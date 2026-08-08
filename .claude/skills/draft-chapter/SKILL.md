@@ -15,10 +15,10 @@ the first few chapters are written.
 2. Scaffold to convention if missing: chapters/NN-slug/ch.tex holds \chapter
    and \label and \input's one file per section (NN-name.tex, zero-padded,
    paths written from the book root).
-3. Draft following the writing defaults in CLAUDE.md plus the SPEC's writing
-   rules. Code listings come from the companion repo named in SPEC; if the
-   repo or a snippet does not exist yet, record that in SPEC open items
-   instead of inventing code.
+3. Load the humanizer skill, then draft following its checklist, the writing
+   defaults in CLAUDE.md, and the SPEC's writing rules. Code listings come
+   from the companion repo named in SPEC; if the repo or a snippet does not
+   exist yet, record that in SPEC open items instead of inventing code.
 4. Compile: cd books/<name> && latexmk. While iterating, uncomment
    \includeonly in main.tex for the chapter; comment it back out and rebuild
    clean before finishing.

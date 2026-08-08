@@ -70,7 +70,9 @@ Per-book SPEC.md records deviations; otherwise:
 
 - Voice: first-person practitioner - direct, concrete, opinionated where
   experience warrants it.
-- Prose must read as human-written (the humanizer bar): no inflated
+- Prose must read as human-written. Load the humanizer skill before drafting
+  or reviewing any book prose and apply its full checklist; if it is not
+  available in the session, fall back to its core bans: no inflated
   symbolism, rule-of-three padding, "isn't just X" framings, or vague
   attributions.
 - Code shown in a book exists in that book's companion repo and compiles;
