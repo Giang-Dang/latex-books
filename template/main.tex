@@ -1,0 +1,35 @@
+% !TeX program = lualatex
+% Build with: latexmk   (configured by .latexmkrc; output lands in build/main.pdf)
+\documentclass[11pt,a4paper,twoside,openright]{book}
+
+\input{preamble/packages}
+\input{preamble/fonts}
+\input{preamble/macros}
+
+\addbibresource{refs.bib}
+\makeindex[intoc]
+
+% Drafting aid for large books: uncomment to recompile only the listed
+% chapters while keeping page numbers and cross-references intact.
+% Comment it out again before a release build.
+% \includeonly{chapters/01-example/ch}
+
+\begin{document}
+
+\frontmatter
+\input{frontmatter/titlepage}
+\input{frontmatter/copyright}
+\tableofcontents
+\input{frontmatter/preface}
+
+\mainmatter
+\include{chapters/01-example/ch}
+
+\appendix
+\include{backmatter/appendix}
+
+\backmatter
+\printbibliography[heading=bibintoc]
+\printindex
+
+\end{document}

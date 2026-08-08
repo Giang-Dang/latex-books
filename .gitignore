@@ -1,0 +1,25 @@
+# All build output lands in each book's build/ directory
+build/
+
+# LaTeX aux files, in case a build ever runs outside build/
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+
+# Editors / OS
+.DS_Store
+Thumbs.db

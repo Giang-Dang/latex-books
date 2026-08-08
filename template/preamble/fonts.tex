@@ -1,0 +1,42 @@
+% Fonts and languages (LuaLaTeX + fontspec).
+% Default: English text in TeX Gyre fonts, which ship with TeX Live/MiKTeX
+% and already cover Vietnamese diacritics.
+%
+% Fonts are loaded by FILENAME (texgyre*.otf in the TeX tree), not by display
+% name - filename loading works on every machine without depending on the
+% luaotfload font-name database being up to date.
+
+\usepackage[main=english]{babel}
+\usepackage{fontspec}
+
+\setmainfont{texgyrepagella}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  BoldFont       = *-bold,
+  ItalicFont     = *-italic,
+  BoldItalicFont = *-bolditalic,
+]
+\setsansfont{texgyreheros}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  BoldFont       = *-bold,
+  ItalicFont     = *-italic,
+  BoldItalicFont = *-bolditalic,
+]
+\setmonofont{texgyrecursor}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  BoldFont       = *-bold,
+  ItalicFont     = *-italic,
+  BoldItalicFont = *-bolditalic,
+]
+
+% Vietnamese: the fonts above already cover it - just add the language:
+% \babelprovide[import]{vietnamese}
+
+% Chinese/Japanese: install the Noto CJK fonts, then uncomment what the book
+% needs. [onchar=ids fonts] switches the font automatically per script.
+% \babelprovide[onchar=ids fonts]{japanese}
+% \babelfont[japanese]{rm}{Noto Serif CJK JP}
+% \babelprovide[onchar=ids fonts]{chinese-simplified}
+% \babelfont[chinese-simplified]{rm}{Noto Serif CJK SC}
