@@ -75,7 +75,16 @@ The sequence matters more than any individual step.
    the SPEC writing rules and the humanizer checklist, reporting `file:line` for
    every finding. Then verify each factual finding yourself before acting on it.
    The audit is a lead, not a verdict.
-6. **Close out.** Build clean, update SPEC, commit.
+6. **Close out.** Build clean, run the check script, update SPEC, commit.
+7. **Retro, proposals only.** List what cost time this session. Sort each
+   item: a machine-checkable mistake becomes a proposed new check in
+   `scripts/check-chapter.ps1`; a book-specific lesson goes into that book's
+   SPEC open items or decision log (do that now - it is in scope); a
+   cross-book process lesson becomes a proposed edit to this skill's
+   references, but only once the same lesson has bitten in two different
+   chapters - a one-off is noise, name it and drop it. Present proposals to
+   the author as diffs and stop there: never edit this skill, its
+   references, or the check script in a drafting session.
 
 Writing prose before the code exists produces listings that then have to be made
 true, which is backwards and tends to leave inventions in the text.
@@ -90,17 +99,21 @@ Do not pass one of these without the previous one holding.
 | Companion code | That repo's verification script passes; the chapter's tag is pushed |
 | Report | Real schema and numbers posted before prose starts |
 | Prose | Every listing traceable to a file in the companion repo at the chapter's tag |
-| Build | `latexmk` exits 0, with **zero overfull boxes** and zero undefined references |
+| Build | `latexmk` exits 0; `pwsh scripts/check-chapter.ps1 books/<name>` exits 0 |
 | SPEC | Progress row, decisions, TOC and open items all reflect reality |
 | Commit | `.githooks/pre-commit` passes unaided; never `--no-verify` |
 
-The build gate, run from the book directory:
+The build gate: from the book directory `latexmk -C && latexmk` (through the
+Bash tool), then from the repo root:
 
 ```
-latexmk -C && latexmk
-grep -c Overfull build/main.log     # must be 0
-grep -ci undefined build/main.log   # must be 0
+pwsh scripts/check-chapter.ps1 books/<name>
 ```
+
+Add `-Chapter NN` to lint one chapter while iterating. The script owns the
+mechanical checks - bytes, citation ties and keys, quoting, index termination,
+contractions, spellings, dashes, and the log's overfull and undefined counts.
+Fix findings rather than arguing with them.
 
 Then read `build/main.pdf` and look at the chapter: figure placement, listings
 inside the measure, index entries, citations resolving. A clean log is not the

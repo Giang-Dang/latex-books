@@ -1,6 +1,6 @@
 #!/bin/sh
 # Local build gate (this repo has no CI): build every book touched by the
-# staged changes and abort the commit if any fails to compile.
+# staged changes, run the prose checks, and abort the commit if either fails.
 # One-time setup per clone: git config core.hooksPath .githooks
 
 set -e
@@ -24,4 +24,12 @@ for t in $targets; do
         exit 1
     fi
     rm -f "$log"
+    if [ "$t" != template ]; then
+        echo "pre-commit: checking $t"
+        if ! pwsh scripts/check-chapter.ps1 "$t"; then
+            echo "pre-commit: $t failed checks; commit aborted."
+            echo "pre-commit: run 'pwsh scripts/check-chapter.ps1 $t' to reproduce."
+            exit 1
+        fi
+    fi
 done

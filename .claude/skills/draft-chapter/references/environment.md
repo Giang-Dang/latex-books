@@ -28,18 +28,9 @@ GNU sed reads `\c` in a replacement as a control-character escape, so
 The result looks almost right in a terminal, breaks the ASCII-only rule, and
 survives until a byte scan.
 
-Use the Edit tool, or Python, for anything containing a backslash. To check a
-chapter is clean:
-
-```python
-from pathlib import Path
-import glob
-for f in sorted(glob.glob('*.tex')):
-    d = Path(f).read_bytes()
-    bad = [(i, x) for i, x in enumerate(d)
-           if x > 127 or (x < 32 and x not in (9, 10, 13))]
-    print(f, 'clean' if not bad else bad[:5])
-```
+Use the Edit tool, or Python, for anything containing a backslash. The byte
+scan that catches this class of damage is the `ascii` check in
+`scripts/check-chapter.ps1`; run that rather than rescanning by hand.
 
 ## Overfull boxes
 
@@ -67,14 +58,10 @@ The `lines X--Y` in each report refer to the source file named in the enclosing
 ## Citation keys
 
 A subagent writing the bibliography picks its own key names, which will not
-match the keys already written into prose. Reconcile after that agent finishes:
-
-```
-grep -ho 'autocite{[a-z0-9]*}' *.tex | sort -u
-```
-
-and check each against `refs.bib`. Undefined citations do not fail the build
-loudly; they render as bold question marks.
+match the keys already written into prose. Reconcile after that agent
+finishes: `pwsh scripts/check-chapter.ps1 books/<name>` flags every key the
+prose cites that `refs.bib` does not define. Undefined citations do not fail
+the build loudly; they render as bold question marks.
 
 ## Concurrent builds
 
