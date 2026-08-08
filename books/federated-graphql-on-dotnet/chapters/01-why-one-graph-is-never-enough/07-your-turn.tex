@@ -1,0 +1,48 @@
+\section*{Your turn}
+
+Every chapter from here ends with something to do, and from
+chapter~\ref{ch:hotchocolate-quickly} onward that means checking out a tag from
+the companion repository and running it. This one needs no code, because the
+question this chapter raises is about your organisation rather than your
+toolchain.
+
+Pick a graph. If your team runs a GraphQL API, use that one, however small. If
+you do not have one to hand, use GitHub's, which publishes its whole schema as a
+single downloadable file~\autocite{github2026schema} alongside the
+breaking-change policy that keeps it
+manageable~\autocite{github2026breaking}. It is large, genuinely load bearing,
+and deliberately not federated, which makes it a useful control case for
+everything argued above. Answer the questions you can from the schema and the
+policy; where you cannot, note what a maintainer would have to tell you.
+
+\begin{enumerate}
+  \item \textbf{Map the owners.} List the fields on \code{Query}. Next to each
+  one, write the name of the team that would review a change to it. Count the
+  fields where you cannot name a team, or where you can name three.
+
+  \item \textbf{Measure the blast radius.} Take the type that appears in the
+  most operations. How many separate features read it? If you added a required
+  argument to one of its fields tomorrow, who finds out, and how?
+
+  \item \textbf{Time a change.} Find the last field added to the schema. From
+  the first commit to serving production traffic, how long did it take, and how
+  many people had to agree? Separate the time spent building from the time
+  spent waiting.
+
+  \item \textbf{Test the coupling.} Can one domain in that schema ship a change
+  to production without the others shipping too? If the answer is no, is that
+  because of the schema, the deployment, or the database?
+
+  \item \textbf{Count the queues.} Over the last quarter, how often did two
+  teams need to change the same type in the same week?
+\end{enumerate}
+
+If your answers are dull, that is the most useful outcome available to you
+here. Fields with one obvious owner, a change that ships in a day, one
+deployable that everybody is happy to release: you have a healthy single graph
+and no federation problem. Part~I of this book will still be worth your time,
+and you can treat the rest as a map of where the road goes.
+
+Keep the notes either way. Chapter~\ref{ch:do-you-actually-need-federation}
+turns this audit into an actual decision, and by then you will have seen what
+the alternative costs.

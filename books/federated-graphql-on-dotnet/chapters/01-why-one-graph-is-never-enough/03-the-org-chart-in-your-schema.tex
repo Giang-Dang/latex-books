@@ -1,0 +1,91 @@
+\section{The org chart in your schema}
+\label{sec:ch01-org-chart}
+
+\index{Conway's law}%
+In 1968 Melvin Conway published an observation that has outlived almost
+everything else written about software that decade: organisations which design
+systems are constrained to produce designs which are copies of the
+communication structures of those organisations~\autocite{conway1968committees}.
+He was writing about committees and contract negotiations, not APIs, and the
+paper is worth reading partly because it is so unlike the slogan it turned
+into.
+
+The same paper contains the arithmetic that explains the queue at the end of
+section~\ref{sec:ch01-promise}, and I had somehow never noticed it until I went
+back to the original. Conway points out that the number of possible
+communication paths in an organisation is roughly half the square of the number
+of people in it, and draws the conclusion himself: \enquote{Even in a moderately
+small organization it becomes necessary to restrict communication in order that
+people can get some `work' done.} Restricting communication is what a review
+process is. It is not bureaucracy arriving to spoil things; it is the only way a
+group above a certain size can ship anything at all.
+
+A GraphQL schema is an unusually literal demonstration. The schema is the
+interface, and it is a single document. If six teams contribute to one
+document, then those six teams need a communication structure capable of
+reaching agreement about that document, and they will build one whether anybody
+plans it or not.
+
+You can usually see what they built. Look for a schema working group with a
+standing meeting, a naming conventions page that is longer than it should be, a
+rule that schema changes need approval from two reviewers outside the
+contributing team, an RFC template for adding a type. None of this is
+dysfunction. It is a reasonable organisation noticing that a shared artifact
+needs shared governance and supplying some. I have helped build these processes
+and would build them again.
+
+Both of those descriptions are drawn from life. Netflix ran a schema working
+group that met weekly, with a schema architect whose job was to understand the
+entire surface area of the graph~\autocite{shin2020netflixtalk}, and they were
+straightforward about the trade: \enquote{while reviews add overhead to the
+product development process}, they judged that protecting the quality of the
+model would cost less later~\autocite{shikhare2020netflix2}. PayPal, once
+GraphQL had spread widely enough inside the company, established a standards
+body, and reported the bill just as plainly: adoption of the one-graph approach
+\enquote{has been slow}, because teams \enquote{have to change a lot of
+behavior}, which adds \enquote{process and time to
+deliver}~\autocite{kapoor2021paypal}.
+
+They also work. That is the part usually left out of the argument for
+federation, so let me put it in early: process solutions to schema coupling are
+cheap, effective, and correct for far longer than vendors suggest. If your
+complaint is inconsistent field naming, you do not have a distribution problem.
+You have a style guide problem, and adopting federation to solve it means paying
+for a router and a schema registry to avoid writing a document.
+Chapter~\ref{ch:do-you-actually-need-federation} returns to this with the
+alternatives worked out properly, because the honest
+answer for a lot of teams is that better governance of one graph beats a
+federated graph they are not ready to operate.
+
+\index{schema!governance}%
+What governance cannot fix is the second arrow in
+figure~\ref{fig:ch01-one-schema-many-teams}. You can make review faster. You
+can make ownership unambiguous with a \code{CODEOWNERS} file. You cannot make
+two teams ship the same binary at different times. Deploy coupling is not a
+communication problem, so no amount of communication resolves it, and it is the
+one failure mode that gets monotonically worse as the organisation grows.
+
+There is a related trap worth naming, because it is where the coupling starts to
+distort the schema itself. When adding a field to an existing type is expensive,
+people stop adding fields to existing types. They add
+\code{productPricingDetails} alongside \code{product} because a new root field
+touches nobody else's code and needs one reviewer. The schema slowly grows a
+layer of near-duplicate types whose only reason for existing is that they were
+cheaper to merge than the correct change would have been. A year later the graph
+is genuinely confusing to clients, and the cause was not incompetence. It was
+that the org chart made the right change expensive and the wrong change free.
+
+\index{team autonomy}%
+Turned around, this is the actual argument for federation, and it is worth
+stating in Conway's terms rather than in terms of performance or scale, neither
+of which federation reliably improves. If you want teams that can decide and
+ship independently, you need interfaces they can change independently. A single
+schema gives you one interface with many owners. Federation gives you many
+interfaces, each with one owner, plus machinery that presents them to clients as
+though they were still one graph. That machinery is the cost. The independence
+is what you are buying.
+
+Whether the trade is worth it depends on how many teams you have and how often
+they collide, which is a question about your organisation that no benchmark will
+answer. Section~\ref{sec:ch01-do-you-need-this} gives you a way to interrogate
+it, and the exercise at the end of the chapter turns it on your own graph.

@@ -1,0 +1,79 @@
+\section{The promise of one graph}
+\label{sec:ch01-promise}
+
+The pitch that got GraphQL into so many companies had nothing to do with
+distribution. It was that a client could ask for exactly the data a screen
+needed, once, and get back a response shaped like the screen.
+
+\begin{minted}{graphql}
+# Sketch: one request for a product page. This is the promise that made
+# GraphQL spread, and it is worth keeping in view for the whole chapter.
+query ProductPage($sku: String!) {
+  product(sku: $sku) {
+    title
+    description
+    price { amount currency }
+    availableQuantity
+    reviews(first: 3) { nodes { rating body } }
+  }
+}
+\end{minted}
+
+Anyone who has assembled that page from four REST endpoints, each returning a
+slightly different notion of a product, each with its own pagination style and
+its own opinion about whether \code{null} means missing or zero, understands the
+appeal immediately. The mobile team stops asking the backend team for a new
+endpoint every sprint. The backend team stops maintaining nine variants of
+\code{/product} that differ only in which fields they include. Nobody has to
+negotiate a payload.
+
+That is the part everyone remembers. The part that matters more for this book is
+the second promise, which is organisational rather than technical. If there is
+one schema, there is one place where the company's domain is written down.
+\code{Product} means one thing. \code{Money} has one shape. When somebody asks
+what data the company has about a customer, the answer is a document that is
+guaranteed to be current, because it is the thing serving traffic. Apollo made
+this the first of its principles for running GraphQL at scale, arguing that a
+company should have \enquote{one unified graph, instead of multiple graphs
+created by each team}~\autocite{schmidt2019principled}. The instinct is right,
+whatever you make of the source: a single graph is worth more than several
+disconnected ones, because the value is in the
+joins.\index{one graph principle}
+
+\index{schema!as shared vocabulary}%
+For a while, this works beautifully, and it is worth being precise about why,
+because the reason is not technical merit. It is that coordination is free when
+the graph is small. One team owns the schema. The people who would need to
+agree about \code{Product} sit near each other, or at least attend the same
+standup. A field gets added in the morning and ships in the afternoon. If
+somebody proposes a name that will age badly, the person who will suffer for it
+is in the room and says so.
+
+Under those conditions a single GraphQL service is close to the best available
+architecture, and I want to be clear that I mean that. Nothing in the following
+twenty-seven chapters is an argument that you should have started differently.
+The correct first move is one service, one schema, one deployable. The problems
+this book solves are the problems of success: more teams, more domains, more
+people with a legitimate claim on the same types.
+
+\index{coordination cost}%
+What changes is not the code. A schema with four hundred fields is not
+meaningfully harder to compile than one with forty. What changes is the number
+of people who have to agree before a field can move, and that number grows
+faster than the schema does. Ten engineers on one graph is a conversation.
+Eighty engineers on one graph is a queue.
+
+Figure~\ref{fig:ch01-one-schema-many-teams} is the shape of that queue. It is
+worth looking at for a moment, because it is an unremarkable diagram of an
+unremarkable architecture, and everything that goes wrong in the next section
+is already visible in it.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch01-one-schema-many-teams}
+  \caption{One schema and one deployable, shared by every team that has
+  anything to say about the domain. The arrows into the box are the ones that
+  cause trouble: every change is a pull request against the same file, and
+  every change ships when the whole service ships.}
+  \label{fig:ch01-one-schema-many-teams}
+\end{figure}

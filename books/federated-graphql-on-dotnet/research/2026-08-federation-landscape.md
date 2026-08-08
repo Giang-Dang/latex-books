@@ -20,10 +20,18 @@ and the preface version baseline.
   ASP.NET Core gateway, decoupled from the HC type system. The old
   HotChocolate.Fusion line ("v1", HC 13/14-era, pre-spec directives, fusion
   compose CLI) effectively ended at 15.1.17 (2026-06-16).
-- New Fusion implements the **GraphQL Composite Schemas specification** (draft
-  under the GraphQL Foundation; working group of ChilliCream, Apollo, and The
-  Guild, announced 2024-05-16). Composition via Nitro CLI
-  (`nitro fusion publish`) or .NET Aspire; `dotnet new graphql-gateway`.
+- New Fusion implements the **GraphQL Composite Schemas specification**.
+  Composition via Nitro CLI (`nitro fusion publish`) or .NET Aspire;
+  `dotnet new graphql-gateway`.
+  - CORRECTED 2026-08-08 while drafting ch 01: this file previously described
+    the Composite Schemas effort as "a working group of ChilliCream, Apollo and
+    The Guild". It is formally the **Composite Schemas Subcommittee** of the
+    GraphQL Specification Working Group, which re-convened rather than being
+    newly created, and the announcement of 2024-05-16 names **seven**
+    contributing organisations: Apollo GraphQL, ChilliCream, Google, Graphile,
+    The Guild, Hasura and IBM. As of 2026-08-07 the spec is an actively edited
+    draft with zero releases and zero tags. See
+    research/2026-08-ch01-scaling-and-federation-history.md section F.
 - Fusion 16.5 (blog 2026-07-12) added **Apollo Federation support in the
   gateway core** - mixed Composite-Schemas + Apollo-Federation graphs; scored
   100% on The Guild's federation gateway audit (only Hive Router and Fusion
@@ -38,7 +46,9 @@ and the preface version baseline.
 ## Apollo
 
 - Federation spec v2.15 (LTS, Jul 2026; min Router 2.16.0); composition
-  rewritten in Rust in 2.15.
+  rewritten in Rust in 2.15. NOTE: the Rust composition rewrite belongs to
+  v2.15 (Jul 2026). Apollo's 2022 Rust work was the **Router**, a different
+  component; do not conflate the two.
 - Apollo Router Core and Federation 2.x libraries are **Elastic License v2**
   (no offering as a managed service).
 - GraphOS pricing: free tier (~60 req/min self-hosted router, 3 devs) ->

@@ -1,0 +1,135 @@
+\section{Do you need this yet?}
+\label{sec:ch01-do-you-need-this}
+
+I have spent five sections describing a disease and naming companies that
+caught it. Here is the part that gets left out of conference talks: plenty of
+organisations operating at genuinely large scale looked at federation, and
+decided against it, and were right.
+
+\index{federation!when not to adopt}%
+The most instructive example is Twitter's Core API Platform team, writing in
+2021 about a schema that, by their own description, defined \enquote{the
+entirety of our api data model} with roughly a thousand object types, a hundred
+input types, and three hundred mutation fields, growing daily as \enquote{several
+hundred developers across the company add fields and types}. That graph served
+around 500,000 requests per second, and one of their most frequent queries was
+2,500 lines long and returned 50,000 fields. When someone asked them directly
+why they had not federated, the answer was that they did not need to:
+\enquote{our underlying data layer (known as strato) is itself federated}, which
+gave them \enquote{most of the perks of federation while also allowing us to
+have a unified schema with strong network effects and without too many
+performance gotchas}~\autocite{twitter2021unified}.
+
+Read that last clause again, because it is a platform engineer at half a million
+requests per second saying that a federated graph has performance
+characteristics his unified schema does not have to deal with. It is also a
+reminder that federation of the graph is not the only place you can put a seam.
+They put theirs one layer down, in the data access tier, which is one of the
+alternatives chapter~\ref{ch:do-you-actually-need-federation} takes seriously.
+
+Zalando made a similar call for similar reasons. They run a unified graph across
+their domains, but as a single service rather than a composed one, and Aditya
+Pratap Singh was explicit that this is a trade rather than an oversight: they
+\enquote{gain by keeping a single Graph in terms of tooling, deployment and
+governance}~\autocite{singh2021zalando}. Tooling, deployment, and governance are
+exactly the three things federation makes harder, and they are not glamorous
+enough to make it into most architecture decisions.
+
+\index{GitHub!GraphQL API}%
+Then there is GitHub, which is the example I reach for when someone argues that
+a schema can simply become too large for one service. I counted the published
+GitHub GraphQL schema while writing this chapter: 1,807 named types and 6,809
+fields on object and interface types, with 32 root query fields and 274
+mutations~\autocite{github2026schema}. It is not versioned. It carries 1,258
+deprecations, most of them with a removal date attached, governed by a published
+policy that promises at least three months' notice and lands breaking changes on
+quarter boundaries~\autocite{github2026breaking}. That is one schema, an order
+of magnitude larger than most schemas anybody reading this owns, kept coherent
+by a deprecation process rather than a distributed architecture. GraphQL's own
+documentation notes that Meta, where the language was invented, has run a
+monolithic GraphQL API since 2012~\autocite{graphqlorg2026federation}.
+
+Schema size, then, is not the trigger. Neither is request volume. The trigger is
+the number of teams that need to change the same part of the schema in the same
+week, which is why the exercise at the end of this chapter asks you to count
+that rather than to count fields.
+
+\subsection*{What it costs}
+
+If you do federate, here is the bill. I would rather you see it now than
+discover it in Part~VI.
+
+The router and the schema registry become production dependencies with their own
+failure modes. Booking.com published the most useful account of this I know:
+running close to a thousand gateway instances that fetched their schema roughly
+8.3 million times a day, they hit a 24-hour window in which the failure rate for
+schema delivery reached about 2.4 per cent against an expected 0.05 per cent,
+and a gateway that cannot fetch a schema cannot roll
+out~\autocite{ernst2022booking}. None of that is a criticism of federation. It
+is what happens when composition becomes something your deploys depend on, and
+it is work you were not doing before.
+
+The performance surface is larger and harder to see into. At Netflix, where two
+subgraph services between them handle over a million GraphQL queries per second,
+Stephen Chambers described fixing a defect in the federation query-planning
+layer, and the fix cut requests per second by 20 per cent and saved hundreds of
+thousands of dollars~\autocite{chambers2026netflix}. That is a cost which had
+been running silently until somebody went looking for it, in a layer that did
+not exist before they federated.
+
+The expertise cost is distributed rather than eliminated, which is easy to
+misread as a saving. Netflix noted that in the monolith era only the Studio API
+team needed to know GraphQL deeply, whereas afterwards \enquote{every DGS team
+needs to build expertise in GraphQL}~\autocite{shikhare2020netflix2}. Airbnb,
+who built a different answer to the same problem, put the structural version of
+this well: \enquote{Federation distributes development by distributing
+servers}~\autocite{tanner2026viaduct}. Hundreds of contributing teams means
+hundreds of services to run, monitor, and page someone about.
+
+\index{federation!maturity}%
+It is worth noting who else says this. Netflix, the reference customer for the
+entire idea, closed their own account of it by warning that federation
+\enquote{is early in its maturity lifecycle and may not be the best fit for
+every team or organization}, and that learning it, running a federation layer,
+and carrying out the migration together \enquote{requires high commitment from
+partner teams and seamless cross-functional
+collaboration}~\autocite{shikhare2020netflix2}. GraphQL's own documentation is
+blunter, saying federation \enquote{requires substantial infrastructure support,
+including a dedicated team to manage the gateway, schema registry} and that
+therefore \enquote{it's crucial to consider whether your organization truly
+needs this level of complexity}~\autocite{graphqlorg2026federation}. When the
+language's own home page tells you to think harder, that is not marketing.
+
+\subsection*{A first pass}
+
+So, a rough test, pending the real one in
+chapter~\ref{ch:do-you-actually-need-federation}. Federation starts to earn its
+cost when several teams own genuinely different domains inside one schema, when
+those teams collide on the same types often enough that you can remember
+specific incidents, when they need to deploy on their own schedules, and when
+you already have the operational maturity to run another tier in production
+without flinching. If instead you have one team, or several teams that rarely
+touch each other's types, or nobody on call for a gateway, then the honest
+answer is that your problems have cheaper solutions: a style guide, a
+\code{CODEOWNERS} file, a deprecation policy like GitHub's, a modular monolith
+with real internal boundaries.
+
+Martin Fowler's advice to build the monolith first and split it once you can see
+where the seams belong was published in 2015 and has aged
+well~\autocite{fowler2015monolithfirst}. It is not unanimous, and the dissent is
+worth reading: Stefan Tilkov argues on the same site that systems intended from
+the start to be distributed are hard to retrofit into that shape
+later~\autocite{tilkov2015dontstart}. For graphs specifically I still lean
+Fowler's way, because a schema is unusually easy to carve later. The entity keys
+that federation needs are mostly the identifiers you already have, and
+chapter~\ref{ch:strangling-the-monolith} does exactly this carving without
+downtime.
+
+One last observation, offered as a caution rather than a conclusion. While
+researching this chapter I looked for companies that had adopted federation and
+then removed it, and found essentially none. That silence is real, but its cause
+is not knowable from the outside. It might mean federation works. It might mean
+that once a graph is composed, unpicking it costs more than living with it,
+which is an argument for deciding carefully rather than a reassurance. Either
+reading points the same direction: this is a decision worth making deliberately,
+in advance, with your own numbers.

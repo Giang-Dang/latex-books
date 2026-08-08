@@ -1,0 +1,100 @@
+\section{Where the single schema cracks}
+\label{sec:ch01-cracks}
+
+What follows is not a list of things that might go wrong. Each item has a
+company's name and a date on it, because \enquote{the monolith was fine} is an
+argument I have had several times, and it is easier to have with sources.
+
+\index{schema!review contention}%
+Start with the review queue, because it is the first thing anybody notices.
+Booking.com described their pre-federation GraphQL service plainly: as it grew,
+one team was left with \enquote{dozens of merge requests a day to review for
+schema changes and service mappings}, while also managing frequent deployments
+of that service and helping resolve merge conflicts between
+teams~\autocite{ernst2022booking}. The detail I find most useful is what this did
+to ownership. In their words, it \enquote{made it difficult for service owners
+to have strong ownership of their data and schema as they were heavily tied to
+the single service}. The teams that understood a domain were not the teams that
+could change how it was exposed. Ownership had become a label rather than a
+capability.
+
+\index{API monolith}%
+The second failure mode is the one I would put on a poster, and Netflix has the
+clearest telling of it because they walked into it having already done the hard
+work of avoiding it. They had broken their system into microservices, and then,
+as Jennifer Shin put it in a 2020 talk, found that those services were
+\enquote{all aggregated into a single API monolith}. Her colleague Stephen
+Spalding described how it happened: the gateway that composed all those services
+kept acquiring responsibilities, fallback logic to handle failure gracefully,
+then caches, then in-memory datastores, then business logic, until \enquote{the
+API gateway had become the new monolith}~\autocite{shin2020netflixtalk}.
+
+That is worth sitting with, because nothing in it is about GraphQL. Any
+aggregation layer with one owner and many contributors drifts toward becoming
+the system's centre of gravity. GraphQL just makes the drift legible, since the
+accumulated coupling has a name and a file you can open.
+
+\index{schema!quality decay}%
+Third, schema quality decays when the people who own the schema are not the
+people who own the domain. Netflix's account of their Studio API bottlenecks
+names three causes: the API team was \enquote{disconnected from the domain
+expertise and the product needs, which negatively impacted the schema's
+health}; wiring a new back-end element into the graph was manual work that
+\enquote{ran counter to the rapid evolution promised by a microservice
+architecture}; and one small team could not keep up with the operational and
+support burden of a growing graph~\autocite{shikhare2020netflix1}. The
+consequence they report is the kind of thing that never appears in an
+architecture diagram: inconsistent data across Studio applications was the top
+support issue in their studio engineering organisation in 2018. A modelling
+problem had turned into a support queue, which is usually how modelling problems
+announce themselves.
+
+\index{deploy coupling}%
+Fourth, deploy coupling, which in practice means two teams have to ship before
+one field exists. Tejas Shikhare put the fix in terms of the problem: with
+federation, \enquote{you don't have to implement the feature in the backend
+service, in the GraphQL service before the client can use it}, so the team that
+owns the data can ship it and it is simply
+there~\autocite{shikhare2023podcast}. Volvo Car Mobility described the same
+tax from the other side: every schema change meant working inside the monolith
+\emph{and} defining service-to-service APIs \emph{and} changing one or more
+microservices, and on top of that their uptime depended on that single
+service~\autocite{radjavi2023volvo}.
+
+\index{breaking changes}%
+Fifth, and this one is quieter, you eventually cannot change anything because
+you do not know who is reading it. Matt Oliver of Major League Baseball
+described having \enquote{low visibility into who is making calls on our
+platform}, with clients owned by different teams, which made model changes and
+breaking changes hard, because notifying and coordinating those clients was
+itself the difficult part~\autocite{oliver2022mlb}. I want to flag an honest
+caveat here: federation does not fix this. What fixes it is a schema registry
+and operation-level tracking, which federated tooling tends to bring along
+because composition needs a registry anyway. You can have that without
+federating, and chapter~\ref{ch:do-you-actually-need-federation} says so.
+
+\index{velocity ceiling}%
+The cumulative version is a ceiling that hiring does not raise. Wayfair's Leah
+Hurwich Adler, describing their monolith to Apollo, said it was \enquote{so
+unwieldy that we hit a ceiling in our velocity, and hiring more engineers didn't
+help us push code to production faster}~\autocite{adler2024wayfair}. That
+sentence is the shape of the whole problem. If throughput were limited by
+engineering capacity, more engineers would help. It was limited by a shared
+resource, and adding contenders for a shared resource makes the contention
+worse.
+
+The most candid summary I know comes from PayPal in 2019, early enough that the
+author was not describing a solved problem. Mark Stuart wrote that users
+reasonably want \enquote{a single, cohesive graph that they can traverse through
+without thinking about many services}, and then immediately conceded: \enquote{In
+reality, assembling a single graph is difficult.} He calls it \enquote{the most
+difficult problem that we have with GraphQL}, and locates the difficulty
+correctly: \enquote{scaling in the Enterprise isn't about horizontal scaling or
+paying a lot of money for servers or cloud compute. Scaling people, tooling and
+processes are most challenging}~\autocite{stuart2019paypal}.
+
+Now read back over that list and notice what is missing from it. Not one of
+these is a performance problem, and not one is a limitation of GraphQL as a
+language. They are all questions about who is allowed to change what, and how
+long everyone else waits while they do. That is a specific kind of problem with
+a specific and well known cause, which is the next section.

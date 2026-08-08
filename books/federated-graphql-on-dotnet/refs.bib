@@ -1,7 +1,371 @@
-@book{knuth1984,
-  author    = {Knuth, Donald E.},
-  title     = {The {\TeX}book},
-  publisher = {Addison-Wesley},
-  year      = {1984},
-  location  = {Reading, Massachusetts}
+% Sources for this book. Web sources verified on the urldate given; the
+% research/ notes record what each one supports.
+
+% --- Chapter 01: team coupling -----------------------------------------------
+
+@article{conway1968committees,
+  author  = {Conway, Melvin E.},
+  title   = {How Do Committees Invent?},
+  journal = {Datamation},
+  volume  = {14},
+  number  = {4},
+  pages   = {28--31},
+  month   = {4},
+  year    = {1968},
+  url      = {https://www.melconway.com/Home/pdf/committees.pdf},
+  urldate  = {2026-08-08},
+  addendum = {Volume and issue follow ACM Queue's citation; the facsimile
+              prints neither}
+}
+
+% --- Chapter 01: what breaks in a single graph -------------------------------
+
+@online{ernst2022booking,
+  author  = {Ernst, Christian},
+  title   = {Improving {GraphQL} federation resiliency},
+  organization = {Booking.com Engineering},
+  year    = {2022},
+  month   = {10},
+  url     = {https://medium.com/booking-com-development/improving-graphql-federation-resiliency-ca3e95075de4},
+  urldate = {2026-08-08}
+}
+
+@online{shikhare2020netflix1,
+  author  = {Shikhare, Tejas},
+  title   = {How {Netflix} scales its {API} with {GraphQL} federation (part 1)},
+  organization = {Netflix Technology Blog},
+  year    = {2020},
+  month   = {11},
+  url     = {https://netflixtechblog.com/how-netflix-scales-its-api-with-graphql-federation-part-1-ae3557c187e2},
+  urldate = {2026-08-08}
+}
+
+@online{shikhare2020netflix2,
+  author  = {Shikhare, Tejas},
+  title   = {How {Netflix} scales its {API} with {GraphQL} federation (part 2)},
+  organization = {Netflix Technology Blog},
+  year    = {2020},
+  month   = {12},
+  url     = {https://netflixtechblog.com/how-netflix-scales-its-api-with-graphql-federation-part-2-bbe71aaec44a},
+  urldate = {2026-08-08}
+}
+
+@online{shin2020netflixtalk,
+  author  = {Shin, Jennifer and Spalding, Stephen},
+  title   = {How {Netflix} scales its {API} with {GraphQL} federation},
+  organization = {QCon Plus, published by InfoQ},
+  year    = {2020},
+  month   = {11},
+  url     = {https://www.infoq.com/presentations/netflix-api-graphql-federation/},
+  urldate = {2026-08-08}
+}
+
+@online{shikhare2023podcast,
+  author  = {Shikhare, Tejas},
+  title   = {Expanding {GraphQL} federation at {Netflix}},
+  organization = {InfoQ podcast, interviewed by Thomas Betts},
+  year    = {2023},
+  month   = {1},
+  url     = {https://www.infoq.com/podcasts/netflix-expanding-graphQL-federation/},
+  urldate = {2026-08-08}
+}
+
+@online{radjavi2023volvo,
+  author  = {Radjavi, Iman and Gustafson, Christopher and Lindquister, Alexander},
+  title   = {Why {Volvo Car Mobility} use {Apollo} federation},
+  organization = {Volvo Car Mobility Tech},
+  year    = {2023},
+  month   = {2},
+  url     = {https://medium.com/volvo-car-mobility-tech/why-volvo-car-mobility-use-apollo-federation-59c647a2ab60},
+  urldate = {2026-08-08}
+}
+
+@online{oliver2022mlb,
+  author  = {Oliver, Matt and Medvedeva, Olessya},
+  title   = {{GraphQL} at {Major League Baseball}},
+  organization = {QCon Plus, published by InfoQ},
+  year    = {2022},
+  month   = {3},
+  url     = {https://www.infoq.com/presentations/graphql-major-league-baseball/},
+  urldate = {2026-08-08}
+}
+
+@online{stuart2019paypal,
+  author  = {Stuart, Mark},
+  title   = {Scaling {GraphQL} at {PayPal}},
+  organization = {The PayPal Technology Blog},
+  year    = {2019},
+  month   = {10},
+  url     = {https://medium.com/paypal-tech/scaling-graphql-at-paypal-b5b5ac098810},
+  urldate = {2026-08-08}
+}
+
+@online{kapoor2021paypal,
+  author  = {Kapoor, Shruti},
+  title   = {{GraphQL} at {PayPal}: an adoption story},
+  organization = {The PayPal Technology Blog},
+  year    = {2021},
+  month   = {8},
+  url     = {https://medium.com/paypal-tech/graphql-at-paypal-an-adoption-story-b7e01175f2b7},
+  urldate = {2026-08-08}
+}
+
+@online{adler2024wayfair,
+  author  = {{Hurwich Adler}, Leah},
+  title   = {How {Wayfair} achieved {GraphQL} success with federated {GraphQL}},
+  organization = {Apollo},
+  year    = {2024},
+  month   = {4},
+  url     = {https://www.apollographql.com/blog/how-wayfair-achieved-graphql-success-with-federated-graphql},
+  urldate = {2026-08-08},
+  note    = {Published by Apollo; quotes Wayfair's own engineering lead}
+}
+
+% --- Chapter 01: the case against --------------------------------------------
+
+@online{twitter2021unified,
+  author  = {{Twitter Core API Platform}},
+  title   = {Discussion: {Twitter}'s unified {GraphQL} schema},
+  organization = {graphql-java discussion 2591},
+  year    = {2021},
+  month   = {10},
+  url     = {https://github.com/graphql-java/graphql-java/discussions/2591},
+  urldate = {2026-08-08},
+  note    = {Posted under the handle jbellenger; the federation answer is in
+             the reply of 20 October 2021}
+}
+
+@online{singh2021zalando,
+  author  = {Singh, Aditya Pratap},
+  title   = {How we use {GraphQL} at {Europe}'s largest fashion e-commerce company},
+  organization = {Zalando Engineering},
+  year    = {2021},
+  month   = {3},
+  url     = {https://engineering.zalando.com/posts/2021/03/how-we-use-graphql-at-europes-largest-fashion-e-commerce-company.html},
+  urldate = {2026-08-08}
+}
+
+@online{pappas2022artsy,
+  author  = {Pappas, Christopher},
+  title   = {{RFC}: officially recommend against using {GraphQL} stitching in {Gravity}},
+  organization = {Artsy},
+  year    = {2022},
+  month   = {4},
+  url     = {https://github.com/artsy/README/issues/459},
+  urldate = {2026-08-08},
+  note    = {Accepted and closed 2 May 2022}
+}
+
+@online{tanner2026viaduct,
+  author  = {Tanner, Ryan and Stata, Raymie and Miskiewicz, Adam},
+  title   = {{Viaduct} 1.0 and the future of {Airbnb}'s data mesh},
+  organization = {Airbnb Tech},
+  year    = {2026},
+  month   = {5},
+  url     = {https://airbnb.tech/infrastructure/viaduct-1-0-and-the-future-of-airbnbs-data-mesh/},
+  urldate = {2026-08-08}
+}
+
+@online{github2026schema,
+  author  = {{GitHub}},
+  title   = {Public {GraphQL} schema},
+  year    = {2026},
+  url      = {https://docs.github.com/public/fpt/schema.docs.graphql},
+  urldate  = {2026-08-08},
+  addendum = {GitHub publishes no type or field counts; the figures in the text
+              were counted from this file on the date given}
+}
+
+@online{github2026breaking,
+  author  = {{GitHub}},
+  title   = {Breaking changes in the {GraphQL} {API}},
+  year    = {2026},
+  url     = {https://docs.github.com/en/graphql/overview/breaking-changes},
+  urldate = {2026-08-08},
+  note    = {Undated living documentation}
+}
+
+@online{graphqlorg2026federation,
+  author  = {{GraphQL Foundation}},
+  title   = {Federation},
+  organization = {graphql.org Learn},
+  year    = {2026},
+  url     = {https://graphql.org/learn/federation/},
+  urldate = {2026-08-08},
+  note    = {Undated living documentation}
+}
+
+@online{giroux2018stitching,
+  author  = {Giroux, Marc-Andr\'e},
+  title   = {On {GraphQL} schema stitching and {API} gateways},
+  year    = {2018},
+  month   = {10},
+  url     = {https://magiroux.com/posts/on-graphql-schema-stitching-api-gateways},
+  urldate = {2026-08-08}
+}
+
+@online{fowler2015monolithfirst,
+  author  = {Fowler, Martin},
+  title   = {{MonolithFirst}},
+  year    = {2015},
+  month   = {6},
+  url     = {https://martinfowler.com/bliki/MonolithFirst.html},
+  urldate = {2026-08-08}
+}
+
+@online{tilkov2015dontstart,
+  author  = {Tilkov, Stefan},
+  title   = {Don't start with a monolith},
+  year    = {2015},
+  month   = {6},
+  url     = {https://martinfowler.com/articles/dont-start-monolith.html},
+  urldate = {2026-08-08}
+}
+
+@online{chambers2026netflix,
+  author  = {Chambers, Stephen},
+  title   = {Solving {GraphQL} performance issues at {Netflix} scale},
+  organization = {GraphQLConf 2025, video published January 2026},
+  year    = {2026},
+  month   = {1},
+  url     = {https://www.youtube.com/watch?v=jlpH9nz_0tw},
+  urldate = {2026-08-08}
+}
+
+% --- Chapter 01: the history of one graph ------------------------------------
+
+@online{byron2015graphql,
+  author  = {Byron, Lee},
+  title   = {{GraphQL}: A data query language},
+  organization = {Facebook Engineering},
+  year    = {2015},
+  month   = {9},
+  url     = {https://engineering.fb.com/2015/09/14/core-infra/graphql-a-data-query-language/},
+  urldate = {2026-08-08}
+}
+
+@online{schmidt2019principled,
+  author  = {Schmidt, Geoff and DeBergalis, Matt},
+  title   = {Principled {GraphQL}},
+  year    = {2019},
+  url     = {https://principledgraphql.com/},
+  urldate = {2026-08-08},
+  note    = {The page carries no publication date; first archived February 2019}
+}
+
+@online{stubailo2017stitching,
+  author  = {Stubailo, Sashko},
+  title   = {{GraphQL} schema stitching},
+  organization = {Apollo},
+  year    = {2017},
+  month   = {9},
+  url     = {https://www.apollographql.com/blog/graphql-schema-stitching},
+  urldate = {2026-08-08}
+}
+
+@online{novikov2017tools2,
+  author  = {Novikov, Mikhail},
+  title   = {{graphql-tools} 2.0 with schema stitching},
+  organization = {Apollo},
+  year    = {2017},
+  month   = {10},
+  url     = {https://www.apollographql.com/blog/graphql-tools-2-0-with-schema-stitching-8944064904a5},
+  urldate = {2026-08-08}
+}
+
+@online{stubailo2018nextgen,
+  author  = {Stubailo, Sashko},
+  title   = {The next generation of schema stitching},
+  organization = {Apollo},
+  year    = {2018},
+  month   = {4},
+  url     = {https://www.apollographql.com/blog/the-next-generation-of-schema-stitching-2716b3b259c0},
+  urldate = {2026-08-08}
+}
+
+@online{baxley2019federation,
+  author  = {Baxley III, James},
+  title   = {Apollo {Federation}},
+  organization = {Apollo},
+  year    = {2019},
+  month   = {5},
+  url     = {https://www.apollographql.com/blog/apollo-federation-f260cf525d21},
+  urldate = {2026-08-08}
+}
+
+@online{debergalis2019managed,
+  author  = {DeBergalis, Matt},
+  title   = {Announcing managed federation},
+  organization = {Apollo},
+  year    = {2019},
+  month   = {7},
+  url     = {https://www.apollographql.com/blog/announcing-managed-federation-265c9f0bc88e},
+  urldate = {2026-08-08}
+}
+
+@online{tanrikulu2020tools6,
+  author  = {Tanrikulu, Arda},
+  title   = {{GraphQL Tools}: next generation schema stitching and new leadership},
+  organization = {The Guild},
+  year    = {2020},
+  month   = {5},
+  url     = {https://the-guild.dev/graphql/hive/blog/graphql-tools-v6},
+  urldate = {2026-08-08}
+}
+
+@online{macwilliam2021stitching,
+  author  = {MacWilliam, Greg},
+  title   = {A new year for {GraphQL} schema stitching},
+  organization = {The Guild},
+  year    = {2021},
+  month   = {1},
+  url     = {https://the-guild.dev/graphql/hive/blog/a-new-year-for-schema-stitching},
+  urldate = {2026-08-08}
+}
+
+@online{isquick2021expedia,
+  author  = {Isquick, David},
+  title   = {Moving from schema stitching to federation: how {Expedia} improved performance},
+  organization = {Apollo},
+  year    = {2021},
+  month   = {7},
+  url     = {https://www.apollographql.com/blog/expedia-improved-performance-by-moving-from-schema-stitching-to-apollo-federation},
+  urldate = {2026-08-08}
+}
+
+@online{prasek2022federation2,
+  author  = {Prasek, Phil},
+  title   = {Apollo {Federation} 2 is now generally available},
+  organization = {Apollo},
+  year    = {2022},
+  month   = {4},
+  url     = {https://www.apollographql.com/blog/announcement/backend/apollo-federation-2-is-now-generally-available/},
+  urldate = {2026-08-08}
+}
+
+@online{graphql2024composite,
+  author  = {Auriemma, Jeff and Gillam, Benjie and Staib, Michael and Kisiela,
+             Kamil and Durairaju, Praveen},
+  title   = {Announcing the {Composite Schemas} Working Group},
+  organization = {GraphQL Foundation},
+  year    = {2024},
+  month   = {5},
+  url     = {https://graphql.org/blog/2024-05-16-composite-schemas-announcement/},
+  urldate = {2026-08-08}
+}
+
+@online{apollo2026versions,
+  author  = {{Apollo GraphQL}},
+  title   = {Federation version changelog},
+  year    = {2026},
+  url     = {https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/reference/versions},
+  urldate = {2026-08-08}
+}
+
+@online{compositeschemas2026draft,
+  author  = {{GraphQL Foundation}},
+  title   = {{GraphQL} {Composite Schemas} specification, working draft},
+  year    = {2026},
+  url     = {https://graphql.github.io/composite-schemas-spec/draft/},
+  urldate = {2026-08-08}
 }

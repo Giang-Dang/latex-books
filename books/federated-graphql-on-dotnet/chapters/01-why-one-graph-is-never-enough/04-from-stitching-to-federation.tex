@@ -1,0 +1,162 @@
+\section{From stitching to federation}
+\label{sec:ch01-stitching-to-federation}
+
+When Facebook open-sourced GraphQL in 2015, the specification described a
+language for asking one server for data~\autocite{byron2015graphql}. It had
+nothing to say about how several teams should build that server together,
+because at the time that was not the problem anybody had. The problem arrived
+about two years later, and the industry has been working on it ever since. The
+history is worth a few pages, because both of the answers people tried are
+still in use, and the difference between them is the difference between a
+gateway you maintain and a gateway you configure.
+
+\subsection*{Stitching}
+\index{schema stitching}
+
+Apollo published the first answer in September 2017. Schema stitching was, in
+Sashko Stubailo's description, \enquote{the idea that you can take two or more
+GraphQL schemas, and merge them into one endpoint that can pull data from all
+of them}~\autocite{stubailo2017stitching}. It shipped as a stable feature that
+October in \code{graphql-tools} 2.0, with three moving
+parts~\autocite{novikov2017tools2}: introspect a remote API and turn it into a
+local schema object, merge several such schemas into one, and write resolvers
+by hand to link types that live in different backends.
+
+That last part is the one to hold on to. If \code{Order} lived in one service
+and \code{User} in another, the code that taught the graph how to get from an
+order to its customer was written in the gateway, by whoever owned the gateway.
+
+Stitching had a real virtue, and it is the reason its descendants are still
+around. It asked nothing of the services being stitched. Any spec-compliant
+GraphQL API could be absorbed without knowing it had been absorbed, which is
+exactly what you want when you are aggregating things you do not control, such
+as a vendor's API or a service belonging to a team that has no interest in your
+architecture.
+
+What it did not fix was the queue from section~\ref{sec:ch01-org-chart}. It
+moved it. Instead of six teams editing one schema file, six teams now needed
+changes in one gateway repository, and the gateway's resolvers encoded
+assumptions about types those teams owned. Apollo's 2018 release added a
+transform layer, which made the glue more capable and also gave it more surface
+area to be wrong about~\autocite{stubailo2018nextgen}.
+
+The sharpest contemporary statement of the problem came from Marc-Andr\'e
+Giroux in October 2018, six months before federation existed, which is part of
+why I trust it more than the migration stories that came later. He observed
+that a large stitched schema ends up with \enquote{a lot of `glue' code at the
+gateway itself, defining all the important relations there}, that
+responsibility drifts until the gateway becomes \enquote{responsible of
+everything}, and then asked the question that has never really been answered on
+stitching's own terms: \enquote{what is the point of having decentralized
+schemas when in reality, we need a centralized point to merge and extend the
+schemas?} He also noticed the cost that shows up in a developer's week rather
+than an architecture review, which is that linking a new field to another
+service now takes two steps instead of one, once at the service and again at
+the gateway~\autocite{giroux2018stitching}.
+
+Expedia's account of migrating off stitching names the operational version of
+the same thing: their gateway code kept getting more complex, and there was
+\enquote{no way to determine the `true schema' without running the
+gateway}~\autocite{isquick2021expedia}. A composed schema that only exists at
+runtime cannot be reviewed, diffed, or checked in CI, which means nothing can
+tell you that today's deploy just broke a client.
+
+\subsection*{Federation}
+\index{Apollo Federation!origins}
+
+Apollo announced Federation on 1 May 2019, and was direct about what it was
+for: replacing stitching and solving \enquote{pain points such as coordination,
+separation of concerns, and brittle gateway code}~\autocite{baxley2019federation}.
+The design move was to invert where the linking logic lives. Rather than a
+gateway that knows how to join services, each service declares which types it
+contributes to and how it can be looked up, and a build step works out the
+joins. In the announcement's words, \enquote{you compose a graph declaratively
+from within your schema instead of writing imperative schema stitching code}.
+
+The same post contains the sentence that this book is arguably a long footnote
+to: \enquote{Often no single team controls every aspect of an important type
+like a User or Product, so the definition of these types should be distributed
+across teams and codebases, rather than centralized.} That is the Conway
+argument from the previous section, made by the vendor, three years before most
+of us were forced to agree with it.
+
+\index{entity}\index{key directive}%
+The mechanism is an \emph{entity}: a type that more than one service can
+contribute fields to, with a declared key that identifies one of them. Two
+subgraphs describing the same product look roughly like this:
+
+\begin{graphqlsdl}
+# Sketch. Catalog owns the product's identity and description.
+type Product @key(fields: "id") {
+  id: ID!
+  title: String!
+}
+
+# In a different service, a different repository, a different deploy.
+type Product @key(fields: "id") {
+  id: ID!
+  price: Money!
+}
+\end{graphqlsdl}
+
+Neither service knows about the other. Both claim \code{Product}, and both agree
+on how a product is identified. Everything federation does follows from that:
+a build step checks the claims are compatible and produces one schema, and at
+request time something has to fetch the pieces and stitch the result together.
+Chapter~\ref{ch:the-federation-model} covers the directives properly and
+chapter~\ref{ch:how-a-federated-query-actually-runs} follows the HTTP traffic,
+so I will leave both alone here. The shape is what matters for now.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch01-supergraph-shape}
+  \caption{Independent services, one schema composed from them at deploy time,
+  one router serving clients. Compare this with
+  figure~\ref{fig:ch01-one-schema-many-teams}: the client's view is unchanged,
+  which is the entire point, and the teams no longer share a deploy.}
+  \label{fig:ch01-supergraph-shape}
+\end{figure}
+
+Two months after the launch, Apollo moved composition out of the gateway's
+startup and into a managed build step against a
+registry~\autocite{debergalis2019managed}. This sounds like an operational
+detail and is closer to the foundation of everything in Part~VI. Once
+composition is a build artifact, an incompatible schema change is something
+that fails in a pipeline instead of at three in the morning, which is what
+chapter~\ref{ch:ci-cd-for-a-federated-graph} is about.
+
+Federation~2 reached general availability in April
+2022~\autocite{prasek2022federation2}. The change that matters conceptually is
+that types became genuinely shared rather than owned-and-extended: the
+\code{extend} keyword stopped being required, fields could deliberately exist
+in more than one subgraph, and the composition engine was rewritten to validate
+\enquote{all theoretically possible queries} instead of only checking that the
+pieces fit together. That last one is the difference between composition as a
+merge and composition as a proof, and chapter~\ref{ch:composition} is where you
+will feel it.
+
+\subsection*{What actually happened to stitching}
+
+Federation did not kill stitching, and books that say it did are repeating a
+press release. The Guild took over \code{graphql-tools} in the spring of
+2020~\autocite{tanrikulu2020tools6} and kept developing it, and their position
+is a fair statement of the trade to this day: if you want workflows out of the
+box, federation is the tool; otherwise stitching \enquote{keeps you in control
+of your full system architecture}~\autocite{macwilliam2021stitching}. Control
+over your own gateway code is a real thing to want. It is also work you have to
+keep doing.
+
+The current chapter of the story is an attempt to stop having this argument
+per vendor. In May 2024 a Composite Schemas subcommittee re-convened under the
+GraphQL specification working group, with Apollo, ChilliCream, Google, Graphile,
+The Guild, Hasura, and IBM contributing, to standardise the composition model
+that each gateway had been reinventing~\autocite{graphql2024composite}. As of
+this writing the specification is an actively edited draft with no published
+version~\autocite{compositeschemas2026draft}, while Apollo's own specification
+has continued to move and sits at v2.15~\autocite{apollo2026versions}.
+
+This book follows Apollo Federation~v2, because that is the specification
+HotChocolate's subgraph package implements and the one Cosmo composes and
+routes. Chapter~\ref{ch:fusion} builds the same graph on Composite Schemas with
+Fusion instead, and chapter~\ref{ch:the-gateway-market-and-the-future} looks at
+where the standard appears to be going.

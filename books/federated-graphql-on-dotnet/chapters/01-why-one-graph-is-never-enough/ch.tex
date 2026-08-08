@@ -1,7 +1,26 @@
 \chapter{Why One Graph Is Never Enough}
 \label{ch:why-one-graph-is-never-enough}
 
-\emph{Not yet drafted.} Planned scope: The promise and failure modes of the single GraphQL schema, team coupling at scale, where federation fits, the Mosaic storefront this book builds, and an honest first pass at whether you need federation at all (chapter 26 returns to it in full).
+I have never worked with a team that set out to build a distributed graph.
+Every federated graph I have seen started as one GraphQL service that worked,
+and it usually kept working for longer than anyone later admitted. The service
+got busy, the company hired, and at some point shipping a field to production
+started to involve three teams and a scheduling conversation. Federation is
+what people reach for at that point.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/01-why-one-graph-is-never-enough/01-section-name}
+So this chapter is not a sales pitch. It is the argument the rest of the book
+depends on, and it has three moving parts: what a single schema actually gives
+you, what starts to fail once enough teams share it, and what federation
+charges you for the fix. I will introduce Mosaic, the storefront we build and
+then pull apart over the following chapters, and I will end by trying to talk
+you out of all of it. Chapter~\ref{ch:do-you-actually-need-federation} makes
+that case properly, with the alternatives worked through. Here I only want you
+to be suspicious.
+
+\input{chapters/01-why-one-graph-is-never-enough/01-the-promise-of-one-graph}
+\input{chapters/01-why-one-graph-is-never-enough/02-where-the-single-schema-cracks}
+\input{chapters/01-why-one-graph-is-never-enough/03-the-org-chart-in-your-schema}
+\input{chapters/01-why-one-graph-is-never-enough/04-from-stitching-to-federation}
+\input{chapters/01-why-one-graph-is-never-enough/05-meet-mosaic}
+\input{chapters/01-why-one-graph-is-never-enough/06-do-you-need-this}
+\input{chapters/01-why-one-graph-is-never-enough/07-your-turn}

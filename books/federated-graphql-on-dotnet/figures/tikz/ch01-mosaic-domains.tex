@@ -1,0 +1,32 @@
+% Mosaic's six domains inside one deployable, with the seams the book later
+% cuts along. Referenced from chapter 01. Bare tikzpicture; the figure
+% environment, caption and label live at the call site.
+\begin{tikzpicture}[
+    font=\small,
+    dom/.style={draw, rounded corners=2pt, minimum width=25mm,
+                minimum height=9mm, align=center},
+    seam/.style={dashed, gray},
+    note/.style={font=\scriptsize\itshape, align=center}
+  ]
+
+  \node[dom] (cat) at (0,0)      {Catalog};
+  \node[dom] (inv) at (3.1,0)    {Inventory};
+  \node[dom] (pri) at (6.2,0)    {Pricing};
+  \node[dom] (ord) at (0,-1.5)   {Orders};
+  \node[dom] (acc) at (3.1,-1.5) {Accounts};
+  \node[dom] (rev) at (6.2,-1.5) {Reviews};
+
+  % The one deployable everything starts inside.
+  \draw[thick] (-1.65,0.95) rectangle (7.85,-2.4);
+  \node[anchor=south west, font=\small\itshape] at (-1.65,0.95)
+    {Mosaic, one service (chapters 2 to 5)};
+
+  % Seams: where chapters 8 and 12 cut.
+  \draw[seam] (1.55,0.85) -- (1.55,-2.3);
+  \draw[seam] (4.65,0.85) -- (4.65,-2.3);
+  \draw[seam] (-1.55,-0.75) -- (7.75,-0.75);
+
+  \node[note, anchor=north] at (3.1,-2.6)
+    {dashed lines: the seams chapters 8 and 12 cut along};
+
+\end{tikzpicture}

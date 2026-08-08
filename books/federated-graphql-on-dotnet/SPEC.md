@@ -11,8 +11,9 @@ Author: Giang Dang
 
 ## Status
 
-Scaffolded (structure only - no chapter content written). Next actions: draft
-chapter 01 when asked; create the companion repo before chapter 02 drafting.
+Chapter 01 drafted (2026-08-08); everything else is scaffold. Next action:
+create the companion repo F:/repo/mosaic-graph, which chapter 02 needs before
+it can be drafted.
 
 ## Decision log
 
@@ -41,6 +42,9 @@ is re-opened only by recording what changed and why, in the row.
 | 18 | Chapter apparatus | End-of-chapter "Your turn" labs tied to repo tags; recurring "Under the hood" sections plus dedicated Part IV; index maintained while writing, not retrofitted |
 | 19 | Title | "Federated GraphQL on .NET" with the subtitle above; versions stay out of the main title |
 | 20 | Demo name | "Mosaic" - PROVISIONAL, freely renameable until the companion repo is created |
+| 21 | Illustrative SDL before the companion repo exists | Allowed, and only in the conceptual chapters that precede it. Short GraphQL SDL sketches may appear when the prose frames them as sketches rather than as code from the repo; no C# until the repo exists. This reads the "no listings that pretend to be real code" rule as a ban on fake provenance, not a ban on schema illustration. Settled 2026-08-08 while drafting ch 01. |
+| 22 | Ch 01 "Your turn" lab | No-code assessment: the reader audits a graph they own, or GitHub's public schema, against the chapter's failure modes. Ch 01 predates the companion repo, so it cannot cite a repo tag; the repo-tag form of the lab resumes at ch 02. Settled 2026-08-08. |
+| 23 | How SDL is typeset | Two environments. Executable GraphQL (queries, mutations, fragments) uses `\begin{minted}{graphql}`; SDL uses `\begin{graphqlsdl}`, defined in preamble/packages.tex as minted's Ruby lexer under an honest name. Reason: Pygments 2.19.2's graphql lexer has no SDL support and emits red Error boxes on type definitions, `!`, and block strings (315 Error tokens on a representative federation schema, versus 0 for Ruby, which handles `#` comments, type names and `@directives` correctly). A custom Pygments lexer was rejected because minted v3 requires a per-machine `.latexminted_config` to load one, which would break a fresh clone and the pre-commit hook. Revisit if Pygments gains an SDL lexer. Settled 2026-08-08 while drafting ch 01. |
 
 ## Version baseline
 
@@ -125,7 +129,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | Chapter | Status | Notes |
 |---------|--------|-------|
 | Preface | not-started | write last; version-baseline stub in place |
-| 01 | not-started | |
+| 01 | drafted | 2026-08-08. 11 pages, 7 sections, ~6,250 words, 3 TikZ figures, 24 index entries. Sources in research/2026-08-ch01-scaling-and-federation-history.md; 35 real citations replace the knuth1984 placeholder. Lab is the no-code audit of decision 22; its heading is a plain `\section*` with no TOC entry, so revisit whether the apparatus deserves a macro once ch 02-03 have used it too. Not yet reviewed for line-level prose. |
 | 02 | not-started | needs companion repo first |
 | 03 | not-started | |
 | 04 | not-started | |
@@ -171,6 +175,17 @@ Library-wide defaults are in CLAUDE.md; these are this book's additions.
 - Each chapter ends with a "Your turn" lab referencing a companion-repo tag.
 - Facts from research/2026-08-federation-landscape.md must be re-verified
   before drafting the chapters that use them (Parts VI and VII especially).
+- Citations are `~\autocite{...}`, always with the tilde, so a bracketed number
+  can never start a line on its own.
+- Quoted material uses `\enquote{}` (csquotes), never literal quote characters.
+- A figure's `tikzpicture` lives in figures/tikz/ as a bare picture; the
+  `figure` environment, caption and label stay at the call site in the section
+  file.
+- Vendor-published sources are usable only when they quote a named engineer at
+  the company being described, and the prose says whose blog it was.
+- Numbers we measured ourselves rather than found published must say so in the
+  text ("I counted..."), and the research file must record how to reproduce the
+  count.
 
 ## Open items
 
@@ -181,5 +196,19 @@ Library-wide defaults are in CLAUDE.md; these are this book's additions.
   (minted v3 needs TEXMF_OUTPUT_DIRECTORY, set in .latexmkrc) and in the one
   CI run that existed before CI was removed. Compile checks now happen in the
   repo's pre-commit hook.
-- refs.bib still holds the template's knuth1984 placeholder; replace as real
-  citations accrue (research file sources are candidates).
+- (resolved 2026-08-08) refs.bib no longer holds the knuth1984 placeholder; it
+  was removed once chapter 01's real citations landed.
+- Facts in research/2026-08-ch01-scaling-and-federation-history.md must be
+  re-verified before chapters 26 and 28 reuse them. That file's section J lists
+  fabricated and vendor-biased sources that rank highly in search results;
+  read it before researching the landscape chapters.
+- Pygments has no GraphQL SDL lexer, so SDL is typeset through Ruby's (decision
+  23). If Pygments ships one, switch `graphqlsdl` in preamble/packages.tex over
+  to it and drop the workaround comment.
+- Chapter 01 came in at 11 pages against a 12-18 estimate. Not padded on
+  purpose. If the whole book tracks short of 450 pages, revisit the estimate
+  rather than inflating chapters.
+- Unused-but-verified sources are parked in the chapter 01 research file's bib
+  key table (Artsy's stitching RFC, Shopify's modular-monolith posts, Giroux's
+  later essays, Avilla's "One Graph to Rule Them All" piece). Chapters 26 and 28
+  should start there rather than re-researching.

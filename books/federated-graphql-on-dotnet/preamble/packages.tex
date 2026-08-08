@@ -29,7 +29,31 @@
 \usepackage{minted}
 \setminted{autogobble, breaklines, fontsize=\small, tabsize=2}
 
+% Pygments' graphql lexer only handles executable documents (queries,
+% mutations, fragments). It has no schema-definition-language support at all:
+% no schema/scalar/interface/union/enum/extend keywords, and it emits Error
+% tokens (rendered as red boxes) for type definitions, "!" non-null markers
+% and block strings. Since this book is mostly SDL, that is unusable.
+%
+% Ruby's lexer handles SDL correctly by coincidence and with zero Error
+% tokens: "#" line comments, CamelCase type names as constants, "@directive"
+% names, quoted strings and block strings all land on sensible tokens. So SDL
+% listings use this environment, which borrows that lexer under an honest
+% name. Executable GraphQL still uses minted's real graphql lexer.
+% Verified against Pygments 2.19.2. Revisit if Pygments gains an SDL lexer.
+\newminted[graphqlsdl]{ruby}{}
+
 \usepackage[style=numeric, backend=biber]{biblatex}
+% refs.bib is mostly @online entries whose URLs are far too long to fit a
+% justified measure; they ran up to 33pt into the margin. Permit breaks inside
+% a URL after any letter or digit (biblatex needs a non-zero penalty to allow
+% these at all), and set the bibliography ragged right, which is what finally
+% removes the overfull lines: no amount of break permission helps when the
+% remaining fragment is still wider than the space left on the line.
+\setcounter{biburllcpenalty}{100}
+\setcounter{biburlucpenalty}{100}
+\setcounter{biburlnumpenalty}{100}
+\appto{\bibsetup}{\raggedright}
 \usepackage{imakeidx}
 
 \usepackage[hidelinks]{hyperref}

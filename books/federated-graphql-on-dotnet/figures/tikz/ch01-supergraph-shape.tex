@@ -1,0 +1,38 @@
+% The shape of a federated graph: independent services, one composed schema,
+% one router in front. Referenced from chapter 01. Bare tikzpicture; the figure
+% environment, caption and label live at the call site.
+\begin{tikzpicture}[
+    font=\small,
+    box/.style={draw, rounded corners=2pt, minimum width=24mm,
+                minimum height=8mm, align=center},
+    router/.style={draw, thick, minimum width=40mm, minimum height=10mm,
+                   align=center},
+    super/.style={draw, dashed, minimum width=38mm, minimum height=11mm,
+                  align=center},
+    consumer/.style={draw, dotted, minimum width=30mm, minimum height=8mm,
+                     align=center},
+    flow/.style={-{Stealth[length=2mm]}, thick},
+    build/.style={-{Stealth[length=2mm]}, dashed},
+    note/.style={font=\scriptsize\itshape, align=center}
+  ]
+
+  \node[consumer] (client) at (0,3.1) {one client query};
+  \node[router]   (router) at (0,1.7) {router};
+  \node[super]    (super)  at (4.9,1.7) {composed\\supergraph schema};
+
+  \node[box] (sg1) at (-3.1,-0.4) {Catalog};
+  \node[box] (sg2) at ( 0,  -0.4) {Orders};
+  \node[box] (sg3) at ( 3.1,-0.4) {Pricing};
+
+  \draw[flow]  (client) -- (router);
+  \draw[build] (super)  -- (router);
+
+  \foreach \s in {sg1,sg2,sg3}{%
+    \draw[flow] (router.south) -- (\s.north);
+  }
+
+  \node[note, anchor=north] at (4.9,1.05) {built at deploy time};
+  \node[note, anchor=north] at (0,-1.15)
+    {three services, three teams, three deploy schedules};
+
+\end{tikzpicture}
