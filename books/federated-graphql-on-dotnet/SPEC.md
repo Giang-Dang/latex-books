@@ -181,6 +181,11 @@ Library-wide defaults are in CLAUDE.md; these are this book's additions.
   release a walkthrough was checked against.
 - Code listings come from the mosaic-graph companion repo once it exists;
   until then, write no listings that pretend to be real code.
+- A chapter that ships code is not drafted until `pwsh scripts/verify.ps1` in
+  that repo prints PASS and the chapter's `chNN` tag is pushed. If a chapter
+  legitimately changes one of the numbers the script asserts, update the script
+  and say so in the commit message; never loosen an assertion to make a run
+  pass.
 - Each chapter ends with a "Your turn" lab referencing a companion-repo tag.
 - Facts from research/2026-08-federation-landscape.md must be re-verified
   before drafting the chapters that use them (Parts VI and VII especially).

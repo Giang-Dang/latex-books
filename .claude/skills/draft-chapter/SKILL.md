@@ -1,29 +1,135 @@
 ---
 name: draft-chapter
-description: Drafts, outlines, or continues a chapter, section, or appendix of a book under books/ in this repo, following that book's SPEC.md. Use for any request to write or continue book content, even phrased loosely, e.g. "draft chapter 7", "continue the federation book", "write the next section", "outline chapter 12".
+description: Drafts, outlines, continues, or revises a chapter, section, appendix, figure, or end-of-chapter lab for a book under books/ in this repo, following that book's SPEC.md. Use for any request to write or continue book content, however loosely phrased - "draft chapter 7", "continue the federation book", "write the next section", "outline chapter 12", "add the lab to chapter 3", "this chapter needs a diagram". Also use when revising drafted prose for voice, or when updating a book's SPEC.md after a writing session.
 ---
 
 # Draft a chapter
 
-Thin v1: mechanics only. Fold style lessons learned back into this skill after
-the first few chapters are written.
+## Invocation
 
-1. Identify the target book and chapter. One book in books/ -> that one;
-   otherwise take it from the request or ask. Read books/<name>/SPEC.md fully:
-   the TOC entry scopes the chapter, the decision log constrains content, the
-   progress table shows prior state.
-2. Scaffold to convention if missing: chapters/NN-slug/ch.tex holds \chapter
-   and \label and \input's one file per section (NN-name.tex, zero-padded,
-   paths written from the book root).
-3. Load the humanizer skill, then draft following its checklist, the writing
-   defaults in CLAUDE.md, and the SPEC's writing rules. Code listings come
-   from the companion repo named in SPEC; if the repo or a snippet does not
-   exist yet, record that in SPEC open items instead of inventing code.
-4. Compile: cd books/<name> && latexmk. While iterating, uncomment
-   \includeonly in main.tex for the chapter; comment it back out and rebuild
-   clean before finishing.
-5. Update SPEC.md: the progress row, the TOC (only if structure changed), and
-   open items.
+Typical use is a single line with no further instruction:
 
-Done when the full book compiles with zero errors and SPEC.md reflects the new
-state.
+```
+/draft-chapter chapter 3
+```
+
+That means: research it, plan it, build whatever code it needs, write it,
+compile it, update the SPEC, and commit. Run the whole thing without stopping to
+ask for permission between phases. The phases below are the plan; do not write a
+separate plan document or wait for approval of one.
+
+Resolve the target from the argument. A bare number or "chapter N" means chapter
+N of the only book under `books/`; if several books exist, take the book from
+the request or ask. "appendix B", "the lab in chapter 3" and "the next
+undrafted chapter" are all valid targets, the last resolving through the SPEC
+progress table.
+
+Ask the author a question only when proceeding either way would waste
+substantial work or produce something unusable. Report decisions you made on
+their behalf at the end instead of asking up front.
+
+## Orient first
+
+Read these before writing anything. Each one changes what the chapter may say.
+
+- `books/<name>/SPEC.md`, in full. The TOC line scopes the chapter, the decision
+  log constrains it, the writing-rules section binds it, and open items may name
+  work this chapter owes.
+- The chapter's stub at `chapters/NN-slug/ch.tex`. Its `\label{ch:...}` already
+  exists and earlier chapters forward-reference it, so the label is fixed.
+- **The previous drafted chapter's section files, end to end.** That is the voice
+  specification. Paraphrasing a style guide produces a different voice; reading
+  the actual prose does not.
+- Any research file the SPEC points at for this chapter.
+
+Then `grep -h '\\label{' chapters/*/ch.tex backmatter/*.tex` for the exact
+cross-reference keys. Never guess a `\ref` target.
+
+If the SPEC's TOC line has gone stale against current reality, say so before
+drafting. A settled decision changes by being recorded as changed, never by
+quietly diverging: update the TOC line and add a decision row in the same
+session.
+
+## Order of work
+
+The sequence matters more than any individual step.
+
+1. **Research**, in both directions. Web-verify against primary sources, and
+   verify empirically by building and running. Where docs and the compiler
+   disagree, the compiler wins and the research file records the disagreement.
+   Write the findings to `books/<name>/research/` following the shape of the
+   existing files there.
+2. **Companion code**, if the chapter ships any. See
+   `references/companion-code.md`. The repo has to exist, pass its own
+   verification, and be tagged **before** prose is written.
+3. **Report, then keep going.** Post the real schema, the measured numbers, and
+   anything the build taught you that the docs did not. This is a progress
+   report, not a request for approval: the author can interrupt if something
+   looks wrong, and silence means continue.
+4. **Draft.** Load the `humanizer` skill first and apply its checklist, along
+   with the writing defaults in `CLAUDE.md` and the SPEC's own writing rules.
+   Scaffold to convention: `chapters/NN-slug/ch.tex` holds `\chapter`, `\label`
+   and a short opener, then `\input`s one file per section, with every path
+   written from the book root.
+5. **Audit.** Run a read-only subagent against the previous chapter, `CLAUDE.md`,
+   the SPEC writing rules and the humanizer checklist, reporting `file:line` for
+   every finding. Then verify each factual finding yourself before acting on it.
+   The audit is a lead, not a verdict.
+6. **Close out.** Build clean, update SPEC, commit.
+
+Writing prose before the code exists produces listings that then have to be made
+true, which is backwards and tends to leave inventions in the text.
+
+## Gates
+
+Do not pass one of these without the previous one holding.
+
+| Gate | Condition |
+|---|---|
+| Research | Every load-bearing fact has a primary source at a pinned version, or was measured |
+| Companion code | That repo's verification script passes; the chapter's tag is pushed |
+| Report | Real schema and numbers posted before prose starts |
+| Prose | Every listing traceable to a file in the companion repo at the chapter's tag |
+| Build | `latexmk` exits 0, with **zero overfull boxes** and zero undefined references |
+| SPEC | Progress row, decisions, TOC and open items all reflect reality |
+| Commit | `.githooks/pre-commit` passes unaided; never `--no-verify` |
+
+The build gate, run from the book directory:
+
+```
+latexmk -C && latexmk
+grep -c Overfull build/main.log     # must be 0
+grep -ci undefined build/main.log   # must be 0
+```
+
+Then read `build/main.pdf` and look at the chapter: figure placement, listings
+inside the measure, index entries, citations resolving. A clean log is not the
+same as a chapter that reads well on the page.
+
+## Numbers and sources
+
+If the text states a measurement, measure it, and record how to reproduce it in
+the research file. While chapter 02 of the federation book was being drafted, a
+latency, a line count and an API attribute name were all asserted from memory;
+all three were wrong, and only the audit caught them. Treat any number you did
+not personally run as unverified.
+
+Vendor sources are usable only when a named engineer is named in the prose, so
+check the byline rather than the domain.
+
+## Reference material
+
+Load these when the task reaches them, not before.
+
+- `references/house-style.md` - LaTeX and prose conventions shared by books in
+  this repo: citations, quoting, index entries, listings, figures, labels.
+- `references/companion-code.md` - the code-before-prose workflow, and the
+  subagent delegation pattern that keeps parallel work from colliding.
+- `references/environment.md` - build and tooling traps specific to this
+  machine and repo. Read it before the first `latexmk` run of a session.
+
+## Done when
+
+The full book compiles clean with `\includeonly` commented out, every listing is
+traceable to a companion-repo tag, `SPEC.md` reflects the new state, and the
+pre-commit hook passes on its own.
