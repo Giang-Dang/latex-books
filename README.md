@@ -8,9 +8,10 @@ structure and tooling, not styling.
 
 - A TeX distribution with LuaLaTeX, latexmk and biber
   - Windows: MiKTeX (enable automatic package installation) or TeX Live
-  - CI uses the full `texlive/texlive` Docker image
 - Git LFS (`git lfs install` once per machine) - final PDFs in `dist/` are LFS-tracked
 - PowerShell 7+ for the helper scripts
+- Once per clone: `git config core.hooksPath .githooks` to enable the
+  pre-commit build gate
 
 ## Quick start
 
@@ -29,7 +30,7 @@ pwsh scripts/release.ps1
 ## Repository layout
 
 ```
-template/                  skeleton for new books (kept compiling by CI)
+template/                  skeleton for new books (kept compiling by the build gate)
 books/<name>/              one self-contained folder per book
   main.tex                 class options, \includeonly switch, \include list
   .latexmkrc               lualatex + build/ output dir + biber
@@ -42,6 +43,7 @@ books/<name>/              one self-contained folder per book
   build/                   latexmk output, gitignored
 dist/                      final PDF per book, committed via Git LFS
 scripts/                   new-book.ps1, release.ps1
+.githooks/                 pre-commit build gate (see Prerequisites)
 ```
 
 ## Working on a large book
@@ -51,8 +53,8 @@ chapters you are editing - latexmk then recompiles just those while keeping
 page numbers and cross-references intact. Comment it out again before a
 release build.
 
-## CI
+## Build gate
 
-Every push builds `template/` and all books with the full TeX Live image and
-uploads the PDFs as workflow artifacts. The committed PDFs in `dist/` are only
-refreshed locally via `scripts/release.ps1`.
+There is no CI. The pre-commit hook in `.githooks/` compiles every book
+touched by the staged changes and aborts the commit on a broken build. The
+committed PDFs in `dist/` are only refreshed locally via `scripts/release.ps1`.

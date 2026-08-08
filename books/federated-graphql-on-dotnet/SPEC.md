@@ -177,10 +177,9 @@ Library-wide defaults are in CLAUDE.md; these are this book's additions.
 - Companion repo F:/repo/mosaic-graph: create when chapter 02 drafting starts.
 - Demo retailer name "Mosaic" is provisional; confirm or rename before the
   companion repo is created (rename is a find-and-replace until then).
-- minted on CI: local MiKTeX build verified 2026-08-08 (minted v3 needs
-  TEXMF_OUTPUT_DIRECTORY, set in .latexmkrc). First "Build books" CI run of
-  this book must still confirm the texlive/texlive:latest container has
-  Python and Pygments for -shell-escape; fallback is a pip install step in
-  the workflow or the listings package.
+- (resolved 2026-08-08) minted builds verified twice: locally on MiKTeX
+  (minted v3 needs TEXMF_OUTPUT_DIRECTORY, set in .latexmkrc) and in the one
+  CI run that existed before CI was removed. Compile checks now happen in the
+  repo's pre-commit hook.
 - refs.bib still holds the template's knuth1984 placeholder; replace as real
   citations accrue (research file sources are candidates).

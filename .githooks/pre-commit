@@ -1,0 +1,27 @@
+#!/bin/sh
+# Local build gate (this repo has no CI): build every book touched by the
+# staged changes and abort the commit if any fails to compile.
+# One-time setup per clone: git config core.hooksPath .githooks
+
+set -e
+
+targets=$(git diff --cached --name-only |
+    sed -n -e 's|^\(books/[^/]*\)/.*|\1|p' -e 's|^template/.*|template|p' |
+    sort -u)
+
+[ -z "$targets" ] && exit 0
+
+for t in $targets; do
+    # A deleted book stages paths but has no folder left to build.
+    [ -d "$t" ] || continue
+    echo "pre-commit: building $t"
+    log=$(mktemp)
+    if ! (cd "$t" && latexmk) >"$log" 2>&1; then
+        tail -30 "$log"
+        rm -f "$log"
+        echo "pre-commit: $t failed to build; commit aborted."
+        echo "pre-commit: run 'cd $t && latexmk' for the full output."
+        exit 1
+    fi
+    rm -f "$log"
+done

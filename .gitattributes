@@ -6,6 +6,9 @@
 *.yml text
 *.ps1 text
 
+# Shell scripts (git hooks) must stay LF even on Windows checkouts
+.githooks/* text eol=lf
+
 # Binary assets
 *.png binary
 *.jpg binary

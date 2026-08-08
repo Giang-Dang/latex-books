@@ -10,7 +10,7 @@ preamble code; repo-wide consistency is structural only.
 - books/<book-name>/ - one folder per book, fully self-contained
 - dist/ - final released PDFs, one per book, tracked with Git LFS
 - scripts/ - new-book.ps1, release.ps1 (PowerShell 7+)
-- .github/workflows/build.yml - CI compile check for template/ and every book
+- .githooks/pre-commit - local build gate: compiles every staged book before a commit
 
 Inside a book: main.tex, .latexmkrc, refs.bib, preamble/{packages,fonts,macros}.tex,
 frontmatter/, chapters/NN-name/, backmatter/, figures/{images,tikz}/, build/ (generated).
@@ -19,6 +19,8 @@ frontmatter/, chapters/NN-name/, backmatter/, figures/{images,tikz}/, build/ (ge
 
 - Build one book: `cd books/<name> && latexmk` (output: build/main.pdf)
 - Clean: `latexmk -C`
+- One-time per clone: `git config core.hooksPath .githooks` (enables the
+  pre-commit build gate)
 - New book: `pwsh scripts/new-book.ps1 <kebab-case-name>`
 - Release all books into dist/: `pwsh scripts/release.ps1`
 
@@ -33,6 +35,8 @@ frontmatter/, chapters/NN-name/, backmatter/, figures/{images,tikz}/, build/ (ge
   adopt them manually if wanted.
 - This is an independent git repo nested inside F:\repo (which is a separate
   repo). Run all git commands from the latex-books root.
+- There is no CI. The pre-commit hook is the only compile check; never bypass
+  it with --no-verify.
 
 ## Conventions
 
