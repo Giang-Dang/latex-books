@@ -11,6 +11,8 @@ preamble code; repo-wide consistency is structural only.
 - dist/ - final released PDFs, one per book, tracked with Git LFS
 - scripts/ - new-book.ps1, release.ps1 (PowerShell 7+)
 - .githooks/pre-commit - local build gate: compiles every staged book before a commit
+- .claude/skills/ - draft-chapter, plus vendored copies of the skills it
+  depends on; see the README there
 
 Inside a book: main.tex, .latexmkrc, refs.bib, preamble/{packages,fonts,macros}.tex,
 frontmatter/, chapters/NN-name/, backmatter/, figures/{images,tikz}/, build/ (generated).
@@ -71,10 +73,8 @@ Per-book SPEC.md records deviations; otherwise:
 - Voice: first-person practitioner - direct, concrete, opinionated where
   experience warrants it.
 - Prose must read as human-written. Load the humanizer skill before drafting
-  or reviewing any book prose and apply its full checklist; if it is not
-  available in the session, fall back to its core bans: no inflated
-  symbolism, rule-of-three padding, "isn't just X" framings, or vague
-  attributions.
+  or reviewing any book prose and apply its full checklist. It is vendored
+  into .claude/skills/, so it travels with the repo and is always available.
 - Code shown in a book exists in that book's companion repo and compiles;
   never present invented listings as real code.
 - ASCII punctuation only in source files - no Unicode dashes or quotes.
