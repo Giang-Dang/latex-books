@@ -1,0 +1,134 @@
+\section{Where parsing actually happens}
+\label{sec:ch03-parsing}
+\index{parsing|(}
+
+Number five in that list is \code{DocumentParserMiddleware}. It is the obvious
+place to look for the moment your query stops being text and starts being a
+syntax tree, and for a GraphQL server reached over HTTP it is the wrong place.
+
+Here is the measurement that gave it away. Every timeline Mosaic has printed,
+against a cold cache or a warm one, reports the parse phase as a dash:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+parse - validate 0.204ms compile 0.097ms coerce - execute 0.492ms total 0.931ms
+    (document cache miss, operation cache miss, 146 resolvers)
+\end{minted}
+
+A dash means the timer never started. That first line is a document the server
+had never seen, so nothing could have been cached, and the parse phase still did
+not run. Something else had already done it.
+
+\index{parsing!in the transport}%
+That something is the transport. HotChocolate's ASP.NET Core layer reads the
+request body with a \code{Utf8GraphQLRequestParser}, handing it the document
+cache and the hash provider, and inside that parser the document is turned into
+a tree before the executor is involved at all:
+
+\begin{minted}{csharp}
+var hash = _hashProvider!.ComputeHash(documentBody);
+...
+document = _cache!.TryGetDocument(hash.Value, out cachedDocument)
+    ? cachedDocument.Body
+    : Utf8GraphQLParser.Parse(documentBody, _options);
+\end{minted}
+
+By the time the pipeline runs, the request is carrying a parsed document rather
+than source text. \code{DocumentParserMiddleware} checks for exactly that, and
+its diagnostic scope lives inside the other branch:
+
+\begin{minted}{csharp}
+if (query is OperationDocument parsed)
+{
+    documentInfo.Hash = CreateDocumentHash(documentInfo, context.Request);
+    documentInfo.Document = parsed.Document;
+    ...
+}
+else if (query is OperationDocumentSourceText source)
+{
+    using (_diagnosticEvents.ParseDocument(context))
+    {
+        ...
+    }
+}
+\end{minted}
+
+So the middleware is not dead code and the phase is not fake. Both exist for
+callers that hand the executor raw source text, which is what you get when you
+execute a request in process rather than over HTTP, and
+chapter~\ref{ch:automated-tests} does exactly that. Over HTTP the branch is
+simply never taken.
+
+\subsection*{A syntax error never gets in}
+
+\index{parsing!syntax errors}%
+The consequence is sharper than a missing timer, and it is testable. Send
+Mosaic something that does not parse:
+
+\begin{minted}{graphql}
+{ products { title
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{
+  "errors": [
+    {
+      "message": "Expected a `RightBrace`-token, but found a `EndOfFile`-token.",
+      "locations": [ { "line": 1, "column": 20 } ],
+      "extensions": { "code": "HC0011" }
+    }
+  ]
+}
+\end{minted}
+
+HTTP 400, error \code{HC0011}, and no timeline line at all. I checked that
+rather than inferring it: one good request followed by three different
+unparseable documents against a warmed-up service produced exactly one timeline
+line, from the good request. The three failures never reached the execution
+pipeline, so the instrumentation middleware at position one never opened a
+scope, so nothing was there to report.
+
+\index{errors!layering}%
+Put that next to the other rejection chapter~\ref{ch:hotchocolate-quickly}
+showed, the field that does not exist:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{
+  "errors": [
+    {
+      "message": "The field `nope` does not exist on the type `Product`.",
+      "locations": [ { "line": 1, "column": 14 } ],
+      "extensions": {
+        "type": "Product",
+        "field": "nope",
+        "responseName": "nope",
+        "specifiedBy": "https://spec.graphql.org/September2025/#sec-Field-Selections"
+      }
+    }
+  ]
+}
+\end{minted}
+
+Both are 400. Both have no \code{data} key. One carries a HotChocolate error
+code and no \code{specifiedBy}; the other carries \code{specifiedBy} and no
+code. Chapter~\ref{ch:hotchocolate-quickly} read that difference as the language
+rules against the server's own, which is right, and I described both as
+validation running before any resolver, which is not quite. The unknown field is
+validation, at position six, inside the pipeline. The syntax error is the
+transport refusing to build a request at all.
+
+The correction is small and the reason to make it is not. From
+chapter~\ref{ch:enter-the-router} onward there is a router in front of these
+services, and \enquote{which component produced this error} becomes a question
+you ask several times a week. A server that answers 400 without ever creating a
+request is a server whose logs, traces and diagnostic listeners will all be
+empty for that request. If you are looking for it in the wrong layer you will
+conclude the request never arrived, and you will be half right in the way that
+wastes the most time.
+
+\index{parsing!hashing}%
+One more thing falls out of the parser code above, and the next section is
+built on it. Before the transport parses anything it computes a hash of the
+document body and looks that hash up. The document cache is therefore consulted
+twice per request, once at the door and once inside, and the second consultation
+is the one that decides whether your query gets validated.
+\index{parsing|)}

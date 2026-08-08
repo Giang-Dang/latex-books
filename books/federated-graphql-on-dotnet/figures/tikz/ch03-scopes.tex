@@ -1,0 +1,42 @@
+% Request scope versus the child scopes a query field gets by default, with the
+% probe numbers the sample actually returned. Referenced from chapter 03. Bare
+% tikzpicture: the figure environment, caption and label live at the call site.
+% Uses only arrows.meta and positioning.
+\begin{tikzpicture}[
+    font=\small,
+    outer/.style={draw, thick, rounded corners=3pt, minimum width=104mm,
+                  minimum height=46mm},
+    shared/.style={draw, thick, rounded corners=2pt, minimum width=44mm,
+                   minimum height=11mm, align=center, font=\scriptsize},
+    child/.style={draw, rounded corners=2pt, minimum width=30mm,
+                  minimum height=15mm, align=center, font=\scriptsize},
+    plain/.style={draw, dashed, rounded corners=2pt, minimum width=30mm,
+                  minimum height=15mm, align=center, font=\scriptsize},
+    reach/.style={-{Stealth[length=2mm]}, dashed},
+    note/.style={font=\scriptsize\itshape, align=center}
+  ]
+
+  \node[outer] (req) at (0,0) {};
+
+  \node[note, anchor=south] at (0,2.55)
+    {\textbf{the request scope}, which is what \texttt{RequestServices} points at};
+
+  \node[shared] (rprobe) at (0,1.25)
+    {the request's own probe:\\\textbf{2}};
+
+  \node[child] (fa) at (-3.4,-1.1)
+    {field \texttt{a}\\its own child scope\\was handed \textbf{1}};
+
+  \node[child] (fb) at (0,-1.1)
+    {field \texttt{b}\\its own child scope\\was handed \textbf{3}};
+
+  \node[plain] (fc) at (3.4,-1.1)
+    {field \texttt{c}, marked\\\texttt{[UseRequestScope]}\\was handed \textbf{2}};
+
+  \draw[reach] (fc) -- (rprobe);
+
+  \node[note, anchor=north] at (0,-2.75)
+    {Three probes, one request. Only the annotated field reaches the one the
+     request owns.};
+
+\end{tikzpicture}

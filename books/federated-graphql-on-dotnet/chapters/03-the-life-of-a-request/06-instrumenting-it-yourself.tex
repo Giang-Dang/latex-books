@@ -1,0 +1,149 @@
+\section{Instrumenting it yourself}
+\label{sec:ch03-instrumenting}
+\index{diagnostics!execution listener|(}
+
+Every measurement in this chapter came from three small files in Mosaic: a
+listener, a per-request record for it to write into, and one options hook. They
+are worth reading, partly because the timeline is genuinely useful to keep
+switched on in development, and partly because getting them registered taught me
+something that will bite again in Part~VI.
+
+\subsection*{Scopes for phases, calls for facts}
+
+\index{diagnostics!ExecutionDiagnosticEventListener}%
+The extension point is \code{ExecutionDiagnosticEventListener}, a base class of
+virtual no-ops that you subclass and override selectively. Its methods come in
+two shapes, and the shape tells you what the event is for. A phase returns an
+\code{IDisposable}: the engine opens the scope before the phase and disposes it
+after, so timing a phase means timing the scope. A fact returns \code{void}.
+
+\begin{minted}{csharp}
+public override IDisposable ValidateDocument(RequestContext context)
+    => Measure(context, static (timeline, elapsed) => timeline.Validate = elapsed);
+
+public override void RetrievedDocumentFromCache(RequestContext context)
+{
+    if (Timeline(context) is { } timeline)
+    {
+        timeline.DocumentCacheHit = true;
+    }
+}
+\end{minted}
+
+\code{Measure} returns a small \code{IDisposable} holding a timestamp; there is
+nothing to it beyond \code{Stopwatch.GetElapsedTime}. The two cache events are
+facts rather than phases, which is how the timeline knows to print
+\enquote{hit} or \enquote{miss}.
+
+\index{diagnostics!EnableResolveFieldValue}%
+Per-field events need one extra step. \code{ResolveFieldValue} fires once per
+field rather than once per request, and the same switch gates \code{RunTask}, so
+a listener has to ask for them:
+
+\begin{minted}{csharp}
+public override bool EnableResolveFieldValue => true;
+\end{minted}
+
+That property defaults to false, and the dispatcher reads it exactly once, in
+its constructor, partitioning the listeners into those that want per-field
+events and those that do not. So the cost of not opting in is zero rather than a
+virtual call per field. In a service doing 146 resolver invocations per request
+that is a defensible default, and it is worth knowing the switch exists before
+you conclude your override is broken.
+
+\subsection*{The registration that fails at startup}
+
+\index{diagnostics!schema services}%
+Registering the listener is one line, and next to it sits a line that looks like
+boilerplate and is not:
+
+\begin{minted}{csharp}
+builder.AddGraphQL()
+    .AddMosaic()
+    .AddApplicationService<ILoggerFactory>()
+    .AddDiagnosticEventListener<RequestTimelineListener>();
+\end{minted}
+
+\code{AddDiagnosticEventListener} registers the listener in the \emph{schema}
+service provider, which is a separate container from the application's and does
+not inherit its registrations. The listener wants an \code{ILoggerFactory}. The
+application has one; the schema services do not, until you say so.
+
+Delete that line and the service does not start:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+fail: Microsoft.Extensions.Hosting.Internal.Host[11]
+      Hosting failed to start
+      System.InvalidOperationException: Unable to resolve service for type
+      'Microsoft.Extensions.Logging.ILoggerFactory' while attempting to activate
+      'Mosaic.Api.Infrastructure.Diagnostics.RequestTimelineListener'.
+\end{minted}
+
+I checked that by deleting it, because a chapter that tells you a line is
+load-bearing should have watched the thing fall down. The message is a good one,
+which is not something I get to say often in this book: it names both the
+service it could not find and the type it was building, and it arrives at
+startup rather than on the first query.
+
+That last part is chapter~\ref{ch:hotchocolate-quickly}'s eager initialisation
+paying out. Under the old lazy behaviour this would have surfaced when the first
+request hit a listener that could not be constructed. Now the container never
+becomes healthy and the deploy visibly does not happen. Error filters, HTTP
+request interceptors and diagnostic listeners are all schema-level components
+with this same requirement, and \code{AddApplicationService<T>} is the answer
+for all of them.
+
+\subsection*{Reading the pipeline back}
+
+\index{request pipeline!reporting}%
+The startup listing from section~\ref{sec:ch03-pipeline} comes from somewhere
+else, because the pipeline is not something a diagnostic listener can see. It is
+configured through named options, so it can be read back the same way:
+
+\begin{minted}{csharp}
+public static IServiceCollection AddPipelineReport(this IServiceCollection services)
+    => services.AddTransient<IConfigureOptions<RequestExecutorSetup>>(
+        serviceProvider => new ConfigureNamedOptions<RequestExecutorSetup>(
+            ISchemaDefinition.DefaultName,
+            setup => setup.PipelineModifiers.Add(
+                pipeline => Report(serviceProvider, pipeline))));
+\end{minted}
+
+\code{Report} walks the list and logs each key. No reflection is involved: this
+is the same mechanism \code{UseRequest} uses, reached through
+\code{Microsoft.Extensions.Options} rather than through the internal helper
+HotChocolate calls. The default schema is named \code{\_Default}, which is what
+\code{ISchemaDefinition.DefaultName} holds.
+
+The modifier only observes; it inserts nothing and removes nothing. Its position
+in the registration order, as section~\ref{sec:ch03-pipeline} admitted, decides
+whether it sees the finished list.
+
+\subsection*{Verify it in Postman}
+
+\index{Postman!pipeline requests}%
+Two of the collection's requests exist to make the pipeline visible from the
+client side, and both were added for this chapter.
+
+The first sends the catalog-with-reviews query with \code{GraphQL-Cost:
+validate}. It asserts that the response has no \code{data} property, and that
+the field cost reported under \code{extensions.operationCost} is 30. That is a
+client watching a request leave the pipeline at position seven.
+
+The second posts \code{\{ products \{ title} with the brace left open and
+asserts a 400 with \code{extensions.code} of \code{HC0011}. Run the collection
+with the service's console visible and the point of
+section~\ref{sec:ch03-parsing} lands better than any diagram: six of the seven
+requests print a timeline line and that one does not.
+
+\begin{minted}{text}
+npx newman run postman/mosaic.postman_collection.json \
+    -e postman/mosaic.local.postman_environment.json
+\end{minted}
+
+Seven requests, twenty-four assertions. \code{scripts/verify.ps1} runs the same
+collection and also asserts the thirteen middleware in order and the 146
+resolvers, so the numbers printed in this chapter are checked by the same script
+that checks the numbers in the last one. If HotChocolate changes its default
+pipeline, that script fails and this chapter is what needs rewriting.
+\index{diagnostics!execution listener|)}

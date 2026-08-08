@@ -1,0 +1,178 @@
+\section{Thirteen things happen first}
+\label{sec:ch03-pipeline}
+\index{request pipeline|(}
+
+Mosaic logs this when it starts:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+Request pipeline: 13 middleware
+  1. InstrumentationMiddleware
+  2. ExceptionMiddleware
+  3. TimeoutMiddleware
+  4. DocumentCacheMiddleware
+  5. DocumentParserMiddleware
+  6. DocumentValidationMiddleware
+  7. CostAnalyzerMiddleware
+  8. OperationCacheMiddleware
+  9. OperationResolverMiddleware
+  10. SkipWarmupExecutionMiddleware
+  11. OperationVariableCoercionMiddleware
+  12. ConcurrencyGateMiddleware
+  13. OperationExecutionMiddleware
+\end{minted}
+
+\index{request pipeline!default}%
+Twelve of those are HotChocolate's default pipeline, and they are added by a
+method that is refreshingly easy to read:
+
+\begin{minted}{csharp}
+internal static void AddDefaultPipeline(this IList<RequestMiddlewareConfiguration> pipeline)
+{
+    pipeline.Add(CommonMiddleware.Instrumentation);
+    pipeline.Add(CommonMiddleware.UnhandledExceptions);
+    pipeline.Add(TimeoutMiddleware.Create());
+    pipeline.Add(CommonMiddleware.DocumentCache);
+    pipeline.Add(CommonMiddleware.DocumentParser);
+    pipeline.Add(CommonMiddleware.DocumentValidation);
+    pipeline.Add(OperationCacheMiddleware.Create());
+    pipeline.Add(OperationResolverMiddleware.Create());
+    pipeline.Add(CommonMiddleware.SkipWarmupExecution);
+    pipeline.Add(OperationVariableCoercionMiddleware.Create());
+    pipeline.Add(CommonMiddleware.ConcurrencyGate);
+    pipeline.Add(OperationExecutionMiddleware.Create());
+}
+\end{minted}
+
+That is the whole of it, in \code{RequestExecutorBuilderExtensions.UseRequest.cs}
+at tag 16.6.0. There is no configuration system behind it and no discovery: the
+default pipeline is a list of twelve entries appended in order.
+
+\index{cost analysis!middleware}%
+The thirteenth is the cost analyzer, which is not in that list because it
+inserts itself. The defaults turn it on unless you pass
+\code{disableDefaultSecurity}, and \code{AddCostAnalyzer} ends by asking to be
+put in a specific place:
+
+\begin{minted}{csharp}
+.UseRequest(
+    CostAnalyzerMiddleware.Create(),
+    after: WellKnownRequestMiddleware.DocumentValidationMiddleware)
+\end{minted}
+
+Which is why it lands at seven, between validation and the operation cache.
+Chapter~\ref{ch:hotchocolate-quickly} met the cost analyzer as the thing that
+sprinkles \code{@cost} directives into exported SDL; this is the rest of it,
+doing work on every request.
+
+\subsection*{Named neighbours, and why they exist}
+
+\index{request pipeline!middleware keys}%
+That \code{after:} argument is worth dwelling on, because it explains the
+strings in the log. Every middleware in the pipeline carries an optional key,
+and the framework's own keys are public constants on
+\code{WellKnownRequestMiddleware}. So an insertion does not have to count
+positions:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+builder.AddGraphQL()
+    .UseRequest(
+        MyMiddleware.Create(),
+        after: WellKnownRequestMiddleware.DocumentValidationMiddleware);
+\end{minted}
+
+The key of the thing being inserted travels inside the configuration that
+\code{Create()} returns, which is why it does not appear in that call. There are
+overloads that take a bare delegate and a separate \code{key} argument, and one
+that takes a middleware type; they all end up in the same list.
+
+If the anchor is missing the call throws, naming the key it could not find,
+which is a better failure than silently landing in the wrong place. Position
+counting would break the first time a package inserted something above you, and
+packages do: this is exactly how the cost analyzer gets in.
+
+\subsection*{The pipeline is built once, not per request}
+
+\index{request pipeline!composition}%
+The list becomes a delegate chain in \code{CreatePipeline}, and the shape of
+that method is the thing to take away:
+
+\begin{minted}{csharp}
+if (pipeline.Count == 0)
+{
+    defaultPipelineFactory ??= RequestExecutorBuilderExtensions.AddDefaultPipeline;
+    defaultPipelineFactory(pipeline);
+}
+
+foreach (var modifier in pipelineModifiers)
+{
+    modifier(pipeline);
+}
+
+RequestDelegate next = _ => default;
+
+for (var i = pipeline.Count - 1; i >= 0; i--)
+{
+    next = pipeline[i].Middleware(factoryContext, next);
+}
+\end{minted}
+
+Add the defaults, run the modifiers, then fold the list backwards into a chain
+of delegates. All of that happens once, while the schema is being built, and
+chapter~\ref{ch:hotchocolate-quickly} established that this now happens at
+startup rather than on the first query. A request does not walk a list of
+thirteen objects; it enters one delegate that already has the other twelve
+closed over inside it.
+
+\index{request pipeline!ConcurrencyGate}%
+That is not a detail for its own sake, and the concurrency gate shows why.
+Mosaic configures no gate, so at composition time the middleware factory looks
+for one, does not find it, and returns the next delegate unwrapped:
+
+\begin{minted}{csharp}
+if (gate is null or { IsEnabled: false })
+{
+    // No gate is configured - skip the middleware entirely so there is
+    // no per-request overhead on the hot path.
+    return context => next(context);
+}
+\end{minted}
+
+The comment is theirs, and I repeat it because it is the clearest statement of
+the design in the whole file: a middleware with no work to do removes itself
+when the pipeline is composed rather than checking on every request. That option
+only exists because composition is separate from execution.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch03-pipeline}
+  \caption{The thirteen, and the three ways out. A request that does not parse
+  never reaches the pipeline at all, because the transport parses it first. A
+  request that fails validation stops at six. A request carrying
+  \code{GraphQL-Cost: validate} stops at seven with a cost report and no data.
+  Only the ones that survive all three reach a resolver.}
+  \label{fig:ch03-pipeline}
+\end{figure}
+
+\subsection*{An ordering mistake worth repeating}
+
+\index{request pipeline!modifier order}%
+The first version of the code that printed that list reported twelve middleware,
+not thirteen, and I believed it long enough to write it down.
+
+The reporter works by adding a pipeline modifier, which is the same mechanism
+\code{after:} uses. Modifiers run in registration order, and I had registered
+mine before the call to \code{AddGraphQL()}. So mine ran first, printed the
+pipeline as it stood, and only afterwards did the cost analyzer's modifier
+insert the thing I had just finished counting. Moving one line down the file
+fixed it.
+
+I would not raise it except that the same trap is waiting for anything else you
+insert by name. If your middleware has to sit after a middleware that some
+package adds through a modifier, the order in which the two of you were
+registered decides whether the anchor is there to find. The failure is loud when
+the anchor is missing, and silent when you are merely observing.
+
+So: thirteen middleware, composed once, one of which removes itself entirely
+when it has nothing to do. The next four sections walk the ones that stayed,
+starting with the one that does its work somewhere else entirely.
+\index{request pipeline|)}

@@ -1,0 +1,148 @@
+\section{Two caches, and what they actually save}
+\label{sec:ch03-caches}
+\index{caching|(}
+
+Positions four and eight are caches, and they cache different things for
+different reasons. The document cache remembers documents the server has already
+accepted. The operation cache remembers what compiling one produced. Send the
+same query twice and both report a hit:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+parse - validate 0.204ms compile 0.097ms coerce - execute 0.492ms total 0.931ms
+    (document cache miss, operation cache miss, 146 resolvers)
+parse - validate - compile - coerce - execute 1.049ms total 1.065ms
+    (document cache hit, operation cache hit, 146 resolvers)
+\end{minted}
+
+The dashes on the second line are the point. Validation and compilation did not
+run slowly; they did not run.
+
+\subsection*{The document cache is not a parse cache}
+
+\index{caching!validation skipped}%
+Calling position four a parse cache is the natural reading of the name and it
+undersells what it does. On a hit, \code{DocumentCacheMiddleware} copies six
+things onto the request, and one of them is the interesting one:
+
+\begin{minted}{csharp}
+documentInfo.Id = request.DocumentId;
+documentInfo.Hash = document.Hash;
+documentInfo.Document = document.Body;
+documentInfo.IsValidated = true;
+documentInfo.IsCached = true;
+documentInfo.IsPersisted = document.IsPersisted;
+\end{minted}
+
+\code{IsValidated}. Two middleware later, that flag is the whole of the
+validation decision:
+
+\begin{minted}{csharp}
+if (!documentInfo.IsValidated || _documentValidator.HasNonCacheableRules)
+{
+    using (_diagnosticEvents.ValidateDocument(context))
+    {
+        ...
+    }
+}
+\end{minted}
+
+So the document cache is better described as a record of documents this schema
+has already agreed to run. That is a much stronger claim than remembering a
+syntax tree, and it is why the entry is written on the way out rather than on
+the way in. \code{DocumentCacheMiddleware} calls \code{TryAddDocument} after
+\code{await \_next(context)} returns, and only when \code{IsValidated} is still
+true. A document that fails validation is never cached, which is the behaviour
+you want: caching it would mean caching permission to run something the schema
+rejects.
+
+\index{validation!non-cacheable rules}%
+The second half of that condition is the escape hatch, and I want to be careful
+about what I know. If the validator holds rules that cannot be cached, every
+request is validated again whatever the cache says. Mosaic's measurements show
+validation being skipped, so its configuration has no such rules; which of
+HotChocolate's shipped rules are non-cacheable I did not establish, and I am not
+going to guess in a chapter whose whole argument is that you can go and look. If
+you add custom validation rules, check this branch before assuming the cache
+still saves you the work.
+
+\subsection*{The operation cache, and the thundering herd}
+
+\index{caching!operation cache}%
+Position eight caches the compiled operation, and its implementation is more
+interesting than a dictionary lookup. Consider a cold start behind a load
+balancer: fifty requests for the same uncached query arrive in the same
+millisecond. A naive cache lets all fifty miss and all fifty compile.
+
+\code{OperationCacheMiddleware} does not. It keeps a second dictionary of
+compilations currently in flight, and the first request to claim an entry
+becomes what the code calls the single-flight leader:
+
+\begin{minted}{csharp}
+if (ReferenceEquals(cachedInFlightOperation, inFlightOperation))
+{
+    // We won the race! This request is the single-flight leader
+    // responsible for compiling and signaling all followers.
+    isSingleFlightLeader = true;
+    context.Features.Set(inFlightOperation.Value);
+}
+else
+{
+    // We lost the race! Another request claimed leadership between
+    // TryGetValue and GetOrAdd. So we simply await the leader's result.
+    var coalescedOperation = await cachedInFlightOperation.Value.Task
+        .WaitAsync(context.RequestAborted)
+        .ConfigureAwait(false);
+    context.SetOperation(coalescedOperation);
+}
+\end{minted}
+
+Those comments are HotChocolate's, exclamation marks and all. The leader
+compiles, the followers wait on its result, and the leader adds the operation to
+the cache before removing the in-flight entry so there is never a moment when it
+is in neither. I have not measured this path, because manufacturing the race
+reliably is a chapter of its own, but it is worth knowing it exists: it is the
+difference between a cold restart costing one compilation and costing as many as
+you have concurrent clients.
+
+\subsection*{What the caches are worth, honestly}
+
+\index{caching!measuring}%
+Here is where I nearly published a number I would have had to retract.
+
+The first request to a freshly started Mosaic reports this:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+parse - validate 16.690ms compile 11.515ms coerce - execute 41.541ms total 88.061ms
+\end{minted}
+
+Eighty-eight milliseconds, against one or two for the same query once the caches
+are warm. It is a wonderful statistic and it is mostly a lie. Almost all of it
+is the runtime compiling itself, because the validator, the operation compiler
+and the resolver machinery are all being jitted for the first time. Quote it as
+the cost of validation and you have told your reader that validating a
+nine-field query takes sixteen milliseconds, which it does not.
+
+The way to get an honest number is to warm the process first and then feed it
+work it has never seen. I ran the catalog-with-reviews query twenty times to
+settle the runtime down, then sent five documents that differed only by an
+alias, so each one was novel to both caches while doing identical work. On this
+machine, those five reported:
+
+\begin{itemize}
+  \item validation between 0.184 and 0.355~ms,
+  \item compilation between 0.076 and 0.110~ms,
+  \item and a total inside the pipeline between 0.75 and 1.33~ms.
+\end{itemize}
+
+Two things follow. The first is that the caches save something like a third of a
+warm request for this query, which is worth having and is not the order of
+magnitude the cold number implied. The second is more useful: validation costs
+roughly three times what compilation costs. If you had asked me to guess which
+of those two was the expensive one, I would have said the one called
+\enquote{compile}, and I would have been wrong by a factor of three.
+
+The absolute milliseconds are worth nothing on your machine. The ratio, and the
+habit of warming a process before believing a first-request measurement, are
+worth carrying. What the caches hand on once they have let a document through is
+the subject of the next section.
+\index{caching|)}

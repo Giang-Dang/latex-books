@@ -1,7 +1,35 @@
 \chapter{The Life of a Request}
 \label{ch:the-life-of-a-request}
 
-\emph{Not yet drafted.} Planned scope: Parsing, validation, operation compilation, resolver execution, and middleware inside HotChocolate; the first source-guided walk; the recurring Under the Hood sections begin here.
+Chapter~\ref{ch:hotchocolate-quickly} ended with a number and a confession. One
+query, a hundred and forty-six lookups, and a counter that took two attempts
+because a resolver's injected services do not come from the scope I assumed they
+did. I fixed the counter, said the fix was worth more than the number, and moved
+on. This chapter goes back and reads the code that made me wrong.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/03-the-life-of-a-request/01-section-name}
+Between an HTTP request arriving and the first line of your resolver running,
+HotChocolate does thirteen things. Some of them you can skip, one of them is not
+where you think it is, and two of them are caches that make the second identical
+request cost meaningfully less than the first. None of this is exotic: it is a
+list of middleware, in a fixed order, that you can print at startup.
+
+That printing matters more than it sounds. Everything measured in this chapter
+came out of the service itself rather than out of a documentation page, and
+section~\ref{sec:ch03-instrumenting} shows the code that produced it.
+Where the source and my expectations disagreed, the source won and I have said
+so. Where the first measurement was wrong, I have said that too, because the way
+it was wrong is the useful part.
+
+This is also the first of the chapters that reads HotChocolate's own code. When
+one of those walks makes a claim, it names the tag it was read against. For this
+chapter that is 16.6.0 throughout, which resolves to commit
+\code{8fea46e}~\autocite{chillicream2026source}, and the companion repository is
+at tag \code{ch03}.
+
+\input{chapters/03-the-life-of-a-request/01-thirteen-things-first}
+\input{chapters/03-the-life-of-a-request/02-where-parsing-happens}
+\input{chapters/03-the-life-of-a-request/03-two-caches}
+\input{chapters/03-the-life-of-a-request/04-compiling-the-operation}
+\input{chapters/03-the-life-of-a-request/05-the-scope-a-resolver-runs-in}
+\input{chapters/03-the-life-of-a-request/06-instrumenting-it-yourself}
+\input{chapters/03-the-life-of-a-request/07-your-turn}

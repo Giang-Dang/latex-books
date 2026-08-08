@@ -11,10 +11,10 @@ Author: Giang Dang
 
 ## Status
 
-Chapters 01 and 02 drafted (2026-08-08). The companion repo exists, is public
-at https://github.com/Giang-Dang/mosaic-graph, and is tagged `ch02`. Next
-action: chapter 03, which walks the request lifecycle against that same
-service; nothing blocks it.
+Chapters 01, 02 and 03 drafted (2026-08-08). The companion repo exists, is
+public at https://github.com/Giang-Dang/mosaic-graph, and is tagged `ch02` and
+`ch03`. Next action: chapter 04, which brings EF Core and DataLoaders and owes
+the reader a drop from 146 lookups to 3; nothing blocks it.
 
 ## Decision log
 
@@ -53,6 +53,9 @@ is re-opened only by recording what changed and why, in the row.
 | 28 | Schema authoring style | Mosaic is **implementation-first** throughout; chapters 03-28 inherit this. Reasons, strongest first: HC 16's source generator and ~40 compile-time analyzers key off the attributes and descriptors get none of it; the generated registration is readable material for ch 03 and 16; `[ObjectType<T>]` lets a field live in its owning domain's folder with no central registration list, which is what makes ch 08's extraction a move rather than a rewrite; and `HotChocolate.ApolloFederation` is attribute-led. Descriptors remain the documented escape hatch and the only route to runtime-shaped schemas; the book says so in ch 02 so that reaching for one later reads as planned. Settled 2026-08-08. |
 | 29 | Chapter tag convention | `chNN` marks the end-of-chapter state of the companion repo (`ch02`, `ch03`, ...); `chNN-<step>` if a chapter ever needs an intermediate state. Chapter prose references tags by name. Settled 2026-08-08. |
 | 30 | The N+1 ships on purpose | Chapter 02's domain services are single-key with no batch overload anywhere, so the catalog-with-reviews query (`{ products { title reviews { rating author { displayName } } } }`, named that way in ch 02 to keep it distinct from the single-product "product page" query of the Postman section) costs 146 lookups. A request-scoped counter reports the number, ch 02 shows it and admits it without naming DataLoader, and ch 04 brings it to 3. Chapter 04 therefore fixes a real measured problem in Mosaic's own code rather than demonstrating on one invented for the occasion. Settled 2026-08-08. |
+| 31 | Mechanism demos live in `samples/`, not in Mosaic | A micro-example that exists only to demonstrate one HotChocolate mechanism goes into its own project under `samples/`, never into `Mosaic.Api`. Chapter 03 needed two fields whose whole purpose was to expose service-scope identity; putting them in Mosaic would have added diagnostic noise to a storefront schema, changed the committed SDL and moved the assertions in `verify.ps1`. `samples/resolver-scopes` costs one project and keeps `schema/mosaic.graphql` a description of the product. This is decision 8's "isolated micro-examples for mechanisms" made concrete about where they live. Settled 2026-08-08. |
+| 32 | Internals claims cite the source tree, not the docs | From chapter 03 on, an internals claim is verified by reading `ChilliCream/graphql-platform` at a release tag and naming the commit, and the tag is cloned locally rather than fetched page by page. The v16 documentation is cited only for things it is the authority on. Reason: chapter 02 found a documentation page whose sample code does not compile, and a chapter that walks the executor cannot be built on pages of that reliability. Research files tag such facts `[source]` rather than `[web]`. Settled 2026-08-08. |
+| 33 | Chapter 03 TOC line rewritten | The approved line read "parsing, validation, operation compilation, resolvers, middleware; first source-guided walk". Drafting found that the document and operation caches are half of what the pipeline does, and that parsing is best covered by establishing where it does *not* happen. The line now names the caches and the diagnostic listener. Scope grew in detail, not in ambition, and the chapter still ends before DataLoaders. Settled 2026-08-08. |
 
 ## Version baseline
 
@@ -62,7 +65,7 @@ that depend on them.
 
 | Component | Version |
 |-----------|---------|
-| HotChocolate / HotChocolate.ApolloFederation | 16.6.0 (2026-08-05). Ships net8.0, net9.0, net10.0 and net11.0 assets; "targets .NET 8+" understates it. Re-confirmed from the nuspec 2026-08-08. |
+| HotChocolate / HotChocolate.ApolloFederation | 16.6.0 (2026-08-05). Ships net8.0, net9.0, net10.0 and net11.0 assets; "targets .NET 8+" understates it. Re-confirmed from the nuspec 2026-08-08. Tag `16.6.0` resolves to commit `8fea46e9560c973eba1b9c899937f9a6bb02aaf9`; the tree is cloned at F:/repo/graphql-platform for the source-guided chapters (decision 32). |
 | HotChocolate.Templates | 16.6.0. Note the id: `ChilliCream.HotChocolate.Templates` does not exist. |
 | WunderGraph Cosmo (router, wgc CLI) | current as of Aug 2026 - pin exact versions when the companion repo is created |
 | ChilliCream Fusion (ch 27) | 16.5 |
@@ -78,7 +81,7 @@ session. Chapter folders in chapters/ carry the same scope lines.
 
 1. **Why One Graph Is Never Enough** - single-schema failure modes, team coupling, where federation fits, the Mosaic storefront, first pass at "do you need this" (ch 26 in full)
 2. **HotChocolate, Quickly** - first service on .NET 10; implementation-first vs code-first (and what happened to schema-first); Mosaic monolith v1; the Postman dev loop
-3. **The Life of a Request** - parsing, validation, operation compilation, resolvers, middleware; first source-guided walk
+3. **The Life of a Request** - the thirteen request middleware and how they are composed; where parsing really happens; the document and operation caches; operation compilation; resolver service scopes; writing a diagnostic listener. First source-guided walk
 4. **Data Without the N+1** - EF Core, DataLoader usage and batching internals, projections/filtering/sorting/pagination
 5. **Schema Design That Survives Change** - abstract types, Relay conventions, error design, deprecation, single-service subscriptions
 
@@ -140,7 +143,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | Preface | not-started | write last; version-baseline stub in place |
 | 01 | drafted | 2026-08-08. 11 pages, 7 sections, ~6,250 words, 3 TikZ figures, 24 index entries. Sources in research/2026-08-ch01-scaling-and-federation-history.md; 35 real citations replace the knuth1984 placeholder. Lab is the no-code audit of decision 22; its heading is a plain `\section*` with no TOC entry, so revisit whether the apparatus deserves a macro once ch 02-03 have used it too. Not yet reviewed for line-level prose. |
 | 02 | drafted | 2026-08-08. 18 pages (15-32), 7 numbered sections plus the lab, ~6,600 words, 3 TikZ figures, 35 index entries, 7 citations, 27 listings. First chapter with C# and the first use of minted's csharp lexer; it renders clean. Sources in research/2026-08-ch02-hotchocolate-16.md, which also carries the listing-provenance table. Companion repo tag `ch02`; every listing traceable to a file there and `scripts/verify.ps1` passes. TOC line updated (decision 28) because HC 16 names two authoring styles, not three. Not yet reviewed for line-level prose. |
-| 03 | not-started | |
+| 03 | drafted | 2026-08-08. 16 pages (33-48), 6 numbered sections plus the lab, ~5,900 words, 2 TikZ figures, 26 index entries, 1 citation, 29 listings. First source-guided chapter: everything internals-related is read out of `graphql-platform` at tag 16.6.0, commit `8fea46e`, cloned at F:/repo/graphql-platform. Sources in research/2026-08-ch03-request-lifecycle.md. Companion repo tag `ch03`; `scripts/verify.ps1` now also asserts the 13 middleware in order and the 146 resolvers. TOC line rewritten (decision 33) because the planned five-topic line missed the two caches, which turned out to be half the chapter. Not yet reviewed for line-level prose. |
 | 04 | not-started | |
 | 05 | not-started | |
 | 06 | not-started | |
@@ -204,16 +207,39 @@ Library-wide defaults are in CLAUDE.md; these are this book's additions.
 ## Open items
 
 - (resolved 2026-08-08) Companion repo created, verified and published:
-  https://github.com/Giang-Dang/mosaic-graph, tag `ch02`. `scripts/verify.ps1`
-  is the gate a tag has to pass; it builds in Release with warnings as errors,
-  checks the committed SDL against a fresh export, asserts 25 products / 120
-  reviews / 146 lookups, and runs the Postman collection through newman.
+  https://github.com/Giang-Dang/mosaic-graph, tags `ch02` and `ch03`.
+  `scripts/verify.ps1` is the gate a tag has to pass; it builds in Release with
+  warnings as errors, checks the committed SDL against a fresh export, asserts
+  25 products / 120 reviews / 146 lookups, and runs the Postman collection
+  through newman. Chapter 03 added two assertions to it: the request pipeline
+  is the expected 13 middleware in order, and the request timeline reports 146
+  resolvers. The collection is now seven requests and twenty-four assertions.
 - (resolved 2026-08-08) "Mosaic" confirmed as the demo name; see decision 24.
-- The "Your turn" apparatus has now been used twice (ch 01 unlabelled
-  `\section*`, ch 02 the same). It still does not need a macro: the heading is
-  one line and the two labs differ in shape, ch 01 being a no-code audit and
-  ch 02 a six-exercise lab against a repo tag. Revisit if a third form appears
-  or if the labs ever need to be cross-referenced.
+- The "Your turn" apparatus has now been used three times (ch 01, 02 and 03, all
+  as an unlabelled `\section*`). Ch 03's is a seven-exercise lab in ch 02's
+  shape, so the third form the last revisit was waiting for did not appear. It
+  still does not need a macro: the heading is one line and nothing
+  cross-references a lab. Stop revisiting this until something actually needs to
+  `\ref` one.
+- Chapter 03 corrects one sentence of chapter 02. Ch 02's Postman section says
+  validation runs "against the schema before a single resolver is called" and
+  applies that to both the unknown-field 400 and the syntax-error 400. The
+  unknown field is validation inside the pipeline; the syntax error is rejected
+  by the transport parser and never creates a request at all. Ch 03 states the
+  distinction explicitly. If ch 02 is ever revised for line-level prose, tighten
+  that sentence rather than leaving the correction to arrive a chapter late.
+- Chapter 03 leaves three things unmeasured and says so: which shipped
+  validation rules are non-cacheable (`DocumentValidator.HasNonCacheableRules`),
+  the single-flight compilation path under a real burst, and anything about
+  `RunTask` or execution-task counts. Chapters 16 and 17 own all three. The ch
+  03 research file's section O lists them so they do not get asserted from
+  memory later.
+- The absolute timings in chapter 03 are single-machine numbers from the
+  author's box. The claims that are meant to survive are the ratio (validation
+  costs roughly three times compilation) and the warning that a cold first
+  request measures the runtime warming up rather than the pipeline. If the book
+  is ever re-measured on other hardware, keep the ratios and replace the
+  milliseconds.
 - Chapter 02 leaves three things deliberately unfixed, each promised to a named
   chapter: `reviews` is a plain list (ch 05 makes it a connection), errors are
   bare exceptions (ch 05 designs an error model), and nothing is authorised

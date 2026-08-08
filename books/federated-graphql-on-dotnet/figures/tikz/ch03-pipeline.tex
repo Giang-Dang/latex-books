@@ -1,0 +1,60 @@
+% The thirteen middleware, and the three places a request can leave early.
+% Referenced from chapter 03. Bare tikzpicture: the figure environment, caption
+% and label live at the call site. Uses only arrows.meta and positioning.
+\begin{tikzpicture}[
+    font=\small,
+    mw/.style={draw, rounded corners=2pt, minimum width=52mm,
+               minimum height=7mm, align=center, font=\scriptsize},
+    gate/.style={draw, thick, rounded corners=2pt, minimum width=52mm,
+                 minimum height=7mm, align=center, font=\scriptsize},
+    outside/.style={draw, dashed, rounded corners=2pt, minimum width=52mm,
+                    minimum height=9mm, align=center, font=\scriptsize},
+    flow/.style={-{Stealth[length=2mm]}, thick},
+    exit/.style={-{Stealth[length=2mm]}, thick, dashed},
+    note/.style={font=\scriptsize\itshape, align=left}
+  ]
+
+  % The transport, which is not part of the pipeline.
+  \node[outside] (http) at (0,0.9) {the ASP.NET Core transport:\\reads the body and \emph{parses the document}};
+
+  \node[mw]   (m1)  at (0,-0.4) {1. Instrumentation};
+  \node[mw]   (m2)  at (0,-1.2) {2. Exception};
+  \node[mw]   (m3)  at (0,-2.0) {3. Timeout};
+  \node[gate] (m4)  at (0,-2.8) {4. DocumentCache};
+  \node[mw]   (m5)  at (0,-3.6) {5. DocumentParser};
+  \node[gate] (m6)  at (0,-4.4) {6. DocumentValidation};
+  \node[gate] (m7)  at (0,-5.2) {7. CostAnalyzer};
+  \node[gate] (m8)  at (0,-6.0) {8. OperationCache};
+  \node[mw]   (m9)  at (0,-6.8) {9. OperationResolver (compiles)};
+  \node[mw]   (m10) at (0,-7.6) {10. SkipWarmupExecution};
+  \node[mw]   (m11) at (0,-8.4) {11. OperationVariableCoercion};
+  \node[gate] (m12) at (0,-9.2) {12. ConcurrencyGate};
+  \node[mw]   (m13) at (0,-10.0) {13. OperationExecution};
+
+  \node[outside] (res) at (0,-11.3) {your resolvers};
+
+  \draw[flow] (http) -- (m1);
+  \foreach \a/\b in {m1/m2, m2/m3, m3/m4, m4/m5, m5/m6, m6/m7, m7/m8,
+                     m8/m9, m9/m10, m10/m11, m11/m12, m12/m13}{%
+    \draw[flow] (\a) -- (\b);
+  }
+  \draw[flow] (m13) -- (res);
+
+  % The three ways out.
+  \draw[exit] (http.east) -- (3.3,0.9);
+  \node[note, anchor=west] at (3.4,0.9) {will not parse:\\400, and no request};
+
+  \draw[exit] (m6.east) -- (3.3,-4.4);
+  \node[note, anchor=west] at (3.4,-4.4) {fails validation:\\400, nothing executed};
+
+  \draw[exit] (m7.east) -- (3.3,-5.2);
+  \node[note, anchor=west] at (3.4,-5.2) {\texttt{GraphQL-Cost: validate}:\\cost only, no data};
+
+  % The thick boxes are the four that can change what the rest of the pipeline
+  % has left to do.
+  \node[note, anchor=east] at (-3.2,-2.8) {a hit here skips\\5 and 6};
+  \node[note, anchor=east] at (-3.2,-4.4) {rejects here, or\\lets the rest run};
+  \node[note, anchor=east] at (-3.2,-6.0) {a hit here skips 9};
+  \node[note, anchor=east] at (-3.2,-9.2) {removes itself unless\\a gate is configured};
+
+\end{tikzpicture}

@@ -1,0 +1,66 @@
+\section*{Your turn}
+
+Check out this chapter's tag and confirm you have the same service I do:
+
+\begin{minted}{text}
+git clone https://github.com/Giang-Dang/mosaic-graph
+cd mosaic-graph
+git checkout ch03
+pwsh scripts/verify.ps1
+\end{minted}
+
+The script now checks two more things than it did in
+chapter~\ref{ch:hotchocolate-quickly}: that the pipeline is those thirteen
+middleware in that order, and that the timeline reports 146 resolvers. Run the
+service with its console where you can see it for all of these.
+
+\begin{enumerate}
+  \item \textbf{Watch a document go cold.} Send the catalog-with-reviews query
+  three times and read the three timeline lines. Now change one character of it,
+  a field alias will do, and send it again. Which phases came back, and which
+  stayed dashes? The answer tells you what the cache is keyed on.
+
+  \item \textbf{Find the request that leaves no trace.} Post a document with an
+  unclosed brace, then post one asking for a field that does not exist. Both
+  come back 400. Count the timeline lines. Then explain the difference to
+  somebody without using the word \enquote{validation}.
+
+  \item \textbf{Measure the caches honestly.} Restart the service and time the
+  first request. Then send twenty, and time the twenty-first. Then send a novel
+  document and time that. You now have three numbers, only two of which belong
+  in the same sentence. Decide which two, and write down why the third is
+  misleading.
+
+  \item \textbf{Insert your own middleware.} Add one that logs the operation
+  name, keyed, and anchored \code{after:} the document validation middleware.
+  Confirm it appears in the startup listing where you expected. Then move its
+  registration above \code{AddGraphQL()} and see what the listing says. This is
+  the mistake section~\ref{sec:ch03-pipeline} describes, and it is cheaper to
+  make on purpose.
+
+  \item \textbf{Break the listener.} Delete
+  \code{AddApplicationService<ILoggerFactory>()} from \code{Program.cs} and
+  start the service. Read the error. Then work out, without running it, whether
+  the same mistake in an error filter would fail the same way.
+
+  \item \textbf{Move a field's scope.} Run the \code{samples/resolver-scopes}
+  project and send the four-field query from
+  section~\ref{sec:ch03-scopes}. Predict the numbers before you look. Then add
+  \code{[UseResolverScope]} to the field that currently has
+  \code{[UseRequestScope]}, and predict them again.
+
+  \item \textbf{Cost something.} Send three queries of increasing size with the
+  \code{GraphQL-Cost: validate} header and record the field costs. Work out the
+  rule from the numbers, then check it against the \code{@cost} weights in
+  \code{schema/mosaic.graphql}. Which fields are free, and is that the answer
+  you would want if you were setting a budget?
+\end{enumerate}
+
+Exercise~2 is the one that matters at three in the morning. A request that
+returns 400 without producing a single log line, span or diagnostic event is not
+a broken server, and the instinct that it must be will send you looking in the
+executor for something the transport rejected. From
+chapter~\ref{ch:enter-the-router} onward there is another process in front of
+these services, with its own layers and its own version of the same trap, and
+knowing which of your components can answer without recording anything is most
+of the skill of reading a distributed failure.

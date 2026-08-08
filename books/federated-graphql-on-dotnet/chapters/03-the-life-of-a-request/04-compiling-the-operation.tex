@@ -1,0 +1,111 @@
+\section{Compiling the operation}
+\label{sec:ch03-compiling}
+\index{operation compilation|(}
+
+Position nine is where a validated document becomes something the engine can
+execute. It is also where HotChocolate's naming is at its least helpful, and
+saying so early saves you from wondering whether you have found three things or
+one.
+
+The middleware is called \code{OperationResolverMiddleware}. The field it holds
+the compiler in is called \code{\_operationPlanner}. The class it calls is
+called \code{OperationCompiler}. Three names, one step:
+
+\begin{minted}{csharp}
+using (_diagnosticEvents.CompileOperation(context))
+{
+    ...
+    operation = _operationPlanner.Compile(
+        operationId ?? Guid.NewGuid().ToString("N"),
+        documentInfo.Hash.Value,
+        context.Request.OperationName,
+        documentInfo.Document,
+        context);
+
+    context.SetOperation(operation);
+    inFlightOperation?.TrySetResult(operation);
+    ...
+}
+\end{minted}
+
+I would call the step compilation, because that is what the class doing the work
+is called and what the diagnostic event is called. \enquote{Resolver} in the
+middleware name is the older sense of resolving \emph{which} operation to run:
+a document may hold several named operations, and the request's
+\code{OperationName} picks one. That is genuinely a separate job from compiling
+the one it picked, and it is why the middleware carries the name it does.
+Chapter~\ref{ch:inside-hotchocolate} takes the compiler apart properly. For now
+the useful fact is what does not go in.
+
+\subsection*{Variables are not baked in}
+
+\index{variables!coercion}%
+What does not go in is variable values. The compiled operation is derived from
+the document, the schema and the operation name, and nothing else in that
+argument list is per-request.
+
+You can watch this. Send one document with three different variable sets and
+only the first pays for compilation:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+parse - validate 2.246ms compile 1.033ms coerce 2.480ms execute 8.890ms total 16.770ms
+    (document cache miss, operation cache miss, 17 resolvers)
+parse - validate - compile - coerce 0.038ms execute 0.617ms total 0.710ms
+    (document cache hit, operation cache hit, 13 resolvers)
+parse - validate - compile - coerce 0.064ms execute 1.298ms total 1.562ms
+    (document cache hit, operation cache hit, 15 resolvers)
+\end{minted}
+
+Both caches hit on the second and third, because the document did not change.
+Coercion still runs, at position eleven, because the values did.
+
+\index{variables!and persisted operations}%
+This is the mechanical reason behind the habit
+chapter~\ref{ch:hotchocolate-quickly} asked you to build in Postman: put the
+identifier in the Variables pane rather than in the query text. A query with the
+value inlined is a new document every time it changes, so it misses both caches,
+gets validated again and compiled again, and cannot be registered ahead of time
+at all. Chapter~\ref{ch:the-wire-completely} turns that last point into
+persisted operations, where the client sends only a hash. The discipline starts
+paying long before that, in cache hits.
+
+\index{resolvers!count}%
+The resolver counts on those lines drift for a reason worth naming, because
+somebody will rerun this and get different numbers. Seventeen, thirteen,
+fifteen: the three requests asked for different products, and those products
+have twelve, eight and ten reviews. The count follows the data, not the
+document.
+
+\subsection*{Leaving the pipeline in the middle}
+
+\index{cost analysis!GraphQL-Cost header}%
+While we are between validation and execution, there is a way to stop here on
+purpose, and it makes the pipeline visible from outside the process. Send any
+query with the header \code{GraphQL-Cost: validate}:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{ "extensions": { "operationCost": { "fieldCost": 30, "typeCost": 4 } } }
+\end{minted}
+
+HTTP 200, and no \code{data} key whatsoever. The request was parsed, validated
+and costed, and then the cost analyzer at position seven answered instead of
+letting it through. The timeline for that request confirms it from the inside:
+\code{execute -} and zero resolvers. The sibling value \code{report} runs the
+query and attaches the same numbers alongside the data.
+
+That field cost of 30 closes a loop opened in
+chapter~\ref{ch:hotchocolate-quickly}. The catalog-with-reviews query selects
+three fields backed by asynchronous resolvers, \code{products}, \code{reviews}
+and \code{author}, and each carries \code{@cost(weight: "10")} in the exported
+SDL. The plain record properties it also selects, \code{title}, \code{rating}
+and \code{displayName}, carry no weight and contribute nothing. Ten and ten and
+ten.
+
+Nothing is being enforced here: \code{MaxFieldCost} and \code{MaxTypeCost} both
+default to 1000, and 30 is not close. Chapter~\ref{ch:security-hardening} turns
+the limits on and argues about where to set them. What the header is good for
+today is answering \enquote{what does this query cost} without running it, which
+is a question worth being able to ask of a query somebody has proposed adding to
+a client. Which leaves the last thing on the list: where the resolvers actually
+run.
+\index{operation compilation|)}

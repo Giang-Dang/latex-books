@@ -1,0 +1,182 @@
+\section{The scope a resolver runs in}
+\label{sec:ch03-scopes}
+\index{dependency injection!resolver scope|(}
+
+Position thirteen executes the operation, and somewhere inside it your resolver
+finally runs. This is the part chapter~\ref{ch:hotchocolate-quickly} got wrong
+first time, so it is the part I want to read out of the source rather than
+describe.
+
+The counter that chapter needed had to accumulate across a whole request. I
+registered it as a scoped service, injected it into the domain services, and got
+this:
+
+\begin{minted}{text}
+info: Service lookups this request: 1
+info: Service lookups this request: 1
+info: Service lookups this request: 1
+\end{minted}
+
+A hundred and forty-six times. I explained it then by saying HotChocolate
+resolves a resolver's services from a scope of its own, one per resolver
+invocation. That is true, and it is about sixty per cent of the truth.
+
+\subsection*{Ten lines that explain it}
+
+\index{dependency injection!ResolverTask}%
+Here is the code, in \code{ResolverTask.Execute.cs}:
+
+\begin{minted}{csharp}
+private async ValueTask ExecuteResolverPipelineAsync(CancellationToken cancellationToken)
+{
+    if (_context.Field.DependencyInjectionScope == DependencyInjectionScope.Resolver)
+    {
+        var serviceScope = _operationContext.Services.CreateAsyncScope();
+        _context.Services = serviceScope.ServiceProvider;
+        _context.RegisterForCleanup(serviceScope.DisposeAsync);
+        _operationContext.ServiceScopeInitializer.Initialize(
+            _context, _context.RequestServices, _context.Services);
+    }
+
+    await _context.ResolverPipeline!(_context).ConfigureAwait(false);
+    ...
+}
+\end{minted}
+
+The scope is created \emph{per field}, and behind an \code{if}. So it is not a
+rule about resolvers, it is a property of the field being resolved, and a field
+can have the other value. That immediately raises the question of what sets it,
+and the answer is the part I did not know:
+
+\begin{minted}{csharp}
+public DependencyInjectionScope DefaultQueryDependencyInjectionScope { get; set; } =
+    DependencyInjectionScope.Resolver;
+
+public DependencyInjectionScope DefaultMutationDependencyInjectionScope { get; set; } =
+    DependencyInjectionScope.Request;
+\end{minted}
+
+\index{dependency injection!query and mutation defaults}%
+Queries and mutations do not default to the same thing. A query field gets its
+own scope per resolver; a mutation field shares the request's. \code{ObjectField}
+picks between them when the schema is built, unless the field states its own
+preference.
+
+The asymmetry is the reason the setting exists.
+Query resolvers run concurrently and mostly independently, and giving each one
+its own scope means a scoped \code{DbContext} in one field cannot be dragged
+across a thread boundary by another. Mutation resolvers usually want the
+opposite: one unit of work, one transaction, one \code{DbContext} that several
+steps commit together. Chapter~\ref{ch:data-without-the-n-plus-1} is where this
+stops being trivia, because a \code{DbContext} is exactly the service whose
+scope you have to be able to reason about.
+
+\subsection*{Two attributes, and a way to see them work}
+
+\index{dependency injection!UseRequestScope}%
+Any field can override the default. In the descriptor API those are
+\code{UseRequestScope()} and \code{UseResolverScope()}; Mosaic is
+implementation-first, so the relevant form is the pair of attributes,
+\code{[UseRequestScope]} and \code{[UseResolverScope]}, both of which go on a
+method.
+
+The companion repository has a sample that does nothing but show the difference.
+A scoped service hands out a number that increments every time a scope
+constructs one, and two fields report both the number they were given and the
+number living in the request's own provider:
+
+\begin{minted}{csharp}
+[QueryType]
+public static partial class ScopeQueries
+{
+    public static ScopeReading GetDefaultScope(
+        ScopeProbe injected,
+        IResolverContext context)
+        => new(
+            injected.Id,
+            context.RequestServices.GetRequiredService<ScopeProbe>().Id);
+
+    [UseRequestScope]
+    public static ScopeReading GetRequestScope(
+        ScopeProbe injected,
+        IResolverContext context)
+        => new(
+            injected.Id,
+            context.RequestServices.GetRequiredService<ScopeProbe>().Id);
+}
+\end{minted}
+
+Ask for both, twice each, in a single request:
+
+\begin{minted}{graphql}
+{
+  a: defaultScope { injected fromRequestServices }
+  b: defaultScope { injected fromRequestServices }
+  c: requestScope { injected fromRequestServices }
+  d: requestScope { injected fromRequestServices }
+}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{
+  "a":{"injected":1,"fromRequestServices":2},
+  "b":{"injected":3,"fromRequestServices":2},
+  "c":{"injected":2,"fromRequestServices":2},
+  "d":{"injected":2,"fromRequestServices":2}}}
+\end{minted}
+
+Read the numbers rather than the field names. There are three probes in that
+request, not one. Field \code{a} was handed probe~1 and field \code{b} probe~3,
+and neither is probe~2, which is the one the request itself owns. The two
+annotated fields were both handed probe~2. Send the query again and the same
+pattern comes back with 4, 5 and 6.
+
+The ordering is a small bonus: 1 before 2 before 3 says the first resolver's
+private scope was created before anything asked the request for its copy.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch03-scopes}
+  \caption{Why the counter reported one. Each query field resolved by default
+  gets a child scope, so a scoped service injected into it is constructed fresh
+  and disposed when the field finishes. \code{RequestServices} always points at
+  the request's provider, and \code{[UseRequestScope]} makes an injected
+  parameter come from there too.}
+  \label{fig:ch03-scopes}
+\end{figure}
+
+\subsection*{What that means for the counter}
+
+\index{dependency injection!RequestServices}%
+So chapter~\ref{ch:hotchocolate-quickly} had three fixes available and I picked
+one without knowing the others existed.
+
+Hanging the total off \code{HttpContext.Items}, which is what Mosaic does,
+works and has the advantage of being obvious to anyone who knows ASP.NET Core
+and nothing about HotChocolate. Annotating every contributing field with
+\code{[UseRequestScope]} would also have worked, and would have been worse: it
+is an attribute on every resolver that touches a domain service, and one that
+has to be remembered on the next one somebody adds. The third option is the one
+this chapter has been leaning on the whole time, and it is what the timeline
+uses.
+
+\code{IResolverContext.RequestServices} is not the resolver's scope. Look again
+at the ten lines above. The \code{if} replaces the resolver context's
+\code{Services} property and never touches the other one, which comes from the
+operation context. That was initialised from the request, so it is the
+request's provider whatever the field's scope setting says. A service
+registered scoped and read through it is therefore one instance per request,
+reachable from any resolver, with no attributes and no \code{HttpContext}:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+public override IDisposable ResolveFieldValue(IMiddlewareContext context)
+{
+    context.RequestServices.GetService<RequestTimeline>()?.CountResolver();
+    return EmptyScope;
+}
+\end{minted}
+
+That is how a hundred and forty-six resolver invocations, many of them
+concurrent, all increment the same counter. Which leaves the question of where
+that method comes from.
+\index{dependency injection!resolver scope|)}
