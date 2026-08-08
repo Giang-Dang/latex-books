@@ -1,0 +1,125 @@
+\section{The smallest service that works}
+\label{sec:ch02-smallest-service}
+\index{HotChocolate!getting started|(}
+
+\index{HotChocolate!templates}%
+The fastest route into HotChocolate~16 is not a package reference. It is a
+template, which ChilliCream ships on NuGet:
+
+\begin{minted}{text}
+dotnet new install HotChocolate.Templates
+dotnet new graphql -o src/Mosaic.Api
+\end{minted}
+
+Note the package name. ChilliCream is the company, so prefixing it with
+\code{ChilliCream.} is the natural guess, and no such package
+exists~\autocite{nuget2026templates}. Installing the real one registers three
+templates: \code{graphql} for a server, \code{graphql-gateway} for a Fusion
+gateway, and \code{graphql-azf} for an Azure Function. We want the first.
+
+I recommend starting from the template rather than assembling the project by
+hand, and not for the usual reason. It is not that the setup is hard. It is that
+HotChocolate~16 changed how a server is wired up, and almost everything written
+about HotChocolate on the public internet describes an older version. The
+template ships from ChilliCream at the same version as the packages, so it
+matches the release you are installing. Here is what it produces, in full:
+
+\begin{minted}{csharp}
+var builder = WebApplication.CreateBuilder(args);
+
+builder.AddGraphQL().AddTypes();
+
+var app = builder.Build();
+
+app.MapGraphQL();
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{HotChocolate!AddGraphQL}%
+If you have used HotChocolate before, the second line is the surprising one. The
+call you probably remember is this:
+
+\begin{minted}{csharp}
+builder.Services
+    .AddGraphQLServer()
+    .AddQueryType<Query>();
+\end{minted}
+
+That still compiles. It is not deprecated, and nothing in this book will break
+if you keep writing it. But it is no longer the shape the documentation teaches,
+and in 16.6.0 there are three similarly named entry points with genuinely
+different behaviour~\autocite{chillicream2026source}.
+\code{builder.AddGraphQL()}, on the host builder, forwards to
+\code{AddGraphQLServer()} and applies the ASP.NET Core defaults.
+\code{builder.Services.AddGraphQL()}, on the service collection, does not apply
+them. One character of difference in what you type, and a materially different
+server at the other end, so it is worth knowing before you need it.
+
+\index{HotChocolate!source generator}%
+The more interesting absence is \code{Query}. Nothing in that file names a type,
+and yet the service serves a schema. \code{AddTypes()} is generated at compile
+time by a Roslyn source generator that ships in the
+\code{HotChocolate.Types.Analyzers} package, which the template references as an
+analyzer. The generator scans the assembly for types carrying attributes it
+recognises, and writes the registration code that the file above then calls.
+The template's query type looks like this:
+
+\begin{minted}{csharp}
+[QueryType]
+public static partial class Query
+{
+    public static Book GetBook()
+        => new Book("C# in depth.", new Author("Jon Skeet"));
+}
+\end{minted}
+
+A static class, marked \code{partial} so the generator can add to it, with
+static methods that become fields. \code{GetBook} becomes \code{book}:
+HotChocolate strips the \code{Get} prefix, and it strips an \code{Async} suffix
+too, so \code{GetProductsAsync} becomes \code{products}.
+
+\index{HotChocolate!Module attribute}%
+One detail here bites early and is worth showing before it does. The generated
+method is not always called \code{AddTypes}. Its name comes from an
+assembly-level attribute, which the template ships in a file of its own as
+\code{Module("Types")}. Rename the module to something meaningful for your
+service and the generated method is renamed with it. Mosaic uses this:
+
+\begin{minted}{csharp}
+[assembly: Module("Mosaic")]
+\end{minted}
+
+so its registration call is \code{AddMosaic()}. If you rename the module and
+forget to update \code{Program.cs} to match, you do not get a helpful message
+about a missing method. \code{AddTypes} still resolves, to a pair of unrelated
+\code{params} overloads that take arrays of types, and the compiler reports:
+
+\begin{minted}{text}
+error CS0121: The call is ambiguous between the following methods or
+properties: 'SchemaRequestExecutorBuilderExtensions.AddTypes(
+IRequestExecutorBuilder, params System.Type[])' and
+'SchemaRequestExecutorBuilderExtensions.AddTypes(
+IRequestExecutorBuilder, params HotChocolate.Types.ITypeDefinition[])'
+\end{minted}
+
+Which is an accurate description of the compiler's problem and no help at all
+with yours. The attribute is assembly-scoped rather than folder-scoped, which
+matters more than it looks: one \code{AddMosaic()} call registers every
+GraphQL type in the assembly, no matter which folder it sits in. That single
+fact is what makes the layout in section~\ref{sec:ch02-six-domains} possible.
+
+\index{Nitro}%
+Run the project and open \code{http://localhost:5100/graphql} in a browser.
+HotChocolate notices that a browser asked and serves Nitro, its own IDE, from
+the same endpoint that answers queries~\autocite{chillicream2026endpoints}.
+Nitro was called Banana Cake Pop until October 2024, when Rafael Staib announced
+the rename on ChilliCream's blog~\autocite{staib2024nitro}. The old name has been
+scrubbed from the current documentation, so if you find a page using it you are
+reading something out of date. The same endpoint also answers \code{?sdl} with
+the schema as a file, which is occasionally more useful than the IDE.
+
+Point a client at it, ask for the one field that exists, and you have a working
+GraphQL server. That is the \emph{quickly} part, and it is over. Everything
+after this is about the choices the template made silently on your behalf.
+\index{HotChocolate!getting started|)}

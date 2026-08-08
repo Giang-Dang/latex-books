@@ -1,0 +1,150 @@
+\section{Postman, and what introspection costs}
+\label{sec:ch02-postman}
+\index{Postman|(}
+
+Nitro is a good IDE and it is attached to one service. From
+chapter~\ref{ch:enter-the-router} onward Mosaic is several services behind a
+router, and the questions worth asking are about the traffic between them: what
+the router sent a subgraph, what came back, whether a header survived the trip.
+Those are Postman questions, and it is easier to build the habit now, on one
+service, than to learn the tool and federation in the same week.
+
+Postman's GraphQL request type reads a schema three ways: by introspecting a
+running endpoint, by pulling an API out of a Postman workspace, or from a local
+file or URL~\autocite{postman2026client}. Point it at
+\code{http://localhost:5100/graphql}, let it introspect, and the query editor
+starts autocompleting Mosaic's fields.
+
+The companion repository ships a collection and an environment under
+\code{postman/}, with five requests in it. Import both, and the environment
+supplies \code{baseUrl} so nothing is hard-coded to a port. Every request
+carries assertions, which means the collection doubles as a smoke test: the
+product-page request checks that a field from each of four domains came back,
+and the whole collection runs from the command line.
+
+\subsection*{Variables, and why to bother early}
+
+The second request in the collection asks for a product page. The identifier is
+a variable rather than a literal:
+
+\begin{minted}{graphql}
+query ProductPage($id: ID!) {
+  productById(id: $id) {
+    sku
+    title
+    price { amount currency }
+    availableQuantity
+    averageRating
+    reviews {
+      rating
+      author { displayName }
+    }
+  }
+}
+\end{minted}
+
+\begin{minted}{json}
+{ "id": "a0000000-0000-4000-8000-000000000001" }
+\end{minted}
+
+Editing the Variables pane rather than the query is a small discipline with a
+large payoff later. A document that stays constant across runs is a document
+that can be registered ahead of time, which is what persisted operations and
+trusted documents need, and chapter~\ref{ch:the-wire-completely} is largely
+about that. Getting into the habit while the graph has one service is free.
+
+\subsection*{A deliberate 400}
+
+\index{Postman!error responses}%
+The fourth request in the collection asks for a field that does not exist. I
+left it in deliberately, because the response teaches something:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{
+  "errors": [
+    {
+      "message": "The field `nope` does not exist on the type `Product`.",
+      "locations": [ { "line": 1, "column": 14 } ],
+      "extensions": {
+        "type": "Product",
+        "field": "nope",
+        "responseName": "nope",
+        "specifiedBy": "https://spec.graphql.org/September2025/#sec-Field-Selections"
+      }
+    }
+  ]
+}
+\end{minted}
+
+The status is 400 and there is no \code{data} key at all, not even a null one.
+Validation runs against the schema before a single resolver is called, so
+nothing was executed and there is nothing partial to return. Notice also what
+the error carries: the type, the field, and a link into the GraphQL
+specification. There is no HotChocolate error code, because this is not
+HotChocolate's rule being broken, it is the language's. Ask for a code and you
+find one only on the errors that belong to the server: a syntax error comes back
+with \code{extensions.code} set to \code{HC0011}. That division is a useful
+thing to have internalised before chapter~\ref{ch:composition}, where reading
+error payloads carefully stops being optional.
+
+\subsection*{Introspection is off in production, and it will catch you}
+
+\index{introspection!disabled by default}%
+This one cost me an hour on this chapter's own code.
+\code{AddGraphQLServer()} applies a set of defaults, and one of them disables
+introspection whenever the host environment is not Development. The reasoning
+is sound: an introspectable schema is a complete map of your API for anybody who
+asks, and the safe default is to hand it out only to developers.
+
+The trap is that you can leave Development without meaning to. Mosaic's
+verification script starts the service with \code{--no-launch-profile}, which
+skips \code{launchSettings.json}, and \code{launchSettings.json} was the only
+thing setting the environment. So the service came up in Production, four of the
+five Postman requests passed, and the introspection request failed with a 400
+and error \code{HC0046}. Nothing about the query was wrong. The fix is to say
+what you mean:
+
+\begin{minted}{text}
+ASPNETCORE_ENVIRONMENT=Development
+\end{minted}
+
+The same applies in a container, and the compose file in the companion
+repository sets it with a comment explaining that this is a development
+baseline rather than a production posture.
+
+\index{introspection!DisableIntrospection}%
+While we are here: if you go looking for how to control this deliberately, the
+version~16 security documentation tells you to call
+\code{AllowIntrospection(false)} on the builder. That will not
+compile~\autocite{chillicream2026introspection}. No such method exists on
+\code{IRequestExecutorBuilder} in 16.6.0. \code{AllowIntrospection} lives on
+\code{OperationRequestBuilder}, where it overrides the policy for a single
+request from inside an interceptor, which is a genuinely useful thing but not
+what the page is describing. The builder-level API is \code{DisableIntrospection},
+which takes either a boolean or a function of the service provider, and the
+function form is how the default is implemented. I report this not to score a
+point against a documentation page but because it is exactly the kind of thing
+you will blame on your own setup, and you should not have to.
+
+\subsection*{Running the collection without Postman}
+
+The collection is a file, so it runs anywhere:
+
+\begin{minted}{text}
+npm ci
+npx newman run postman/mosaic.postman_collection.json \
+    -e postman/mosaic.local.postman_environment.json
+\end{minted}
+
+Five requests, eighteen assertions. Mosaic's verify script runs exactly this
+after starting the service, which is what makes the collection a gate rather
+than a convenience. Chapter~\ref{ch:the-postman-federation-workbook} builds this
+out properly, with JWT pre-request scripts, subscription testing and a
+collection that exercises a federated graph through the router. For now the
+useful idea is smaller: the requests you use to poke at a service by hand are
+worth keeping, and once they have assertions on them they are tests.
+
+Run the collection and Mosaic passes every assertion in it. That is worth
+knowing before the next section, which is about how much work it did to get
+there.
+\index{Postman|)}

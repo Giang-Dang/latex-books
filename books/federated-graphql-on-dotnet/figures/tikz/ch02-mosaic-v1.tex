@@ -1,0 +1,55 @@
+% Mosaic at the ch02 tag: six domains in one process, and what is not there
+% yet. Referenced from chapter 02. Bare tikzpicture: the figure environment,
+% caption and label live at the call site. Uses only arrows.meta and positioning.
+\begin{tikzpicture}[
+    font=\small,
+    dom/.style={draw, rounded corners=2pt, minimum width=25mm,
+                minimum height=9mm, align=center},
+    store/.style={draw, rounded corners=2pt, minimum width=62mm,
+                  minimum height=9mm, align=center},
+    entry/.style={draw, thick, rounded corners=2pt, minimum width=34mm,
+                  minimum height=9mm, align=center},
+    consumer/.style={draw, dotted, rounded corners=2pt, minimum width=24mm,
+                     minimum height=8mm, align=center},
+    later/.style={draw=gray, dashed, text=gray, rounded corners=2pt,
+                  minimum width=27mm, minimum height=11mm, align=center},
+    flow/.style={-{Stealth[length=2mm]}, thick},
+    note/.style={font=\scriptsize\itshape, align=center},
+    laternote/.style={font=\scriptsize\itshape, align=center, text=gray}
+  ]
+
+  \node[consumer] (client) at (3.0,5.1) {a client};
+  \node[entry]    (entry)  at (3.0,3.5) {\texttt{/graphql}};
+
+  \draw[flow] (client) -- (entry);
+  \draw[flow] (entry.south) -- (3.0,2.2);
+
+  \node[dom] (cat) at (-3.1,1.35) {Catalog};
+  \node[dom] (pri) at ( 0,   1.35) {Pricing};
+  \node[dom] (inv) at ( 3.1, 1.35) {Inventory};
+  \node[dom] (rev) at (-3.1, 0.25) {Reviews};
+  \node[dom] (acc) at ( 0,   0.25) {Accounts};
+  \node[dom] (ord) at ( 3.1, 0.25) {Ordering};
+
+  \node[store] (data) at (0,-1.15) {seeded in-memory data};
+  \node[note, anchor=north] at (0,-1.8)
+    {chapter 4 replaces this with a real database};
+
+  % The one process everything ships in.
+  \draw[thick] (-4.75,2.2) rectangle (4.75,-2.35);
+  \node[anchor=south west, font=\small\itshape] at (-4.75,2.2)
+    {Mosaic v1: one process, one deployable};
+
+  % Deliberately absent at this tag.
+  \node[laternote, anchor=north] at (0,-2.6)
+    {dashed grey: not in v1, and deliberately so};
+
+  \node[later] (db)     at (-3.1,-3.7) {a real\\database};
+  \node[later] (router) at ( 0,  -3.7) {a router\\in front};
+  \node[later] (split)  at ( 3.1,-3.7) {separate\\services};
+
+  \node[laternote, anchor=north] at (-3.1,-4.45) {chapter 4};
+  \node[laternote, anchor=north] at ( 0,  -4.45) {chapter 10};
+  \node[laternote, anchor=north] at ( 3.1,-4.45) {chapters 8 and 12};
+
+\end{tikzpicture}

@@ -1,0 +1,96 @@
+\section{The development loop}
+\label{sec:ch02-dev-loop}
+
+A schema you did not write by hand is a schema you have to go and look at. That
+is the one genuine cost of the implementation-first style, and it shapes how you
+work day to day: the loop is edit, restart, look at what the schema became.
+
+\index{HotChocolate!eager initialisation}%
+The restart is better than it used to be. HotChocolate~16 builds the schema
+eagerly during application startup rather than lazily on the first
+request~\autocite{chillicream2026migrate16}. If you have written HotChocolate
+before, this is the change most likely to alter your habits, and it is worth
+being concrete about the difference. Under lazy initialisation a schema mistake
+was a broken response to whoever sent the first query, which in practice meant
+you found it in the IDE and sometimes in staging. Now the process fails to start.
+A container with a bad schema never becomes healthy, which turns a class of
+error that used to reach a client into a deployment that visibly did not happen.
+If you had \code{InitializeOnStartup()} in an older service, delete it; the
+behaviour is the default now.
+
+\index{schema!export}%
+The second habit is exporting the schema to a file. The template wires this up
+already, through the last line of \code{Program.cs}:
+
+\begin{minted}{csharp}
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+That call gives the executable a command line as well as a web server, so the
+same project that serves the graph can print it:
+
+\begin{minted}{text}
+dotnet run --project src/Mosaic.Api -- \
+    schema export --output schema/mosaic.graphql
+\end{minted}
+
+The exporter also drops a \code{mosaic-settings.json} next to the SDL, which you
+almost certainly do not want in the repository; Mosaic gitignores it.
+
+Mosaic commits the schema itself. That is the part I would push hardest on if I
+were reviewing somebody else's HotChocolate service, because it converts an
+invisible change into a visible one. Rename a resolver method and the schema changes;
+nothing in the C\# diff says so, and a reviewer reading the pull request has to
+know HotChocolate's naming rules well enough to notice. With the schema in the
+repository, the same pull request carries a diff that says \code{price} became
+\code{unitPrice} in as many words. Mosaic's verify script regenerates the file
+and fails if it differs from the committed copy, so the two cannot drift apart
+quietly.
+
+That check earns its place in a way I did not anticipate. Exported SDL turns out
+to include things nobody typed:
+
+\begin{graphqlsdl}
+type Query {
+  products: [Product!]! @cost(weight: "10")
+  productById(id: ID!): Product @cost(weight: "10")
+}
+\end{graphqlsdl}
+
+\index{HotChocolate!cost analysis}%
+The \code{@cost} directives come from HotChocolate~16's cost analyzer, which is
+one of the defaults \code{AddGraphQLServer()} applies, and the weights are
+assigned by the server rather than by you. Which fields get one is not arbitrary,
+and working out the rule took me an afternoon that I will save you: an
+asynchronous resolver gets a default weight, and so does a resolver supplied as
+a delegate, because a delegate is opaque to the analyzer. A resolver written as
+a method on a class, which HotChocolate compiles and can inspect, gets no weight
+at all when it is synchronous and takes nothing but field arguments. I found
+this because two of the sample projects from
+section~\ref{sec:ch02-two-ways} refused to produce identical schemas, and the
+whole difference was one resolver written as a lambda.
+
+\index{Nitro!schema browsing}%
+For looking at the schema rather than diffing it, Nitro is already running at
+the endpoint. Create a document, point it at
+\code{http://localhost:5100/graphql}, and the Schema tab renders the types while
+the Schema Definition tab shows raw SDL. It is the fastest way to answer
+\enquote{did that field come out with the name I expected}, which in a
+generated schema is a question you ask a lot.
+
+So the loop is: change a type, restart and let startup tell you if the schema is
+broken, export and read the diff if you meant to change the contract, and open
+Nitro when you want to see the shape rather than the text.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch02-dev-loop}
+  \caption{The cycle this section describes. The two branches off it are what
+  make a generated schema manageable: startup fails loudly when the schema is
+  wrong, and the committed SDL file turns a change in the contract into
+  something a reviewer can read.}
+  \label{fig:ch02-dev-loop}
+\end{figure}
+
+There is one more tool in the loop, and it is the one the rest of this book
+leans on hardest.

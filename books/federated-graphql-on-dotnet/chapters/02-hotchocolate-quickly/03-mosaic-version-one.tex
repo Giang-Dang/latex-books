@@ -1,0 +1,146 @@
+\section{Mosaic, version one}
+\label{sec:ch02-mosaic-v1}
+\index{Mosaic|(}
+
+Mosaic sells furniture, lighting, kitchen equipment, textiles and storage. The
+seeded catalog has twenty-five products in it, which is enough to make a list
+query interesting and few enough that you can read the whole thing in one
+listing if you want to.
+
+Catalog owns what a product \emph{is}:
+
+\begin{minted}{csharp}
+public sealed record Product(
+    Guid Id,
+    string Sku,
+    string Title,
+    string? Description,
+    ProductCategory Category);
+\end{minted}
+
+Five properties, and none of them is the price. That omission is the whole
+design and I will come back to it in the next section.
+
+\index{Mosaic!in-memory data}%
+The data lives in memory, in a singleton holding a list built from a C\#
+collection expression. There is no database in this chapter.
+Chapter~\ref{ch:data-without-the-n-plus-1} brings EF~Core and Postgres, and
+doing it here would mean spending a third of a chapter called \emph{quickly} on
+connection strings. Product identifiers come from a fixed pattern rather than
+being random:
+
+\begin{minted}{csharp}
+public static Guid ProductId(int n) =>
+    new($"a0000000-0000-4000-8000-{n:D12}");
+\end{minted}
+
+That looks like a shortcut and it is doing real work. The other five domains
+need to refer to products, and each of them writes its own copy of this helper
+rather than calling Catalog's. It is duplication, deliberately, because after
+chapter~\ref{ch:strangling-the-monolith} these domains are separate services
+that cannot share a file, and the identifier is the only contract left between
+them. Seed data that models the eventual boundary is easier to split than seed
+data that models a shared C\# assembly.
+
+\index{Mosaic!CatalogService}%
+Between the data and the graph sits a service:
+
+\begin{minted}{csharp}
+public sealed class CatalogService(
+    InMemoryCatalogData data,
+    ServiceCallCounter counter)
+{
+    public async Task<Product?> GetProductByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        await counter.RecordLookupAsync(cancellationToken);
+        return data.Products.FirstOrDefault(p => p.Id == id);
+    }
+}
+\end{minted}
+
+Three things about that method are choices rather than accidents. It takes one
+key and answers about one thing, and there is no overload anywhere in Mosaic
+that accepts a list of identifiers. It returns a \code{Task} even though a
+linear scan of a list in memory is synchronous, so that the signature does not
+have to change when the work becomes genuinely asynchronous. And it tells a
+counter that a lookup happened, which is how
+section~\ref{sec:ch02-still-wrong} gets its number.
+
+The root fields are a static class with the \code{[QueryType]} attribute:
+
+\begin{minted}{csharp}
+[QueryType]
+public static partial class CatalogQueries
+{
+    public static Task<IReadOnlyList<Product>> GetProductsAsync(
+        CatalogService catalog,
+        CancellationToken cancellationToken)
+        => catalog.GetProductsAsync(cancellationToken);
+
+    public static Task<Product?> GetProductByIdAsync(
+        [ID] Guid id,
+        CatalogService catalog,
+        CancellationToken cancellationToken)
+        => catalog.GetProductByIdAsync(id, cancellationToken);
+}
+\end{minted}
+
+\index{HotChocolate!resolver parameters}%
+Note what the parameters are doing. \code{id} is a GraphQL argument,
+\code{catalog} is a service resolved from the container, and
+\code{cancellationToken} is neither. HotChocolate decides which is which by
+looking at the type and at what is registered in dependency injection, and it
+gets this right almost always. When it gets it wrong the failure is memorable:
+forget to register a service and HotChocolate concludes the parameter must be an
+argument, tries to build an input type out of it, and the schema fails to build
+with \enquote{No compatible constructor found for input type}. The service is
+not missing, in its view. It has been promoted.
+
+\index{HotChocolate!ID scalar}%
+The last piece is a single-field type extension:
+
+\begin{minted}{csharp}
+[ObjectType<Product>]
+public static partial class ProductNode
+{
+    [ID]
+    public static Guid GetId([Parent] Product product) => product.Id;
+}
+\end{minted}
+
+That is the same \code{[ID]} correction from
+section~\ref{sec:ch02-two-ways}, and the new part is \code{[Parent]}, which
+marks the object the field is being resolved on. It is a small thing, but it is
+the first example of the pattern that the next section is built on: a class
+whose entire job is to add one field to a type declared somewhere else.
+
+Ask for a product and you get one:
+
+\begin{minted}{graphql}
+{
+  productById(id: "a0000000-0000-4000-8000-000000000001") {
+    sku
+    title
+    category
+  }
+}
+\end{minted}
+
+\begin{minted}{json}
+{
+  "data": {
+    "productById": {
+      "sku": "MOS-FRN-0001",
+      "title": "Larsen Oak Dining Table",
+      "category": "FURNITURE"
+    }
+  }
+}
+\end{minted}
+
+That is Catalog, complete. It is also, on its own, an entirely ordinary GraphQL
+service of the kind chapter~\ref{ch:why-one-graph-is-never-enough} said was the
+right first move. The interesting part starts when the other five domains want a
+say in what a product looks like.

@@ -1,7 +1,28 @@
 \chapter{HotChocolate, Quickly}
 \label{ch:hotchocolate-quickly}
 
-\emph{Not yet drafted.} Planned scope: A first HotChocolate service on .NET 10; annotation-based, code-first, and schema-first approaches and when each wins; the Mosaic monolith v1; the development loop with Postman (introspection, variables, auth headers).
+Chapter~\ref{ch:why-one-graph-is-never-enough} was an argument. This one is a
+service. By the end of it Mosaic exists as running code on .NET~10, with six
+domains inside one deployable, and you will have queried it from a browser and
+from Postman.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/02-hotchocolate-quickly/01-section-name}
+The word \emph{quickly} in the title is a promise about the first section only.
+HotChocolate will serve a schema after about six lines of setup, and I want to
+get that out of the way early so the rest of the chapter can be spent on the
+decisions that actually cost something later: which of the ways to describe a
+type you commit to, where a field lives when four teams have a claim on the type
+it hangs from, and what a development loop looks like when the schema is
+generated rather than written.
+
+I also want to end the chapter with something broken. Mosaic as this chapter
+leaves it does a stupid amount of work to answer one query, and it does it on
+purpose. Section~\ref{sec:ch02-still-wrong} counts exactly how much.
+
+\input{chapters/02-hotchocolate-quickly/01-the-smallest-service-that-works}
+\input{chapters/02-hotchocolate-quickly/02-two-ways-to-describe-a-type}
+\input{chapters/02-hotchocolate-quickly/03-mosaic-version-one}
+\input{chapters/02-hotchocolate-quickly/04-six-domains-one-deployable}
+\input{chapters/02-hotchocolate-quickly/05-the-development-loop}
+\input{chapters/02-hotchocolate-quickly/06-postman-and-introspection}
+\input{chapters/02-hotchocolate-quickly/07-what-is-still-wrong}
+\input{chapters/02-hotchocolate-quickly/08-your-turn}

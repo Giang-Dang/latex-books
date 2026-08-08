@@ -1,0 +1,147 @@
+\section{Six domains, one deployable}
+\label{sec:ch02-six-domains}
+
+The \code{Product} that chapter~\ref{ch:why-one-graph-is-never-enough} sketched
+had eight fields on it and four owners: merchandising writes the title,
+pricing sets what it costs today, the warehouse counts what is on the shelf, and
+customers supply the opinions. That was presented as the problem. Here it is as
+a directory listing:
+
+\begin{minted}{text}
+src/Mosaic.Api/
+  Catalog/    Pricing/    Inventory/
+  Reviews/    Accounts/   Ordering/
+  Infrastructure/
+\end{minted}
+
+\index{Mosaic!domain folders}%
+Each folder has the same three subfolders: \code{Model} for the records,
+\code{Data} for the store and the service, \code{Types} for the GraphQL surface.
+The rule that makes this worth doing is not the folder structure, though. It is
+this: \emph{a field lives in the folder of the domain that owns it, even when it
+hangs off a type another domain declared}.
+
+\code{Product} is a Catalog record. \code{Product.price} is not a property on it.
+It is a resolver in Pricing's folder:
+
+\begin{minted}{csharp}
+[ObjectType<Product>]
+public static partial class ProductPricingNode
+{
+    public static async Task<Money> GetPriceAsync(
+        [Parent] Product product,
+        PricingService pricing,
+        CancellationToken cancellationToken)
+    {
+        var price = await pricing.GetPriceByProductIdAsync(product.Id, cancellationToken);
+
+        return price?.Amount
+            ?? throw new InvalidOperationException(
+                $"No price is seeded for product {product.Id}.");
+    }
+}
+\end{minted}
+
+Inventory does the same for the stock count, and Reviews for the review list and
+the average rating. Four classes in four folders contribute to one
+\code{Product}, and Ordering does the same trick in the other direction,
+attaching \code{product} to its own \code{OrderLine} type by reaching into
+Catalog.
+
+\index{HotChocolate!type extensions}%
+This works because \code{[ObjectType<T>]} is not exclusive. Several classes in
+one assembly can extend the same type, and the source generator merges them.
+I want to flag that I did not take this on faith: the documented examples of the
+pattern put each extension in a separate assembly, which is what a federated
+service looks like, and I could not find it stated anywhere that a single
+assembly may do it too. So I wrote a throwaway project with two
+\code{[ObjectType<Product>]} classes in it before committing the layout to a
+book. It compiles, and both fields appear.
+
+The generated SDL is one type assembled from four folders:
+
+\begin{graphqlsdl}
+type Product {
+  id: ID!
+  availableQuantity: Int!
+  price: Money!
+  reviews: [Review!]!
+  averageRating: Float
+  sku: String!
+  title: String!
+  description: String
+  category: ProductCategory!
+}
+\end{graphqlsdl}
+
+\index{HotChocolate!field ordering}%
+The field order is worth a glance, because it is not the order anybody wrote.
+Fields declared by extension classes come first, then the record's own inferred
+properties. If you are diffing exported schemas in code review, and
+section~\ref{sec:ch02-dev-loop} argues you should be, expect a new resolver to
+appear in the middle of a type rather than at the end.
+
+\subsection*{Why this layout and not the obvious one}
+
+The obvious layout is \code{Models/}, \code{Services/} and \code{Types/} at the
+project root, with everything of a kind together. It is what most .NET samples
+do and there is nothing wrong with it for a service that will stay one service.
+
+Mosaic will not stay one service, and that changes the arithmetic.
+Chapter~\ref{ch:the-first-cut-extracting-catalog} lifts Catalog out into its own
+subgraph. Under the layout above that is a \code{git mv} of one folder, a new
+project, and a four-line \code{Product} stub in the remaining monolith carrying
+nothing but the key. Not one resolver body changes, because Pricing's price
+resolver was never in Catalog's file to begin with. Under the type-per-folder
+layout, the same extraction means opening three shared folders and deciding, file
+by file, which half of each one is leaving. I have done the second kind of split
+and would rather not describe it in a chapter I want people to enjoy.
+
+\index{Mosaic!domain dependencies}%
+The dependencies between domains also all point one way. Pricing, Inventory,
+Reviews and Ordering reference Catalog's \code{Product}. Reviews and Ordering
+reference Accounts' \code{Customer}. Catalog references nobody. That acyclic
+shape is why Catalog is the domain that can be extracted first, and
+chapter~\ref{ch:the-first-cut-extracting-catalog} collects
+on it. If you are laying out your own service with a future split in mind, the
+question to ask of each dependency is not whether it is tidy but whether it
+points at something you could deploy separately tomorrow.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch02-mosaic-v1}
+  \caption{Mosaic at the end of this chapter. Six domains, one process, one
+  endpoint, and a seeded list where a database will go. The dashed additions are
+  the ones the book spends Parts~I to~III putting in, and the seams they follow
+  are the folder boundaries that already exist.}
+  \label{fig:ch02-mosaic-v1}
+\end{figure}
+
+\subsection*{Registration}
+
+Program.cs ends up reading as a manifest of what Mosaic is made of:
+
+\begin{minted}{csharp}
+builder.Services
+    .AddCatalogDomain()
+    .AddPricingDomain()
+    .AddInventoryDomain()
+    .AddReviewsDomain()
+    .AddAccountsDomain()
+    .AddOrderingDomain();
+
+builder.AddGraphQL().AddMosaic();
+\end{minted}
+
+Six lines of dependency injection, one line of GraphQL. The asymmetry is the
+point of the module attribute from section~\ref{sec:ch02-smallest-service}:
+because the generator works across the whole assembly, adding a domain folder
+does not mean adding a GraphQL registration. It means adding a service
+registration and nothing else.
+
+That list is also the file
+chapter~\ref{ch:the-first-cut-extracting-catalog} cuts in half.
+
+Mosaic is now a service rather than an argument. What it is not yet is
+something you can work on comfortably, and that is the next thing to fix.
+\index{Mosaic|)}

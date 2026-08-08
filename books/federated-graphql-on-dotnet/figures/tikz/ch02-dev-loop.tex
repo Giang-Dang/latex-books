@@ -1,0 +1,43 @@
+% The edit and check cycle, with the SDL snapshot hanging off it. Referenced
+% from chapter 02. Bare tikzpicture: the figure environment, caption and label
+% live at the call site. Uses only arrows.meta and positioning.
+\begin{tikzpicture}[
+    font=\small,
+    stage/.style={draw, rounded corners=2pt, minimum width=27mm,
+                  minimum height=12mm, align=center},
+    cmd/.style={draw, rounded corners=2pt, minimum width=38mm,
+                minimum height=12mm, align=center},
+    art/.style={draw, thick, rounded corners=2pt, minimum width=34mm,
+                minimum height=12mm, align=center},
+    flow/.style={-{Stealth[length=2mm]}, thick},
+    note/.style={font=\scriptsize\itshape, align=center}
+  ]
+
+  \node[stage] (edit)    at (-2.9, 1.5) {edit a\\C\# type};
+  \node[stage] (restart) at ( 2.9, 1.5) {restart\\the service};
+  \node[stage] (schema)  at ( 2.9,-1.5) {the schema\\changes};
+  \node[stage] (probe)   at (-2.9,-1.5) {re-introspect\\in Postman};
+
+  \draw[flow] (edit)    -- (restart);
+  \draw[flow] (restart) -- (schema);
+  \draw[flow] (schema)  -- (probe);
+  \draw[flow] (probe)   -- (edit);
+
+  \node[note, anchor=south] at (0,2.25)
+    {the schema is built eagerly at startup:\\
+     a mistake fails here, not on the first query};
+
+  \node[note, anchor=north] at (-2.9,-2.25)
+    {introspection answers\\only in Development};
+
+  % The branch that turns a schema change into a diff.
+  \node[cmd] (export)   at (2.9,-3.5) {\texttt{dotnet run}\\\texttt{-- schema export}};
+  \node[art] (snapshot) at (2.9,-5.4) {committed SDL\\snapshot};
+
+  \draw[flow] (schema) -- (export);
+  \draw[flow] (export) -- (snapshot);
+
+  \node[note, anchor=north] at (2.9,-6.1)
+    {this is what makes a schema\\change show up in a diff};
+
+\end{tikzpicture}

@@ -1,0 +1,209 @@
+\section{Two ways to describe a type}
+\label{sec:ch02-two-ways}
+\index{schema!authoring styles|(}
+
+Every GraphQL server in .NET has to answer the same question: where does the
+schema come from? You can write C\# and let the server work out the schema, or
+you can write the schema and let the server work out where to send the calls.
+HotChocolate has historically supported both, in three named flavours, and if
+you have read about this before you probably learned them as annotation-based,
+code-first, and schema-first.
+
+That vocabulary is out of date. HotChocolate~16's documentation names two
+authoring styles under a heading that says so plainly: \enquote{Hot Chocolate
+offers two C\# authoring styles, both of which produce GraphQL
+SDL}~\autocite{chillicream2026typesystem}. They are called
+\emph{implementation-first} and \emph{code-first}. The term
+\enquote{annotation-based} has been retired, and the third style has quietly
+left the documentation altogether. It still works; it is just no longer written
+down.
+
+The comparison below uses one deliberately small schema so the three versions
+fit side by side. It lives in the companion repository under
+\code{samples/three-approaches}, as three projects that run on three ports. All
+three serve exactly this:
+
+\begin{graphqlsdl}
+type Query {
+  productById(id: ID!): Product
+}
+
+type Product {
+  id: ID!
+  sku: String!
+  title: String!
+}
+\end{graphqlsdl}
+
+\subsection*{Implementation-first}
+
+\index{schema!implementation-first}%
+C\# types are the source of truth, and attributes adjust what the server infers
+from them.
+
+\begin{minted}{csharp}
+[QueryType]
+public static partial class CatalogQueries
+{
+    public static Product? GetProductById([ID] Guid id) => Catalog.ById(id);
+}
+
+[ObjectType<Product>]
+public static partial class ProductNode
+{
+    [ID]
+    public static Guid GetId([Parent] Product product) => product.Id;
+}
+\end{minted}
+
+\code{Product} itself is a plain record, and its \code{Sku} and \code{Title}
+properties become fields with no further ceremony. The only reason
+\code{ProductNode} exists is to say that the identifier is an \code{ID} and not
+a \code{UUID}, which is the default mapping for a \code{Guid}. Registration is
+the one generated line from the previous section:
+
+\begin{minted}{csharp}
+builder.AddGraphQL().AddCatalog();
+\end{minted}
+
+\subsection*{Code-first}
+
+\index{schema!code-first}%
+The same schema, described through the descriptor API. Nothing is inferred.
+
+\begin{minted}{csharp}
+public sealed class ProductType : ObjectType<Product>
+{
+    protected override void Configure(IObjectTypeDescriptor<Product> descriptor)
+    {
+        descriptor.Name("Product");
+
+        descriptor.Field(p => p.Id).Type<NonNullType<IdType>>();
+        descriptor.Field(p => p.Sku).Type<NonNullType<StringType>>();
+        descriptor.Field(p => p.Title).Type<NonNullType<StringType>>();
+    }
+}
+\end{minted}
+
+Registration names every type, because a type that is not reachable from
+\code{AddQueryType} through \code{AddType} is not in the schema:
+
+\begin{minted}{csharp}
+builder.AddGraphQL()
+    .AddQueryType<QueryType>()
+    .AddType<ProductType>();
+\end{minted}
+
+It is worth saying that this API survived HotChocolate~16 untouched. The release
+rearchitected the type system, and I half expected the descriptors to change
+shape along with it, but \code{ObjectType<T>},
+\code{IObjectTypeDescriptor<T>} and \code{Configure} are exactly where they were.
+Code-first is not a legacy path.
+
+\subsection*{And schema-first}
+
+\index{schema!schema-first}%
+The third style writes SDL and binds runtime types to it.
+
+\begin{minted}{csharp}
+const string Sdl =
+    """
+    type Query {
+      productById(id: ID!): Product
+    }
+
+    type Product {
+      id: ID!
+      sku: String!
+      title: String!
+    }
+    """;
+
+builder.AddGraphQL()
+    .AddDocumentFromString(Sdl)
+    .BindRuntimeType<Product>("Product")
+    .AddResolver<QueryResolvers>("Query");
+\end{minted}
+
+That compiles and runs against 16.6.0, and I have the exported schema to prove
+it. But there is no page about it anywhere in the version~16 documentation. Not
+a deprecated page, not a page with a warning banner: the whole documentation
+tree has nothing on schema-first, and the tab that used to sit alongside the
+other two in the code samples is gone.
+
+The API is alive, though. All four of the calls above ship in 16.6.0 without an
+\code{[Obsolete]} attribute between them, and the repository still has tests
+exercising them at that tag~\autocite{chillicream2026source}. So the honest
+description is: supported, tested, and undocumented. Whether that is a
+deliberate soft retirement or an oversight I cannot tell you, and I would
+rather say so than guess.
+
+Two things have moved, if you are porting older schema-first code.
+\code{BindComplexType} is gone and \code{BindRuntimeType} replaces it, and
+\code{AddSchemaConfiguration} is now internal and cannot be called from your
+code. Search results will happily hand you pages describing both, from a
+documentation repository ChilliCream retired years ago. Stale documentation
+outranking current documentation is not specific to HotChocolate, and the
+defence is the same everywhere: for anything version-sensitive, read the source
+tree at a release tag before you read the first page of results.
+
+\subsection*{What Mosaic uses, and why}
+
+Mosaic is implementation-first throughout, and since every chapter from here
+inherits that decision it deserves a reason rather than a preference.
+
+\index{HotChocolate!analyzers}%
+The strongest argument is that HotChocolate~16 has put its tooling behind it.
+The source generator, the \code{[DataLoader]} attribute that
+chapter~\ref{ch:data-without-the-n-plus-1} needs, and a set of compile-time
+analyzers with code fixes all key off the attributes; version~16 added twelve
+new analyzers at error severity on its own~\autocite{chillicream2026migrate16}.
+Descriptors get none of that: a mistake in a \code{Configure} method is a
+runtime schema error, while the same mistake in an attributed class is a red
+squiggle with a suggested fix. For a book whose thesis is that you should earn
+the right to distribute before you distribute, taking the compile-time help is
+the consistent choice.
+
+Second, the generated code is something we can open and read.
+Chapter~\ref{ch:the-life-of-a-request} answers the question \enquote{how does
+HotChocolate know about my types} by looking at the file the generator wrote,
+and chapter~\ref{ch:inside-hotchocolate} goes considerably further. Descriptors
+would leave nothing to look at but reflection.
+
+Third, and this is the one that matters most for the shape of the book, an
+extension class lets a field live in a different file from the type it hangs
+off, with no central registration list to edit. That is what
+section~\ref{sec:ch02-six-domains} is about, and it is what makes
+chapter~\ref{ch:the-first-cut-extracting-catalog} a move rather than a rewrite.
+
+Fourth, and last, federation is expressed with attributes. Part~II runs on
+\code{[Key]} and \code{[ReferenceResolver]}, which are the documented path in
+the federation package, so an implementation-first service is already speaking
+the right language when it becomes a subgraph.
+
+I want to be precise about what that decision is not. It is not a claim that
+descriptors are worse. They are the escape hatch, and they are the only route to
+a schema whose shape is decided at runtime. Mosaic will reach for one when an
+attribute cannot express what a type needs, and when that happens in Part~III it
+should read as planned rather than as a reversal.
+
+\subsection*{One schema, three descriptions}
+
+Run all three sample projects and export all three schemas, and the files are
+identical. Not equivalent: identical, same bytes, same hash. The style you pick
+changes who maintains what and which mistakes the compiler catches. It changes
+nothing at all about what a client sees.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch02-authoring-styles}
+  \caption{Three descriptions, one schema, one SDL document. The choice is a
+  maintenance decision made inside the service, and it is invisible from
+  outside it. Schema-first is drawn apart because it still works but no longer
+  appears in the version~16 documentation.}
+  \label{fig:ch02-authoring-styles}
+\end{figure}
+
+That is also why the exercise at the end of this chapter asks you to prove it
+rather than take my word for it.
+\index{schema!authoring styles|)}

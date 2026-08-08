@@ -11,9 +11,10 @@ Author: Giang Dang
 
 ## Status
 
-Chapter 01 drafted (2026-08-08); everything else is scaffold. Next action:
-create the companion repo F:/repo/mosaic-graph, which chapter 02 needs before
-it can be drafted.
+Chapters 01 and 02 drafted (2026-08-08). The companion repo exists, is public
+at https://github.com/Giang-Dang/mosaic-graph, and is tagged `ch02`. Next
+action: chapter 03, which walks the request lifecycle against that same
+service; nothing blocks it.
 
 ## Decision log
 
@@ -45,6 +46,13 @@ is re-opened only by recording what changed and why, in the row.
 | 21 | Illustrative SDL before the companion repo exists | Allowed, and only in the conceptual chapters that precede it. Short GraphQL SDL sketches may appear when the prose frames them as sketches rather than as code from the repo; no C# until the repo exists. This reads the "no listings that pretend to be real code" rule as a ban on fake provenance, not a ban on schema illustration. Settled 2026-08-08 while drafting ch 01. |
 | 22 | Ch 01 "Your turn" lab | No-code assessment: the reader audits a graph they own, or GitHub's public schema, against the chapter's failure modes. Ch 01 predates the companion repo, so it cannot cite a repo tag; the repo-tag form of the lab resumes at ch 02. Settled 2026-08-08. |
 | 23 | How SDL is typeset | Two environments. Executable GraphQL (queries, mutations, fragments) uses `\begin{minted}{graphql}`; SDL uses `\begin{graphqlsdl}`, defined in preamble/packages.tex as minted's Ruby lexer under an honest name. Reason: Pygments 2.19.2's graphql lexer has no SDL support and emits red Error boxes on type definitions, `!`, and block strings (315 Error tokens on a representative federation schema, versus 0 for Ruby, which handles `#` comments, type names and `@directives` correctly). A custom Pygments lexer was rejected because minted v3 requires a per-machine `.latexminted_config` to load one, which would break a fresh clone and the pre-commit hook. Revisit if Pygments gains an SDL lexer. Settled 2026-08-08 while drafting ch 01. |
+| 24 | Demo name, settled | "Mosaic" confirmed 2026-08-08, closing the provisional status of decision 20. The companion repo is `mosaic-graph`, namespaces are `Mosaic.*`, and the name is now baked into a public repo, its tags and chapter 01's prose. Renaming from here is no longer a find-and-replace. |
+| 25 | Chapter 02 repo slice | One project, in-memory seeded data, no EF Core and no Postgres. EF Core is chapter 04's subject and spending it early would cost that chapter its material. Settled 2026-08-08. |
+| 26 | Companion repo hosting | Public on GitHub at https://github.com/Giang-Dang/mosaic-graph, so the "check out the tag" labs work for readers. Settled 2026-08-08. |
+| 27 | Postman assets | The repo ships `postman/` with a collection and a local environment from tag `ch02` onward. Five requests, eighteen assertions, run by `scripts/verify.ps1` through newman so the collection is a gate rather than a convenience. Settled 2026-08-08. |
+| 28 | Schema authoring style | Mosaic is **implementation-first** throughout; chapters 03-28 inherit this. Reasons, strongest first: HC 16's source generator and ~40 compile-time analyzers key off the attributes and descriptors get none of it; the generated registration is readable material for ch 03 and 16; `[ObjectType<T>]` lets a field live in its owning domain's folder with no central registration list, which is what makes ch 08's extraction a move rather than a rewrite; and `HotChocolate.ApolloFederation` is attribute-led. Descriptors remain the documented escape hatch and the only route to runtime-shaped schemas; the book says so in ch 02 so that reaching for one later reads as planned. Settled 2026-08-08. |
+| 29 | Chapter tag convention | `chNN` marks the end-of-chapter state of the companion repo (`ch02`, `ch03`, ...); `chNN-<step>` if a chapter ever needs an intermediate state. Chapter prose references tags by name. Settled 2026-08-08. |
+| 30 | The N+1 ships on purpose | Chapter 02's domain services are single-key with no batch overload anywhere, so the catalog-with-reviews query (`{ products { title reviews { rating author { displayName } } } }`, named that way in ch 02 to keep it distinct from the single-product "product page" query of the Postman section) costs 146 lookups. A request-scoped counter reports the number, ch 02 shows it and admits it without naming DataLoader, and ch 04 brings it to 3. Chapter 04 therefore fixes a real measured problem in Mosaic's own code rather than demonstrating on one invented for the occasion. Settled 2026-08-08. |
 
 ## Version baseline
 
@@ -54,7 +62,8 @@ that depend on them.
 
 | Component | Version |
 |-----------|---------|
-| HotChocolate / HotChocolate.ApolloFederation | 16.6.0 (2026-08-05) |
+| HotChocolate / HotChocolate.ApolloFederation | 16.6.0 (2026-08-05). Ships net8.0, net9.0, net10.0 and net11.0 assets; "targets .NET 8+" understates it. Re-confirmed from the nuspec 2026-08-08. |
+| HotChocolate.Templates | 16.6.0. Note the id: `ChilliCream.HotChocolate.Templates` does not exist. |
 | WunderGraph Cosmo (router, wgc CLI) | current as of Aug 2026 - pin exact versions when the companion repo is created |
 | ChilliCream Fusion (ch 27) | 16.5 |
 | Apollo Federation specification | v2.15 (LTS, Jul 2026) |
@@ -68,7 +77,7 @@ session. Chapter folders in chapters/ carry the same scope lines.
 ### Part I - One Service Done Right
 
 1. **Why One Graph Is Never Enough** - single-schema failure modes, team coupling, where federation fits, the Mosaic storefront, first pass at "do you need this" (ch 26 in full)
-2. **HotChocolate, Quickly** - first service on .NET 10; annotation-based vs code-first vs schema-first; Mosaic monolith v1; the Postman dev loop
+2. **HotChocolate, Quickly** - first service on .NET 10; implementation-first vs code-first (and what happened to schema-first); Mosaic monolith v1; the Postman dev loop
 3. **The Life of a Request** - parsing, validation, operation compilation, resolvers, middleware; first source-guided walk
 4. **Data Without the N+1** - EF Core, DataLoader usage and batching internals, projections/filtering/sorting/pagination
 5. **Schema Design That Survives Change** - abstract types, Relay conventions, error design, deprecation, single-service subscriptions
@@ -130,7 +139,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 |---------|--------|-------|
 | Preface | not-started | write last; version-baseline stub in place |
 | 01 | drafted | 2026-08-08. 11 pages, 7 sections, ~6,250 words, 3 TikZ figures, 24 index entries. Sources in research/2026-08-ch01-scaling-and-federation-history.md; 35 real citations replace the knuth1984 placeholder. Lab is the no-code audit of decision 22; its heading is a plain `\section*` with no TOC entry, so revisit whether the apparatus deserves a macro once ch 02-03 have used it too. Not yet reviewed for line-level prose. |
-| 02 | not-started | needs companion repo first |
+| 02 | drafted | 2026-08-08. 18 pages (15-32), 7 numbered sections plus the lab, ~6,600 words, 3 TikZ figures, 35 index entries, 7 citations, 27 listings. First chapter with C# and the first use of minted's csharp lexer; it renders clean. Sources in research/2026-08-ch02-hotchocolate-16.md, which also carries the listing-provenance table. Companion repo tag `ch02`; every listing traceable to a file there and `scripts/verify.ps1` passes. TOC line updated (decision 28) because HC 16 names two authoring styles, not three. Not yet reviewed for line-level prose. |
 | 03 | not-started | |
 | 04 | not-started | |
 | 05 | not-started | |
@@ -189,9 +198,30 @@ Library-wide defaults are in CLAUDE.md; these are this book's additions.
 
 ## Open items
 
-- Companion repo F:/repo/mosaic-graph: create when chapter 02 drafting starts.
-- Demo retailer name "Mosaic" is provisional; confirm or rename before the
-  companion repo is created (rename is a find-and-replace until then).
+- (resolved 2026-08-08) Companion repo created, verified and published:
+  https://github.com/Giang-Dang/mosaic-graph, tag `ch02`. `scripts/verify.ps1`
+  is the gate a tag has to pass; it builds in Release with warnings as errors,
+  checks the committed SDL against a fresh export, asserts 25 products / 120
+  reviews / 146 lookups, and runs the Postman collection through newman.
+- (resolved 2026-08-08) "Mosaic" confirmed as the demo name; see decision 24.
+- The "Your turn" apparatus has now been used twice (ch 01 unlabelled
+  `\section*`, ch 02 the same). It still does not need a macro: the heading is
+  one line and the two labs differ in shape, ch 01 being a no-code audit and
+  ch 02 a six-exercise lab against a repo tag. Revisit if a third form appears
+  or if the labs ever need to be cross-referenced.
+- Chapter 02 leaves three things deliberately unfixed, each promised to a named
+  chapter: `reviews` is a plain list (ch 05 makes it a connection), errors are
+  bare exceptions (ch 05 designs an error model), and nothing is authorised
+  (ch 15). If any of those chapters moves, ch 02's closing section needs
+  updating with it.
+- Chapter 04 inherits a hard number: 146 lookups on the catalog-with-reviews
+  query, down to 3 with DataLoaders. Measured latency for that query at tag
+  `ch02` was a 3 ms mean over ten warmed-up runs; ch 02 quotes it with "I timed"
+  framing, and the reproduction is in the ch 02 research file. `MosaicDataOptions.LookupDelay` ships at zero so
+  ch 04 can make a lookup cost something before Postgres enters the story.
+- The v16 security docs page tells readers to call `AllowIntrospection(false)`
+  on the builder, which does not compile against 16.6.0. Chapter 02 says so.
+  Re-check before ch 25 (security hardening) in case ChilliCream fixes the page.
 - (resolved 2026-08-08) minted builds verified twice: locally on MiKTeX
   (minted v3 needs TEXMF_OUTPUT_DIRECTORY, set in .latexmkrc) and in the one
   CI run that existed before CI was removed. Compile checks now happen in the

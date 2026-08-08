@@ -1,0 +1,59 @@
+\section*{Your turn}
+
+Chapter~\ref{ch:why-one-graph-is-never-enough}'s exercise needed no code. This
+one does. Clone the companion repository and check out the tag for this chapter:
+
+\begin{minted}{text}
+git clone https://github.com/Giang-Dang/mosaic-graph
+cd mosaic-graph
+git checkout ch02
+pwsh scripts/verify.ps1
+\end{minted}
+
+The script builds the solution, checks the committed schema against a freshly
+exported one, starts the service, and runs the Postman collection. If it prints
+\code{PASS} you have the same Mosaic I have. Appendix~\ref{app:toolchain} covers
+the setup in more detail and gives you a tour of the repository.
+
+\begin{enumerate}
+  \item \textbf{Prove the styles are interchangeable.} Run all three projects
+  under \code{samples/three-approaches} and export a schema from each. Diff
+  them, or compare their hashes. Then break one deliberately: rename a field in
+  the code-first descriptor and watch which of the three schemas moves. The
+  point of the exercise is the direction of the arrow, from code to schema, and
+  how little of it a client can see.
+
+  \item \textbf{Add a field, and watch the diff.} Give \code{Product} a
+  \code{weightInGrams}. Put it wherever you think it belongs, then export the
+  schema and look at the diff. Where did the field land in the type, and does
+  that match where you would have written it by hand?
+
+  \item \textbf{Break the schema on purpose.} Give two resolvers on the same
+  type the same GraphQL name. Start the service. Note where the failure happens
+  and what it costs you: with eager initialisation this is a process that will
+  not boot, not a query that returns an error. Now imagine that container going
+  out in a rolling deploy.
+
+  \item \textbf{Move the number.} Section~\ref{sec:ch02-still-wrong} counts 146
+  lookups for the catalog-with-reviews query. Work out, without running it, what
+  the count should be for a query that asks for every product's title and price
+  and nothing else. Then run it and check. If you were wrong, the interesting
+  question is which resolver you forgot.
+
+  \item \textbf{Make a lookup cost something.} In \code{appsettings.json}, set
+  the lookup delay under \code{Mosaic:Data} to five milliseconds and re-run the
+  catalog-with-reviews query. The service does exactly what it did before and
+  the schema is unchanged. Write down the new response time before you look at
+  it, then look.
+
+  \item \textbf{Lose introspection.} Start the service with
+  \code{ASPNETCORE\_ENVIRONMENT=Production} and try to refresh the schema in
+  Postman. Read the error. This is the failure mode most likely to greet you the
+  first time you point a tool at a deployed graph, and it is much less alarming
+  when you have seen it on purpose.
+\end{enumerate}
+
+Exercise~5 is the one to sit with. Five milliseconds is a plausible round trip
+to a database on the same network, and it is a number nobody would flag in
+review. Multiply it by the count from exercise~4 and you have the reason
+chapter~\ref{ch:data-without-the-n-plus-1} exists.

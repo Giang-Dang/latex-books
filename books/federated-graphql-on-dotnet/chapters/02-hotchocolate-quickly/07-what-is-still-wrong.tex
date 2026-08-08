@@ -1,0 +1,140 @@
+\section{What is deliberately still wrong}
+\label{sec:ch02-still-wrong}
+
+Ask Mosaic for every product, with every product's reviews, and the name of
+everyone who wrote one. Call this the catalog-with-reviews query; the rest of
+the chapter refers back to it.
+
+\begin{minted}{graphql}
+{
+  products {
+    title
+    reviews {
+      rating
+      author { displayName }
+    }
+  }
+}
+\end{minted}
+
+It answers correctly. I timed ten runs of it against a warmed-up service on my
+own machine and got a mean of three milliseconds. It also does this:
+
+\begin{minted}{text}
+info: Mosaic.ServiceLookups[0]
+      Service lookups this request: 146
+\end{minted}
+
+\index{N+1 problem}%
+One lookup to fetch the product list. Twenty-five more, one per product, to
+fetch each product's reviews. A hundred and twenty more, one per review, to
+fetch each author. One plus twenty-five plus a hundred and twenty is a hundred
+and forty-six round trips through the domain services to answer a single HTTP
+request.
+
+Every one of those is a linear scan of a \code{List<T>} that is already in
+memory, which is why a hundred and forty-six of them still come in under three
+milliseconds. That is exactly why this shape survives into production. Nobody
+profiles a service that answers that fast. The lookups stay single-key and
+unbatched all the way through review, through staging, and through the first six
+months in production. Then somebody puts a database behind the same service, and
+a hundred and forty-six list scans become a hundred and forty-six queries against
+it, without a line of the service changing.
+
+\index{Mosaic!lookup counter}%
+I want to be clear that Mosaic's domain services are written this way on
+purpose. Not one of them has a method that takes a list of identifiers. That
+omission is the subject of chapter~\ref{ch:data-without-the-n-plus-1}, which
+brings EF~Core, explains what a DataLoader does, and brings the same query down
+to three lookups. Building the naive version first means that chapter gets to
+fix something real rather than demonstrate on a problem invented for the
+occasion.
+
+\subsection*{Why the first counter reported 1}
+
+\index{HotChocolate!resolver scopes}%
+Counting those lookups took two attempts, and the reason the first one failed is
+worth more than the number is.
+
+The obvious design is a scoped service: register a counter per request, inject it
+into every domain service, increment it on each lookup, and report the total when
+the scope is disposed at the end of the request. That is standard ASP.NET Core,
+and in Mosaic it produced this:
+
+\begin{minted}{text}
+info: Service lookups this request: 1
+info: Service lookups this request: 1
+info: Service lookups this request: 1
+\end{minted}
+
+A hundred and forty-six times.
+
+HotChocolate resolves a resolver's injected services from a scope of its own,
+one per resolver invocation, rather than from the scope that wraps the HTTP
+request. Every resolver therefore got a freshly constructed counter, watched it
+record exactly one lookup, and disposed it. The total was right in aggregate and
+useless in every individual line. Nothing was broken; my mental model of where
+the scope boundary sat was simply wrong.
+
+The fix is to stop keeping request state in a scoped service and hang it off the
+request instead. A small object goes into \code{HttpContext.Items} in middleware,
+the counter increments it through \code{IHttpContextAccessor}, and the middleware
+reports the total once the response is finished:
+
+\begin{minted}{csharp}
+public static IApplicationBuilder UseServiceCallCounting(this IApplicationBuilder app)
+    => app.Use(async (context, next) =>
+    {
+        var count = new RequestLookupCount();
+        context.Items[ServiceCallCounter.ItemKey] = count;
+
+        await next();
+
+        if (count.Value > 0)
+        {
+            var logger = context.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("Mosaic.ServiceLookups");
+
+            logger.LogInformation("Service lookups this request: {Count}", count.Value);
+        }
+    });
+\end{minted}
+
+The increment is an \code{Interlocked.Increment}, because resolvers run
+concurrently and a hundred and forty-six unsynchronised increments across a
+thread pool will quietly lose a few.
+
+The counter itself is throwaway code. The scoping rule it exposed comes back in
+chapter~\ref{ch:entity-resolution-done-right}, when DataLoaders have to be shared
+across resolvers that are supposedly independent. Resolver lifetime is not
+request lifetime, and anything that has to accumulate across a whole GraphQL
+request has to live somewhere the request owns.
+Chapter~\ref{ch:inside-hotchocolate} takes the execution pipeline apart and shows
+where those scopes are actually created.
+
+\subsection*{The rest of the list}
+
+Three other things in this version of Mosaic are wrong on purpose, and naming
+them here means the later chapters do not have to pretend to discover them.
+
+\code{reviews} returns a plain list. No pagination, no connection type, no way
+to ask for the first ten. Chapter~\ref{ch:schema-design-that-survives-change}
+makes it a Relay connection and needs this version to compare against, since a
+schema change that nobody can see the before-state of is not much of a lesson.
+
+Errors are exceptions. Pricing throws when it cannot find a price for a
+product, and HotChocolate turns that into a GraphQL error with a stack trace
+attached in Development. That is fine for seed-data bugs, which is all it can
+currently be, and it is not an error model.
+Chapter~\ref{ch:schema-design-that-survives-change} builds one.
+
+And nothing is authorised. Any caller can read any customer's orders, given an
+identifier, and the seeded identifiers follow a fixed pattern that makes them
+easy to guess. Chapter~\ref{ch:identity-and-authorization} fixes this properly
+and across service boundaries, which is a harder problem than it looks and not
+one to solve twice.
+
+None of that stops Mosaic being a real GraphQL service. It answers queries, it
+has a schema you can introspect, it runs in a container, and it is the thing the
+next three chapters improve until it is worth distributing.

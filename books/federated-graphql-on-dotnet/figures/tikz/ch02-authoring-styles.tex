@@ -1,0 +1,47 @@
+% Three ways to describe a type, one schema, one SDL document. Referenced from
+% chapter 02. Bare tikzpicture: the figure environment, caption and label live
+% at the call site. Uses only arrows.meta and positioning (loaded in packages.tex).
+\begin{tikzpicture}[
+    font=\small,
+    src/.style={draw, rounded corners=2pt, minimum width=40mm,
+                minimum height=17mm, align=center, font=\scriptsize},
+    odd/.style={draw, dashed, rounded corners=2pt, minimum width=40mm,
+                minimum height=17mm, align=center, font=\scriptsize},
+    core/.style={draw, thick, rounded corners=2pt, minimum width=34mm,
+                 minimum height=12mm, align=center},
+    emit/.style={draw, rounded corners=2pt, minimum width=32mm,
+                 minimum height=12mm, align=center},
+    flow/.style={-{Stealth[length=2mm]}, thick},
+    note/.style={font=\scriptsize\itshape, align=center}
+  ]
+
+  \node[src] (impl) at (-4.8,2.5)
+    {{\small Implementation-first}\\[2pt]
+     C\# types plus attributes,\\
+     read by a source generator};
+
+  \node[src] (code) at (-4.8,0)
+    {{\small Code-first}\\[2pt]
+     descriptor classes:\\
+     \texttt{ObjectType<T>} and\\
+     \texttt{Configure}};
+
+  \node[odd] (schemafirst) at (-4.8,-2.5)
+    {{\small Schema-first}\\[2pt]
+     an SDL document plus\\
+     runtime type bindings};
+
+  \node[core] (schema) at (0,0)   {one schema object\\in memory};
+  \node[emit] (sdl)    at (4.5,0) {the same SDL,\\byte for byte};
+
+  \foreach \s in {impl,code,schemafirst}{%
+    \draw[flow] (\s) -- (schema);
+  }
+  \draw[flow] (schema) -- (sdl);
+
+  \node[note, anchor=south] at (-4.8,3.45)
+    {Mosaic uses implementation-first};
+  \node[note, anchor=north] at (-4.8,-3.5)
+    {dashed: supported, but absent\\from the v16 documentation};
+
+\end{tikzpicture}
