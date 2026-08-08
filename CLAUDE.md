@@ -51,3 +51,24 @@ frontmatter/, chapters/NN-name/, backmatter/, figures/{images,tikz}/, build/ (ge
   commented \babelfont block in that file.
 - Figures: TikZ sources in figures/tikz/, bitmap/PDF assets in figures/images/;
   both are on \graphicspath, so reference them by bare filename.
+
+## Book specs
+
+Every books/<name>/ contains SPEC.md - that book's decision log, approved TOC,
+and progress tracker, started from template/SPEC.md. Read it before any work
+on a book; update its progress table (and its TOC, on structural changes)
+before finishing. A decision recorded there is settled - changing it means
+recording what changed and why in the log, not silently diverging.
+
+## Writing defaults (all books)
+
+Per-book SPEC.md records deviations; otherwise:
+
+- Voice: first-person practitioner - direct, concrete, opinionated where
+  experience warrants it.
+- Prose must read as human-written (the humanizer bar): no inflated
+  symbolism, rule-of-three padding, "isn't just X" framings, or vague
+  attributions.
+- Code shown in a book exists in that book's companion repo and compiles;
+  never present invented listings as real code.
+- ASCII punctuation only in source files - no Unicode dashes or quotes.

@@ -1,0 +1,35 @@
+% Package loads shared by the whole book. Keep hyperref last.
+
+\usepackage{geometry}
+\geometry{a4paper, inner=30mm, outer=25mm, top=25mm, bottom=25mm}
+
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{booktabs}
+\usepackage{csquotes}
+
+\usepackage{graphicx}
+\graphicspath{{figures/images/}{figures/tikz/}}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+% TikZ externalization caches compiled figures between runs; enable it when
+% figure-heavy chapters slow the build down:
+%   1. -shell-escape is already set in .latexmkrc (needed by minted below)
+%   2. uncomment the two lines below
+% \usetikzlibrary{external}
+% \tikzexternalize[prefix=tikz-cache/]
+
+% Code listings: minted v3 (Pygments-based; the csharp and graphql lexers
+% ship with Pygments). Needs -shell-escape and TEXMF_OUTPUT_DIRECTORY, both
+% set in this book's .latexmkrc, and a Python with Pygments on the build
+% machine.
+\usepackage{minted}
+\setminted{autogobble, breaklines, fontsize=\small, tabsize=2}
+
+\usepackage[style=numeric, backend=biber]{biblatex}
+\usepackage{imakeidx}
+
+\usepackage[hidelinks]{hyperref}

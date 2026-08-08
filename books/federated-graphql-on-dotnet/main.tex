@@ -1,0 +1,80 @@
+% !TeX program = lualatex
+% Build with: latexmk   (configured by .latexmkrc; output lands in build/main.pdf)
+\documentclass[11pt,a4paper,twoside,openright]{book}
+
+\input{preamble/packages}
+\input{preamble/fonts}
+\input{preamble/macros}
+
+\addbibresource{refs.bib}
+\makeindex[intoc]
+
+% Drafting aid for large books: uncomment to recompile only the listed
+% chapters while keeping page numbers and cross-references intact.
+% Comment it out again before a release build.
+% \includeonly{chapters/01-why-one-graph-is-never-enough/ch}
+
+\begin{document}
+
+\frontmatter
+\input{frontmatter/titlepage}
+\input{frontmatter/copyright}
+\tableofcontents
+\input{frontmatter/preface}
+
+\mainmatter
+
+\part{One Service Done Right}
+\include{chapters/01-why-one-graph-is-never-enough/ch}
+\include{chapters/02-hotchocolate-quickly/ch}
+\include{chapters/03-the-life-of-a-request/ch}
+\include{chapters/04-data-without-the-n-plus-1/ch}
+\include{chapters/05-schema-design-that-survives-change/ch}
+
+\part{Thinking in Entities}
+\include{chapters/06-the-federation-model/ch}
+\include{chapters/07-how-a-federated-query-actually-runs/ch}
+\include{chapters/08-the-first-cut-extracting-catalog/ch}
+\include{chapters/09-composition/ch}
+\include{chapters/10-enter-the-router/ch}
+
+\part{Decomposition in Practice}
+\include{chapters/11-entity-resolution-done-right/ch}
+\include{chapters/12-strangling-the-monolith/ch}
+\include{chapters/13-hard-modeling-problems/ch}
+\include{chapters/14-real-time-in-a-federated-world/ch}
+\include{chapters/15-identity-and-authorization/ch}
+
+\part{The Machinery}
+\include{chapters/16-inside-hotchocolate/ch}
+\include{chapters/17-inside-the-router-and-the-composer/ch}
+\include{chapters/18-the-wire-completely/ch}
+
+\part{Confidence}
+\include{chapters/19-the-postman-federation-workbook/ch}
+\include{chapters/20-automated-tests/ch}
+
+\part{Production}
+\include{chapters/21-self-hosting-cosmo/ch}
+\include{chapters/22-ci-cd-for-a-federated-graph/ch}
+\include{chapters/23-observability/ch}
+\include{chapters/24-resilience-and-performance/ch}
+\include{chapters/25-security-hardening/ch}
+
+\part{The Landscape and the Road Ahead}
+\include{chapters/26-do-you-actually-need-federation/ch}
+\include{chapters/27-fusion/ch}
+\include{chapters/28-the-gateway-market-and-the-future/ch}
+
+\appendix
+\include{backmatter/appendix-a-toolchain}
+\include{backmatter/appendix-b-aspire}
+\include{backmatter/appendix-c-hotchocolate-14}
+\include{backmatter/appendix-d-directives-reference}
+\include{backmatter/appendix-e-composition-errors}
+
+\backmatter
+\printbibliography[heading=bibintoc]
+\printindex
+
+\end{document}
