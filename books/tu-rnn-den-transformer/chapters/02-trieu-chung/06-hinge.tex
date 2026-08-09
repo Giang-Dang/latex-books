@@ -1,0 +1,42 @@
+% 05-hinge.tex -- What we proved, what we didn't, handoff to chapter 03
+%
+% Scope: summary of empirical findings; what remains unanswered; explicit
+% handoff to Pascanu 2013 chapter.
+
+\section{Điều chương này chứng minh, và điều nó chưa}
+\label{sec:ch02-hinge}
+
+Chương này không có định lý. Nó có ba bảng số liệu và hai hộp cầu nối. Nhưng
+những con số đó nói một điều rất rõ: RNN với hàm kích hoạt $\tanh$ và huấn
+luyện bằng BPTT \textbf{không học được phụ thuộc dài hạn} khi chuỗi vượt quá
+một độ dài nhất định. Ở bài toán sao chép với $T_{\text{mem}} = 20$, gradient
+tại bước đầu tiên yếu hơn gradient tại bước cuối cùng 25 lần. Loss sau 2000
+epoch huấn luyện cao hơn loss trước khi huấn luyện.
+
+Đó là triệu chứng. Còn căn bệnh thì sao?
+
+Căn bệnh là \textbf{cấu trúc đại số của BPTT}. Mỗi bước lùi nhân gradient
+với $\mat{W}_{hh}\transpose$ và với đạo hàm của $\tanh$. Nếu trị riêng lớn
+nhất của $\mat{W}_{hh}$ nhỏ hơn 1, tích của $T$ ma trận như vậy tiến về 0
+khi $T$ lớn. Gradient từ bước cuối không đến được bước đầu. Các tham số ở
+gần đầu chuỗi không nhận được tín hiệu học có ý nghĩa, và mạng không thể
+học cách biểu diễn thông tin từ quá khứ xa.
+
+Nhưng \textbf{tại sao} trị riêng của $\mat{W}_{hh}$ quyết định mọi thứ?
+Điều kiện chính xác cho vanishing và exploding gradient là gì? Tại sao
+clipping gradient giải quyết được vấn đề bùng nổ nhưng không giải quyết
+được vấn đề triệt tiêu? Và quan trọng nhất: có cách nào để huấn luyện RNN
+mà không cần thay đổi kiến trúc không?
+
+Đó là những câu hỏi mà chương tiếp theo trả lời. Chương~3 sẽ đọc bài báo
+của Pascanu, Mikolov và Bengio~\autocite{pascanu2013difficulty}, dẫn xuất điều kiện
+đủ cho vanishing (qua trị riêng lớn nhất của $\mat{W}_{\text{rec}}$) và điều
+kiện cần cho exploding, rồi đánh giá hai giải pháp họ đề xuất: clipping
+gradient và bộ chính quy hóa bảo toàn norm. Một trong hai giải pháp đó còn
+sống đến năm 2026. Cái còn lại thì không.
+
+Nếu bạn đang đọc cuốn sách này một mạch, đây là lúc để dừng và làm bài tập
+cuối chương. Chương~3 sẽ bắt đầu bằng việc mở bài báo của Pascanu, và bạn
+sẽ cần những gì bạn vừa thấy; những con số, những norm gradient, cảm giác
+về việc một RNN thất bại trông như thế nào; để hiểu vì sao bài báo đó
+quan trọng.

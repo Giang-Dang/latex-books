@@ -1,0 +1,88 @@
+% 06-bai-tap.tex -- End-of-chapter exercises
+%
+% Scope: three tiers as per SPEC
+
+\exercises
+
+\index{bài tập!kiểm tra hiểu|(}%
+
+\par\textbf{Hướng dẫn chung:} Code cho chương này nằm trong repo
+\texttt{rnn-to-transformer-lab} tại tag \texttt{ch02}.
+Mở file \mintinline{text}{ch02_symptoms.py}.
+Mọi số liệu đến từ \mintinline{text}{python verify.py}.
+
+\index{bài tập!kiểm tra hiểu|)}%
+
+\tierunderstand
+
+\begin{bt}
+  \item Bài toán cộng yêu cầu mạng nhớ \textbf{hai} giá trị trong toàn bộ
+    chuỗi. Nếu ta đổi thành ba vị trí đánh dấu, độ khó tăng lên thế nào?
+    Giải thích bằng khái niệm dung lượng trạng thái ẩn.
+
+  \item Nhìn vào bảng kết quả copy task. Với $T_{\text{mem}} = 20$, loss
+    sau huấn luyện (8.37) cao hơn loss trước huấn luyện (7.91). Về mặt
+    con số, điều này có nghĩa là gì? Mạng đang làm gì sai mà loss tăng
+    lên thay vì giảm xuống?
+
+  \item Tại sao gradient ở bước $t=1$ luôn nhỏ hơn gradient ở bước $t=T$
+    trong copy task? Dùng công thức BPTT từ chương~01 để giải thích, không
+    cần tính toán.
+
+  \item Bài báo Bengio 1994 chứng minh rằng xác suất gradient được bảo
+    toàn giảm theo hàm mũ của $T$. Nếu xác suất đó là $0.9^T$, thì với
+    $T=50$, xác suất là bao nhiêu? So sánh với tỉ lệ norm gradient bạn
+    thấy trong thí nghiệm.
+\end{bt}
+
+\tierapply
+
+\index{bài tập!để tay vào|(}%
+
+\begin{bt}
+  \item Mở \mintinline{text}{ch02_symptoms.py}, tìm hàm
+    \mintinline{python}{train_adding}. Tăng $T$ lên 100 và chạy lại với
+    20000 mẫu. Loss sau huấn luyện là bao nhiêu? Tỉ lệ norm gradient thay
+    đổi thế nào so với $T=50$?
+
+  \item Sửa hàm \mintinline{python}{train_copy} để in ra loss \textbf{tại
+    từng epoch} (mỗi 100 epoch). Vẽ đồ thị loss theo epoch cho $T_{\text{mem}}
+    = 5, 10, 20$. Ở $T_{\text{mem}}$ nào thì loss bắt đầu tăng thay vì giảm?
+
+  \item Thay hàm kích hoạt từ $\tanh$ sang ReLU trong cả hai bài toán
+    (\mintinline{python}{np.maximum(0, a)}). Chạy lại thí nghiệm. Gradient
+    còn biến mất không? Nếu không, vì sao ReLU không giải quyết được vấn
+    đề này trong RNN? (Gợi ý: ReLU không có upper bound.)
+
+  \item Dùng \mintinline{python}{torch.nn.RNN} (PyTorch) cài đặt lại bài
+    toán sao chép với $T_{\text{mem}} = 20$. Để PyTorch tự tính gradient.
+    In ra norm của gradient theo $\mat{W}_{hh}$ tại mỗi bước thời gian.
+    Kết quả có khớp với BPTT thủ công không?
+\end{bt}
+
+\index{bài tập!để tay vào|)}%
+
+\tierextend
+
+\index{bài tập!đẩy xa hơn|(}%
+
+\begin{bt}
+  \item Thiết kế một bài toán tổng hợp mới kiểm tra trí nhớ dài hạn theo
+    cách khác với adding và copy. Yêu cầu: (a) bài toán phải đơn giản đến
+    mức mô tả được trong ba câu, (b) một RNN với $d_h = 32$ phải thất bại
+    ở $T > 30$, (c) một LSTM (sẽ học ở chương~4) phải giải được ở cùng $T$.
+    Cài đặt và đo.
+
+  \item Bài báo của Hochreiter 1991 viết bằng tiếng Đức. Tìm một bản dịch
+    hoặc bài tổng quan tiếng Anh, đọc phần mô tả thí nghiệm của ông, và
+    so sánh với thí nghiệm trong chương này. Hochreiter dùng bài toán gì?
+    Kiến trúc RNN của ông khác gì so với RNN trong chương này?
+
+  \item (Câu hỏi mở) Chương này đo $\|\partial L / \partial \mat{W}_{hh}\|$
+    như một chỉ số cho sức khỏe gradient. Nhưng liệu norm của gradient theo
+    \textbf{input} ($\partial L / \partial \mat{W}_{xh}$) có bị ảnh hưởng
+    bởi vanishing không? Nếu không, vì sao? Nếu có, cơ chế khác gì? Gợi ý:
+    truy ngược BPTT cho $\partial L / \partial \vect{x}_t$.
+\end{bt}
+
+\index{bài tập!đẩy xa hơn|)}%

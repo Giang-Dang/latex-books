@@ -1,0 +1,73 @@
+% 03-rnn-don-gian.tex - The plain RNN forward pass
+%
+% Scope: forward equations with pre-activation; unrolled view; sharing
+% weights across time; the loss function.
+
+\section{RNN: lan truyền xuôi}
+\label{sec:ch01-rnn-xuoi}
+
+Với ký hiệu đã có, tôi viết lại lan truyền xuôi của RNN một cách tường minh
+cho toàn bộ chuỗi. Đây không phải là chỗ để đọc lướt; mỗi ký hiệu trong dẫn
+xuất BPTT ở mục~4 đều quay về một dòng ở đây.
+
+\subsection{Một bước thời gian}
+
+Tại bước $t$, ba thứ xảy ra theo thứ tự:
+
+\begin{enumerate}
+  \item Tính pre-activation:
+    $\vect{a}_t = \mat{W}_{xh} \vect{x}_t
+                 + \mat{W}_{hh} \vect{h}_{t-1}
+                 + \vect{b}_h$.
+  \item Qua hàm kích hoạt:
+    $\vect{h}_t = \tanh(\vect{a}_t)$,
+    với $\tanh$ áp dụng lên từng phần tử.
+  \item Đọc ra output:
+    $\vect{y}_t = \mat{W}_{hy} \vect{h}_t + \vect{b}_y$.
+\end{enumerate}
+
+Cùng một bộ trọng số $(\mat{W}_{xh}, \mat{W}_{hh}, \mat{W}_{hy},
+\vect{b}_h, \vect{b}_y)$ được dùng ở mọi bước. Đây là \textbf{chia sẻ trọng
+số} (weight sharing): RNN không học một bộ tham số riêng cho $t=1$, một bộ
+khác cho $t=2$, mà học một bộ duy nhất áp dụng cho chuỗi dài bất kỳ. Nhờ vậy,
+một RNN huấn luyện trên câu dài 10 từ vẫn chạy được trên câu dài 50 từ mà
+không cần thay đổi gì.
+
+\subsection{Toàn bộ chuỗi}
+
+Với chuỗi dài $T$, lan truyền xuôi sinh ra ba dãy:
+
+\[
+  \vect{h}_1, \vect{h}_2, \dots, \vect{h}_T; \qquad
+  \vect{y}_1, \vect{y}_2, \dots, \vect{y}_T; \qquad
+  \vect{a}_1, \vect{a}_2, \dots, \vect{a}_T.
+\]
+
+Trạng thái ẩn ban đầu $\vect{h}_0 = \vect{0}$ (vector không). Đây là lựa chọn
+đơn giản nhất và là mặc định trong mọi cài đặt; sau này LSTM và GRU cũng khởi
+tạo cell state và hidden state bằng vector không.
+
+\subsection{Hàm mất mát}
+
+Tôi dùng \textbf{tổng bình phương sai số} trên toàn bộ chuỗi. Với
+$\widehat{\vect{y}}_t$ là target tại bước $t$:
+
+\begin{equation}
+  L = \frac{1}{2} \sum_{t=1}^{T} \bigl\|
+      \vect{y}_t - \widehat{\vect{y}}_t
+      \bigr\|^2.
+  \label{eq:rnn-loss}
+\end{equation}
+
+Hệ số $1/2$ không thay đổi vị trí cực tiểu nhưng làm gọn gradient: đạo hàm
+của $z^2/2$ là $z$, không phải $2z$. Trong thực tế, bài toán phân loại chuỗi
+dùng cross-entropy, và bài toán sinh chuỗi dùng cross-entropy trên từng
+token. Nhưng những hàm mất mát đó thêm một tầng softmax và một tầng Jacobian
+không giúp ích gì cho việc hiểu BPTT. Tổng bình phương sai số giữ gradient
+ở dạng đơn giản nhất: một phép trừ.
+
+Chương này chỉ dùng bài toán hồi quy; dự đoán một vector liên tục từ một
+chuỗi đầu vào. Đó là bài toán nhân tạo, nhưng mọi thứ ta học từ nó áp dụng
+nguyên vẹn cho bài toán thật. BPTT không quan tâm bạn đặt gì sau
+$\vect{y}_t$; nó chỉ cần biết $\partial L / \partial \vect{y}_t$, và con số
+đó đến từ đâu không ảnh hưởng đến phần còn lại của dẫn xuất.

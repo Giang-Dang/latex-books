@@ -1,0 +1,38 @@
+% 01-dat-van-de.tex ;  Sets up the empirical question
+%
+% Scope: brief recap of BPTT recurrence from ch01; the question this
+% chapter answers by measurement, not derivation.
+
+\section{Câu hỏi}
+\label{sec:ch02-dat-van-de}
+
+Trong BPTT, gradient của loss theo trạng thái ẩn tại bước $t$ được tính lùi
+từ $T$ về $1$ bằng công thức truy hồi từ chương~01,
+phương trình~\eqref{eq:bptt-dh-recurrence}:
+
+\[
+\pd{L}{\vect{h}_t}
+= \mat{W}_{hy}\transpose \pd{L}{\vect{y}_t}
++ \mat{W}_{hh}\transpose \;
+  \Bigl(
+    \pd{L}{\vect{h}_{t+1}}
+    \odot \bigl(\vect{1} - \vect{h}_{t+1}^2\bigr)
+  \Bigr).
+\]
+
+Hệ quả trực tiếp: nếu $\|\mat{W}_{hh}\| < 1$ và các phần tử của
+$\vect{1} - \vect{h}_t^2$ đều không vượt quá 1 (điều luôn đúng với
+$\tanh$), thì $\|\partial L / \partial \vect{h}_t\|$ nhỏ dần sau mỗi
+bước lùi. Sau $T$ bước, gradient truyền từ bước cuối về bước đầu bị
+suy giảm theo hàm mũ của $T$.
+
+Đó là lý thuyết. Nhưng lý thuyết không nói liệu điều này có thực sự xảy
+ra trong một bài toán cụ thể hay không. Một RNN với $\mat{W}_{hh}$ được
+khởi tạo ngẫu nhiên có thể có trị riêng lớn nhất vượt quá 1; một bài toán
+có thể không cần gradient truyền xa đến vậy; và trong thực tế, mạng học
+được những biểu diễn làm chậm quá trình suy giảm.
+
+Chương này trả lời câu hỏi đó bằng thực nghiệm. Tôi sẽ huấn luyện RNN
+trên hai bài toán được thiết kế để \emph{ép} mạng phải nhớ thông tin qua
+nhiều bước, và tôi sẽ đo gradient ở từng bước để bạn thấy nó suy giảm
+như thế nào, hoặc không.

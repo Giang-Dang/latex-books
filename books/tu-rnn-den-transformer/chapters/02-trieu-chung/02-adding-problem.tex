@@ -1,0 +1,91 @@
+% 02-adding-problem.tex ;  The adding problem, expanded with T=100 and d_h=12
+%
+% Finding: adding problem is NOT a good vanishing-gradient diagnostic;
+% even at T=100, d_h=12, gradient ratio stays near 1. The chapter
+% uses this to motivate why the copy task is the better test.
+
+\section{Bài toán cộng}
+\label{sec:ch02-adding}
+
+\index{adding problem|(}%
+
+\subsection{Định nghĩa}
+
+Cho một chuỗi $T$ bước thời gian. Tại mỗi bước $t$, mạng nhận hai số:
+\begin{itemize}
+  \item Một giá trị ngẫu nhiên $v_t \sim \mathrm{Uniform}(-1, 1)$.
+  \item Một cờ đánh dấu $m_t \in \{0, 1\}$. Cờ bằng $1$ tại \textbf{đúng hai}
+    vị trí ngẫu nhiên trong chuỗi; bằng $0$ ở mọi vị trí còn lại.
+\end{itemize}
+
+Nhiệm vụ: tại bước cuối cùng $T$, mạng phải xuất ra tổng của hai giá trị tại
+hai vị trí được đánh dấu.
+
+\begin{example}
+Với $T=10$, hai vị trí được đánh dấu là $t=3$ và $t=7$:
+\[
+\begin{array}{c|cccccccccc}
+t      & 1 & 2 & 3    & 4 & 5 & 6 & 7    & 8 & 9 & 10 \\
+\hline
+v_t    & 0.5 & -0.3 & \mathbf{0.8} & 0.1 & -0.4 & 0.6 & \mathbf{0.2} & -0.7 & 0.9 & -0.1 \\
+m_t    & 0 & 0 & \mathbf{1} & 0 & 0 & 0 & \mathbf{1} & 0 & 0 & 0
+\end{array}
+\]
+Target: $0.8 + 0.2 = 1.0$.
+\end{example}
+
+\subsection{Kết quả}
+
+Tôi huấn luyện RNN với $d_h = 24$, learning rate $0.01$, khởi tạo trọng số
+$\mathcal{N}(0, 0.1)$, hàm mất mát MSE trên output cuối cùng.
+
+\begin{measured}{Adding problem, $d_h = 24$}
+\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+$T$ & Mẫu & Loss trước & Loss sau &
+$\|\partial L / \partial \mat{W}_{hh}\|$ tại $t=1$ & tại $t=T$ \\
+\midrule
+10  & 5000  & 2.86 & 0.67 & 0.387 & 0.228 \\
+20  & 5000  & 1.34 & 0.65 & 0.206 & 0.206 \\
+50  & 10000 & 0.002 & 0.66 & 0.235 & 0.196 \\
+100 & 20000 & 0.09 & 0.65 & 0.045 & 0.046 \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{measured}
+
+Tôi mong đợi gradient sẽ suy giảm rõ rệt khi $T$ tăng. Nó đã không. Ngay cả
+ở $T = 100$, tỉ lệ norm gradient giữa $t=1$ và $t=T$ vẫn gần bằng 1. Loss
+giảm từ 2.86 xuống 0.67 ở $T=10$ và giữ nguyên ở mức đó cho đến $T=100$.
+
+Để loại trừ khả năng $d_h = 24$ che giấu vanishing, tôi thử lại với $d_h
+= 12$ và $T$ lên đến 100:
+
+\begin{measured}{Adding problem, $d_h = 12$}
+\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+$T$ & Mẫu & Loss trước & Loss sau &
+$\|\partial L / \partial \mat{W}_{hh}\|$ tại $t=1$ & tại $t=T$ \\
+\midrule
+50  & 10000 & 1.28 & 0.69 & 0.012 & 0.012 \\
+100 & 20000 & 0.03 & 0.67 & 0.045 & 0.046 \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{measured}
+
+Vẫn không có vanishing. Với $d_h = 12$ và $T = 100$, tỉ lệ gradient là
+1.01; về cơ bản là phẳng.
+
+Đây không phải là thất bại của thí nghiệm. Đây là một kết quả quan trọng:
+\textbf{bài toán cộng không phải là bài kiểm tra tốt cho vanishing gradient}.
+Lý do: chỉ output cuối cùng có target, nên backward signal chỉ xuất phát từ
+$t = T$, và nó chỉ cần đi qua $T$ bước \emph{một lần}. Hàm cần học; tổng hai
+số; quá đơn giản để tạo ra áp lực lên gradient.
+
+Bài toán cộng kiểm tra xem RNN có học được không. Bài toán tiếp theo kiểm tra
+xem gradient có sống sót không.
+
+\index{adding problem|)}%

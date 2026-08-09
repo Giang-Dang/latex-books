@@ -1,0 +1,91 @@
+% 06-kiem-tra-gradient.tex - Finite-difference gradient checking
+%
+% Scope: two-sided finite difference formula; why it works; measured
+% errors from the verification run; why this check is load-bearing.
+
+\section{Kiểm tra gradient bằng sai phân hữu hạn}
+\label{sec:ch01-gradient-check}
+
+BPTT dễ cài đặt sai. Một dấu trừ nhầm chỗ, một chuyển vị thiếu, một chỉ số
+\mintinline{python}{t} với \mintinline{python}{t+1} lẫn lộn; và gradient vẫn
+là một ma trận trông hợp lý. Nó chỉ sai, và bạn sẽ không biết cho đến khi mô
+hình không hội tụ, mà một mô hình không hội tụ thì có hàng tá nguyên nhân
+khác ngoài gradient sai.
+
+Cách duy nhất để biết chắc một cài đặt lan truyền ngược là đúng: so sánh nó
+với gradient được tính bằng \textbf{sai phân hữu hạn}. Đây là kỹ thuật lâu đời
+nhất trong tối ưu hóa số, và nó không phụ thuộc vào code của bạn; nó chỉ phụ
+thuộc vào định nghĩa của đạo hàm.
+
+\subsection{Công thức}
+
+Với một tham số vô hướng $\theta$ và một hàm mất mát $L(\theta)$, đạo hàm
+được xấp xỉ bằng:
+
+\begin{equation}
+  \frac{dL}{d\theta} \approx
+  \frac{L(\theta + \varepsilon) - L(\theta - \varepsilon)}{2\varepsilon},
+  \label{eq:finite-diff}
+\end{equation}
+
+với $\varepsilon$ là một số rất nhỏ. Đây là \textbf{sai phân trung tâm} bậc
+hai: sai số tỉ lệ với $\varepsilon^2$, tốt hơn sai phân tiến bậc một (tỉ lệ
+với $\varepsilon$). Cái giá là phải chạy lan truyền xuôi \emph{hai lần} cho
+mỗi tham số; một lần với $+\varepsilon$, một lần với $-\varepsilon$.
+
+Với một ma trận trọng số $\mat{W}$, ta áp dụng \eqref{eq:finite-diff} cho
+từng phần tử một. Nếu $\mat{W}$ có $m \times n$ phần tử, ta cần $2mn$ lần
+chạy lan truyền xuôi. Với RNN đồ chơi $3 \times 2$ của chúng ta, đó là 12
+lần chạy cho $\mat{W}_{xh}$, 18 cho $\mat{W}_{hh}$, 6 cho $\mat{W}_{hy}$,
+3 cho $\vect{b}_h$, và 2 cho $\vect{b}_y$; tổng cộng 82 lần chạy, chưa đầy
+một phần nghìn giây trên CPU.
+
+\subsection{Kết quả}
+
+Tôi chạy với $\varepsilon = 10^{-5}$. Với mỗi tham số, tôi tính sai khác tuyệt
+đối lớn nhất giữa gradient BPTT và gradient sai phân hữu hạn, rồi chia cho
+tổng biên độ của hai gradient để có sai số tương đối.
+
+\begin{measured}{Sai phân hữu hạn, $\varepsilon = 10^{-5}$}
+\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Tham số & $\max|\text{BPTT} - \text{FD}|$ & Sai số tương đối & Kết luận \\
+\midrule
+$\mat{W}_{xh}$ & $2.82 \times 10^{-11}$ & $1.35 \times 10^{-11}$ & Khớp \\
+$\mat{W}_{hh}$ & $2.93 \times 10^{-11}$ & $2.28 \times 10^{-11}$ & Khớp \\
+$\mat{W}_{hy}$ & $4.40 \times 10^{-11}$ & $8.69 \times 10^{-12}$ & Khớp \\
+$\vect{b}_h$   & $4.88 \times 10^{-11}$ & $1.15 \times 10^{-11}$ & Khớp \\
+$\vect{b}_y$   & $2.79 \times 10^{-11}$ & $4.07 \times 10^{-12}$ & Khớp \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{measured}
+
+Tất cả gradient khớp với sai số tương đối dưới $1.4 \times 10^{-11}$. Đây là
+độ chính xác ở mức float64: với $\varepsilon = 10^{-5}$, sai số của sai phân
+trung tâm vào khoảng $\varepsilon^2 \cdot L''' \approx 10^{-10}$, cộng thêm
+sai số làm tròn của phép cộng/trừ float64. Con số $10^{-11}$ nằm gọn trong
+khoảng đó.
+
+Nếu bạn thấy sai số tương đối trên $10^{-6}$ khi kiểm tra gradient trong dự
+án của mình, có bug. Không có ngoại lệ.
+
+\subsection{Vì sao việc này quan trọng}
+
+Tôi biết một nghiên cứu sinh bỏ ba tuần debug một mô hình không hội tụ.
+Nguyên nhân: gradient của $\mat{W}_{hh}$ bị thiếu một phép chuyển vị.
+Một dòng code. Cả ba tuần đó có thể được tiết kiệm bằng 82 lần chạy sai
+phân hữu hạn, tốn chưa đến một giây.
+
+Mỗi chương trong cuốn sách này, trước khi in bất kỳ con số nào, đều chạy
+gradient check trên code của chương đó. Kết quả được ghi vào research note
+và không được chỉnh sửa. Đây không phải là thói quen tốt; đây là thứ duy
+nhất ngăn tôi in một ma trận gradient sai lên giấy.
+
+Trong thực tế, bạn không cần viết gradient check bằng tay như tôi làm ở đây.
+PyTorch có \mintinline{python}{torch.autograd.gradcheck}, TensorFlow có
+\mintinline{python}{tf.test.compute_gradient}. Nhưng hiểu thứ bên trong
+những hàm đó; biết chính xác sai phân trung tâm là gì, $\varepsilon$ nên
+chọn bao nhiêu, sai số kỳ vọng là bao nhiêu; là thứ phân biệt một kỹ sư
+dùng được công cụ với một kỹ sư tin công cụ một cách mù quáng.
