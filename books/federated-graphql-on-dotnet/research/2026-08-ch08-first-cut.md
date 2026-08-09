@@ -42,22 +42,43 @@ is run once as a gate (section G) and is chapter 9's subject.
 ## B. What was extracted, and what moved
 
 Catalog is the domain that references nobody, which is what made it the first
-one out. `git` recorded the move rather than a delete and an add: nine files
-changed path, and of those only `CatalogService.cs` changed content.
-
-Moved to `src/Mosaic.Catalog/`:
+one out. `git` recorded the move rather than a delete and an add. Measured with
+`git diff --find-renames --summary ch07 ch08`:
 
 ```
-Catalog/CatalogRegistration.cs
-Catalog/Data/CatalogDataLoaders.cs
-Catalog/Data/CatalogSeedData.cs
-Catalog/Data/CatalogService.cs
-Catalog/Data/ProductConfiguration.cs
-Catalog/Model/Product.cs
-Catalog/Model/ProductCategory.cs
-Catalog/Types/CatalogQueries.cs
-Catalog/Types/ProductNode.cs
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/CatalogRegistration.cs (81%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Data/CatalogDataLoaders.cs (87%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Data/CatalogSeedData.cs (98%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Data/CatalogService.cs (68%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Data/ProductConfiguration.cs (96%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Model/ProductCategory.cs (73%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Types/CatalogQueries.cs (97%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Types/ProductNode.cs (55%)
 ```
+
+Eight files, not nine. `Catalog/Model/Product.cs` is *not* in that list: a file
+of that name exists on both sides now, holding two different types, so git sees
+a modification on one side and a new file on the other rather than a rename.
+An intermediate commit did report nine renames, because at that moment
+`Mosaic.Api` had no `Product.cs` at all; the number to quote is the one at the
+tag.
+
+Added and deleted lines per moved file, from
+`git diff --find-renames -M20% --numstat ch07 ch08`:
+
+| File | +/- | What changed |
+|---|---|---|
+| `CatalogRegistration.cs` | 2 / 2 | `using`, `namespace` |
+| `CatalogDataLoaders.cs` | 2 / 2 | `using`, `namespace` |
+| `CatalogSeedData.cs` | 2 / 2 | `using`, `namespace` |
+| `ProductConfiguration.cs` | 2 / 2 | `using`, `namespace` |
+| `ProductCategory.cs` | 1 / 1 | `namespace` |
+| `CatalogQueries.cs` | 3 / 3 | two `using`s and the `namespace`; no root field touched |
+| `ProductNode.cs` | 29 / 8 | both methods kept; comments rewritten and extended |
+| `CatalogService.cs` | 25 / 39 | see below |
+
+So five of the eight changed nothing but where they say they live. That is the
+number the chapter quotes.
 
 New in `src/Mosaic.Catalog/`: `Program.cs`, `Dockerfile`, `Properties/`,
 `appsettings*.json`, `Catalog/Data/CatalogDbContext.cs`,
@@ -65,10 +86,13 @@ New in `src/Mosaic.Catalog/`: `Program.cs`, `Dockerfile`, `Properties/`,
 `Catalog/Data/CatalogDatabaseSeeder.cs`, `Catalog/Model/ProductKey.cs`,
 `Federation/PageCursorExtension.cs`.
 
-`CatalogService` changed in exactly two ways, both in its constructor: the
-context is `CatalogDbContext` rather than `MosaicDbContext`, and the
-`ServiceCallCounter` parameter is gone along with the six `counter.RecordLookup()`
-calls. Nothing else about the class differs.
+`CatalogService` changed behaviour in exactly one way: it no longer reports to
+`ServiceCallCounter`. The constructor lost that parameter and gained
+`CatalogDbContext` in place of `MosaicDbContext`, the six
+`counter.RecordLookup()` calls went, and all five query methods therefore
+became expression-bodied because nothing was left in the braces. The class
+comment was rewritten as well, which is most of the remaining diff. No query
+changed.
 
 **Not changed by a character:** `Pricing/Types/ProductPricingNode.cs`,
 `Inventory/Types/ProductInventoryNode.cs`,
@@ -540,6 +564,12 @@ Identical list, identical order. Federation adds fields to the schema, not
 middleware to the pipeline. `CostAnalyzerMiddleware` is still there after
 `ApplyCostDefaults = false`, which is the evidence that the setting turns off
 the stamped weights rather than the analyzer.
+
+**Measured on Mosaic only.** `AddPipelineReport()` is Mosaic's, added in
+chapter 3, and `Mosaic.Catalog` does not register it. Catalog's pipeline was
+never printed and the chapter says so rather than assuming the two are alike.
+Giving Catalog the same report would be a reasonable thing for chapter 23 to
+do when it instruments both services.
 
 ## I. Measurements
 

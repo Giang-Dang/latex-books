@@ -34,28 +34,36 @@ Figure~\ref{fig:ch08-the-cut} is the shape of the change.
 \subsection*{What git called it}
 
 \index{extraction!as a file move}%
-Nine files changed path and one of them changed content:
+Eight files changed path, and git will tell you how much of each survived the
+trip:
 
-\begin{minted}[fontsize=\footnotesize]{text}
-R  src/Mosaic.Api/Catalog/CatalogRegistration.cs   -> src/Mosaic.Catalog/Catalog/CatalogRegistration.cs
-R  src/Mosaic.Api/Catalog/Data/CatalogDataLoaders.cs -> src/Mosaic.Catalog/Catalog/Data/CatalogDataLoaders.cs
-R  src/Mosaic.Api/Catalog/Data/CatalogSeedData.cs  -> src/Mosaic.Catalog/Catalog/Data/CatalogSeedData.cs
-R  src/Mosaic.Api/Catalog/Data/CatalogService.cs   -> src/Mosaic.Catalog/Catalog/Data/CatalogService.cs
-R  src/Mosaic.Api/Catalog/Data/ProductConfiguration.cs -> src/Mosaic.Catalog/Catalog/Data/ProductConfiguration.cs
-R  src/Mosaic.Api/Catalog/Model/Product.cs         -> src/Mosaic.Catalog/Catalog/Model/Product.cs
-R  src/Mosaic.Api/Catalog/Model/ProductCategory.cs -> src/Mosaic.Catalog/Catalog/Model/ProductCategory.cs
-R  src/Mosaic.Api/Catalog/Types/CatalogQueries.cs  -> src/Mosaic.Catalog/Catalog/Types/CatalogQueries.cs
-R  src/Mosaic.Api/Catalog/Types/ProductNode.cs     -> src/Mosaic.Catalog/Catalog/Types/ProductNode.cs
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/CatalogRegistration.cs (81%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Data/CatalogDataLoaders.cs (87%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Data/CatalogSeedData.cs (98%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Data/CatalogService.cs (68%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Data/ProductConfiguration.cs (96%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Model/ProductCategory.cs (73%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Types/CatalogQueries.cs (97%)
+rename src/{Mosaic.Api => Mosaic.Catalog}/Catalog/Types/ProductNode.cs (55%)
 \end{minted}
 
-\code{CatalogQueries} did not change at all. The four root fields
-chapters~\ref{ch:hotchocolate-quickly} to~\ref{ch:schema-design-that-survives-change}
-built, including the deprecation
+Five of the eight changed nothing but their \code{namespace} line and their
+\code{using} lines: two lines each for the registration, the DataLoader, the
+seed data and the entity configuration, one for the enum.
+\code{CatalogQueries} changed three, and not one of them was a root field. The
+four that chapters~\ref{ch:hotchocolate-quickly}
+to~\ref{ch:schema-design-that-survives-change} built, including the deprecation
 chapter~\ref{ch:schema-design-that-survives-change} put on \code{products},
-compiled in the new project untouched. So did the DataLoader, the seed data and
-the entity configuration.
+compiled in the new project untouched.
 
-\code{CatalogService} changed in two ways and both are in its constructor:
+The percentages are worth reading rather than skipping. Ninety-eight per cent
+for a file of seed data whose only change was where it says it lives.
+Fifty-five for \code{ProductNode}, which kept both of its methods and gained
+paragraphs of comment about what is deliberately \emph{not} in it, which
+section~\ref{sec:ch08-two-attributes} is about.
+
+\code{CatalogService} is the sixty-eight, and it lost one thing:
 
 \begin{minted}{csharp}
 public sealed class CatalogService(CatalogDbContext db)
@@ -64,11 +72,17 @@ public sealed class CatalogService(CatalogDbContext db)
 \index{ServiceCallCounter@\code{ServiceCallCounter}!left behind}%
 It used to take two things: the shared \code{MosaicDbContext}, and a
 \code{ServiceCallCounter}. The context is Catalog's own now, and the counter is
-gone along with the six calls to it. That counter was built in
+gone along with the calls to it, which is why all five of its query methods
+collapsed into expressions with no body left to hold. That counter was built in
 chapter~\ref{ch:the-life-of-a-request} to count what one process was doing to
 itself, and it belongs to Mosaic. A service that answers one domain's questions
 has nothing to count with it, and I would rather a new service start with no
 instrumentation than with somebody else's.
+
+\index{extraction!the type that did not move}%
+One file in that folder did not move at all, and its absence from the list is
+the whole of section~\ref{sec:ch08-what-is-left-behind}: \code{Model/Product.cs}
+exists on both sides now, as two different types.
 
 \subsection*{The three files that did not change}
 

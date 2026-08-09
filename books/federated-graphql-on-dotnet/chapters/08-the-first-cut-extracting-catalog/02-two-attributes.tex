@@ -15,11 +15,15 @@ chapter~\ref{ch:how-a-federated-query-actually-runs} watched it do on the
 sample: it adds \code{\_service} and \code{\_entities} to \code{Query}, the
 \code{\_Any} scalar, an \code{\_Entity} union assembled from every type carrying
 a key, and the \code{@link} that declares which version of the federation
-specification the schema is written against. On Mosaic it also declares
-nothing else, which is worth saying out loud: the thirteen request middleware
-chapter~\ref{ch:the-life-of-a-request} printed are still thirteen, in the same
-order, on both services. Federation adds fields to a schema. It does not add
-middleware to a pipeline.
+specification the schema is written against.
+
+What it does not do is worth saying out loud, because I expected otherwise.
+Mosaic still reports the same thirteen request middleware
+chapter~\ref{ch:the-life-of-a-request} printed, in the same order, with
+\code{AddApolloFederation()} in place. Federation adds fields to a schema. It
+does not add middleware to a pipeline. I can only say that about Mosaic:
+Catalog does not carry chapter~\ref{ch:the-life-of-a-request}'s pipeline
+report, so nothing in this chapter measured the new service's pipeline at all.
 
 Then two attributes turn a class into an entity:
 
