@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Implementation Notes — Chapter 01</title></head>
+<body>
+<h1>Implementation Notes — Chapter 01 "Chuỗi, ký hiệu, và lan truyền ngược qua thời gian"</h1>
+<p>Book: <code>tu-rnn-den-transformer</code> | Worktree: <code>.claude/worktrees/ch01</code></p>
+
+<h2>Summary</h2>
+<p>Chapter 01 drafted: foundation chapter covering notation, plain RNN forward pass, BPTT in Jacobian form, three-step worked example, and finite-difference gradient checking. 71-page build, all machine checks clean.</p>
+
+<h2>Decisions / Assumptions</h2>
+<ul>
+  <li><strong>Companion repo:</strong> <code>rnn-to-transformer-lab</code> at <code>F:/repo/rnn-to-transformer-lab</code>, tag <code>ch01</code></li>
+  <li><strong>Notation:</strong> <code>\vect{}</code> for vectors, <code>\mat{}</code> for matrices, pre-activation <code>\vect{a}_t</code> separated from hidden state</li>
+  <li><strong>No bibliography:</strong> Chapter 01 is foundational, cites no papers. Empty bibliography warning is expected.</li>
+  <li><strong>No figures:</strong> Three-step example uses tables and listings. RNN unrolling diagram deferred.</li>
+  <li><strong>7 section files:</strong> why-sequences-differ, notation, RNN-forward, BPTT-Jacobian, three-step-example, gradient-checking, exercises</li>
+</ul>
+
+<h2>Deviations / Tradeoffs</h2>
+<ul>
+  <li><strong>No subagent audit:</strong> The tool environment doesn't support spawning read-only subagents. Self-audit performed; machine gates (check-chapter.ps1) cover all mechanical checks.</li>
+  <li><strong>Appendix A empty cells:</strong> Uses empty <code>&amp; &amp;</code> cells instead of <code>---</code> because the dash check catches the three-hyphen pattern even in braces.</li>
+  <li><strong>Appendix B verbatim:</strong> Replaced <code>\verb|\tn|</code> with <code>\texttt{\textbackslash tn}</code> because <code>\verb</code> in tabular can cause formatting issues.</li>
+  <li><strong>55 dash findings fixed:</strong> All <code>---</code> in Vietnamese prose replaced with semicolons (standard Vietnamese punctuation for parenthetical clauses).</li>
+</ul>
+
+<h2>Validation</h2>
+<ul>
+  <li><code>latexmk</code>: exits 0, 71 pages</li>
+  <li><code>check-chapter.ps1</code>: clean (0 findings)</li>
+  <li>Companion repo <code>verify.py</code>: exits 0, gradient check relative error ≤ 1.35e-11</li>
+  <li>Policy: chars=Punctuation cite=autocite(tie,keys) quotes=on index=on dashes=on contractions=off spelling=en-US numbers=research/*.md verbatim=minted:text,minted:json log=0/0</li>
+</ul>
+
+<h2>Follow-ups</h2>
+<ul>
+  <li>Push companion repo to GitHub (remote not yet configured)</li>
+  <li>Gloss check proposal deferred until after chapter 02 is drafted (per SPEC open items)</li>
+  <li>Chapter 02 needs: bibliography entries, CPU time budgets, experiment design for adding/copy tasks</li>
+</ul>
+</body>
+</html>

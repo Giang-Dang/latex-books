@@ -1,0 +1,208 @@
+% 04-bptt-jacobian.tex - BPTT derived step by step in Jacobian form
+%
+% Scope: the backward recurrence; each Jacobian; parameter gradients;
+% why the same W_hh appears T times in the product.
+
+\section{Lan truyền ngược qua thời gian}
+\label{sec:ch01-bptt}
+
+BPTT không phải là một thuật toán mới. Nó là lan truyền ngược thông thường,
+áp dụng lên đồ thị tính toán đã được tháo cuộn của RNN. Điều duy nhất thay
+đổi là gradient phải đi qua $\mat{W}_{hh}$ nhiều lần; mỗi lần tại một bước
+thời gian; và chính sự lặp lại đó sẽ là nhân vật chính của ba chương tiếp
+theo.
+
+\subsection{ gradient theo đầu ra}
+
+Đạo hàm của $L$ theo $\vect{y}_t$ là điểm khởi đầu của mọi thứ. Từ
+\eqref{eq:rnn-loss}:
+
+\begin{equation}
+  \pd{L}{\vect{y}_t} = \vect{y}_t - \widehat{\vect{y}}_t.
+  \label{eq:bptt-dy}
+\end{equation}
+
+Đây là một vector $d_y$-chiều. Mỗi bước thời gian đóng góp gradient riêng,
+không phụ thuộc vào các bước khác; ít nhất là ở tầng này.
+
+\subsection{ gradient theo hidden state}
+
+Từ $\vect{y}_t$ đi xuống $\vect{h}_t$ là một phép biến đổi tuyến tính
+$\vect{y}_t = \mat{W}_{hy} \vect{h}_t + \vect{b}_y$. Jacobian của phép này là
+chính $\mat{W}_{hy}$:
+
+\[
+  \jac{\vect{y}_t}{\vect{h}_t} = \mat{W}_{hy}.
+\]
+
+ Gradient truyền từ $\vect{y}_t$ về $\vect{h}_t$ là tích của Jacobian chuyển
+vị với gradient đầu ra:
+
+\begin{equation}
+  \pd{L}{\vect{h}_t} \quad\text{nhận từ}\quad
+  \underbrace{\mat{W}_{hy}\transpose \pd{L}{\vect{y}_t}}_{\text{từ output}}.
+  \label{eq:bptt-dh-output}
+\end{equation}
+
+Nhưng $\vect{h}_t$ còn một đường gradient nữa: từ tương lai. Vì
+$\vect{h}_{t+1}$ phụ thuộc vào $\vect{h}_t$ qua $\mat{W}_{hh}$, gradient
+tại bước $t+1$ sẽ truyền ngược về bước $t$. Đây chính là điểm khác biệt duy
+nhất giữa BPTT và lan truyền ngược thông thường, và tôi sẽ gọi nó là
+\emph{tín hiệu hồi quy}.
+
+\subsection{Tín hiệu hồi quy}
+
+Tại bước $t$, $\vect{h}_t$ ảnh hưởng đến $\vect{a}_{t+1}$ qua
+$\mat{W}_{hh} \vect{h}_t$, rồi $\vect{a}_{t+1}$ qua $\tanh$ thành
+$\vect{h}_{t+1}$. Ta cần Jacobian của $\vect{h}_{t+1}$ theo $\vect{h}_t$.
+
+Trước hết, đạo hàm của $\tanh$ là một ma trận đường chéo:
+
+\[
+  \jac{\vect{h}_{t+1}}{\vect{a}_{t+1}}
+  = \diag\bigl(1 - \vect{h}_{t+1}^2\bigr),
+\]
+
+với $\vect{h}_{t+1}^2$ là bình phương từng phần tử. Ký hiệu $\vect{1}$ là
+vector toàn 1, và phép bình phương được áp dụng element-wise.
+
+Tiếp theo, $\jac{\vect{a}_{t+1}}{\vect{h}_t} = \mat{W}_{hh}$, vì
+$\vect{a}_{t+1} = \mat{W}_{xh} \vect{x}_{t+1} + \mat{W}_{hh} \vect{h}_t
++ \vect{b}_h$.
+
+Theo quy tắc dây chuyền Jacobian:
+
+\begin{equation}
+  \jac{\vect{h}_{t+1}}{\vect{h}_t}
+  = \jac{\vect{h}_{t+1}}{\vect{a}_{t+1}}
+    \;\jac{\vect{a}_{t+1}}{\vect{h}_t}
+  = \diag\bigl(1 - \vect{h}_{t+1}^2\bigr) \; \mat{W}_{hh}.
+  \label{eq:bptt-dhnext-dht}
+\end{equation}
+
+Khi truyền gradient, ta nhân với chuyển vị:
+
+\[
+  \Bigl(\jac{\vect{h}_{t+1}}{\vect{h}_t}\Bigr)\transpose
+  = \mat{W}_{hh}\transpose \;
+    \diag\bigl(1 - \vect{h}_{t+1}^2\bigr).
+\]
+
+\subsection{Công thức truy hồi cho hidden state}
+
+Gộp hai đường gradient; từ output và từ tương lai; ta có công thức truy hồi
+trung tâm của BPTT:
+
+\begin{equation}
+  \boxed{
+    \pd{L}{\vect{h}_t}
+    = \mat{W}_{hy}\transpose \pd{L}{\vect{y}_t}
+    + \mat{W}_{hh}\transpose \;
+      \Bigl(
+        \pd{L}{\vect{h}_{t+1}}
+        \odot \bigl(\vect{1} - \vect{h}_{t+1}^2\bigr)
+      \Bigr)
+  }.
+  \label{eq:bptt-dh-recurrence}
+\end{equation}
+
+Trong đó $\odot$ là tích Hadamard (nhân từng phần tử). Tôi viết hạng tử thứ
+hai dưới dạng Hadamard thay vì $\diag$ để gần với code hơn: trong Python,
+\mintinline{python}{dh_next * (1 - h_next**2)} rồi nhân với
+\mintinline{python}{W_hh.T} là ba dòng, không cần dựng ma trận đường chéo
+$d_h \times d_h$.
+
+Điều kiện biên: tại bước cuối cùng $t = T$, không có tương lai để nhận
+gradient:
+
+\begin{equation}
+  \pd{L}{\vect{h}_T}
+  = \mat{W}_{hy}\transpose \pd{L}{\vect{y}_T}.
+  \label{eq:bptt-dhT}
+\end{equation}
+
+Từ đây, ta chạy \eqref{eq:bptt-dh-recurrence} lùi dần: $t = T-1, T-2, \dots,
+1$. Ở mỗi bước, gradient $\pd{L}{\vect{h}_t}$ nhận thêm tín hiệu từ output
+hiện tại và từ tất cả các bước tương lai đã được gộp qua $\mat{W}_{hh}$.
+
+\subsection{ gradient qua $\tanh$}
+
+Một khi đã có $\pd{L}{\vect{h}_t}$, bước qua $\tanh$ là đạo hàm element-wise:
+
+\begin{equation}
+  \pd{L}{\vect{a}_t}
+  = \pd{L}{\vect{h}_t}
+    \odot \bigl(\vect{1} - \vect{h}_t^2\bigr).
+  \label{eq:bptt-da}
+\end{equation}
+
+Đây là vector $d_h$-chiều. Nó là ``tín hiệu lỗi'' tại pre-activation của
+bước $t$, và sẽ được dùng để tính gradient cho mọi tham số đóng góp vào
+$\vect{a}_t$.
+
+\subsection{ gradient cho tham số}
+
+Từ $\pd{L}{\vect{a}_t}$ và $\pd{L}{\vect{y}_t}$, gradient cho năm tham số
+được tích luỹ qua toàn bộ chuỗi:
+
+\begin{align}
+  \pd{L}{\mat{W}_{xh}} &= \sum_{t=1}^{T}
+    \pd{L}{\vect{a}_t} \otimes \vect{x}_t\transpose,
+    \label{eq:bptt-dWxh} \\
+  \pd{L}{\mat{W}_{hh}} &= \sum_{t=1}^{T}
+    \pd{L}{\vect{a}_t} \otimes \vect{h}_{t-1}\transpose,
+    \label{eq:bptt-dWhh} \\
+  \pd{L}{\mat{W}_{hy}} &= \sum_{t=1}^{T}
+    \pd{L}{\vect{y}_t} \otimes \vect{h}_t\transpose,
+    \label{eq:bptt-dWhy} \\
+  \pd{L}{\vect{b}_h} &= \sum_{t=1}^{T}
+    \pd{L}{\vect{a}_t},
+    \label{eq:bptt-dbh} \\
+  \pd{L}{\vect{b}_y} &= \sum_{t=1}^{T}
+    \pd{L}{\vect{y}_t}.
+    \label{eq:bptt-dby}
+\end{align}
+
+Ký hiệu $\vect{u} \otimes \vect{v}\transpose$ là tích ngoài: nếu $\vect{u}
+\in \R^m$ và $\vect{v} \in \R^n$, kết quả là ma trận $m \times n$ với phần
+tử $(i,j) = u_i v_j$. Đây chính là dạng Jacobian của gradient theo ma trận
+trọng số: mỗi cặp (đầu vào, tín hiệu lỗi) đóng góp một hạng tử vào tổng.
+
+\subsection{Vì sao $\mat{W}_{hh}$ lặp $T$ lần}
+
+Nhìn vào \eqref{eq:bptt-dh-recurrence}: $\mat{W}_{hh}\transpose$ xuất hiện ở
+mọi bước lùi. Nếu bạn tháo cuộn công thức này từ $t = T$ về $t = 1$, bạn sẽ
+thấy $\pd{L}{\vect{h}_1}$ chứa $\mat{W}_{hh}\transpose$ nhân với chính nó $T$
+lần. Khi $T$ lớn, tích này hoặc co về không hoặc bùng nổ, tùy vào giá trị
+riêng lớn nhất của $\mat{W}_{hh}$. Đó chính là vấn đề
+\tn{triệt tiêu gradient}{vanishing gradient} và
+\tn{bùng nổ gradient}{exploding gradient}; chủ đề của chương~2 và~3.
+
+Tôi sẽ không dẫn xuất điều kiện đó ở đây, vì chương~3 dành trọn một chương
+cho nó. Điều cần nhớ lúc này: BPTT là một vòng lặp, và mỗi vòng lặp nhân thêm
+một ma trận $\mat{W}_{hh}$. Đó là toàn bộ câu chuyện.
+
+\subsection{Tóm tắt thuật toán}
+
+Toàn bộ BPTT gói gọn trong năm bước:
+
+\begin{enumerate}
+  \item \textbf{Lan truyền xuôi}: tính và lưu $\vect{x}_t$, $\vect{a}_t$,
+    $\vect{h}_t$, $\vect{y}_t$ cho $t = 1, \dots, T$.
+  \item \textbf{Khởi tạo}: $\pd{L}{\vect{h}_{T+1}} = \vect{0}$ (không có
+    tương lai sau bước cuối).
+  \item \textbf{Lùi từ $T$ về $1$}:
+    \begin{itemize}
+      \item $\pd{L}{\vect{y}_t} = \vect{y}_t - \widehat{\vect{y}}_t$
+      \item $\pd{L}{\vect{h}_t}$ từ \eqref{eq:bptt-dh-recurrence}
+      \item $\pd{L}{\vect{a}_t}$ từ \eqref{eq:bptt-da}
+      \item Tích luỹ gradient tham số từ
+        \eqref{eq:bptt-dWxh} đến \eqref{eq:bptt-dby}.
+    \end{itemize}
+  \item \textbf{Kết thúc}: tổng gradient cho năm tham số đã sẵn sàng cho
+    bước cập nhật (SGD, Adam, v.v.).
+\end{enumerate}
+
+Trong code, bước~3 là một vòng lặp \mintinline{python}{for t in reversed(range(T))}.
+Mọi thứ khác là phép nhân ma trận và Hadamard product. Toàn bộ cài đặt dài
+chưa đến 30 dòng Python; bạn sẽ thấy nó trong mục tiếp theo.

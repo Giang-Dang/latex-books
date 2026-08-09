@@ -1,0 +1,109 @@
+% 07-bai-tap.tex - End-of-chapter exercises (three tiers)
+%
+% Scope: tier 1 (understand), tier 2 (apply/code), tier 3 (extend/open).
+
+\exercises
+
+\index{bài tập!kiểm tra hiểu|(}%
+
+\par\textbf{Hướng dẫn chung:} Code cho toàn bộ chương này nằm trong companion
+repo \texttt{rnn-to-transformer-lab} tại tag \texttt{ch01}. Clone repo, checkout
+tag, cài môi trường conda, rồi mở file
+\mintinline{text}{rnn_to_transformer_lab/__init__.py}. Đọc code cùng với mục~4
+và~5 của chương. Khi một bài yêu cầu bạn sửa code, hãy sửa trực tiếp file đó
+và chạy \mintinline{text}{python verify.py} để kiểm tra.
+
+\index{bài tập!kiểm tra hiểu|)}%
+
+\tierunderstand
+
+\begin{bt}
+  \item Tại bước $t$, $\vect{h}_t$ nhận gradient từ hai nguồn. Kể tên hai
+    nguồn đó và viết công thức Jacobian cho từng nguồn. Nguồn nào biến mất
+    tại bước cuối cùng $t = T$?
+
+  \item Mở companion repo, chạy \mintinline{text}{python verify.py}, và đọc
+    kết quả lan truyền xuôi. Không cần tính toán: nhìn vào $\vect{h}_3$ và
+    giải thích vì sao các phần tử của nó đều gần bằng 1. Gợi ý: nhìn vào
+    $\vect{a}_3$.
+
+  \item Trong BPTT, gradient qua $\tanh$ là phép nhân Hadamard với
+    $(\vect{1} - \vect{h}_t^2)$. Một phần tử của $\vect{h}_t$ có giá trị
+    $0.95$. Hỏi: tín hiệu gradient qua phần tử đó bị suy giảm bao nhiêu lần
+    so với một phần tử có giá trị $0.1$?
+
+  \item Nhìn vào $\partial L / \partial \mat{W}_{hh}$ trong mục~5. Phần tử
+    nào lớn nhất, và nó nối hidden unit nào với hidden unit nào? Lần ngược
+    về lan truyền xuôi để giải thích vì sao.
+
+  \item Vẽ đồ thị tính toán tháo cuộn của RNN ba bước. Trên mỗi cạnh, ghi
+    kích thước của Jacobian tương ứng. Mũi tên nào là nơi $\mat{W}_{hh}$ xuất
+    hiện nhiều lần nhất?
+\end{bt}
+
+\tierapply
+
+\index{bài tập!để tay vào|(}%
+
+\begin{bt}
+  \item Trong companion repo, đổi hàm kích hoạt từ $\tanh$ sang
+    \mintinline{python}{relu} (dùng \mintinline{python}{np.maximum(0, a)}).
+    Chạy lại \mintinline{python}{python verify.py}. Gradient check còn khớp
+    không? Nếu không, vì sao? Gợi ý: ReLU không khả vi tại 0, nhưng sai phân
+    hữu hạn thì vẫn chạy.
+
+  \item Thêm một bước thời gian thứ tư với $\vect{x}_4 = [0.2, -0.5]$ và
+    $\widehat{\vect{y}}_4 = [0.5, 0.0]$. Cập nhật \mintinline{python}{X} và
+    \mintinline{python}{TARGET} trong code. Chạy gradient check. Gradient
+    của $\mat{W}_{hh}$ thay đổi thế nào so với bản ba bước? Giải thích.
+
+  \item Cố ý gây một lỗi BPTT: trong hàm \mintinline{python}{backward}, bỏ
+    \mintinline{python}{dh_next} khỏi dòng tính \mintinline{python}{dh_t}
+    (tức là chỉ giữ đường gradient từ output). Gradient check bắt được lỗi
+    này không? Sai số tương đối tăng lên bao nhiêu?
+
+  \item Cài đặt BPTT cho bài toán phân loại: thay vì hồi quy, đặt một softmax
+    lên $\vect{y}_T$ (chỉ bước cuối) và dùng cross-entropy. Đạo hàm qua
+    softmax + cross-entropy là $\vect{y}_T - \widehat{\vect{y}}_T$, giống hệt
+    trường hợp hồi quy; chỉ khác là nó chỉ áp dụng ở bước cuối, và
+    $\widehat{\vect{y}}_T$ là one-hot. Cài đặt và kiểm tra gradient.
+\end{bt}
+
+\index{bài tập!để tay vào|)}%
+
+\tierextend
+
+\index{bài tập!đẩy xa hơn|(}%
+
+\begin{bt}
+  \item Đo thời gian chạy của \mintinline{python}{backward()} và
+    \mintinline{python}{finite_difference()} cho $T = 3, 10, 50, 100$.
+    Vẽ đồ thị. Với $T = 100$, sai phân hữu hạn chậm hơn BPTT bao nhiêu lần?
+    Từ đó giải thích vì sao mọi framework deep learning đều dùng lan truyền
+    ngược thay vì sai phân hữu hạn, và vì sao sai phân hữu hạn vẫn là công cụ
+    kiểm tra không thể thiếu.
+
+  \item Đọc bài báo ``Automatic Differentiation in Machine Learning: a
+    Survey'' của Baydin và cộng sự (2018, arXiv:1502.05767). So sánh cách
+    bài báo đó trình bày forward-mode AD và reverse-mode AD (BPTT là
+    reverse-mode) với dẫn xuất Jacobian trong chương này. Viết một đoạn ngắn
+    giải thích vì sao reverse-mode có lợi thế khi số tham số lớn hơn số đầu
+    ra.
+
+  \item Dùng thư viện \mintinline{python}{torch} (PyTorch) cài đặt lại chính
+    xác RNN ba bước này, nhưng để cơ chế autograd của PyTorch tự tính
+    gradient. So sánh gradient của PyTorch với gradient BPTT thủ công của bạn
+    (gợi ý: dùng \mintinline{python}{torch.from_numpy} để copy trọng số).
+    Gradient có khớp đến từng chữ số không? Nếu không, vì sao? Gợi ý: kiểm
+    tra xem bạn có đang chạy ở \mintinline{python}{torch.float64} không
+    (\mintinline{python}{torch.set_default_dtype} để set mặc định).
+
+  \item (Câu hỏi mở) Định lý universal approximation nói rằng một mạng
+    truyền thẳng đủ rộng có thể xấp xỉ mọi hàm. Vậy vì sao ta cần RNN? Hãy
+    trả lời bằng cách chỉ ra một bài toán mà mạng truyền thẳng \emph{không
+    thể} giải được dù có bao nhiêu tham số đi nữa; và giải thích vì sao RNN
+    giải được nó. Đây là câu hỏi chưa có trong kỳ thi nào; tôi thật sự muốn
+    biết bạn nghĩ gì.
+\end{bt}
+
+\index{bài tập!đẩy xa hơn|)}%

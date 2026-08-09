@@ -1,3 +1,51 @@
-% Scope (SPEC table of contents): Từ nào dịch, từ nào giữ nguyên tiếng Anh. Đây là nguồn sự thật cho macro tn và cho luật gloss trong SPEC.
+% Scope (SPEC table of contents): Từ nào dịch, từ nào giữ nguyên tiếng Anh. Đây là nguồn sự thật cho macro \tn và cho luật gloss trong SPEC.
 \chapter{Bảng thuật ngữ Việt-Anh}
 \label{app:thuat-ngu}
+
+Cuốn sách này viết bằng tiếng Việt cho sinh viên sẽ đọc paper bằng tiếng
+Anh. Mỗi thuật ngữ được quyết định một lần: dịch sang tiếng Việt và dùng
+macro \texttt{\textbackslash tn} để mang bản tiếng Anh trong ngoặc ở \textbf{mọi} lần xuất
+hiện, hoặc giữ nguyên tiếng Anh và không cần ngoặc. Quy tắc này đến từ
+mục~15 và~16 trong decision log của sách.
+
+\footnotesize
+\begin{tabular}{@{}llp{4cm}@{}}
+\toprule
+Tiếng Việt & Tiếng Anh & Quyết định \\
+\midrule
+\multicolumn{3}{@{}l@{}}{\textbf{Chương 01}} \\
+\midrule
+bước thời gian & timestep & Dịch, dùng \texttt{\textbackslash tn} \\
+chuỗi & sequence & Dịch, dùng \texttt{\textbackslash tn} \\
+độ dốc\textsuperscript{*} & gradient & Dịch, dùng \texttt{\textbackslash tn}; xem ghi chú \\
+hàm kích hoạt & activation function & Dịch, dùng \texttt{\textbackslash tn} \\
+hàm mất mát & loss function & Dịch, dùng \texttt{\textbackslash tn} \\
+lan truyền ngược & backpropagation & Dịch, dùng \texttt{\textbackslash tn} \\
+lan truyền ngược qua thời gian & backpropagation through time (BPTT) & Dịch, dùng \texttt{\textbackslash tn} \\
+ma trận Jacobi & Jacobian matrix & Dịch, dùng \texttt{\textbackslash tn} \\
+ma trận trọng số & weight matrix & Dịch, dùng \texttt{\textbackslash tn} \\
+mạng hồi quy & recurrent neural network (RNN) & Dịch, dùng \texttt{\textbackslash tn} \\
+sai phân hữu hạn & finite difference & Dịch, dùng \texttt{\textbackslash tn} \\
+trạng thái ẩn & hidden state & Dịch, dùng \texttt{\textbackslash tn} \\
+\midrule
+\multicolumn{3}{@{}l@{}}{\textbf{Giữ nguyên tiếng Anh (không dịch)}} \\
+\midrule
+\multicolumn{2}{@{}l}{bias} & Giữ nguyên \\
+\multicolumn{2}{@{}l}{Jacobian} & Giữ nguyên (tính từ); \emph{ma trận Jacobi} khi là danh từ \\
+\multicolumn{2}{@{}l}{sigmoid} & Giữ nguyên \\
+\multicolumn{2}{@{}l}{softmax} & Giữ nguyên \\
+\multicolumn{2}{@{}l}{tanh} & Giữ nguyên \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\vspace{0.5em}
+\textsuperscript{*}``độ dốc'' là bản dịch đã quen trong giáo trình Giải tích
+nhiều biến và được dùng khi ``gradient'' là danh từ. Sách giữ nguyên
+``gradient'' trong các tên riêng: ``gradient checking'', ``gradient
+descent'', ``vanishing gradient''.
+
+\vspace{1em}
+Bảng này được cập nhật ở mỗi chương: chương nào thêm thuật ngữ mới thì
+ghi thêm dòng, kèm tên chương để biết nó xuất hiện lần đầu ở đâu. Một
+thuật ngữ đã có quyết định rồi thì các chương sau không thay đổi.
