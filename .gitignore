@@ -31,6 +31,11 @@ build/
 # tracked copy. Committing it would duplicate every skill.
 .agents/skills/
 
+# One checkout per in-flight branch, made by the drafting workflow. Git will not
+# descend into a worktree, but without this the directory itself sits untracked
+# in every status the main checkout prints.
+.claude/worktrees/
+
 # Editors / OS
 .DS_Store
 Thumbs.db

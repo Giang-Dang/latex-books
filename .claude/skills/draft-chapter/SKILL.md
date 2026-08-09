@@ -13,10 +13,11 @@ Typical use is a single line with no further instruction:
 /draft-chapter chapter 3
 ```
 
-That means: research it, plan it, build whatever code it needs, write it,
-compile it, update the SPEC, and commit. Run the whole thing without stopping to
-ask for permission between phases. The phases below are the plan; do not write a
-separate plan document or wait for approval of one.
+That means: branch it, research it, plan it, build whatever code it needs, write
+it, compile it, update the SPEC, commit, push, and open the pull request. Run
+the whole thing without stopping to ask for permission between phases. The
+phases below are the plan; do not write a separate plan document or wait for
+approval of one.
 
 Resolve the target from the argument. A bare number or "chapter N" means chapter
 N of the only book under `books/`; if several books exist, take the book from
@@ -27,6 +28,47 @@ progress table.
 Ask the author a question only when proceeding either way would waste
 substantial work or produce something unusable. Report decisions you made on
 their behalf at the end instead of asking up front.
+
+## Where the work happens
+
+Never draft in the main checkout, and never on `main`. Each session runs in its
+own worktree on a new branch cut from `origin/main`, so an abandoned session
+leaves nothing to clean up, two chapters can be in flight at once, and the author
+reviews the result as a diff instead of finding it already landed.
+
+Name the branch after the target: `draft/<book>-chNN-<slug>` for chapter prose,
+`feat/` or `fix/` for a session that only touches tooling. `<book>` is the folder
+name under `books/`.
+
+In Claude Code, `EnterWorktree` is this step - it makes the worktree under
+`.claude/worktrees/`, cuts the branch from `origin/<default branch>`, and moves
+the session into it. In any other runtime, from the repo root:
+
+```
+git fetch origin
+git worktree add -b draft/<book>-chNN-<slug> .claude/worktrees/<slug> origin/main
+```
+
+Then check what you actually got, because a tool that names the branch for you
+derives that name from the one you asked for rather than using it:
+
+```
+git status -sb
+git merge-base --is-ancestor origin/main HEAD && echo based on origin/main
+```
+
+`git branch -m draft/<book>-chNN-<slug>` fixes a name that missed the convention.
+From here every path in this skill is relative to the worktree root, including
+`pwsh scripts/check-chapter.ps1 books/<name>`. The hook path is repository config
+and `.githooks/` is tracked, so the pre-commit gate works in a worktree with
+nothing re-run; `scripts/setup.ps1` is for a fresh clone, not a fresh worktree.
+
+The base is `origin/main` even where a book's SPEC names a different one. A SPEC
+that still declares its own base branch is a stale decision: raise it and let the
+author settle it, rather than branching off it quietly. Same answer when the
+target depends on work that has not reached `origin/main` yet - say so before
+drafting, because a chapter written against a tree missing its predecessor will
+contradict it.
 
 ## Orient first
 
@@ -104,7 +146,12 @@ The sequence matters more than any individual step.
    finding yourself before acting on it, and report the ones you reject along
    with why. The audit is a lead, not a verdict.
 6. **Close out.** Rebuild after the audit fixes, run the check script again,
-   update SPEC, commit.
+   update SPEC, then commit and push. One commit per logical change, subject in
+   the repo's style: `draft: chapter NN, <chapter title>` for the prose,
+   `feat:`, `fix:` or `refactor:` for anything else the session touched. The
+   pre-commit hook rebuilds every book in the staged paths, so it is slow on
+   purpose; read what it prints rather than working around it. Then
+   `git push -u origin HEAD`.
 7. **Retro, proposals only.** List what cost time this session, then sort each
    item into exactly one of these:
 
@@ -131,6 +178,22 @@ The sequence matters more than any individual step.
 
    Present proposals to the author as diffs and stop there: never edit this
    skill, its references, or the check script in a drafting session.
+8. **Open the PR.** Last, so that it can carry the retro:
+
+   ```
+   gh pr create --base main --title 'draft: chapter NN, <chapter title>' \
+     --body-file <a scratch file outside the repo>
+   ```
+
+   The body covers what the chapter does, which gates passed and how each audit
+   finding was resolved, the companion tag its listings depend on, the SPEC rows
+   that moved, and step 7's proposals as a list the author can act on. Write it
+   to a scratch path rather than the working tree, so drafting the PR does not
+   leave a file behind in the commit that follows. Target `main`, never another
+   book's branch.
+
+   Stop at the open PR. Merging it and clearing the worktree are the author's,
+   and a worktree removed before review takes the branch's working state with it.
 
 Writing prose before the code exists produces listings that then have to be made
 true, which is backwards and tends to leave inventions in the text.
@@ -141,6 +204,7 @@ Do not pass one of these without the previous one holding.
 
 | Gate | Condition |
 |---|---|
+| Branch | Work is in a worktree on a new branch cut from `origin/main`; the main checkout is untouched |
 | Research | Every load-bearing fact has a primary source at a pinned version, or was measured |
 | Companion code | That repo's verification script passes; the chapter's tag is pushed |
 | Report | Real schema and numbers posted before prose starts |
@@ -149,6 +213,7 @@ Do not pass one of these without the previous one holding.
 | Audit | A subagent with no drafting context reported; every finding is fixed, or rejected on the record |
 | SPEC | Progress row, decisions, TOC and open items all reflect reality |
 | Commit | `.githooks/pre-commit` passes unaided; never `--no-verify` |
+| PR | Branch pushed with its upstream set; PR open against `main`, body carrying the gate results and the retro proposals |
 
 The build gate: from the book directory `latexmk -C && latexmk` (through the
 Bash tool), then from the repo root:
@@ -208,5 +273,7 @@ Load these when the task reaches them, not before.
 ## Done when
 
 The full book compiles clean with `\includeonly` commented out, every listing is
-traceable to a companion-repo tag, `SPEC.md` reflects the new state, and the
-pre-commit hook passes on its own.
+traceable to a companion-repo tag, `SPEC.md` reflects the new state, the
+pre-commit hook passes on its own, and the branch is pushed with a PR open
+against `main`. Leave the worktree where it is: whether that PR merges is the
+author's call, not the session's.
