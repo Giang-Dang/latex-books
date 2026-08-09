@@ -7,8 +7,8 @@ nothing needs mirroring afterwards.
 
 ## Owned here
 
-- **draft-chapter** - the writing workflow for books under `books/`. Research,
-  companion code, prose, build, SPEC update, commit. Start here.
+- **draft-chapter** - the writing workflow for books under `books/`. Branch,
+  research, companion code, prose, build, SPEC update, commit, PR. Start here.
 
 ## Vendored copies
 
