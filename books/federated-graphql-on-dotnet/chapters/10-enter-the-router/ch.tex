@@ -1,7 +1,34 @@
 \chapter{Enter the Router}
 \label{ch:enter-the-router}
 
-\emph{Not yet drafted.} Planned scope: Cosmo Router locally: configuration, the first federated query, reading query plans, and where the router surprises you.
+Chapter~\ref{ch:composition} produced a file and left it on disk. This chapter
+starts the process that reads it.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/10-enter-the-router/01-section-name}
+Mosaic has been a graph nobody could query for two chapters. Since the
+extraction in chapter~\ref{ch:the-first-cut-extracting-catalog}, Catalog has
+had the product titles and no way to price them, and Mosaic has had the prices
+and no way to list the products, and every question that spans the two has been
+answered by me, by hand, with a base64 identifier copied out of one response and
+pasted into the next. The router is the thing that does that copying.
+
+Tag \code{ch10} of the companion repository changes neither service by a line,
+again. What it adds is a container and two files it mounts: the composed
+configuration from chapter~\ref{ch:composition}, and \code{router/config.yaml},
+which is about the process rather than about the graph. The router is the first
+part of Mosaic that is configured rather than written, and most of what went
+wrong for me in this chapter went wrong in that file.
+
+Three things caught me out. A value in the configuration file beats the
+environment variable that sets the same thing. A routing URL that says
+\code{localhost} works from inside a container, for a reason nothing in the
+request or the log mentions. And the flag
+chapter~\ref{ch:composition} refused to speculate about turns a build failure
+that names four fields into a runtime failure that names nothing.
+
+\input{chapters/10-enter-the-router/01-one-process-two-files}
+\input{chapters/10-enter-the-router/02-the-query-that-stopped-working}
+\input{chapters/10-enter-the-router/03-sixty-six-settings}
+\input{chapters/10-enter-the-router/04-the-plan-on-a-real-graph}
+\input{chapters/10-enter-the-router/05-what-the-router-costs}
+\input{chapters/10-enter-the-router/06-the-check-you-turned-off}
+\input{chapters/10-enter-the-router/07-your-turn}

@@ -1,0 +1,120 @@
+\section{One Process, Two Files}
+\label{sec:ch10-one-process-two-files}
+\index{router!starting it|(}%
+
+The router is a service in \code{docker-compose.yml} like the other three, and
+starting it is one command:
+
+\begin{minted}{text}
+docker compose up -d mosaic-router
+\end{minted}
+
+\index{router!what it needs to start}%
+It needs no account, no registry and no network beyond the two subgraphs it
+will eventually call. Chapter~\ref{ch:how-a-federated-query-actually-runs}
+established that much on the sample; what is new here is that it needs nothing
+of Mosaic either. I started it with both services stopped and it came up and
+answered \code{/health}, because the execution config is a complete description
+of the graph and the router does not check whether any of it is true until a
+query arrives. So the compose service has no \code{depends\_on}. There is
+nothing to wait for.
+
+Figure~\ref{fig:ch10-what-it-loads} is the whole arrangement: two files in, one
+process, two services it reaches by a route that is not quite the one written
+down.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch10-what-it-loads}
+  \caption{Everything the router knows is in the two mounted files, and neither
+  is consulted again after startup unless something changes them. The dashed
+  arrow is the part that is not written anywhere: the routing URLs say
+  \code{localhost}, and inside a container that is the container, so the router
+  rewrites them before it dials. The setting behind that rewrite is in
+  section~\ref{sec:ch10-sixty-six-settings}.}
+  \label{fig:ch10-what-it-loads}
+\end{figure}
+
+\subsection*{What it says on the way up}
+
+\index{router!startup log}%
+Eleven lines, of which three are warnings. This is the whole of it, colour
+stripped and with the \code{hostname}, \code{pid} and \code{service\_version}
+fields that repeat on every line taken out. Nothing else is removed:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+INFO cmd/main.go:230 Config file watching is disabled, you can still trigger reloads by sending SIGHUP to the router process
+INFO cmd/main.go:125 Config file provided. Values in the config file have higher priority than environment variables {"config_file": ["/etc/mosaic-router/config.yaml"]}
+INFO core/supervisor_instance.go:47 GOMEMLIMIT set automatically {"limit": "0 B"}
+WARN core/router.go:464 No graph token provided. The following Cosmo Cloud features are disabled. Not recommended for Production. {"features": ["Schema Usage Tracking", "Persistent operations", "Cosmo Cloud Tracing", "Cosmo Cloud Metrics"]}
+WARN core/router.go:536 Development mode enabled. This should only be used for testing purposes
+INFO metric/prometheus_server.go:63 Prometheus metrics enabled {"listen_addr": "127.0.0.1:8088", "endpoint": "/metrics"}
+INFO core/router.go:1020 Serving GraphQL playground {"url": "http://0.0.0.0:3002/"}
+WARN core/router.go:1570 Advanced Request Tracing (ART) is enabled in development mode but requires a graph token to work in production.
+INFO core/router.go:1697 Server initialized and ready to serve requests {"listen_addr": "0.0.0.0:3002", "playground": true, "introspection": true, "config_version": "00000000-0000-0000-0000-000000000000"}
+INFO core/router.go:1715 Watching config file for changes. Router will hot-reload automatically without downtime {"path": "/etc/mosaic/supergraph.json"}
+INFO core/supervisor.go:155 Router started
+\end{minted}
+
+\index{router!config\_version@\code{config\_version}}%
+\code{config\_version} is chapter~\ref{ch:composition}'s all-zero \code{version}
+field arriving where chapter~\ref{ch:how-a-federated-query-actually-runs} first
+met it. A config composed on a laptop has no registry to take a version from,
+and the router prints the zeroes without comment.
+
+\index{router!two settings named config file}%
+Read the first line and the second to last one together, because they are two
+different settings with almost the same name and they say opposite things.
+Line one is \code{watch\_config}, which watches \code{config.yaml}, and it is
+off. Line ten is \code{execution\_config.file.watch}, which watches
+\code{supergraph.json}, and it is on because Mosaic's configuration turns it on.
+Nothing on either line says which file it means until the tenth one names a
+path, and the two are eight lines apart.
+
+\subsection*{The warnings are the honest kind}
+
+Three warnings on a healthy start would normally be a smell. These three are
+each telling you about a decision this book made on purpose.
+
+\index{router!no graph token}%
+\code{No graph token provided} is the account this book does not have. The
+token is how a router fetches its schema from the Cosmo registry and reports
+back to it, and with a static execution config there is nothing to fetch. What
+it costs is named in the warning itself: schema usage tracking, persisted
+operations, and Cosmo Cloud's tracing and metrics.
+Chapter~\ref{ch:self-hosting-cosmo} is where a control plane arrives and those
+come back.
+
+\code{Development mode enabled} and the note about Advanced Request Tracing are
+the same decision twice. Development mode is what makes the query plan headers
+work without a signed request, and
+section~\ref{sec:ch10-the-plan-on-a-real-graph} depends on it entirely. It is
+a development posture, exactly like the \code{ASPNETCORE\_ENVIRONMENT} of
+\code{Development} that both subgraphs run under in the same compose file, and
+for the same reason: a graph you cannot introspect is a graph no tool can be
+pointed at.
+
+\medskip
+\index{router!endpoints}%
+Beyond \code{/graphql} the router serves an IDE at its root, and three health
+endpoints at their default paths. I asked for all three and got 200 and the
+body \code{OK} from each:
+
+\begin{minted}{text}
+/health        /health/ready        /health/live
+\end{minted}
+
+\code{/metrics} on that port answers 404, because the Prometheus server the log
+mentions is on \code{127.0.0.1:8088} inside the container and nothing publishes
+it. Chapter~\ref{ch:observability} is where that becomes interesting.
+
+\index{router!readiness reports on itself}%
+One thing about readiness will matter later, so here it is measured rather than
+assumed. I stopped both subgraphs, started the router against nothing, and
+asked all three endpoints again. All three still answer 200 and \code{OK}. A
+query at that point comes back
+\code{Failed to fetch from Subgraph 'catalog'} with \code{data} null. The
+router is reporting on itself, and it is ready in the sense that it is willing
+to take your request.
+
+\index{router!starting it|)}%

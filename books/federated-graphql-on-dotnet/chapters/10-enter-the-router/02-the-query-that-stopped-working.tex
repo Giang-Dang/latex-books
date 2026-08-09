@@ -1,0 +1,154 @@
+\section{The Query That Stopped Working}
+\label{sec:ch10-the-query-that-stopped-working}
+\index{federated query!the first real one|(}%
+
+This is the query chapters~\ref{ch:hotchocolate-quickly}
+to~\ref{ch:schema-design-that-survives-change} opened with, in its current
+spelling:
+
+\begin{minted}{graphql}
+{
+  browseProducts(first: 3) {
+    nodes {
+      title
+      price { amount currency }
+      availableQuantity
+      averageRating
+      reviews(first: 2) {
+        totalCount
+        nodes { rating author { displayName } }
+      }
+    }
+  }
+}
+\end{minted}
+
+It has not answered since
+chapter~\ref{ch:the-first-cut-extracting-catalog}, and the two failures are
+worth seeing side by side. Both subgraphs reject it at validation, with a 400
+and no execution at all:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+catalog (5101), 4 errors
+  The field `price` does not exist on the type `Product`.
+  The field `availableQuantity` does not exist on the type `Product`.
+  The field `averageRating` does not exist on the type `Product`.
+  The field `reviews` does not exist on the type `Product`.
+
+mosaic (5100), 1 error
+  The field `browseProducts` does not exist on the type `Query`.
+\end{minted}
+
+Catalog has the products and none of the four fields hanging off them. Mosaic
+has all four and no way to list a product.
+
+Send it to the router:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{
+  "title": "Beech Cutting Board",
+  "price": { "amount": 69, "currency": "EUR" },
+  "availableQuantity": 61,
+  "averageRating": 4.166666666666667,
+  "reviews": {
+    "totalCount": 6,
+    "nodes": [
+      { "rating": 5, "author": { "displayName": "Katharina Brandt" } },
+      { "rating": 4, "author": { "displayName": "Tomas Novak" } }
+    ]
+  }
+}
+\end{minted}
+
+That is the first of the three products, and it is the first answer about
+Mosaic that crossed a service boundary without me carrying it.
+Chapter~\ref{ch:how-a-federated-query-actually-runs} watched a router assemble
+one, but that was two subgraphs built to be watched. This is the storefront.
+\code{title} came out of Catalog's database. Everything else came out of
+Mosaic's, hung off a \code{Product} class that holds an identifier and nothing
+else.
+
+\index{federation!the payoff, stated plainly}%
+I want to be precise about what is impressive here and what is not. The data is
+dull: it is the same twenty-five products and hundred and twenty reviews the
+book has been carrying since chapter~\ref{ch:hotchocolate-quickly}. What
+changed is that no process in the system has all of it, and the client did not
+have to know that. There is no aggregation code anywhere in Mosaic. Nobody
+wrote a class that calls Catalog and then calls Pricing and stitches the
+results. The stitching is a consequence of two schemas agreeing on what a
+\code{Product} is, and the rest is a routing table.
+
+\subsection*{What each service did for it}
+
+\index{request timeline!through a router}%
+Chapter~\ref{ch:the-life-of-a-request} built a per-request timeline and
+chapter~\ref{ch:data-without-the-n-plus-1} added a SQL counter to it. Both are
+still running. Mosaic's console, for one warm request:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+parse - validate - compile - coerce 0.056ms execute 7.802ms total 7.895ms (document cache hit, operation cache hit, 19 resolvers, 6 SQL)
+Service lookups this request: 5
+\end{minted}
+
+Nineteen resolvers and six statements for its half. Both caches hit, which they
+would: the router sends the same document every time, which is
+section~\ref{sec:ch10-the-plan-on-a-real-graph}'s subject from the other end.
+The first request of a session reports both caches missed and 93.9 ms of
+execute, so chapter~\ref{ch:the-life-of-a-request}'s warning about cold first
+measurements survives the move to a federated graph intact.
+
+\index{observability!lost in the extraction}%
+Catalog's console reports nothing at all. Not a smaller number: nothing. It has
+no request timeline, no resolver count and no lookup counter, because
+chapter~\ref{ch:the-life-of-a-request} built all three inside \code{Mosaic.Api}
+and chapter~\ref{ch:the-first-cut-extracting-catalog}'s extraction left them
+there. I grepped the whole of \code{src/Mosaic.Catalog} for the four
+diagnostic types and got one hit, which is a comment in
+\code{CatalogService.cs} saying the counter is gone.
+
+That is worth more than a footnote. Half of every federated query in this
+system is now unmeasured, and the extraction that caused it did not warn me,
+because instrumentation is not part of a schema and no gate checks for it. The
+service still works. It is just quiet. This is the ordinary way observability
+degrades when a service splits, and
+chapter~\ref{ch:observability} is where it gets fixed properly with tracing that
+spans both.
+
+\subsection*{Verify it in Postman}
+
+\index{Postman!against the router}%
+The collection for this chapter is \code{mosaic-router.postman\_collection.json},
+and unlike chapter~\ref{ch:the-first-cut-extracting-catalog}'s it talks to one
+address. Seven requests, twenty-three assertions, all against port 3002.
+
+The first one sends the query above and asserts what makes it interesting rather
+than what makes it pass:
+
+\begin{minted}[fontsize=\footnotesize]{javascript}
+pm.test("every product carries fields from both subgraphs", function () {
+    for (const node of nodes) {
+        pm.expect(node.title, "title").to.be.a("string").and.not.empty;
+        pm.expect(node.price.amount, "price.amount").to.be.a("number");
+        pm.expect(node.price.currency, "price.currency").to.eql("EUR");
+        pm.expect(node.availableQuantity, "availableQuantity").to.be.a("number");
+        pm.expect(node.reviews.totalCount, "reviews.totalCount").to.be.a("number");
+    }
+});
+\end{minted}
+
+\index{verification!asserting the seam}%
+An assertion on the product count would pass against Catalog alone. This one
+cannot: every field after \code{title} is on the far side of the seam, so the
+test fails if the second hop stops happening, and it fails for every product
+rather than for whichever one happened to be first. The verification script runs
+it on every pass, and its line in the summary says what it is for:
+
+\begin{minted}{text}
+[ok]   the router answers the query neither subgraph can
+\end{minted}
+
+Two subgraphs, one answer, and so far nothing about how. The router will tell
+you how if you ask it, and it turns out to have rewritten the question on the
+way in.
+
+\index{federated query!the first real one|)}%

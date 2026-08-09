@@ -1,0 +1,51 @@
+% What the router loads and what it talks to. Referenced from chapter 10.
+% Bare tikzpicture; the figure environment, caption and label live at the call
+% site.
+%
+% The point of the picture is the boundary in the middle: the router is in a
+% container and the subgraphs are not, which is what makes the routing URLs in
+% the composed config wrong and the dashed rewrite necessary.
+\begin{tikzpicture}[
+    font=\small,
+    infile/.style={draw, rounded corners=2pt, minimum width=44mm,
+                   minimum height=8mm, font=\scriptsize, align=center},
+    proc/.style={draw, rounded corners=2pt, minimum width=62mm,
+                 minimum height=12mm, font=\scriptsize, align=center,
+                 fill=black!8},
+    svc/.style={draw, rounded corners=2pt, minimum width=44mm,
+                minimum height=10mm, font=\scriptsize, align=center,
+                fill=black!5},
+    feed/.style={-{Stealth[length=2mm]}},
+    call/.style={-{Stealth[length=2mm]}, dashed, gray},
+    lbl/.style={font=\scriptsize, align=center, inner sep=1pt},
+    divider/.style={gray, dotted, thick}
+  ]
+
+  % -- the two mounted files -------------------------------------------------
+  \node[infile] (cfg) at (3.4,0)  {\code{federation/supergraph.json}\\the graph};
+  \node[infile] (yml) at (10.4,0) {\code{router/config.yaml}\\the process};
+
+  % -- the router ------------------------------------------------------------
+  \node[proc] (router) at (6.9,-2.2)
+    {Cosmo Router 0.337.1, in a container\\listening on \code{0.0.0.0:3002}};
+
+  \draw[feed] (cfg.south) -- (3.4,-2.2) -- (router.west);
+  \draw[feed] (yml.south) -- (10.4,-2.2) -- (router.east);
+
+  % -- the container boundary ------------------------------------------------
+  \draw[divider] (0.3,-3.35) -- (13.5,-3.35);
+  \node[lbl, gray, anchor=south east] at (13.5,-3.28) {in a container};
+  \node[lbl, gray, anchor=north east] at (13.5,-3.42) {on the host};
+
+  % -- the two subgraphs -----------------------------------------------------
+  \node[svc] (cat) at (3.4,-5.5)  {\code{Mosaic.Catalog}\\port 5101};
+  \node[svc] (mos) at (10.4,-5.5) {\code{Mosaic.Api}\\port 5100};
+
+  \draw[call] (router.south) -- (6.9,-4.75) -- (3.4,-4.75) -- (cat.north);
+  \draw[call] (router.south) -- (6.9,-4.75) -- (10.4,-4.75) -- (mos.north);
+
+  \node[lbl, gray, anchor=south] at (6.9,-4.65)
+    {the config says \code{localhost};
+     the router dials \code{host.docker.internal}};
+
+\end{tikzpicture}

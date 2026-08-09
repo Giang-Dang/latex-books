@@ -1,0 +1,64 @@
+% Where --disable-resolvability-validation moves the failure. Referenced from
+% chapter 10. Bare tikzpicture; the figure environment, caption and label live
+% at the call site.
+%
+% Two columns for the same fault, and one horizontal rule. Everything above the
+% rule happens on a laptop with both schemas open; everything below it happens
+% in production. The columns run top to bottom rather than left to right
+% because the right-hand one has three outcomes and no room for them sideways.
+\begin{tikzpicture}[
+    font=\small,
+    stage/.style={draw, rounded corners=2pt, minimum width=46mm,
+                  minimum height=8mm, font=\scriptsize, align=center},
+    result/.style={draw, rounded corners=2pt, minimum width=52mm,
+                   minimum height=12mm, font=\scriptsize, align=center,
+                   fill=black!8},
+    quiet/.style={draw, rounded corners=2pt, minimum width=52mm,
+                  minimum height=11mm, font=\scriptsize, align=center,
+                  dashed},
+    flow/.style={-{Stealth[length=2mm]}},
+    lbl/.style={font=\scriptsize, align=center, inner sep=1pt},
+    divider/.style={gray, dotted, thick}
+  ]
+
+  % -- the two columns -------------------------------------------------------
+  \node[lbl] at (3.5,0.5) {\textbf{Composed as it stands}};
+  \node[lbl] at (10.5,0.5) {\textbf{Composed with the check off}};
+
+  \node[stage] (cmdA) at (3.5,-0.4)  {\code{wgc router compose}};
+  \node[stage] (cmdB) at (10.5,-0.4)
+    {\code{wgc router compose}\\\code{--disable-resolvability-validation}};
+
+  \node[result] (errA) at (3.5,-2.0)
+    {4 errors, exit 1\\each names a field\\and the path a client takes to it};
+  \node[result] (cfgB) at (10.5,-2.0)
+    {a config, exit 0\\one property differs\\from a healthy one};
+
+  \draw[flow] (cmdA) -- (errA);
+  \draw[flow] (cmdB) -- (cfgB);
+
+  % -- the divide ------------------------------------------------------------
+  \draw[divider] (0.3,-3.1) -- (13.7,-3.1);
+  \node[lbl, gray, anchor=south east] at (13.7,-3.03) {build time};
+  \node[lbl, gray, anchor=north east] at (13.7,-3.17) {request time};
+
+  % -- what each one leaves you with -----------------------------------------
+  \node[lbl, align=center] (noneA) at (3.5,-4.1)
+    {nothing is deployed,\\because nothing\\was produced};
+
+  \node[quiet] (routerB) at (10.5,-4.1)
+    {the router starts\\no warning about the graph};
+  \draw[flow] (cfgB) -- (routerB);
+
+  \node[result] (okB) at (10.5,-5.8)
+    {a query inside one subgraph\\HTTP 200};
+  \node[result] (badB) at (10.5,-7.4)
+    {a query across the boundary\\HTTP 500,
+     \code{internal server error}};
+
+  % Two outcomes of the same router, not a sequence, so the second one is
+  % routed around the first rather than through it.
+  \draw[flow] (routerB.south) -- (okB.north);
+  \draw[flow] (routerB.west) -- (7.4,-4.1) -- (7.4,-7.4) -- (badB.west);
+
+\end{tikzpicture}

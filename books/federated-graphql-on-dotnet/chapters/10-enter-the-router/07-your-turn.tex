@@ -1,0 +1,145 @@
+\section*{Your turn}
+
+Everything here needs three processes and Docker. Check out tag \code{ch10} of
+the companion repository, run \code{npm ci} once, and from the repository root
+start the database, both subgraphs and the router:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+docker compose up -d mosaic-db
+dotnet run --project src/Mosaic.Catalog     # 5101
+dotnet run --project src/Mosaic.Api         # 5100
+docker compose up -d mosaic-router          # 3002
+\end{minted}
+
+The two \code{dotnet run} commands want a terminal each. If port 3002 is
+already taken, an earlier run of \code{docker compose --profile wire up} left
+chapter~\ref{ch:how-a-federated-query-actually-runs}'s router behind;
+\code{docker compose --profile wire down} clears it. The commands below are
+written for PowerShell, and the only thing that changes under \code{sh} is the
+line continuation.
+
+\begin{enumerate}
+  \item \textbf{Answer the question the book could not.} Send
+  section~\ref{sec:ch10-the-query-that-stopped-working}'s storefront query to
+  \code{http://localhost:3002/graphql}, then send the same document to 5100 and
+  to 5101. You get one answer and two 400s, and the two failures name different
+  fields. Keep the three responses side by side for a moment. They are the
+  argument for the whole of Part II on one screen.
+
+  \item \textbf{Watch a plan get smaller.} Ask for the plan of the storefront
+  query with \code{X-WG-Include-Query-Plan} and \code{X-WG-Skip-Loader}, then
+  remove \code{price} from the selection, then \code{availableQuantity}, then
+  \code{averageRating}, asking for the plan each time. The
+  \code{dependencies} array shrinks by one entry each time and the number of
+  fetches does not change. Now remove \code{reviews} as well: the second fetch
+  disappears entirely. That is section~\ref{sec:ch10-the-plan-on-a-real-graph}'s
+  point about what the array's length is a count of, felt rather than read.
+
+  \item \textbf{Predict the plan for two root fields.} Before running it, write
+  down how many fetches you expect from
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+{ browseProducts(first: 2) { nodes { title } } customerById(id: "...") { displayName } }
+  \end{minted}
+
+  with a real customer identifier, which you can get from a review's author.
+  Then run it. If your prediction was two fetches under a \code{Sequence}, look
+  again at what node they are under and why
+  chapter~\ref{ch:how-a-federated-query-actually-runs} says the router
+  serialises only as much as the data forces it to.
+
+  \item \textbf{Make the literals matter, and find that they do not.} Send the
+  storefront query at \code{first: 3}, then at \code{first: 7}, capturing both
+  plans. Compare them as strings rather than by eye. Then send the same
+  document with proper variable declarations and compare again. Two of the
+  three comparisons come out equal and one does not, and the one that does not
+  is the one a generated client sends.
+
+  \item \textbf{Break the routing on purpose.} Copy the router's configuration
+  to a second file beside it, and add this line to the copy:
+
+  \begin{minted}[fontsize=\footnotesize]{text}
+localhost_fallback_inside_docker: false
+  \end{minted}
+
+  Start a second router on it. It needs a port of its own, because
+  \code{mosaic-router} already holds 3002:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+docker run --rm -d --name nofallback -p 3003:3002 `
+  --add-host host.docker.internal:host-gateway `
+  -v ${PWD}/federation/supergraph.json:/etc/mosaic/supergraph.json:ro `
+  -v ${PWD}/router/nofallback.yaml:/etc/mosaic-router/config.yaml:ro `
+  -e CONFIG_PATH=/etc/mosaic-router/config.yaml `
+  ghcr.io/wundergraph/cosmo/router:0.337.1
+  \end{minted}
+
+  Send the storefront query to port 3003. Note the status code before you read
+  the body, then decide what a load balancer in front of this would have
+  concluded. \code{docker rm -f nofallback} puts things back.
+
+  \item \textbf{Set a value in two places.} Change \code{log\_level} to
+  \code{debug} in \code{router/config.yaml}, then recreate the container:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+docker compose up -d --force-recreate mosaic-router
+docker compose logs mosaic-router
+  \end{minted}
+
+  Confirm the debug lines appear. Now put the file back to \code{info} and set
+  the environment variable instead, by adding this under \code{mosaic-router}
+  in \code{docker-compose.yml}:
+
+  \begin{minted}[fontsize=\footnotesize]{yaml}
+      LOG_LEVEL: "debug"
+  \end{minted}
+
+  Recreate it again and count the debug lines. Then read the second line of the
+  startup log, which told you this would happen. Put both files back with
+  \code{git checkout}.
+
+  \item \textbf{Reload the graph under a running router.} With the router up,
+  edit a field description in \code{src/Mosaic.Catalog}, re-export that
+  service's schema, and recompose over the committed config. Watch the router's
+  log for \code{Config file changed}, then introspect to confirm the
+  description changed. Nothing restarted. Now run the verification script: it
+  fails, because the committed config no longer matches the one your edit
+  produced. Put both back with \code{git checkout}.
+
+  \item \textbf{Deploy a graph you were told not to.} Run
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/router-cases.mjs --print resolvability-off
+  \end{minted}
+
+  and read the five lines of evidence it prints. Then do it by hand:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+# add ", resolvable: false" to the @key on Product in schema/mosaic.graphql
+npx wgc router compose --disable-resolvability-validation `
+    -i federation/mosaic.yaml -o federation/scratch.json
+  \end{minted}
+
+  Then start a router on that file, on a port of its own again, with the
+  \code{docker run} of exercise 5 and \code{scratch.json} in place of
+  \code{supergraph.json}. Try to find out what is wrong with your graph using
+  only what the router tells a client. Give yourself five minutes. Then look at
+  \code{docker logs}. Afterwards, restore the schema with
+  \code{git checkout schema/mosaic.graphql}.
+
+  \item \textbf{Ask the router for something only a subgraph has.} Send
+  \code{\{ \_service \{ sdl \} \}} to 3002 and to 5101. Then send
+  \code{\{ nope1 nope2 nope3 \}} to both. The status codes differ, the wording
+  differs, and one of them reports three errors where the other reports one.
+  Decide which behaviour you would rather your clients see, and note that you
+  do not get to choose.
+\end{enumerate}
+
+Exercise 8 is the one worth doing properly, with the five minutes actually
+spent. Reading that a diagnostic is useless is not the same experience as
+needing it and finding it is not there, and the second one is what makes you
+put composition in a pipeline the following Monday.
+Chapter~\ref{ch:entity-resolution-done-right} takes the second hop apart: what
+a reference resolver does when the router batches twenty-five representations
+into it, and what \code{@requires} costs when a field needs something the other
+service owns.
