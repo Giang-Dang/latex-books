@@ -1,7 +1,35 @@
 \chapter{The First Cut: Extracting Catalog}
 \label{ch:the-first-cut-extracting-catalog}
 
-\emph{Not yet drafted.} Planned scope: HotChocolate.ApolloFederation; reference resolvers; extending foreign entities; testing a naked subgraph in Postman (\code{\_service}, hand-built \code{\_entities} calls) before any router exists.
+Chapter~\ref{ch:how-a-federated-query-actually-runs} ran a federated graph made
+of two toy services with three products in them. This chapter takes Mosaic
+apart.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/08-the-first-cut-extracting-catalog/01-section-name}
+Catalog goes first, because Catalog asks nobody for anything. It owns
+\code{Product} and it owns nothing else, and the five domains left behind all
+speak to it the same way: through an identifier. That was arranged in
+chapter~\ref{ch:hotchocolate-quickly}, where every field went into the folder of
+the domain that owns it and no entity was given a navigation property to an
+entity belonging to another domain. The bill for that arrangement comes due
+here, and the interesting thing about the extraction is how much of it was
+already paid.
+
+What follows is the real cut, at tag \code{ch08} of the companion repository:
+one service becomes two, one database becomes two, and the twenty-five products
+this book has been printing since chapter~\ref{ch:hotchocolate-quickly} end up
+in a different process from the reviews written about them. No router appears
+anywhere in this chapter. Everything is tested one subgraph at a time, by hand,
+because a subgraph you cannot exercise on its own is a subgraph you will end up
+debugging through a router, which is chapter~\ref{ch:enter-the-router}'s job and
+not a debugger.
+
+Three of the things I had to fix took longer than the extraction did, and none
+of the three is visible from inside either service.
+
+\input{chapters/08-the-first-cut-extracting-catalog/01-what-comes-out-first}
+\input{chapters/08-the-first-cut-extracting-catalog/02-two-attributes}
+\input{chapters/08-the-first-cut-extracting-catalog/03-the-key-you-already-designed}
+\input{chapters/08-the-first-cut-extracting-catalog/04-what-is-left-behind}
+\input{chapters/08-the-first-cut-extracting-catalog/05-testing-a-naked-subgraph}
+\input{chapters/08-the-first-cut-extracting-catalog/06-only-breaks-together}
+\input{chapters/08-the-first-cut-extracting-catalog/07-your-turn}

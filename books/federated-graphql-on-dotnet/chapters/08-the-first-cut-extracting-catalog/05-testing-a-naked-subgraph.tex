@@ -1,0 +1,225 @@
+\section{Testing a Naked Subgraph}
+\label{sec:ch08-testing-a-naked-subgraph}
+\index{subgraph!testing without a router|(}%
+
+There is no router in this chapter, and that is a choice rather than a schedule.
+A subgraph is an ordinary GraphQL service that has agreed to two extra fields,
+and both of those fields can be exercised from Postman with nothing else
+running. Do that first. Every minute spent learning what a subgraph answers on
+its own is a minute you will not spend later staring at a query plan trying to
+work out which of three processes is lying.
+
+Two questions, in this order.
+
+\subsection*{What do you publish?}
+
+\index{federation!service field@\code{\_service} field!as a first check}%
+\code{\{ \_service \{ sdl \} \}}, to each service, on its own port. That string
+is what a composer will read, and reading it yourself takes ten seconds. The
+things worth checking are the ones a compiler cannot:
+
+\medskip\noindent\textbf{Is the key there?} \code{@key(fields: "id")} on the
+types you meant, and on no others.
+Chapter~\ref{ch:how-a-federated-query-actually-runs} showed a schema that built,
+started and answered while publishing no key at all, because nothing reachable
+from a root field returned the entity.
+
+\medskip\noindent\textbf{Is \code{\_entities} there?} It is generated from the
+\code{\_Entity} union, which is generated from the keys. No key, no union, no
+field.
+
+\medskip\noindent\textbf{Are the fields on the side you intended?} Mosaic
+publishes \code{price}, \code{availableQuantity}, \code{reviews} and
+\code{averageRating} on \code{Product} and nothing else. Catalog publishes
+\code{sku}, \code{title}, \code{description} and \code{category}. A field on
+both sides is a composition error waiting for
+chapter~\ref{ch:composition}; a field on neither is a client error waiting for
+production.
+
+\subsection*{Can you answer for a key?}
+
+\index{representations!typed by hand}%
+Then \code{\_entities}, by hand, exactly as
+chapter~\ref{ch:how-a-federated-query-actually-runs} typed it into the sample.
+The document is the same one a router would send:
+
+\begin{minted}{graphql}
+query ($representations: [_Any!]!) {
+  _entities(representations: $representations) {
+    ... on Product {
+      price { amount currency }
+      availableQuantity
+      averageRating
+    }
+  }
+}
+\end{minted}
+
+\begin{minted}{json}
+{ "representations": [ { "__typename": "Product", "id": "UHJvZHVjdDoAAACgAAAAQIAAAAAAAAAB" } ] }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"_entities":[{"price":{"amount":1249.00,"currency":"EUR"},
+  "availableQuantity":12,"averageRating":4.25}]}}
+\end{minted}
+
+That is Mosaic answering three questions about a product it cannot name. Send
+the same key to Catalog and you get the title and the sku and no price. Between
+the two responses is the entire supergraph, assembled by hand, and it took two
+requests and no new software.
+
+\subsection*{A key that does not decode}
+
+\index{representations!an unresolvable key}%
+Two representations worth sending on purpose. First, obvious rubbish:
+
+\begin{minted}{json}
+{ "representations": [ { "__typename": "Product", "id": "not-a-key" } ] }
+\end{minted}
+
+Second, and this is the one that matters, the raw identifier:
+
+\begin{minted}{json}
+{ "representations": [ { "__typename": "Product", "id": "a0000000-0000-4000-8000-000000000001" } ] }
+\end{minted}
+
+Both answer the same way:
+
+\begin{minted}{json}
+{"data":{"_entities":[null]}}
+\end{minted}
+
+A null, no \code{errors} key, HTTP 200. The second one is worth dwelling on: that
+string is a real product identifier, and it is what this field answered before
+chapter~\ref{ch:schema-design-that-survives-change} made it a global object
+identifier. A representation carrying it is now indistinguishable from garbage,
+and the subgraph says so in the mildest possible way.
+
+I think the null is the right answer and I want to be clear about why, because
+the first instinct is to throw. \code{\_entities} returns \code{[\_Entity]},
+nullable on purpose, so that one bad key in a batch of twenty-five does not cost
+the other twenty-four their answers. A subgraph that throws instead turns a
+single malformed representation into a failed fetch, and the router turns that
+into a failed field, and the client gets nothing for a page of products because
+one of them was wrong. Fail the entity, not the batch.
+
+\subsection*{One call for twenty-five, and what happens when it is not}
+
+\index{federation!representation batching!measured}%
+Now the number I would put in front of anyone who thinks representation batching
+is an implementation detail.
+
+Catalog's reference resolver goes through the same DataLoader its node resolver
+uses. I asked it for all twenty-five products, first as one \code{\_entities}
+call carrying twenty-five representations, then as twenty-five calls carrying
+one each, counting the statements that reached PostgreSQL both times:
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+How the keys arrived & Statements \\
+\midrule
+Twenty-five representations, one call & 1 \\
+The same twenty-five keys, one per call & 25 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\index{DataLoader!behind a reference resolver}%
+The data is identical. Nothing in either response says which one happened. This
+is chapter~\ref{ch:data-without-the-n-plus-1}'s fix arriving at the door the
+router knocks on, and it is why
+chapter~\ref{ch:how-a-federated-query-actually-runs} made such a point of
+checking that the router sent one call rather than three: the router's batching
+and the subgraph's batching are two separate things, and either one of them
+being absent costs you the same order of magnitude.
+
+It is worth knowing which half of that you own. The reference resolver itself
+does run twenty-five times either way: HotChocolate clones the resolver context
+once per representation and starts each one as its own task, which
+chapter~\ref{ch:how-a-federated-query-actually-runs} read out of
+\code{EntitiesResolver} at tag \code{16.6.0}. So \code{ProductKey.TryDecode}
+happens twenty-five times in both rows of that table. What collapses is what
+happens next, and it collapses because the resolver hands its key to a
+DataLoader rather than to a service. The row that costs twenty-five statements
+is the one where the twenty-five resolvers were never in the same request to
+begin with, and nothing inside a subgraph can fix that. Whether they arrive
+together is the router's decision, which is why
+chapter~\ref{ch:how-a-federated-query-actually-runs} spent a section proving
+that it batches.
+
+\subsection*{The number that did not move}
+
+\index{measurement!before and after extraction}%
+Chapters~\ref{ch:hotchocolate-quickly} to~\ref{ch:schema-design-that-survives-change}
+were built on one query and three numbers. The query is gone: no service can
+answer it now, because \code{products} belongs to Catalog and \code{reviews}
+belongs to Mosaic, and nothing joins them until
+chapter~\ref{ch:enter-the-router}. Ask it in two halves instead, twenty-five
+products from Catalog and then the same twenty-five keys to Mosaic asking for
+each product's reviews and their authors, and this is what Mosaic's timeline
+reports:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+parse - validate 5.019ms compile 2.203ms coerce 3.270ms execute 188.741ms total 204.336ms
+    (document cache miss, operation cache miss, 146 resolvers, 2 SQL)
+\end{minted}
+
+Ignore the milliseconds. That is the first request a freshly started process
+ever answered, both caches missing, so most of the two hundred is the runtime
+warming up, exactly as chapter~\ref{ch:the-life-of-a-request} warned. The same
+request a moment later reported a total of 4.866 milliseconds with both caches
+hitting. It is the two counts at the end of the line that this chapter is
+about.
+
+\index{measurement!146 resolvers}%
+One hundred and forty-six resolvers, which is exactly what
+chapter~\ref{ch:data-without-the-n-plus-1} measured, and it is not a
+coincidence. It was one root field, twenty-five review connections and one
+hundred and twenty authors. It is now one \code{\_entities} field, twenty-five
+review connections and one hundred and twenty authors. The shape of the work did
+not change; the name of the field the work hangs from did.
+
+Two statements, where the monolith needed three. The one that left is the
+statement that fetched the products, and Catalog runs it instead. Add Catalog's
+one to Mosaic's two and you have chapter~\ref{ch:data-without-the-n-plus-1}'s
+three, in two processes.
+
+That is the most reassuring measurement in this chapter and I would not read too
+much into it. It says the extraction did not cost the database anything, which
+is worth knowing and is not the same as saying it cost nothing. What it leaves
+out is the round trip between the two services, which does not exist yet because
+there is nothing between them.
+
+\subsection*{Verify it in Postman}
+
+\index{Postman!federation collection}%
+Everything above is a request in the companion repository's collection, and the
+collection is worth running rather than reading. Both files live in
+\code{postman/}:
+
+\begin{minted}{text}
+mosaic-federation.postman_collection.json
+mosaic-federation.local.postman_environment.json
+\end{minted}
+
+The environment carries the two URLs. Import both and run the folder:
+
+\begin{minted}{text}
+npx newman run postman/mosaic-federation.postman_collection.json \
+    -e postman/mosaic-federation.local.postman_environment.json
+\end{minted}
+
+\index{Postman!assertions worth stealing}%
+Two assertions in it are worth stealing for a graph of your own. One sends
+Catalog three representations in a deliberately shuffled order and checks that
+the three entities come back in that same shuffled order, because the contract
+is positional and nothing in the response would tell you if a subgraph had
+helpfully sorted them. The other asks Mosaic for \code{products} and asserts
+that it fails, which is a strange-looking test until you consider what it
+catches: a field quietly surviving on the wrong side of a cut is the failure
+mode of every extraction, and it is invisible to a test that only checks that
+the right things work.
+
+\index{subgraph!testing without a router|)}%

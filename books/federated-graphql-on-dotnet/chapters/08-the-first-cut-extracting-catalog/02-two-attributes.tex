@@ -1,0 +1,182 @@
+\section{Two Attributes, and Only One of Them Is Forgiving}
+\label{sec:ch08-two-attributes}
+\index{federation!Key attribute@\code{[Key]} attribute|(}%
+
+A subgraph needs one package and one line.
+
+\begin{minted}{csharp}
+builder.AddGraphQL()
+    .AddApolloFederation()
+    .AddCatalog()
+\end{minted}
+
+\code{AddApolloFederation()} does what
+chapter~\ref{ch:how-a-federated-query-actually-runs} watched it do on the
+sample: it adds \code{\_service} and \code{\_entities} to \code{Query}, the
+\code{\_Any} scalar, an \code{\_Entity} union assembled from every type carrying
+a key, and the \code{@link} that declares which version of the federation
+specification the schema is written against. On Mosaic it also declares
+nothing else, which is worth saying out loud: the thirteen request middleware
+chapter~\ref{ch:the-life-of-a-request} printed are still thirteen, in the same
+order, on both services. Federation adds fields to a schema. It does not add
+middleware to a pipeline.
+
+Then two attributes turn a class into an entity:
+
+\begin{minted}{csharp}
+[Key("id")]
+public sealed record Product(
+    Guid Id,
+    string Sku,
+    string Title,
+    string? Description,
+    ProductCategory Category)
+{
+    [ReferenceResolver]
+    public static async Task<Product?> ResolveReferenceAsync(
+        string id,
+        IResolverContext context,
+        IProductByIdDataLoader productById,
+        CancellationToken cancellationToken)
+        => ProductKey.TryDecode(id, context, out var productId)
+            ? await productById.LoadAsync(productId, cancellationToken)
+            : null;
+}
+\end{minted}
+
+The key says how any other subgraph names one of these, and the reference
+resolver answers when one does.
+Section~\ref{sec:ch08-the-key-you-already-designed} is about the
+\code{TryDecode} call in the middle, which is not boilerplate and should not
+have to be there at all.
+
+This section is about where those two attributes are written, because I put them
+in the wrong place first and the schema did not complain.
+
+\subsection*{The house style does not work here}
+
+\index{Mosaic!authoring style}%
+Every domain type in this repository is a plain record under \code{Model/},
+with a partial class under \code{Types/} carrying its resolvers.
+\code{Product} is the record; \code{ProductNode} is where its \code{id} field
+and its node resolver live. So the obvious place for two more attributes about
+\code{Product} is \code{ProductNode}, beside everything else the graph knows
+about the type.
+
+That compiles. It publishes a schema. It composes. And the entity is broken.
+
+Here is what \code{\_service} returns for a type declared that way, taken from a
+probe I built for exactly this question:
+
+\begin{graphqlsdl}
+type Alpha implements Node @key(fields: "id") {
+  id: ID!
+  resolveByKey(id: UUID!): Alpha
+  title: String!
+}
+\end{graphqlsdl}
+
+\index{source generator!fields it invents}%
+The key landed. The reference resolver became a public field. The source
+generator collects the methods of an \code{[ObjectType<T>]} class and turns each
+one into a field on the type, and it has never heard of
+\code{[ReferenceResolver]}: grep the generator's source at tag \code{16.6.0},
+commit \code{8fea46e}, and the only federation attribute it knows about is
+\code{Shareable}, and that one belongs to the Composite Schemas stack rather
+than to Apollo Federation.
+
+So \code{resolveByKey} is now something a client can call:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"alphas":[{"resolveByKey":{"title":"alpha one"}},
+                   {"resolveByKey":{"title":"alpha one"}}]}}
+\end{minted}
+
+\index{federation!entities field@\code{\_entities} field!with no resolver}%
+And \code{\_entities}, the field that actually matters, has nothing behind it:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"errors":[{"message":"Unexpected Execution Error","path":["_entities"]}],"data":null}
+\end{minted}
+
+That is the masked error
+chapter~\ref{ch:how-a-federated-query-actually-runs} taught me to read, meaning
+the same thing it meant there: HotChocolate threw
+\code{EntityResolver\_NoResolverFound} inside and the mask is all that survived.
+
+\subsection*{Why it fails quietly}
+
+\index{HotChocolate!ReferenceResolverAttribute@\code{ReferenceResolverAttribute}}%
+\code{ReferenceResolverAttribute} is a descriptor attribute, and its
+\code{TryConfigure} does its work only when the descriptor it is handed is an
+object type descriptor or an interface type descriptor. Read at tag
+\code{16.6.0}: every branch of that method is inside one of those two type
+checks, and there is no \code{else}. A method inside a type extension class is
+compiled into a field, so what arrives is a field descriptor, and the method
+falls through and returns.
+
+Nothing throws, nothing warns, and the failure is worse than a no-op in two
+directions at once. The type still carries \code{@key}, so it is still in the
+\code{\_Entity} union, so a composer will accept it and a router will route to
+it. And the schema has grown a field nobody designed.
+
+\subsection*{Where each attribute may go}
+
+I tested the four placements against HotChocolate 16.6.0, one type each in one
+schema, so that the answers could not be confused with each other:
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\code{[Key]} on & \code{[ReferenceResolver]} on & key emitted & resolver registered \\
+\midrule
+the record          & the record          & yes & yes \\
+the type extension  & the type extension  & yes & no \\
+the record          & the type extension  & yes & no \\
+the type extension  & the record          & yes & yes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\index{federation!ReferenceResolver attribute@\code{[ReferenceResolver]} attribute}%
+\code{[Key]} works in either place. \code{[ReferenceResolver]} works on the
+runtime type and nowhere else.
+
+Mosaic puts both on the runtime type, and the rule for this book from here on is
+that federation attributes go on the runtime type. That is an amendment to the
+authoring style chapter~\ref{ch:hotchocolate-quickly} settled, not a footnote to
+it, and it is recorded as one. The fields on an entity stay where the layout
+rule put them; what the entity \emph{is} to other services is declared on the
+class itself.
+
+\subsection*{What a reference resolver may ask for}
+
+\index{federation!reference resolver!parameters}%
+The parameters are not ordinary resolver parameters, and the difference cost me
+an afternoon. Anything the reference resolver declares is first offered to the
+federation argument builder, which reads it out of the representation by name.
+Measured, this is what works:
+
+\medskip\noindent\textbf{The key, by name.} A parameter called \code{id} gets
+the \code{id} field of the representation. A composite key spreads across
+several parameters, and \code{[Map("variation.id")]} reaches into a nested one.
+
+\medskip\noindent\textbf{Application services.} \code{CatalogService}, a
+DataLoader, anything registered in the application container. HotChocolate's own
+certification schema does this, so it is the supported shape.
+
+\medskip\noindent\textbf{\code{IResolverContext}.} Which is how
+section~\ref{sec:ch08-the-key-you-already-designed} reaches something it needs.
+
+\medskip\noindent\textbf{Not a service registered only with the schema.} Ask for
+one of those and the argument builder claims the parameter instead, tries to
+find a representation field by that name, finds nothing, and hands the resolver
+a null. The resolver then throws on it, and what the caller sees is
+\enquote{Unexpected Execution Error} again.
+
+\medskip
+The rule underneath all four is the same: a reference resolver's parameter list
+is a description of a representation first and a dependency list second. Write
+it in that order and it behaves.
+
+\index{federation!Key attribute@\code{[Key]} attribute|)}%

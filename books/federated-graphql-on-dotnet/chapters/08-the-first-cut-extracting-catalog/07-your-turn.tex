@@ -1,0 +1,109 @@
+\section*{Your turn}
+
+Everything in this chapter was measured against two services you can start in
+two terminals. Check out tag \code{ch08} of the companion repository and work
+from its root. You need the .NET SDK, Docker, and \code{npm ci} to have been run
+once. Ports 5100 and 5101 have to be free.
+
+\begin{minted}{text}
+docker compose up -d mosaic-db
+dotnet run --project src/Mosaic.Catalog   # :5101
+dotnet run --project src/Mosaic.Api       # :5100
+\end{minted}
+
+The first start of each creates and seeds its own database and says so.
+Catalog logs \code{Seeded 25 products into a newly created database.} and Mosaic
+logs a line naming prices, reviews, customers and orders. If either sits there
+without logging a seed line, it is waiting on PostgreSQL; \code{docker compose
+ps} should show \code{mosaic-db} healthy.
+
+\begin{enumerate}
+  \item \textbf{Read both contracts.} Send \code{\{ \_service \{ sdl \} \}} to
+  port 5101 and then to port 5100, and put the two \code{Product} blocks side by
+  side. Nine fields between them, one key each, no overlap. Then find the two
+  differences that are not fields: one type implements \code{Node} and the other
+  does not, and only one of them has \code{ProductCategory} in its schema at all.
+
+  \item \textbf{Assemble one product by hand.} Ask Catalog for
+  \code{\{ products \{ id title \} \}} and copy the first \code{id}. Send it to
+  Mosaic as a representation, asking for \code{price} and \code{reviews(first:
+  2)}. You have just executed a query plan with your hands. Write down how many
+  requests it took and which service you had to ask first, because that ordering
+  is not a convention, it is the only order that works.
+
+  \item \textbf{Break the key three ways.} Send Catalog a representation whose
+  \code{id} is the raw \code{Guid} \code{a0000000-0000-4000-8000-000000000001},
+  then one with the string \code{not-a-key}, then a valid product key with
+  \code{\_\_typename} changed to \code{Customer}. The first two answer null. The
+  third does not answer null, and working out why from the response alone is the
+  exercise.
+
+  \item \textbf{Watch the batching, or fail to.} Turn on Entity Framework Core's
+  command logging for Catalog:
+
+  \begin{minted}[fontsize=\footnotesize]{text}
+$env:ASPNETCORE_ENVIRONMENT = 'Development'
+${env:Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command} = `
+    'Information'
+  \end{minted}
+
+  and restart it. The brace syntax is not optional: the category name contains
+  dots and PowerShell needs \code{\$\{env:...\}} to set it. Now send all
+  twenty-five product keys in one \code{\_entities} call and count the
+  \code{Executed DbCommand} lines. Then send them one call at a time and count
+  again. The answers are identical and the counts are not.
+
+  \item \textbf{Put the reference resolver in the wrong place.} In
+  \code{Mosaic.Catalog}, move the attributed method off the \code{Product}
+  record and onto \code{ProductNode}, the type extension class beside it. It
+  compiles. Restart, ask for \code{\_service}, and find the field that
+  appeared. Then send any representation and read what comes back. Put it back
+  afterwards.
+
+  \item \textbf{Take the type name check out and find that nothing happens.} In
+  \code{ProductKey}, return the parsed value without comparing
+  \code{nodeId.TypeName}. Restart Catalog and send it a representation whose
+  \code{id} is a \emph{customer} key, taken from any review's author. You get a
+  null, which is what you got before. Now work out what would have to be true
+  about Mosaic's identifiers for the two answers to differ, and decide whether
+  you would ship the check anyway. My answer is in
+  section~\ref{sec:ch08-the-key-you-already-designed}; disagree with it if you
+  can say why.
+
+  \item \textbf{Ask Mosaic for something that left.} Send
+  \code{\{ products \{ id \} \}} to port 5100 and read the error carefully. Then
+  ask yourself what would have told you, before you deployed, that the field had
+  gone. The answer is chapter~\ref{ch:ci-cd-for-a-federated-graph}, and it is
+  worth having the question first.
+
+  \item \textbf{Compose them, and then break it.} From the repository root:
+
+  \begin{minted}[fontsize=\footnotesize]{text}
+npx wgc router compose -i federation/mosaic.yaml -o supergraph.json
+  \end{minted}
+
+  It succeeds. Now open either \code{Program.cs} and drop the
+  \code{registerNodeInterface} argument, so that the call is a plain
+  \code{AddGlobalObjectIdentification()} again. Re-export that service's schema
+  over its committed file:
+
+  \begin{minted}[fontsize=\footnotesize]{text}
+dotnet run --project src/Mosaic.Catalog -- \
+    schema export --output schema/catalog.graphql
+  \end{minted}
+
+  and compose again. Read the error. Then do the same for the two cost options,
+  and again for the shareable page cursor class. Three settings, three errors,
+  and none of the three is visible from inside either service.
+
+  \item \textbf{Run the gate.} \code{pwsh scripts/verify.ps1}. It starts both
+  services, checks both published schemas against the committed files, asks the
+  chapter's question in two halves, and composes the pair. Then change
+  \code{\$ExpectedSqlCommandCount} from 2 to 3 and run it again, to see what a
+  stale number in this chapter would look like to the build.
+\end{enumerate}
+
+Exercise~2 is the one to repeat. Every chapter from here to
+chapter~\ref{ch:enter-the-router} adds machinery that does that assembly for
+you, and the machinery is much easier to reason about once you have done it by
+hand and know exactly how little of it is magic.

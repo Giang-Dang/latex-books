@@ -11,17 +11,19 @@ Author: Giang Dang
 
 ## Status
 
-Chapters 01 to 07 drafted (07 on 2026-08-09). The companion repo is public at
+Chapters 01 to 08 drafted (08 on 2026-08-09). The companion repo is public at
 https://github.com/Giang-Dang/mosaic-graph, tagged `ch02`, `ch03`, `ch04-ef`,
-`ch04`, `ch05` and `ch07`. Mosaic itself is unchanged since `ch05`: global
-object identification, a connection on `Product.reviews`, a mutation with typed
-domain errors, one subscription, a deprecated `products`, and a catalog query
-costing 146 resolvers and 3 statements. Chapter 06 shipped no companion code
-(conceptual chapter, like 01); chapter 07 shipped `samples/federated-wire/`,
-which is two subgraphs and the Cosmo Router and touches no Mosaic code.
-Next action: chapter 08, the first cut, which extracts Catalog out of Mosaic for
-real. It owes an answer to the open item about `[ReferenceResolver]` and the
-source generator.
+`ch04`, `ch05`, `ch07` and `ch08`. Mosaic is no longer one service. At `ch08`
+Catalog lives in `src/Mosaic.Catalog` on port 5101 with its own database and
+owns the `Product` entity; `src/Mosaic.Api` keeps the other five domains on
+5100 and contributes `price`, `availableQuantity`, `reviews` and
+`averageRating` to the same type. Both are Apollo Federation subgraphs, both
+publish `_service` and `_entities`, and the two schemas compose. Nothing routes
+them yet.
+Next action: chapter 09, composition, which now has two real subgraph schemas
+to compose and a supergraph to take apart. Chapter 08 left it three settings
+already made and explained (decisions 50 to 52), so 09 should not re-argue
+them.
 
 ## Decision log
 
@@ -76,6 +78,14 @@ is re-opened only by recording what changed and why, in the row.
 | 44 | Chapter 07 runs on a sample, not on Mosaic | The chapter needs a working federated graph, and it sits before ch 08 extracts Catalog and before ch 10 sets the router up properly. Federating Mosaic here would spend ch 08's subject. So `samples/federated-wire/` is two tiny subgraphs sharing one `Product` entity plus the Cosmo Router, three products and three reviews, existing only to be watched. This is decision 31 applied at a larger size: the sample is bigger than `resolver-scopes` but the rule is the same, and `Mosaic.Api` is untouched at tag `ch07`. Settled 2026-08-09. |
 | 45 | Wire traffic is captured inside the subgraphs, not in Postman | The approved ch 07 TOC line said "captured in Postman". Postman cannot see a request the router makes to a subgraph; it can only see the two ends. Both sample subgraphs therefore call ASP.NET Core's `UseHttpLogging` with request and response bodies enabled, and every wire listing in the chapter is what the server process read. Two configuration details are load-bearing: `application/graphql-response+json` has to be added to `MediaTypeOptions` or bodies are dropped, and headers outside the default allow-list print as `[Redacted]` rather than vanishing, which is what makes "the router forwarded nothing" a measurement instead of an inference. Postman keeps decision 13's job: `_service` and `_entities` at the subgraph, and assertions on the router's query plan. TOC line updated in the same session. Settled 2026-08-09. |
 | 46 | The federated-wire gate asserts the request bodies, not just the answers | `verify.ps1` and `verify.sh` compose with wgc, start both subgraphs and the router, check that what each subgraph publishes through `_service` is the committed file the composer reads, run a nine-request collection, and then grep the subgraph consoles for the exact two request bodies chapter 07 prints. The last check is the one that matters: three separate `_entities` calls instead of one batch would give the client an identical answer and pass every assertion on the data. A stale listing in the chapter now fails the build. Settled 2026-08-09. |
+| 47 | Federation attributes go on the runtime type | `[ReferenceResolver]` does not work inside an `[ObjectType<T>]` partial class. Measured on a four-placement probe at HotChocolate 16.6.0: the source generator turns the method into an ordinary public field, no reference resolver is registered, the type is still in the `_Entity` union because `[Key]` did land, and `_entities` answers `Unexpected Execution Error`. `ReferenceResolverAttribute.TryConfigure` acts only on an object or interface type descriptor and a method in a type extension compiles to a field descriptor, so every branch falls through with no `else`. `[Key]` works in either place. This amends decision 28: fields stay in the folder of the domain that owns them, and what an entity *is* to other services is declared on the runtime type. Closes the chapter 08 open item. Settled 2026-08-09. |
+| 48 | The federation key is chapter 5's global identifier, and each service decodes it | `Product.id` is a relay node id, so `@key(fields: "id")` carries base64 rather than a `Guid`. `HotChocolate.ApolloFederation` 16.6.0 mentions relay identifiers nowhere in its source; a reference resolver's key parameter is read out of the representation and converted to the parameter type, `[ID]` on it is inert, and a `Guid` parameter therefore gets `Guid.Empty` and answers **null rather than an error**. Each subgraph carries its own `ProductKey.TryDecode`, calling `INodeIdSerializer.Parse(id, typeof(Guid))` through `IResolverContext.Schema.Services`, and checks the decoded type name. The file is duplicated on purpose: the format of the key is a contract between two services, and a shared class would turn it into a project reference. Settled 2026-08-09. |
+| 49 | Catalog takes its own database | `CatalogDbContext` points at a database named `catalog` on the same PostgreSQL container. EF Core's `EnsureCreatedAsync` creates it, so `docker-compose.yml` needed no init script and no second server. Two services sharing a server is a deployment detail; two services sharing a table would undo the extraction. Splitting the remaining five domains is chapter 12. Settled 2026-08-09. |
+| 50 | `Query.node` and `Query.nodes` leave both subgraphs | Two subgraphs declaring them is a composition error, measured with wgc 0.129.7, and `@shareable` would be false: neither service can resolve the other's node types, so a router free to pick would answer null for half the identifiers. Both services pass `registerNodeInterface: false`, which keeps the node id serialiser, the `Node` interface, `implements Node` and every node resolver, and drops only the two root fields. Global identifiers survive the split; the field you hand them back to does not. Chapter 13 owns giving a federated graph a `node` field. Settled 2026-08-09. |
+| 51 | Both subgraphs turn HotChocolate's cost defaults off | The composer rejects `@cost(weight: "10")` because its own definition takes an `Int!`, and rejects `@listSize`'s `slicingArgumentDefaultValue`, which HotChocolate's own option documents as "the non-spec slicing argument default value". `ModifyCostOptions` sets `ApplyCostDefaults = false` and `ApplySlicingArgumentDefaultValue = false` in both services. `SkipAnalyzer` and `EnforceCostLimits` are separate settings and stay on, so the analyzer and its limits survive; the automatic per-field weights do not, and neither do chapter 5's printed cost numbers for `Product.reviews`. Chapter 25 has to set weights deliberately. Also: `PageCursor` is marked `@shareable` by hand, because `FederationTypeInterceptor` auto-marks `PageInfo` by name and nothing marks the type `PageInfo.forwardCursors` returns. Settled 2026-08-09. |
+| 52 | `submitReview` gives up its product check | Reviews cannot ask whether a product exists once Catalog is a separate service, so the check and `ProductNotFoundError` are both gone and the payload union lost a member, which is a breaking change. The alternatives were a synchronous call from Reviews to Catalog on the write path, which reintroduces the coupling the extraction was for, or leaving an error type in the schema that nothing can raise, which is a lie a client will write a branch for. Chapter 11 has `@requires`; chapter 12 argues about whether it is worth taking. Settled 2026-08-09. |
+| 53 | Chapter 08 composes as a gate and shows none of it | `federation/mosaic.yaml` is created in chapter 08 and `wgc router compose` runs on every verification pass, but no composition output appears in the chapter. Composition is chapter 09's subject and spending it early would cost that chapter its material. What chapter 08 does own is the three subgraph settings above, because each is a property of a service rather than of the composer, and a chapter that produced two subgraphs which cannot be assembled would have shipped a broken tag. Settled 2026-08-09. |
+| 54 | The single-service Postman collection is retired at `ch08` | Most of `postman/mosaic.postman_collection.json` asked port 5100 for `products`, which now lives on 5101, so it was deleted rather than patched. `postman/mosaic-federation.postman_collection.json` replaces it: 16 requests, covering both subgraphs, `_service`, `_entities` in both directions, the positional contract, an undecodable key, and the mutation with its three remaining typed errors. Chapter 19's workbook inherits the job of consolidating this properly. Settled 2026-08-09. |
 
 ## Version baseline
 
@@ -111,7 +121,7 @@ session. Chapter folders in chapters/ carry the same scope lines.
 
 6. **The Federation Model** - supergraph/subgraphs, entity ownership, the Apollo Federation v2 directive tour, composition rules conceptually
 7. **How a Federated Query Actually Runs** - query plans, representations, `_entities`/`_service`, exact router-subgraph HTTP traffic captured inside the subgraphs; `_entities` and `_service` exercised from Postman
-8. **The First Cut: Extracting Catalog** - HotChocolate.ApolloFederation, reference resolvers, extending foreign entities; testing a naked subgraph in Postman before any router exists
+8. **The First Cut: Extracting Catalog** - HotChocolate.ApolloFederation, reference resolvers, extending foreign entities; the global object identifier as a federation key, and decoding it; testing a naked subgraph in Postman before any router exists; the three subgraph defaults that only fail once two schemas meet
 9. **Composition** - satisfiability, reading composition errors, `wgc router compose` (router-only), supergraph anatomy
 10. **Enter the Router** - Cosmo Router locally: config, first federated query, reading query plans
 
@@ -170,7 +180,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 05 | drafted | 2026-08-09. 24 pages (67-90), 6 numbered sections plus the lab, ~9,600 words, 2 TikZ figures, 8 citations to primary sources, 47 listings. Sources in research/2026-08-ch05-schema-design.md. Companion tag `ch05`, passing both verify scripts; the Postman collection went from 10 requests and 36 assertions to 19 and 74. The chapter's spine is one deprecation against two breaking changes (decision 39), and its headline finding is that `[ID]` was inert until this chapter (decision 40). TOC line unchanged: abstract types, Relay conventions, error design, deprecation and single-service subscriptions all landed as scoped, with abstract types arriving three times over as `Node`, the `Error` interface and the generated error union. Longest chapter so far, and the audit's structural note about section 5.4 being thinner than the rest is recorded below rather than fixed. Not yet reviewed for line-level prose. |
 | 06 | drafted | 2026-08-09. 12 pages (91--102), 5 sections plus the lab, ~6,800 words, no figures, 3 citations, 30 listings (all SDL sketches). First conceptual chapter since ch01; no companion code (decision 21 applies). Sources in research/2026-08-ch06-federation-model.md. Covers the supergraph and subgraph model, entities and @key ownership, the field-level directives (@shareable/@external/@requires/@provides), the structural directives (@override/@interfaceObject/@inaccessible/@tag), and composition rules conceptually. Not yet reviewed for line-level prose. |
 | 07 | drafted | 2026-08-09. 18 pages (103--120), 6 numbered sections plus the lab, ~8,400 words, 2 TikZ figures, 6 citations, 45 listings. Sources in research/2026-08-ch07-federated-query-execution.md. Companion tag `ch07`; Mosaic is untouched and the code is `samples/federated-wire/`, two subgraphs and the Cosmo Router (decision 44). Both verify scripts grew a federation section and pass. The chapter's spine is one query followed end to end: the plan the router prints, then the two request bodies the subgraphs logged, then what the second hop costs. Headline findings: HotChocolate 16.6.0 emits federation v2.6 against a spec at v2.15; the router never calls `_service`; a subgraph publishes no `_entities` at all if no root field reaches the entity; and the router forwards no client headers. TOC line corrected (decision 45). Not yet reviewed for line-level prose. |
-| 08 | not-started | |
+| 08 | drafted | 2026-08-09. 18 pages (121--138), 6 numbered sections plus the lab, ~7,500 words, 2 TikZ figures, 49 index entries, 0 citations, 36 listings. Sources in research/2026-08-ch08-first-cut.md. Companion tag `ch08`, the first tag that changes Mosaic itself: `src/Mosaic.Catalog` on 5101 with its own database, `src/Mosaic.Api` on 5100 with five domains, both federation subgraphs, both gates passing and the two schemas composing. The chapter's spine is that the extraction was a file move and the schema was the work: nine files changed path, one changed content, and the three `[ObjectType<Product>]` classes in Pricing, Inventory and Reviews did not change by a character. Headline findings: `[ReferenceResolver]` in an `[ObjectType<T>]` class silently becomes a public field (decision 47); the federation key is chapter 5's base64 identifier and nothing decodes it, so a `Guid` parameter answers null rather than erroring (decision 48); and three subgraph defaults block composition, of which `Query.node` in two subgraphs is the one that costs a feature (decisions 50 and 51). Measured: 146 resolvers and 2 SQL for the catalog page through `_entities`, against 146 and 3 as a monolith, and 1 statement for 25 representations in one call against 25 for the same keys one call at a time. No citations, because everything load-bearing was measured or read out of the source tree; the TOC line was widened in the same session (decision 53 explains what was deliberately left out). Not yet reviewed for line-level prose. |
 | 09 | not-started | |
 | 10 | not-started | |
 | 11 | not-started | |
@@ -266,13 +276,54 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
 
 ## Open items
 
-- **Chapter 08 owes an answer on `[ReferenceResolver]` and the source
-  generator.** The ch 07 sample puts `[Key("id")]` and a `[ReferenceResolver]`
-  static method on the runtime type, which is the style HotChocolate's own
-  certification schema uses. Mosaic's house style is decision 28's
-  `[ObjectType<T>]` partial class, and whether the two compose was never tested.
-  Chapter 08 cannot extract Catalog without finding out, and if the answer is
-  "only one of them works" that is a decision-28 amendment, not a footnote.
+- (resolved 2026-08-09) Chapter 08 answered the `[ReferenceResolver]` question,
+  and the answer was "only one of them works". See decision 47. The failure is
+  silent and leaves a field in the public schema, which is why the chapter spends
+  a section on it rather than a sentence.
+
+- **Chapter 08 corrects a defect chapter 04 shipped, and no gate caught it for
+  four chapters.** `OrderingService` never called `.Include(o => o.Lines)`, and
+  `OrderLine` is a related entity with a shadow key rather than an owned type,
+  so `Order.lines` answered `[]` for every order and `Order.total` threw.
+  Reproduced at tag `ch07` before anything in chapter 08 was written. The
+  service's own doc comment claimed the lines were owned; `OrderConfiguration`
+  in the same repository says in as many words that they are not. Chapter 04's
+  prose is right about this and only the comment and the missing `Include` were
+  wrong, so nothing in chapter 04 needs rewriting. What is worth carrying is
+  why it survived: no request in the Postman collection had ever asked an order
+  for anything. Chapter 08 found it because `OrderLine.product` is where a
+  federated Mosaic hands a key to Catalog. The gate now asks for an order and
+  selects `total`.
+- Chapter 05's cost numbers for `Product.reviews` (30 flat, 41 at `first: 2`,
+  521 at `first: 50`) do not reproduce at tag `ch08` or later, because decision
+  51 turned the automatic per-field weights off in both services. The numbers
+  stand for the schema that produced them. Chapter 25 owns cost and has to set
+  weights deliberately rather than inheriting defaults; when it does, say in
+  chapter 25 what changed rather than leaving a reader to rerun chapter 05 and
+  find different numbers.
+- `verify.sh` needed one fix beyond translation, and it is a Windows trap worth
+  remembering: under Git Bash the JSON helper prints CRLF, and a carriage return
+  inside a key becomes an illegal control character in a JSON string literal.
+  The service answers HC0012 "Invalid JSON document" about a request that looks
+  perfectly fine in the log. Both key files are now piped through `tr -d '\r'`.
+  Both scripts were run to completion on this machine at tag `ch08`, which is
+  the first time `verify.sh` has been executed here rather than only reviewed.
+- Chapter 08 leaves these unmeasured, and the research file's section N names an
+  owner for each: anything a router does with these two subgraphs (ch 10), the
+  supergraph the composer produced (ch 09), `@requires` / `@provides` /
+  `@external` / `@override` (ch 11 and 12), whether a reference resolver behind
+  a DataLoader is called concurrently for one batch (ch 11), the latency cost of
+  the extraction (ch 10), what happens when Catalog is down (ch 24), mutations
+  and subscriptions through a federated graph (ch 12 and 14), and whether
+  `Query.node` can be given back to a federated graph at all (ch 13).
+- Mosaic has no root field that lists customers, so at tag `ch08` the only way
+  to obtain a customer key is through a review's author. Both verification
+  scripts do exactly that and then walk the authors until one of them has an
+  order, because seven of the twelve seeded customers have none. That is a fair
+  description of the schema rather than a workaround, but it is fragile: a seed
+  change that leaves every reviewing customer orderless would fail the gate for
+  the wrong reason. Chapter 19 or 20 should give the gate a deterministic route
+  to an order.
 - Chapter 07 leaves these unmeasured and its research file's section M names an
   owner for each: DataLoader behind a reference resolver (ch 11), `@requires`
   and `@provides` on the wire (ch 11), `@override` (ch 12), Advanced Request

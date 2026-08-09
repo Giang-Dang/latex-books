@@ -1,0 +1,169 @@
+\section{The Key You Already Designed}
+\label{sec:ch08-the-key-you-already-designed}
+\index{global object identification!as a federation key|(}%
+
+\code{@key(fields: "id")} names a field, and in Mosaic that field is not a
+\code{Guid}. Chapter~\ref{ch:schema-design-that-survives-change} made
+\code{Product.id} a global object identifier, so it answers with an opaque
+string carrying the type name beside the key:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"products":[
+  {"id":"UHJvZHVjdDoAAACgAAAAQIAAAAAAAAAB","sku":"MOS-FRN-0001","title":"Larsen Oak Dining Table"},
+  {"id":"UHJvZHVjdDoAAACgAAAAQIAAAAAAAAAC","sku":"MOS-FRN-0002","title":"Larsen Dining Chair"}]}}
+\end{minted}
+
+Base64, decoding to \code{Product:} followed by the sixteen bytes of
+\code{a0000000-0000-4000-8000-000000000001}. That string is now the federation
+key, which means it is what travels in every representation, and it means the
+two services have to agree about it exactly.
+
+\index{global object identification!type name inside the key}%
+They do agree, and the reason is the part of the encoding that looks like
+decoration. The GraphQL type name is inside the key. Both services call the type
+\code{Product}, both use HotChocolate's default node identifier serialiser, so
+both turn the same \code{Guid} into the same string without ever having spoken.
+Rename the type in one of them and every representation stops matching, with no
+composition error anywhere to warn you, because the schemas would still be
+perfectly compatible. Figure~\ref{fig:ch08-key-round-trip} is the round trip.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch08-key-round-trip}
+  \caption{One identifier, three forms. Encoding happens on the way out of
+  either service and HotChocolate does it; decoding happens on the way in and
+  nobody does it for you. The string in the middle is what a representation
+  carries, and the type name inside it is what makes two processes that have
+  never met agree on a key.}
+  \label{fig:ch08-key-round-trip}
+\end{figure}
+
+\subsection*{Nothing decodes it for you}
+
+\index{federation!and relay identifiers}%
+Here is the finding this section exists for. The federation package and the
+global object identification feature do not know about each other at all. Grep
+the whole federation package's source at tag \code{16.6.0} for \code{NodeId} or
+for \code{Relay} and you get nothing back.
+
+A reference resolver's key parameter is read out of the representation by the
+federation argument parser, which coerces the literal with the field's own
+scalar and then converts the result to the parameter's type.
+The scalar is \code{ID}, so the coercion hands back the base64 string unchanged,
+and the conversion to \code{Guid} fails. When it fails, the parser returns the
+default. So a reference resolver written the obvious way:
+
+\begin{minted}{csharp}
+[ReferenceResolver]
+public static Product? ResolveReference(Guid id) => ...
+\end{minted}
+
+is handed \code{Guid.Empty} for a perfectly valid key, looks it up, finds
+nothing, and answers:
+
+\begin{minted}{json}
+{"data":{"_entities":[null]}}
+\end{minted}
+
+\index{federation!silent null entity}%
+Not an error. A null, in the slot where the router expected a product, for every
+representation. And the specification's \code{[\_Entity]} return type is
+nullable precisely so that a subgraph can answer null for one entity without
+failing the batch, which means nothing anywhere in the system considers this
+worth reporting.
+
+\code{[ID]} on the parameter does not help. I tried it, because it is the first
+thing anybody tries. An entity whose reference resolver was declared
+\code{ResolveByKey([ID] Guid id)} resolved correctly when handed a raw
+\code{Guid} string and answered null when handed the encoded key, which is the
+exact opposite of what the attribute promises. Argument coercion is where
+\code{[ID]} does its work, and a representation never goes through argument
+coercion.
+
+\subsection*{The decode, and two things about it that cost time}
+
+\index{INodeIdSerializer@\code{INodeIdSerializer}}%
+So the decode is explicit, and it lives in one small class per service:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+public static bool TryDecode(string formattedId, IResolverContext context, out Guid id)
+{
+    var services = context.Schema.Services;
+    var accessor = services?.GetService(typeof(INodeIdSerializerAccessor))
+        as INodeIdSerializerAccessor;
+
+    if (accessor is null)
+    {
+        id = Guid.Empty;
+        return false;
+    }
+
+    try
+    {
+        var nodeId = accessor.Serializer.Parse(formattedId, typeof(Guid));
+
+        if (nodeId.TypeName != nameof(Product) || nodeId.InternalId is not Guid decoded)
+        {
+            id = Guid.Empty;
+            return false;
+        }
+
+        id = decoded;
+        return true;
+    }
+    catch (Exception)
+    {
+        id = Guid.Empty;
+        return false;
+    }
+}
+\end{minted}
+
+\medskip\noindent\textbf{The second argument is the type of the identifier, not
+of the entity.} Pass \code{typeof(Guid)} and it works. Pass
+\code{typeof(Product)} and it throws, with a message reporting that no
+serialiser is registered for a type you can see in your own schema, which is a
+confusing five minutes. This is not a guess about the intended usage: it is the
+call HotChocolate itself makes for an ordinary \code{[ID]} argument, in
+\code{GlobalIdInputValueFormatter}, where the runtime type passed in is the type
+of the identifier value.
+
+\medskip\noindent\textbf{The serialiser is a schema service, not a request
+service.} Ask \code{context.Services} for it and you get null; ask
+\code{context.Schema.Services} and you get it. That is why the method takes an
+\code{IResolverContext} rather than the accessor itself, and it is the same
+constraint section~\ref{sec:ch08-two-attributes} described from the other side:
+a schema service cannot be a reference resolver parameter, so it has to be
+reached through one that can.
+
+\medskip
+The type name check earns its place, and not in the way I expected when I wrote
+it. Hand Catalog a customer key with and without that line and the answer is the
+same both times: a null. Mosaic's identifiers are \code{Guid}s, so a customer's
+decodes to a value no product has ever had, and the lookup misses either way.
+
+It matters the moment the internal identifier is not globally unique, which is
+the ordinary case rather than the exotic one. A graph keyed on integers encodes
+customer 5 and product 5 into two different strings that decode to the same
+\code{5}, and a resolver that ignores the type name would answer with product 5
+for a representation naming a customer. The check is the difference between a
+service that knows which type it was asked about and one that trusts a number.
+Mosaic gets away without it; I would not want the next service to inherit the
+habit.
+
+\subsection*{Two copies of one file, on purpose}
+
+\index{extraction!contracts between services}%
+\code{ProductKey} exists twice, once in each service, byte for byte the same. I
+considered a shared package and decided against it, and I would decide the same
+way again: the moment the two services share a class, the format of the key
+becomes a compile-time dependency between them, and the fact that they have to
+\emph{agree about a string} disappears into a project reference. It is a
+contract. Contracts get written down twice.
+
+That is also the honest version of what the extraction actually did to
+\code{Product}. There are two \code{Product} types in this repository now, in
+two assemblies, with different fields. They are the same GraphQL type because
+they carry the same name and the same key, and for no other reason at all.
+
+\index{global object identification!as a federation key|)}%

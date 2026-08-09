@@ -1,0 +1,131 @@
+\section{What Comes Out First}
+\label{sec:ch08-what-comes-out-first}
+\index{extraction!choosing the first domain|(}%
+
+Mosaic has six domains and one of them can leave without asking permission.
+Catalog stores a product's identity, its stock keeping unit, its title, its
+description and its category, and it reads nothing else. Pricing reads a product
+identifier. Inventory reads a product identifier. Reviews reads a product
+identifier and a customer identifier. Ordering reads all three. Point the arrows
+and one folder has none coming out of it.
+
+\index{extraction!acyclic dependencies}%
+That is the rule I would apply to any decomposition, and it is duller than the
+architecture diagrams suggest: extract the domain that references nobody, and
+the extraction is a move. Extract one in the middle and it is a negotiation
+about who holds what. Chapter~\ref{ch:strangling-the-monolith} carves the
+remaining five, where the arrows do point outward and the answer is
+\code{@override} and a migration rather than a rename.
+
+Figure~\ref{fig:ch08-the-cut} is the shape of the change.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch08-the-cut}
+  \caption{One deployable becomes two. \code{Product} is declared on both sides
+  of the line with the same key, and four of its fields answer from a process
+  that has never seen a product row. Ordering is left out of the picture
+  because it contributes nothing to \code{Product}; it only holds identifiers,
+  which is section~\ref{sec:ch08-what-is-left-behind}. The dashed boundary is
+  the only new thing here. Every folder was already where it is.}
+  \label{fig:ch08-the-cut}
+\end{figure}
+
+\subsection*{What git called it}
+
+\index{extraction!as a file move}%
+Nine files changed path and one of them changed content:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+R  src/Mosaic.Api/Catalog/CatalogRegistration.cs   -> src/Mosaic.Catalog/Catalog/CatalogRegistration.cs
+R  src/Mosaic.Api/Catalog/Data/CatalogDataLoaders.cs -> src/Mosaic.Catalog/Catalog/Data/CatalogDataLoaders.cs
+R  src/Mosaic.Api/Catalog/Data/CatalogSeedData.cs  -> src/Mosaic.Catalog/Catalog/Data/CatalogSeedData.cs
+R  src/Mosaic.Api/Catalog/Data/CatalogService.cs   -> src/Mosaic.Catalog/Catalog/Data/CatalogService.cs
+R  src/Mosaic.Api/Catalog/Data/ProductConfiguration.cs -> src/Mosaic.Catalog/Catalog/Data/ProductConfiguration.cs
+R  src/Mosaic.Api/Catalog/Model/Product.cs         -> src/Mosaic.Catalog/Catalog/Model/Product.cs
+R  src/Mosaic.Api/Catalog/Model/ProductCategory.cs -> src/Mosaic.Catalog/Catalog/Model/ProductCategory.cs
+R  src/Mosaic.Api/Catalog/Types/CatalogQueries.cs  -> src/Mosaic.Catalog/Catalog/Types/CatalogQueries.cs
+R  src/Mosaic.Api/Catalog/Types/ProductNode.cs     -> src/Mosaic.Catalog/Catalog/Types/ProductNode.cs
+\end{minted}
+
+\code{CatalogQueries} did not change at all. The four root fields
+chapters~\ref{ch:hotchocolate-quickly} to~\ref{ch:schema-design-that-survives-change}
+built, including the deprecation
+chapter~\ref{ch:schema-design-that-survives-change} put on \code{products},
+compiled in the new project untouched. So did the DataLoader, the seed data and
+the entity configuration.
+
+\code{CatalogService} changed in two ways and both are in its constructor:
+
+\begin{minted}{csharp}
+public sealed class CatalogService(CatalogDbContext db)
+\end{minted}
+
+\index{ServiceCallCounter@\code{ServiceCallCounter}!left behind}%
+It used to take two things: the shared \code{MosaicDbContext}, and a
+\code{ServiceCallCounter}. The context is Catalog's own now, and the counter is
+gone along with the six calls to it. That counter was built in
+chapter~\ref{ch:the-life-of-a-request} to count what one process was doing to
+itself, and it belongs to Mosaic. A service that answers one domain's questions
+has nothing to count with it, and I would rather a new service start with no
+instrumentation than with somebody else's.
+
+\subsection*{The three files that did not change}
+
+\index{ObjectType@\code{[ObjectType<T>]}!across a service boundary}%
+This is the part worth stopping on.
+
+\code{Product.price} is a resolver in \code{Pricing/Types/}.
+\code{Product.availableQuantity} is one in \code{Inventory/Types/}.
+\code{Product.reviews} and \code{Product.averageRating} are two more in
+\code{Reviews/Types/}. All four hang off a type declared in another folder,
+through an \code{[ObjectType<Product>]} partial class, because
+chapter~\ref{ch:hotchocolate-quickly} made that the rule for this repository and
+held to it even where a shortcut was tempting.
+
+None of those three files changed by a character when Catalog left. The type
+they extend is not in the same assembly any more. They do not know that.
+
+\index{decomposition!what the layout rule buys}%
+I want to be precise about what that buys, because it is easy to oversell. It
+does not make the extraction free: there is a new project, a new database, a new
+schema to publish, and section~\ref{sec:ch08-only-breaks-together}'s three
+surprises to work through. What it buys is that the resolvers stayed put. A
+version of Mosaic that had registered every field on \code{Product} in one
+central place would have needed that list unpicked, and every field on the wrong
+side of the cut rewritten against a type it could no longer see. That is the
+rewrite the layout rule was insurance against, and this is the chapter that
+collects.
+
+\subsection*{Two databases, and nothing in the compose file}
+
+\index{extraction!splitting the database}%
+Catalog took its table with it. \code{CatalogDbContext} is
+\code{MosaicDbContext} with five of its six \code{DbSet} properties deleted, and
+\code{ProductConfiguration} moved into the new assembly, where
+\code{ApplyConfigurationsFromAssembly} finds it exactly as before.
+
+The new service points at a database called \code{catalog} on the same
+PostgreSQL container. That needed no change to \code{docker-compose.yml} and no
+initialisation script, because Entity Framework Core's
+\code{EnsureCreatedAsync} creates the database as well as the schema and the
+container's user is allowed to. Two services on one server is a deployment
+detail; two services on one table would be a design failure, and this is the
+first of those rather than the second.
+
+Nothing in the seed data had to move either. Every domain already carried its
+own copy of the identifier pattern:
+
+\begin{minted}{csharp}
+private static Guid ProductId(int n) => new($"a0000000-0000-4000-8000-{n:D12}");
+\end{minted}
+
+That line appears in Pricing's seed data, Inventory's, Reviews' and Ordering's,
+each with a comment saying the duplication is on purpose. In
+chapter~\ref{ch:hotchocolate-quickly} it read as a slightly fussy way to avoid
+sharing a file. Here it is the reason a price still finds its product across a
+process boundary.
+
+The code, then, was the easy half. The schema is where the chapter lives.
+
+\index{extraction!choosing the first domain|)}%
