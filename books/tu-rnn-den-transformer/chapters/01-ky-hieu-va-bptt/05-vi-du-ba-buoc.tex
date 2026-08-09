@@ -1,0 +1,147 @@
+% 05-vi-du-ba-buoc.tex - The three-step worked example with concrete numbers
+%
+% Scope: 3 timesteps, d_x=2, d_h=3, d_y=2; forward pass numbers; BPTT
+% numbers; every intermediate shown.
+
+\section{Ví dụ chạy tay ba bước}
+\label{sec:ch01-vi-du}
+
+Dẫn xuất đến đây là xong, nhưng một dẫn xuất không có con số thì giống như
+một bản đồ không có tọa độ: bạn biết đường đi, nhưng bạn không biết mình đang
+đứng ở đâu. Mục này chạy một RNN thật qua ba bước thời gian, in từng vector,
+từng ma trận gradient, và kiểm tra tất cả bằng sai phân hữu hạn.
+
+Toàn bộ code của ví dụ này nằm trong companion repo
+\href{https://github.com/Giang-Dang/rnn-to-transformer-lab}{rnn-to-transformer-lab}
+tại tag \texttt{ch01}. Đây là code thật, chạy được, không phải pseudo-code.
+Mọi số trong mục này đều được in ra bởi lệnh \mintinline{text}{python verify.py}
+và tôi không sửa một chữ số nào.
+
+\subsection{Bài toán}
+
+\begin{itemize}
+  \item Số bước thời gian: $T = 3$.
+  \item Chiều đầu vào: $d_x = 2$, chiều ẩn: $d_h = 3$, chiều đầu ra: $d_y = 2$.
+  \item Hàm mất mát: $L = \frac{1}{2}\sum_t \|\vect{y}_t - \widehat{\vect{y}}_t\|^2$.
+\end{itemize}
+
+Đầu vào và target được chọn nhỏ và tròn để bạn có thể đọc. Trọng số được khởi
+tạo từ \mintinline{python}{np.random.seed(42)} rồi lưu cứng trong code.
+
+\begin{minted}[fontsize=\footnotesize]{text}
+x_1 = [ 0.50, -0.30]    target_1 = [1.0, 0.0]
+x_2 = [ 0.80,  0.10]    target_2 = [0.5, 0.5]
+x_3 = [-0.40,  0.60]    target_3 = [0.0, 1.0]
+\end{minted}
+
+\subsection{Trọng số khởi tạo}
+
+\begin{minted}[fontsize=\footnotesize]{text}
+W_xh = [[0.374540, 0.950714],
+        [0.731994, 0.598658],
+        [0.156019, 0.155995]]
+
+W_hh = [[0.058084, 0.866176, 0.601115],
+        [0.708073, 0.020584, 0.969910],
+        [0.832443, 0.212339, 0.181825]]
+
+
+W_hy = [[0.183405, 0.304242, 0.524756],
+        [0.431945, 0.291229, 0.611853]]
+
+b_h  = [0.139494, 0.292145, 0.366362]
+b_y  = [0.456070, 0.785176]
+\end{minted}
+
+\subsection{ Lan truyền xuôi}
+
+\textbf{Bước 1.} $\vect{h}_0 = [0, 0, 0]\transpose$.
+
+\[
+\begin{aligned}
+\vect{a}_1 &= \mat{W}_{xh} \vect{x}_1 + \mat{W}_{hh} \vect{h}_0 + \vect{b}_h
+           = [0.041527,\; 0.445077,\; 0.377870]\transpose, \\
+\vect{h}_1 &= \tanh(\vect{a}_1)
+           = [0.041503,\; 0.417592,\; 0.360942]\transpose, \\
+\vect{y}_1 &= \mat{W}_{hy} \vect{h}_1 + \vect{b}_y
+           = [0.797387,\; 1.163933]\transpose.
+\end{aligned}
+\]
+
+\textbf{Bước 2.}
+
+\[
+\begin{aligned}
+\vect{a}_2 &= [0.998533,\; 1.338704,\; 0.895926]\transpose, \\
+\vect{h}_2 &= [0.760938,\; 0.870611,\; 0.714808]\transpose, \\
+\vect{y}_2 &= [1.190059,\; 1.763888]\transpose.
+\end{aligned}
+\]
+
+\textbf{Bước 3.}
+
+\[
+\begin{aligned}
+\vect{a}_3 &= [1.832494,\; 1.700802,\; 1.474498]\transpose, \\
+\vect{h}_3 &= [0.950081,\; 0.935406,\; 0.900416]\transpose, \\
+\vect{y}_3 &= [1.367527,\; 1.994699]\transpose.
+\end{aligned}
+\]
+
+\textbf{Mất mát:}
+
+\[
+L = \frac{1}{2}\bigl(
+    \|\vect{y}_1 - \widehat{\vect{y}}_1\|^2
+  + \|\vect{y}_2 - \widehat{\vect{y}}_2\|^2
+  + \|\vect{y}_3 - \widehat{\vect{y}}_3\|^2
+\bigr) = 3.1644732918.
+\]
+
+\subsection{BPTT}
+
+Tôi chạy BPTT lùi từ $t = 3$ về $t = 1$. Kết quả gradient cho năm tham số:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+∂L/∂W_xh = [[1.099039,  0.130346],
+            [0.707644,  0.099482],
+            [0.406837,  0.088858]]
+
+∂L/∂W_hh = [[0.206025,  0.084900,  0.067627],
+            [0.400063,  0.163004,  0.132281],
+            [0.342944,  0.140476,  0.113827]]
+
+∂L/∂W_hy = [[1.275750,  1.487095,  1.274845],
+            [2.530391,  2.960730,  2.546304]]
+
+∂L/∂b_h  = [0.684370,  1.088999,  0.861787]
+∂L/∂b_y  = [2.164953,  4.658796]
+\end{minted}
+
+Tôi in đến sáu chữ số thập phân. Trong research note của chương này, mọi số
+được ghi với độ chính xác đầy đủ của float64; ở đây tôi làm tròn để bảng không
+tràn lề.
+
+\subsection{Đọc gradient}
+
+Vài quan sát từ chính những con số này, trước khi ta kiểm tra chúng:
+
+\begin{itemize}
+  \item $\partial L / \partial \mat{W}_{xh}$ có cột đầu tiên lớn hơn cột thứ
+    hai ($1.10$ so với $0.13$, v.v.). Đầu vào $\vect{x}_t$ có xu hướng dương
+    ở chiều thứ nhất và dao động ở chiều thứ hai, nên gradient dồn vào chiều
+    ổn định hơn.
+  \item $\partial L / \partial \vect{b}_y = [2.16, 4.66]\transpose$. Đây là
+    tổng của ba vector sai số $\vect{y}_t - \widehat{\vect{y}}_t$. Target thứ
+    ba là $[0, 1]$ trong khi $\vect{y}_3$ xấp xỉ $[1.37, 1.99]$, nên sai số ở
+    chiều thứ hai lớn hơn hẳn.
+  \item $\partial L / \partial \mat{W}_{hh}$ có giá trị nhỏ hơn
+    $\partial L / \partial \mat{W}_{xh}$ khoảng 5 đến 10 lần. Đây là hiệu ứng của
+    $\tanh$: đạo hàm $1 - h_t^2$ tại $h_1 \approx 0$ thì gần bằng 1, nhưng
+    tại $h_3 \approx 0.95$ thì chỉ còn khoảng $0.1$. Gradient bị suy giảm khi
+    đi qua các bước có hidden state bão hòa; và đó chính là manh mối đầu tiên
+    của vanishing gradient.
+\end{itemize}
+
+Đây là kiểu đọc mà tôi muốn bạn làm được sau chương này: không chỉ tính ra
+gradient, mà còn \emph{đọc} nó để hiểu chuyện gì đang xảy ra bên trong mạng.

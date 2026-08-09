@@ -1,3 +1,44 @@
 % Scope (SPEC table of contents): Ký hiệu của sách so với ký hiệu gốc của cả sáu paper, để người đọc mở paper ra không lạc.
 \chapter{Bảng đối chiếu ký hiệu}
 \label{app:ky-hieu}
+
+Sáu bài báo gốc của cuốn sách này dùng sáu bộ ký hiệu khác nhau.
+LSTM~1997 gọi input weights là \(W\), recurrent weights là \(U\) và output
+weights là \(V\); Bahdanau~2015 gọi context vector là \(c_i\) trong khi chương~4
+của chính cuốn sách này đã dùng \(c_t\) cho cell state; Vaswani~2017 ký hiệu
+chiều embedding là \(d_{\mathrm{model}}\) còn ViT gọi nó là \(D\).
+
+Bảng dưới đây cho phép bạn mở bất kỳ bài báo nào trong sáu bài và tra ngược
+về ký hiệu sách đang dùng.  Cột đầu tiên là ký hiệu của sách; mỗi cột sau là
+ký hiệu tương đương trong một bài báo, kèm ghi chú nếu hai bên khác nhau về
+ý nghĩa chứ không chỉ khác về chữ.  Ô trống nghĩa là bài báo đó không dùng
+khái niệm này, hoặc chưa được đối chiếu.
+
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}lllllll@{}}
+\toprule
+Ý nghĩa & Sách này & LSTM 1997 & Pascanu 2013 & Sutskever 2014 & Bahdanau 2015 & Vaswani 2017 \\
+\midrule
+Chiều input & \(d_x\) & & & & & \(d_{\mathrm{model}}\) \\
+Chiều hidden & \(d_h\) & \(n\) (số unit) & & & \(n\) & \(d_{\mathrm{model}}\) \\
+Chiều output & \(d_y\) & \(m\) & & & & \(d_{\mathrm{model}}\) \\
+Số bước thời gian & \(T\) & & & & \(T_x, T_y\) & \\
+\midrule
+Input tại \(t\) & \(\vect{x}_t\) & \(\vect{x}(t)\) & \(\vect{x}_t\) & & \(\vect{x}_t\) & \\
+Hidden state tại \(t\) & \(\vect{h}_t\) & & \(\vect{h}_t\) & & & \\
+Cell state tại \(t\) & \(\vect{c}_t\) & \(\vect{c}_t\) & & & & \\
+Output tại \(t\) & \(\vect{y}_t\) & \(\vect{y}(t)\) & \(\vect{y}_t\) & & & \\
+\midrule
+Input weights & \(\mat{W}_{xh}\) & \(\mat{W}\) & \(\mat{W}_{in}\) & & & \\
+Recurrent weights & \(\mat{W}_{hh}\) & \(\mat{U}\) & \(\mat{W}_{rec}\) & & & \\
+Output weights & \(\mat{W}_{hy}\) & \(\mat{V}\) & \(\mat{W}_{out}\) & & & \\
+\midrule
+Gradient of \(L\) w.r.t.\ \(\mat{W}\) & \(\pd{L}{\mat{W}}\) & & \(\frac{\partial L}{\partial \mat{W}}\) & & & \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\vspace{1em}
+Bảng này được điền dần trong quá trình viết sách. Chương nào giới thiệu một
+bài báo mới thì có trách nhiệm cập nhật cột của bài báo đó trong bảng này.

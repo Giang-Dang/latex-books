@@ -1,0 +1,56 @@
+% 01-vi-sao-chuoi-khac.tex - Vì sao dữ liệu chuỗi khác dữ liệu thường
+%
+% Scope: what makes a sequence different from i.i.d. data; examples from
+% text, speech, video, time series; the memory requirement.
+
+\section{Vì sao dữ liệu chuỗi khác}
+\label{sec:ch01-vi-sao-chuoi-khac}
+
+Một bức ảnh chụp một con mèo. Nếu bạn xáo trộn các pixel của nó, nó vẫn là
+một con mèo; mô hình phân loại ảnh không cần biết pixel nào đứng cạnh pixel
+nào, chỉ cần biết tất cả chúng cùng có mặt. Đó là thế giới của dữ liệu
+\tn{độc lập và phân phối giống hệt nhau}{independent and identically
+distributed} (i.i.d.), nơi mỗi mẫu huấn luyện là một điểm rời rạc không liên
+quan đến mẫu trước nó.
+
+Giờ thử xáo trộn các chữ trong câu bạn vừa đọc.
+
+Chuỗi thì khác. Trật tự mang thông tin, và thông tin đó không nằm trong từng
+phần tử riêng lẻ mà nằm ở quan hệ giữa chúng. Một mô hình đọc ``mèo đuổi
+chuột'' phải biết rằng ``mèo'' đứng trước ``đuổi'' và ``đuổi'' đứng trước
+``chuột''; đảo thành ``chuột đuổi mèo'' thì nghĩa đảo ngược hoàn toàn, dù
+tập hợp từ không đổi.
+
+Dữ liệu dạng \tn{chuỗi}{sequence} có mặt ở khắp nơi. Văn bản là chuỗi các từ
+hoặc ký tự. Tiếng nói là chuỗi các mẫu âm thanh lấy ở tần số lấy mẫu cố định.
+Video là chuỗi các khung hình. Dữ liệu tài chính là chuỗi giá theo thời gian.
+DNA là chuỗi các nucleotide. Trong mọi trường hợp, ý nghĩa của một phần tử
+phụ thuộc vào những phần tử đứng trước nó; và đôi khi cả những phần tử đứng
+sau.
+
+Để xử lý dữ liệu chuỗi, một mô hình cần \textbf{trí nhớ}. Nó phải giữ lại
+thông tin từ quá khứ để diễn giải hiện tại. Một mạng nơ-ron truyền thẳng
+thông thường không làm được việc này: mỗi đầu vào được xử lý độc lập, đầu ra
+chỉ phụ thuộc vào đầu vào hiện tại. Cần một kiến trúc cho phép tín hiệu đi
+từ bước thời gian trước sang bước thời gian sau.
+
+Đó chính là \tn{mạng hồi quy}{recurrent neural network} (RNN). Kiến trúc này
+giữ một \tn{trạng thái ẩn}{hidden state}; một vector tổng kết mọi thứ mạng
+đã thấy cho đến thời điểm hiện tại. Tại mỗi bước, trạng thái ẩn được cập nhật
+bằng cách kết hợp đầu vào mới với trạng thái ẩn cũ. Cùng một tập trọng số
+được dùng lại ở mọi bước thời gian, nên mạng có thể xử lý chuỗi có độ dài bất
+kỳ.
+
+Nhưng trí nhớ có giá của nó. Mạng hồi quy không học bằng cách truyền thẳng
+rồi lan truyền ngược như mạng nơ-ron thường. Vì trạng thái ẩn tại bước $t$
+phụ thuộc vào trạng thái ẩn tại bước $t-1$, gradient của hàm mất mát phải
+được truy ngược qua \textbf{từng bước thời gian}, từ cuối chuỗi về đầu chuỗi.
+Kỹ thuật này gọi là \tn{lan truyền ngược qua thời gian}{backpropagation
+through time} (BPTT), và nó là trung tâm của mọi thứ chương này sẽ làm.
+
+Mục tiêu của chương này là ba thứ. Thứ nhất: thiết lập hệ ký hiệu mà toàn bộ
+cuốn sách sẽ dùng. Thứ hai: dẫn xuất BPTT đến từng Jacobian một, để ba chương
+tiếp theo có thể mổ xẻ chính xác vì sao gradient biến mất hoặc bùng nổ. Thứ
+ba: chạy một ví dụ bằng số để bạn thấy mọi ma trận, mọi đạo hàm, và để bạn
+kiểm tra lại gradient bằng \tn{sai phân hữu hạn}{finite difference}; cách
+duy nhất để biết chắc một cài đặt lan truyền ngược là đúng.

@@ -1,0 +1,133 @@
+% 02-ky-hieu.tex - The book's notation system
+%
+% Scope: vectors, matrices, dimensions, the recurrence equation, and why
+% one notation is needed for six conflicting papers.
+
+\section{Hệ ký hiệu}
+\label{sec:ch01-ky-hieu}
+
+Trước khi viết phương trình đầu tiên, tôi cần chốt một bộ ký hiệu dùng cho
+toàn bộ cuốn sách. Đây không phải là việc trang trí. Sáu bài báo gốc mà cuốn
+sách này dựa vào dùng sáu bộ ký hiệu khác nhau và không bộ nào tương thích
+với bộ nào. LSTM~1997 gọi ma trận trọng số hồi quy là $\mat{U}$; Pascanu~2013
+gọi nó là $\mat{W}_{\text{rec}}$; Transformer~2017 không có ma trận hồi quy
+nào cả nhưng có ba ma trận attention đều tên là $W$. Nếu mỗi chương dùng ký
+hiệu của bài báo mà nó đang đọc, bạn sẽ phải học lại bảng chữ cái ở mỗi
+chương, và tôi sẽ không thể đặt hai phương trình cạnh nhau để so sánh; đó
+lại chính là việc cuốn sách này tồn tại để làm.
+
+Tôi chọn một bộ ký hiệu theo ba nguyên tắc. Một: nhất quán toàn sách; mỗi
+đại lượng có đúng một tên, mỗi tên có đúng một nghĩa. Hai: gần với quy ước
+hiện đại; bạn ra ngoài đọc paper năm 2026 sẽ gặp $\vect{h}_t$ cho trạng thái
+ẩn, không gặp $\vect{s}_t$ như paper RNN đầu tiên. Ba: tự mô tả; $\mat{W}_{xh}$
+tự nói ``từ $x$ tới $h$'', không cần bạn tra bảng.
+
+\subsection{Đại lượng}
+
+Vector được in đậm chữ thường, ma trận in đậm chữ hoa. Tại mỗi
+\tn{bước thời gian}{timestep} $t = 1, 2, \dots, T$, mạng nhận một vector đầu
+vào $\vect{x}_t \in \R^{d_x}$, giữ một trạng thái ẩn $\vect{h}_t \in \R^{d_h}$,
+và sinh một vector đầu ra $\vect{y}_t \in \R^{d_y}$. Ký hiệu $d_x, d_h, d_y$
+là số chiều của từng không gian; chúng là hằng số với một mô hình cho trước
+và không phụ thuộc vào $T$. Trạng thái ẩn ban đầu $\vect{h}_0$ luôn là vector
+không: mạng bắt đầu với một tờ giấy trắng.
+
+Đầu vào $\vect{x}_t$ có thể là một từ được nhúng trong không gian
+embedding, một vector đặc trưng được trích từ khung hình thứ $t$ của video,
+hay một điểm dữ liệu trong chuỗi thời gian; RNN không quan tâm. Điều nó
+làm với đầu vào đó là như nhau ở mọi bài toán, và đó là thứ ta quan tâm
+trong chương này.
+
+\subsection{Phương trình hồi quy}
+
+Một RNN được định nghĩa bởi hai phương trình:
+
+\begin{align}
+  \vect{h}_t &= \tanh\!\bigl(\mat{W}_{xh} \vect{x}_t
+               + \mat{W}_{hh} \vect{h}_{t-1}
+               + \vect{b}_h\bigr), \label{eq:rnn-hidden} \\
+  \vect{y}_t &= \mat{W}_{hy} \vect{h}_t + \vect{b}_y. \label{eq:rnn-output}
+\end{align}
+
+Phương trình~\eqref{eq:rnn-hidden} là trái tim của RNN. Tại mỗi bước $t$, nó
+lấy đầu vào hiện tại $\vect{x}_t$ và trạng thái ẩn trước đó $\vect{h}_{t-1}$,
+nhân với hai \tn{ma trận trọng số}{weight matrix} $\mat{W}_{xh}$ (input
+$\to$ hidden) và $\mat{W}_{hh}$ (hidden $\to$ hidden), cộng
+\tn{bias}{bias} $\vect{b}_h$, rồi đẩy qua hàm $\tanh$. Kết quả là trạng thái
+ẩn mới $\vect{h}_t$; một vector tổng kết mọi thứ mạng đã thấy từ bước~1 đến
+bước~$t$.
+
+Phương trình~\eqref{eq:rnn-output} đọc trạng thái ẩn ra thành đầu ra
+$\vect{y}_t$ qua một phép biến đổi tuyến tính nữa. Trong bài toán phân loại,
+$\vect{y}_t$ sẽ được đưa qua softmax; trong bài toán hồi quy, nó là đầu ra
+trực tiếp. Chương này dùng hồi quy vì nó giữ cho đạo hàm đơn giản; mỗi bước
+thêm một lớp softmax là thêm một tầng Jacobian không cần thiết cho mục tiêu
+hiểu BPTT.
+
+\subsection{Tháo cuộn theo thời gian}
+
+Một RNN có vẻ tuần hoàn: $\vect{h}_t$ xuất hiện ở cả vế trái lẫn vế phải của
+\eqref{eq:rnn-hidden}. Nhưng với một chuỗi có độ dài $T$ cố định, ta có thể
+\textbf{tháo cuộn} nó thành một mạng truyền thẳng sâu $T$ tầng, mỗi tầng dùng
+chung một bộ trọng số. Hình dung: tại $t=1$, mạng tính $\vect{h}_1$ từ
+$\vect{x}_1$ và $\vect{h}_0$; tại $t=2$, nó tính $\vect{h}_2$ từ $\vect{x}_2$
+và $\vect{h}_1$; và cứ thế đến $T$.
+
+Chính hình ảnh tháo cuộn này là thứ làm cho BPTT khả thi. Một khi chuỗi đã
+được trải phẳng thành một đồ thị tính toán không có chu trình, ta có thể áp
+dụng đúng thuật toán lan truyền ngược thông thường; chỉ khác là gradient
+phải đi qua cùng một tập trọng số $\mat{W}_{hh}$ nhiều lần, mỗi lần tại một
+bước thời gian. Chính sự lặp lại đó là nguồn gốc của mọi hiện tượng mà phần~II
+của cuốn sách sẽ mổ xẻ.
+
+\subsection{Ký hiệu gradient}
+
+Cuốn sách này làm việc với gradient ở dạng \textbf{ma trận Jacobi}. Nếu
+$\vect{y} \in \R^m$ và $\vect{x} \in \R^n$, thì Jacobian
+$\jac{\vect{y}}{\vect{x}}$ là một ma trận $m \times n$ với phần tử
+$(i,j)$ là $\partial y_i / \partial x_j$. Với một \tn{hàm mất mát}{loss
+function} vô hướng $L$, gradient của $L$ theo một ma trận $\mat{W}$ là một
+ma trận cùng kích thước:
+
+\[
+  \pd{L}{\mat{W}} = \begin{bmatrix}
+    \frac{\partial L}{\partial W_{11}} & \cdots & \frac{\partial L}{\partial W_{1n}} \\
+    \vdots & \ddots & \vdots \\
+    \frac{\partial L}{\partial W_{m1}} & \cdots & \frac{\partial L}{\partial W_{mn}}
+  \end{bmatrix}.
+\]
+
+Dạng Jacobian có một lợi thế lớn: quy tắc dây chuyền trở thành phép nhân ma
+trận. Nếu $\vect{z} = f(\vect{y})$ và $\vect{y} = g(\vect{x})$, thì
+
+\[
+  \jac{\vect{z}}{\vect{x}} = \jac{\vect{z}}{\vect{y}} \; \jac{\vect{y}}{\vect{x}}.
+\]
+
+Không cần nhớ khi nào thì nhân với chuyển vị, không cần tranh luận
+\emph{denominator layout} hay \emph{numerator layout}; Jacobian tự xử lý
+chiều. Từ chương này đến hết chương~4, mọi dẫn xuất sẽ được viết ở dạng này.
+Khi đến chương~7 với Transformer, ta sẽ chuyển sang dạng vector vì bản thân
+bài báo Vaswani làm vậy; phụ lục~A ghi lại ánh xạ giữa hai dạng cho từng bài
+báo.
+
+\subsection{Ký hiệu cho BPTT}
+
+Để dẫn xuất BPTT, tôi tách pre-activation khỏi hidden state. Gọi
+$\vect{a}_t$ là vector \textbf{trước} khi qua $\tanh$:
+
+\begin{equation}
+  \vect{a}_t = \mat{W}_{xh} \vect{x}_t
+              + \mat{W}_{hh} \vect{h}_{t-1}
+              + \vect{b}_h,
+  \qquad
+  \vect{h}_t = \tanh(\vect{a}_t).
+  \label{eq:rnn-preact}
+\end{equation}
+
+Ký hiệu $\vect{a}_t$ không có trong các bài báo gốc; họ viết thẳng
+$\vect{h}_t = \tanh(\mat{W}_{xh} \vect{x}_t + \mat{W}_{hh} \vect{h}_{t-1}
++ \vect{b}_h)$. Nhưng khi dẫn xuất BPTT, tách $\vect{a}_t$ ra giúp cô lập
+đạo hàm của $\tanh$ thành một bước riêng, và bước đó là ma trận đường chéo
+$\diag(1 - \vect{h}_t^2)$. Sự tách biệt này sẽ trả giá trong mục~4 khi ta
+tính gradient qua từng cổng.

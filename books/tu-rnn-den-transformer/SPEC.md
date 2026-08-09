@@ -176,7 +176,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | Chapter | Status | Notes |
 |---------|--------|-------|
 | Preface | not-started | Write last. Stub in place so front matter pagination is right from the start; front matter role, so `tone-loi-noi-dau` |
-| 01 | not-started | Blocked on the companion repo existing and on appendix A's notation being settled |
+| 01 | drafted | Companion repo `rnn-to-transformer-lab` tag `ch01`; notation in appendix A; glossary seeded in appendix B; research notes in `research/2026-08-09-*.md` |
 | 02 | not-started | |
 | 03 | not-started | Must verify the venue of the Pascanu paper; the PDF on file states none |
 | 04 | not-started | |
@@ -192,8 +192,8 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 14 | not-started | Re-verify before drafting |
 | 15 | not-started | Re-verify before drafting |
 | 16 | not-started | Write after 12-15; it is their summary |
-| App A | not-started | Needed by chapter 01, so it is not really last |
-| App B | not-started | Needed by chapter 01, same reason |
+| App A | drafted | Notation cross-reference table populated with LSTM 1997, Pascanu 2013, Sutskever 2014, Bahdanau 2015, Vaswani 2017 |
+| App B | drafted | Glossary seeded with 12 translated terms and 5 kept-English terms from chapter 01 |
 | App C | not-started | Grows as chapters push derivations out |
 | App D | not-started | Write when the companion repo exists |
 | App E | not-started | |
@@ -260,10 +260,12 @@ machine-checkable half is `check-chapter.psd1` in this folder.
 
 ## Open items
 
-- **The companion repo does not exist and is unnamed.** Proposed
-  `rnn-to-transformer-lab` for both the repo and the conda env, PROVISIONAL in
-  the sense of the other book's decision 20: freely renameable until the repo is
-  created and pushed, and expensive afterwards. Chapter 01 is blocked on it.
+- **The companion repo now exists.** Named `rnn-to-transformer-lab`, public
+  at `github.com/Giang-Dang/rnn-to-transformer-lab`. Conda env name matches.
+  Tag `ch01` created and pushed. Resolved 2026-08-09.
+- **Appendix A's notation is settled.** The table now maps the book's notation
+  to LSTM 1997, Pascanu 2013, Sutskever 2014, Bahdanau 2015, and Vaswani 2017.
+  Resolved 2026-08-09.
 - **A `gloss` check for decision 16, deliberately deferred.** The rule is
   machine-checkable: read appendix B's glossary, and flag every occurrence of a
   translated term that is not inside `\tn`. It cannot live in
@@ -276,10 +278,6 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   `scripts/check-chapter.tests.ps1`. Until then decision 21's macro is the only
   thing holding the rule, and it holds it by making the right thing easy rather
   than by making the wrong thing fail.
-- **Appendix A's notation has to be settled before chapter 01 is written**, not
-  after. Sixteen chapters inherit it, and changing a symbol later is not a
-  find-and-replace when the same letter means different things in different
-  papers.
 - **The running example is proposed, not settled.** A toy Vietnamese-English
   parallel set carried from chapter 05 to chapter 08, chosen because Vietnamese
   and English word order differ enough that chapter 06's alignment matrix shows
@@ -294,6 +292,6 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   BERT, GPT, Kaplan and Hoffmann. Each becomes a `refs.bib` entry only after the
   chapter that cites it has fetched and read it; none are in `refs.bib` yet, on
   purpose.
-- **The `Empty bibliography` warning is expected and will clear itself.** Nothing
-  cites anything yet. If it survives chapter 01, something is wrong with the
-  citation keys rather than with the build.
+- **The `Empty bibliography` warning is expected and will clear itself.** Chapter
+  01 is foundational and cites no papers, so the warning is still present.
+  Chapter 02 will be the first to add entries to `refs.bib`.
