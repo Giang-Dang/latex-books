@@ -1,0 +1,29 @@
+\section{Captured output}
+\label{sec:ch01-captured}
+
+Four em dashes, one per case, for Characters.AllowInCapturedListings. With the
+setting absent every one of them is a finding. With the setting naming
+minted:text, exactly one of them stops being one, and which one is the whole
+behaviour: inside a named environment AND traceable to a research note.
+
+Case 1, inside minted:text and traceable. This is the only forgivable one.
+
+\begin{minted}{text}
+The generated config keeps the directive—this time without its argument.
+\end{minted}
+
+Case 2, inside minted:text and traceable to nothing. Somebody typed it.
+
+\begin{minted}{text}
+An invented line of output nobody ever captured—typed straight into the draft.
+\end{minted}
+
+Case 3, traceable, but in an environment the setting does not name.
+
+\begin{minted}{json}
+The generated config keeps the directive—this time without its argument.
+\end{minted}
+
+Case 4, prose. Traceable word for word, and still not a listing.
+
+The generated config keeps the directive—this time without its argument.

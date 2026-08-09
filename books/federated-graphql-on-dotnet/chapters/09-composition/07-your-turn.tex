@@ -1,0 +1,118 @@
+\section*{Your turn}
+
+Every exercise here but the last two runs against files, with nothing started:
+no database, no container, no service. Check out tag \code{ch09} of the
+companion repository, run \code{npm ci} once, and work from the repository root.
+The commands are written for PowerShell, which is what the verification script
+needs anyway; the only thing that changes under \code{sh} is the line
+continuation.
+
+Scratch output goes to \code{federation/scratch.json} throughout, which is
+gitignored, so \code{git status} stays quiet and nothing you compose here can
+be mistaken for the committed config.
+
+\begin{enumerate}
+  \item \textbf{Compose it yourself.} Run
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+npx wgc router compose -i federation/mosaic.yaml -o federation/scratch.json
+  \end{minted}
+
+  with both services stopped, to prove to yourself that it does not need them.
+  Then compare your output with the committed \code{federation/supergraph.json}.
+  They are identical, and the fact that they are is what
+  section~\ref{sec:ch09-composition-as-a-gate}'s check depends on.
+
+  \item \textbf{Find out who owns a field.} Without opening either subgraph
+  schema, work out from the config alone which service answers
+  \code{Product.price}:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node -e "const c=require('./federation/supergraph.json'); console.log(JSON.stringify(c.engineConfig.datasourceConfigurations.map(d => [d.id, d.rootNodes]), null, 1))"
+  \end{minted}
+
+  It has to stay on one line, because PowerShell ends the command at the
+  newline rather than passing it to node. Then try to answer the same question
+  by reading \code{engineConfig.graphqlSchema}, and fail. That failure is
+  section~\ref{sec:ch09-not-a-schema}'s point about \code{join\_\_} directives,
+  felt rather than read.
+
+  \item \textbf{Check the SHA-1 yourself.} Take the \code{upstreamSchema.key}
+  of either datasource, look the value up in \code{engineConfig.stringStorage},
+  and hash it. It is the key. Then hash \code{federation.serviceSdl} from the
+  same datasource and confirm it is not, because that one is the file as
+  committed rather than the normalised form.
+
+  \item \textbf{Break satisfiability by hand.} Add \code{, resolvable: false}
+  to the \code{@key} on \code{Product} in \code{schema/mosaic.graphql} and
+  compose. Count the errors before you read them, then check: it is one per
+  field Mosaic contributes to \code{Product}, not one for the graph. Put the
+  file back with \code{git checkout schema/mosaic.graphql}.
+
+  \item \textbf{Predict three error messages.} For each of these, write down
+  which of the composer's errors you expect before running anything: giving
+  Mosaic's \code{Product} a \code{sku: String!}; keying Mosaic on \code{sku}
+  instead of \code{id} and publishing a \code{sku} field so that the key names
+  something real; and deleting the \code{@key} line entirely. Then
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/composition-cases.mjs --print duplicate-field
+node scripts/composition-cases.mjs --print key-mismatch
+node scripts/composition-cases.mjs --print missing-key
+  \end{minted}
+
+  The first case prints the error for \code{title} rather than \code{sku},
+  because that is the field the committed case edits, and the shape is what you
+  are checking your prediction against. Two of your three scenarios are about
+  keys. Neither of their errors is.
+
+  \item \textbf{Compose a graph you know is broken.} Make exercise 4's edit
+  again, then compose with the flag from
+  section~\ref{sec:ch09-turning-the-check-off}:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+npx wgc router compose --disable-resolvability-validation `
+    -i federation/mosaic.yaml -o federation/scratch.json
+  \end{minted}
+
+  Compare the \code{engineConfig.graphqlSchema} of that config with the good
+  one and find that they are the same string. Then diff the two files properly
+  and account for every leaf that differs. Four of them are your own edit coming
+  back at you; one is not, and that one is the section. Put
+  \code{schema/mosaic.graphql} back afterwards.
+
+  \item \textbf{Make a case go stale on purpose.} Open
+  \code{scripts/composition-cases.mjs} and change one character inside the
+  \code{from} string of any case, then run it. You get \enquote{matched 0 times}
+  rather than a pass. Now imagine that guard absent, and what the case would
+  have asserted.
+
+  \item \textbf{Make the two subgraphs drift.} Change something in
+  \code{Mosaic.Catalog}'s C\# that alters its schema, a field description will
+  do, and rebuild without re-exporting. Compose. It succeeds, because the
+  composer read a file. Then start both services and run
+  \code{pwsh scripts/verify.ps1}, which fails at the \code{\_service} check.
+  That is the division of labour in
+  section~\ref{sec:ch09-composition-as-a-gate}, demonstrated in two commands.
+
+  \item \textbf{Count the catalogue, and get it wrong first.} Open
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node_modules/@wundergraph/composition/dist/errors/errors.d.ts
+  \end{minted}
+
+  and count the declarations. Then count only the ones whose type is
+  \code{Error}. The two numbers are 203 and 123, and
+  section~\ref{sec:ch09-reading-the-errors} explains what the difference is.
+  Now read twenty of the names. Most of them are about one schema rather than
+  two, which is the point: decide for yourself how much of what you were afraid
+  of in composition is federation, and how much is ordinary schema validation
+  you have been getting from HotChocolate all along.
+\end{enumerate}
+
+Exercise 5 is the one to do properly, with the predictions written down before
+you run anything. Reading a composition error correctly is a small skill with a
+sharp edge to it, and the fastest way to acquire it is to be wrong three times
+in ten minutes with the answer one command away.
+Chapter~\ref{ch:enter-the-router} is where this configuration stops being a file
+and starts being a service.

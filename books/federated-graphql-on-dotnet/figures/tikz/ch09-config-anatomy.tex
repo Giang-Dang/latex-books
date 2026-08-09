@@ -1,0 +1,59 @@
+% What one wgc router compose actually produces: three files in, one file out,
+% and the four parts of that file chapter 09 takes apart. Referenced from
+% chapter 09. Bare tikzpicture; the figure environment, caption and label live
+% at the call site.
+%
+% The flow runs top to bottom because the output box is wider than any input
+% and a left-to-right arrangement leaves no room for it inside the measure.
+% The dashed line is routed above the input row rather than through it.
+\begin{tikzpicture}[
+    font=\small,
+    infile/.style={draw, rounded corners=2pt, minimum width=40mm,
+                   minimum height=7mm, font=\scriptsize, align=center},
+    cmd/.style={draw, rounded corners=2pt, minimum width=34mm,
+                minimum height=7mm, font=\scriptsize, align=center,
+                fill=black!8},
+    outer/.style={draw, rounded corners=2pt, minimum width=72mm,
+                  minimum height=40mm},
+    part/.style={draw, rounded corners=2pt, minimum width=64mm,
+                 minimum height=8mm, font=\scriptsize, align=center,
+                 fill=black!5},
+    feed/.style={-{Stealth[length=2mm]}},
+    copy/.style={-{Stealth[length=2mm]}, dashed, gray},
+    lbl/.style={font=\scriptsize, align=center, inner sep=1pt}
+  ]
+
+  % -- what goes in --------------------------------------------------------
+  \node[infile] (yaml) at (2.4,0)  {\code{federation/mosaic.yaml}};
+  \node[infile] (cat)  at (7.0,0)  {\code{schema/catalog.graphql}};
+  \node[infile] (mos)  at (11.6,0) {\code{schema/mosaic.graphql}};
+
+  \node[cmd] (wgc) at (7.0,-1.9) {\code{wgc router compose}};
+
+  \draw[feed] (2.4,-0.35)  -- (2.4,-1.9)  -- (wgc.west);
+  \draw[feed] (7.0,-0.35)  -- (wgc.north);
+  \draw[feed] (11.6,-0.35) -- (11.6,-1.9) -- (wgc.east);
+
+  % -- what comes out ------------------------------------------------------
+  \node[outer] (cfg) at (7.0,-5.15) {};
+  \node[lbl, anchor=south] at (7.0,-3.05)
+    {\code{federation/supergraph.json}, 31{,}555 bytes};
+
+  \node[part] (api) at (7.0,-3.75)
+    {\code{engineConfig.graphqlSchema}\\the client schema, no \code{join\_\_} in it};
+  \node[part] (ds)  at (7.0,-4.75)
+    {\code{datasourceConfigurations}\\which subgraph answers which fields};
+  \node[part] (sdl) at (7.0,-5.75)
+    {\code{federation.serviceSdl}\\each subgraph's schema, verbatim};
+  \node[part] (ss)  at (7.0,-6.75)
+    {\code{stringStorage}\\the same two, normalised, keyed by SHA-1};
+
+  \draw[feed] (wgc.south) -- (7.0,-3.35);
+
+  % The one part of the output that is a copy of the input rather than
+  % something derived from it. Routed above the input row and down the right.
+  \draw[copy] (cat.north) -- (7.0,0.75) -- (14.3,0.75) -- (14.3,-5.75)
+              -- (sdl.east);
+  \node[lbl, gray, anchor=south] at (10.65,0.8) {byte for byte};
+
+\end{tikzpicture}

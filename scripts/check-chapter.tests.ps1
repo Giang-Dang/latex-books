@@ -259,11 +259,72 @@ $PunctExpected = @(
     'chapters/01-modes/02-lookalikes.tex:10: [unicode] U+201D is right double quote, a Unicode look-alike of ASCII punctuation'
     'chapters/01-modes/02-lookalikes.tex:11: [unicode] U+2026 is ellipsis, a Unicode look-alike of ASCII punctuation'
     'chapters/01-modes/02-lookalikes.tex:12: [unicode] U+00A0 is no-break space, a Unicode look-alike of ASCII punctuation'
+    # 03-captured.tex holds four em dashes, one per case. The committed fixture
+    # policy does not set Characters.AllowInCapturedListings, so all four are
+    # findings here. The next block turns the setting on and asserts that
+    # exactly one of them goes away.
+    'chapters/01-modes/03-captured.tex:12: [unicode] U+2014 is em dash, a Unicode look-alike of ASCII punctuation'
+    'chapters/01-modes/03-captured.tex:18: [unicode] U+2014 is em dash, a Unicode look-alike of ASCII punctuation'
+    'chapters/01-modes/03-captured.tex:24: [unicode] U+2014 is em dash, a Unicode look-alike of ASCII punctuation'
+    'chapters/01-modes/03-captured.tex:29: [unicode] U+2014 is em dash, a Unicode look-alike of ASCII punctuation'
 )
 
 $punct = Invoke-Checker $punctFix
 if (Compare-Findings 'fixture-punctuation' $PunctExpected $punct) {
     Write-Host '[ok]   punctuation: look-alikes caught, letters of five scripts passed'
+}
+
+# ---------------------------------------------------------------------------
+# Characters.AllowInCapturedListings
+# ---------------------------------------------------------------------------
+
+# The setting forgives a character the mode would reject, so what it must NOT
+# forgive is the whole test. 03-captured.tex holds the same em dash four times:
+# in a named environment and traceable to research/ (line 12), in a named
+# environment and traceable to nothing (18), traceable but in an environment
+# the setting does not name (24), and in prose (29). Only line 12 may go.
+#
+# The fixture's own psd1 also has Numbers and Verbatim off, which makes this
+# the case that proves the research notes are read for this family rather than
+# only as a side effect of one of those two being on.
+$punctPolicy = Join-Path $punctFix 'check-chapter.psd1'
+$punctPolicyOriginal = Get-Content -LiteralPath $punctPolicy -Raw
+
+try {
+    Set-Content -LiteralPath $punctPolicy -Encoding utf8 -Value @'
+@{
+    Characters   = @{ Mode = 'Punctuation'; AllowInCapturedListings = @('minted:text') }
+
+    Citations    = @{ Enabled = $false }
+    Quotes       = @{ Enabled = $false }
+    Index        = @{ Enabled = $false }
+    Dashes       = @{ Enabled = $false }
+    Contractions = @{ Enabled = $false }
+    Spelling     = @{ Enabled = $false }
+    Numbers      = @{ Enabled = $false }
+    Verbatim     = @{ Enabled = $false }
+    Log          = @{ Enabled = $false }
+}
+'@
+    $CapturedExpected = @($PunctExpected | Where-Object { $_ -notlike '*03-captured.tex:12:*' })
+    $captured = Invoke-Checker $punctFix
+    if (Compare-Findings 'fixture-punctuation with AllowInCapturedListings' $CapturedExpected $captured) {
+        Write-Host '[ok]   captured: the traced listing line is forgiven, the other three are not'
+    }
+
+    # And the run has to admit it. A gate that forgives bytes somewhere while
+    # printing a bare "chars=Punctuation" is the silent weakening the printed
+    # policy exists to prevent, so the exemption belongs on that line.
+    $policyLine = @(& pwsh -NoProfile -File $checker $punctFix 2>&1 |
+            ForEach-Object { "$_" } | Where-Object { $_ -like '*==> policy:*' })
+    if (@($policyLine | Where-Object { $_ -match 'chars=Punctuation\(captured:minted:text\)' }).Count -ne 1) {
+        Write-Fail 'the policy line did not report the captured-listing exemption'
+        $policyLine | ForEach-Object { Write-Host "    actual: $_" }
+    } else {
+        Write-Host '[ok]   captured: the policy line names the exemption'
+    }
+} finally {
+    Set-Content -LiteralPath $punctPolicy -Encoding utf8 -Value $punctPolicyOriginal -NoNewline
 }
 
 # A file that is not valid UTF-8 has to be reported, not silently repaired.

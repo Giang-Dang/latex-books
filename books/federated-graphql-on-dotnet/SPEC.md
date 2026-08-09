@@ -11,19 +11,22 @@ Author: Giang Dang
 
 ## Status
 
-Chapters 01 to 08 drafted (08 on 2026-08-09). The companion repo is public at
+Chapters 01 to 09 drafted (09 on 2026-08-09). The companion repo is public at
 https://github.com/Giang-Dang/mosaic-graph, tagged `ch02`, `ch03`, `ch04-ef`,
-`ch04`, `ch05`, `ch07` and `ch08`. Mosaic is no longer one service. At `ch08`
-Catalog lives in `src/Mosaic.Catalog` on port 5101 with its own database and
-owns the `Product` entity; `src/Mosaic.Api` keeps the other five domains on
+`ch04`, `ch05`, `ch07`, `ch08` and `ch09`. Mosaic is no longer one service. At
+`ch08` Catalog lives in `src/Mosaic.Catalog` on port 5101 with its own database
+and owns the `Product` entity; `src/Mosaic.Api` keeps the other five domains on
 5100 and contributes `price`, `availableQuantity`, `reviews` and
 `averageRating` to the same type. Both are Apollo Federation subgraphs, both
-publish `_service` and `_entities`, and the two schemas compose. Nothing routes
+publish `_service` and `_entities`, and the two schemas compose. Neither service
+changed at `ch09`, which adds the composed router execution config as a
+committed file and five composition failures produced on purpose. Nothing routes
 them yet.
-Next action: chapter 09, composition, which now has two real subgraph schemas
-to compose and a supergraph to take apart. Chapter 08 left it three settings
-already made and explained (decisions 50 to 52), so 09 should not re-argue
-them.
+Next action: chapter 10, the router, which now has `federation/supergraph.json`
+to load. Chapter 09 owes it two questions it could not answer without a router:
+what the router does with a config composed with the resolvability check off,
+and whether the `GRAPHQL_SUBSCRIPTION_PROTOCOL_WS` in that config is what it
+actually uses against a subgraph chapter 05 exercised over SSE.
 
 ## Decision log
 
@@ -87,6 +90,11 @@ is re-opened only by recording what changed and why, in the row.
 | 53 | Chapter 08 composes as a gate and shows none of it | `federation/mosaic.yaml` is created in chapter 08 and `wgc router compose` runs on every verification pass, but no composition output appears in the chapter. Composition is chapter 09's subject and spending it early would cost that chapter its material. What chapter 08 does own is the three subgraph settings above, because each is a property of a service rather than of the composer, and a chapter that produced two subgraphs which cannot be assembled would have shipped a broken tag. Settled 2026-08-09. |
 | 54 | The single-service Postman collection is retired at `ch08` | Most of `postman/mosaic.postman_collection.json` asked port 5100 for `products`, which now lives on 5101, so it was deleted rather than patched. `postman/mosaic-federation.postman_collection.json` replaces it: 16 requests, covering both subgraphs, `_service`, `_entities` in both directions, the positional contract, an undecodable key, and the mutation with its three remaining typed errors. Chapter 19's workbook inherits the job of consolidating this properly. Settled 2026-08-09. |
 | 55 | A finding that needs a listing needs a project | Chapter 08's headline finding was first measured on a throwaway probe, and the chapter printed its SDL. The independent audit called that out: a listing nobody can check out fails the rule that every listing is real code from the companion repo at the chapter's tag, however true the finding is. The probe became `samples/entity-attribute-placement` under decision 31, its SDL is committed, and both verify scripts assert the leak by name so that a HotChocolate release fixing it fails the gate rather than quietly making the chapter wrong. The rule going forward: if a measurement is load-bearing enough to print, it is load-bearing enough to commit. Settled 2026-08-09. |
+| 56 | Chapter 09's composed config is committed, chapter 07's is not | `federation/supergraph.json` is tracked; `samples/federated-wire/supergraph.json` stays gitignored. Both are build artefacts of committed schemas, and the difference is that chapter 09 prints what is inside one of them. A listing a reader cannot open fails decision 55. Both verify scripts recompose and compare against the committed file, which works only because composition is deterministic: composed twice and compared with `cmp`, byte identical. A wgc upgrade that changes the config format therefore fails the gate rather than silently making the chapter wrong, which is the intended behaviour and not a maintenance problem to solve. `.gitignore` carries the reasoning beside the chapter 07 entry so the inconsistency reads as a decision. Settled 2026-08-09. |
+| 57 | Composition cases are one node script, not two shell implementations | `scripts/composition-cases.mjs` mutates the real committed schema pair in memory, composes, and asserts the composer's messages; `verify.ps1` and `verify.sh` both call it. This is the first node script in the repository, and the alternative was writing the same mutate-compose-assert logic twice and letting it drift, which the chapter 04 open item records having already happened once to `verify.sh`. Each case's edit is a literal replacement that must match exactly once, so a schema change that invalidates a case fails with "matched 0 times" rather than composing the unedited pair and asserting nothing. Cases derive from the real schemas rather than a fixture, because an error message from a toy schema pair is a fact about the toy. Settled 2026-08-09. |
+| 58 | Chapter 09's TOC line widened | The approved line read "satisfiability, reading composition errors, `wgc router compose` (router-only), supergraph anatomy". Drafting found that "supergraph anatomy" names an artefact that does not exist in this stack, which became the chapter's second section; and that two topics the line did not name earned sections of their own, the `--disable-resolvability-validation` flag and composition as a build gate. The line now names all six. Same form as decisions 33 and 45: scope grew in detail, not in ambition. Settled 2026-08-09. |
+| 59 | Three numbers in chapter 09 were wrong until the audit, and all three had been "verified" | The independent auditor re-derived every number and found: the error catalogue is 123 errors, not 203, because 80 of the 203 declarations return a message `string` rather than an `Error`; the config composed with the resolvability check off differs from the good one in five leaves, not one, four of them being the schema edit echoing through content-addressed storage; and the four normalisation changes the chapter named all add bytes, so none of them could explain a document 903 bytes shorter, which turned out to be the federation entry points being stripped. Every one came from counting or diffing the wrong thing and reading the result as confirmation. The rule this leaves: a count is of a type, not of a line that mentions it, and a before-and-after needs the two sides to differ in exactly the one thing being claimed. Settled 2026-08-09. |
+| 60 | Captured output may keep the punctuation the tool wrote | `Characters.Mode = 'Ascii'` stays, and gains `AllowInCapturedListings = @('minted:text')`. The rule that produced Ascii mode is that a stray Unicode character in a listing is a paste that went through something; the case it did not anticipate is that compilers, composers and linters write prose, and their prose has punctuation. Chapter 09 met it as a composition error containing a U+2014 em dash. Both halves of the exemption are required: the character must be inside `minted:text`, and the line must appear in a research note, by the same test the verbatim family uses. Prose is not in a listing and a typed listing traces to nothing, so neither can reach it, and a control character is never forgiven because a mangled `sed` is the one thing this family catches that nothing else would. The setting is library-wide and defaults to empty, so no other book is affected; `scripts/check-chapter.tests.ps1` covers the three cases it must refuse. Settled 2026-08-09, after the chapter first shipped without the listing. |
 
 ## Version baseline
 
@@ -123,7 +131,7 @@ session. Chapter folders in chapters/ carry the same scope lines.
 6. **The Federation Model** - supergraph/subgraphs, entity ownership, the Apollo Federation v2 directive tour, composition rules conceptually
 7. **How a Federated Query Actually Runs** - query plans, representations, `_entities`/`_service`, exact router-subgraph HTTP traffic captured inside the subgraphs; `_entities` and `_service` exercised from Postman
 8. **The First Cut: Extracting Catalog** - HotChocolate.ApolloFederation, reference resolvers, extending foreign entities; the global object identifier as a federation key, and decoding it; testing a naked subgraph in Postman before any router exists; the three subgraph defaults that only fail once two schemas meet
-9. **Composition** - satisfiability, reading composition errors, `wgc router compose` (router-only), supergraph anatomy
+9. **Composition** - `wgc router compose` (router-only); what a router execution config actually contains, against Apollo's supergraph schema; satisfiability as a graph walk; reading composition errors and the causes they do not name; the flag that disables the check; composition as a build gate and what it structurally cannot see
 10. **Enter the Router** - Cosmo Router locally: config, first federated query, reading query plans
 
 ### Part III - Decomposition in Practice
@@ -182,7 +190,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 06 | drafted | 2026-08-09. 12 pages (91--102), 5 sections plus the lab, ~6,800 words, no figures, 3 citations, 30 listings (all SDL sketches). First conceptual chapter since ch01; no companion code (decision 21 applies). Sources in research/2026-08-ch06-federation-model.md. Covers the supergraph and subgraph model, entities and @key ownership, the field-level directives (@shareable/@external/@requires/@provides), the structural directives (@override/@interfaceObject/@inaccessible/@tag), and composition rules conceptually. Not yet reviewed for line-level prose. |
 | 07 | drafted | 2026-08-09. 18 pages (103--120), 6 numbered sections plus the lab, ~8,400 words, 2 TikZ figures, 6 citations, 45 listings. Sources in research/2026-08-ch07-federated-query-execution.md. Companion tag `ch07`; Mosaic is untouched and the code is `samples/federated-wire/`, two subgraphs and the Cosmo Router (decision 44). Both verify scripts grew a federation section and pass. The chapter's spine is one query followed end to end: the plan the router prints, then the two request bodies the subgraphs logged, then what the second hop costs. Headline findings: HotChocolate 16.6.0 emits federation v2.6 against a spec at v2.15; the router never calls `_service`; a subgraph publishes no `_entities` at all if no root field reaches the entity; and the router forwards no client headers. TOC line corrected (decision 45). Not yet reviewed for line-level prose. |
 | 08 | drafted | 2026-08-09. 18 pages (121--138), 6 numbered sections plus the lab, ~8,200 words, 2 TikZ figures, 52 index entries, 4 citations, 36 listings. Sources in research/2026-08-ch08-first-cut.md. Companion tag `ch08`, the first tag that changes Mosaic itself: `src/Mosaic.Catalog` on 5101 with its own database, `src/Mosaic.Api` on 5100 with five domains, both federation subgraphs, both gates passing and the two schemas composing. The chapter's spine is that the extraction was a file move and the schema was the work: eight files changed path, five of them changing nothing but their namespace and using lines, and the three `[ObjectType<Product>]` classes in Pricing, Inventory and Reviews did not change by a character. Headline findings: `[ReferenceResolver]` in an `[ObjectType<T>]` class silently becomes a public field (decision 47); the federation key is chapter 5's base64 identifier and nothing decodes it, so a `Guid` parameter answers null rather than erroring (decision 48); and three subgraph defaults block composition, of which `Query.node` in two subgraphs is the one that costs a feature (decisions 50 and 51). Measured: 146 resolvers and 2 SQL for the catalog page through `_entities`, against 146 and 3 as a monolith, and 1 statement for 25 representations in one call against 25 for the same keys one call at a time. Four citations, all to Apollo's own documentation for claims about what the specification requires rather than what this build does; everything else was measured or read out of the source tree. The TOC line was widened in the same session (decision 53 explains what was deliberately left out). Audited by a fresh agent, which found seven real defects; see decision 55 and the open items. Not yet reviewed for line-level prose. |
-| 09 | not-started | |
+| 09 | drafted | 2026-08-09. 16 pages (139--154), 6 numbered sections plus the lab, ~7,400 words, 2 TikZ figures, 51 index entries, 5 citations, 36 listings. Sources in research/2026-08-ch09-composition.md. Companion tag `ch09`; neither service changed by a line, and the tag adds `federation/supergraph.json` (committed, decision 56) and `scripts/composition-cases.mjs` (decision 57). Both gates pass, both run to completion on this machine. The chapter's spine is that the artefact is not what its name says and the errors do not name their causes. Headline findings: a Cosmo router execution config carries no `join__` directives at all, splitting into a clean client schema plus a routing table where Apollo has one annotated document; each subgraph's SDL is in the file twice, verbatim and normalised, the normalised copy content-addressed under the SHA-1 of itself and stripped of `_service`, `_entities`, `_Service`, `_Entity` and `_Any`; satisfiability is one error out of 123 and renders as a query document; three different mistakes all report as a shareability error on the key field and none names a key; and `--disable-resolvability-validation` emits a config whose client schema is `===` identical to a healthy one. TOC line widened in the same session (decision 58). Audited by a fresh agent, which found three wrong numbers that had survived my own verification; see decision 59 and the open items. Not yet reviewed for line-level prose. |
 | 10 | not-started | |
 | 11 | not-started | |
 | 12 | not-started | |
@@ -253,6 +261,14 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
 - Listings are drawn from the environments decisions 23 and 38 name, and each
   one exists as a `\newminted` alias or a stock lexer in preamble/packages.tex.
   Adding an environment is a decision, recorded in the log.
+- Every file in this book is ASCII, with one exception: a `minted:text` listing
+  may carry a non-ASCII character when the tool that produced the line wrote it
+  and the line is recorded in a research note. Captured output is not ours to
+  clean, and altering it would be the worse breach. The exception is enforced by
+  `Characters.AllowInCapturedListings` in check-chapter.psd1, which requires
+  both halves and forgives no control character, so it cannot reach prose or an
+  invented listing. It covers punctuation a tool emitted; it is not a licence to
+  paste a curly quote into a listing. See decision 60.
 - Prefer a figure wherever a figure carries the point better than prose does.
   One diagram replaces three paragraphs describing an architecture; one plotted
   series replaces a four-row table. A figure is not decoration. It is a second
@@ -283,6 +299,40 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
   project, or delete them once they have been read.
 
 ## Open items
+
+- (resolved 2026-08-09) The composer message chapter 09 could not print now
+  prints. `Characters.AllowInCapturedListings` exists, this book sets it to
+  `minted:text`, and the enum-drift case is committed in the companion repo like
+  the other six. See decision 60. What is worth carrying: the em-dash line in
+  research/2026-08-ch09-composition.md section G is load-bearing, because the
+  check traces the chapter's listing to it. Re-wrapping that line in the note
+  turns the listing back into a finding, and the failure will name the listing
+  rather than the note.
+- **The satisfiability error names one route out of four.** Catalog has four
+  root fields returning `Product` and the unresolvable-path error names only
+  `Query.products`. Whether that is the first route the walker tried, the
+  shortest, or something else was not investigated; the chapter says only that
+  fixing the named path is not evidence the graph is fixed. Chapter 17 walks the
+  composer properly and owns the answer.
+- **`scalar FieldSet` reaches the client-facing schema** because HotChocolate
+  imports it as a named type in its `@link` list and the composer keeps imported
+  named types. Harmless, visible to anyone who introspects the router, and
+  nobody's documented intent. Chapter 25 should decide whether a production
+  graph does anything about it; chapter 28 is where the two stacks are compared
+  and it is evidence.
+- Chapter 09 leaves these unmeasured, and the research file's section M names an
+  owner for each: anything a router does with this config including what it does
+  with one composed with the resolvability check off (ch 10), the
+  `GRAPHQL_SUBSCRIPTION_PROTOCOL_WS` in the config against a subscription
+  chapter 05 exercised over SSE (ch 14), `--split-configs-enabled`,
+  `--ignore-external-keys` and `--suppress-warnings` (the second needs
+  `@external`, ch 11), composition warnings of any kind since Mosaic produces
+  none, composition across more than two subgraphs (ch 12), and whether an
+  Apollo-style annotated supergraph SDL can be obtained from wgc at all (ch 28).
+- The composer prints some errors more than once: twice for the incompatible
+  type case, three times for the uncommitted enum case, identically each time.
+  No pattern was established, so chapter 09 says only that a count of blocks is
+  not a count of faults. Worth resolving if chapter 17 reads the composer.
 
 - (resolved 2026-08-09) Chapter 08 answered the `[ReferenceResolver]` question,
   and the answer was "only one of them works". See decision 47. The failure is

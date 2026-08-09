@@ -1,0 +1,46 @@
+% Satisfiability as the walk it is: from a root field, through the subgraph
+% that owns it, across a key edge, to the fields another subgraph contributes.
+% Take the key edge away and the four fields on the right are unreachable,
+% which is what chapter 09 measures. Referenced from chapter 09. Bare
+% tikzpicture; the figure environment, caption and label live at the call site.
+%
+% The zone divider is drawn only above the key edge. Run it the full height and
+% it crosses the one line in the picture that matters.
+\begin{tikzpicture}[
+    font=\small,
+    place/.style={draw, rounded corners=2pt, minimum width=34mm,
+                  minimum height=12mm, align=center, font=\scriptsize},
+    entry/.style={draw, rounded corners=2pt, minimum width=34mm,
+                  minimum height=8mm, align=center, font=\scriptsize,
+                  fill=black!8},
+    walk/.style={-{Stealth[length=2mm]}},
+    keyedge/.style={-{Stealth[length=2mm]}, thick},
+    cut/.style={thick},
+    lbl/.style={font=\scriptsize, align=center, inner sep=1pt},
+    onedge/.style={font=\scriptsize, align=center, fill=white, inner sep=2pt},
+    zone/.style={gray, dashed, thick}
+  ]
+
+  % the two subgraphs, named above the boxes rather than boxed themselves
+  \draw[zone] (6.5,1.6) -- (6.5,0.05);
+  \node[lbl, text=gray, anchor=south] at (2.9,1.65) {subgraph \code{catalog}};
+  \node[lbl, text=gray, anchor=south] at (10.1,1.65) {subgraph \code{mosaic}};
+
+  \node[entry] (root) at (2.9,1.0) {\code{Query.products}};
+  \node[place] (pcat) at (2.9,-0.9)
+    {\code{Product} here\\\code{id sku title}\\\code{description category}};
+
+  \node[place] (pmos) at (10.1,-0.9)
+    {\code{Product} here\\\code{price availableQuantity}\\\code{reviews averageRating}};
+
+  \draw[walk] (root) -- (pcat);
+  \draw[keyedge] (pcat) -- (pmos);
+  \node[onedge] at (6.5,-0.45) {\code{@key(fields: "id")}};
+
+  % what resolvable: false does to it
+  \draw[cut] (6.28,-0.68) -- (6.72,-1.12);
+  \draw[cut] (6.28,-1.12) -- (6.72,-0.68);
+  \node[lbl, anchor=north, align=center] at (6.5,-1.35)
+    {\code{resolvable: false}\\removes this edge};
+
+\end{tikzpicture}

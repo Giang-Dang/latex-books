@@ -1,7 +1,31 @@
 \chapter{Composition}
 \label{ch:composition}
 
-\emph{Not yet drafted.} Planned scope: Satisfiability, reading composition errors, router-only composition with \code{wgc router compose}, and the anatomy of the composed supergraph.
+Chapter~\ref{ch:the-first-cut-extracting-catalog} ended with one command run
+once, its output discarded, used as nothing more than a gate. This chapter runs
+the same command and reads what it produced.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/09-composition/01-section-name}
+Composition is the step between having subgraphs and having a graph. Two
+services that each answer correctly, publish a valid schema and pass their own
+tests can still fail to make one graph, and until now this book has met that
+fact only as an obstacle: three settings in
+chapter~\ref{ch:the-first-cut-extracting-catalog} that had to be changed before
+the tag would ship. Here it is the subject. What the composer checks, what it
+produces when it is satisfied, and what it tells you when it is not.
+
+Nothing in Mosaic changes. Tag \code{ch09} of the companion repository has the
+same two services as \code{ch08}, byte for byte, and adds two things that exist
+only to be read: the composed configuration, committed rather than discarded,
+and five composition failures produced on purpose from the real pair of schemas.
+
+Two of the things I expected to find were not there. The file the command writes
+is not a supergraph schema, and the check this whole subject is famous for turns
+out to be one error out of a hundred and twenty-three.
+
+\input{chapters/09-composition/01-one-command}
+\input{chapters/09-composition/02-not-a-schema}
+\input{chapters/09-composition/03-satisfiability}
+\input{chapters/09-composition/04-reading-the-errors}
+\input{chapters/09-composition/05-turning-the-check-off}
+\input{chapters/09-composition/06-composition-as-a-gate}
+\input{chapters/09-composition/07-your-turn}

@@ -1,0 +1,98 @@
+\section{One Command, and What It Talks To}
+\label{sec:ch09-one-command}
+\index{composition!running it|(}%
+
+Everything in this chapter comes out of one command:
+
+\begin{minted}{text}
+npx wgc router compose -i federation/mosaic.yaml -o federation/supergraph.json
+\end{minted}
+
+\index{composition!wgc router compose@\code{wgc router compose}}%
+\code{federation/mosaic.yaml} was written in
+chapter~\ref{ch:the-first-cut-extracting-catalog}, which composed with it on
+every verification run and printed none of the result. It names the two
+subgraphs, says where each one answers, and points at the file holding each
+one's schema:
+
+\begin{minted}{yaml}
+version: 1
+
+subgraphs:
+  - name: catalog
+    routing_url: http://localhost:5101/graphql
+    schema:
+      file: ../schema/catalog.graphql
+
+  - name: mosaic
+    routing_url: http://localhost:5100/graphql
+    schema:
+      file: ../schema/mosaic.graphql
+\end{minted}
+
+That is the entire input. Two schema files and a note of which URL each one
+belongs to.
+
+\index{composition!offline}%
+The command needs no account, no registry and no network. Cosmo's documentation
+says it \enquote{does not interact with the control plane and completely runs
+locally}~\autocite{cosmo2026routercompose}, and with schema files as the input
+it does not contact the subgraphs either. The routing URLs go into the output
+for the router to use later. The composer never visits them, and
+chapter~\ref{ch:how-a-federated-query-actually-runs} printed the one request it
+does make when you give it the other kind of input.
+
+\index{composition!subgraphs need not be running}%
+Which has a consequence worth stating plainly, because it is the difference
+between composition being a build step and being an integration test: neither
+service has to be running. Both were stopped while I wrote this section. A
+composition failure is a statement about two text files.
+
+\subsection*{Where the schemas come from, and what that costs}
+
+\index{composition!file input versus introspection}%
+The \code{file:} form is a choice with a failure mode attached. The composer
+reads what is committed under \code{schema/}, and what is committed is what each
+service published through \code{\_service} on the day somebody exported it.
+Change a subgraph's C\# without re-exporting, and the composer will go on
+composing a graph that no longer exists.
+
+\code{introspection:} in place of \code{schema:} points it at a live endpoint
+instead, and chapter~\ref{ch:how-a-federated-query-actually-runs} printed the
+request it sends. That form cannot drift, and it cannot run in a build that has
+no services in it either.
+
+Mosaic keeps the files and closes the gap a different way, which is
+section~\ref{sec:ch09-composition-as-a-gate}: the verification script asks each
+running service for its schema and fails if what it publishes is not the
+committed file. The composer reads a file, and something else makes sure the
+file is true. Chapter~\ref{ch:ci-cd-for-a-federated-graph} is where that
+arrangement becomes a pipeline with a registry in it, and where the drift check
+stops being local.
+
+\subsection*{What the command answers with}
+
+Success is quiet:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Router execution config successfully written to "federation/supergraph.json".
+\end{minted}
+
+Failure is a table, and the exit code is 1. The tables in
+sections~\ref{sec:ch09-satisfiability} and~\ref{sec:ch09-reading-the-errors} are
+drawn with box-drawing characters and hard-wrapped to a fixed width, so every
+error in this chapter is printed as its message rather than as its box. The
+words are the composer's; the line breaks around them are the command-line
+tool's, and I have taken them out.
+
+\index{composition!determinism}%
+One property of the command matters more than it sounds like it should:
+composition is deterministic. I composed the same pair twice and compared the
+two outputs byte for byte with \code{cmp}, and they are identical. That is what
+makes the rest of this chapter possible. An artefact you can commit is an
+artefact a build can diff, and section~\ref{sec:ch09-composition-as-a-gate} does
+exactly that.
+
+Now the file itself, which is not the file I expected.
+
+\index{composition!running it|)}%
