@@ -229,7 +229,8 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   spectral radius sixteen times, and a parenthesis on each turns the page into a
   bilingual dictionary. Once per section still serves the reason decision 16
   gave, because a reader opening the book anywhere lands inside a section. After
-  the gloss, carry the term as notation where there is one: `ho(W_hh)` reads
+  the gloss, carry the term as notation where there is one: `
+ho(W_hh)` reads
   better than the words fifteen times over, and it is more precise.
 - **Voice:** First-person practitioner, the AGENTS.md default, which takes the
   chapter role. In Vietnamese that is "tôi" for the author and "bạn" for the
@@ -298,6 +299,21 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   attributing a sentence to a year.
 
 ## Open items
+
+- **Chapters 01 and 02 gloss below the cadence decision 16 now states.** Counted
+  2026-08-09: 12 uses of `\tn` in chapter 01, 2 in chapter 02, 36 in chapter 03.
+  The rule is once per section, and chapter 03 is the only one that meets it.
+  Nothing is wrong on the page, so this is not urgent; sweep each of the two when
+  it is next opened rather than in a pass of its own. This is also the first real
+  data point for the deferred `gloss` check, which needs a second before it can
+  be proposed as a family in `scripts/check-chapter.ps1`.
+- **A listing wider than the measure is a defect no check catches.** Three tables
+  in chapter 03 shipped at 82 to 101 characters and wrapped with continuation
+  markers inside a 155mm measure; all three were found by reading the PDF, not by
+  the gate. The fix each time was to narrow the experiment's output at the
+  source. Whether this becomes a check in `scripts/check-chapter.ps1` depends on
+  it biting a second book; until then, read the built pages.
+
 
 - **The companion repo now exists.** Named `rnn-to-transformer-lab`, public
   at `github.com/Giang-Dang/rnn-to-transformer-lab`. Conda env name matches.
