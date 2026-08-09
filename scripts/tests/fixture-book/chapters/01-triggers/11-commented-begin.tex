@@ -1,0 +1,11 @@
+\section{A commented-out listing}
+\label{sec:ch01-commented-begin}
+
+% \begin{fixturesdl}
+The line above is commented out and opens nothing. Read before comments come
+off, it used to set the listing state, and because no matching close follows,
+every line below it went silent for every prose check.
+
+So the finding this file triggers is a "literal double quote" that has to
+survive. A regression here removes a line from the expected output rather than
+adding one, which is the failure that is easy to miss.

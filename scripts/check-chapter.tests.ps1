@@ -68,6 +68,17 @@ function Invoke-Checker {
         ForEach-Object { $_.Substring($prefix.Length + 1) })
 }
 
+# Invoke-Checker keeps only the finding lines and throws the exit code away,
+# which is the whole output when the run fails on the policy rather than on the
+# prose. This returns both, and takes the extra arguments the -Chapter mode
+# needs.
+function Invoke-CheckerRaw {
+    param([string]$Fixture, [string[]]$ExtraArgs = @())
+
+    $lines = @(& pwsh -NoProfile -File $checker $Fixture @ExtraArgs 2>&1 | ForEach-Object { "$_" })
+    return [pscustomobject]@{ Lines = $lines; ExitCode = $LASTEXITCODE }
+}
+
 function Get-FindingIds {
     param([string[]]$Lines)
     return @($Lines |
@@ -163,10 +174,18 @@ $Expected = @(
     # columns, the \begin and \end lines are not measured at all, and the second
     # block is the same width but carries its own option list, so it is waived.
     "chapters/01-triggers/10-listings.tex:11: [listing] listing line is 78 columns against a budget of 60; it will wrap or overflow the measure"
+    # A commented-out \begin used to open a listing region that nothing closed,
+    # and everything below it went silent. So the assertion is a finding that
+    # has to survive: a regression takes this line away rather than adding one.
+    "chapters/01-triggers/11-commented-begin.tex:9: [quote] literal double quote in prose; use \enquote{...}"
+    # In a subfolder, so it is only reached when the walk recurses. The full
+    # path always did; -Chapter did not, and -Chapter is the mode a drafting
+    # session iterates with. The group below runs that mode and looks for this.
+    "chapters/01-triggers/nested/01-nested.tex:4: [dash] en/em dash ligature in prose; reword or use ASCII punctuation"
     # One line out of a picture that also grids on step=0.5cm, scales a node,
     # sets text=gray and names a style with a space in it. Exactly one of those
     # is a style declaration using a reserved name.
-    "figures/tikz/11-reserved-key.tex:10: [tikz] style name 'step' is a pgfkeys key already; the picture will fail to compile with an error naming the key rather than the style"
+    "figures/tikz/12-reserved-key.tex:10: [tikz] style name 'step' is a pgfkeys key already; the picture will fail to compile with an error naming the key rather than the style"
     "build/main.log: [log] 1 Overfull box(es); locate with: grep -A3 Overfull build/main.log"
     "build/main.log: [log] 1 line(s) mentioning undefined references or citations"
 )
@@ -262,6 +281,53 @@ if (@($unmasked | Where-Object { $_ -like '*01-clean.tex*' }).Count -eq 0) {
 
 if (-not $failed) {
     Write-Host "[ok]   wiring: $($WiringCases.Count) settings silence exactly the check they name"
+}
+
+# ---------------------------------------------------------------------------
+# The schema rejects a setting whose type is wrong
+# ---------------------------------------------------------------------------
+
+# Test-PolicySchema branched on tables, arrays and bools and nothing else, so
+# every count the library takes - the two Verbatim windows, the two Log
+# ceilings, the Listings budget - accepted a word, passed the policy line, and
+# then threw somewhere in the middle of the run on a comparison, in a message
+# naming a variable. The failure belongs on the policy, and it has to say which
+# key is wrong.
+Set-Content -LiteralPath $bookPolicy -Encoding utf8 -Value (New-BookConfig @{ Verbatim = "@{ Window = 'six' }" })
+try {
+    $bad = Invoke-CheckerRaw $bookFix
+    if ($bad.ExitCode -eq 0) {
+        Write-Fail 'a word where Verbatim.Window wants a count did not fail the run'
+    } elseif (@($bad.Lines | Where-Object { $_ -like '*Verbatim.Window*' }).Count -eq 0) {
+        Write-Fail 'the run failed, but the message did not name Verbatim.Window'
+        $bad.Lines | ForEach-Object { Write-Host "    actual: $_" }
+    } else {
+        Write-Host '[ok]   schema: a count written as a word fails the run and names its key'
+    }
+} finally {
+    Remove-Item -LiteralPath $bookPolicy -Force -ErrorAction SilentlyContinue
+}
+
+# ---------------------------------------------------------------------------
+# -Chapter, the mode a drafting session actually runs
+# ---------------------------------------------------------------------------
+
+# Everything above runs the whole book. -Chapter walks one folder, and it walked
+# it without -Recurse, so a chapter keeping a section in a subfolder was linted
+# by one mode and not the other. Nothing in either book has a subfolder today,
+# which is exactly why nobody noticed.
+Set-Content -LiteralPath $bookPolicy -Encoding utf8 -Value (New-BookConfig @{})
+try {
+    $scoped = Invoke-CheckerRaw $bookFix @('-Chapter', '01')
+    $nested = @($scoped.Lines | Where-Object { $_ -like '*nested/01-nested.tex*' -or $_ -like '*nested\01-nested.tex*' })
+    if ($nested.Count -ne 1) {
+        Write-Fail '-Chapter 01 did not reach the section in a subfolder'
+        $scoped.Lines | ForEach-Object { Write-Host "    actual: $_" }
+    } else {
+        Write-Host '[ok]   chapter: -Chapter recurses, and reaches a section in a subfolder'
+    }
+} finally {
+    Remove-Item -LiteralPath $bookPolicy -Force -ErrorAction SilentlyContinue
 }
 
 # ---------------------------------------------------------------------------
@@ -363,6 +429,131 @@ try {
     }
 } finally {
     Remove-Item -LiteralPath $latin1File -Force -ErrorAction SilentlyContinue
+}
+
+# ---------------------------------------------------------------------------
+# The psd1 files still document the schema they claim to
+# ---------------------------------------------------------------------------
+
+# template/check-chapter.psd1 says of itself that the commented block is the
+# schema: "Every key check-chapter.ps1 accepts appears below, in the sections
+# and the order the script defines them." Nothing held it to that, and it was
+# false for two families - Figures and Characters.AllowInCapturedListings - from
+# the day the figures check landed. A book cannot set what it cannot find, so a
+# family missing from that block is a family nobody uses.
+#
+# Read from the source rather than from a copy of it: the AST gives the keys
+# Get-DefaultPolicy actually declares, so this cannot drift the way a hand-kept
+# list would.
+function Get-HashtableKeys {
+    param([System.Management.Automation.Language.Ast]$Node)
+
+    $ht = $Node.Find({ param($n) $n -is [System.Management.Automation.Language.HashtableAst] }, $true)
+    if (-not $ht) { return @() }
+    return @($ht.KeyValuePairs | ForEach-Object { $_.Item1.Value })
+}
+
+function Get-DocumentedSchema {
+    param([string]$Path)
+
+    $lines = [System.IO.File]::ReadAllLines($Path)
+    $order = @()
+    $keys = @{}
+
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -notmatch '^\s*#\s*--\s*(\d+)\.\s*(\w+)') { continue }
+        $name = $Matches[2]
+        $order += [pscustomobject]@{ Number = [int]$Matches[1]; Name = $name }
+
+        # The block from '# <Name> = ' to the line that balances its braces.
+        # Strip one level of comment and what is left is PowerShell, because the
+        # prose inside these blocks is written as a nested comment - which is
+        # also why the brace count skips any line that is still a comment after
+        # stripping, and why Spelling's Extra = @{} does not end the block early.
+        $block = @()
+        $started = $false
+        $depth = 0
+        for ($j = $i + 1; $j -lt $lines.Count; $j++) {
+            if ($lines[$j] -match '^\s*#\s*--\s*\d+\.') { break }
+            if (-not $started) {
+                if ($lines[$j] -match ('^\s*#\s' + [regex]::Escape($name) + '\s*=')) { $started = $true }
+                else { continue }
+            }
+            if ($lines[$j] -notmatch '^\s*#') { break }
+            $line = $lines[$j] -replace '^(\s*)#\s?', '$1'
+            $block += $line
+            if ($line -match '^\s*#') { continue }
+            $depth += ([regex]::Matches($line, '\{')).Count - ([regex]::Matches($line, '\}')).Count
+            if ($depth -le 0) { break }
+        }
+
+        if (-not $started) { $keys[$name] = $null; continue }
+
+        $t = $null; $e = $null
+        $blockAst = [System.Management.Automation.Language.Parser]::ParseInput(
+            ($block -join [Environment]::NewLine), [ref]$t, [ref]$e)
+        $keys[$name] = if ($e.Count) { $null } else { Get-HashtableKeys $blockAst }
+    }
+    return [pscustomobject]@{ Order = $order; Keys = $keys }
+}
+
+$repoRoot = Split-Path -Parent $PSScriptRoot
+
+$t = $null; $e = $null
+$scriptAst = [System.Management.Automation.Language.Parser]::ParseFile($checker, [ref]$t, [ref]$e)
+$policyFn = $scriptAst.Find({ param($n)
+        $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+        $n.Name -eq 'Get-DefaultPolicy' }, $true)
+$policyHt = $policyFn.Find({ param($n) $n -is [System.Management.Automation.Language.HashtableAst] }, $true)
+
+$Families = [ordered]@{}
+foreach ($kv in $policyHt.KeyValuePairs) { $Families[$kv.Item1.Value] = Get-HashtableKeys $kv.Item2 }
+
+# The template is the schema by declaration. A book's copy is checked only if it
+# carries the block at all: a psd1 written as differences-only, with no banners,
+# is a legitimate second shape and is not being asked to grow one.
+$schemaFiles = @(Join-Path $repoRoot 'template' 'check-chapter.psd1') +
+    @(Get-ChildItem (Join-Path $repoRoot 'books') -Directory |
+        ForEach-Object { Join-Path $_.FullName 'check-chapter.psd1' } |
+        Where-Object { Test-Path -LiteralPath $_ })
+
+$checkedSchemas = 0
+foreach ($path in $schemaFiles) {
+    $rel = $path.Substring($repoRoot.Length + 1) -replace '\\', '/'
+    $doc = Get-DocumentedSchema $path
+    if ($doc.Order.Count -eq 0) { continue }
+    $checkedSchemas++
+
+    $wantOrder = @($Families.Keys | ForEach-Object { $_ })
+    $gotOrder = @($doc.Order | ForEach-Object { $_.Name })
+    if (($wantOrder -join ',') -ne ($gotOrder -join ',')) {
+        Write-Fail "$rel does not document the families the script defines, in order"
+        Write-Host "    expected: $($wantOrder -join ', ')"
+        Write-Host "    actual:   $($gotOrder -join ', ')"
+        continue
+    }
+
+    $badNumber = @($doc.Order | Where-Object { $_.Number -ne ($doc.Order.IndexOf($_) + 1) })
+    if ($badNumber) {
+        Write-Fail "$rel numbers its sections out of step: $(($doc.Order | ForEach-Object { "$($_.Number). $($_.Name)" }) -join ', ')"
+        continue
+    }
+
+    foreach ($family in $Families.Keys) {
+        $want = @($Families[$family]) | Sort-Object
+        $got = $doc.Keys[$family]
+        if ($null -eq $got) {
+            Write-Fail "$rel section '$family' has no readable settings block"
+        } elseif ((@($got | Sort-Object) -join ',') -ne ($want -join ',')) {
+            Write-Fail "$rel documents the wrong settings under '$family'"
+            Write-Host "    expected: $($want -join ', ')"
+            Write-Host "    actual:   $(@($got | Sort-Object) -join ', ')"
+        }
+    }
+}
+
+if (-not $failed) {
+    Write-Host "[ok]   schema: $checkedSchemas psd1 file(s) document all $($Families.Count) families and their settings"
 }
 
 Write-Host ''
