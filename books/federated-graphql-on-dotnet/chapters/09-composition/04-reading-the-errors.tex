@@ -1,0 +1,145 @@
+\section{Reading What the Composer Says}
+\label{sec:ch09-reading-the-errors}
+\index{composition!reading the errors|(}%
+
+Satisfiability is the check that worries people. It is not the check they meet.
+
+\index{composition!error catalogue size}%
+I counted the composition errors the library can produce, from the type of every
+declaration in its error module at version 0.63.2. There are 123: 119 factory
+functions that return an \code{Error}, and four exported constants that are one.
+Exactly one of the 123 is satisfiability.
+
+Counting them is fiddlier than it looks, and the fiddly part is the finding. The
+module exports 203 things in total, and the other 80 are strings rather than
+errors: message fragments, spliced into the errors above to build a sentence. So
+counting declarations instead of their types gives 203, which is wrong by a
+factor of nearly two. I know because that is the number I had first.
+
+That number is not an invitation to read them. It is there to set an
+expectation: a composer is mostly a very thorough schema linter that happens to
+be reading two schemas at once, and the exotic distributed-systems check is one
+line item in it.
+
+The rest of this section is four failures, all produced from Mosaic's real pair
+of schemas with one edit each, because an error message printed from an invented
+fixture teaches you the fixture.
+
+\subsection*{A field two subgraphs both claim}
+
+\index{shareable@\code{@shareable}!the error it produces}%
+Give Mosaic's \code{Product} a \code{title} and let both services publish one:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The Object "Product" defines the same fields in multiple subgraphs without the "@shareable" directive:
+ The field "title" is defined in the following subgraphs: "catalog", "mosaic".
+ However, it is not declared "@shareable" in any of them.
+\end{minted}
+
+This is the rule
+chapter~\ref{ch:the-federation-model} covered and
+chapter~\ref{ch:the-first-cut-extracting-catalog} met three times before its tag
+would ship. Two subgraphs may not both define a field unless one of them says it
+is shareable~\autocite{apollo2026compositionrules}. The message names the type,
+the field, both subgraphs and the missing directive, and there is nothing to
+work out.
+
+Hold on to its shape, because the next two errors have it and mean something
+else.
+
+\subsection*{A shared field with two different types}
+
+Mark \code{averageRating} shareable in both services and give Catalog's an
+\code{Int} where Mosaic has a \code{Float}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Each instance of a shared field must resolve identically across subgraphs.
+The field "Product.averageRating" could not be federated due to incompatible types across subgraphs.
+The discrepancies are as follows:
+ The named type "Int" is returned by the following subgraph: "catalog".
+ The named type "Float" is returned by the following subgraph: "mosaic".
+\end{minted}
+
+Apollo's second composition rule: a shared field needs a compatible return type
+and compatible argument types everywhere it is
+defined~\autocite{apollo2026compositionrules}. Also clear, also nothing to work
+out.
+
+\index{composition!duplicated error messages}%
+One thing about it is worth a sentence, because it will otherwise cost you a
+minute of counting. The composer printed that error twice, identically. A
+different case I ran while researching this chapter printed its error three
+times. I have not established the pattern and I will not invent one, so take
+only this away: the number of blocks in the table is not the number of things
+wrong with your graph.
+
+\subsection*{The two that name the wrong thing}
+
+\index{composition!errors that name the symptom}%
+Here is where reading these gets a skill attached to it.
+
+Take the \code{@key} off Mosaic's \code{Product} entirely, so that the type is
+declared in both services and is an entity in only one:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The Object "Product" defines the same fields in multiple subgraphs without the "@shareable" directive:
+ The field "id" is defined and declared "@shareable" in the following subgraph: "catalog".
+ However, it is not declared "@shareable" in the following subgraph: "mosaic".
+\end{minted}
+
+Nothing in that message mentions a key.
+
+\index{key@\code{@key}!implicitly shareable}%
+The reasoning is sound and it runs backwards from where you would look. A key
+field is shareable by definition, because every subgraph declaring the entity
+has to be able to answer with it, which is why
+chapter~\ref{ch:the-first-cut-extracting-catalog} could put \code{id} on both
+sides of the cut and compose. Take the key away and \code{id} stops being a key
+field. It becomes an ordinary field that two subgraphs both declare, one of
+which is still implicitly shareable and one of which is now nothing at all. So
+the composer reports shareability, because shareability is the rule that broke
+first.
+
+Now key the two services on different fields. Mosaic keys on \code{sku} and
+publishes one; Catalog still keys on \code{id}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The Object "Product" defines the same fields in multiple subgraphs without the "@shareable" directive:
+ The field "id" is defined and declared "@shareable" in the following subgraph: "catalog".
+ However, it is not declared "@shareable" in the following subgraph: "mosaic".
+ The field "sku" is defined and declared "@shareable" in the following subgraph: "mosaic".
+ However, it is not declared "@shareable" in the following subgraph: "catalog".
+\end{minted}
+
+Symmetric, and again never the words \enquote{your keys disagree}. Each side's
+key field is implicitly shareable at home and an ordinary duplicated field
+abroad, so the composer reports it twice, once in each direction.
+
+\index{composition!three causes one error}%
+Three of the four failures in this section come out of a single error factory:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{javascript}
+function invalidFieldShareabilityError(objectData, invalidFieldNames) { ... }
+\end{minted}
+
+Its two message shapes are visible in the source, one for a field shareable in
+none of the subgraphs and one for a field shareable in some and not others.
+Three causes, one error, and only the first of the three is really about
+shareability.
+
+\medskip
+So the rule I would give somebody reading composition output for the first time
+is this. \textbf{The composer tells you where it noticed, not what you did.} It
+compares two schemas coordinate by coordinate and reports the first rule that
+fails at each one, and the rule that fails is often downstream of the mistake.
+An error about a field you never thought about, on a type you did not touch, is
+the normal case rather than a sign that something strange is happening.
+
+The practical form of that: when a shareability error names a key field, stop
+reading it as a shareability error. It is telling you something is wrong with
+the entity, and the entity's key is the first thing to look at.
+
+All of which assumes you want the composer to refuse. There is a flag that
+makes it stop.
+
+\index{composition!reading the errors|)}%

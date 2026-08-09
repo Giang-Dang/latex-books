@@ -1,0 +1,100 @@
+\section{The Switch That Turns It Off}
+\label{sec:ch09-turning-the-check-off}
+\index{satisfiability!disabling the check|(}%
+
+\code{wgc router compose --help} lists six options at 0.129.7, and one of them
+takes the subject of section~\ref{sec:ch09-satisfiability} away:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+--disable-resolvability-validation  This flag will disable the validation for
+                                    whether all nodes of the federated graph
+                                    are resolvable. Do NOT use unless
+                                    troubleshooting.
+\end{minted}
+
+The capital letters are theirs. I want to know what a flag does before I decide
+whether the warning is proportionate, so I ran it against the unsatisfiable pair
+from section~\ref{sec:ch09-satisfiability}: the one that produces four errors
+and writes nothing.
+
+With the flag, it composes. Exit code 0, a config on disk, no output but the
+success line.
+
+\subsection*{What the config says}
+
+\index{satisfiability!disableEntityResolver@\code{disableEntityResolver}}%
+I compared that config with the good one leaf by leaf, and five leaves differ.
+Four of the five are the edit echoing back: Mosaic's schema is nineteen
+characters longer than it was, so the verbatim copy of it is longer, so its
+normalised copy is longer, so the SHA-1 those are stored under is a different
+one. Nothing there is about the flag.
+
+The fifth is the only thing anywhere in the file that records the graph is
+broken, and it is one property:
+
+\begin{minted}{json}
+"keys": [
+  { "typeName": "Product", "selectionSet": "id", "disableEntityResolver": true }
+]
+\end{minted}
+
+That is the honest half. The router is told that Mosaic's \code{Product} key
+exists and may not be used to enter it.
+
+The other half is the one that matters, and I checked it in the strongest form I
+could rather than eyeballing the two files. The merged client-facing schema in
+the broken config and the merged client-facing schema in the good one are the
+same string. Not similar: I compared them with \code{===} in node and got
+\code{true}.
+
+So the router is handed a schema that advertises \code{price},
+\code{availableQuantity}, \code{reviews} and \code{averageRating} on
+\code{Product}, and a routing table saying the only service that has them cannot
+be reached. Every one of those fields introspects. Every one of them appears in
+a client's generated types. Nothing in the schema records that the graph was
+composed with the check switched off.
+
+\subsection*{Why that is the worst available outcome}
+
+\index{failures!moved rather than removed}%
+A composition failure is the cheapest failure in this book. It happens on a
+laptop or in a build, before anything is deployed, in a tool that has both
+schemas open in front of it and can name the exact coordinate. Nothing is
+running, no client is connected, and the cost of being wrong is that you read a
+message and edit a file.
+
+This flag converts that into a runtime failure in a distributed system, and
+moves it from the person who caused it to whoever is on call. What the router
+actually does when handed this config, I do not know: no router runs in this
+chapter, and I am not going to describe behaviour I have not watched. It is
+chapter~\ref{ch:enter-the-router}'s first easy experiment, and one request
+answers it.
+
+\index{troubleshooting!flags that hide the problem}%
+What I will say is that \enquote{do not use unless troubleshooting} is a
+strange thing to be able to do at all, and I can construct exactly one case
+where I would reach for it: a graph with dozens of subgraphs where the error
+names a path I do not believe, and I want to see the routing table the composer
+would have produced so I can argue with it. That is a debugging session, and the
+config it produces should be deleted at the end of it rather than shipped.
+
+The general shape is worth naming because federation has several switches like
+this one. A tool that refuses to produce output is doing the most useful thing
+it can do. An override that turns a refusal into a warning is fine; an override
+that turns a refusal into silence, and produces an artefact indistinguishable
+from a good one, is a way of losing information you cannot get back.
+
+\medskip
+Three of the other five options belong in the same paragraph, and none of the
+three is exercised here. \code{--suppress-warnings} hides output that Mosaic
+never produced, so I have no warning text to show you at all.
+\code{--ignore-external-keys} needs \code{@external}, which arrives in
+chapter~\ref{ch:entity-resolution-done-right}. \code{--split-configs-enabled}
+splits the output across files and wants a router at 0.315.0 or above. The
+remaining two are \code{-i} and \code{-o}, which every command in this chapter
+has used.
+
+That is composition as a tool. What remains is composition as something a build
+does on your behalf, every time, whether or not anybody remembered to ask.
+
+\index{satisfiability!disabling the check|)}%

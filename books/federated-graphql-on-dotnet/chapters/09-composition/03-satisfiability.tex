@@ -1,0 +1,173 @@
+\section{Satisfiability}
+\label{sec:ch09-satisfiability}
+\index{satisfiability|(}%
+
+Two schemas can merge cleanly into a schema that describes a graph nobody can
+query. That is the failure satisfiability exists to catch, and it is the one
+composition check with no equivalent in a single-service world.
+
+Apollo states it as one of three composition rules: \enquote{If multiple
+subgraphs define the same type, each field of that type must be resolvable by
+every valid GraphQL operation that includes it}, and calls it \enquote{the most
+complex and the most essential to Federation
+2}~\autocite{apollo2026compositionrules}.
+
+Read that twice, because the quantifier is the whole rule. Not \emph{some}
+operation. Every valid operation that includes the field. A graph is
+satisfiable when there is no query a client could write that the router would
+have to give up on.
+
+\subsection*{It is a walk}
+
+\index{satisfiability!as a graph walk}%
+Cosmo implements the rule as a graph traversal, in a directory called
+\code{resolvability-graph}. The names in it are the mechanism:
+\code{graph-nodes}, \code{node-resolution-data}, \code{walker}.
+
+Figure~\ref{fig:ch09-resolvability-walk} is the shape of it for Mosaic. Start at
+a root field. That field belongs to one subgraph, so you are now inside that
+subgraph and can reach anything it declares. To reach a field it does not
+declare, you have to leave, and the only way out is a key on an entity you are
+currently holding, pointing at a subgraph that will accept it. Every field the
+walk never arrives at is a satisfiability error.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch09-resolvability-walk}
+  \caption{The only way out of a subgraph is a key another subgraph will answer
+  for. Every field the walk never reaches is a field some client query can ask
+  for and no router can answer, which is what the composer refuses to emit. One
+  edge carries all four of Mosaic's fields here, so cutting it produces four
+  errors rather than one.}
+  \label{fig:ch09-resolvability-walk}
+\end{figure}
+
+\index{satisfiability!error factories}%
+There is exactly one error factory for all of this. In
+\code{@wundergraph/composition} at 0.63.2, \code{unresolvablePathError} is the
+only one that satisfiability produces:
+
+\begin{minted}[fontsize=\footnotesize]{javascript}
+function unresolvablePathError({ fieldName, selectionSet }, reasons) {
+    const message = `The field "${fieldName}" is unresolvable at the following path:\n${selectionSet}` +
+        `\nThis is because:\n - ` +
+        reasons.join(`\n - `);
+    return new Error(message);
+}
+\end{minted}
+
+Everything the check can tell you is in that \code{reasons} array, which two
+functions in the same package assemble. Reading those two is the cheapest way to
+learn what the walk knows about itself: which root field it started from, which
+subgraphs define the field, which of them marked it \code{@external}, and
+whether the entity it was standing on could satisfy a key to reach the subgraph
+that has what it wanted.
+
+\subsection*{Breaking it on purpose}
+
+\index{satisfiability!measured on Mosaic}%
+The way to remove that edge without removing anything else is one argument.
+\code{@key} takes a \code{resolvable} flag, and a key declared
+\code{resolvable: false} means the type is still an entity here, still carries
+the key, and still may not be entered with it.
+
+So Mosaic's \code{Product} becomes:
+
+\begin{graphqlsdl}
+type Product @key(fields: "id", resolvable: false) {
+  availableQuantity: Int!
+  price: Money!
+  reviews(first: Int, after: String, last: Int, before: String): ReviewConnection!
+  averageRating: Float
+  id: ID!
+}
+\end{graphqlsdl}
+
+One argument, nothing else touched. The schema is still valid, Mosaic would
+still start, and the merge still produces a sensible-looking \code{Product} with
+nine fields on it. The composer refuses, four times, once per field Mosaic
+contributes. Here is the first, in full:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The field "availableQuantity" is unresolvable at the following path:
+ query {
+  products {
+   availableQuantity <--
+  }
+ }
+This is because:
+ - The root type field "Query.products" is defined in the following subgraph: "catalog".
+ - The field "Product.availableQuantity" is defined in the following subgraph: "mosaic".
+ - The entity ancestor "Product" in subgraph "catalog" has no accessible target entities (resolvable @key directives) in the subgraphs where "Product.availableQuantity" is defined.
+ - The type "Product" is not a descendant of any other entity ancestors that can provide a shared route to access "availableQuantity".
+\end{minted}
+
+\index{satisfiability!the error is a query}%
+The error is a query. That is the part worth stopping on, and it is what makes
+this the friendliest error in the whole composition catalogue. The composer does
+not tell you that a rule was violated at a schema coordinate; it hands you a
+document a client could have sent and points at the field it would have had to
+fail on. \code{renderSelectionSet} in that same package draws the path from the
+root and marks the offender with \code{<--}, and a path too deep to print gets
+truncated with a count of what was left out.
+
+The four reasons underneath read in order. Where the walk started. Where the
+field lives. Why it could not get from the first to the second. And a last line
+ruling out the possibility that some other entity on the path could have
+provided a route.
+
+The other three errors are the same shape for \code{price}, \code{reviews} and
+\code{averageRating}. Two of those return composite types, so their rendered
+paths open a selection set:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+The field "price" is unresolvable at the following path:
+ query {
+  products {
+   price { <--
+     ...
+    }
+  }
+ }
+\end{minted}
+
+\subsection*{One thing the error does not tell you}
+
+\index{satisfiability!which route it names}%
+Catalog has four root fields that return a \code{Product}:
+
+\begin{minted}{text}
+products   browseProducts   productById   productBySku
+\end{minted}
+
+All four are equally broken by this change, and the error names only
+\code{Query.products}.
+
+So the message reports \emph{a} route that fails, not every route that fails. I
+have not gone into the walker to find out whether that is the first route it
+tried, the shortest, or something else, and I am not going to guess in print.
+What matters when you are reading one of these at half past five is that fixing
+the named path is not evidence that you have fixed the graph. Recompose and see
+whether it says something different.
+
+\index{satisfiability!and the entity's own key}%
+The fix here is obvious because the break was surgical, and that is the one
+unrealistic thing about the experiment. Nobody types \code{resolvable: false} by
+accident. What produces this error in a real graph is duller and further away
+from the message: a subgraph that declares fields on somebody else's entity and
+never declared the key, or declared it on a field it does not publish.
+
+\index{federation!silent failures composition cannot see}%
+Worth saying now, because a chapter about a checker owes it. The third way to
+get an unreachable entity is to have the key, publish it, and have no working
+reference resolver behind it, which is the failure
+chapter~\ref{ch:the-first-cut-extracting-catalog} spent a section on. That one
+composes. It composes because the composer reads two text files and a reference
+resolver is not in either of them, which is a limit of the whole approach rather
+than a gap in this tool. Section~\ref{sec:ch09-composition-as-a-gate} is about
+what has to check the things composition structurally cannot.
+
+That is the check with the reputation. The errors you will actually spend time
+on are elsewhere, and they are stranger.
+
+\index{satisfiability|)}%

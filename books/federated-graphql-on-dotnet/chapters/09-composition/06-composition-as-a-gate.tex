@@ -1,0 +1,149 @@
+\section{Composition as a Gate}
+\label{sec:ch09-composition-as-a-gate}
+\index{composition!as a build gate|(}%
+
+Composition is worth almost nothing as something you remember to run. Two
+subgraphs stop composing because of a change to one of them, and the person who
+made that change is the last person who will think to check the other.
+
+Mosaic's verification script has composed on every pass since
+chapter~\ref{ch:the-first-cut-extracting-catalog}, which was the right call a
+chapter early. This chapter adds two things to it, and both exist for the same
+reason: the chapter prints artefacts, and a printed artefact goes stale
+silently.
+
+\subsection*{The composed config is committed}
+
+\index{composition!committing the output}%
+\code{federation/supergraph.json} is in the repository at tag \code{ch09}, which
+is a deliberate reversal of what
+chapter~\ref{ch:how-a-federated-query-actually-runs} did. That chapter's sample
+supergraph is a build artefact and is gitignored, on the grounds that it is
+derived from two committed schemas and adds nothing.
+
+The difference is that section~\ref{sec:ch09-not-a-schema} prints what is inside
+this one. A listing nobody can check out is a listing that has to be taken on
+trust, and a book whose whole method is that every listing came from somewhere
+does not get to ask for that. So the file is committed and the gate recomposes
+and compares:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+[ok]   catalog and mosaic compose into one supergraph
+[ok]   the composed config matches federation/supergraph.json
+\end{minted}
+
+That works only because composition is deterministic, which
+section~\ref{sec:ch09-one-command} established by composing twice and comparing.
+If \code{wgc} changes the config format in a version bump, that check fails and
+says so, which is what should happen to a chapter that documents a format.
+
+\subsection*{The errors are asserted too}
+
+\index{composition!asserting error messages}%
+Every composer message in sections~\ref{sec:ch09-satisfiability}
+and~\ref{sec:ch09-reading-the-errors} is produced by
+\code{scripts/composition-cases.mjs} and checked on every verification run. Six
+cases: the real pair, which composes, and five edits, which do not.
+
+\begin{minted}[fontsize=\footnotesize]{text}
+node scripts/composition-cases.mjs --list
+
+baseline            the two schemas as committed, which compose
+unsatisfiable-key   mosaic keeps its key but stops answering for it
+duplicate-field     both subgraphs declare Product.title, neither says shareable
+incompatible-type   a shared field whose return type differs
+missing-key         mosaic declares Product and forgets the key
+key-mismatch        the two subgraphs key the same entity on different fields
+\end{minted}
+
+\index{composition!cases derived from the real schemas}%
+Each case is \code{schema/catalog.graphql} and \code{schema/mosaic.graphql} as
+committed, with one literal string replacement applied in memory. No fixture
+schema exists anywhere in that script, which is the point: an error message
+printed from a toy pair of schemas is a fact about the toy.
+
+The edits have a guard on them that I would put in anything of this shape. A
+replacement has to match exactly once, and the script fails if it matches zero
+times or twice. I added a space inside the \code{@key} on Mosaic's
+\code{Product} to see it fire:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+  FAILED   missing-key         mosaic declares Product and forgets the key
+             case "missing-key": the edit to mosaic matched 0 times, expected exactly 1.
+             The text it looks for is:
+             type Product @key(fields: "id") {
+             The committed schema has changed under this case. Fix the case rather than the schema.
+\end{minted}
+
+That run reported four failures rather than one, because four of the five cases
+edit that same line. The fifth touches a different line and Catalog's schema, so
+it went on passing. One character of schema, four stale cases, and every one of
+them named.
+
+Without the guard, a future change to \code{Product} would leave those cases
+quietly composing the unedited pair and asserting nothing, which is the failure
+mode of every test that mutates its own input.
+
+\index{verification!one implementation, two callers}%
+It is a node script, and it is the first one in that repository. Both verify
+scripts call it rather than each implementing the same mutate, compose and
+assert logic in PowerShell and in \code{sh}. That is not a preference. Mosaic
+carries two verification scripts that are supposed to check the same things, and
+they have already drifted apart once: the \code{sh} one went two chapters
+quietly asserting less than its PowerShell twin, which is worse than having no
+second gate, because a green run means something different depending on which
+one you happened to execute. The cheapest way not to have that problem again is
+to have one implementation.
+
+\subsection*{Verify it in Postman}
+
+\index{Postman!checking the composer's input}%
+There is nothing in this chapter for Postman to send. \code{wgc router compose}
+is a command-line tool reading two files, and no HTTP request anywhere will tell
+you whether a graph composes.
+
+What Postman can check is the thing the composer trusts and cannot verify:
+whether those two files are still true.
+
+\begin{minted}{graphql}
+{ _service { sdl } }
+\end{minted}
+
+Send it to port 5101 and to port 5100, exactly as
+chapter~\ref{ch:the-first-cut-extracting-catalog} did, and compare each answer
+with the committed file that \code{federation/mosaic.yaml} names for that
+subgraph. The verification collection does this for both, and the script asserts
+it:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+[ok]   both subgraphs publish the committed schemas through _service
+\end{minted}
+
+\index{composition!what it cannot see}%
+That assertion is doing more work than it looks like. The composer's whole view
+of your system is two strings. Everything else about a subgraph, whether it is
+running, whether its reference resolver works, whether the key it advertises
+resolves to anything, whether it answers in under a second, is invisible to
+composition and always will be.
+
+So the honest division is this. Composition proves the two schemas can be one
+schema. \code{\_service} proves the schemas are the ones the services actually
+publish. And the \code{\_entities} calls of
+chapter~\ref{ch:the-first-cut-extracting-catalog} prove the subgraphs can answer
+for a key, which is the part
+chapter~\ref{ch:the-first-cut-extracting-catalog} found composes perfectly while
+being completely broken.
+
+Three checks, three different failures, and only the first one is this chapter's.
+A build that runs only the first has verified that two files agree.
+
+\medskip
+Which is the whole argument for putting composition in the pipeline rather than
+in a runbook. It is fast, it needs nothing running, and it catches a class of
+breakage that no test of either service can reach. It is also not evidence that
+the graph works.
+Chapter~\ref{ch:enter-the-router} puts a router in front of this configuration
+and asks it a question, which is the first time anything in this book will have
+answered one across a boundary without me assembling the answer by hand.
+
+\index{composition!as a build gate|)}%

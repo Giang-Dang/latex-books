@@ -1,0 +1,268 @@
+\section{The Supergraph Is Not a Schema}
+\label{sec:ch09-not-a-schema}
+\index{supergraph!what the composer writes|(}%
+
+The command is called \code{router compose} and the thing it is understood to be
+composing is a supergraph. What lands on disk is a \emph{router execution
+config}: 31{,}555 bytes of JSON on a single line, holding five keys.
+
+\begin{minted}[fontsize=\footnotesize]{text}
+engineConfig            31,272 bytes
+version                 "00000000-0000-0000-0000-000000000000"
+subgraphs               2 entries
+featureFlagConfigs      {}
+compatibilityVersion    "1:0.63.2"
+\end{minted}
+
+Chapter~\ref{ch:how-a-federated-query-actually-runs} met the all-zero version on
+the sample and explained it: a locally composed config has no registry to take a
+version from, and the router logs those zeroes at startup as its
+\code{config\_version}. Figure~\ref{fig:ch09-config-anatomy} is the whole file
+in one picture, and the rest of this section is the four parts of it that carry
+anything.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch09-config-anatomy}
+  \caption{Two schemas and a routing list in, one file out. The dashed line is
+  the only part of the output that is a copy rather than a derivation: each
+  subgraph's own SDL is carried through untouched. Everything else in the file
+  was computed from the pair, which is why nothing in it can be edited by hand
+  and still mean anything.}
+  \label{fig:ch09-config-anatomy}
+\end{figure}
+
+\subsection*{The version string names two things, and both are checkable}
+
+\index{compatibilityVersion@\code{compatibilityVersion}}%
+\code{compatibilityVersion} is two numbers joined by a colon, and I chased both
+because a version string nobody can decode is a version string nobody can act
+on.
+
+The \code{1} is the router contract version, and
+\code{@wundergraph/composition} declares it in one line:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{javascript}
+exports.ROUTER_COMPATIBILITY_VERSION_ONE = '1';
+exports.ROUTER_COMPATIBILITY_VERSIONS = new Set([exports.ROUTER_COMPATIBILITY_VERSION_ONE]);
+exports.LATEST_ROUTER_COMPATIBILITY_VERSION = '1';
+\end{minted}
+
+At 0.63.2 that set has one member, so there is currently no other contract to
+speak. The \code{0.63.2} is the package's own version, read from its
+\code{package.json}. Between them the string says which router protocol the file
+speaks and which library wrote it, and a router that refuses a config can say
+which half it objected to.
+
+That library is a dependency of \code{wgc} rather than something you install, so
+its version is not one you would normally know. Everything in this chapter was
+run against \code{wgc} 0.129.7, pinned exactly in the companion repository's
+\code{package.json}, and this string is where the number underneath it becomes
+visible.
+
+\subsection*{Ownership is a table, not an annotation}
+
+\index{supergraph!datasourceConfigurations@\code{datasourceConfigurations}}%
+\code{engineConfig.datasourceConfigurations} is where the router learns who can
+answer what. One entry per subgraph, and the interesting field on each is
+\code{rootNodes}: the types the router is allowed to \emph{enter} that subgraph
+at.
+
+\begin{minted}[fontsize=\footnotesize]{text}
+catalog  Query:        products, browseProducts, productById, productBySku
+         Product:      id, sku, title, description, category
+
+mosaic   Query:        customerById, ordersByCustomer
+         Mutation:     submitReview
+         Subscription: onReviewAdded
+         Product:      availableQuantity, price, reviews, averageRating, id
+\end{minted}
+
+\index{entity!as an entry point}%
+\code{Product} is a root node in both, and that is the whole of what being an
+entity means, written down. Every other root node is a real operation root;
+\code{Product} is a type the router can arrive at from outside, through
+\code{\_entities}, carrying a key. The \code{keys} field beside it says which
+key, and it is the same in both:
+
+\begin{minted}{json}
+[ { "typeName": "Product", "selectionSet": "id" } ]
+\end{minted}
+
+\code{childNodes} is the rest: five types reachable once you are inside Catalog,
+fifteen inside Mosaic. Nothing surprising in either list, and the two share
+\code{PageInfo}, \code{PageCursor} and \code{Node}, which is
+chapter~\ref{ch:the-first-cut-extracting-catalog}'s shareable page cursor
+arriving where it was always going to arrive.
+
+\subsection*{Each subgraph's schema is in there twice}
+
+\index{supergraph!serviceSdl@\code{serviceSdl}}%
+Both copies live under \code{customGraphql}, and they are not the same text.
+
+\medskip\noindent\textbf{\code{federation.serviceSdl} is the input, unmodified.}
+I checked this rather than assuming it, because \enquote{the composer passes
+your schema through} is the kind of claim that is almost true. Catalog's
+committed file and the \code{serviceSdl} of datasource 0 are both 5{,}127 bytes
+and hash to the same SHA-256; Mosaic's are both 5{,}150 bytes and likewise. Byte
+for byte, comments and blank lines included.
+
+\medskip\noindent\textbf{\code{upstreamSchema} is a reference to a normalised
+copy.} It holds nothing but a key:
+
+\begin{minted}{json}
+"upstreamSchema": { "key": "35fef470f114894fa41bd5ab1cedf9f40b322b70" }
+\end{minted}
+
+\index{supergraph!stringStorage@\code{stringStorage}}%
+That key resolves in \code{engineConfig.stringStorage}, which here has exactly
+two entries, one per subgraph. And the key of each entry is the SHA-1 of its own
+value. I hashed both to be sure, and both match. So the config is content
+addressed, and a graph with a hundred subgraphs in it stores one copy per
+distinct schema rather than one per subgraph. Mosaic has two subgraphs and no
+two identical schemas, so I have not seen that case; it is what content
+addressing is for rather than something this file demonstrates.
+
+The normalised form is 4{,}224 bytes against the 5{,}127 it came from, and the
+900 bytes it lost are the federation machinery. \code{Query} in the normalised
+copy has no \code{\_service} and no \code{\_entities} on it, and \code{\_Service},
+\code{\_Entity} and \code{\_Any} are not in the document at all. In their place
+are the definitions of \code{@key}, \code{@link} and \code{@shareable}, plus
+\code{link\_\_Import}, \code{link\_\_Purpose} and \code{openfed\_\_FieldSet}.
+
+\index{supergraph!normalisation}%
+Which is worth pausing on, because it says what the copy is for. The router does
+not need to be told that a subgraph has an \code{\_entities} field; every
+subgraph has one, and the router is going to call it. What it needs is the
+declarations that let it check a query against that subgraph, and the
+normalisation keeps exactly those.
+
+The rest of the rewriting is presentational, and the point of it is that two
+schemas which mean the same thing end up spelled the same way. Types, fields and
+arguments are all sorted alphabetically. Descriptions become block strings. The
+multi-line \code{@link} collapses onto one line. \code{@key(fields: FieldSet!)}
+becomes \code{openfed\_\_FieldSet!}. And an object-level \code{@shareable} is
+pushed down onto every field of the object, so
+chapter~\ref{ch:the-first-cut-extracting-catalog}'s
+
+\begin{graphqlsdl}
+type PageCursor @shareable {
+  page: Int!
+  cursor: String!
+}
+\end{graphqlsdl}
+
+arrives as
+
+\begin{graphqlsdl}
+type PageCursor {
+  cursor: String! @shareable
+  page: Int! @shareable
+}
+\end{graphqlsdl}
+
+\index{listings!descriptions elided}%
+Two things about how the SDL listings in this chapter are printed, since one of
+them is on the page above. Description strings are taken out, because the real
+text carries a docstring above almost every field and printing them would triple
+every listing. And where a field's arguments are one per line only because each
+one has a description, the arguments are closed back up onto one line. Nothing
+else is altered, and every file is in the repository if you want it untouched.
+
+Same meaning either way, one canonical spelling of it. A composer that has to
+compare two schemas has to decide what \enquote{the same} means before it can
+compare anything, and this is that decision made concrete.
+
+\subsection*{No join directives anywhere}
+
+\index{supergraph!join directives@\code{join\_\_} directives}%
+\code{engineConfig.graphqlSchema} is the merged schema, 6{,}035 characters of
+SDL as one string. It is also where I expected to find the routing information
+and did not.
+
+Apollo describes three schemas. A subgraph schema, a supergraph schema that
+\enquote{combines all of the types and fields from your subgraph schemas, plus
+some federation-specific information that tells your router which subgraphs can
+resolve which fields}, and an API schema that \enquote{omits federation-specific
+types, fields, and directives that are considered
+\enquote{machinery}}~\autocite{apollo2026schematypes}. In Apollo's stack the
+middle one is a real document you can read, annotated throughout with
+\code{@join\_\_type}, \code{@join\_\_field} and \code{@join\_\_graph}.
+
+Grep the entire 31 KB Cosmo config for \code{join\_\_} and you get nothing.
+There is no annotated middle document in it at all. What Apollo puts in one
+document, Cosmo splits in two: a clean client-facing schema, and the
+\code{datasourceConfigurations} table above.
+
+Here is \code{Product} as the merged schema has it:
+
+\begin{graphqlsdl}
+type Product implements Node {
+  id: ID!
+  sku: String!
+  title: String!
+  description: String
+  category: ProductCategory!
+  availableQuantity: Int!
+  price: Money!
+  reviews(first: Int, after: String, last: Int, before: String): ReviewConnection!
+  averageRating: Float
+}
+\end{graphqlsdl}
+
+Nine fields from two services, and nothing on the page says so. The only
+directive in the whole merged schema is the \code{@deprecated} that
+chapter~\ref{ch:schema-design-that-survives-change} put on \code{products}.
+
+\index{Node interface@\code{Node} interface!after composition}%
+\code{implements Node} survived, and \code{Query.node} did not, which is
+chapter~\ref{ch:the-first-cut-extracting-catalog}'s decision visible from the
+outside for the first time: the interface is still in the graph, and the root
+field you would hand an identifier back to is gone.
+
+I do not think either arrangement is better and I would not choose a stack on
+it. What it changes is where you look. If you are used to reading an Apollo
+supergraph to find out which service owns a field, the equivalent question here
+is answered by a JSON array rather than by a directive, and no amount of reading
+the schema will answer it.
+
+\subsection*{One type in there that nobody wrote}
+
+\index{supergraph!FieldSet leak@\code{FieldSet} leak}%
+The merged schema contains this:
+
+\begin{graphqlsdl}
+scalar FieldSet
+\end{graphqlsdl}
+
+Nothing in that schema uses it. No field returns it, no argument takes it, and a
+client has no way to send one.
+
+It arrives because of how HotChocolate writes its \code{@link}:
+
+\begin{graphqlsdl}
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.6"
+    import: ["@key", "@shareable", "@tag", "FieldSet"]
+  )
+\end{graphqlsdl}
+
+\code{FieldSet} is imported as a named type rather than only as the type of
+\code{@key}'s argument, so the composer treats it as a type the subgraph
+declared and keeps it. Both subgraphs do it, so it survives the merge.
+
+It is harmless and it is visible to anyone who introspects the router, which
+makes it the second thing in two chapters where HotChocolate's output and the
+Cosmo composer disagree about what belongs in a federated schema. The first was
+the \code{@cost} directive of
+chapter~\ref{ch:the-first-cut-extracting-catalog}, and I declined to say which
+tool was wrong then for the same reason I decline now: two implementations
+reading one specification differently is a fact about your build, and picking a
+side does not change what ships.
+
+Everything so far is what the composer produces when it is content. The next
+section is the one check that has no equivalent in a single service, and the
+only way to see it is to break the graph on purpose.
+
+\index{supergraph!what the composer writes|)}%
