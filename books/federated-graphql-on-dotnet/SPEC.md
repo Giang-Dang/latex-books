@@ -11,10 +11,12 @@ Author: Giang Dang
 
 ## Status
 
-Chapters 01, 02 and 03 drafted (2026-08-08). The companion repo exists, is
-public at https://github.com/Giang-Dang/mosaic-graph, and is tagged `ch02` and
-`ch03`. Next action: chapter 04, which brings EF Core and DataLoaders and owes
-the reader a drop from 146 lookups to 3; nothing blocks it.
+Chapters 01 to 04 drafted (04 on 2026-08-09). The companion repo is public at
+https://github.com/Giang-Dang/mosaic-graph, tagged `ch02`, `ch03`, `ch04-ef`
+and `ch04`. Mosaic now runs on PostgreSQL through EF Core and answers the
+catalog-with-reviews query in 3 statements rather than 146. Next action:
+chapter 05, which owes the reader a Relay connection on `reviews`, an error
+model, and abstract types; nothing blocks it.
 
 ## Decision log
 
@@ -56,6 +58,11 @@ is re-opened only by recording what changed and why, in the row.
 | 31 | Mechanism demos live in `samples/`, not in Mosaic | A micro-example that exists only to demonstrate one HotChocolate mechanism goes into its own project under `samples/`, never into `Mosaic.Api`. Chapter 03 needed two fields whose whole purpose was to expose service-scope identity; putting them in Mosaic would have added diagnostic noise to a storefront schema, changed the committed SDL and moved the assertions in `verify.ps1`. `samples/resolver-scopes` costs one project and keeps `schema/mosaic.graphql` a description of the product. This is decision 8's "isolated micro-examples for mechanisms" made concrete about where they live. Settled 2026-08-08. |
 | 32 | Internals claims cite the source tree, not the docs | From chapter 03 on, an internals claim is verified by reading `ChilliCream/graphql-platform` at a release tag and naming the commit, and the tag is cloned locally rather than fetched page by page. The v16 documentation is cited only for things it is the authority on. Reason: chapter 02 found a documentation page whose sample code does not compile, and a chapter that walks the executor cannot be built on pages of that reliability. Research files tag such facts `[source]` rather than `[web]`. Settled 2026-08-08. |
 | 33 | Chapter 03 TOC line rewritten | The approved line read "parsing, validation, operation compilation, resolvers, middleware; first source-guided walk". Drafting found that the document and operation caches are half of what the pipeline does, and that parsing is best covered by establishing where it does *not* happen. The line now names the caches and the diagnostic listener. Scope grew in detail, not in ambition, and the chapter still ends before DataLoaders. Settled 2026-08-08. |
+| 34 | Chapter 04 ships two tags | `ch04-ef` is Mosaic on PostgreSQL with the naive single-key lookups intact; `ch04` adds the DataLoaders and the paged field. The chapter's whole argument is a before and an after, and both have to be checkable: a reader runs `git checkout ch04-ef` rather than being asked to delete code. Both tags pass `scripts/verify.ps1` with different expected numbers. This is the first use of decision 29's `chNN-<step>` form. Settled 2026-08-09. |
+| 35 | `products` is never paginated | The data middleware went on a new root field, `browseProducts`, and `products` was left exactly as chapters 02 and 03 measured it. Every number those chapters print is a measurement of that field, so paginating it would make two chapters of evidence unreproducible. The chapter says outright that a real service would replace `products` and deprecate it, and hands that to ch 05. Settled 2026-08-09. |
+| 36 | The lookup counter and the SQL counter are both kept | `ServiceCallCounter` counts questions asked of a domain service; a new EF Core `DbCommandInterceptor` counts statements that reach PostgreSQL. They were the same number for two chapters and stopped being the same number the moment a service could answer several questions at once. Both appear on the request timeline. Settled 2026-08-09. |
+| 37 | Batching numbers are asserted over five runs, not one | Measured over 400 warm requests, 398 reported 3 statements and 2 reported 4: the customers batch occasionally dispatches before its last keys arrive, which is `BatchDispatcher`'s documented settle-time behaviour and not a fault. Both verify scripts now send the query five times and assert that at least one run hit 3 exactly and that no run exceeded 4. Asserting an exact number against one sample would fail about one run in two hundred. Settled 2026-08-09. |
+| 38 | `sql`, `yaml` and `javascript` join the listing environments | Decision 23 named csharp, graphql, graphqlsdl, text and json. Chapter 04 needed three more: `sql` for generated statements, `yaml` for the compose file, and `javascript` for Postman test scripts. All three are stock Pygments lexers and render clean. Settled 2026-08-09. |
 
 ## Version baseline
 
@@ -144,7 +151,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 01 | drafted | 2026-08-08. 11 pages, 7 sections, ~6,250 words, 3 TikZ figures, 24 index entries. Sources in research/2026-08-ch01-scaling-and-federation-history.md; 35 real citations replace the knuth1984 placeholder. Lab is the no-code audit of decision 22; its heading is a plain `\section*` with no TOC entry, so revisit whether the apparatus deserves a macro once ch 02-03 have used it too. Not yet reviewed for line-level prose. |
 | 02 | drafted | 2026-08-08. 18 pages (15-32), 7 numbered sections plus the lab, ~6,600 words, 3 TikZ figures, 35 index entries, 7 citations, 27 listings. First chapter with C# and the first use of minted's csharp lexer; it renders clean. Sources in research/2026-08-ch02-hotchocolate-16.md, which also carries the listing-provenance table. Companion repo tag `ch02`; every listing traceable to a file there and `scripts/verify.ps1` passes. TOC line updated (decision 28) because HC 16 names two authoring styles, not three. Not yet reviewed for line-level prose. |
 | 03 | drafted | 2026-08-08. 16 pages (33-48), 6 numbered sections plus the lab, ~5,900 words, 2 TikZ figures, 26 index entries, 1 citation, 29 listings. First source-guided chapter: everything internals-related is read out of `graphql-platform` at tag 16.6.0, commit `8fea46e`, cloned at F:/repo/graphql-platform. Sources in research/2026-08-ch03-request-lifecycle.md. Companion repo tag `ch03`; `scripts/verify.ps1` now also asserts the 13 middleware in order and the 146 resolvers. TOC line rewritten (decision 33) because the planned five-topic line missed the two caches, which turned out to be half the chapter. Not yet reviewed for line-level prose. |
-| 04 | not-started | |
+| 04 | drafted | 2026-08-09. 18 pages (49-66), 6 numbered sections plus the lab, ~7,400 words, 2 TikZ figures, 2 citations to primary sources plus 6 more in refs.bib, 40 listings. First chapter with a database. Sources in research/2026-08-ch04-ef-core-and-dataloaders.md. Two companion tags, `ch04-ef` and `ch04` (decision 34), both passing `verify.ps1`. The chapter's spine is three numbers on one timeline line: 146 resolvers, 3 lookups, 3 SQL. Also the first use of the `sql`, `yaml` and `javascript` lexers (decision 38). TOC line unchanged: EF Core, DataLoader usage and batching internals, projections/filtering/sorting/pagination all landed as scoped. Not yet reviewed for line-level prose. |
 | 05 | not-started | |
 | 06 | not-started | |
 | 07 | not-started | |
@@ -244,12 +251,38 @@ Library-wide defaults are in CLAUDE.md; these are this book's additions.
   chapter: `reviews` is a plain list (ch 05 makes it a connection), errors are
   bare exceptions (ch 05 designs an error model), and nothing is authorised
   (ch 15). If any of those chapters moves, ch 02's closing section needs
-  updating with it.
-- Chapter 04 inherits a hard number: 146 lookups on the catalog-with-reviews
-  query, down to 3 with DataLoaders. Measured latency for that query at tag
-  `ch02` was a 3 ms mean over ten warmed-up runs; ch 02 quotes it with "I timed"
-  framing, and the reproduction is in the ch 02 research file. `MosaicDataOptions.LookupDelay` ships at zero so
-  ch 04 can make a lookup cost something before Postgres enters the story.
+  updating with it. Chapter 04 added a fourth: `products` returns the whole
+  catalog unpaged and will keep doing so, by decision 35, so ch 05's connection
+  work has both a field to fix and a worked example, `browseProducts`, to fix it
+  against.
+- House style says the prose references a figure before it appears. Chapters 02
+  and 03 do not do this for any of their five figures; chapter 04 does for both
+  of its. Worth one pass over ch 02 and ch 03 when either is next opened, rather
+  than a separate errand.
+- (resolved 2026-08-09) Chapter 04 delivered the number: 146 lookups down to 3,
+  and 146 statements down to 3. `MosaicDataOptions` and its `LookupDelay` were
+  **removed** rather than used. The knob existed so an in-memory lookup could be
+  made to cost something; a PostgreSQL round trip costs something on its own, so
+  keeping it would have been a way to lie about the measurement rather than a
+  way to take one. Chapter 04's lab throttles the container instead, which slows
+  the real thing.
+- Chapter 04's absolute timings are single-machine numbers, like chapter 03's.
+  The claim meant to survive is the ratio, roughly twelve milliseconds against
+  roughly five for the same query, measured back to back in one sitting. That
+  last part is not a detail: an earlier pass measured the same `ch04-ef` code at
+  10-12 ms and a later one at 19-20 ms, purely because the machine was busier.
+  Any re-measurement has to do both tags in one session or it says nothing.
+- Chapter 04 leaves five things unmeasured and its research file's section J
+  names an owner for each: batching under real concurrency and index behaviour
+  (ch 24), `MaxBatchSize` splitting, `DataLoaderServiceScope.OriginalScope`, and
+  migrations (ch 22, which should say plainly that a real service migrates
+  where Mosaic calls `EnsureCreatedAsync`).
+- `verify.sh` had never been given chapter 03's pipeline and timeline checks,
+  although its own header says changes to one script belong in the other. It was
+  brought back to parity in chapter 04 and now also carries the SQL assertion.
+  Whatever is added to one gate from here needs adding to both in the same
+  commit, because a second gate that silently checks less is worse than no
+  second gate.
 - The v16 security docs page tells readers to call `AllowIntrospection(false)`
   on the builder, which does not compile against 16.6.0. Chapter 02 says so.
   Re-check before ch 25 (security hardening) in case ChilliCream fixes the page.

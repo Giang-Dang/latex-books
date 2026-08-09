@@ -1,0 +1,161 @@
+\section{What the mapper asked for in return}
+\label{sec:ch04-what-the-mapper-asked-for}
+\index{Entity Framework Core!model binding|(}
+
+Mosaic's domain types are records with positional constructors, and they were
+written that way in chapter~\ref{ch:hotchocolate-quickly} because immutability is
+the right default for something a resolver hands out. Entity Framework Core
+disagreed with three of them. The disagreements are small, the reason behind all
+three is the same, and the reason is not quite what the error message says.
+
+\index{Entity Framework Core!collection navigations}%
+The first complaint was easy and I fixed it without thinking. A collection
+navigation has to be something the mapper can add to while it materialises a
+row, and the compiler-generated backing field of a record property has the
+declared type, so an \code{IReadOnlyList} leaves it nothing to fill.
+\code{Order.Lines} became a \code{List<OrderLine>}. That is one interface on one
+property, and it does not change the GraphQL field at all.
+
+Then, with the collection type already fixed, the model still would not build:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+System.InvalidOperationException: No suitable constructor was found for the
+type 'Order'. The following constructors had parameters that could not be
+bound to properties of the type:
+    Cannot bind 'Lines' in 'Order(Guid Id, Guid CustomerId,
+        DateTimeOffset PlacedAt, List<OrderLine> Lines)'
+Note that only mapped properties can be bound to constructor parameters.
+Navigations to related entities, including references to owned types, cannot
+be bound.
+\end{minted}
+
+\index{Entity Framework Core!constructor binding}%
+Clear, specific, and it arrives at startup rather than on the first query, which
+is chapter~\ref{ch:hotchocolate-quickly}'s eager initialisation paying out
+again. The documented rule is that a constructor parameter binds to a mapped
+property and a navigation is not one~\autocite{microsoft2026efconstructors}. An
+owned type is an entity without a key of its own, so it arrives as a navigation,
+so it cannot be a constructor parameter. Fine.
+
+\subsection*{The half of the rule that is not written down}
+
+\index{Entity Framework Core!complex types}%
+\code{Money} is a value. It has an amount and a currency, no identity, and no
+reason to exist apart from the thing it prices. Entity Framework Core has a
+feature for exactly that, distinct from owned types: a complex property, which
+maps to columns on the same row and is treated as a value rather than as a
+tracked entity. Since a complex property is a property and not a navigation, the
+error message above appeared to be telling me how to fix it.
+
+It was not. Moving \code{ProductPrice.Amount} from \code{OwnsOne} to
+\code{ComplexProperty} produced the identical exception, with \code{Amount}
+named where \code{Lines} had been. Against Entity Framework Core 10.0.10, only
+scalars bind to constructor parameters. Neither an owned reference nor a complex
+property qualifies, and the message names only the first of those.
+
+I am stating that as a measurement rather than as a rule, because it is one. I
+compiled it, ran it, and read the exception; I did not find it on a page. If a
+later release relaxes it, this paragraph is the thing that dates, and a reader
+on a newer version should try the positional constructor before believing me.
+
+\index{Entity Framework Core!init properties}%
+The fix is unexciting and identical in all three places. The value leaves the
+primary constructor and becomes an \code{init} property, which Entity Framework
+Core populates through the backing field:
+
+\begin{minted}{csharp}
+public sealed record ProductPrice(Guid ProductId)
+{
+    public required Money Amount { get; init; }
+}
+\end{minted}
+
+Three properties moved out of three constructors. Together with the collection
+type above, that is every concession Mosaic made to the mapper, and none of them
+reaches the graph.
+
+\subsection*{A key nobody asked for}
+
+\index{Entity Framework Core!shadow properties}%
+With \code{Money} settled as a complex property, order lines could not stay
+owned, because an owned collection is a navigation and \code{OrderLine} is a
+record whose price wants to be a complex property of its own. So the line became
+a related entity. It has no identifier in the domain model and none on the
+graph, and a relational row needs one, so both the key and the foreign key back
+to the order live as shadow properties:
+
+\begin{minted}{csharp}
+builder.ToTable("order_lines");
+
+builder.Property<int>("Id").ValueGeneratedOnAdd();
+builder.HasKey("Id");
+
+builder.ComplexProperty(l => l.UnitPrice, money =>
+{
+    money.Property(m => m.Amount).HasPrecision(12, 2).IsRequired();
+    money.Property(m => m.Currency).HasMaxLength(3).IsRequired();
+});
+\end{minted}
+
+A shadow property exists in the database and in the mapper's model, and nowhere
+in the C\#. No code can read it or set it. When the thing you are modelling
+genuinely has no identity worth exposing, this is better than inventing an
+\code{Id} property and then remembering to hide it from everything.
+
+\subsection*{Making the SQL readable}
+
+\index{PostgreSQL!identifier folding}%
+One more piece of mapping earns its place, because the rest of this chapter is
+spent reading generated statements. PostgreSQL folds unquoted identifiers to
+lower case, so a table Entity Framework Core calls \code{StockLevels} has to be
+quoted every time anybody writes it by hand. Renaming everything once at model
+build removes that:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+foreach (var entity in modelBuilder.Model.GetEntityTypes())
+{
+    if (entity.GetTableName() is { } table)
+    {
+        entity.SetTableName(ToSnakeCase(table));
+    }
+
+    foreach (var property in entity.GetProperties())
+    {
+        property.SetColumnName(ToSnakeCase(property.GetColumnName()));
+    }
+    ...
+}
+\end{minted}
+
+\code{GetProperties} does not return complex ones, and I found that out the way
+you would expect. The price columns turned up quoted and in mixed case, in the
+middle of an otherwise lower-case statement I was about to put in this chapter:
+
+\begin{minted}[fontsize=\footnotesize]{sql}
+SELECT p.product_id, p."Amount_Amount", p."Amount_Currency"
+FROM prices AS p
+WHERE p.product_id = ANY (@productIds)
+\end{minted}
+
+Complex properties need a second pass, over \code{GetComplexProperties}.
+
+\subsection*{And the schema did not move}
+
+\index{schema!stability}%
+Here is the part worth stopping on. Everything above changed: the storage, the
+mapping, three type definitions, the service constructors, six domain services
+rewritten against \code{IQueryable}. The exported SDL at tag \code{ch04-ef} is
+byte-identical to the one at tag \code{ch03}.
+
+That is a consequence of a decision made two chapters ago, and it is the one
+that pays for itself first. Chapter~\ref{ch:hotchocolate-quickly}
+put the \code{price} field in Pricing's folder rather than on Catalog's
+\code{Product} record, and the reason it did is the same reason the whole data
+layer could be replaced without a client noticing. A GraphQL
+schema is a contract about fields and types, and where a field's value comes
+from is not part of it. A resolver is where a change of mind can go without a
+client noticing.
+
+Hold on to that, because the next section changes every one of those resolvers
+and the schema does not move then either.
+\index{Entity Framework Core!model binding|)}

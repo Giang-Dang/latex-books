@@ -1,0 +1,216 @@
+\section{What a lookup costs now}
+\label{sec:ch04-what-a-lookup-costs}
+\index{Entity Framework Core|(}
+
+Mosaic's docker-compose file has said the same thing since
+chapter~\ref{ch:hotchocolate-quickly}: it is the spine, and later chapters
+attach things to it. This is the chapter that attaches the first one.
+
+\begin{minted}[fontsize=\footnotesize]{yaml}
+  mosaic-db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: mosaic
+      POSTGRES_USER: mosaic
+      POSTGRES_PASSWORD: mosaic
+    volumes:
+      - mosaic-db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mosaic -d mosaic"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      ...
+\end{minted}
+
+\index{PostgreSQL!container}%
+The health check earns its place. Starting a fresh volume runs \code{initdb},
+which brings the server up, configures it and restarts it, and a client that
+connects during that window gets refused. The API service depends on this one
+\code{condition: service\_healthy}, so compose holds it back until
+\code{pg\_isready} answers.
+
+The volume line cost me twenty minutes and is worth passing on. It mounts one
+directory higher than it used to, and not at the \code{data} subdirectory
+underneath, because PostgreSQL 18's official image moved the cluster into a
+version-named directory so that \code{pg\_upgrade} can see an old one and a new
+one without crossing a mount point~\autocite{dockerlibrary2026postgres18}. Mount
+the old path and the container refuses to start, in a restart loop, with an
+explanation in its log that is unusually good and that you will not read until
+you think to look.
+
+\subsection*{Six domains, one context, no navigations}
+
+\index{Entity Framework Core!DbContext}%
+\code{MosaicDbContext} holds a \code{DbSet} for each of the six domains and
+nothing else. The mapping lives in the domains: every folder carries its own
+\code{IEntityTypeConfiguration<T>}, and the context only collects them.
+
+\begin{minted}{csharp}
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.ApplyConfigurationsFromAssembly(
+        typeof(MosaicDbContext).Assembly);
+
+    UseSnakeCaseNames(modelBuilder);
+}
+\end{minted}
+
+That is the same rule the resolvers follow, applied to tables. A domain's
+storage is described in the folder that owns the domain, so when Catalog leaves
+this service in chapter~\ref{ch:the-first-cut-extracting-catalog} its table
+definition goes with it.
+
+\index{Entity Framework Core!navigations}%
+The rule with teeth is the one about navigations, and it is a rule about what
+the model does \emph{not} contain. No entity here holds a navigation property to
+an entity another domain owns. Reviews stores a \code{Guid} for the product, not
+a \code{Product}. Ordering stores a \code{Guid} for the customer, not a
+\code{Customer}. There is not a single foreign key across a domain boundary,
+which means there is not a single \code{Include} to unpick later, because there
+never was one.
+
+This costs something now. A join that the database could do for free becomes two
+statements and a dictionary lookup in C\#. I am paying that on purpose, and it is
+worth being explicit about why rather than dressing it up: within one service the
+join is cheaper, and the moment the two domains are two services with two
+databases the join is not available at any price. Building the monolith as though
+the boundary were already there is the only way the extraction later is a move
+rather than a rewrite.
+
+\subsection*{Which scope the context comes from}
+
+\index{dependency injection!DbContext}%
+Chapter~\ref{ch:the-life-of-a-request} read ten lines of \code{ResolverTask} and
+found that a query field gets a dependency injection scope of its own, one per
+resolver invocation, while a mutation field shares the request's. I said at the
+time that this stops being trivia in this chapter. Here is where.
+
+\index{Entity Framework Core!threading}%
+Entity Framework Core does not support two operations running on one
+\code{DbContext} at once. Query resolvers run concurrently. Put those two
+sentences together and the per-resolver scope stops looking like a curiosity and
+starts looking like the thing standing between you and an intermittent
+\enquote{A second operation started on this context before a previous operation
+completed}. The v16 documentation says as much, and warns that changing the
+default scope for queries will likely produce exactly that
+error~\autocite{chillicream2026efcore}.
+
+Mosaic registers a pooled factory and a scoped context resolved from it:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+services.AddPooledDbContextFactory<MosaicDbContext>((serviceProvider, options) =>
+    options
+        .UseNpgsql(connectionString)
+        .AddInterceptors(
+            new SqlCommandCounter(
+                serviceProvider.GetRequiredService<IHttpContextAccessor>())));
+
+services.AddScoped(serviceProvider =>
+    serviceProvider.GetRequiredService<IDbContextFactory<MosaicDbContext>>()
+        .CreateDbContext());
+\end{minted}
+
+\index{Entity Framework Core!RegisterDbContextFactory}%
+One line in \code{Program.cs} goes with it, and it does less than its name
+suggests:
+
+\begin{minted}{csharp}
+builder.AddGraphQL()
+    .AddMosaic()
+    .RegisterDbContextFactory<MosaicDbContext>()
+\end{minted}
+
+That call adds a parameter expression builder so the resolver compiler knows how
+to hand a resolver a \code{MosaicDbContext}. It does not register the factory. I
+have read the whole file it lives in, which is fifty-four lines including the
+documentation comments and contains exactly two methods, so I can say that with
+some confidence; the documentation says the same thing in
+bold~\autocite{chillicream2026efcore}. Forget \code{AddPooledDbContextFactory}
+and this line still compiles.
+
+\subsection*{Counting what actually reaches the database}
+
+\index{diagnostics!DbCommandInterceptor}%
+Chapter~\ref{ch:hotchocolate-quickly}'s counter counts questions asked of a
+domain service. That was a fair proxy for work while every question was answered
+from memory, and it stops being one the moment a service can answer several
+questions with one statement. So this chapter adds a second counter, and puts it
+as low as it can go:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+public sealed class SqlCommandCounter(IHttpContextAccessor httpContextAccessor)
+    : DbCommandInterceptor
+{
+    public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result,
+        CancellationToken cancellationToken = default)
+    {
+        Count();
+        return ValueTask.FromResult(result);
+    }
+
+    ...
+
+    private void Count()
+        => httpContextAccessor.HttpContext?.RequestServices
+            .GetService<RequestTimeline>()
+            ?.CountSqlCommand();
+}
+\end{minted}
+
+The elision hides three more overrides that do the same thing for the
+synchronous reader and for the two scalar hooks, so a \code{count(*)} is
+counted alongside a \code{SELECT}. An interceptor on the command is not an
+estimate of round trips, it is the round trips. The awkward part is
+attribution. The interceptor is attached to the
+pooled factory's options, which are built once for the process, so it cannot
+hold a per-request total and has to go and find one. It finds it the way
+chapter~\ref{ch:the-life-of-a-request}'s listener does, through
+\code{RequestServices}, reached here through the \code{IHttpContextAccessor}.
+
+I did not assume that would work. The accessor keeps the context in an
+\code{AsyncLocal}, and a DataLoader batch is dispatched from a coordinator loop
+rather than from the resolver that asked for the data, which is exactly the
+shape of thing that loses an ambient value. It survives, because HotChocolate
+registers its batch dispatcher per request scope and starts the loop inside the
+request. That is a claim I checked twice: once by reading the registration, and
+once by firing ten copies of the same query at the service at the same moment
+and confirming that all ten reported their own counts rather than one report of
+ten times the work.
+
+\subsection*{The number, with a price on it}
+
+\index{N+1 problem!measured}%
+The timeline line grows a field, and the catalog-with-reviews query says this:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+parse - validate - compile - coerce - execute 12.674ms total 12.716ms
+    (document cache hit, operation cache hit, 146 resolvers, 146 SQL)
+\end{minted}
+
+A hundred and forty-six resolvers, a hundred and forty-six lookups, a hundred
+and forty-six statements. The three numbers agree because every resolver asks
+one question and every question is one query, and the agreement is what is
+wrong, put as plainly as it can be put.
+
+I warmed the process with twenty requests before believing any of this, for the
+reason chapter~\ref{ch:the-life-of-a-request} gave: a first request to a fresh
+Mosaic reports around 205~ms and almost all of it is the runtime compiling
+itself. Warm, nine of ten runs came in between 9.2 and 14.2~ms and one landed at
+44.6, which is a laptop being a laptop. Against three milliseconds from a list in
+memory, the same query now costs somewhere near twelve.
+
+Read that gap carefully, because the interesting thing about it is how small it
+is. PostgreSQL is on the same machine, over a loopback socket, holding
+twenty-five products and a hundred and twenty reviews, with every row in cache.
+This is the friendliest database a query will ever have. Move it to another host
+and the per-statement cost goes up by a network round trip; give it a table
+worth having an index on and it goes up again. Twelve milliseconds is the floor.
+What the N+1 costs in production is that floor multiplied by conditions nobody
+sets on purpose.
+
+Before the fix, though, there is a bill to settle with the mapper.
+\index{Entity Framework Core|)}

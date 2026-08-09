@@ -1,0 +1,202 @@
+\section{Three statements}
+\label{sec:ch04-three-statements}
+\index{DataLoader|(}
+
+The pattern is older than GraphQL and it is named after the library that
+popularised it. DataLoader's README credits Nick Schrock with the original
+Loader API, written at Facebook in 2010 to coalesce a collection of key-value
+back ends, and describes what it does in one sentence: batching and caching over
+remote data sources~\autocite{schrock2026dataloader}. Both halves matter here,
+and one of them is doing more work than people expect.
+
+\index{DataLoader!source generator}%
+In HotChocolate 16 you do not write the class. You write a static method that
+takes a list of keys and returns a keyed result, mark it, and the source
+generator writes the DataLoader and its interface at build
+time~\autocite{chillicream2026dataloaderdocs}:
+
+\begin{minted}{csharp}
+public static class AccountDataLoaders
+{
+    [DataLoader]
+    public static Task<IReadOnlyDictionary<Guid, Customer>> GetCustomerByIdAsync(
+        IReadOnlyList<Guid> ids,
+        AccountsService accounts,
+        CancellationToken cancellationToken)
+        => accounts.GetCustomersByIdsAsync(ids, cancellationToken);
+}
+\end{minted}
+
+That produces \code{CustomerByIdDataLoader} and \code{ICustomerByIdDataLoader}.
+The name is derived by stripping a leading \code{Get}, then a trailing
+\code{Async}, then a trailing \code{DataLoader}, and appending \code{DataLoader}
+to what is left. It is worth knowing the rule rather than guessing at the result,
+because the interface name is what you type in the resolver.
+
+\index{DataLoader!partial classes}%
+Two smaller things about that snippet. The class is not \code{partial}, and does
+not need to be, which sets it apart from every other generated thing in Mosaic:
+\code{[QueryType]} and \code{[ObjectType<T>]} both extend the class they are on,
+and \code{[DataLoader]} generates a separate class beside it. And there is no
+registration anywhere. The documentation shows an assembly attribute,
+\code{DataLoaderModule}, for that~\autocite{chillicream2026dataloaderdocs}. But
+Mosaic already declares the type module attribute
+chapter~\ref{ch:hotchocolate-quickly} introduced:
+
+\begin{minted}{csharp}
+[assembly: Module("Mosaic")]
+\end{minted}
+
+The type module generator emits an \code{AddDataLoader} call for every generated
+loader into the same \code{AddMosaic()} it already emits the types into. One
+attribute, declared for another reason two chapters ago, covers both.
+
+\subsection*{Three shapes, and one of them is a trap}
+
+\index{DataLoader!kinds}%
+The generator picks what kind of DataLoader to build from the return type, in
+this order: a dictionary keyed by the key type is a \emph{batch} loader, an
+\code{ILookup} is a \emph{group} loader, and anything else is treated as a
+\emph{cache} loader over a single key.
+
+The distinction that matters in practice is not the mechanism. All three batch;
+all three cache. What differs is what happens to a key that has no answer.
+
+\begin{minted}{csharp}
+[DataLoader]
+public static Task<ILookup<Guid, Review>> GetReviewsByProductIdAsync(
+    IReadOnlyList<Guid> productIds,
+    ReviewsService reviews,
+    CancellationToken cancellationToken)
+    => reviews.GetReviewsByProductIdsAsync(productIds, cancellationToken);
+\end{minted}
+
+\code{ILookup} answers an unknown key with an empty sequence. Three of Mosaic's
+twenty-five products have never been reviewed, and the \code{reviews} field is a
+non-nullable list, so this return type is the difference between a correct
+response and three null violations. Had I written
+\code{Dictionary<Guid, Review[]>} instead, the code would have compiled, the
+batching would have worked identically, and the three unreviewed products would
+have come back as errors. The documentation is explicit that a dictionary whose
+value happens to be an array is still a batch loader, and that a missing key in
+a batch loader is null~\autocite{chillicream2026dataloaderdocs}. It is the kind
+of thing you read past until it bites.
+
+\subsection*{The resolvers, before and after}
+
+\index{DataLoader!in resolvers}%
+Here is \code{Review.author} as chapter~\ref{ch:hotchocolate-quickly} left it,
+and as this chapter leaves it. The declaration is the only thing that changed:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+public static async Task<Customer> GetAuthorAsync(
+    [Parent] Review review,
+    AccountsService accounts,
+    CancellationToken cancellationToken)
+{
+    var author = await accounts.GetCustomerByIdAsync(review.CustomerId, cancellationToken);
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+public static async Task<Customer> GetAuthorAsync(
+    [Parent] Review review,
+    ICustomerByIdDataLoader customerById,
+    CancellationToken cancellationToken)
+{
+    var author = await customerById.LoadAsync(review.CustomerId, cancellationToken);
+\end{minted}
+
+One parameter type, one method name. The field keeps its name, its type and its
+nullability, so the schema does not move. That property is why this fix can be
+applied to a live service one resolver at a time, and why nobody has to be told
+it is happening.
+
+\index{DataLoader!request scope}%
+The same interface appears in \code{Order.customer}, and that is not tidiness. A
+DataLoader instance and its cache live for exactly one
+request~\autocite{chillicream2026dataloaderdocs}, so a query that reaches a
+customer through their orders and again through their reviews fetches them once
+and hands both fields the same object. Consistency inside a response is a
+property you get for free here, and it is worth naming because it is the sort of
+thing that is very expensive to add later.
+
+\subsection*{The number}
+
+\index{N+1 problem!fixed}%
+Same query, same seed data, same machine:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+parse - validate - compile - coerce - execute 4.365ms total 4.414ms
+    (document cache hit, operation cache hit, 146 resolvers, 3 SQL)
+\end{minted}
+
+A hundred and forty-six resolvers, and three statements. Nine of ten warm runs
+came in between 3.9 and 5.8~ms, against 9.2 to 14.2 for the same query at the
+previous tag, and I measured the two back to back in one sitting because
+otherwise the comparison is between two different machine loads rather than
+between two versions of Mosaic. The caveat from
+section~\ref{sec:ch04-what-a-lookup-costs} still applies: the database is on the
+same machine, so the ratio is what travels rather than the milliseconds.
+
+The statements themselves are worth reading, because they are ordinary:
+
+\begin{minted}[fontsize=\footnotesize]{sql}
+SELECT p.id, p.category, p.description, p.sku, p.title
+FROM products AS p
+ORDER BY p.id
+
+SELECT r.id, r.body, r.created_at, r.customer_id, r.product_id, r.rating
+FROM reviews AS r
+WHERE r.product_id = ANY (@productIds)
+ORDER BY r.created_at, r.id
+
+SELECT c.id, c.display_name, c.email
+FROM customers AS c
+WHERE c.id = ANY (@ids)
+\end{minted}
+
+\index{PostgreSQL!ANY versus IN}%
+\code{Contains} over a list becomes \code{= ANY (@keys)} on Npgsql rather than
+the \code{IN (@p0, @p1, ...)} that other providers emit. That is one parameter
+instead of one per key, which means one query plan whatever the page size. A
+provider that expands the list produces a differently shaped statement for every
+distinct key count, and a plan cache full of near-identical entries. If you take
+one thing from this listing that is not about GraphQL, take that.
+
+Figure~\ref{fig:ch04-batching} draws the same request twice, once for each tag.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch04-batching}
+  \caption{The same hundred and forty-six resolvers, twice. On the left every
+  resolver reaches the database on its own account. On the right the keys are
+  gathered before anything is fetched, and the hundred and twenty author
+  resolvers collapse to twelve keys rather than a hundred and twenty, because
+  deduplication happens in the cache before a key ever reaches a batch.}
+  \label{fig:ch04-batching}
+\end{figure}
+
+\subsection*{The half that is not batching}
+
+\index{DataLoader!deduplication}%
+The third statement carries twelve keys. The query asked for the authors of a
+hundred and twenty reviews, and Mosaic has twelve customers.
+
+This is the part of DataLoader that gets less attention than the batching and
+that does more work in a real graph. \code{LoadAsync} consults a promise cache
+\emph{before} it touches a batch: the key is looked up, and a repeated key gets
+the promise the first caller made rather than a place in the queue. So the
+hundred and twenty calls produce twelve entries, and the fetch method is handed
+twelve keys. Batching turned a hundred and twenty statements into one;
+deduplication decided what that one statement had to ask for.
+
+The two work together and they fail together. A cache key that varies when it
+should not, an identifier that arrives as a string in one place and a
+\code{Guid} in another, and the batch is suddenly a hundred and twenty keys
+long. It still works, it is still one statement, and it is doing ten times the
+work with nothing in the response to say so. Which is a good argument for
+keeping a count of statements per request somewhere you will see it.
+
+Which leaves the question the numbers so far have not answered: what decides
+that the batch is finished?
+\index{DataLoader|)}

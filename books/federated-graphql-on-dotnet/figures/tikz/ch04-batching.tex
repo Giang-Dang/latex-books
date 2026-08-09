@@ -1,0 +1,64 @@
+% The same 146 resolvers, with and without DataLoaders. Referenced from
+% chapter 04. Bare tikzpicture: the figure environment, caption and label live
+% at the call site. Uses only arrows.meta and positioning.
+\begin{tikzpicture}[
+    font=\small,
+    lvl/.style={draw, rounded corners=2pt, minimum width=30mm,
+                minimum height=7mm, align=center, font=\scriptsize},
+    db/.style={draw, thick, rounded corners=2pt, minimum width=30mm,
+               minimum height=8mm, align=center, font=\scriptsize},
+    batch/.style={draw, fill=black!8, rounded corners=2pt, minimum width=30mm,
+                  minimum height=7mm, align=center, font=\scriptsize},
+    thin arrow/.style={-{Stealth[length=1.6mm]}, gray},
+    fat/.style={-{Stealth[length=2mm]}, thick},
+    note/.style={font=\scriptsize\itshape, align=center},
+    head/.style={font=\small\bfseries}
+  ]
+
+  % ---- left: one resolver, one statement -------------------------------
+  \node[head] at (-3.4,1.1) {tag \texttt{ch04-ef}};
+
+  \node[lvl] (lp) at (-3.4,0.2)  {\texttt{products}\\1 resolver};
+  \node[lvl] (lr) at (-3.4,-1.6) {\texttt{reviews}\\25 resolvers};
+  \node[lvl] (la) at (-3.4,-3.4) {\texttt{author}\\120 resolvers};
+  \node[db]  (ldb) at (-3.4,-5.3) {PostgreSQL};
+
+  \draw[fat] (lp) -- (lr);
+  \draw[fat] (lr) -- (la);
+
+  % Many thin arrows: every resolver goes on its own.
+  \foreach \x in {-4.4,-4.0,...,-2.4}{%
+    \draw[thin arrow] (\x,-3.75) -- (\x,-4.9);
+  }
+  \foreach \x in {-4.2,-3.8,...,-2.6}{%
+    \draw[thin arrow] (\x,-1.95) .. controls (\x-0.3,-3.4) .. (\x-0.15,-4.9);
+  }
+  \draw[thin arrow] (-3.4,-0.15) .. controls (-5.4,-2.5) .. (-4.4,-4.9);
+
+  \node[note] at (-3.4,-6.1) {146 statements\\one per question};
+
+  % ---- right: keys first, then three statements ------------------------
+  \node[head] at (3.4,1.1) {tag \texttt{ch04}};
+
+  \node[lvl] (rp) at (3.4,0.2)  {\texttt{products}\\1 resolver};
+  \node[lvl] (rr) at (3.4,-1.6) {\texttt{reviews}\\25 resolvers};
+  \node[lvl] (ra) at (3.4,-3.4) {\texttt{author}\\120 resolvers};
+
+  \node[batch] (b1) at (3.4,-4.5) {batch: 12 keys};
+  \node[db]    (rdb) at (3.4,-5.9) {PostgreSQL};
+
+  \draw[fat] (rp) -- (rr);
+  \draw[fat] (rr) -- (ra);
+
+  % The 120 resolvers hand keys to one batch.
+  \foreach \x in {2.4,2.8,...,4.4}{%
+    \draw[thin arrow] (\x,-3.75) -- (\x,-4.2);
+  }
+  \draw[fat] (b1) -- (rdb);
+
+  \node[note] at (3.4,-6.7) {3 statements\\one per batch};
+
+  \node[note, anchor=west, text width=32mm] at (5.1,-4.5)
+    {120 calls, 12 keys:\\the cache answers a\\repeated key before\\a batch sees it};
+
+\end{tikzpicture}

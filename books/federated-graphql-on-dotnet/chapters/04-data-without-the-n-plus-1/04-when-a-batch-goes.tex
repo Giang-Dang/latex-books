@@ -1,0 +1,193 @@
+\section{When a batch goes}
+\label{sec:ch04-when-a-batch-goes}
+\index{DataLoader!batching internals|(}
+
+A DataLoader collects keys and then, at some point, stops collecting and
+fetches. That word, \enquote{then}, is the whole of the mechanism. Stop too
+early and you have several small batches; stop too late and every request pays
+for the wait. The documentation describes the trigger like this:
+
+\begin{quote}
+\enquote{once no more resolver work is immediately ready, each pending batch is
+dispatched \dots\ The dispatch trigger is \enquote{no more ready work}, not a
+fixed schedule and not one dispatch per level of the
+query.}~\autocite{chillicream2026dataloaderdocs}
+\end{quote}
+
+The second sentence is right and the first is not the mechanism. Nothing in the
+code that dispatches batches observes resolver readiness. It observes the batch.
+This chapter's rule, set in chapter~\ref{ch:the-life-of-a-request}, is that where
+the source and a page disagree the source wins, so here is the source.
+
+\subsection*{The half in GreenDonut: collecting}
+
+\index{GreenDonut!DataLoaderBase}%
+\code{DataLoaderBase<TKey,TValue>} keeps one open batch. \code{LoadAsync} takes
+a lock, asks the promise cache for the key, and on a miss adds it to that batch:
+
+\begin{minted}{csharp}
+var current = _currentBatch;
+
+if (current is not null)
+{
+    // if the batch has space for more keys we just keep adding to it.
+    if (current.Size < _maxBatchSize || _maxBatchSize == 0)
+    {
+        return current.GetOrCreatePromise<TValue?>(key, allowCachePropagation);
+    }
+    ...
+}
+\end{minted}
+
+\code{MaxBatchSize} defaults to 1024. Mosaic's largest batch is twenty-five keys,
+so the branch below that comment has never run here, and I have not measured what
+happens when it does.
+
+\index{GreenDonut!Batch}%
+What the batch records is the interesting part, because it is what the other half
+reads. Every \code{Batch} carries a creation timestamp, a modification timestamp,
+a status of either enqueued or touched, and this:
+
+\begin{minted}{csharp}
+public override bool Touch()
+{
+    var previous = Interlocked.Exchange(ref _status, Touched);
+    return previous == Touched;
+}
+\end{minted}
+
+Adding a key sets the status back to enqueued and restamps the modification
+time. So \code{Touch} returning true means precisely one thing: nothing has put a
+key in this batch since the last time somebody looked.
+
+\subsection*{The half in HotChocolate: deciding}
+
+\index{HotChocolate!BatchDispatcher}%
+\code{BatchDispatcher} is registered scoped, so there is one per request. Its
+\code{Schedule} method does no work at all; it adds the batch to a set,
+increments a counter, and returns. The work is in a coordinator loop that runs
+for the life of the request, and its decision is two lines:
+
+\begin{minted}{csharp}
+var shouldDispatch =
+    batch.Touch()
+    && TicksToUs(now - batch.ModifiedTimestamp) >= batchSettleTimeUs;
+
+if (!shouldDispatch && maxBatchAgeUs != 0)
+{
+    shouldDispatch = TicksToUs(now - batch.CreatedTimestamp) > maxBatchAgeUs;
+}
+\end{minted}
+
+\index{HotChocolate!BatchDispatcherOptions}%
+Two conditions, not one. A batch goes when it has survived two evaluation rounds
+without anybody touching it \emph{and} has been quiet for at least the settle
+time, or when it is simply too old. The defaults are 250 microseconds for the
+settle time and 50 milliseconds for the ceiling, and the ceiling can be turned
+off by setting it to zero.
+
+Between rounds the coordinator yields, and the comment on that yield is the
+clearest statement of the design in the file:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+// Yield between evaluation rounds so executing resolvers get time
+// to add more data requirements to the open batches. Under load the
+// yield queues behind real work, which widens the aggregation window.
+\end{minted}
+
+That is theirs, not mine. It also names a property I have not measured and will
+not claim: under load the window widens by itself, because the coordinator's
+yield goes to the back of a busier queue. It is a nice piece of design and this
+chapter's evidence is one client on one machine.
+
+\index{HotChocolate!batch priority}%
+When several batches are open they go into a priority queue keyed on the
+modification timestamp, so the batch nobody has touched for longest is evaluated
+first and has the best chance of being dispatched. A single open batch skips the
+queue entirely through a separate method. That ordering is why a query with
+several independent DataLoaders does not starve one of them behind another.
+
+\subsection*{The scheduler you get when nobody is coordinating}
+
+\index{GreenDonut!AutoBatchScheduler}%
+There is a second implementation, and knowing it exists explains a class of
+confusing benchmark. \code{AutoBatchScheduler} is what a DataLoader gets outside
+a HotChocolate request, and its \code{Schedule} is a single expression:
+
+\begin{minted}{csharp}
+public void Schedule(Batch batch)
+    => BeginDispatch(batch);
+
+private static void BeginDispatch(Batch batch)
+    => Task.Run(async () =>
+    {
+        try
+        {
+            await batch.DispatchAsync().ConfigureAwait(false);
+        }
+        catch
+        {
+            // we do ignore any potential exceptions here
+        }
+    });
+\end{minted}
+
+Its own summary says it \enquote{prioritizes low latency over batching
+efficiency by executing each batch as soon as it is scheduled}. No settle time,
+no coordination. Inside a request the scoped dispatcher is substituted in its
+place, which happens through a small service provider wrapper that intercepts
+requests for \code{IBatchScheduler}. If you ever test a DataLoader outside the
+executor and find it batching far less than you expected, this is why, and the
+answer is not that your DataLoader is broken.
+
+\subsection*{The number is three, nearly always}
+
+\index{DataLoader!split batches}%
+Two conditions and a timer mean the answer is a distribution rather than a
+constant, and it is worth knowing the shape of it rather than assuming.
+
+I sent the catalog-with-reviews query four hundred times against a warm process
+and counted what the timeline reported. Three hundred and ninety-eight requests
+reported three statements. Two reported four. In both of those, the duplicated
+statement was the one against \code{customers}, issued twice with different key
+sets.
+
+\index{DataLoader!fan-out}%
+Which is exactly the mechanism above, seen from outside. The customers batch is
+fed by a hundred and twenty resolvers, more than any other batch in the request,
+and they do not all arrive in an instant. When the stragglers are late by more
+than a quarter of a millisecond, the coordinator has seen the batch untouched
+twice, the settle time has elapsed, and it dispatches with what it has. The
+remaining keys open a new batch. Both statements are correct, the response is
+identical, and it took two runs in four hundred to see it happen.
+Figure~\ref{fig:ch04-batch-window} puts the two cases side by side.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch04-batch-window}
+  \caption{Why the answer is usually three and occasionally four. The
+  coordinator dispatches a batch it has seen untouched across two rounds and
+  quiet for the settle time. On the upper timeline every key arrives inside the
+  window. On the lower one a straggler misses it, so the batch goes with what it
+  has and the rest form a second one. Nothing is wrong in either case.}
+  \label{fig:ch04-batch-window}
+\end{figure}
+
+This had a consequence for the companion repository's verification script, and
+the way it was resolved is the part I would defend. The script asserts the
+numbers the book prints, so it wanted to assert three. Asserting three against a
+single request would fail roughly one run in two hundred, and a gate that fails
+at random gets ignored within a week. Accepting \enquote{three or four} from one
+request would never fail, and would also stop distinguishing the ordinary case
+from the exception, which is most of what the assertion is for.
+
+So it sends the query five times and asserts two things: that at least one run
+reported exactly three, and that no run reported more than four. A service
+without DataLoaders reports a hundred and forty-six five times over and fails
+both. That is the general shape of the problem, and it is not specific to this
+book: a number produced by a race needs an assertion that describes the race,
+and the way to write one is to measure the distribution first.
+
+Three statements is where the N+1 story ends. The next section is about what is
+in them.
+\index{DataLoader!batching internals|)}

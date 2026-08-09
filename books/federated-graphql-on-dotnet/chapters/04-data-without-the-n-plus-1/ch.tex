@@ -1,7 +1,39 @@
 \chapter{Data Without the N+1}
 \label{ch:data-without-the-n-plus-1}
 
-\emph{Not yet drafted.} Planned scope: EF Core integration; DataLoader usage and its batching internals; projections, filtering, sorting, and pagination middleware.
+A hundred and forty-six lookups, answered from a list in memory, cost three
+milliseconds. Chapter~\ref{ch:hotchocolate-quickly} measured that and admitted
+it. Chapter~\ref{ch:the-life-of-a-request} read the code that ran them and found
+that the engine had executed a hundred and forty-six resolvers to do it, one for
+every question asked. What neither chapter could tell you is what the number was
+worth, because a \code{List<T>} answers everything for free, so the count
+measured nothing but itself.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/04-data-without-the-n-plus-1/01-section-name}
+This chapter gives the questions a price. Mosaic moves onto PostgreSQL through
+Entity Framework Core, the same six domains behind the same six folders, and the
+hundred and forty-six lookups become a hundred and forty-six statements. Then
+DataLoaders bring that to three.
+
+The resolver count does not move. It is a hundred and forty-six before and a
+hundred and forty-six after, and holding those two numbers next to each other is
+most of what this chapter has to teach. The engine still runs every resolver it
+ran in chapter~\ref{ch:the-life-of-a-request}; what changes is what a resolver
+does when it gets there. Nothing about the schema changes at all, which is the
+property that makes this fix applicable one field at a time to a service already
+in production.
+
+Because the before and the after both matter, the companion repository carries
+two tags for this chapter. \code{ch04-ef} is Mosaic on PostgreSQL with the naive
+lookups intact, and \code{ch04} is the same service with DataLoaders and a paged,
+filtered, sorted catalog field. Every number below is reproducible from one of
+them. Internals are read from HotChocolate at tag 16.6.0, commit
+\code{8fea46e}~\autocite{chillicream2026source}, as they were in the last
+chapter.
+
+\input{chapters/04-data-without-the-n-plus-1/01-what-a-lookup-costs-now}
+\input{chapters/04-data-without-the-n-plus-1/02-what-the-mapper-asked-for}
+\input{chapters/04-data-without-the-n-plus-1/03-three-statements}
+\input{chapters/04-data-without-the-n-plus-1/04-when-a-batch-goes}
+\input{chapters/04-data-without-the-n-plus-1/05-only-the-columns-you-asked-for}
+\input{chapters/04-data-without-the-n-plus-1/06-two-quiet-failures}
+\input{chapters/04-data-without-the-n-plus-1/07-your-turn}

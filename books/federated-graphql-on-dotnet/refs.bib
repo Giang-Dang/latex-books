@@ -569,3 +569,116 @@
               here. Postman's 2022 post on automatic schema imports describes
               an older client and is deliberately not cited as current}
 }
+
+% --- Chapter 04: EF Core, DataLoaders, and the data middleware ---------------
+
+@online{schrock2026dataloader,
+  author   = {{GraphQL Foundation}},
+  title    = {{DataLoader}},
+  year     = {2026},
+  url      = {https://github.com/graphql/dataloader},
+  urldate  = {2026-08-09},
+  addendum = {The reference implementation, in JavaScript, of the pattern every
+              other language's DataLoader is named after. Its README credits
+              Nick Schrock with the original Loader API, written at Facebook in
+              2010, and describes the library as providing batching and caching
+              over remote data sources}
+}
+
+@online{chillicream2026dataloaderdocs,
+  author   = {{ChilliCream}},
+  title    = {{DataLoader}},
+  organization = {Hot Chocolate v16 documentation},
+  year     = {2026},
+  url      = {https://chillicream.com/docs/hotchocolate/v16/fetching-data/batching/dataloader},
+  urldate  = {2026-08-09},
+  addendum = {Authoritative on the source generator's contract: the three
+              method shapes, the name derivation, the 1024 default batch size
+              and the per-request cache lifetime. Its account of when a batch
+              is dispatched is looser than the code, and chapter 4 says where}
+}
+
+@online{chillicream2026efcore,
+  author   = {{ChilliCream}},
+  title    = {Entity {Framework} {Core}},
+  organization = {Hot Chocolate v16 documentation},
+  year     = {2026},
+  url      = {https://chillicream.com/docs/hotchocolate/v16/fetching-data/integrations/entity-framework},
+  urldate  = {2026-08-09},
+  addendum = {The page that states the resolver-scope consequence for a
+              DbContext, and that RegisterDbContextFactory does not register
+              the factory}
+}
+
+@online{chillicream2026projections,
+  author   = {{ChilliCream}},
+  title    = {Projections},
+  organization = {Hot Chocolate v16 documentation},
+  year     = {2026},
+  url      = {https://chillicream.com/docs/hotchocolate/v16/fetching-data/projections},
+  urldate  = {2026-08-09},
+  addendum = {Names QueryContext as the v16 route to projections, in place of
+              the older UseProjection middleware, and gives the order With
+              applies filter, sort and selector in}
+}
+
+@online{chillicream2026pagination,
+  author   = {{ChilliCream}},
+  title    = {Pagination},
+  organization = {Hot Chocolate v16 documentation},
+  year     = {2026},
+  url      = {https://chillicream.com/docs/hotchocolate/v16/fetching-data/pagination},
+  urldate  = {2026-08-09},
+  addendum = {Source for AddPagingArguments, the PagingArguments parameter and
+              ToPageAsync, and for which packages ToPageAsync ships in}
+}
+
+@online{microsoft2026efconstructors,
+  author   = {{Microsoft}},
+  title    = {Entity types with constructors},
+  organization = {Entity Framework Core documentation},
+  year     = {2026},
+  url      = {https://learn.microsoft.com/en-us/ef/core/modeling/constructors},
+  urldate  = {2026-08-09},
+  addendum = {States the rule that a constructor parameter must bind to a
+              mapped property. Chapter 4 records that complex properties do not
+              qualify either, which this page does not say and which was
+              established by compiling against 10.0.10}
+}
+
+@online{nuget2026datentityframework,
+  author   = {{ChilliCream}},
+  title    = {{HotChocolate.Data.EntityFramework} 16.6.0},
+  organization = {NuGet},
+  year     = {2026},
+  url      = {https://www.nuget.org/packages/HotChocolate.Data.EntityFramework/16.6.0},
+  urldate  = {2026-08-09},
+  addendum = {The nuspec declares four target framework groups with different
+              Entity Framework Core floors, and carries the repository commit
+              8fea46e9560c973eba1b9c899937f9a6bb02aaf9, the same commit tag
+              16.6.0 resolves to}
+}
+
+@online{nuget2026npgsql,
+  author   = {{Npgsql} contributors},
+  title    = {{Npgsql.EntityFrameworkCore.PostgreSQL} 10.0.3},
+  organization = {NuGet},
+  year     = {2026},
+  url      = {https://www.nuget.org/packages/Npgsql.EntityFrameworkCore.PostgreSQL/10.0.3},
+  urldate  = {2026-08-09},
+  addendum = {Its net10.0 dependency group requires Microsoft.EntityFrameworkCore
+              in the range 10.0.4 up to but excluding 11.0.0, which is why
+              Mosaic pins 10.0.10 rather than 10.0.0}
+}
+
+@online{dockerlibrary2026postgres18,
+  author   = {{Docker Official Images contributors}},
+  title    = {Move the {PostgreSQL} data directory for 18+},
+  organization = {docker-library/postgres},
+  year     = {2026},
+  url      = {https://github.com/docker-library/postgres/pull/1259},
+  urldate  = {2026-08-09},
+  addendum = {The change the postgres:18 image's own start-up message points
+              at when it refuses a volume mounted at the old
+              /var/lib/postgresql/data path}
+}

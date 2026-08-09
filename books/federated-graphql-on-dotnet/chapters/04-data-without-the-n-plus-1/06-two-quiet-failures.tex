@@ -1,0 +1,168 @@
+\section{Two quiet failures}
+\label{sec:ch04-two-quiet-failures}
+\index{projections!failure modes|(}
+
+Both mistakes in this section were mine, and both were found by running the
+service rather than by reading anything. Neither produces a stack trace, and one
+of them produces no error at all, which is what earns them a section.
+
+\subsection*{A field the schema promises and the resolver cannot keep}
+
+\index{pagination!IncludeTotalCount}%
+The first version of \code{browseProducts} did not carry the connection
+attribute that turns a total count on:
+
+\begin{minted}{csharp}
+[UseConnection(IncludeTotalCount = true)]
+\end{minted}
+
+The schema it produced still had this in it, descriptions elided:
+
+\begin{graphqlsdl}
+type ProductConnection {
+  edges: [ProductEdge!]
+  nodes: [Product!]
+  pageInfo: PageInfo!
+  totalCount: Int! @cost(weight: "10")
+}
+\end{graphqlsdl}
+
+A non-nullable \code{totalCount}, advertised to every client, on a field that
+could not answer it:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{
+  "errors": [
+    {
+      "message": "Cannot return null for non-nullable field.",
+      "path": [ "browseProducts", "totalCount" ],
+      "extensions": { "code": "HC0018" }
+    }
+  ],
+  "data": null
+}
+\end{minted}
+
+Note the \code{"data": null}. Non-null propagation walked all the way to the
+root, so a client that asked for a page and a count got neither. Nothing about
+this is subtle once it happens; the trouble is that the schema, which is the
+thing clients read and generate code from, says the field is there and always
+present.
+
+Turning the option on fixes it, and costs less than I expected: the count
+arrives as the correlated subquery in
+section~\ref{sec:ch04-only-the-columns}, in the page's own statement. The
+general lesson is the uncomfortable one. A connection type is generated for you,
+and generated types can promise things your resolver has not been configured to
+deliver. Export the SDL and read it, which chapter~\ref{ch:hotchocolate-quickly}
+made a habit of for exactly this reason.
+
+\subsection*{The identifier that was not there}
+
+\index{projections!Parent requires}%
+The second one produced no error whatsoever, and I nearly shipped it.
+
+Ask \code{browseProducts} for identifiers and titles, and every product came
+back with the same identifier:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"nodes":[
+  {"id":"00000000-0000-0000-0000-000000000000","title":"Beech Cutting Board"},
+  {"id":"00000000-0000-0000-0000-000000000000","title":"Brant Ottoman"},
+  {"id":"00000000-0000-0000-0000-000000000000","title":"Brant Two-Seat Sofa"}]}
+\end{minted}
+
+HTTP 200, no errors key, three products in the right order with the right
+titles. Decode the \code{endCursor} that came with them and the zeros are in
+there too, in the position where the sort tiebreaker should be. Page forward
+from that cursor and you are seeking to a position that does not exist.
+
+\index{projections!resolver-backed fields}%
+The cause is a single line in Catalog:
+
+\begin{minted}{csharp}
+[ID]
+public static Guid GetId([Parent] Product product) => product.Id;
+\end{minted}
+
+\code{Product.id} is produced by a resolver rather than read straight off the
+property, because \code{[ID]} has to encode the raw \code{Guid} into an opaque
+identifier. A projection builds its \code{SELECT} list out of the properties
+named in the selection set. The selection set names \code{id}, which is a field
+backed by a resolver, so the projection has nothing to select on its account,
+so \code{products.id} is not in the statement, so the resolver is handed a
+\code{Product} whose \code{Id} was never populated. \code{default(Guid)} is
+sixteen zero bytes and no exception.
+
+The fix is that \code{ParentAttribute} takes an optional string naming what the
+resolver needs from its parent:
+
+\begin{minted}{csharp}
+[ID]
+public static Guid GetId([Parent("Id")] Product product) => product.Id;
+\end{minted}
+
+Every cross-domain resolver on \code{Product} carries the same declaration now,
+for the same reason: \code{price}, \code{availableQuantity}, \code{reviews} and
+\code{averageRating} all key off an identifier that the selection set has no
+reason to mention.
+
+\subsection*{Why this one is the dangerous kind}
+
+\index{projections!silent failure}%
+Two details make this worse than an ordinary bug, and both are worth carrying
+into any codebase that turns projection on.
+
+The first is the shape of the failure. A missing column does not throw. It
+produces a default value, and the default for the two most common key types is
+zero or null: both legal, both serialisable, and both invisible to a test that
+only counts elements.
+
+The second is when it appears. Before the fix, \emph{not} selecting \code{id}
+worked correctly, because the paging machinery adds the sort keys to the
+selector on its own account, and \code{Id} is the tiebreaker. The failure only
+showed up when a client asked for the field. So the version that goes wrong is
+the version a real client sends, and the version in your smoke test, which asks
+for a page and counts it, is the version that passes.
+
+\subsection*{Verify it in Postman}
+
+\index{Postman!projection assertions}%
+Which is why the collection got three new requests for this chapter and one of
+them exists solely to catch the zero.
+
+The first asks for a page of three with identifiers, and asserts the page size,
+the total count, the default ordering, and this:
+
+\begin{minted}[fontsize=\footnotesize]{javascript}
+pm.test("the projection kept the identifier", function () {
+    page.nodes.forEach(function (node) {
+        const raw = Buffer.from(node.id, "base64").toString("utf8");
+        pm.expect(raw).to.not.include("00000000-0000-0000-0000-000000000000");
+    });
+});
+\end{minted}
+
+It decodes the opaque identifier and looks for the empty \code{Guid} inside it.
+That is an ugly assertion and I would rather it did not have to exist, but a
+correct-looking response is exactly what this failure produces, so the test has
+to know what the wrong answer looks like.
+
+That request also stores its \code{endCursor} in a collection variable, and the
+second reads it back and pages from it, asserting that the second page starts
+where the first stopped. That is the cursor checked end to end rather than
+eyeballed. The third sends a filter and an order together and asserts both took
+effect.
+
+\begin{minted}{text}
+npx newman run postman/mosaic.postman_collection.json \
+    -e postman/mosaic.local.postman_environment.json
+\end{minted}
+
+Ten requests, thirty-six assertions. \code{scripts/verify.ps1} runs the same
+collection, and since this chapter it also starts PostgreSQL from
+\code{docker-compose.yml}, waits for it to report healthy, and stops it again on
+the way out. Both verification scripts now assert the lookup and statement
+counts this chapter prints, so if a later chapter breaks the batching the script
+says so before the prose does.
+\index{projections!failure modes|)}

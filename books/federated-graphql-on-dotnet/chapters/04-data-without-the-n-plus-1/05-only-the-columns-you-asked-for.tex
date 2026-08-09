@@ -1,0 +1,174 @@
+\section{Only the columns you asked for}
+\label{sec:ch04-only-the-columns}
+\index{projections|(}
+
+Three statements is a good answer to the wrong question if each of them drags
+back every column of every row. A GraphQL client says exactly which fields it
+wants, which is more than a REST client ever tells you, and \code{HotChocolate.Data}
+exists to spend that information on the query rather than throw it away.
+
+\index{pagination!cursor}%
+This is also where pagination arrives, and the two belong together because they
+are configured together. A field that returns every product is a bug waiting for
+the catalog to grow. Mosaic gets a second entry point:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+[UseConnection(IncludeTotalCount = true)]
+[UseFiltering]
+[UseSorting]
+public static async Task<PageConnection<Product>> GetBrowseProductsAsync(
+    PagingArguments pagingArguments,
+    QueryContext<Product>? query,
+    CatalogService catalog,
+    CancellationToken cancellationToken)
+    => await catalog.BrowseProductsAsync(pagingArguments, query, cancellationToken);
+\end{minted}
+
+\index{schema!evidence}%
+A second entry point, not a replacement, and the reason is about this book
+rather than about storefronts. \code{products} is the field
+chapters~\ref{ch:hotchocolate-quickly} and~\ref{ch:the-life-of-a-request}
+measured and the field this chapter has been measuring; paginating it would
+quietly retire two chapters of evidence and make every number in them
+unreproducible. In a real service you would replace \code{products}, deprecate
+it, and let chapter~\ref{ch:schema-design-that-survives-change}'s machinery
+handle the transition. Here the old field earns its keep by staying comparable.
+
+\subsection*{Three parameters the resolver did not have to build}
+
+\index{HotChocolate!PagingArguments}%
+\code{PagingArguments} carries \code{first}, \code{after}, \code{last} and
+\code{before}, coerced and validated, and registering
+\code{AddPagingArguments()} is what puts those arguments on the
+field~\autocite{chillicream2026pagination}.
+
+\index{HotChocolate!QueryContext}%
+\code{QueryContext<Product>} is the interesting one. It is a record with three
+nullable properties: a predicate built from the \code{where} argument, a sort
+definition built from \code{order}, and a selector built from the selection set.
+In HotChocolate 16 this is the documented route to projections, in place of the
+older \code{[UseProjection]} middleware~\autocite{chillicream2026projections}.
+The two attributes on the field add the two arguments and do nothing else;
+neither of them touches the query. What touches the query is one call:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+return await db.Products
+    .AsNoTracking()
+    .With(query, DefaultOrder)
+    .ToPageAsync(pagingArguments, cancellationToken);
+\end{minted}
+
+\code{With} applies the three in the order filter, sort, project, which is the
+order that keeps the query cheap: narrow the rows first, arrange what is left,
+and only then decide which columns to carry~\autocite{chillicream2026projections}.
+
+\index{pagination!keyset}%
+\code{ToPageAsync} comes from \code{GreenDonut.Data.EntityFramework} and does
+keyset pagination: the cursor encodes the sort keys, so the next page is a seek
+rather than an offset. That is why the default order is not decoration:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+private static SortDefinition<Product> DefaultOrder(SortDefinition<Product> sort)
+    => sort.IfEmpty(order => order.AddAscending(p => p.Title))
+        .AddAscending(p => p.Id);
+\end{minted}
+
+\code{IfEmpty} supplies an ordering only when the caller did not ask for one. The
+tiebreaker on the identifier is appended whatever the caller asked for, because
+a cursor into an order that is not total cannot say where it points. Two
+products with the same title and no tiebreaker, and the page boundary between
+them is undefined.
+
+\subsection*{What comes out}
+
+\index{projections!generated SQL}%
+Ask for three products and one field each:
+
+\begin{minted}[fontsize=\footnotesize]{graphql}
+{ browseProducts(first: 3) { nodes { title } } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{sql}
+SELECT p.title
+FROM products AS p
+ORDER BY p.title, p.id
+LIMIT @p
+\end{minted}
+
+One column, because the client asked for one field. Add a filter and an order
+and both land in the same statement:
+
+\begin{minted}[fontsize=\footnotesize]{graphql}
+{
+  browseProducts(
+    first: 2
+    where: { category: { eq: LIGHTING } }
+    order: [{ title: DESC }]
+  ) { nodes { title category averageRating } }
+}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{sql}
+SELECT p.id, p.title, p.category
+FROM products AS p
+WHERE p.category = @p
+ORDER BY p.title DESC, p.id
+LIMIT @p1
+\end{minted}
+
+\index{projections!and DataLoaders}%
+Three columns, and the client asked for two of them. \code{category} is there
+because the selection set grew by a field that is a column. \code{id} is there
+because \code{averageRating}'s resolver declares that it needs the parent's
+identifier, and the projection honoured the declaration. Section~\ref{sec:ch04-two-quiet-failures}
+is about what happens when it does not.
+
+\code{averageRating} itself is not in that statement at all, and its absence is
+the thing to notice. It belongs to the Reviews domain, it is resolved by a
+DataLoader, and it arrives in a second statement covering whatever products the
+page turned out to contain:
+
+\begin{minted}[fontsize=\footnotesize]{sql}
+SELECT r.product_id AS "ProductId", avg(r.rating::double precision) AS "Average"
+FROM reviews AS r
+WHERE r.product_id = ANY (@productIds)
+GROUP BY r.product_id
+\end{minted}
+
+Two statements for a filtered, sorted, projected page with a field from another
+domain on it. The averages are computed by PostgreSQL, so the review rows
+themselves never cross the wire at all. Projection and batching divide the work
+along the same seam the folders do.
+
+\subsection*{A total count that costs nothing extra}
+
+\index{pagination!totalCount}%
+Selecting \code{totalCount} alongside the page produces this:
+
+\begin{minted}[fontsize=\footnotesize]{sql}
+SELECT (
+    SELECT count(*)::int
+    FROM products AS p0), p.title
+FROM products AS p
+ORDER BY p.title, p.id
+LIMIT @p
+\end{minted}
+
+One statement, not two. The count arrives as a correlated subquery evaluated
+once, and I am pointing at it because the received wisdom is that a total count
+costs a second round trip, and here it does not. It is still work: a count over
+an unfiltered table is a scan, and on a catalog of any size that is the
+expensive part of the page rather than the page. But it is not an extra trip,
+and the difference matters if you are budgeting round trips rather than CPU.
+
+\subsection*{What projection is not}
+
+\index{projections!limits}%
+It is worth being clear about the boundary, because the demonstration above is
+flattering. Projection reads properties of the entity out of the selection set,
+so anything computed by a resolver is beyond it, whether that resolver belongs
+to another domain or is sitting on the entity's own type. The second case is the
+one that catches people, because a resolver that does nothing but return a
+property looks exactly like a property and is not one. That is the subject of
+the next section, and it cost me an afternoon.
+\index{projections|)}

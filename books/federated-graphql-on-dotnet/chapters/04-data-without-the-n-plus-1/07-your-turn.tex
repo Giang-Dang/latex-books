@@ -1,0 +1,79 @@
+\section*{Your turn}
+
+This chapter has two tags, and the exercises use both. Start the database once
+and leave it running:
+
+\begin{minted}{text}
+git clone https://github.com/Giang-Dang/mosaic-graph
+cd mosaic-graph
+docker compose up -d mosaic-db
+git checkout ch04
+pwsh scripts/verify.ps1 -KeepDatabase
+\end{minted}
+
+The script now brings PostgreSQL up itself. It asserts three lookups and three
+statements where chapter~\ref{ch:the-life-of-a-request}'s asserted a hundred and
+forty-six lookups and knew nothing about statements, because Mosaic had no
+database then. At tag \code{ch04-ef} the same script asserts a hundred and
+forty-six of both. Run the service with its console visible for all of these.
+
+\begin{enumerate}
+  \item \textbf{Watch the number change under you.} Send the
+  catalog-with-reviews query at tag \code{ch04} and read the timeline. Now
+  \code{git checkout ch04-ef} and send the same query. Two things moved and one
+  did not. Write down which, and say in one sentence why the one that did not
+  move is the interesting one.
+
+  \item \textbf{Find the split.} Warm the service at tag \code{ch04}, then send
+  the query four hundred times and count what the timeline reported:
+
+  \begin{minted}[fontsize=\footnotesize]{text}
+grep -oE "[0-9]+ SQL\)" log | sort -n | uniq -c
+  \end{minted}
+
+  You are looking for the runs that report four. Turn the database command log
+  up to \code{Information} and work out which statement doubled. Then explain,
+  from section~\ref{sec:ch04-when-a-batch-goes}, why it is that one and not one
+  of the others.
+
+  \item \textbf{Break the batching deliberately.} In
+  \code{ReviewDataLoaders.cs}, change the reviews loader so that it returns a
+  dictionary of arrays rather than a lookup, and make the service return one. It
+  compiles, and it still batches. Send the catalog-with-reviews query and count
+  the errors. Which three products, and why those three?
+
+  \item \textbf{Take the identifier away.} On \code{ProductNode.GetId}, delete
+  the argument to the \code{Parent} attribute so that it no longer names the
+  identifier, then ask \code{browseProducts} for its nodes' \code{id} and
+  \code{title}. Before you look at the response, predict the HTTP status. Then
+  run the Postman collection and watch which single assertion catches it.
+
+  \item \textbf{Cost the count.} Turn the database command log up and send a
+  page of three with and without \code{totalCount}. Count the statements. Now
+  remove the connection attribute from the field, export the schema, and check
+  whether \code{totalCount} left the SDL. The answer to that last question is
+  the point of the exercise.
+
+  \item \textbf{Ask for something the projection cannot reach.} Send
+  \code{browseProducts} asking only for \code{nodes \{ price \{ amount \} \}}
+  and read the statements. How many, and what is in the first one? Then work out
+  why \code{price} could not have been a column in it even in principle.
+
+  \item \textbf{Give a lookup a real cost.} Mosaic's PostgreSQL is on your own
+  machine, which is the friendliest network a query will ever see. Starve the
+  container of processor time with \code{docker update --cpus 0.25 mosaic-db}
+  and re-run exercise 1 on both tags. The ratio between them is the number this
+  chapter claims travels; find out whether it does, and put the container back
+  afterwards.
+\end{enumerate}
+
+Exercise 4 is the one worth doing even if you skip the rest. Everything else
+here fails loudly: a wrong return type produces errors, and a missing
+configuration produces HC0018. A projection that drops a key produces a
+well-formed response with the right
+number of elements in it, a 200, and no errors key, and it does so only when a
+client asks for the field rather than when your smoke test does. From
+chapter~\ref{ch:enter-the-router} onward there is another process between the
+client and this data with its own opportunities to lose a field quietly, and the
+habit that survives all of them is the same one: assert on the value, not on the
+shape.
