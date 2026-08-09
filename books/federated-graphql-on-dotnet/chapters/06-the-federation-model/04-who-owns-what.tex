@@ -1,0 +1,137 @@
+\section{Who Owns What}
+\label{sec:ch06-who-owns-what}
+\index{federation!structural directives|(}%
+
+The previous section was about fields that live on two sides of a boundary at
+once. This section is about directives that change who is on which side.
+
+\subsection*{\code{@override}: moving a field from one subgraph to another}
+
+\index{federation!override@\code{@override}}%
+A field that lives in one subgraph can be migrated to another, and
+\code{@override} is how you tell the router it has moved:
+
+\begin{graphqlsdl}
+# The first version: Catalog owns `price`
+# Catalog subgraph:
+type Product @key(fields: "id") {
+  id: ID!
+  price: Money!
+}
+
+# Pricing subgraph:
+type Product @key(fields: "id") {
+  id: ID!
+}
+
+# Later: Pricing takes over `price`
+# Pricing subgraph, after the change:
+type Product @key(fields: "id") {
+  id: ID!
+  price: Money! @override(from: "catalog")
+}
+\end{graphqlsdl}
+
+\index{federation!override progressive migration@\code{@override} progressive migration}%
+The \code{from} argument names the subgraph that used to resolve the field. The
+router sees it and changes where it sends queries for \code{price}, immediately,
+for every client. There is no deprecation window, no dual-resolution period, and
+no rollback mechanism beyond deploying the old schema again. That is a sharp
+tool, and chapter~\ref{ch:strangling-the-monolith} is about using it safely:
+progressive migration, percentage-based traffic shifting, and the moment it is
+worth pulling rather than the easier path of keeping the field in two places.
+
+The migrated field has to match in name and type. Pricing cannot decide
+\code{price} is now \code{Float} when Catalog declared it \code{Money}. That is
+not an override; it is a different field, and composition rejects it.
+
+\subsection*{\code{@interfaceObject}: contributing to an interface from a distance}
+
+\index{federation!interfaceObject@\code{@interfaceObject}}%
+\index{entities!entity interfaces}%
+An interface can be an entity. Put \code{@key} on an interface, and every object
+type implementing it is an entity too, reachable through the interface's key.
+Then a subgraph that does not define the interface itself can contribute fields
+to every entity implementing it, all at once, without naming each type.
+
+\begin{graphqlsdl}
+# In the Media subgraph
+interface Media @key(fields: "id") {
+  id: ID!
+  url: String!
+}
+
+type Image implements Media @key(fields: "id") {
+  id: ID!
+  url: String!
+  width: Int!
+  height: Int!
+}
+
+# In the Search subgraph
+type Image @key(fields: "id") {
+  id: ID!
+}
+
+type Media @interfaceObject @key(fields: "id") {
+  id: ID!
+  relevanceScore: Float!
+}
+\end{graphqlsdl}
+
+\index{federation!interfaceObject mechanics@\code{@interfaceObject} mechanics}%
+The Search subgraph never declared \code{relevanceScore}
+on \code{Image}. It declared it on \code{Media}, marked
+as \code{@interfaceObject}, and the composer adds the field to every type
+implementing \code{Media}. If a
+seventh type implements \code{Media} next month, Search's contribution applies
+to it automatically, without a schema change in Search. The subgraph still needs
+a reference resolver for each implementing type, because the router still sends
+representations, and the resolver has to know which type it is being asked for.
+
+\index{federation!interfaceObject vs Federation v1@\code{@interfaceObject} vs Federation v1}%
+This directive replaced a Federation v1 pattern where every implementing type
+had to be listed and extended separately. That pattern did not survive a new
+implementation arriving, and \code{@interfaceObject} is the fix.
+
+\subsection*{\code{@inaccessible}: hiding things from the public API}
+
+\index{federation!inaccessible@\code{@inaccessible}}%
+Not everything a subgraph defines belongs in the supergraph. A field that exists
+only so another subgraph can \code{@require} it, or an internal type that
+happens to be in the schema because the framework generated it, can be marked
+\code{@inaccessible}:
+
+\begin{graphqlsdl}
+type Product @key(fields: "id") {
+  id: ID!
+  internalCatalogId: String! @inaccessible
+  title: String!
+}
+\end{graphqlsdl}
+
+The client never sees \code{internalCatalogId} in the supergraph schema, and
+introspection does not show it. The field still exists in the subgraph, and
+other subgraphs can still reference it in \code{@requires}. What changes is
+that the public API is cleaned of it.
+
+\index{federation!inaccessible types@\code{@inaccessible} types}%
+The directive works on types, enum values and arguments too, not only on fields.
+A whole type marked \code{@inaccessible} disappears from the supergraph while
+its subgraph goes on using it. The most common use is hiding implementation
+details that the gateway does not need to know about, and
+chapter~\ref{ch:identity-and-authorization} uses it to keep internal
+authorisation fields out of the routeable schema.
+
+\subsection*{\code{@tag}: labelling things for tools}
+
+\index{federation!tag@\code{@tag}}%
+\code{@tag(name: "string")} attaches a label to any schema element. It does
+nothing to composition, query planning or execution. It exists for tooling: a
+registry can filter types by tag, a dashboard can colour nodes by tag, a CI
+check can fail pull requests that add a field without the right tag. Mosaic uses
+it sparingly, because a tag that is not read by a machine is a comment that
+looks like a directive, and comments are cheaper. Chapter~\ref{ch:ci-cd-for-a-federated-graph}
+is where a machine starts reading them.
+
+\index{federation!structural directives|)}%

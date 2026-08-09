@@ -1,0 +1,111 @@
+\section*{Your turn}
+
+This chapter has no tag and no code to run. It is the floor plan for the next
+six chapters, and the exercises are about reading federation SDL rather than
+writing it. Open a text editor and the Apollo Federation specification at
+\url{https://specs.apollo.dev/federation/v2.15/}~\autocite{apollo2026federationspec};
+everything below is answerable from the directives in this chapter and the
+composition rules in
+section~\ref{sec:ch06-how-composition-thinks}.
+
+\begin{enumerate}
+  \item \textbf{Trace one entity across three subgraphs.} Here is a
+  \code{Product} as it might look in Mosaic once three subgraphs exist:
+
+  \begin{graphqlsdl}
+# Catalog
+type Product @key(fields: "id") @key(fields: "sku") {
+  id: ID!
+  sku: String!
+  title: String!
+}
+
+# Inventory
+type Product @key(fields: "id") {
+  id: ID!
+  stock: Int!
+  warehouseLocation: String
+}
+
+# Pricing
+type Product @key(fields: "id") {
+  id: ID!
+  price: Money!
+}
+  \end{graphqlsdl}
+
+  A client sends this query:
+
+  \begin{minted}[fontsize=\footnotesize]{graphql}
+  { product(sku: "MOS-FRN-0001") { title stock price } }
+  \end{minted}
+
+  Write down which subgraph is called first, what key is used, and the
+  sequence of calls the router makes. Then say what changes if Pricing declares
+  \code{price} with \code{@shareable}.
+
+  \item \textbf{Find the unsatisfiable field.} Here is a schema that will not
+  compose:
+
+  \begin{graphqlsdl}
+# Catalog
+type Product @key(fields: "id") {
+  id: ID!
+  title: String!
+}
+
+# Reviews
+type Product @key(fields: "id") {
+  id: ID!
+  reviews: [Review!]!
+  averageRating: Float! @requires(fields: "reviews { rating }")
+}
+  \end{graphqlsdl}
+
+  Name the specific thing the composer rejects and why. Then write the
+  \code{@external} declaration that fixes it.
+
+  \item \textbf{Spot the migration that fails.} In the \code{@override} example
+  of section~\ref{sec:ch06-who-owns-what}, Pricing takes over \code{price} with
+  \code{@override(from: "catalog")}. Say what happens if the \code{from}
+  argument reads \code{"inventory"} instead. Then say what happens if Pricing
+  declares the field as \code{Float!} when Catalog has it as \code{Money!}.
+
+  \item \textbf{Design the key for a shared type.} Mosaic has an
+  \code{Address} value type on \code{Customer} and \code{Order}. If
+  \code{Address} needed to become an entity so a Shipping subgraph could add
+  fields to it, what would the key be? There is no single right answer, but say
+  why the key you chose is or is not enough across three subgraphs.
+
+  \item \textbf{Count the queries in a chain.} A client asks for:
+
+  \begin{minted}[fontsize=\footnotesize]{graphql}
+  { me { orders { items { product { title reviews { body } } } } } }
+  \end{minted}
+
+  Assume Accounts owns \code{me}, Orders owns \code{Order} and
+  \code{OrderItem}, Catalog owns \code{title} on \code{Product}, and
+  Reviews owns \code{body} on \code{Review}. Each owns its entity and nothing else. Count the minimum
+  number of subgraph calls the router must make, and say what entity keys are
+  carried between which subgraphs. Then identify the call that could be avoided
+  if one subgraph \code{@provides} something.
+
+  \item \textbf{Write a composition error in your own words.} Take the
+  unsatisfiable schema from exercise~2, before you fixed it, and write the
+  composition error message the way you would explain it to a teammate who has
+  never seen federation. Name the query the composer would print, the field that
+  cannot be resolved, and what the fix is.
+
+  \item \textbf{Read a subgraph and find what it owes.} Open the Apollo
+  Federation subgraph specification and find the section on
+  \code{Query.\_entities}. Read the input and output types. Then write down, in
+  one sentence, what a subgraph has to implement beyond its own schema for the
+  router to be able to ask it for an entity. You are looking at
+  chapter~\ref{ch:how-a-federated-query-actually-runs}'s subject.
+\end{enumerate}
+
+Exercises~1 and~5 are the ones that will be directly tested the moment
+chapter~\ref{ch:the-first-cut-extracting-catalog} splits Mosaic for real. If you
+can trace a query through three subgraphs on paper, you can read the query plan
+the router will print a few chapters from now, and reading the plan is what
+separates knowing federation from trusting it.

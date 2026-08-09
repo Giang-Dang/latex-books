@@ -1,0 +1,105 @@
+\section{Entities and Ownership}
+\label{sec:ch06-entities-and-ownership}
+\index{entities|(}%
+
+An entity is a type the router can ask for by name. That is the definition that
+matters, and everything else follows from it.
+
+\index{entities!key directive@\code{@key} directive}%
+A type becomes an entity when a subgraph puts \code{@key} on
+it~\autocite{apollo2026entities}. The
+\code{fields} argument names the fields that together make up the key, which is
+how the router will identify one instance when it needs to ask another subgraph
+for more information.
+
+\begin{graphqlsdl}
+type Product @key(fields: "id") {
+  id: ID!
+  title: String!
+  sku: String!
+}
+\end{graphqlsdl}
+
+That \code{Product} exists in the Catalog subgraph, and the key says the router
+can reach it by \code{id}. If a query selects \code{title} and
+\code{Product.reviews} in the same document, the router fetches the
+\code{title} and the \code{id} from Catalog, then sends the \code{id} to Reviews
+with a query that asks for the reviews of that exact product.
+
+The subgraph that defines the key is the entity's owner, but ownership here is
+not a claim about the domain. It is a claim about who is the authority for the
+entity's existence. Catalog owns \code{Product} because it is where a
+\code{Product} is created; Reviews contributes fields to one but does not get to
+say which products exist. That distinction matters the moment two subgraphs
+disagree about whether a product is real, and chapter~\ref{ch:entity-resolution-done-right}
+is where that disagreement is handled.
+
+\subsection*{Extending an entity from another subgraph}
+
+\index{entities!extending}%
+A subgraph that wants to add fields to an entity another subgraph owns declares
+the type again, with the same key, and adds its fields:
+
+\begin{graphqlsdl}
+# In the Reviews subgraph
+type Product @key(fields: "id") {
+  id: ID!
+  reviews: [Review!]!
+}
+\end{graphqlsdl}
+
+The key must match the owning subgraph's key, and the key fields must appear
+here too, because the router has to fill them in from the representation it
+already holds. \code{id} appears in both subgraphs, in both schemas, and in the
+supergraph it appears once.
+
+\index{entities!reference resolver}%
+That arrangement works because the Reviews subgraph can answer this question:
+given a \code{Product} identifier, give me back a \code{Product} with the
+reviews attached. The function that answers it is the reference resolver, and
+the router calls it through the \code{\_entities} query when it needs to bridge
+fields from two subgraphs. A reference resolver receives a list of
+representations, each a JSON object with \code{\_\_typename} and the key fields,
+and returns the matching entities. Chapter~\ref{ch:how-a-federated-query-actually-runs}
+shows the exact HTTP traffic; for the model, what matters is that a subgraph
+extending an entity promises to resolve it from its key.
+
+\subsection*{Multiple keys on one type}
+
+\index{entities!multiple keys}%
+An entity can declare more than one key, and the second one enables something
+the first cannot:
+
+\begin{graphqlsdl}
+type Product @key(fields: "id") @key(fields: "sku") {
+  id: ID!
+  sku: String!
+  title: String!
+}
+\end{graphqlsdl}
+
+Now the router has two routes to the same entity. When a query starts from a
+field that only hands back a \code{sku}, the router can still reach the rest of
+\code{Product} without first resolving \code{id}. The downstream cost is that
+every subgraph extending the entity has to be able to resolve it from either
+key, which means a reference resolver for each. Chapter~\ref{ch:entity-resolution-done-right}
+covers that cost and the batching strategy that makes it acceptable.
+
+The second key does not create a second entity. It creates a second way to reach
+the same one, and the router picks based on what it already has.
+
+\subsection*{What is not an entity}
+
+\index{entities!value types}%
+A type without \code{@key} is a value type. It exists only in the subgraph that
+defines it, cannot be extended by another subgraph, and the router has no way to
+ask for it by name. Money, an address, a cursor, a page of results: these are
+value types, and most types in a federated graph are value types. An entity is
+the exception, and it is expensive specifically because it crosses boundaries.
+Mark too many things as entities and you have promised the router can ask for
+them, which means every subgraph that touches them has to write a reference
+resolver. Chapter~\ref{ch:hard-modeling-problems} is about where the boundary
+between entity and value type should be drawn, and the short version is that
+most boundary types are entities and most nested types are not.
+
+\index{entities|)}%

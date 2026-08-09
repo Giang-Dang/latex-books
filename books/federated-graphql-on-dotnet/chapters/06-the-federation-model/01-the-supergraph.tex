@@ -1,0 +1,78 @@
+\section{The Supergraph}
+\label{sec:ch06-the-supergraph}
+\index{supergraph|(}%
+
+Start with the picture that everything from here to
+chapter~\ref{ch:the-gateway-market-and-the-future} hangs on.
+
+\begin{graphqlsdl}
+# -- Catalog subgraph --
+type Product @key(fields: "id") {
+  id: ID!
+  title: String!
+  price: Money!
+}
+
+# -- Reviews subgraph --
+type Product @key(fields: "id") {
+  id: ID!
+  reviews: [Review!]!
+}
+
+# -- The supergraph, after composition --
+type Product {
+  id: ID!
+  title: String!
+  price: Money!
+  reviews: [Review!]!
+}
+\end{graphqlsdl}
+
+Two subgraphs, each defining a \code{Product} type with different fields. A
+composer reads both schemas, notices they share a \code{@key}, and merges them
+into one \code{Product} with four fields. A client that sends a query selecting
+\code{title}, \code{price} and \code{reviews} gets an answer from two services
+without knowing there were two. The router knew: it fetched the Catalog's fields
+first, then used the \code{id} to ask Reviews for the rest.
+
+\index{router!role}%
+The router is the single point of contact, and the single point of contact is
+the whole trick. The client does not address a subgraph directly. It does not
+know which subgraph owns which field. It sends one document to one endpoint, and
+the router's query planner produces a plan that says which subgraph answers
+which selection, in which order, with which identifiers carried between them.
+Chapter~\ref{ch:how-a-federated-query-actually-runs} is that plan in motion;
+this chapter is the static structure that makes it possible.
+
+\index{subgraph!definition}%
+A subgraph is a normal GraphQL service with two extra responsibilities. It has
+to publish its own schema without knowing about the others, and it has to answer
+two queries the router will send: \code{\_service}, which returns the SDL the
+router needs for composition, and \code{\_entities}, which receives a list of
+type-and-key pairs and returns the matching objects. Chapter~\ref{ch:how-a-federated-query-actually-runs}
+covers both in detail. For now, all that matters is that a subgraph declares its
+own types and fields, marks which ones are shareable, and says which are
+entities the router can ask for.
+
+\index{supergraph!schema}%
+The supergraph schema is what the client sees, and it is not one subgraph's
+schema with additions. It is the output of composition: the union of every type,
+every field and every directive from every subgraph, merged according to rules
+that sometimes reject the whole arrangement. A field that appears in two
+subgraphs without \code{@shareable} on both is a composition error. A field of
+\code{Product} that a query can reach but no subgraph can resolve is a
+composition error. The composer is the gatekeeper for the claim that the
+supergraph works, and section~\ref{sec:ch06-how-composition-thinks} is its
+rules.
+
+\index{Mosaic!as federated supergraph}%
+Mosaic, from chapter~\ref{ch:the-first-cut-extracting-catalog} onward, is six
+subgraphs behind one router. Catalog owns products and their attributes.
+Reviews owns reviews. Orders owns orders and their lines. Inventory owns stock.
+Pricing owns prices and currency. Accounts owns customers and their profiles.
+Each is a service with its own database, its own deployment, and its own slice
+of the schema, and together they answer the same queries the monolith did. The
+rest of Part~II is about how that arrangement is built, and this chapter is the
+language it is described in.
+
+\index{supergraph|)}%

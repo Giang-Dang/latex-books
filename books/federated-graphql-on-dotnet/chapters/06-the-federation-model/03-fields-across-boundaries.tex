@@ -1,0 +1,143 @@
+\section{Fields Across Boundaries}
+\label{sec:ch06-fields-across-boundaries}
+\index{federation!field-level directives|(}%
+
+Four directives describe what happens to a field when the type it hangs on lives
+in more than one subgraph. None of them make sense on a value type, because a
+value type belongs to exactly one subgraph and has no second place for a field
+to come from.
+
+\subsection*{\code{@shareable}: a field more than one subgraph can resolve}
+
+\index{federation!shareable@\code{@shareable}}%
+Without \code{@shareable}, a given field of a given object type may appear in
+exactly one subgraph~\autocite{apollo2026compositionrules}. Put \code{Product.title} in Catalog and again in Reviews,
+without the directive, and composition fails. The rule exists because Federation
+v1 did not have it, and the result was a schema that looked correct and
+sometimes produced answers from the wrong service. \code{@shareable} makes the
+intention explicit: this field can be resolved by more than one subgraph, and
+the router may pick either.
+
+\begin{graphqlsdl}
+# In Catalog
+type Product @key(fields: "id") {
+  id: ID!
+  title: String! @shareable
+  price: Money!
+}
+
+# In Inventory
+type Product @key(fields: "id") {
+  id: ID!
+  title: String! @shareable
+  stock: Int!
+}
+\end{graphqlsdl}
+
+Here \code{title} appears in both, and the router can fetch it from whichever it
+is already talking to. The practical use is reducing round trips: if a query
+selects \code{price} and \code{title} and \code{stock}, the router might fetch
+\code{title} from Inventory alongside \code{stock} rather than making a third
+call to Catalog for one field. But that is a query-planning decision the router
+makes, not a guarantee you write into the schema, and
+chapter~\ref{ch:how-a-federated-query-actually-runs} shows the plan that
+resulted.
+
+The cost is that both subgraphs now have to keep the field correct. If Catalog
+updates \code{title} and Inventory does not, the router serves stale data with
+no way to know it is stale. That is not a bug in the router. It is the
+definition of a shareable field: two sources of truth that agree because you
+keep them agreeing, not because the system enforces it.
+
+\subsection*{\code{@external}: this field comes from somewhere else}
+
+\index{federation!external@\code{@external}}%
+\code{@external} marks a field as defined elsewhere in the supergraph. It
+appears in a subgraph alongside \code{@requires} or \code{@provides}, never
+alone. The field still appears on the type, and the subgraph still knows its
+type, but the router does not ask this subgraph to resolve it.
+
+\begin{graphqlsdl}
+# In the Shipping subgraph
+type Product @key(fields: "id") {
+  id: ID!
+  weight: Float! @external
+  shippingCost: Money! @requires(fields: "weight")
+}
+\end{graphqlsdl}
+
+Shipping does not own \code{weight}. Catalog does. But \code{shippingCost}
+depends on it, so Shipping declares the field as \code{@external} so the router
+knows to fetch it from Catalog first and hand it along. The word
+\enquote{external} is from the subgraph's point of view: this field is part of
+the type's schema, but it is resolved by somebody else.
+
+\subsection*{\code{@requires}: I need these to compute mine}
+
+\index{federation!requires@\code{@requires}}%
+\code{@requires} names the external fields a resolver cannot function without.
+The example above says \code{shippingCost} needs \code{weight}. When a query
+selects \code{shippingCost}, the router fetches \code{weight} from Catalog first
+and includes it in the representation sent to Shipping. The resolver receives
+the \code{weight} and computes the cost, and it never had to ask for it.
+
+The \code{fields} argument is a GraphQL selection set, not just a flat list. It
+can reach into nested types:
+
+\begin{graphqlsdl}
+type Product @key(fields: "id") {
+  id: ID!
+  dimensions: Dimensions @external
+  volumetricWeight: Float! @requires(fields: "dimensions { length width height }")
+}
+\end{graphqlsdl}
+
+\index{federation!requires cost@\code{@requires} cost}%
+The router fetches the whole selection before calling the resolver. That is the
+performance guarantee and the cost. A resolver that needs one small field costs
+one extra subgraph fetch for that field, and a resolver that needs a deep
+traversal costs the same traversal. Chapter~\ref{ch:entity-resolution-done-right}
+measures the difference.
+
+\subsection*{\code{@provides}: I can give you extra fields from this entity}
+
+\index{federation!provides@\code{@provides}}%
+\code{@provides} is the inverse of \code{@requires} and the more surprising of
+the two. It says that when this field returns an entity, the resolver can also
+supply the named fields of that entity, saving the router a follow-up fetch.
+
+\begin{graphqlsdl}
+# In the Reviews subgraph
+type Review @key(fields: "id") {
+  id: ID!
+  body: String!
+  author: Customer! @provides(fields: "displayName")
+}
+
+type Customer @key(fields: "id") {
+  id: ID!
+  displayName: String! @external
+}
+\end{graphqlsdl}
+
+Reviews returns a \code{Customer} as part of a \code{Review}'s author. The
+router would normally fetch \code{displayName} from Accounts separately.
+\code{@provides(fields: "displayName")} tells the router that the resolver
+already has it, so the router can skip the call. The subgraph is making a
+promise it has to keep: if it says it provides \code{displayName}, the resolver
+had better include it in the returned \code{Customer}, or the client gets null
+and the router did not ask anybody else.
+
+\index{federation!provides vs shareable@\code{@provides} vs \code{@shareable}}%
+This is not the same as \code{@shareable}. \code{@shareable} says a field can
+live in two subgraphs. \code{@provides} says a resolver for one field can supply
+another field of the entity it returns, and that other field is still owned by
+one subgraph. The router receives it from Reviews and does not fetch it from
+Accounts, but Accounts is still where it is defined.
+
+The directive is an optimisation and it is the one that most often goes wrong.
+Getting it right means the resolver returns more than it was asked for, which
+GraphQL deliberately does not do anywhere else. Chapter~\ref{ch:entity-resolution-done-right}
+has the measured numbers and the failure modes.
+
+\index{federation!field-level directives|)}%

@@ -1,7 +1,33 @@
 \chapter{The Federation Model}
 \label{ch:the-federation-model}
 
-\emph{Not yet drafted.} Planned scope: Supergraph and subgraphs; entity ownership; the Apollo Federation v2 directive tour (\code{@key}, \code{@shareable}, \code{@external}, \code{@requires}, \code{@provides}, \code{@override}, \code{@interfaceObject}); composition rules conceptually.
+Chapter~\ref{ch:why-one-graph-is-never-enough} argued that one schema, owned by
+one team, becomes the wrong number at some point nobody notices passing. The five
+chapters since have built a single service well, and the one that just finished
+left the schema carrying promises a client depends on. This chapter is about
+what happens when the schema stops being one service's property and becomes six.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/06-the-federation-model/01-section-name}
+Federation is a way to present several independent GraphQL services as one. The
+client sends a query to a router and gets back an answer; it does not know which
+service produced which field, and it does not need to. Each service owns its
+domain, publishes its own schema, and the router stitches them into a single
+composed schema called the supergraph. When a query arrives, the router
+decomposes it, fans out to the services that can answer each part, assembles the
+pieces, and returns.
+
+Three ideas carry the weight, and the rest of the chapter is the detail behind
+them. The first is the entity: a type that exists in more than one subgraph,
+identified by a key the router can read. The second is the set of directives
+that describe where a field lives, which subgraph needs what, and who is allowed
+to move. The third is composition: the act of taking several subgraph schemas
+and producing one that is more than the sum of them, plus the rules that reject
+schemas that could never work. Nothing below compiles, because nothing below is
+a single service, but everything from
+chapter~\ref{ch:the-first-cut-extracting-catalog} onward depends on it.
+
+\input{chapters/06-the-federation-model/01-the-supergraph}
+\input{chapters/06-the-federation-model/02-entities-and-ownership}
+\input{chapters/06-the-federation-model/03-fields-across-boundaries}
+\input{chapters/06-the-federation-model/04-who-owns-what}
+\input{chapters/06-the-federation-model/05-how-composition-thinks}
+\input{chapters/06-the-federation-model/06-your-turn}

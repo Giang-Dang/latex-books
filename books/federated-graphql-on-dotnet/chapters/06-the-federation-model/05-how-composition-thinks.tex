@@ -1,0 +1,143 @@
+\section{How Composition Thinks}
+\label{sec:ch06-how-composition-thinks}
+\index{composition|(}%
+
+Composition is the step between writing subgraph schemas and running a router.
+It takes every subgraph's schema, checks them against each other, and either
+produces a single supergraph schema or refuses with an error that names the
+problem and the location.
+
+The algorithm is chapter~\ref{ch:composition}'s subject, and it runs in a CLI
+tool and in the router and in CI, often with different settings. This section is
+the model behind the tool: what the composer checks, why it rejects what it
+does, and what the errors are actually saying.
+
+\subsection*{The rule that drives everything else}
+
+\index{composition!satisfiability}%
+A supergraph schema has to be
+satisfiable~\autocite{apollo2026compositionrules}: for every valid query a client could
+write, every field in the selection set must be resolvable by at least one
+subgraph. That is the one rule from which the others follow, and it is harder
+than it looks because the query that breaks it might never have been written by
+a human. A client that asks for \code{Product.reviews} gets a response from
+Reviews, and a client that asks for \code{Product.weight} gets a response from
+Catalog, and a client that asks for both in one query gets both. The question
+the composer asks is: does any plausible traversal of this schema lead to a
+field nobody can resolve?
+
+If Catalog defines \code{Product.price} and Inventory does not, and a query
+starts in Inventory, the router can fetch \code{Product} from Catalog for the
+\code{price}. That is satisfiable. If Catalog does not define \code{price}
+either, and nothing else does, the field exists in the supergraph and nobody can
+resolve it. That is unsatisfiable, and composition refuses.
+
+\subsection*{The explicit rules}
+
+\index{composition!rules}%
+The satisfiability rule is the principle, and the compiler's checks are the
+machinery. The Apollo Federation specification lists them, and these are the
+ones that produce the most errors during development:
+
+\index{composition!duplicate field}%
+\medskip\noindent\textbf{One field, one owner, unless shared.} A field of an
+object type may appear in exactly one subgraph, or in several if every
+occurrence is marked \code{@shareable}. A field that appears twice without
+\code{@shareable} on both is a composition error, and the message names the type
+and the conflicting subgraphs. This is the error most people hit first.
+
+\index{composition!incompatible types}%
+\medskip\noindent\textbf{Shared fields must agree on type.} Two subgraphs
+declaring \code{Product.title} both as \code{String!} is fine. One declaring
+\code{String!} and the other \code{String} is not. The types must be identical,
+nullability and list wrappers included. The composition algorithm compares the
+fully resolved type, not the SDL text, so \code{[String]!} and
+\code{[String!]!} are different.
+
+\index{composition!external reachability@\code{@external} reachability}%
+\medskip\noindent\textbf{\code{@external} fields must be reachable.} A field
+marked \code{@external} in one subgraph must be resolvable by another in every
+query that could reach it. If the field is in a \code{@requires} selection, the
+composer checks that the route from the entity to that field exists.
+
+\index{composition!override validity@\code{@override} validity}%
+\medskip\noindent\textbf{\code{@override} must target a valid owner.} The
+\code{from} argument must name a subgraph that actually defined the field before
+the override. A typo in \code{from} is a composition error, and so is overriding
+a field that was never defined.
+
+\index{composition!key matching@\code{@key} matching}%
+\medskip\noindent\textbf{Keys must match across subgraphs.} When Catalog defines
+\code{Product @key(fields: "id")} and Reviews also defines
+\code{Product @key(fields: "id")}, the keys must name the same fields of
+compatible types. A key of \code{fields: "sku"} in one and \code{fields: "id"}
+in the other means the entity has two separate keys, which is valid; a key of
+\code{fields: "id"} of type \code{ID!} in one and \code{String!} in the other is
+not.
+
+\index{composition!interfaceObject rules@\code{@interfaceObject} rules}%
+\medskip\noindent\textbf{\code{@interfaceObject} must resolve for every
+implementing type.} The subgraph that applies \code{@interfaceObject} must have
+a reference resolver for every concrete type implementing the interface, or the
+composer cannot guarantee that a query reaching the interface will reach a
+resolvable entity.
+
+\subsection*{What composition does not check}
+
+\index{composition!limitations}%
+A list of what is outside the composer's scope is as useful as the list of what
+is inside it, because everything not on it is a runtime surprise.
+
+\begin{itemize}
+\item \textbf{Resolver behaviour.} Composition checks the schema. It cannot know
+  whether a resolver returns correct data, crashes, or is slow. The supergraph
+  is satisfiable on paper and still broken in production, and the only
+  detector is testing.
+
+\item \textbf{Data consistency.} A shareable field is a promise two subgraphs
+  agree on its value. Composition validates the types, not the values. If
+  Catalog has \code{title: "Table"} and Inventory has \code{title: "Desk"},
+  composition passes and the client gets whichever one the router fetched.
+  Chapter~\ref{ch:strangling-the-monolith} is where this stops being
+  theoretical.
+
+\item \textbf{Performance.} A satisfiable query plan can still be slow.
+  \code{@requires} that pulls a deep tree, a chain of entities six subgraphs
+  long, a reference resolver without a DataLoader: the composer signs off
+  on all of them. Chapter~\ref{ch:resilience-and-performance} has the
+  profiling.
+
+\item \textbf{Cycles.} Two subgraphs can each \code{@require} a field from the
+  other, and composition accepts the arrangement. At runtime the router detects
+  the cycle and returns an error, which is a worse position than having the
+  composer say no before deployment. Chapter~\ref{ch:hard-modeling-problems}
+  covers how to spot them before the schema is committed.
+\end{itemize}
+
+\subsection*{Reading a composition error}
+
+\index{composition!error messages}%
+The first time composition fails, the message looks like a stack trace from a
+language you did not write. Here is a real one, paraphrased:
+
+\begin{minted}{text}
+SATISFIABILITY_ERROR: The following supergraph API query:
+  { product(sku: "MOS-FRN-0001") { reviews { author { displayName } } } }
+cannot be satisfied by the subgraphs because:
+  - Customer.displayName is not resolvable from subgraph "reviews"
+  - Customer is not defined in subgraph "reviews"
+\end{minted}
+
+The error names a query, not just a type and a field. That is the key to reading
+it: the composer found a traversal path that reaches a field nobody owns, and it
+printed the path. The fix is either to mark the field \code{@shareable} where it
+is, to remove it from where it should not be, or to add \code{@external} and a
+\code{@requires} that tells the router where to get it.
+
+Chapter~\ref{ch:composition} and appendix~\ref{app:composition-errors} decode
+each error class with the fix and the example. For now, the point is that a
+composition error is answering a question you want answered before deployment:
+does this schema work? The answer is sometimes no, and getting it from a
+compiler is better than getting it from a client at runtime.
+
+\index{composition|)}%
