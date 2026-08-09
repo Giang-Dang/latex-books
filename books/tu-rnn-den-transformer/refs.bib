@@ -1,0 +1,124 @@
+% Bibliography for "Tu RNN den Transformer".
+%
+% Grouped by the chapter that first cites an entry, under %--- banners, per the
+% house style. Only the six core papers are here: every one of them was read off
+% the PDF in the author's papers folder, and each entry records the exact arXiv
+% version that copy is, because page-anchored quotations in the chapters will
+% refer to that copy rather than to a proceedings reprint with different
+% pagination.
+%
+% Bridge papers (Cho 2014, Luong 2015, Gers 2000, Ba 2016, Xiong 2020, BERT,
+% GPT, Kaplan, Hoffmann, FlashAttention, RoPE, ALiBi, S4, Mamba, Swin, DeiT,
+% ConvNeXt and the rest named in the SPEC's table of contents) are deliberately
+% absent. They land in the chapter that cites them, after that chapter's
+% research step has fetched and read them. An entry added from memory is exactly
+% the failure the research gate exists to prevent.
+
+%--- Chapter 03: the diagnosis ---------------------------------------------
+
+@online{pascanu2013difficulty,
+  author  = {Pascanu, Razvan and Mikolov, Tomas and Bengio, Yoshua},
+  title   = {On the difficulty of training Recurrent Neural Networks},
+  year    = {2013},
+  eprint  = {1211.5063},
+  eprinttype = {arXiv},
+  eprintclass = {cs.LG},
+  version = {2},
+  url     = {https://arxiv.org/abs/1211.5063v2},
+  urldate = {2026-08-09},
+  note    = {Read as arXiv:1211.5063v2, dated 16 February 2013. The copy on file
+             carries no venue line. A proceedings version is believed to exist;
+             confirm the venue and its pagination during chapter 03 research
+             before citing a page number.}
+}
+
+%--- Chapter 04: the architectural fix --------------------------------------
+
+@article{hochreiter1997lstm,
+  author  = {Hochreiter, Sepp and Schmidhuber, J{\"u}rgen},
+  title   = {Long Short-Term Memory},
+  journal = {Neural Computation},
+  volume  = {9},
+  number  = {8},
+  pages   = {1735--1780},
+  year    = {1997},
+  note    = {Volume, issue, pages and year are printed on the title page of the
+             copy on file.}
+}
+
+%--- Chapter 05: encoder-decoder --------------------------------------------
+
+@inproceedings{sutskever2014seq2seq,
+  author       = {Sutskever, Ilya and Vinyals, Oriol and Le, Quoc V.},
+  title        = {Sequence to Sequence Learning with Neural Networks},
+  year         = {2014},
+  eprint       = {1409.3215},
+  eprinttype   = {arXiv},
+  eprintclass  = {cs.CL},
+  url          = {https://arxiv.org/abs/1409.3215v3},
+  urldate      = {2026-08-09},
+  note         = {Read as arXiv:1409.3215v3, dated 14 December 2014. The copy on
+                 file carries no venue line; confirm the proceedings during
+                 chapter 05 research.}
+}
+
+%--- Chapter 06: alignment --------------------------------------------------
+
+@inproceedings{bahdanau2015align,
+  author       = {Bahdanau, Dzmitry and Cho, Kyunghyun and Bengio, Yoshua},
+  title        = {Neural Machine Translation by Jointly Learning to Align and
+                  Translate},
+  booktitle    = {International Conference on Learning Representations},
+  year         = {2015},
+  eprint       = {1409.0473},
+  eprinttype   = {arXiv},
+  eprintclass  = {cs.CL},
+  url          = {https://arxiv.org/abs/1409.0473v7},
+  urldate      = {2026-08-09},
+  note         = {The title page states \enquote{Published as a conference paper
+                 at ICLR 2015}. Read as arXiv:1409.0473v7, dated 19 May 2016, so
+                 the copy on file postdates the conference by a year.}
+}
+
+%--- Chapter 07: the Transformer --------------------------------------------
+
+@inproceedings{vaswani2017attention,
+  author       = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and
+                  Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and
+                  Kaiser, {\L}ukasz and Polosukhin, Illia},
+  title        = {Attention Is All You Need},
+  booktitle    = {31st Conference on Neural Information Processing Systems
+                  (NIPS 2017)},
+  location     = {Long Beach, California, USA},
+  year         = {2017},
+  eprint       = {1706.03762},
+  eprinttype   = {arXiv},
+  eprintclass  = {cs.CL},
+  url          = {https://arxiv.org/abs/1706.03762v7},
+  urldate      = {2026-08-09},
+  note         = {Venue line printed at the foot of the title page. Read as
+                 arXiv:1706.03762v7, dated 2 August 2023, which is six years
+                 later than the conference; check any quotation against the
+                 proceedings text before attributing wording to 2017.}
+}
+
+%--- Chapter 11: Vision Transformer -----------------------------------------
+
+@inproceedings{dosovitskiy2021vit,
+  author       = {Dosovitskiy, Alexey and Beyer, Lucas and Kolesnikov, Alexander
+                  and Weissenborn, Dirk and Zhai, Xiaohua and Unterthiner,
+                  Thomas and Dehghani, Mostafa and Minderer, Matthias and
+                  Heigold, Georg and Gelly, Sylvain and Uszkoreit, Jakob and
+                  Houlsby, Neil},
+  title        = {An Image is Worth 16x16 Words: Transformers for Image
+                  Recognition at Scale},
+  booktitle    = {International Conference on Learning Representations},
+  year         = {2021},
+  eprint       = {2010.11929},
+  eprinttype   = {arXiv},
+  eprintclass  = {cs.CV},
+  url          = {https://arxiv.org/abs/2010.11929v2},
+  urldate      = {2026-08-09},
+  note         = {The title page states \enquote{Published as a conference paper
+                 at ICLR 2021}. Read as arXiv:2010.11929v2, dated 3 June 2021.}
+}

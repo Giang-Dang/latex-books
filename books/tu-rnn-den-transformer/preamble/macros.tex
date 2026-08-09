@@ -1,0 +1,139 @@
+% Book-specific commands, environments and metadata.
+
+% Title metadata used by the frontmatter pages.
+\newcommand{\thebooktitle}{Từ RNN đến Transformer}
+\newcommand{\thebooksubtitle}{Sáu bài báo gốc từ 1997 đến 2021, và những gì đến sau}
+\newcommand{\thebookauthor}{Giang Dang}
+
+% Inline code.
+\newcommand{\code}[1]{\texttt{#1}}
+
+% ---------------------------------------------------------------------------
+% Glossed terms
+% ---------------------------------------------------------------------------
+% This book is written in Vietnamese for readers who will go on to read the
+% papers in English. A term the book translates therefore carries its English
+% original in parentheses at EVERY occurrence, not only the first: a reader who
+% opens the book at chapter 9 gets the same help as one who started at page one.
+%
+%   \tn{mang hoi quy}{recurrent neural network}  ->  mang hoi quy (recurrent
+%                                                    neural network)
+%
+% Terms the book keeps in English (attention, softmax, gradient, embedding,
+% transformer) are typed plainly and take no parentheses, because "attention
+% (attention)" helps nobody. Which terms fall on which side is settled once in
+% appendix B and does not drift.
+%
+% Writing every gloss through this macro rather than by hand is what makes the
+% rule checkable later: a term from the glossary appearing in the prose outside
+% \tn is a miss, and that is a grep rather than a parser. See the SPEC's open
+% items.
+\newcommand{\tn}[2]{#1 (#2)}
+
+% ---------------------------------------------------------------------------
+% Mathematical notation
+% ---------------------------------------------------------------------------
+% One notation for the whole book (see chapter 1), with appendix A mapping it
+% back to what each of the six papers wrote. These macros exist so that a
+% decision about how a vector is set is made once here rather than 400 times in
+% the chapters.
+
+% Vectors are bold lowercase, matrices bold uppercase. Two macros with the same
+% body, deliberately: the distinction is worth being able to grep for.
+\newcommand{\vect}[1]{\mathbf{#1}}
+\newcommand{\mat}[1]{\mathbf{#1}}
+
+\newcommand{\transpose}{^{\mathsf{T}}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\norm}[1]{\lVert #1 \rVert}
+\newcommand{\abs}[1]{\lvert #1 \rvert}
+\newcommand{\inner}[2]{\langle #1, #2 \rangle}
+
+% Partial derivatives and Jacobians. Chapters 1 to 4 are mostly these.
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\jac}[2]{\frac{\partial #1}{\partial #2}}
+
+\DeclareMathOperator{\softmax}{softmax}
+\DeclareMathOperator{\attention}{Attention}
+\DeclareMathOperator{\headop}{head}
+\DeclareMathOperator{\multihead}{MultiHead}
+\DeclareMathOperator{\layernorm}{LayerNorm}
+\DeclareMathOperator{\ffn}{FFN}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\rank}{rank}
+
+\newcommand{\dmodel}{d_{\mathrm{model}}}
+\newcommand{\dk}{d_{k}}
+\newcommand{\dv}{d_{v}}
+\newcommand{\dff}{d_{\mathrm{ff}}}
+
+% ---------------------------------------------------------------------------
+% Theorem environments
+% ---------------------------------------------------------------------------
+% One shared counter, numbered by chapter, so that a later chapter can cite
+% "dinh ly 3.4" with no ambiguity about which sequence it belongs to. Babel's
+% Vietnamese locale already supplies \proofname as "Chung minh".
+\theoremstyle{definition}
+\newtheorem{definition}{Định nghĩa}[chapter]
+\newtheorem{example}[definition]{Ví dụ}
+
+\theoremstyle{plain}
+\newtheorem{theorem}[definition]{Định lý}
+\newtheorem{lemma}[definition]{Bổ đề}
+\newtheorem{proposition}[definition]{Mệnh đề}
+\newtheorem{corollary}[definition]{Hệ quả}
+
+\theoremstyle{remark}
+\newtheorem{remark}[definition]{Nhận xét}
+
+% ---------------------------------------------------------------------------
+% The two recurring boxes
+% ---------------------------------------------------------------------------
+% Grey and rules only, no colour: these books are likely to be read in mono.
+
+% Bridge box. The six papers do not form a chain on their own - Bahdanau builds
+% on Cho rather than on Sutskever, the forget gate arrives three years after the
+% 1997 LSTM, ViT stands on BERT and GPT. A bridge box is where an intermediate
+% paper gets its half page: what it changed, and why the next chapter would not
+% make sense without it. The argument of the chapter runs outside these boxes,
+% so a reader can skip every one of them and still follow the spine.
+\newtcolorbox{bridge}[1]{
+  breakable, enhanced, sharp corners,
+  colback = black!3, colframe = black!55,
+  boxrule = 0.4pt, left = 3mm, right = 3mm, top = 2mm, bottom = 2mm,
+  title = {Cầu nối: #1},
+  fonttitle = \bfseries\small,
+  coltitle = black, colbacktitle = black!12,
+}
+
+% Measured note. This book prints two kinds of number: what a paper reported,
+% which is cited, and what I ran myself, which lives in one of these. The box
+% exists so the difference is visible on the page rather than buried in a
+% subordinate clause. Every number inside one traces to a file under research/.
+\newtcolorbox{measured}[1]{
+  breakable, enhanced, sharp corners,
+  colback = white, colframe = black!70,
+  boxrule = 0.8pt, left = 3mm, right = 3mm, top = 2mm, bottom = 2mm,
+  title = {Tôi đo được: #1},
+  fonttitle = \bfseries\small,
+  coltitle = black, colbacktitle = black!8,
+}
+
+% ---------------------------------------------------------------------------
+% End-of-chapter exercises
+% ---------------------------------------------------------------------------
+% Three tiers, one per goal the book set itself: understand the idea, apply it
+% to code, push past it. Starred headings throughout - nothing cross-references
+% an exercise, and the tiers would otherwise flood the table of contents with
+% forty-eight entries.
+\newcommand{\exercises}{\section*{Bài tập cuối chương}}
+\newcommand{\tierunderstand}{\subsection*{Kiểm tra hiểu}}
+\newcommand{\tierapply}{\subsection*{Để tay vào}}
+\newcommand{\tierextend}{\subsection*{Đẩy xa hơn}}
+
+\newlist{bt}{enumerate}{1}
+\setlist[bt]{label = \arabic*., leftmargin = *, itemsep = 0.4em, topsep = 0.4em}
