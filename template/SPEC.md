@@ -35,7 +35,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 
 ## Writing rules (book-specific)
 
-Deviations from and additions to the library-wide defaults in CLAUDE.md.
+Deviations from and additions to the library-wide defaults in AGENTS.md.
 
 ## Open items
 

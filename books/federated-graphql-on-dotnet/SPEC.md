@@ -37,7 +37,7 @@ is re-opened only by recording what changed and why, in the row.
 | 9 | Venue | This latex-books pipeline (LuaLaTeX, latexmk, CI) |
 | 10 | Length | 450-550 pages |
 | 11 | Language | English |
-| 12 | Voice | First-person practitioner; humanizer bar (library defaults in CLAUDE.md) |
+| 12 | Voice | First-person practitioner; humanizer bar (library defaults in AGENTS.md) |
 | 13 | Postman | First-class: dev-loop intro in ch 02; subgraph-level `_entities` and `_service` testing in ch 07-08; consolidated workbook in ch 19; Postman CLI smoke tests in CI |
 | 14 | Automated testing | Full chapter (ch 20) plus composition checks in the CI/CD chapter (ch 22) |
 | 15 | Cosmo demos | Router-only composition first (ch 09-10, no account needed); full self-hosted platform in ch 21; Cosmo Cloud as a sidebar |
@@ -190,7 +190,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 
 ## Writing rules (book-specific)
 
-Library-wide defaults are in CLAUDE.md; these are this book's additions.
+Library-wide defaults are in AGENTS.md; these are this book's additions.
 
 - Every hands-on chapter includes a "verify it in Postman" step.
 - Internals claims are pinned: name the HotChocolate 16.x source tag or Cosmo

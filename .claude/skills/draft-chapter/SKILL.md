@@ -67,7 +67,7 @@ The sequence matters more than any individual step.
    report, not a request for approval: the author can interrupt if something
    looks wrong, and silence means continue.
 4. **Draft.** Load the `humanizer` skill first and apply its checklist, along
-   with the writing defaults in `CLAUDE.md` and the SPEC's own writing rules.
+   with the writing defaults in `AGENTS.md` and the SPEC's own writing rules.
    Scaffold to convention: `chapters/NN-slug/ch.tex` holds `\chapter`, `\label`
    and a short opener, then `\input`s one file per section, with every path
    written from the book root.

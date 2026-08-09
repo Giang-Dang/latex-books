@@ -1,5 +1,10 @@
 # Skills in this repo
 
+This folder is the only tracked copy. `.agents/skills`, for runtimes that look
+there instead, is a link to it created by `pwsh scripts/setup.ps1` (a junction
+on Windows, a symlink on macOS and Linux) and is gitignored. Edit skills here;
+nothing needs mirroring afterwards.
+
 ## Owned here
 
 - **draft-chapter** - the writing workflow for books under `books/`. Research,
@@ -9,7 +14,7 @@
 
 `humanizer` and `skill-conventions` are copies of skills that also exist in a
 personal `~/.claude/skills/`. They are checked in so the repo carries its own
-dependencies: `CLAUDE.md` requires the humanizer before any book prose is
+dependencies: `AGENTS.md` requires the humanizer before any book prose is
 drafted, and a clone without it silently loses that step.
 
 They are copies, so they can drift from upstream. Refresh with:
@@ -32,7 +37,7 @@ WikiProject AI Cleanup; the attribution is in its own file.
 
 ## Why these two
 
-- `humanizer` is a hard dependency: `CLAUDE.md` and `draft-chapter` both require
+- `humanizer` is a hard dependency: `AGENTS.md` and `draft-chapter` both require
   it before prose is written or reviewed.
 - `skill-conventions` is how `draft-chapter` itself gets maintained, so it is
   here for whoever edits that skill next.

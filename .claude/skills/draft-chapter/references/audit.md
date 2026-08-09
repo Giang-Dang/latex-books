@@ -77,7 +77,7 @@ Read before judging anything:
   books/federated-graphql-on-dotnet/chapters/04-data-without-the-n-plus-1/*.tex
       - the voice specification. Take the voice from this prose, not from any
         description of it.
-  CLAUDE.md - repo-wide writing defaults
+  AGENTS.md - repo-wide writing defaults (CLAUDE.md only imports it)
   books/federated-graphql-on-dotnet/SPEC.md - writing rules, decision log, and
         the TOC line for this chapter
   .claude/skills/draft-chapter/references/house-style.md
@@ -93,7 +93,7 @@ bottom.
      does not trace to the research note, to the companion repo at that tag, or
      to a cited primary source. The research note is a claim too: a number
      recorded there with no way to reproduce it was not measured.
-  2. Violations of CLAUDE.md, the SPEC writing rules or house-style. Include
+  2. Violations of AGENTS.md, the SPEC writing rules or house-style. Include
      \ref targets that do not resolve, and a SPEC TOC line that no longer
      describes what the chapter actually does.
   3. Voice drift from chapter 04, and anything on the humanizer checklist.
