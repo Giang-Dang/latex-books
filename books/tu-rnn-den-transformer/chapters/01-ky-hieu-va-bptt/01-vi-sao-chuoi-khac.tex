@@ -32,7 +32,7 @@ sau.
 thông tin từ quá khứ để diễn giải hiện tại. Một mạng nơ-ron truyền thẳng
 thông thường không làm được việc này: mỗi đầu vào được xử lý độc lập, đầu ra
 chỉ phụ thuộc vào đầu vào hiện tại. Cần một kiến trúc cho phép tín hiệu đi
-từ bước thời gian trước sang bước thời gian sau.
+từ \tn{bước thời gian}{timestep} trước sang bước thời gian sau.
 
 Đó chính là \tn{mạng hồi quy}{recurrent neural network} (RNN). Kiến trúc này
 giữ một \tn{trạng thái ẩn}{hidden state}; một vector tổng kết mọi thứ mạng
@@ -42,8 +42,9 @@ bằng cách kết hợp đầu vào mới với trạng thái ẩn cũ. Cùng m
 kỳ.
 
 Nhưng trí nhớ có giá của nó. Mạng hồi quy không học bằng cách truyền thẳng
-rồi lan truyền ngược như mạng nơ-ron thường. Vì trạng thái ẩn tại bước $t$
-phụ thuộc vào trạng thái ẩn tại bước $t-1$, gradient của hàm mất mát phải
+rồi \tn{lan truyền ngược}{backpropagation} như mạng nơ-ron thường. Vì trạng
+thái ẩn tại bước $t$ phụ thuộc vào trạng thái ẩn tại bước $t-1$, gradient của
+\tn{hàm mất mát}{loss function} phải
 được truy ngược qua \textbf{từng bước thời gian}, từ cuối chuỗi về đầu chuỗi.
 Kỹ thuật này gọi là \tn{lan truyền ngược qua thời gian}{backpropagation
 through time} (BPTT), và nó là trung tâm của mọi thứ chương này sẽ làm.

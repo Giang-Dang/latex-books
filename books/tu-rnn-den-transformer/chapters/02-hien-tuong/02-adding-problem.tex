@@ -80,7 +80,8 @@ Vẫn không có vanishing. Với $d_h = 12$ và $T = 100$, tỉ lệ gradient l
 1.01; về cơ bản là phẳng.
 
 Đây không phải là thất bại của thí nghiệm. Đây là một kết quả quan trọng:
-\textbf{bài toán cộng không phải là bài kiểm tra tốt cho vanishing gradient}.
+\textbf{\tn{bài toán cộng}{adding problem} không phải là bài kiểm tra tốt cho
+vanishing gradient}.
 Lý do: chỉ output cuối cùng có target, nên backward signal chỉ xuất phát từ
 $t = T$, và nó chỉ cần đi qua $T$ bước \emph{một lần}. Hàm cần học; tổng hai
 số; quá đơn giản để tạo ra áp lực lên gradient.

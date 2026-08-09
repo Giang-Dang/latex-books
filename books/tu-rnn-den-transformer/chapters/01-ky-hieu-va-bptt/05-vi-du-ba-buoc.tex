@@ -8,8 +8,9 @@
 
 Dẫn xuất đến đây là xong, nhưng một dẫn xuất không có con số thì giống như
 một bản đồ không có tọa độ: bạn biết đường đi, nhưng bạn không biết mình đang
-đứng ở đâu. Mục này chạy một RNN thật qua ba bước thời gian, in từng vector,
-từng ma trận gradient, và kiểm tra tất cả bằng sai phân hữu hạn.
+đứng ở đâu. Mục này chạy một RNN thật qua ba \tn{bước thời gian}{timestep}, in
+từng vector, từng ma trận gradient, và kiểm tra tất cả bằng
+\tn{sai phân hữu hạn}{finite difference}.
 
 Toàn bộ code của ví dụ này nằm trong companion repo
 \href{https://github.com/Giang-Dang/rnn-to-transformer-lab}{rnn-to-transformer-lab}
@@ -22,7 +23,7 @@ và tôi không sửa một chữ số nào.
 \begin{itemize}
   \item Số bước thời gian: $T = 3$.
   \item Chiều đầu vào: $d_x = 2$, chiều ẩn: $d_h = 3$, chiều đầu ra: $d_y = 2$.
-  \item Hàm mất mát: $L = \frac{1}{2}\sum_t \|\vect{y}_t - \widehat{\vect{y}}_t\|^2$.
+  \item \tn{Hàm mất mát}{loss function}: $L = \frac{1}{2}\sum_t \|\vect{y}_t - \widehat{\vect{y}}_t\|^2$.
 \end{itemize}
 
 Đầu vào và target được chọn nhỏ và tròn để bạn có thể đọc. Trọng số được khởi

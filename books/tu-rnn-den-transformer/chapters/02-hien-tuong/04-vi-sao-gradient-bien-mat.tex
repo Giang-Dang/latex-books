@@ -7,7 +7,8 @@
 \label{sec:ch02-vi-sao}
 
 Những con số ở mục trên đặt ra một câu hỏi: \emph{tại sao} gradient yếu đi 25
-lần khi đi từ $t = 21$ về $t = 1$ trong bài toán sao chép $T_{\text{mem}} =
+lần khi đi từ $t = 21$ về $t = 1$ trong
+\tn{bài toán sao chép}{copy task} $T_{\text{mem}} =
 10$? Câu trả lời nằm trong chính công thức BPTT mà chương~01 đã dẫn xuất.
 
 \subsection{Sự lặp lại của $\mat{W}_{hh}$}
@@ -44,7 +45,8 @@ $\tanh$). Nếu $\|\mat{W}_{hh}\| < 1$, tích này tiến về 0 theo hàm mũ:
 
 $\mat{W}_{hh}$ không phải là thủ phạm duy nhất. Đạo hàm của $\tanh$ tại
 $\vect{h}_{t+1}$ là $1 - \vect{h}_{t+1}^2$. Khi một phần tử của hidden
-state bão hòa (tiến gần đến $\pm 1$), đạo hàm của nó tiến gần đến 0, và
+state \tn{bão hòa}{saturation} (tiến gần đến $\pm 1$), đạo hàm của nó tiến gần
+đến 0, và
 gradient đi qua phần tử đó bị chặn lại.
 
 Trong bài toán sao chép, RNN có xu hướng đẩy hidden state đến gần bão hòa
@@ -56,7 +58,8 @@ bước.
 
 \subsection{Không phải mọi RNN đều bị vanishing như nhau}
 
-Kết quả từ bài toán cộng cho thấy vanishing gradient không phải là định mệnh:
+Kết quả từ \tn{bài toán cộng}{adding problem} cho thấy vanishing gradient không
+phải là định mệnh:
 với $d_h = 24$, gradient gần như không suy giảm ở $T = 50$. Điều này là vì
 $\mat{W}_{hh}$ với khởi tạo $\mathcal{N}(0, 0.1)$ và $d_h = 24$ có trị riêng
 lớn nhất đủ nhỏ, và vì bài toán cộng không ép mạng phải dùng đến bão hòa

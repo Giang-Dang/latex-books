@@ -46,13 +46,15 @@ và chạy \mintinline{text}{python verify.py} để kiểm tra.
 \index{bài tập!để tay vào|(}%
 
 \begin{bt}
-  \item Trong companion repo, đổi hàm kích hoạt từ $\tanh$ sang
+  \item Trong companion repo, đổi \tn{hàm kích hoạt}{activation function} từ
+    $\tanh$ sang
     \mintinline{python}{relu} (dùng \mintinline{python}{np.maximum(0, a)}).
     Chạy lại \mintinline{python}{python verify.py}. Gradient check còn khớp
-    không? Nếu không, vì sao? Gợi ý: ReLU không khả vi tại 0, nhưng sai phân
-    hữu hạn thì vẫn chạy.
+    không? Nếu không, vì sao? Gợi ý: ReLU không khả vi tại 0, nhưng
+    \tn{sai phân hữu hạn}{finite difference} thì vẫn chạy.
 
-  \item Thêm một bước thời gian thứ tư với $\vect{x}_4 = [0.2, -0.5]$ và
+  \item Thêm một \tn{bước thời gian}{timestep} thứ tư với
+    $\vect{x}_4 = [0.2, -0.5]$ và
     $\widehat{\vect{y}}_4 = [0.5, 0.0]$. Cập nhật \mintinline{python}{X} và
     \mintinline{python}{TARGET} trong code. Chạy gradient check. Gradient
     của $\mat{W}_{hh}$ thay đổi thế nào so với bản ba bước? Giải thích.
@@ -79,8 +81,9 @@ và chạy \mintinline{text}{python verify.py} để kiểm tra.
   \item Đo thời gian chạy của \mintinline{python}{backward()} và
     \mintinline{python}{finite_difference()} cho $T = 3, 10, 50, 100$.
     Vẽ đồ thị. Với $T = 100$, sai phân hữu hạn chậm hơn BPTT bao nhiêu lần?
-    Từ đó giải thích vì sao mọi framework deep learning đều dùng lan truyền
-    ngược thay vì sai phân hữu hạn, và vì sao sai phân hữu hạn vẫn là công cụ
+    Từ đó giải thích vì sao mọi framework deep learning đều dùng
+    \tn{lan truyền ngược}{backpropagation} thay vì sai phân hữu hạn, và vì sao
+    sai phân hữu hạn vẫn là công cụ
     kiểm tra không thể thiếu.
 
   \item Đọc bài báo ``Automatic Differentiation in Machine Learning: a

@@ -50,7 +50,7 @@ is re-opened only by recording what changed and why, in the row.
 | 13 | Hardware | Every experiment finishes on a CPU-only laptop in minutes. The GPU path is an optional override, never the default. Reason: the reader is a Vietnamese undergraduate, and an experiment that needs a card the reader does not have is a figure, not an experiment |
 | 14 | Where the work happens | Companion code is a second git repo, public on GitHub. The book's own work started in a dedicated worktree of `latex-books` on a long-lived branch `book/tu-rnn-den-transformer`, at `F:/repo/latex-books-transformers`. **Amended 2026-08-09:** AGENTS.md now requires a per-session branch cut from `origin/main`, in a worktree under `.claude/worktrees/`, ending in a pull request. The library rule wins over this row. The chapter 03 session followed AGENTS.md and reused only the directory; the long-lived branch is dead and has diverged from main, which is the failure mode decision 30 exists to prevent |
 | 15 | Title | "Từ RNN đến Transformer", folder `tu-rnn-den-transformer`. The subtitle offered during the interview said "Mười ba năm kiến trúc chuỗi", which was written before decision 5 extended the book to 2026; corrected to "Sáu bài báo gốc từ 1997 đến 2021, và những gì đến sau" in the same session |
-| 16 | Glossed terms | A term this book translates carries its English original in parentheses, so that a reader opening at chapter 9 gets the same help as one who started at page 1. A term the book keeps in English takes no parentheses: "attention (attention)" helps nobody. Which terms fall on which side is settled once in appendix B. **Amended 2026-08-09:** this row originally set the cadence at every occurrence, not just the first. Chapter 03 showed what that costs: it names the spectral radius sixteen times, and a parenthesis on each turns the page into a bilingual dictionary. The cadence is now once per section, which still serves the reason this row gave, because a reader opening the book anywhere lands inside a section. The writing-rules section carries the rule |
+| 16 | Glossed terms | A term this book translates carries its English original in parentheses, so that a reader opening at chapter 9 gets the same help as one who started at page 1. A term the book keeps in English takes no parentheses: "attention (attention)" helps nobody. Which terms fall on which side is settled once in appendix B. **Amended 2026-08-09:** this row originally set the cadence at every occurrence, not just the first. Chapter 03 showed what that costs: it names the spectral radius sixteen times, and a parenthesis on each turns the page into a bilingual dictionary. The cadence is now once per section, which still serves the reason this row gave, because a reader opening the book anywhere lands inside a section. The writing-rules section carries the rule. **Amended again 2026-08-09:** the cadence covers the terms a chapter introduces, which are the terms in that chapter's own block of appendix B; a term an earlier chapter owns is glossed once at its first use in the chapter and not again. Measuring every appendix B term against every section is what forced this: chapter 03 was 36 sites of 48, chapter 01 was 9 of 38, chapter 02 was 0 of 22, and the terms making up most of the shortfall were ordinary Vietnamese words like "chuoi" that appear in nearly every section of every chapter. Glossing those once per section sets "chuoi (sequence)" about fifteen times, which is the same bilingual dictionary this row already ruled out, one level down. Chapter 03's practice is the definition rather than an approximation of it |
 | 17 | Spelling of the English glosses | en-US, matching how all six papers spell. `Spelling = @{ Enabled = $true; Preset = 'en-US' }` in `check-chapter.psd1`, so "(initialisation)" is a finding. A gloss in the wrong variety sends a student searching for a string that is not in the paper |
 | 18 | Language of SPEC.md and check-chapter.psd1 | English. `draft-chapter` reads the slot labels, and the library's other SPEC is English |
 | 19 | Companion repo environment | Conda, not venv and not bare pip. The repo ships `environment.yml` pinning the env name, the Python version and the PyTorch build; the verify script activates that env before it runs anything, so a clean run does not depend on whose machine it is. Appendix D teaches the conda path. Default install is CPU-only PyTorch per decision 13; the GPU path is a separate override file, never an edit to the main one |
@@ -225,13 +225,24 @@ machine-checkable half is `check-chapter.psd1` in this folder.
 - **Appendices are lookup only** (decision 29): entries, not argument. No
   opening paragraph, no rationale section, no closing note about how the table
   is maintained. That reasoning lives here.
-- **How often a gloss repeats:** once per section. Decision 16 originally said
-  every occurrence, and chapter 03 is what showed the cost: it names the
-  spectral radius sixteen times, and a parenthesis on each turns the page into a
-  bilingual dictionary. Once per section still serves the reason decision 16
-  gave, because a reader opening the book anywhere lands inside a section. After
-  the gloss, carry the term as notation where there is one: `\rho(W_hh)` reads
-  better than the words fifteen times over, and it is more precise.
+- **How often a gloss repeats:** once per section, for the terms the chapter
+  introduces. Decision 16 originally said every occurrence, and chapter 03 is
+  what showed the cost: it names the spectral radius sixteen times, and a
+  parenthesis on each turns the page into a bilingual dictionary. Once per
+  section still serves the reason decision 16 gave, because a reader opening the
+  book anywhere lands inside a section. After the gloss, carry the term as
+  notation where there is one: `\rho(W_hh)` reads better than the words fifteen
+  times over, and it is more precise.
+- **Which terms that cadence covers:** the ones in the chapter's own block of
+  appendix B. A term an earlier chapter introduced is glossed once at its first
+  use in this chapter and then left alone, because the reader who opened here
+  has already had it, and because the alternative was measured: most of the
+  shortfall against a literal reading was ordinary Vietnamese words, and
+  glossing `chuoi` once per section sets "chuoi (sequence)" about fifteen times
+  across the book. A chapter that borrows a term and then leans on it - makes it
+  load-bearing rather than passing - treats it as its own and follows the
+  section cadence; that judgement is the author's and the reason goes in the
+  decision log, not here.
 - **Voice:** First-person practitioner, the AGENTS.md default, which takes the
   chapter role. In Vietnamese that is "tôi" for the author and "bạn" for the
   reader, one pair for the whole book (decision 10). The book teaches other
@@ -308,13 +319,47 @@ machine-checkable half is `check-chapter.psd1` in this folder.
 
 ## Open items
 
-- **Chapters 01 and 02 gloss below the cadence decision 16 now states.** Counted
-  2026-08-09: 12 uses of `\tn` in chapter 01, 2 in chapter 02, 36 in chapter 03.
-  The rule is once per section, and chapter 03 is the only one that meets it.
-  Nothing is wrong on the page, so this is not urgent; sweep each of the two when
-  it is next opened rather than in a pass of its own. This is also the first real
-  data point for the deferred `gloss` check, which needs a second before it can
-  be proposed as a family in `scripts/check-chapter.ps1`.
+- **Chapters 01 and 02 gloss below the cadence: swept 2026-08-09.** Closed. What
+  the sweep found was more than a shortfall, so it is worth keeping the numbers.
+  Measured against every appendix B term, chapter 01 was 9 term-section sites of
+  38, chapter 02 was 0 of 22, and chapter 03 - the one this item called
+  compliant - was 36 of 48. That reading also meant glossing ordinary Vietnamese
+  words like `chuoi` in nearly every section of every chapter, about fifteen
+  times across the book, which is the bilingual dictionary decision 16 had
+  already ruled out. Hence the second amendment to decision 16 and the new
+  writing rule scoping the cadence to a chapter's own terms. Under that rule all
+  three chapters are now complete: 83 term-section sites, 0 unglossed, counted
+  on prose with comments and headings excluded.
+- **Three defects the sweep turned up that were not about cadence.** All fixed
+  2026-08-09. `02-ky-hieu.tex` carried `\tn{bias}{bias}`, which set as "bias
+  (bias)" - the exact shape decision 16 names as the thing not to do, on a term
+  appendix B lists under keep-in-English. Four terms were glossed in prose while
+  absent from appendix B, which decision 16 makes the source of truth: `bai toan
+  cong`, `bai toan sao chep`, `triet tieu gradient` and `bung no gradient`. And
+  appendix B had a block for chapter 01 and one for chapter 03 and none for
+  chapter 02, so chapter 02 had no settled term list to be swept against; it has
+  one now, and it is where `phu thuoc dai han` and `bao hoa` were settled.
+- **Glosses never go in a heading.** Observed rather than decided: no `\section`
+  or `\subsection` in the book carries one, and a parenthetical in a heading
+  would follow into the table of contents and the running head. So a term whose
+  only appearance in a section is its heading gets no gloss there. Recorded here
+  because the sweep had to decide it and silence would have made it an accident.
+- **The gloss density in chapter 01 is the rule's cost, and it should be looked
+  at once on paper.** Chapter 01 introduces the foundational vocabulary, so its
+  own terms are the ones that appear in every section: printed page 3 carries
+  five glosses and pages 4 and 5 carry four each. Nothing is wrong and every one
+  is a term being introduced, but `chuoi (sequence)` lands twice on printed page
+  5, in sections 1.2 and 1.3, twelve lines apart, because the two sections are
+  short and the cadence is per section. Leaving it: consistency with a written
+  rule beats a judgement call made once. Worth a look next time chapter 01 is
+  open.
+- **The second data point for the deferred `gloss` check now exists.** The
+  unblocking condition this item used to carry has been met, and by a wider
+  margin than expected: the misses were in all three drafted chapters, not two,
+  and they were mechanical enough that a script would have found every one of
+  them. See the `gloss` check item below, which is still deferred - having the
+  evidence and building the family are two decisions, and only the first is
+  taken.
 - **A listing wider than the measure is now a check.** Was an open item; closed
   2026-08-09 by decision 31 and the `Listings` family in
   `scripts/check-chapter.ps1`. Two of the five listings it was written for were
@@ -338,7 +383,30 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   glosses in both, propose the family with fixtures in
   `scripts/check-chapter.tests.ps1`. Until then decision 21's macro is the only
   thing holding the rule, and it holds it by making the right thing easy rather
-  than by making the wrong thing fail.
+  than by making the wrong thing fail. **Unblocked 2026-08-09** by the cadence
+  sweep, which found misses in all three drafted chapters and found them by
+  script rather than by reading. Still not built: the evidence and the family
+  are two decisions and only the first is taken. Whoever builds it should know
+  the sweep's own tooling had to flatten whitespace before matching, because a
+  term broken across two source lines hides from a line-at-a-time scan, and had
+  to drop `%` comments and heading lines or it reported both as prose.
+- **The book disagrees with itself about `do doc`, and it is the central term.**
+  Found by the cadence sweep 2026-08-09 and deliberately not fixed by it,
+  because this is a decision and not a gloss. Appendix B lists `do doc` /
+  gradient as translated, with a footnote keeping "gradient" only inside proper
+  names such as "gradient descent" and "vanishing gradient". Counted across the
+  drafted chapters: chapter 01 writes the bare English "gradient" 71 times and
+  `do doc` 0 times, chapter 02 writes it 79 times and `do doc` 0 times, and
+  chapter 03 writes it 39 times and `do doc` 9 times, glossed. Only the third of
+  those three follows appendix B, and chapters 01 and 02 are not near-misses,
+  they never use the Vietnamese at all. So one of two things is true and the
+  book has not said which: either the entry is right and roughly 150 occurrences
+  across two chapters need changing, or chapters 01 and 02 are right, gradient
+  belongs on the keep-in-English list, and chapter 03's nine glosses come out
+  along with the appendix B row and its footnote. Both are defensible; the
+  second is what a Vietnamese ML reader would probably expect, and the first is
+  what the book currently promises. Whichever wins gets a decision row, because
+  this is the term the first three chapters are about.
 - **The running example is proposed, not settled.** A toy Vietnamese-English
   parallel set carried from chapter 05 to chapter 08, chosen because Vietnamese
   and English word order differ enough that chapter 06's alignment matrix shows

@@ -8,8 +8,10 @@
 
 Chương này không có định lý. Nó có ba bảng số liệu và hai hộp cầu nối. Nhưng
 những con số đó nói một điều rất rõ: RNN với hàm kích hoạt $\tanh$ và huấn
-luyện bằng BPTT \textbf{không học được phụ thuộc dài hạn} khi chuỗi vượt quá
-một độ dài nhất định. Ở bài toán sao chép với $T_{\text{mem}} = 20$, gradient
+luyện bằng BPTT
+\textbf{không học được \tn{phụ thuộc dài hạn}{long-term dependencies}} khi
+chuỗi vượt quá một độ dài nhất định. Ở
+\tn{bài toán sao chép}{copy task} với $T_{\text{mem}} = 20$, gradient
 tại bước đầu tiên yếu hơn gradient tại bước cuối cùng 25 lần. Loss sau 2000
 epoch huấn luyện cao hơn loss trước khi huấn luyện.
 
