@@ -225,6 +225,44 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
 - Numbers we measured ourselves rather than found published must say so in the
   text ("I counted..."), and the research file must record how to reproduce the
   count.
+- Voice: first-person practitioner. First person singular, opinionated where
+  experience warrants it and willing to concede. No contractions in my own
+  voice; they appear only inside quoted material. Sentence length varies, and a
+  short declarative sentence lands the end of a paragraph or a section.
+  Sections end on a hinge into the next one. Claims are concrete - a company, a
+  date, a number, a name - because the vague authority ("experts argue",
+  "industry reports") is the failure this voice exists to avoid.
+- Humanizer skill: humanizer. The book is in English, so a draft is judged
+  against the English tone profiles, not the humanizer-vi ones.
+- Spelling is British-leaning: organisation, centre, labelled, initialisation.
+  Product and API names keep whatever spelling their vendor chose, so
+  HotChocolate ships Types.Analyzers and its analyzers stay analyzers. The
+  enforced variety and the four exemptions are in check-chapter.psd1; this is
+  the rule they enforce.
+- Listings are drawn from the environments decisions 23 and 38 name, and each
+  one exists as a `\newminted` alias or a stock lexer in preamble/packages.tex.
+  Adding an environment is a decision, recorded in the log.
+- TikZ figures follow the idiom the existing ones already use: hand-placed
+  absolute coordinates rather than a layout engine, `-{Stealth[length=2mm]}`
+  arrowheads, `rounded corners=2pt`, node dimensions in mm, and `font=\small`
+  with `\scriptsize` for labels. A figure drawn to a different idiom reads as a
+  figure borrowed from another book, which is why the existing pictures rather
+  than this paragraph are the authority.
+- The "Your turn" lab opens with a paragraph of framing, then a numbered list
+  whose items begin with a bolded imperative (`\item \textbf{Map the
+  owners.}`), and closes by saying what a dull result would mean or by pointing
+  forward to the chapter that picks the thread up.
+- mosaic-graph is laid out one folder per domain, and every field lives in the
+  folder of the domain that owns it, even when it hangs off a type another
+  domain declared. `Product` is a Catalog record, but `Product.price` is a
+  resolver in `Pricing/Types/`. That is what makes chapter 08's extraction a
+  move rather than a rewrite, so it holds even where a shortcut is tempting.
+  Dependencies between domains stay acyclic and one-directional: the domain
+  that references nobody is the one that can be extracted first.
+- Do not enable `EmitCompilerGeneratedFiles` with an output path inside the
+  project directory. The SDK compiles the emitted files as sources on the next
+  build and the run fails with duplicate definitions. Dump them outside the
+  project, or delete them once they have been read.
 
 ## Open items
 

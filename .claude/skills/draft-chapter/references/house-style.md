@@ -15,22 +15,23 @@ LaTeX and prose conventions shared by books in this repo. A book's own
 
 ## Prose voice
 
-Take the voice from the previous drafted chapter's files rather than from this
-list. What follows is what those files already do, recorded so a drift is
-noticeable.
+Take the voice from the previous drafted chapter's files rather than from any
+description of it, this one included. A paraphrase of a voice is a different
+voice; the prose is the specification.
 
-First person singular, opinionated where experience warrants, and willing to
-concede. No contractions in the author's own voice; they appear only inside
-quoted material. Sentence length varies, and a short declarative sentence lands
-the end of a paragraph or section. Sections end on a hinge into the next one.
+The library default in `AGENTS.md` is a first-person practitioner: direct,
+concrete, opinionated where experience warrants it. What a given book actually
+sounds like is the `Voice:` line in its SPEC's writing-rules section, which is
+also where the specifics live - contractions, sentence rhythm, how a section
+ends. That line wins over this one.
 
 Claims are concrete: a company, a date, a number, a name. Vague authorities
 ("experts argue", "industry reports") are the thing this style exists to avoid.
 
-Spelling follows the book. The federation book is British-leaning
-("organisation", "centre", "labelled", "initialisation"), with the exception
-that product and API names keep their own spelling: HotChocolate ships
-`Types.Analyzers`, so its analyzers are analyzers.
+Spelling follows the book. Which variety, and which words are exempt from it,
+are settings in the book's `check-chapter.psd1`; the reasons they were chosen
+are in its SPEC. Read the psd1 rather than guessing the variety from the prose,
+because an exemption looks exactly like an inconsistency.
 
 ## Citations and quoting
 
@@ -53,16 +54,12 @@ drafted chapters depend on its current behaviour.
 Listings sit inline in the prose. They are not floats, carry no caption and no
 label, and the surrounding text introduces them.
 
-Language environments, per the federation book's decision 23:
-
-- `\begin{minted}{csharp}` for C#
-- `\begin{minted}{graphql}` for executable operations (queries, mutations)
-- `\begin{graphqlsdl}` for schema definition language
-- `\begin{minted}{text}` for shell commands and compiler output
-- `\begin{minted}{json}` for responses
-
-`graphqlsdl` is minted's Ruby lexer under an honest name, because Pygments has
-no SDL lexer and its `graphql` lexer emits Error boxes on type definitions.
+A book declares its listing environments in its SPEC, and adding one is a
+decision recorded there rather than a choice made mid-chapter. What the check
+script actually discovers is different and narrower: the `\newminted[NAME]`
+aliases in that book's `preamble/packages.tex`. Read both before picking an
+environment for a new listing - an environment named only in prose is one that
+nothing typesets and nothing checks.
 
 **Every listing is real code from the companion repo at the chapter's tag.**
 Before the repo exists, a book may permit illustrative sketches, but the prose
@@ -77,10 +74,17 @@ TikZ sources live in `figures/tikz/chNN-<slug>.tex` as a **bare
 `tikzpicture`**. The `figure` environment, `\caption` and `\label` stay at the
 call site in the section file.
 
-Only `arrows.meta` and `positioning` are loaded. Using `calc`, `fit`,
-`shapes.geometric` or `backgrounds` will not compile. Existing figures use
-hand-placed absolute coordinates, `-{Stealth[length=2mm]}` arrowheads,
-`rounded corners=2pt`, node dimensions in mm, and `font=\small`.
+The template loads `arrows.meta` and `positioning` and nothing else, so a book
+that wants `calc`, `fit`, `shapes.geometric` or `backgrounds` adds the
+`\usetikzlibrary` line to its own `preamble/packages.tex`. Read that file before
+reaching for a library: a missing one fails at compile time with an error that
+names the key rather than the library.
+
+Match the idiom of the book's existing figures - how coordinates are placed,
+which arrowhead, corner radius, node sizing, font sizes - and read one of them
+end to end before drawing a new one. The book's SPEC records the idiom, but the
+figures themselves are the authority, and a picture drawn to a different idiom
+reads on the page as a picture from another book.
 
 Beware reserved TikZ key names when declaring styles: `in`, `out`, `step`,
 `shift`, `scale`, `text` and `style` are all taken and fail confusingly.
@@ -96,13 +100,13 @@ On their own line, immediately before the paragraph they belong to, terminated
 with `%` so no spurious space enters the text:
 
 ```latex
-\index{schema!governance}%
+\index{deployment!rollback}%
 The paragraph starts here.
 ```
 
 Use `!` for subentries. For a concept that spans a section, open and close a
-range with `\index{Mosaic|(}` and `\index{Mosaic|)}`. The index is maintained
-while writing, never retrofitted.
+range: `\index{<term>|(}` on the first paragraph and `\index{<term>|)}` on the
+last. The index is maintained while writing, never retrofitted.
 
 ## Labels and cross-references
 
@@ -112,8 +116,8 @@ while writing, never retrofitted.
 - Appendices: `\label{app:<slug>}`.
 
 Reference them with a lowercase word and a non-breaking tilde:
-`chapter~\ref{ch:composition}`, `section~\ref{sec:ch02-dev-loop}`,
-`figure~\ref{fig:ch02-mosaic-v1}`.
+`chapter~\ref{ch:example}`, `section~\ref{sec:ch02-first-section}`,
+`figure~\ref{fig:ch02-diagram}`.
 
 Never hardcode a chapter number in prose. Forward references to undrafted
 chapters resolve because every stub already carries its label.
@@ -127,7 +131,7 @@ relative to the current file.
 Section files are `NN-name.tex`, zero-padded so filesystem order matches book
 order.
 
-The end-of-chapter lab is a plain `\section*{Your turn}`: no label, no TOC
-entry. It opens with framing, then a numbered list whose items begin with a
-bolded imperative (`\item \textbf{Map the owners.}`), and closes by saying what
-a dull result would mean or pointing forward.
+If the book has an end-of-chapter lab, it is a plain `\section*{<heading>}`: no
+label, no TOC entry, because nothing cross-references a lab and a starred
+heading is one line rather than a macro. The heading itself and the shape of
+the exercises belong to the book, and its SPEC records both.

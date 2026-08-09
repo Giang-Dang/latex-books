@@ -25,26 +25,29 @@ hook is a `sh` script, so it works there for the same reason.
 
 GNU sed reads `\c` in a replacement as a control-character escape, so
 `sed -e 's/\\url{/\\code{/'` silently emits a `0x0F` byte followed by `de{`.
-The result looks almost right in a terminal, breaks the ASCII-only rule, and
-survives until a byte scan.
+The result looks almost right in a terminal, puts a control character into the
+source, and survives until something scans the bytes.
 
-Use the Edit tool, or Python, for anything containing a backslash. The byte
-scan that catches this class of damage is the `ascii` check in
-`scripts/check-chapter.ps1`; run that rather than rescanning by hand.
+Use the Edit tool, or Python, for anything containing a backslash. The scan that
+catches this class of damage is the character check in
+`scripts/check-chapter.ps1`; run that rather than rescanning by hand. It holds
+under the looser policy too: `Punctuation` mode admits letters of any script but
+still rejects control characters, and the byte a mangled `sed` emits is a
+control character. Only `Characters.Mode = 'Off'` loses this warning.
 
 ## Overfull boxes
 
 The build gate is zero overfull boxes, and the usual cause is a long inline
 `\code{}` span: a 40-character identifier has no break points and will not fit
-a 155mm measure. Fixes, in order of preference:
+the measure. That measure is 155mm for a book still on the template's
+`\geometry` (A4, 30mm inner, 25mm outer); a book that changes the geometry
+changes the number, so take it from its `preamble/packages.tex`. Fixes, in order
+of preference:
 
 1. Reword so the identifier sits where it fits, or name the thing in words.
 2. Promote it to a displayed listing.
 3. For a single stubborn captured output, set `fontsize=\footnotesize` on that
-   one minted block. Do not alter captured text to make it fit.
-
-Do not redefine `\code` to be breakable; drafted chapters depend on its current
-behaviour.
+   one verbatim block. Do not alter captured text to make it fit.
 
 Locate them with:
 
@@ -69,19 +72,16 @@ Two subagents running a build against the same project collide on intermediate
 output. Either give each agent its own project, or have agents write files only
 and compile centrally.
 
-Related: enabling `EmitCompilerGeneratedFiles` with an output path inside the
-project directory makes the SDK compile the generated files as sources on the
-next build, producing duplicate-definition errors. Dump them outside the project
-or clean up afterwards.
-
 ## minted and Pygments
 
-minted needs `-shell-escape`, a Python with Pygments, and
-`TEXMF_OUTPUT_DIRECTORY`. All three are set in each book's `.latexmkrc`; do not
-remove them.
+minted is not in the template, so this applies only to a book whose
+`preamble/packages.tex` loads it. Where it is loaded, it needs `-shell-escape`,
+a Python with Pygments, and `TEXMF_OUTPUT_DIRECTORY`. All three belong in that
+book's `.latexmkrc`; do not remove them.
 
-The `csharp`, `graphql`, `json` and `text` lexers ship with Pygments. There is
-no SDL lexer, which is why `graphqlsdl` borrows Ruby's.
+Which lexers are available is a Pygments question, not a LaTeX one. Check that a
+lexer exists before writing a listing against it, and if the book aliases one
+under another name with `\newminted`, its SPEC says why.
 
 ## Page numbers in the PDF
 

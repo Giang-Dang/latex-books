@@ -23,25 +23,28 @@ So the auditor has to be a subagent with no drafting context. Not a different
 checklist, not a stricter mood, not a second pass later in the same session -
 a clean context reading the files cold.
 
-The cost of getting this wrong is on the record. Chapter 02 shipped a latency,
+The cost of getting this wrong is on the record. One chapter shipped a latency,
 a line count and an API attribute name asserted from memory, all three wrong.
-Chapter 04 printed a fabricated `11.3ms/11.4ms` request timeline inside a
-minted block, which is why `check-chapter.ps1` now traces every decimal back to
-a research note. Chapter 07 called a query plan "the only listing I have not
-trimmed" after reformatting the query strings inside it, and printed a response
-whose `749.00` had become `749.0` on its way through `python -m json.tool`;
-that pair is why the script also traces listings the prose calls captures. All
-three were caught by an audit. None would have been caught by the draft reading
-itself.
+Another printed a fabricated request timeline inside a listing, which is why
+`check-chapter.ps1` now traces every printed decimal back to a research note. A
+third called a listing the only one it had not trimmed, after reformatting the
+strings inside that listing, and printed a response whose trailing zero a JSON
+formatter had quietly dropped on the way to the page; that pair is why the
+script also traces listings the prose calls captures. All three were caught by
+an audit. None would have been caught by the draft reading itself. Each book's
+own incidents are recorded in its SPEC decision log and open items.
 
 ## Run the machine gate first
 
 Build, then run `pwsh scripts/check-chapter.ps1 books/<name>` from the repo
 root, and fix everything it reports before briefing the auditor.
 
-The script owns bytes, citation ties and keys, quoting, index termination,
-contractions, spellings, dashes, measured-number provenance, verbatim-capture
-claims and the log counts.
+The script owns families of mechanical check: characters, citations, quoting,
+index termination, contractions, spelling, dashes, measured-number provenance,
+verbatim-capture claims and the log counts. Which of them actually ran for this
+book, and how strictly, is the `==> policy:` line the script prints at the top
+of the run, and that line rather than this list is what the brief passes on.
+
 Attention the auditor spends re-deriving those findings is attention it is not
 spending on the half no script can check: whether a sentence is true, whether
 the voice is the book's, whether a listing says what the prose claims it says.
@@ -66,33 +69,53 @@ format. Nothing else.
 
 ## The brief
 
-Filled in for chapter 05 of the federation book. Adapt the paths; keep the
-shape, and keep the order of the report - a long brief gets skimmed from the
-bottom, so what matters most is listed first.
+A template. Fill every angle-bracket slot before sending it, because an
+unfilled slot is how an auditor ends up reading the wrong chapter or judging
+prose against a voice the book does not use. Keep the shape, and keep the order
+of the report - a long brief gets skimmed from the bottom, so what matters most
+is listed first.
+
+- `<REPO ROOT>` - the absolute path to this repository, so that nothing in the
+  brief resolves against the subagent's own working directory.
+- `<BOOK>` - the book folder under `books/`.
+- `<NN-slug>` - the chapter folder under audit.
+- `<previous drafted chapter folder>` - the chapter the SPEC progress table
+  marks drafted before this one. It is the voice specification, so it has to be
+  a drafted chapter and not the stub next door.
+- `<humanizer skill>` - the skill named on the SPEC's `Humanizer skill:` line.
+- `<research file>` - the note under `research/` this chapter's facts trace to.
+- `<companion repo and tag, or "none">` - the tag every listing must match.
+  Write "none" for a chapter that ships no code rather than dropping the line:
+  an auditor told there is no repo stops looking for one, and an auditor told
+  nothing goes looking.
+- `<policy line>` - the `==> policy:` line `check-chapter.ps1` printed on the
+  run you just fixed everything from. Paste it exactly, do not summarise it.
 
 ```
 Read-only audit of a book chapter. Do not edit any file. Repo root is
-F:/repo/latex-books.
+<REPO ROOT>.
 
 Chapter under audit - read every file end to end:
-  books/federated-graphql-on-dotnet/chapters/05-schema-design-that-survives-change/ch.tex
-  ...and 01-what-a-client-can-survive.tex through 07-your-turn.tex in that folder
+  books/<BOOK>/chapters/<NN-slug>/ch.tex
+  ...and every section file in that folder
 
 Read before judging anything:
-  books/federated-graphql-on-dotnet/chapters/04-data-without-the-n-plus-1/*.tex
+  books/<BOOK>/chapters/<previous drafted chapter folder>/*.tex
       - the voice specification. Take the voice from this prose, not from any
         description of it.
   AGENTS.md - repo-wide writing defaults (CLAUDE.md only imports it)
-  books/federated-graphql-on-dotnet/SPEC.md - writing rules, decision log, and
-        the TOC line for this chapter
+  books/<BOOK>/SPEC.md - writing rules, decision log, and the TOC line for
+        this chapter
+  books/<BOOK>/check-chapter.psd1 - the machine half of those writing rules
   .claude/skills/draft-chapter/references/house-style.md
-  .claude/skills/humanizer/SKILL.md - apply its checklist. Judge each file
-      under its tone profile: chapter prose against references/tone-chapter.md,
-      the "Your turn" lab against references/tone-lab.md.
+  .claude/skills/<humanizer skill>/SKILL.md - apply its checklist. Judge each
+      file under its tone role: chapter prose as chapter prose, the
+      end-of-chapter lab as a lab. That skill's own tone table says which
+      file under its references/ each role resolves to; read only those.
 
 Sources this chapter must trace back to:
-  books/federated-graphql-on-dotnet/research/2026-08-ch05-schema-design.md
-  companion repo F:/repo/mosaic-graph at tag ch05
+  books/<BOOK>/research/<research file>
+  companion repo <companion repo and tag, or "none">
 
 Report in this order. Earlier items matter more; if you run short, cut from the
 bottom.
@@ -103,17 +126,20 @@ bottom.
   2. Violations of AGENTS.md, the SPEC writing rules or house-style. Include
      \ref targets that do not resolve, and a SPEC TOC line that no longer
      describes what the chapter actually does.
-  3. Voice drift from chapter 04, and anything on the humanizer checklist,
-     each file judged under the tone profile named above for it.
+  3. Voice drift from the previous chapter, and anything on the humanizer
+     checklist, each file judged under the tone role named above for it.
 
 Format: one line per finding - file:line, the quoted span, what is wrong, the
 rule or source it fails, and confidence (certain / likely / unsure). Flag
 uncertainty instead of guessing; an "unsure" that turns out to be real beats a
 confident miss.
 
-The mechanical checks already pass, so do not re-report bytes, citation ties,
-citation keys, literal quote characters, unterminated \index lines,
-contractions, American spellings or dash characters.
+The mechanical checks already pass. This is the policy the script resolved for
+this book on that run:
+  <policy line>
+A family shown there as on has already been checked, so do not re-report it. A
+family shown as off did not run at all, so nothing in it was checked and it is
+yours to judge like any other prose question.
 
 No praise, no summary, no restating what the chapter does well. If a category
 turns up nothing, say so in one line. Do not manufacture findings to fill it.

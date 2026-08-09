@@ -3,6 +3,11 @@
 How to grow a book's companion repository for a chapter, and how to parallelise
 it without the agents colliding.
 
+Read this only if the book ships companion code. Whether it does, which
+repository that is, and the one command that proves the repository is good are
+all in the book's SPEC; a conceptual book has none of the three and none of this
+applies to it.
+
 ## Contents
 
 - Why code comes first
@@ -25,18 +30,13 @@ time; the same API asserted in prose fails in print.
 
 ## Growing the repo
 
-Read the companion repo's `README.md` for its chapter-to-tag table and its
-layout conventions before adding anything.
+Read the companion repo's `README.md` before adding anything: it carries the
+chapter-to-tag table and the layout conventions.
 
-For the federation book's `mosaic-graph`, the layout rule that everything else
-depends on is: **one folder per domain, and every field lives in the folder of
-the domain that owns it, even when it hangs off a type another domain
-declared.** `Product` is a Catalog record, but `Product.price` is a resolver in
-`Pricing/Types/`. That is what makes a later extraction a move rather than a
-rewrite, and it is worth preserving even when a shortcut is tempting.
-
-Keep dependencies between domains acyclic and one-directional. The domain that
-references nobody is the one that can be extracted first.
+A repo that later chapters take apart also has one layout rule that every later
+extraction depends on, and the book's SPEC states it. Hold it even where a
+shortcut is tempting - the shortcut costs the chapter taking it nothing, and
+costs the chapter doing the extraction a rewrite.
 
 When a chapter deliberately leaves something naive so a later chapter can fix
 it, say so in a code comment as well as in the prose. A future reader of the
@@ -44,15 +44,11 @@ repo has no chapter text in front of them.
 
 ## The verification gate
 
-Every companion repo should have one command that proves it is good. For
-`mosaic-graph` that is `scripts/verify.ps1`, and it must print `PASS` before a
-tag is created. It builds in Release with warnings as errors, regenerates the
-schema and fails on drift from the committed copy, checks the sample projects
-still agree, starts the service, asserts the seeded counts and the lookup
-count, and runs the Postman collection through newman.
+Every companion repo has one command that proves it is good, named in the book's
+SPEC, and it has to pass before a tag is created.
 
-If a chapter legitimately changes one of those expected numbers, update the
-script and say so in the commit message. Never loosen an assertion to make a
+If a chapter legitimately changes one of the numbers that command asserts,
+update it and say so in the commit message. Never loosen an assertion to make a
 run pass.
 
 ## Tagging
@@ -68,10 +64,11 @@ Subagents are worth it for bounded, mechanical work. Prose is neither: splitting
 sections across agents yields several voices to reconcile, which costs more than
 it saves. Keep the writing.
 
-A pattern that worked for a six-domain service:
+A pattern that worked for a multi-domain service:
 
-- **Shared files stay with the orchestrator**: the entry point, central package
-  management, the solution file, the committed schema, `SPEC.md`, all prose.
+- **Shared files stay with the orchestrator**: the entry point, dependency
+  manifests, the solution or workspace file, any committed generated artifact,
+  `SPEC.md`, all prose.
 - **Wave A** - one agent per domain folder, each owning exactly one folder.
   Sequence any domain that others depend on into an earlier wave, or hand the
   dependents its exact contract so they can be written against it.
