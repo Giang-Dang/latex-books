@@ -2,7 +2,7 @@
 # Deterministic lint gate for one book's prose: the machine half of the
 # draft-chapter build gate. Checks characters, citation ties and keys, quoting,
 # index termination, contractions, spellings, dashes, measured-number
-# provenance, verbatim-capture claims, and the build log.
+# provenance, verbatim-capture claims, listing width, and the build log.
 #
 # The checks are general; the policy is the book's. Everything a book can
 # decide - which spelling variety, whether contractions are allowed, which
@@ -127,6 +127,24 @@ function Get-DefaultPolicy {
             ClaimPattern  = '(?i)(?:\bverbatim\b|\bunmodified\b|\buntouched\b|character for character|(?:have|has|had)\s+not\s+(?:been\s+)?(?:trimmed|edited|altered)|\bnot\s+(?:been\s+)?trimmed\b|\bin full\b|exactly as)'
             Window        = 6
             MinLineLength = 12
+        }
+
+        # A listing line wider than the measure is the one typographic defect
+        # the log family cannot see: a book that loads minted with breaklines
+        # has told it to break an over-wide line to fit, so no Overfull box is
+        # raised and the page silently gains a wrap nobody chose.
+        #
+        # MaxLineLength is a column count, and 0 means no budget declared and
+        # the check does not run - the same shape as Spelling.Preset = ''. The
+        # number falls out of the book's measure, its mono font and the size its
+        # listings are set at, so the library will not guess it.
+        #
+        # A block whose \begin line carries its own [option list] is not
+        # measured: naming fontsize or breaklines for one block is a deliberate
+        # decision about that block, and whoever made it owns its width.
+        Listings     = [ordered]@{
+            Enabled       = $true
+            MaxLineLength = 0
         }
 
         # The masking macros. These default to the template's own \code and
@@ -451,6 +469,24 @@ if ($policy.Characters.AllowInCapturedListings.Count -gt 0) {
     }
 }
 
+# 0 means no budget declared and no check. Resolved here rather than at the
+# point of use, because Format-Policy has to report it long before the loop
+# reaches a listing, and because a book that writes a word where a column count
+# belongs should fail on the policy line rather than throw inside a comparison a
+# thousand lines later. Test-PolicySchema validates tables, arrays and bools and
+# nothing else, so this is the only thing standing between a typo and that.
+$listingMax = 0
+if ($policy.Listings.Enabled) {
+    $declared = $policy.Listings.MaxLineLength
+    if ($declared -isnot [int]) {
+        Write-Error "check-chapter.psd1: Listings.MaxLineLength must be a whole number of columns; got '$declared'"
+    }
+    if ($declared -lt 0) {
+        Write-Error "check-chapter.psd1: Listings.MaxLineLength must be 0 (no budget) or a positive column count; got $declared"
+    }
+    $listingMax = $declared
+}
+
 $citeMacroRe = ($policy.Citations.Macros | ForEach-Object { [regex]::Escape($_) }) -join '|'
 $identifierRe = '\\(?:' + (($policy.Macros.Identifiers | ForEach-Object { [regex]::Escape($_) }) -join '|') + ')(?:\[[^\]]*\])?\{[^}]*\}'
 
@@ -692,6 +728,10 @@ function Format-Policy {
 
     $bits += "verbatim=$(if ($verbatimArmRe -and $researchBlob) { $policy.Verbatim.Environments -join ',' } else { 'off' })"
 
+    # $listingMax is already 0 when the family is disabled, so one expression
+    # covers both ways of switching it off.
+    $bits += "listings=$(if ($listingMax -gt 0) { $listingMax } else { 'off' })"
+
     if ($policy.Figures.Enabled) {
         $bits += "figures=$($policy.Figures.ReservedKeys.Count) reserved keys"
     } else { $bits += 'figures=off' }
@@ -847,7 +887,7 @@ $charSet = [System.Collections.Generic.HashSet[string]]::new(
     [System.StringComparer]::OrdinalIgnoreCase)
 
 # ---------------------------------------------------------------------------
-# 2-10. prose, line by line
+# 2-11. prose, line by line
 # ---------------------------------------------------------------------------
 
 foreach ($f in $texFiles) {
@@ -859,6 +899,12 @@ foreach ($f in $texFiles) {
     $rawLines = @(Get-Content $f.FullName)
     $inVerb = $null
     $maskState = @{}
+
+    # listing-width state: whether the open block waived the check by carrying
+    # its own option list, and how many wide lines this file has already shown.
+    $listingWaived = $false
+    $listingReported = 0
+    $listingTotal = 0
 
     # verbatim-claim state: how many lines the pending claim has left, what it
     # said, and the block being collected once one starts.
@@ -883,8 +929,26 @@ foreach ($f in $texFiles) {
                     Test-VerbatimClaim $f.FullName $captureLine $claimLine $claimPhrase $capture $researchBlob $policy.Verbatim.MinLineLength
                     $capture = $null
                 }
-            } elseif ($null -ne $capture) {
-                [void]$capture.Add($raw)
+            } else {
+                # 11. listing: a body line wider than this book's measure. Every
+                # body line of every listing environment, not only the ones a
+                # claim armed, because the defect is typographic and a listing
+                # nobody called a capture wraps exactly as silently as one that
+                # was. This branch is the only place that holds a body line and
+                # nothing else: the \begin line has just set $inVerb and the
+                # \end line has just cleared it, so neither is measured, which
+                # is right because neither sets any columns.
+                if ($listingMax -gt 0 -and -not $listingWaived) {
+                    $columns = $raw.TrimEnd().Length
+                    if ($columns -gt $listingMax) {
+                        $listingTotal++
+                        if ($listingReported -lt 3) {
+                            Add-Finding $f.FullName $lineNo 'listing' "listing line is $columns columns against a budget of $listingMax; it will wrap or overflow the measure"
+                            $listingReported++
+                        }
+                    }
+                }
+                if ($null -ne $capture) { [void]$capture.Add($raw) }
             }
             $stripped = ''
             $verbLine = $true
@@ -893,6 +957,12 @@ foreach ($f in $texFiles) {
             if ($bm.Success -and $verbatimEnvs -contains $bm.Groups[1].Value) {
                 if ($raw -notmatch ('\\end\{' + [regex]::Escape($bm.Groups[1].Value) + '\}')) {
                     $inVerb = $bm.Groups[1].Value
+
+                    # A block that carries its own option list has had a
+                    # typographic decision made about it - a smaller fontsize,
+                    # an explicit breaklines - and whoever made it owns the
+                    # block's width. The width check stands down for it.
+                    $listingWaived = $raw.Substring($bm.Index + $bm.Length) -match '^\s*\['
 
                     # A claim arms the check only for the environments the book
                     # nominated as holding captured output. Listings that come
@@ -1018,6 +1088,10 @@ foreach ($f in $texFiles) {
             }
         }
     }
+
+    if ($listingTotal -gt $listingReported) {
+        Add-Finding $f.FullName 0 'listing' "...and $($listingTotal - $listingReported) more line(s) over the budget"
+    }
 }
 
 # Anything Paths.Characters named that Paths.Prose did not.
@@ -1029,7 +1103,7 @@ foreach ($f in $charFiles) {
 }
 
 # ---------------------------------------------------------------------------
-# 11. figures: TikZ style names pgfkeys has already taken
+# 12. figures: TikZ style names pgfkeys has already taken
 # ---------------------------------------------------------------------------
 
 # `step/.style={...}` does not shadow anything. It fails the build, and the
@@ -1076,7 +1150,7 @@ if ($policy.Figures.Enabled -and $policy.Figures.ReservedKeys.Count -gt 0) {
 }
 
 # ---------------------------------------------------------------------------
-# 12. log: parse an existing build log; never invoke latexmk (perl is not on
+# 13. log: parse an existing build log; never invoke latexmk (perl is not on
 # PowerShell's PATH on this machine).
 # ---------------------------------------------------------------------------
 

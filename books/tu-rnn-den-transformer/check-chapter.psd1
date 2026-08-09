@@ -69,6 +69,17 @@
     #     # Code points to allow back in, each written as U+XXXX. Every entry is
     #     # a hole in the check, so name the one character the book needs.
     #     Allow = @()
+    #
+    #     # Listing environments inside which a character this mode would
+    #     # otherwise reject is allowed to stand, in the same 'name' or
+    #     # 'name:lexer' form Verbatim.Environments uses. Tooling writes prose:
+    #     # a compiler or a linter can emit a message containing an em dash, and
+    #     # a book that prints what a tool said should not have to edit the
+    #     # capture, weaken the mode for every file, or drop the evidence. Both
+    #     # halves are required and the second is the point: the character has
+    #     # to be inside one of these environments AND the line it sits on has
+    #     # to appear in a research note. A book with no notes cannot use it.
+    #     AllowInCapturedListings = @()
     # }
 
     # -- 3. Citations ---------------------------------------------------------
@@ -242,7 +253,48 @@
     #     MinLineLength = 12
     # }
 
-    # -- 11. Macros -----------------------------------------------------------
+    # -- 11. Listings ---------------------------------------------------------
+    # A listing line wider than the measure is the one typographic defect the
+    # log check cannot see. This book loads minted with breaklines, so an
+    # over-wide line is broken to fit and no Overfull box is raised; the page
+    # gains a wrap nobody chose. The Overfull box comes back only when the line
+    # offers no break point at all, which real code never does.
+    # Enabled       - the master switch.
+    # MaxLineLength - the column budget. 0 means no budget has been declared and
+    #                 the check does not run, which is the library default.
+    #
+    # A block whose \begin line carries its own [option list] is not measured.
+    # Naming a fontsize, or an explicit breaklines, for one block is a
+    # typographic decision taken about that block, and whoever took it owns the
+    # width. Chapter 01's three listings use that hatch: they are set at
+    # \footnotesize, where the same measure holds 81 columns.
+    #
+    # What the count is not: display columns. It counts UTF-16 code units, so a
+    # CJK glyph counts one and sets two. A tab counts one. autogobble strips a
+    # block's common indent before typesetting, so an indented block is measured
+    # wider than it sets. This book's listings start at column zero.
+    # Schema, kept for reference now that this key is live below:
+    # Listings = @{
+    #     Enabled       = $true
+    #     MaxLineLength = 0
+    # }
+    #
+    # THIS BOOK: 73 columns, measured rather than assumed. \the\textwidth is
+    # 441.01773pt under the geometry in preamble/packages.tex, and one character
+    # of texgyrecursor at \small in an 11pt class advances exactly 6.0pt, so 73
+    # columns fill 438.0pt and 74 need 444.0pt. Confirmed on a built page: a
+    # line of 73 columns carrying a break point sets flush to the margin, and
+    # the same line at 74 gains a continuation arrow.
+    #
+    # The chapter that made this a rule shipped three tables at 82 to 101
+    # columns and two code listings at 80 and 81, all of them wrapping, none of
+    # them visible to the gate. Recalculate this number if the geometry, the
+    # mono font or \setminted's fontsize ever changes.
+    Listings = @{
+        MaxLineLength = 73
+    }
+
+    # -- 12. Macros -----------------------------------------------------------
     # The masking macros: what is blanked out of a line before the line is read
     # as English. These are library facts rather than book decisions, and they
     # are settable only so that a book which renames one of them keeps its
@@ -262,7 +314,26 @@
     #     Identifiers = @('begin', 'end', 'label', 'ref', 'pageref', 'input', 'include', 'autocite')
     # }
 
-    # -- 12. Log --------------------------------------------------------------
+    # -- 13. Figures ----------------------------------------------------------
+    # TikZ style names pgfkeys has already taken. `step/.style={...}` shadows
+    # nothing: it fails the build with an error naming the key rather than the
+    # style, which reads as a missing \usetikzlibrary and sends you looking in
+    # the preamble.
+    # Enabled      - the master switch.
+    # Paths        - which folders hold picture sources, relative to the book
+    #                root. They sit outside Paths.Prose on purpose, so this is
+    #                the only check that reads them, and -Chapter does not
+    #                narrow them.
+    # ReservedKeys - the names to reject. Emptying the list is the other way to
+    #                switch the check off, so a book that disagrees with one
+    #                name does not have to disable the family to say so.
+    # Figures = @{
+    #     Enabled      = $true
+    #     Paths        = @('figures/tikz')
+    #     ReservedKeys = @('in', 'out', 'step', 'shift', 'scale', 'text', 'style')
+    # }
+
+    # -- 14. Log --------------------------------------------------------------
     # Reads the build log that latexmk already wrote. The check never runs
     # latexmk itself, so a missing log is a warning and a log older than the
     # sources is a warning; build first if you want these numbers to mean
@@ -270,7 +341,10 @@
     # Path         - the log, relative to the book root.
     # MaxOverfull  - how many Overfull boxes are tolerated. Zero means every
     #                line that runs into the margin is a finding. Raising it is
-    #                how a book stops noticing that it sets badly.
+    #                how a book stops noticing that it sets badly. It does not
+    #                cover a listing line that was too wide and got broken to
+    #                fit: that raises no box at all, and section 11 is what
+    #                catches it.
     # MaxUndefined - how many log lines may mention an undefined reference or
     #                citation. Above zero, broken cross-references ship.
     # Log = @{

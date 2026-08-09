@@ -225,7 +225,8 @@ pwsh scripts/check-chapter.ps1 books/<name>
 Add `-Chapter NN` to lint one chapter while iterating. The script owns the
 mechanical checks, and it owns them as families: characters, citations, quoting,
 index termination, contractions, spelling, dashes, measured-number provenance,
-verbatim-capture claims, and the build log's overfull and undefined counts.
+verbatim-capture claims, listing width, and the build log's overfull and
+undefined counts.
 
 Which of those families are live for this book, and how strictly, is not fixed.
 The script holds the checks and a set of defaults; the book's
