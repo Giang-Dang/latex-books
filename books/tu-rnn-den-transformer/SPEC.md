@@ -233,6 +233,11 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   describe it in three paragraphs. A diagram replaces text; it is not decoration.
   This book ships at least one TikZ figure per chapter where the architecture or
   the data flow is load-bearing. Added 2026-08-09 during chapter 02 revision.
+- **Abbreviations spelled out per chapter.** Every abbreviation (RNN, BPTT,
+  LSTM, GRU, MSE, SGD, ReLU, and any other the book introduces later) is
+  written in full at its first occurrence in each chapter, because a reader
+  opening at chapter 9 gets the same help as one who started at page 1.
+  Appendix B holds the master abbreviation table. Added 2026-08-09.
 - **Chapter apparatus:** every chapter closes with `\exercises` and its three
   tiers, `\tierunderstand`, `\tierapply`, `\tierextend`, all starred so the
   table of contents does not grow forty-eight entries. Two recurring boxes:
