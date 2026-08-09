@@ -1,0 +1,5 @@
+This is a fabricated latexmk log. The fixture is never compiled; this file
+exists so the log check has one overfull box and one dangling reference.
+
+Overfull \hbox (12.34pt too wide) in paragraph at lines 4--6
+LaTeX Warning: Reference `sec:nowhere' on page 1 undefined on input line 7.
