@@ -1,0 +1,21 @@
+% Triggers the figures check once, and proves it is narrow four times over.
+%
+% Only the first line below is a finding: `step` is a pgfkeys key, so declaring
+% a style with that name fails the build with an error naming the key. The rest
+% is ordinary TikZ that happens to mention the same words, and none of it may
+% be reported.
+%
+% Never compiled. See main.tex.
+\begin{tikzpicture}[
+    step/.style={draw, rounded corners=2pt},
+    note/.style={font=\scriptsize, text=gray},
+    thin arrow/.style={-{Stealth[length=2mm]}},
+    % out/.style={dashed} would be a finding too, if it were not commented out
+  ]
+
+  \draw[step] (0,0) rectangle (2,1);
+  \draw[help lines, step=0.5cm] (0,0) grid (2,1);
+  \node[note, scale=0.9, text width=3cm] at (1,-1) {an ordinary node};
+  \draw[thin arrow] (0,-2) -- node[midway, above] {in and out} (2,-2);
+
+\end{tikzpicture}

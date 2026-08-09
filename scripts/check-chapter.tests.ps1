@@ -155,6 +155,10 @@ $Expected = @(
     "chapters/01-triggers/08-verbatim.tex:6: [verbatim] line~'this line was never captured anywhere' is in no research/ note, but line 4 calls this listing a capture ('in full')"
     "chapters/01-triggers/09-bytes.tex:5: [ascii] byte 0xC3 is not printable ASCII"
     "chapters/01-triggers/09-bytes.tex:5: [ascii] byte 0xA9 is not printable ASCII"
+    # One line out of a picture that also grids on step=0.5cm, scales a node,
+    # sets text=gray and names a style with a space in it. Exactly one of those
+    # is a style declaration using a reserved name.
+    "figures/tikz/10-reserved-key.tex:10: [tikz] style name 'step' is a pgfkeys key already; the picture will fail to compile with an error naming the key rather than the style"
     "build/main.log: [log] 1 Overfull box(es); locate with: grep -A3 Overfull build/main.log"
     "build/main.log: [log] 1 line(s) mentioning undefined references or citations"
 )
@@ -179,7 +183,7 @@ if (Compare-Findings 'fixture-book with every check on' $Expected $actual) {
 # A book that says nothing gets a gate that assumes nothing about its language:
 # letters of any script pass, spelling has no variety to enforce, and whether
 # contractions belong in the voice is left to the book.
-$DefaultIds = @('cite-key', 'dash', 'index-pct', 'log', 'number', 'quote', 'tilde-cite', 'verbatim')
+$DefaultIds = @('cite-key', 'dash', 'index-pct', 'log', 'number', 'quote', 'tikz', 'tilde-cite', 'verbatim')
 $defaultIds = Get-FindingIds (Invoke-BookFixture -NoPolicy)
 if (($defaultIds -join ',') -ne ($DefaultIds -join ',')) {
     Write-Fail 'the library defaults are not the expected reduced set'
@@ -207,6 +211,11 @@ $WiringCases = @(
     @{ Name = 'Spelling';     Override = @{ Spelling = '@{ Enabled = $false }' };          Silences = @('spelling') }
     @{ Name = 'Numbers';      Override = @{ Numbers = '@{ Enabled = $false }' };           Silences = @('number') }
     @{ Name = 'Verbatim';     Override = @{ Verbatim = '@{ Enabled = $false }' };          Silences = @('verbatim') }
+    @{ Name = 'Figures';      Override = @{ Figures = '@{ Enabled = $false }' };           Silences = @('tikz') }
+    # Emptying the reserved list is the other way to turn it off, and it has to
+    # work: a book that disagrees with one name should not have to disable the
+    # family to say so.
+    @{ Name = 'Figures.Keys'; Override = @{ Figures = '@{ ReservedKeys = @() }' };         Silences = @('tikz') }
     @{ Name = 'Log';          Override = @{ Log = '@{ Enabled = $false }' };               Silences = @('log') }
     # Paths.Prose empties the prose pass. The character scan reads its own list
     # and must survive, which is what keeps the two lists genuinely separate.
