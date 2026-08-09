@@ -1,0 +1,86 @@
+% Package loads shared by the whole book. Keep hyperref last.
+
+\usepackage{geometry}
+\geometry{a4paper, inner=30mm, outer=25mm, top=25mm, bottom=25mm}
+
+\usepackage{microtype}
+
+% Mathematics. This book derives rather than states: the vanishing-gradient
+% condition, the derivative through the LSTM constant error carousel, and the
+% variance argument behind 1/sqrt(d_k) are all worked in the running text, so
+% the maths packages are load-bearing rather than decorative.
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+
+\usepackage{booktabs}
+\usepackage{enumitem}
+
+\usepackage{graphicx}
+\graphicspath{{figures/images/}{figures/tikz/}}
+
+% Diagrams. positioning and arrows.meta come from the template; calc, fit and
+% matrix are here because unrolled recurrent networks, encoder-decoder stacks
+% and attention score matrices all need them.
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc, fit, matrix, backgrounds,
+  decorations.pathreplacing}
+% TikZ externalization caches compiled figures between runs; enable it when
+% figure-heavy chapters slow the build down:
+%   1. -shell-escape is already set in .latexmkrc (needed by minted below)
+%   2. uncomment the two lines below
+% \usetikzlibrary{external}
+% \tikzexternalize[prefix=tikz-cache/]
+
+% Code listings: minted v3 (Pygments-based). Needs -shell-escape and
+% TEXMF_OUTPUT_DIRECTORY, both set in this book's .latexmkrc, and a Python with
+% Pygments on the build machine. The companion repo is PyTorch, so the lexers
+% this book uses are python for code, text for captured console output, and
+% console for a shell session.
+\usepackage{minted}
+\setminted{autogobble, breaklines, fontsize=\small, tabsize=4}
+
+% csquotes has to come after minted, because minted loads fvextra and fvextra
+% warns when csquotes precedes it. It also has to come before biblatex, which
+% detects csquotes and adjusts its own quoting. That single window between the
+% two is why this load is here rather than up with booktabs.
+%
+% csquotes ships no style for Vietnamese. Modern Vietnamese typography uses the
+% same curly double quotes as English, so aliasing the two is the correct
+% mapping rather than a workaround; without it \enquote{} falls back to the
+% package default and warns on every run.
+\usepackage{csquotes}
+\DeclareQuoteAlias{english}{vietnamese}
+
+% Pseudo-code. Algorithms that describe a mechanism rather than ship as code
+% (beam search, the query planner of a batched DataLoader, scaled dot-product
+% attention written out) are typeset here rather than as Python, so that a
+% reader is never asked to believe an invented listing is real code.
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% The three recurring boxes this book uses. Definitions are in macros.tex; this
+% is only the machinery they are built on. breakable matters: a bridge box
+% summarising an intermediate paper can run past a page break.
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{breakable}
+
+\usepackage[style=numeric, backend=biber]{biblatex}
+% biblatex ships no vietnamese.lbx, so it warns and falls back once the main
+% language is Vietnamese. Map it to English on purpose: every entry in refs.bib
+% is an English-language paper, so an English "In:", "visited on" and "edition"
+% is what the entries should read anyway.
+\DeclareLanguageMapping{vietnamese}{english}
+% Most entries are @online arXiv and conference records whose URLs do not fit a
+% justified measure. Permit breaks inside a URL after any letter or digit
+% (biblatex needs a non-zero penalty to allow these at all) and set the
+% bibliography ragged right.
+\setcounter{biburllcpenalty}{100}
+\setcounter{biburlucpenalty}{100}
+\setcounter{biburlnumpenalty}{100}
+\appto{\bibsetup}{\raggedright}
+
+\usepackage{imakeidx}
+
+\usepackage[hidelinks]{hyperref}

@@ -1,0 +1,66 @@
+% !TeX program = lualatex
+% Build with: latexmk   (configured by .latexmkrc; output lands in build/main.pdf)
+\documentclass[11pt,a4paper,twoside,openright]{book}
+
+\input{preamble/packages}
+\input{preamble/fonts}
+\input{preamble/macros}
+
+\addbibresource{refs.bib}
+\makeindex[intoc]
+
+% Drafting aid for large books: uncomment to recompile only the listed
+% chapters while keeping page numbers and cross-references intact.
+% Comment it out again before a release build.
+% \includeonly{chapters/01-ky-hieu-va-bptt/ch}
+
+\begin{document}
+
+\frontmatter
+\input{frontmatter/titlepage}
+\input{frontmatter/copyright}
+\tableofcontents
+\input{frontmatter/preface}
+
+\mainmatter
+
+\part{Nền tảng}
+\include{chapters/01-ky-hieu-va-bptt/ch}
+
+\part{Gradient không đi xa được}
+\include{chapters/02-trieu-chung/ch}
+\include{chapters/03-chan-doan/ch}
+\include{chapters/04-lstm/ch}
+
+\part{Ánh xạ chuỗi sang chuỗi}
+\include{chapters/05-encoder-decoder/ch}
+\include{chapters/06-dong-chinh/ch}
+
+\part{Bỏ hẳn recurrence}
+\include{chapters/07-transformer/ch}
+\include{chapters/08-chi-phi-va-song-song/ch}
+\include{chapters/09-tien-huan-luyen/ch}
+
+\part{Ra khỏi ngôn ngữ}
+\include{chapters/10-bias-quy-nap/ch}
+\include{chapters/11-vit/ch}
+
+\part{Sau ViT, 2021 đến 2026}
+\include{chapters/12-chi-phi-bac-hai/ch}
+\include{chapters/13-vi-tri-va-ngu-canh/ch}
+\include{chapters/14-recurrence-quay-lai/ch}
+\include{chapters/15-thuc-te-trien-khai/ch}
+\include{chapters/16-con-lai-gi/ch}
+
+\appendix
+\include{backmatter/appendix-a-ky-hieu}
+\include{backmatter/appendix-b-thuat-ngu}
+\include{backmatter/appendix-c-dan-xuat}
+\include{backmatter/appendix-d-moi-truong}
+\include{backmatter/appendix-e-doc-paper}
+
+\backmatter
+\printbibliography[heading=bibintoc]
+\printindex
+
+\end{document}
