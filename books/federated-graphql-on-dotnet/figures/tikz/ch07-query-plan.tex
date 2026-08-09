@@ -1,0 +1,41 @@
+% The router's plan for { products { title price reviews { rating body } } },
+% drawn from the JSON the router returns under X-WG-Include-Query-Plan.
+% Referenced from chapter 07. Bare tikzpicture; the figure environment, caption
+% and label live at the call site.
+%
+% The dependency arrow runs underneath the two fetch nodes rather than between
+% them: its label is wider than the gap and overprinted the boxes.
+\begin{tikzpicture}[
+    font=\small,
+    fetch/.style={draw, rounded corners=2pt, minimum width=38mm,
+                  minimum height=13mm, align=center},
+    root/.style={draw, rounded corners=2pt, minimum width=28mm,
+                 minimum height=8mm, align=center, fill=black!8},
+    tree/.style={-{Stealth[length=2mm]}},
+    dep/.style={-{Stealth[length=2mm]}, dashed},
+    lbl/.style={font=\scriptsize, align=center, fill=white, inner sep=2pt},
+    note/.style={font=\scriptsize\itshape, align=center}
+  ]
+
+  \node[root] (seq) at (0,0) {\code{Sequence}};
+
+  \node[fetch] (f0) at (-3.6,-2.0)
+    {\code{fetch 0}\\ \code{Single}\\ subgraph \code{catalog}};
+  \node[fetch] (f1) at (3.6,-2.0)
+    {\code{fetch 1}\\ \code{BatchEntity}\\ subgraph \code{reviews}};
+
+  \draw[tree] (seq.south) -- (-3.6,-0.75) -- (f0.north);
+  \draw[tree] (seq.south) -- (3.6,-0.75) -- (f1.north);
+
+  % The dependency is what forces the order. Everything else is structure.
+  \draw[dep] (-3.6,-2.65) -- (-3.6,-3.5) -- (3.6,-3.5) -- (3.6,-2.65);
+  \node[lbl] at (0,-3.5)
+    {\code{dependsOnFetchIds: [0]}\\
+     \code{Product.id}, \code{isKey: true}};
+
+  \node[note, anchor=north, text width=115mm] at (0,-4.1)
+    {Solid lines are the plan's own structure. The dashed line is the data
+     dependency underneath it: fetch 1 cannot be sent until fetch 0 has
+     answered, because the key it needs is in that answer.};
+
+\end{tikzpicture}

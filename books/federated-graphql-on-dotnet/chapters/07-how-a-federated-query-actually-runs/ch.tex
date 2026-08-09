@@ -1,7 +1,32 @@
 \chapter{How a Federated Query Actually Runs}
 \label{ch:how-a-federated-query-actually-runs}
 
-\emph{Not yet drafted.} Planned scope: Query plans, representations, the \code{\_entities} and \code{\_service} fields, and the exact HTTP traffic between router and subgraph, captured live in Postman.
+Chapter~\ref{ch:the-federation-model} described a machine without ever starting
+it. Entities, keys, directives, composition: all of it true, none of it running.
+This chapter starts the machine and reads what comes out of it, message by
+message, with the bodies printed in full.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/07-how-a-federated-query-actually-runs/01-section-name}
+To do that I need a federated graph, and Mosaic is not one yet. It becomes one
+in chapter~\ref{ch:the-first-cut-extracting-catalog}, and spending that
+extraction here would cost that chapter its subject. So this chapter runs on the
+smallest arrangement that can show every message: two subgraphs sharing a single
+entity, a router in front of them, three products and three reviews. It lives in
+\code{samples/federated-wire/} in the companion repository, at tag \code{ch07},
+and it exists for no other purpose than to be watched.
+
+What makes it worth watching is that both subgraphs print everything. Every
+request they receive and every response they send goes to the console, headers
+and bodies included, through ASP.NET Core's own HTTP logging middleware rather
+than through a proxy sitting in the middle. So the listings in this chapter are
+not a reconstruction of what the router probably sent. They are what the server
+process received, read from inside the server. Twice in what follows the
+documentation and the running system disagree, and both times the console is
+what I believed.
+
+\input{chapters/07-how-a-federated-query-actually-runs/01-three-processes}
+\input{chapters/07-how-a-federated-query-actually-runs/02-what-a-subgraph-owes}
+\input{chapters/07-how-a-federated-query-actually-runs/03-the-plan}
+\input{chapters/07-how-a-federated-query-actually-runs/04-representations}
+\input{chapters/07-how-a-federated-query-actually-runs/05-the-traffic-in-full}
+\input{chapters/07-how-a-federated-query-actually-runs/06-what-the-second-hop-costs}
+\input{chapters/07-how-a-federated-query-actually-runs/07-your-turn}

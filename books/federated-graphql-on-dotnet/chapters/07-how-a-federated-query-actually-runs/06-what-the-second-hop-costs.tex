@@ -1,0 +1,78 @@
+\section{What the Second Hop Costs}
+\label{sec:ch07-what-the-second-hop-costs}
+\index{latency!federated query|(}%
+
+Everyone who meets federation asks the same question, and it is a fair one: what
+does all this cost? The sample can answer it, in the narrow way a sample can.
+
+I measured four things on one machine in one sitting: five warm-up requests then
+fifty timed ones for each row, timed with \code{curl}'s own
+\code{\%\{time\_total\}}. Medians, in milliseconds.
+
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+ & min & median & p90 & max \\
+\midrule
+Router, both subgraphs   & 4.14 & 4.69 & 5.84 & 24.14 \\
+Router, catalog only     & 2.87 & 3.27 & 3.82 & 20.77 \\
+Catalog, direct          & 0.70 & 0.81 & 0.96 &  1.43 \\
+Reviews \code{\_entities}, direct & 0.78 & 0.92 & 1.07 & 21.12 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Three of the four maxima are around 20 milliseconds and they are the machine,
+not the graph: each of those rows has exactly one such outlier and nothing else
+near it. Read the medians.
+
+\index{latency!second subgraph hop}%
+\medskip\noindent\textbf{The second hop costs about 1.4 milliseconds.} That is
+4.69 against 3.27, the same router answering the same root field with and
+without a selection that crosses a boundary. It lines up with what the Reviews
+subgraph costs when I ask it directly, 0.92, which is the result you would
+predict: the second fetch is a serial dependency, so its cost adds rather than
+hides behind anything.
+
+\index{latency!router overhead}%
+\medskip\noindent\textbf{The router costs more than the second subgraph does.}
+3.27 against 0.81 for the same single-subgraph answer. Roughly two and a half
+milliseconds of parsing, normalisation, planning, HTTP client work and container
+networking, against one and a half for an entire extra service.
+
+\medskip
+I did not expect the second one and I have stopped being surprised by it. The
+mental model most people arrive with says a federated query is expensive because
+it fans out, so the thing to optimise is the number of subgraphs a query
+touches. On these numbers that instinct would send you after the smaller half of
+the cost.
+
+\index{latency!measurement caveats}%
+Three things bound how far those numbers travel. The router runs in a container
+and reaches the subgraphs across Docker's bridge to the host, while the direct
+rows are two processes talking on one host, so the router's 2.5 milliseconds
+includes a network hop the subgraphs do not pay and is an upper bound rather
+than a measurement of its own work. The subgraphs answer out of dictionaries
+holding three products, with no database underneath and nothing large to
+serialise. And the machine is mine, which
+chapter~\ref{ch:data-without-the-n-plus-1} already established is worth saying
+out loud, because it measured the same code at ten milliseconds one afternoon
+and twenty the next purely because something else was running.
+
+What survives to your hardware is the ratio and its direction, not the
+milliseconds. A cross-boundary hop against two tiny in-memory subgraphs is
+cheap; the fixed cost of having a router at all is not, and it is paid by every
+query including the ones that never leave one subgraph.
+
+\index{query plan!as a cost estimate}%
+That has a practical consequence worth carrying into
+chapter~\ref{ch:enter-the-router}. The plan of
+section~\ref{sec:ch07-the-plan} tells you the number of hops before you deploy
+anything, and counting them costs nothing. It will not tell you what any of
+them cost. A plan with two
+fetches where one of them queries a table nobody indexed is a fast plan over a
+slow query, and the plan cannot see the difference.
+Chapter~\ref{ch:resilience-and-performance} is where the two are measured
+together.
+
+\index{latency!federated query|)}%

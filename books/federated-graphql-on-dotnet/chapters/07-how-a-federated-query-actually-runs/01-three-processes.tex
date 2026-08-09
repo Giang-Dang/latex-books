@@ -1,0 +1,193 @@
+\section{Three Processes and One Query}
+\label{sec:ch07-three-processes}
+\index{federated-wire sample|(}%
+
+The sample is two ASP.NET Core projects and one container. Catalog listens on
+port 5201 and owns \code{Product}. Reviews listens on 5202 and knows nothing
+about products except their identifiers. The Cosmo Router listens on 3002 and
+has never met either of them until it is handed a file.
+
+Every capture in this chapter comes from those three at fixed versions:
+HotChocolate 16.6.0 in both subgraphs, Cosmo Router 0.337.1 in the container,
+and wgc 0.129.7 doing the composition. Router output in particular is
+version-specific, and the plan of section~\ref{sec:ch07-the-plan} is a Cosmo
+artefact rather than anything the Federation specification defines.
+
+\index{subgraph!Catalog sample}%
+Here is the part of Catalog's schema that is its own work. Everything the
+federation package adds around it is section~\ref{sec:ch07-what-a-subgraph-owes}:
+
+\begin{graphqlsdl}
+type Query {
+  products: [Product!]!
+  productById(id: ID!): Product
+}
+
+type Product @key(fields: "id") {
+  id: ID!
+  title: String!
+  price: Decimal!
+}
+\end{graphqlsdl}
+
+\index{subgraph!Reviews sample}%
+And here is Reviews:
+
+\begin{graphqlsdl}
+type Query {
+  reviews: [Review!]!
+}
+
+type Product @key(fields: "id") {
+  id: ID!
+  reviews: [Review!]!
+}
+
+type Review {
+  id: ID!
+  rating: Int!
+  body: String!
+}
+\end{graphqlsdl}
+
+What matters here is the overlap. \code{Product} appears twice,
+with the same key both times, and the two declarations share exactly one field
+between them. Catalog has never heard of a review. Reviews has never heard of a
+title.
+
+\code{Review} carries no \code{@key}, and that is deliberate. It is a value type
+in the sense chapter~\ref{ch:the-federation-model} gave the term: it lives in one
+subgraph, no other service contributes to it, and the router has no way to ask
+for one by identity. Section~\ref{sec:ch07-representations} shows what happens
+when you ask anyway.
+
+\subsection*{Composing them}
+
+\index{composition!wgc router compose@\code{wgc router compose}}%
+The router needs one file, and one command produces it:
+
+\begin{minted}{text}
+npx wgc router compose -i samples/federated-wire/graph.yaml \
+                       -o samples/federated-wire/supergraph.json
+\end{minted}
+
+\code{graph.yaml} is the composer's input: a name, a routing URL and a schema
+file for each subgraph.
+
+\begin{minted}{yaml}
+version: 1
+
+subgraphs:
+  - name: catalog
+    routing_url: http://host.docker.internal:5201/graphql
+    schema:
+      file: ../../schema/samples/wire-catalog.graphql
+
+  - name: reviews
+    routing_url: http://host.docker.internal:5202/graphql
+    schema:
+      file: ../../schema/samples/wire-reviews.graphql
+\end{minted}
+
+\index{Cosmo!local composition}%
+The Cosmo documentation is explicit that this command \enquote{does not interact
+with the control plane and completely runs
+locally}~\autocite{cosmo2026routercompose}. It needs no account and contacts no
+registry. Two files in, one file out.
+
+That output file is not a supergraph schema, which is what I expected the first
+time. It is a \emph{router execution config}: eight kilobytes of JSON for these
+two subgraphs, with the supergraph's SDL as one string inside it alongside the
+datasource configuration the router's query planner needs.
+Chapter~\ref{ch:composition} takes it apart. For now the only interesting thing
+about it is the version it carries:
+
+\begin{minted}{json}
+"version": "00000000-0000-0000-0000-000000000000",
+"compatibilityVersion": "1:0.63.2"
+\end{minted}
+
+All zeroes, because a locally composed config has no registry to get a version
+from. The router logs that value at startup as its \code{config\_version}, which
+is a small thing to know before you go looking for why every graph in your
+development environment claims to be the same one.
+
+\subsection*{Starting the router without an account}
+
+\index{Cosmo!router configuration}%
+The router runs from the repository's \code{docker-compose.yml}, behind a
+compose profile so that nothing which starts Mosaic starts this. Three
+environment variables:
+
+\begin{minted}{yaml}
+EXECUTION_CONFIG_FILE_PATH: "/etc/wire/supergraph.json"
+DEV_MODE: "true"
+LISTEN_ADDR: "0.0.0.0:3002"
+\end{minted}
+
+There is no \code{GRAPH\_API\_TOKEN}. The documentation says it \enquote{can be
+empty when providing a static router configuration \dots\ but will disable the
+default telemetry stack}~\autocite{cosmo2026routerconfig}, and the router says
+the same thing rather more loudly on the way up:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+WARN core/router.go:464 No graph token provided. The following Cosmo Cloud
+features are disabled. Not recommended for Production.
+{"features": ["Schema Usage Tracking", "Persistent operations",
+              "Cosmo Cloud Tracing", "Cosmo Cloud Metrics"]}
+WARN core/router.go:536 Development mode enabled. This should only be used for
+testing purposes
+INFO core/router.go:1722 Static execution config provided. Polling and watching
+is disabled. Updating execution config is only possible by restarting the router
+\end{minted}
+
+\code{DEV\_MODE} is not decoration. It turns on Advanced Request Tracing without
+an authentication check in front of it, and the query plans of
+section~\ref{sec:ch07-the-plan} are part of that. Without it the header this
+chapter leans on does nothing.
+
+The third warning is the one that shapes the rest of the chapter. A statically
+configured router neither polls nor watches, and it never asks the subgraphs
+anything. Everything it knows about them, it read out of that file.
+
+\subsection*{The query}
+
+\index{federated query!first}%
+With all three running, the client sends one document to one endpoint:
+
+\begin{minted}{graphql}
+{
+  products {
+    title
+    price
+    reviews {
+      rating
+      body
+    }
+  }
+}
+\end{minted}
+
+Neither service can answer that. Catalog has the titles and prices and no
+reviews; Reviews has the reviews and cannot list a product. The response comes
+back anyway:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"products":[
+  {"title":"Oak dining table","price":749.00,"reviews":[
+     {"rating":5,"body":"Survived a house move."},
+     {"rating":3,"body":"Arrived with a chipped leg."}]},
+  {"title":"Linen armchair","price":429.00,"reviews":[
+     {"rating":4,"body":"Firmer than it looks."}]},
+  {"title":"Brass floor lamp","price":189.00,"reviews":[]}]}}
+\end{minted}
+
+That is the router's own output with line breaks added; it arrives as one line.
+
+The third product has never been reviewed, and the empty list is worth noticing
+now because it costs a round trip later. Reviews was asked about it and answered
+\enquote{none}, which is a different thing from not being asked.
+
+Everything from here is the mechanism behind that answer.
+
+\index{federated-wire sample|)}%

@@ -1,0 +1,230 @@
+\section{The Plan}
+\label{sec:ch07-the-plan}
+\index{query plan|(}%
+
+Between the document arriving and the first subgraph being called, the router
+decides what it is going to do. That decision is the query plan, and Cosmo will
+show it to you.
+
+\index{query plan!X-WG-Include-Query-Plan header@\code{X-WG-Include-Query-Plan} header}%
+Three request headers are involved~\autocite{cosmo2026queryplan}:
+
+\begin{minted}{text}
+X-WG-Include-Query-Plan: true
+X-WG-Skip-Loader: true
+X-WG-Disable-Tracing: true
+\end{minted}
+
+\medskip\noindent\textbf{Show me the plan.} The first puts it under
+\code{extensions.queryPlan}, beside the data.
+
+\medskip\noindent\textbf{Do not run it.} The second stops the router executing
+the plan it just made. \code{data} comes back null and the subgraphs are never
+called, which makes asking for a plan free.
+
+\medskip\noindent\textbf{Keep it out of the traces.} The third keeps a plan
+request out of the router's own tracing, so that reading a plan does not show up
+in your metrics as traffic.
+
+\medskip
+The first two need the development mode of
+section~\ref{sec:ch07-three-processes}; I did not test the third without it.
+Send the chapter's query with both set and this comes back, whitespace collapsed
+inside the embedded query strings and nothing else touched.
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{
+  "version": "1",
+  "kind": "Sequence",
+  "children": [
+    {
+      "kind": "Single",
+      "fetch": {
+        "kind": "Single",
+        "subgraphName": "catalog",
+        "subgraphId": "0",
+        "fetchId": 0,
+        "query": "{ products { title price __typename id } }"
+      }
+    },
+    {
+      "kind": "Single",
+      "fetch": {
+        "kind": "BatchEntity",
+        "path": "products",
+        "subgraphName": "reviews",
+        "subgraphId": "1",
+        "fetchId": 1,
+        "dependsOnFetchIds": [0],
+        "representations": [
+          {
+            "kind": "@key",
+            "typeName": "Product",
+            "fragment": "fragment Key on Product { __typename id }"
+          }
+        ],
+        "query": "query($representations: [_Any!]!) { _entities(representations: $representations) { ... on Product { __typename reviews { rating body } } } }",
+        "dependencies": [
+          {
+            "coordinate": { "typeName": "Product", "fieldName": "reviews" },
+            "isUserRequested": true,
+            "dependsOn": [
+              {
+                "fetchId": 0,
+                "subgraph": "catalog",
+                "coordinate": { "typeName": "Product", "fieldName": "id" },
+                "isKey": true,
+                "isRequires": false
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "normalizedQuery": "{products {title price reviews {rating body}}}"
+}
+\end{minted}
+
+\index{query plan!Sequence node@\code{Sequence} node}%
+The outer \code{kind} is \code{Sequence}, which is the plan saying these run in
+order rather than at once. There is a \code{Parallel} node as well, and this
+query does not get one, for a reason the plan itself gives a few lines further
+down. Figure~\ref{fig:ch07-query-plan} is the same structure without the
+punctuation.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch07-query-plan}
+  \caption{Two fetches under one \code{Sequence}. The tree says what runs; the
+  \code{dependencies} array says why it cannot run any other way. Finding the
+  dashed line is how you count a query's round trips before running it, which
+  is not the same as knowing what they cost.}
+  \label{fig:ch07-query-plan}
+\end{figure}
+
+\index{query plan!BatchEntity fetch@\code{BatchEntity} fetch}%
+Fetch 0 is a \code{Single}: an ordinary query, sent to one subgraph, depending
+on nothing. Fetch 1 is a \code{BatchEntity}, which is the plan's name for an
+\code{\_entities} call, and the \code{path} field says where in the response its
+results belong. \code{dependsOnFetchIds: [0]} is the ordering constraint, and
+\code{representations} describes what fetch 1 will send: for every
+\code{Product} at that path, \code{\_\_typename} and \code{id}, written as a
+fragment.
+
+\index{query plan!dependencies array@\code{dependencies} array}%
+The \code{dependencies} array is the part I did not expect and now look at
+first. It is the planner showing its work: the client asked for
+\code{Product.reviews}, so \code{isUserRequested} is true, and answering it
+depends on \code{Product.id} from subgraph \code{catalog}, which is a key rather
+than a \code{@requires}. Two booleans and a coordinate, and between them they
+say exactly why there are two round trips instead of one. When a query is
+slower than I expected, this array is where I start.
+
+\subsection*{Where \code{\_\_typename} and \code{id} came from}
+
+Look at what fetch 0 sends:
+
+\begin{minted}{graphql}
+{ products { title price __typename id } }
+\end{minted}
+
+The client asked for \code{title} and \code{price}. It did not ask for
+\code{\_\_typename} and it did not ask for \code{id}. The router added both,
+because fetch 1 cannot be built without them, and the fragment under
+\code{representations} is the shopping list.
+
+That is easy to state and easy to half-believe, so here is the control. Same
+root field, same subgraph, one selection removed:
+
+\begin{minted}{graphql}
+{ products { title price } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{
+  "kind": "Sequence",
+  "children": [
+    { "kind": "Single",
+      "fetch": { "kind": "Single", "subgraphName": "catalog", "fetchId": 0,
+                 "query": "{ products { title price } }" } }
+  ],
+  "normalizedQuery": "{products {title price}}"
+}
+\end{minted}
+
+One child, and no key. Nothing crosses a boundary, so the router fetches nothing
+to cross it with. The extra fields are not a habit the router has; they are a
+dependency it worked out.
+
+The mirror image makes the same point from the other side. Ask for reviews and
+nothing else:
+
+\begin{minted}{graphql}
+{ products { reviews { rating } } }
+\end{minted}
+
+Catalog is still called, and called for nothing whatsoever that the client
+wanted:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+Single       catalog   { products { __typename id } }
+BatchEntity  reviews   query($representations: [_Any!]!) { _entities(...) }
+\end{minted}
+
+A whole subgraph round trip to learn three identifiers. There is no way around
+it: \code{products} is Catalog's field, and the list of which products exist is
+Catalog's answer to give. This is the shape that makes people ask whether
+federation is worth it, and
+chapter~\ref{ch:do-you-actually-need-federation} takes the question seriously.
+What is worth saying here is that the cost is visible before you deploy
+anything. The plan is a build-time artefact of a query, and you can read it in
+Postman.
+
+\subsection*{When the router does not wait}
+
+\index{query plan!Parallel node@\code{Parallel} node}%
+The \code{Sequence} above is not the router being cautious. Ask for two root
+fields that owe each other nothing:
+
+\begin{minted}{graphql}
+{ products { title } reviews { rating } }
+\end{minted}
+
+and the two fetches land under a different node:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{
+  "kind": "Sequence",
+  "children": [
+    { "kind": "Parallel",
+      "children": [
+        { "kind": "Single",
+          "fetch": { "subgraphName": "catalog", "fetchId": 0,
+                     "query": "{ products { title } }" } },
+        { "kind": "Single",
+          "fetch": { "subgraphName": "reviews", "fetchId": 1,
+                     "query": "{ reviews { rating } }" } }
+      ] }
+  ]
+}
+\end{minted}
+
+Neither fetch has a \code{dependsOnFetchIds}, so neither has to wait, and both
+go at once. That is the rule the two plans share: the router serialises exactly
+as much as the data forces it to, and a \code{Sequence} of two children means it
+found a reason.
+
+\subsection*{The plan is not the traffic}
+
+One caution before the next section. Everything above is the router's account of
+what it intends to do, printed by the router. It is not evidence that any of it
+happened, and with \code{X-WG-Skip-Loader} set it is evidence that none of it
+did.
+
+Section~\ref{sec:ch07-the-traffic-in-full} reads the other end: what the
+subgraphs actually received. The two agree in this sample, and I only know that
+because the repository's verification script checks both and would fail if they
+stopped agreeing.
+
+\index{query plan|)}%

@@ -811,3 +811,65 @@
               transports. Mosaic uses the custom subscribe resolver form rather
               than a Topic placeholder}
 }
+
+% --- Chapter 07: how a federated query actually runs --------------------------
+
+@online{apollo2026subgraphspec,
+  author   = {{Apollo GraphQL}},
+  title    = {Apollo {Federation} subgraph specification},
+  organization = {Apollo GraphOS documentation},
+  year     = {2026},
+  url      = {https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/reference/subgraph-spec},
+  urldate  = {2026-08-09},
+  addendum = {Source for the required subgraph schema additions: Query.\_service
+              and the \_Service type, Query.\_entities, the \_Any scalar, the
+              \_Entity union, and the rules a representation must satisfy}
+}
+
+@online{cosmo2026routercompose,
+  author   = {{WunderGraph}},
+  title    = {wgc router compose},
+  organization = {WunderGraph Cosmo documentation},
+  year     = {2026},
+  url      = {https://cosmo-docs.wundergraph.com/cli/router/compose},
+  urldate  = {2026-08-09},
+  addendum = {CLI reference for local composition. Source for the input file
+              shape and for the statement that the command does not interact
+              with the control plane. Checked against wgc 0.129.7}
+}
+
+@online{cosmo2026queryplan,
+  author   = {{WunderGraph}},
+  title    = {Query plan},
+  organization = {WunderGraph Cosmo documentation},
+  year     = {2026},
+  url      = {https://cosmo-docs.wundergraph.com/router/query-plan},
+  urldate  = {2026-08-09},
+  addendum = {Names the X-WG-Include-Query-Plan, X-WG-Skip-Loader and
+              X-WG-Disable-Tracing headers. It does not document the shape of
+              the plan the router returns; the field names quoted in this
+              chapter were read out of router 0.337.1}
+}
+
+@online{cosmo2026routerconfig,
+  author   = {{WunderGraph}},
+  title    = {Router configuration},
+  organization = {WunderGraph Cosmo documentation},
+  year     = {2026},
+  url      = {https://cosmo-docs.wundergraph.com/router/configuration},
+  urldate  = {2026-08-09},
+  addendum = {Source for the graph token being optional when a static
+              execution config is supplied, and for what development mode
+              enables}
+}
+
+@online{cosmo2026headers,
+  author   = {{WunderGraph}},
+  title    = {Subgraph request headers operations},
+  organization = {WunderGraph Cosmo documentation},
+  year     = {2026},
+  url      = {https://cosmo-docs.wundergraph.com/router/proxy-capabilities/request-headers-operations},
+  urldate  = {2026-08-09},
+  addendum = {Source for the propagate operation and for the statement that no
+              headers are forwarded to subgraphs by default}
+}

@@ -1,0 +1,196 @@
+\section{Representations}
+\label{sec:ch07-representations}
+\index{representations|(}%
+
+A representation is how the router names one instance of an entity to a subgraph
+that has never seen it. It is a JSON object with a \code{\_\_typename} and the
+fields of a \code{@key}, and nothing else:
+
+\begin{minted}{json}
+{ "__typename": "Product", "id": "1" }
+\end{minted}
+
+That is the whole idea. Reviews holds no products, has no product table and
+cannot list one. What it can do is take that object and answer questions about
+the thing it names.
+
+\index{federation!entities field@\code{\_entities} field}%
+The field that accepts them is \code{\_entities}, and you can send it by hand.
+This is the request the router makes for the chapter's query, typed into Postman
+instead:
+
+\begin{minted}{graphql}
+query ($representations: [_Any!]!) {
+  _entities(representations: $representations) {
+    ... on Product {
+      __typename
+      reviews { rating body }
+    }
+  }
+}
+\end{minted}
+
+\begin{minted}{json}
+{
+  "representations": [
+    { "__typename": "Product", "id": "1" },
+    { "__typename": "Product", "id": "2" },
+    { "__typename": "Product", "id": "3" }
+  ]
+}
+\end{minted}
+
+Three things about that document are worth naming before the answer.
+
+\index{representations!in variables}%
+The representations travel in a \emph{variable}, not inlined into the query
+text. That is what lets the router compile one document and reuse it for a batch
+of any size, and it is why the query the router sends for three products is
+character for character the query it would send for three hundred.
+
+The selection set is inside an inline fragment on \code{Product}, because
+\code{\_entities} returns \code{[\_Entity]}, and \code{\_Entity} is a union. Every
+selection on it has to say which member it is for. A query touching two entity
+types in one call carries two fragments.
+
+And \code{\_Any} is a scalar, which means the representations are not validated
+against an input type. The specification puts the rules in prose instead: a
+representation must carry \code{\_\_typename}, and it must carry every field named
+in the \code{@key} it is standing in for~\autocite{apollo2026subgraphspec}. Get
+that wrong and you find out at runtime.
+
+\subsection*{The answer is positional}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"_entities":[
+  {"__typename":"Product","reviews":[
+     {"rating":5,"body":"Survived a house move."},
+     {"rating":3,"body":"Arrived with a chipped leg."}]},
+  {"__typename":"Product","reviews":[
+     {"rating":4,"body":"Firmer than it looks."}]},
+  {"__typename":"Product","reviews":[]}
+]}}
+\end{minted}
+
+Three representations in, three entities out, in the same order. There is no
+identifier in the response tying an answer back to its representation, and there
+does not need to be: answer $n$ belongs to representation $n$. That is the
+contract, and it is also the reason a subgraph must never reorder or deduplicate
+the list it was handed.
+
+Product 3 has no reviews and its slot holds an empty list. It was still asked
+about, and it still cost a slot in the batch.
+
+\index{HotChocolate!EntitiesResolver@\code{EntitiesResolver}}%
+Inside HotChocolate, \code{EntitiesResolver.ResolveAsync} is what runs this. Read
+at tag \code{16.6.0}, commit \code{8fea46e}: it clones the resolver context once
+per representation, starts every reference resolver as its own task, and awaits
+them all afterwards. The representations in one call are resolved concurrently,
+not in a loop. If one of them throws, the error is reported at path
+\code{\_entities[n]} and that slot becomes null while the rest of the list
+survives, which is the behaviour the specification's nullable
+\code{[\_Entity]} return type exists to permit.
+
+\subsection*{The subgraph will answer for things that do not exist}
+
+There is no product 9. Ask anyway:
+
+\begin{minted}{json}
+{ "representations": [ { "__typename": "Product", "id": "9" } ] }
+\end{minted}
+
+\begin{minted}{json}
+{ "data": { "_entities": [ { "id": "9", "reviews": [] } ] } }
+\end{minted}
+
+No error and no null: a perfectly ordinary \code{Product} with no reviews on it.
+
+This is chapter~\ref{ch:the-federation-model}'s ownership rule arriving on the
+wire, and it is sharper here than it was in the abstract. Reviews' reference
+resolver is three lines long:
+
+\begin{minted}{csharp}
+[ReferenceResolver]
+public static Product ResolveById(string id)
+    => new() { Id = id };
+\end{minted}
+
+It takes a key and builds an object from it. It does not check that the product
+exists, because it has no way to check: Catalog is the authority on which
+products exist and Reviews has never been introduced to it. Asking would mean a
+subgraph calling another subgraph behind the router's back, which is the one
+thing federation is arranged to avoid.
+
+In this direction it is harmless, because the router only ever sends keys that
+Catalog just handed it. It stops being harmless the moment a client can reach
+\code{\_entities} directly, and
+chapter~\ref{ch:security-hardening} is where the subgraph stops being
+reachable from outside the cluster.
+
+\subsection*{A representation the subgraph cannot resolve}
+
+\code{Review} has no \code{@key}, so it is not in the \code{\_Entity} union and
+there is no reference resolver for it anywhere. Send one:
+
+\begin{minted}{json}
+{ "representations": [ { "__typename": "Review", "id": "r1" } ] }
+\end{minted}
+
+\begin{minted}{json}
+{
+  "errors": [ { "message": "Unexpected Execution Error", "path": ["_entities"] } ],
+  "data": null
+}
+\end{minted}
+
+HTTP 200, and a message that tells you nothing at all. I am printing it because
+it is what you will get, not because it is any good.
+
+\code{EntityResolver\_NoResolverFound} is what HotChocolate threw inside, and
+that exception knows exactly what went wrong. What survives to the client is the
+masked form, and the mask is the right default for a production subgraph even
+when it is infuriating in development.
+
+\index{federation!diagnosing a missing key}%
+So learn the shape rather than the message. \enquote{Unexpected Execution Error}
+at path \code{\_entities}, on a subgraph that is otherwise healthy, means the
+router asked for a type this subgraph cannot resolve by key. Three causes, in
+the order I check them: the type has no \code{@key} here; it has one but no
+reference resolver; or it has both and is unreachable from any root field, which
+is section~\ref{sec:ch07-what-a-subgraph-owes}'s trap wearing a different hat.
+\code{\_service} answers all three in one request.
+
+\subsection*{Verify it in Postman}
+
+\index{Postman!federated-wire collection}%
+Every response in this section and the last one is a request in the companion
+repository's federated-wire collection, and the collection is worth running
+rather than reading. Both files live in \code{postman/}:
+
+\begin{minted}{text}
+federated-wire.postman_collection.json
+federated-wire.local.postman_environment.json
+\end{minted}
+
+The environment carries the three URLs. Import both and run the folder.
+
+Nine requests, thirty-seven assertions. Three of them go straight to a subgraph
+on its own port, before any router is involved: what Catalog publishes, what
+Reviews publishes, and the \code{\_entities} call above with its three
+representations. Two more are the failure cases: the product that does not exist
+and the type that cannot be resolved. The last three go through the router.
+
+\begin{minted}{text}
+npx newman run postman/federated-wire.postman_collection.json \
+    -e postman/federated-wire.local.postman_environment.json
+\end{minted}
+
+\index{Postman!assertions on a plan}%
+The assertions worth stealing are on the plan rather than the data. One request
+checks that the second fetch is a \code{BatchEntity} sent to \code{reviews},
+that its \code{dependsOnFetchIds} names the first fetch, and that the first
+fetch's query contains \code{\_\_typename} and \code{id}. Another sends a query
+that crosses no boundary and asserts the opposite: one fetch, and neither field
+present. A test on the answer would pass in both cases and tell you nothing.
+
+\index{representations|)}%

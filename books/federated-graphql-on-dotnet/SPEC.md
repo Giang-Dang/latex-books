@@ -11,14 +11,17 @@ Author: Giang Dang
 
 ## Status
 
-Chapters 01 to 06 drafted (06 on 2026-08-09). The companion repo is public at
+Chapters 01 to 07 drafted (07 on 2026-08-09). The companion repo is public at
 https://github.com/Giang-Dang/mosaic-graph, tagged `ch02`, `ch03`, `ch04-ef`,
-`ch04` and `ch05`. Mosaic now has global object identification, a connection on
-`Product.reviews`, a mutation with typed domain errors, one subscription, and a
-deprecated `products`. The catalog query still costs 146 resolvers and 3
-statements. Chapter 06 shipped no companion code (conceptual chapter, like 01).
-Next action: chapter 07, how a federated query actually runs, which needs the
-router and a running federated graph; nothing from ch06 blocks it.
+`ch04`, `ch05` and `ch07`. Mosaic itself is unchanged since `ch05`: global
+object identification, a connection on `Product.reviews`, a mutation with typed
+domain errors, one subscription, a deprecated `products`, and a catalog query
+costing 146 resolvers and 3 statements. Chapter 06 shipped no companion code
+(conceptual chapter, like 01); chapter 07 shipped `samples/federated-wire/`,
+which is two subgraphs and the Cosmo Router and touches no Mosaic code.
+Next action: chapter 08, the first cut, which extracts Catalog out of Mosaic for
+real. It owes an answer to the open item about `[ReferenceResolver]` and the
+source generator.
 
 ## Decision log
 
@@ -70,6 +73,9 @@ is re-opened only by recording what changed and why, in the row.
 | 41 | A verification run starts from a dropped and reseeded database | The Postman collection submits a review from ch 05 on, so a run leaves the database changed and the next run would find 121 reviews. Both scripts now start the service with `MOSAIC_RESET_DATABASE=1` and the seeder drops the schema first. The alternative, loosening the seeded-count assertions, is banned by this book's own rules. Cost is a second or two per run; the check is that `verify.ps1` passes twice in a row. Settled 2026-08-09. |
 | 42 | Node resolvers use the source generator's `[NodeResolver]`, not the documented `[Node]` | The v16 documentation describes only the reflection route, with a method-naming convention resolved at schema build. The generator route is undocumented and enforces its rules at compile time instead: HC0104 (first parameter must be named `id`), HC0092 (no `[ID]` on it), HC0093 (must be public), HC0083 (only one field argument). Mosaic uses it because every domain type is already an `[ObjectType<T>]` partial class, so the node resolver sits in the folder of the domain that owns the type. Settled 2026-08-09. |
 | 43 | The subscription is deliberately outside the verification gate | Newman speaks request and response; a subscription is a connection that stays open. Rather than build a second harness for one field, chapter 05 states plainly in its own prose that the two SSE transcripts it prints are the only evidence nothing re-checks, and that a later chapter breaking `onReviewAdded` would not fail the gate. Chapter 19 owns subscription testing and owes this a fix. Settled 2026-08-09. |
+| 44 | Chapter 07 runs on a sample, not on Mosaic | The chapter needs a working federated graph, and it sits before ch 08 extracts Catalog and before ch 10 sets the router up properly. Federating Mosaic here would spend ch 08's subject. So `samples/federated-wire/` is two tiny subgraphs sharing one `Product` entity plus the Cosmo Router, three products and three reviews, existing only to be watched. This is decision 31 applied at a larger size: the sample is bigger than `resolver-scopes` but the rule is the same, and `Mosaic.Api` is untouched at tag `ch07`. Settled 2026-08-09. |
+| 45 | Wire traffic is captured inside the subgraphs, not in Postman | The approved ch 07 TOC line said "captured in Postman". Postman cannot see a request the router makes to a subgraph; it can only see the two ends. Both sample subgraphs therefore call ASP.NET Core's `UseHttpLogging` with request and response bodies enabled, and every wire listing in the chapter is what the server process read. Two configuration details are load-bearing: `application/graphql-response+json` has to be added to `MediaTypeOptions` or bodies are dropped, and headers outside the default allow-list print as `[Redacted]` rather than vanishing, which is what makes "the router forwarded nothing" a measurement instead of an inference. Postman keeps decision 13's job: `_service` and `_entities` at the subgraph, and assertions on the router's query plan. TOC line updated in the same session. Settled 2026-08-09. |
+| 46 | The federated-wire gate asserts the request bodies, not just the answers | `verify.ps1` and `verify.sh` compose with wgc, start both subgraphs and the router, check that what each subgraph publishes through `_service` is the committed file the composer reads, run a nine-request collection, and then grep the subgraph consoles for the exact two request bodies chapter 07 prints. The last check is the one that matters: three separate `_entities` calls instead of one batch would give the client an identical answer and pass every assertion on the data. A stale listing in the chapter now fails the build. Settled 2026-08-09. |
 
 ## Version baseline
 
@@ -81,7 +87,9 @@ that depend on them.
 |-----------|---------|
 | HotChocolate / HotChocolate.ApolloFederation | 16.6.0 (2026-08-05). Ships net8.0, net9.0, net10.0 and net11.0 assets; "targets .NET 8+" understates it. Re-confirmed from the nuspec 2026-08-08. Tag `16.6.0` resolves to commit `8fea46e9560c973eba1b9c899937f9a6bb02aaf9`; the tree is cloned at F:/repo/graphql-platform for the source-guided chapters (decision 32). |
 | HotChocolate.Templates | 16.6.0. Note the id: `ChilliCream.HotChocolate.Templates` does not exist. |
-| WunderGraph Cosmo (router, wgc CLI) | current as of Aug 2026 - pin exact versions when the companion repo is created |
+| WunderGraph Cosmo Router | 0.337.1 (2026-08-05), image `ghcr.io/wundergraph/cosmo/router:0.337.1`, pinned in the companion repo's docker-compose.yml. Composed execution configs carry `compatibilityVersion: "1:0.63.2"`. |
+| wgc (Cosmo CLI) | 0.129.7, pinned exactly in the companion repo's package.json beside newman |
+| Federation version HotChocolate 16.6.0 emits | v2.6. `FederationVersion.Default = Federation26`, `Latest = Federation27`, so 2.7 is the ceiling against a spec at v2.15. Measured in the published SDL; see the ch07 research file. |
 | ChilliCream Fusion (ch 27) | 16.5 |
 | Apollo Federation specification | v2.15 (LTS, Jul 2026) |
 | .NET | 10 (LTS) |
@@ -102,7 +110,7 @@ session. Chapter folders in chapters/ carry the same scope lines.
 ### Part II - Thinking in Entities
 
 6. **The Federation Model** - supergraph/subgraphs, entity ownership, the Apollo Federation v2 directive tour, composition rules conceptually
-7. **How a Federated Query Actually Runs** - query plans, representations, `_entities`/`_service`, exact router-subgraph HTTP traffic, captured in Postman
+7. **How a Federated Query Actually Runs** - query plans, representations, `_entities`/`_service`, exact router-subgraph HTTP traffic captured inside the subgraphs; `_entities` and `_service` exercised from Postman
 8. **The First Cut: Extracting Catalog** - HotChocolate.ApolloFederation, reference resolvers, extending foreign entities; testing a naked subgraph in Postman before any router exists
 9. **Composition** - satisfiability, reading composition errors, `wgc router compose` (router-only), supergraph anatomy
 10. **Enter the Router** - Cosmo Router locally: config, first federated query, reading query plans
@@ -161,7 +169,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 04 | drafted | 2026-08-09. 18 pages (49-66), 6 numbered sections plus the lab, ~7,400 words, 2 TikZ figures, 2 citations to primary sources plus 6 more in refs.bib, 40 listings. First chapter with a database. Sources in research/2026-08-ch04-ef-core-and-dataloaders.md. Two companion tags, `ch04-ef` and `ch04` (decision 34), both passing `verify.ps1`. The chapter's spine is three numbers on one timeline line: 146 resolvers, 3 lookups, 3 SQL. Also the first use of the `sql`, `yaml` and `javascript` lexers (decision 38). TOC line unchanged: EF Core, DataLoader usage and batching internals, projections/filtering/sorting/pagination all landed as scoped. Not yet reviewed for line-level prose. |
 | 05 | drafted | 2026-08-09. 24 pages (67-90), 6 numbered sections plus the lab, ~9,600 words, 2 TikZ figures, 8 citations to primary sources, 47 listings. Sources in research/2026-08-ch05-schema-design.md. Companion tag `ch05`, passing both verify scripts; the Postman collection went from 10 requests and 36 assertions to 19 and 74. The chapter's spine is one deprecation against two breaking changes (decision 39), and its headline finding is that `[ID]` was inert until this chapter (decision 40). TOC line unchanged: abstract types, Relay conventions, error design, deprecation and single-service subscriptions all landed as scoped, with abstract types arriving three times over as `Node`, the `Error` interface and the generated error union. Longest chapter so far, and the audit's structural note about section 5.4 being thinner than the rest is recorded below rather than fixed. Not yet reviewed for line-level prose. |
 | 06 | drafted | 2026-08-09. 12 pages (91--102), 5 sections plus the lab, ~6,800 words, no figures, 3 citations, 30 listings (all SDL sketches). First conceptual chapter since ch01; no companion code (decision 21 applies). Sources in research/2026-08-ch06-federation-model.md. Covers the supergraph and subgraph model, entities and @key ownership, the field-level directives (@shareable/@external/@requires/@provides), the structural directives (@override/@interfaceObject/@inaccessible/@tag), and composition rules conceptually. Not yet reviewed for line-level prose. |
-| 07 | not-started | |
+| 07 | drafted | 2026-08-09. 18 pages (103--120), 6 numbered sections plus the lab, ~8,400 words, 2 TikZ figures, 6 citations, 45 listings. Sources in research/2026-08-ch07-federated-query-execution.md. Companion tag `ch07`; Mosaic is untouched and the code is `samples/federated-wire/`, two subgraphs and the Cosmo Router (decision 44). Both verify scripts grew a federation section and pass. The chapter's spine is one query followed end to end: the plan the router prints, then the two request bodies the subgraphs logged, then what the second hop costs. Headline findings: HotChocolate 16.6.0 emits federation v2.6 against a spec at v2.15; the router never calls `_service`; a subgraph publishes no `_entities` at all if no root field reaches the entity; and the router forwards no client headers. TOC line corrected (decision 45). Not yet reviewed for line-level prose. |
 | 08 | not-started | |
 | 09 | not-started | |
 | 10 | not-started | |
@@ -219,6 +227,33 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
   count.
 
 ## Open items
+
+- **Chapter 08 owes an answer on `[ReferenceResolver]` and the source
+  generator.** The ch 07 sample puts `[Key("id")]` and a `[ReferenceResolver]`
+  static method on the runtime type, which is the style HotChocolate's own
+  certification schema uses. Mosaic's house style is decision 28's
+  `[ObjectType<T>]` partial class, and whether the two compose was never tested.
+  Chapter 08 cannot extract Catalog without finding out, and if the answer is
+  "only one of them works" that is a decision-28 amendment, not a footnote.
+- Chapter 07 leaves these unmeasured and its research file's section M names an
+  owner for each: DataLoader behind a reference resolver (ch 11), `@requires`
+  and `@provides` on the wire (ch 11), `@override` (ch 12), Advanced Request
+  Tracing (ch 17 and 23), a subgraph that is down or slow (ch 24), mutations and
+  subscriptions through a router (ch 12 and 14), and whether the router's plan
+  cache reuses a plan across requests (ch 17).
+- Chapter 07's latency table is single-machine, like chapters 03 and 04. Two
+  claims are meant to survive: the second subgraph hop costs about what that
+  subgraph costs when asked directly, and the router's own fixed cost is larger
+  than the extra hop. The router figure is an upper bound, because the container
+  reaches the subgraphs across Docker's bridge and the direct rows do not.
+- The federated-wire sample composes from committed schema files, so changing a
+  subgraph's C\# and recomposing changes nothing. The chapter 07 lab now tells
+  the reader to switch `graph.yaml` to `introspection:` before the two exercises
+  that depend on it. If that sample grows, consider making introspection the
+  committed default and keeping the files only for the drift check.
+- `X-WG-Disable-Tracing` was never exercised. Chapter 07 names it and says
+  plainly that only the other two query-plan headers were tested with and
+  without development mode.
 
 - **Chapter 05 corrects chapter 04's Postman gate, and the correction matters.**
   Chapter 04's assertion named "the projection kept the identifier"

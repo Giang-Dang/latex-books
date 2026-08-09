@@ -1,0 +1,46 @@
+% Every HTTP message exchanged for
+% { products { title price reviews { rating body } } }, in the order the
+% subgraph consoles recorded them. Referenced from chapter 07. Bare
+% tikzpicture; the figure environment, caption and label live at the call site.
+\begin{tikzpicture}[
+    font=\small,
+    party/.style={draw, rounded corners=2pt, minimum width=24mm,
+                  minimum height=8mm, align=center},
+    life/.style={gray, dashed},
+    msg/.style={-{Stealth[length=2mm]}},
+    back/.style={-{Stealth[length=2mm]}, gray},
+    lbl/.style={font=\scriptsize, align=center, fill=white, inner sep=1pt}
+  ]
+
+  \node[party] (client) at (0,0)    {Client};
+  \node[party] (router) at (3.6,0)  {Router};
+  \node[party] (cat)    at (7.9,0)  {Catalog\\\scriptsize :5201};
+  \node[party] (rev)    at (12.2,0) {Reviews\\\scriptsize :5202};
+
+  \foreach \x in {0, 3.6, 7.9, 12.2} {
+    \draw[life] (\x,-0.5) -- (\x,-6.4);
+  }
+
+  % 1. the client's document
+  \draw[msg] (0,-1.0) -- (3.6,-1.0);
+  \node[lbl, anchor=south] at (1.8,-0.95) {\code{POST /graphql}};
+
+  % 2 and 3. fetch 0
+  \draw[msg] (3.6,-2.0) -- (7.9,-2.0);
+  \node[lbl, anchor=south] at (5.75,-1.95)
+    {\code{\{products \{title price}\\\code{\_\_typename id\}\}}};
+  \draw[back] (7.9,-3.0) -- (3.6,-3.0);
+  \node[lbl, anchor=south] at (5.75,-2.95) {3 products, with ids};
+
+  % 4 and 5. fetch 1
+  \draw[msg] (3.6,-4.0) -- (12.2,-4.0);
+  \node[lbl, anchor=south] at (7.9,-3.95)
+    {\code{\_entities}, 3 representations in one call};
+  \draw[back] (12.2,-5.0) -- (3.6,-5.0);
+  \node[lbl, anchor=south] at (7.9,-4.95) {3 review lists, one of them empty};
+
+  % 6. the assembled answer
+  \draw[back] (3.6,-6.0) -- (0,-6.0);
+  \node[lbl, anchor=south] at (1.8,-5.95) {one response};
+
+\end{tikzpicture}

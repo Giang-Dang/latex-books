@@ -1,0 +1,171 @@
+\section{The Traffic, in Full}
+\label{sec:ch07-the-traffic-in-full}
+\index{wire traffic|(}%
+
+Six HTTP messages answer the chapter's query, and
+figure~\ref{fig:ch07-message-sequence} is all of them in order. This section is
+the two that go to the subgraphs, printed as the subgraphs recorded them.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch07-message-sequence}
+  \caption{Six messages, four of them between the router and the subgraphs. The
+  two fetches are strictly sequential because the second one needs identifiers
+  the first one returns. Nothing here is proprietary: both subgraph calls are
+  ordinary GraphQL over HTTP.}
+  \label{fig:ch07-message-sequence}
+\end{figure}
+
+\index{wire traffic!capturing it}%
+Before the listings, a word on where they come from, because it changes how much
+weight they can carry. Both subgraphs call ASP.NET Core's own HTTP logging
+middleware with request and response bodies turned on. There is no proxy in the
+path and no packet capture. What follows is what the server process received and
+what it sent, read from inside the server.
+
+Two settings make that work and neither is obvious. A body is logged only if its
+media type is on a list, and GraphQL over HTTP answers with
+\code{application/graphql-response+json}, which ASP.NET Core does not know
+about, so it has to be added by hand. And headers outside the middleware's
+default allow-list are printed as \code{[Redacted]} rather than dropped, which
+turns out to matter later in this section.
+
+\subsection*{What Catalog received}
+
+\begin{minted}[fontsize=\footnotesize]{text}
+Method: POST
+Path: /graphql
+Accept: application/json
+Host: host.docker.internal:5201
+User-Agent: Go-http-client/1.1
+Accept-Encoding: gzip,deflate
+Content-Type: application/json
+traceparent: 00-14c8c3610596717bc4c5d5d57ec4c99a-b1ecebfd8985308e-01
+Content-Length: 50
+
+RequestBody: {"query":"{products {title price __typename id}}"}
+\end{minted}
+
+Fifty bytes. An ordinary \code{POST} carrying a \code{query} key, with no
+variables and no header a GraphQL service would have to be taught about. A
+subgraph needs no router-specific code to be talked to, which has a consequence
+worth holding on to: whatever you could do to a HotChocolate service in
+chapters~\ref{ch:hotchocolate-quickly}
+to~\ref{ch:schema-design-that-survives-change}, you can still do to it once it
+is behind a router.
+
+And what it sent back:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+ResponseBody: {"data":{"products":[
+  {"title":"Oak dining table","price":749.00,"__typename":"Product","id":"1"},
+  {"title":"Linen armchair","price":429.00,"__typename":"Product","id":"2"},
+  {"title":"Brass floor lamp","price":189.00,"__typename":"Product","id":"3"}]}}
+\end{minted}
+
+The \code{\_\_typename} and \code{id} the router added in
+section~\ref{sec:ch07-the-plan} come back in the payload, get stripped out
+before the client sees anything, and exist only to make the next message
+possible.
+
+\subsection*{What Reviews received}
+
+\begin{minted}[fontsize=\footnotesize]{text}
+traceparent: 00-14c8c3610596717bc4c5d5d57ec4c99a-ad519fea48de7013-01
+Content-Length: 278
+
+RequestBody: {"variables":{"representations":[
+  {"__typename":"Product","id":"1"},
+  {"__typename":"Product","id":"2"},
+  {"__typename":"Product","id":"3"}]},
+  "query":"query($representations: [_Any!]!){_entities(representations:
+  $representations){... on Product {__typename reviews {rating body}}}}"}
+\end{minted}
+
+\index{wire traffic!batching}%
+One call for three products. This is the fact the whole arrangement stands on,
+and the first thing I would check in a federated graph I inherited. Three
+separate calls would produce an identical answer to the client and turn a
+two-request query into a four-request query, and nothing in the response would
+tell you it had happened. The verification script in the companion repository
+asserts this body character for character for exactly that reason: an assertion
+on the answer would pass either way.
+
+\subsection*{One trace, two spans}
+
+Both subgraph requests carry a \code{traceparent}, and the two are not the same:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+catalog:  00-14c8c3610596717bc4c5d5d57ec4c99a-b1ecebfd8985308e-01
+reviews:  00-14c8c3610596717bc4c5d5d57ec4c99a-ad519fea48de7013-01
+\end{minted}
+
+\index{tracing!W3C trace context}%
+Same trace identifier, different span identifiers. The router generated both.
+That is W3C trace context doing the one job that makes a federated request
+debuggable at all: without it a slow query is three unrelated log entries in
+three services, and with it they are one tree.
+Chapter~\ref{ch:observability} builds the rest of that picture. What is worth
+knowing here is that the router does this whether or not anything is collecting
+traces, so the identifiers are in your subgraph logs already.
+
+\subsection*{Nothing else of the client's request survives}
+
+I sent the router a request carrying three headers a real client might send:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+graphql-client-name: chapter-07
+Authorization: Bearer not-a-real-token
+X-Custom-Thing: hello
+\end{minted}
+
+None of the three reached the subgraph. Not redacted, not renamed: absent.
+
+\index{router!header propagation}%
+That is a measurement rather than a reading, and it is worth explaining how it
+can be one. Recall that the logging middleware prints an unknown header as
+\code{[Redacted]} rather than dropping it. Sent straight to the subgraph, the
+same three headers log like this:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+Authorization: [Redacted]
+Content-Type: application/json
+graphql-client-name: chapter-07
+X-Custom-Thing: [Redacted]
+\end{minted}
+
+Through the router, none of the three lines appears at all. A header the router
+forwarded but that the log declined to print would look different from a header
+the router never sent, which is what makes the absence evidence.
+
+The documentation agrees: \enquote{By default, no headers are forwarded for
+security reasons}~\autocite{cosmo2026headers}. Turning one on is a router
+configuration rule, not a code change:
+
+\begin{minted}{yaml}
+headers:
+  all:
+    request:
+      - op: "propagate"
+        named: X-Test-Header
+\end{minted}
+
+\index{authorisation!at the boundary}%
+I think this default is right, and it is the first place a federated graph will
+surprise a team that has been passing an \code{Authorization} header around a
+monolith without thinking about it. The router is a trust boundary now. Deciding
+what crosses it is a design decision with a security consequence, and
+chapter~\ref{ch:identity-and-authorization} is the whole of that decision rather
+than the one-line configuration that implements it.
+
+\subsection*{Content negotiation, briefly}
+
+The router asks for \code{application/json} and gets it, with a charset
+attached. It does not ask for the newer
+\code{application/graphql-response+json}, which is what HotChocolate would
+answer a client that did. Both are correct under the GraphQL over HTTP
+specification and they differ in how status codes are chosen, which is a real
+distinction with real consequences and belongs to
+chapter~\ref{ch:the-wire-completely}.
+
+\index{wire traffic|)}%

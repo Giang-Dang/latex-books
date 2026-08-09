@@ -1,0 +1,209 @@
+\section{What a Subgraph Owes the Router}
+\label{sec:ch07-what-a-subgraph-owes}
+\index{subgraph!contract|(}%
+
+A subgraph is an ordinary GraphQL service that has agreed to two extra fields.
+The Apollo Federation subgraph specification names them, along with the types
+they need~\autocite{apollo2026subgraphspec}:
+
+\begin{graphqlsdl}
+extend type Query {
+  _service: _Service!
+  _entities(representations: [_Any!]!): [_Entity]!
+}
+
+type _Service { sdl: String! }
+union _Entity
+scalar _Any
+\end{graphqlsdl}
+
+\index{HotChocolate!AddApolloFederation@\code{AddApolloFederation()}}%
+In HotChocolate 16.6.0 you get all of it from one call. The Catalog subgraph's
+entire federation configuration is this:
+
+\begin{minted}{csharp}
+builder.AddGraphQL()
+    .AddApolloFederation()
+    .AddWireCatalog();
+\end{minted}
+
+\code{AddWireCatalog()} is the source generator's registration method, the same
+mechanism chapter~\ref{ch:hotchocolate-quickly} introduced.
+\code{AddApolloFederation()} is the new line, and here is what it puts into the
+schema:
+
+\begin{graphqlsdl}
+type Query {
+  products: [Product!]!
+  productById(id: ID!): Product
+  _service: _Service!
+  _entities(representations: [_Any!]!): [_Entity]!
+}
+
+type _Service { sdl: String! }
+union _Entity = Product
+scalar FieldSet
+scalar _Any
+
+directive @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on
+  | OBJECT
+  | INTERFACE
+\end{graphqlsdl}
+
+\index{federation!Entity union@\code{\_Entity} union}%
+\code{\_Entity} is a union of exactly the types carrying \code{@key}, which here
+is one type. That is worth holding on to: the union is generated from the keys,
+so a type without a key can never appear in it, and section~\ref{sec:ch07-representations}
+is what happens when the router is told otherwise.
+
+\subsection*{The version HotChocolate speaks is not the version Apollo publishes}
+
+\index{federation!specification version}%
+The first line of every subgraph schema declares which federation specification
+it is written against:
+
+\begin{graphqlsdl}
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.6"
+    import: ["@key", "@tag", "FieldSet"]
+  ) {
+  query: Query
+}
+\end{graphqlsdl}
+
+Version 2.6, against a specification that is at v2.15. That is not a typo and it
+is not a setting I forgot. \code{AddApolloFederation()} takes an optional
+\code{FederationVersion}, and the enum in HotChocolate 16.6.0 stops at 2.7:
+
+\begin{minted}{csharp}
+Federation26 = 2_6,
+Federation27 = 2_7,
+// default to latest-1
+Default = Federation26,
+Latest = Federation27
+\end{minted}
+
+\index{HotChocolate!FederationVersion@\code{FederationVersion}}%
+The comment is theirs. The default is deliberately one behind the newest version
+the library supports, which is a reasonable posture for a library and a
+surprising one to meet in your own schema output. Pass
+\code{FederationVersion.Latest} and you get 2.7; there is no way to ask for
+anything above it.
+
+In practice this has cost me nothing. Every directive
+chapter~\ref{ch:the-federation-model} covers was in the specification by v2.3,
+the composer accepted a v2.6 subgraph without a word, and the router planned
+against it correctly. But it is a ceiling, and it is worth knowing it is there
+before you go looking for something the specification added after v2.7.
+
+\subsection*{\code{\_service}, and who actually reads it}
+
+\index{federation!service field@\code{\_service} field}%
+\code{\_service} returns the subgraph's own schema as a string. Ask Catalog for
+it and you get back the SDL above, directives and all. The specification is
+particular about this: the string \enquote{must include all uses of all
+federation-specific directives, such as
+\code{@key}}~\autocite{apollo2026subgraphspec}. A schema printed without its
+\code{@key} directives would compose into a graph with no entities in it.
+
+The natural assumption is that the router calls this at startup. It does not.
+Start both subgraphs, start the router, wait for it to report itself ready, then
+count the occurrences of \code{\_service} in each subgraph's console. Zero on
+both. The router never asked.
+
+That follows from the third startup warning of
+section~\ref{sec:ch07-three-processes}. A statically configured router got its
+schema from a file, so there is nothing left to ask about. \code{\_service} is
+the \emph{composer's} field, not the router's.
+
+\index{composition!introspection mode}%
+And the composer really does use it. An \code{introspection} block in
+\code{graph.yaml}, where the schema file would otherwise go, points it at a live
+endpoint instead. Run the compose command again and this arrives:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+User-Agent: node
+RequestBody: {"query":"\n  {\n    _service{\n      sdl\n    }\n  }\n","variables":{}}
+\end{minted}
+
+The whitespace is the composer's own document, sent as it was written. Nothing
+clever, nothing proprietary: the tool asks the same question you can ask from
+Postman, and the two committed schema files in this sample were produced by
+asking it.
+
+\subsection*{HotChocolate's own description of \code{\_service} is wrong}
+
+\index{HotChocolate!Service type description@\code{\_Service} type description}%
+Every schema HotChocolate generates carries this description on \code{\_Service},
+and I am quoting it in full because the interesting part is at the end:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+This type provides a field named sdl: String! which exposes the SDL of the
+service's schema. This SDL (schema definition language) is a printed version of
+the service's schema including the annotations of federation directives. This
+SDL does not include the additions of the federation spec.
+\end{minted}
+
+The SDL it returns includes \code{\_service}, \code{\_entities}, \code{\_Any},
+\code{\_Entity}, \code{FieldSet}, \code{@key} and \code{@link}. Every one of
+those is an addition of the federation spec.
+
+The behaviour is correct and the sentence is not. Apollo's specification
+forbids including those definitions only when a subgraph supports Federation 1;
+for Federation 2 it says outright that \code{sdl} may include
+them~\autocite{apollo2026subgraphspec}. So the description is a true statement
+about a rule that does not apply here, shipped as documentation of something
+that does. Read the output, not the docstring. That is the whole of
+chapter~\ref{ch:hotchocolate-quickly}'s lesson about the compiler beating the
+documentation, arriving again in a place I did not expect it.
+
+\subsection*{A type nothing returns is not in the schema}
+
+\index{HotChocolate!unreachable types}%
+This one cost me twenty minutes and it will cost you the same, so here it is
+before chapter~\ref{ch:the-first-cut-extracting-catalog} needs it.
+
+The first version of the Reviews subgraph compiled, started, answered
+\code{Query.reviews} correctly, and published this:
+
+\begin{graphqlsdl}
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.6"
+    import: ["@tag", "FieldSet"]
+  ) {
+  query: Query
+}
+
+type Query {
+  reviews: [Review!]!
+  _service: _Service!
+}
+\end{graphqlsdl}
+
+No \code{Product}, and no \code{\_entities} either. \code{@key} is missing from
+the import list, and so is the \code{\_Entity} union. The C\# was fine: the
+class was there, it had its \code{[Key("id")]}, it had its reference resolver.
+What it did not have was any root field returning it, and HotChocolate builds
+the types it can reach from the roots. An entity that only ever arrives through
+\code{\_entities} is reachable from nowhere.
+
+One line fixes it:
+
+\begin{minted}{csharp}
+builder.AddGraphQL()
+    .AddApolloFederation()
+    .AddWireReviews()
+    .AddType<Product>();
+\end{minted}
+
+What makes this worth a section is how quietly it fails. Nothing throws. The
+subgraph is healthy and answers its own queries. The schema it publishes is
+valid, and it \emph{composes}: you get a supergraph in which \code{Product} has
+a title and a price and no reviews at all, and the first sign of trouble is a
+client asking for a field the router says does not exist. If a subgraph you
+extracted has mysteriously stopped contributing, this is the first thing to
+check, and \code{\_service} is where to check it.
+
+\index{subgraph!contract|)}%

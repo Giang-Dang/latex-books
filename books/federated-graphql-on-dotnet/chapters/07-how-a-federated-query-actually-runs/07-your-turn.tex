@@ -1,0 +1,100 @@
+\section*{Your turn}
+
+Everything in this chapter came out of a running system, and the system is four
+commands away. Check out tag \code{ch07} of the companion repository and start
+from its root. You need the .NET SDK, Docker, and \code{npm ci} to have been run
+once.
+
+\begin{minted}{text}
+dotnet run --project samples/federated-wire/Mosaic.Sample.Wire.Catalog
+dotnet run --project samples/federated-wire/Mosaic.Sample.Wire.Reviews
+npx wgc router compose -i samples/federated-wire/graph.yaml \
+                       -o samples/federated-wire/supergraph.json
+docker compose --profile wire up -d wire-router
+\end{minted}
+
+The first two need a terminal each and stay in the foreground. Ports 5201, 5202
+and 3002 have to be free; if the router will not start, \code{docker compose
+--profile wire down} clears an earlier run. When all three are up,
+\code{curl http://localhost:3002/health} answers 200, and the two subgraph
+terminals are where the answers to most of these exercises appear.
+
+\begin{enumerate}
+  \item \textbf{Watch one query cross the boundary.} Send
+  \code{\{ products \{ title reviews \{ rating \} \} \}} to
+  \url{http://localhost:3002/graphql} and read both subgraph terminals. Write
+  down the two request bodies. Then send
+  \code{\{ products \{ title \} \}} and see which terminal stays silent.
+
+  \item \textbf{Predict a plan, then check it.} Before running anything, write
+  down how many fetches you expect for
+  \code{\{ reviews \{ rating body \} \}}. Then ask the router with
+  \code{X-WG-Include-Query-Plan: true} and \code{X-WG-Skip-Loader: true}. If
+  your prediction was wrong, the \code{dependencies} array says why.
+
+  \item \textbf{Compose from the running services instead of from files.}
+  \code{graph.yaml} reads the two committed schema files, so a change to a
+  subgraph's C\# does not reach the composer. Replace each subgraph's
+  \code{schema:} block with the \code{introspection} form of
+  section~\ref{sec:ch07-what-a-subgraph-owes} and recompose. The supergraph
+  should be unchanged; the point of the exercise is that the next two work.
+
+  \item \textbf{Break the key and read the error.} Open \code{Reviews.cs} in the
+  Reviews subgraph and change \code{[Key("id")]} on \code{Product} to
+  \code{[Key("productId")]}. Restart that subgraph and query \code{\_service}:
+  the schema still builds, and the key now names a field the type does not have.
+  Recompose, and the composer refuses:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The subgraph "reviews" could not be federated for the following reason:
+The 1st instance of the directive "@key" declared on coordinates "Product" is
+invalid for the following reason:
+ The following field set is invalid:
+  "productId"
+ This is because of the selection set corresponding to the field coordinates
+ "Product.productId".
+ The type "Product" does not define a field named "productId".
+  \end{minted}
+
+  Read it twice: the subgraph was happy and the composer was not.
+  Chapter~\ref{ch:composition} is a book of these. Put the file back afterwards.
+
+  \item \textbf{Make the subgraph unreachable to itself.} Remove
+  \code{.AddType<Product>()} from the Reviews \code{Program.cs} and restart it.
+  Do not recompose. Query \code{\_service} on port 5202 and find the three things
+  that disappeared. This is the failure of
+  section~\ref{sec:ch07-what-a-subgraph-owes}, and the point of doing it on
+  purpose is to recognise it when it happens by accident.
+
+  \item \textbf{Call \code{\_entities} yourself.} Send the document from
+  section~\ref{sec:ch07-representations} straight to port 5202 with four
+  representations instead of three, the fourth naming a product that does not
+  exist. Confirm you get four answers in order. Then reverse the order of the
+  representations and confirm the answers reverse with them.
+
+  \item \textbf{Find out what the router forwards.} Send a query to the router
+  with a header of your own invention and look for it in the subgraph terminal.
+  Then add it to \code{RouterHeaders} in
+  \code{samples/federated-wire/WireLogging.cs}, restart the subgraph, and send
+  it again. The header is still missing, and now you know that is the router's
+  doing rather than the logger's.
+
+  \item \textbf{Start a query from the other subgraph.} With exercise~2's
+  introspection composition in place, add a root field to Reviews returning a
+  \code{Product} by identifier, restart it, recompose, and ask the router for
+  \code{\{ productFromReviews(id: "1") \{ title \} \}}. Which subgraph is called
+  first now, and what does the second call carry? Write the plan down before you
+  run it.
+
+  \item \textbf{Run the gate.} From the repository root, run
+  \code{pwsh scripts/verify.ps1}. The last six lines of its summary are this
+  chapter's. Then change one character of the expected catalog fetch in that
+  script and run it again, to see what a stale listing in this chapter would
+  look like to the build.
+\end{enumerate}
+
+Exercise~2 is the one worth repeating. Every chapter from here to
+chapter~\ref{ch:the-wire-completely} adds something that changes a plan, and
+being able to predict the shape before running the query is what turns
+chapter~\ref{ch:enter-the-router}'s router configuration from guesswork into
+work.
