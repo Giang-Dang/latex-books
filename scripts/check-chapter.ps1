@@ -246,6 +246,15 @@ function Test-PolicySchema {
             if ($c -isnot [bool]) {
                 Write-Error "check-chapter.psd1: '$where' must be `$true or `$false"
             }
+        } elseif ($d -is [int]) {
+            # Without this arm a string passed the schema and then threw
+            # somewhere in the middle of a run, on a comparison, naming a
+            # variable rather than the setting. It covers every count the
+            # library takes: the two Verbatim windows, the two Log ceilings and
+            # the Listings budget.
+            if ($c -isnot [int]) {
+                Write-Error "check-chapter.psd1: '$where' must be a whole number, e.g. 12"
+            }
         }
     }
 }
@@ -471,16 +480,12 @@ if ($policy.Characters.AllowInCapturedListings.Count -gt 0) {
 
 # 0 means no budget declared and no check. Resolved here rather than at the
 # point of use, because Format-Policy has to report it long before the loop
-# reaches a listing, and because a book that writes a word where a column count
-# belongs should fail on the policy line rather than throw inside a comparison a
-# thousand lines later. Test-PolicySchema validates tables, arrays and bools and
-# nothing else, so this is the only thing standing between a typo and that.
+# reaches a listing. Test-PolicySchema owns the type, so what is left here is
+# the range: a whole number can still be a negative one, and the schema has no
+# way to say that a count has a floor.
 $listingMax = 0
 if ($policy.Listings.Enabled) {
     $declared = $policy.Listings.MaxLineLength
-    if ($declared -isnot [int]) {
-        Write-Error "check-chapter.psd1: Listings.MaxLineLength must be a whole number of columns; got '$declared'"
-    }
     if ($declared -lt 0) {
         Write-Error "check-chapter.psd1: Listings.MaxLineLength must be 0 (no budget) or a positive column count; got $declared"
     }
@@ -503,7 +508,11 @@ function Get-BookFiles {
         if ($chapterDirs.Count -eq 0) {
             Write-Error "No folder matches chapters/$Chapter-* under '$Book'"
         }
-        return @($chapterDirs | Get-ChildItem -Filter '*.tex' | Sort-Object FullName)
+        # -Recurse, to match the full path below. Without it a chapter that
+        # keeps anything in a subfolder was linted by one mode and not the
+        # other, which is the worst of the two: -Chapter is what a drafting
+        # session runs while it iterates.
+        return @($chapterDirs | Get-ChildItem -Recurse -Filter '*.tex' | Sort-Object FullName)
     }
     foreach ($part in $Parts) {
         $p = Join-Path $bookPath $part
@@ -526,12 +535,27 @@ $charFiles = if ($policy.Paths.Characters -join '|' -eq ($policy.Paths.Prose -jo
 
 # --- verbatim environments: the stock ones plus any the book declares with
 # \newminted[NAME]{lexer}{opts} in its preamble.
-$verbatimEnvs = @('minted', 'verbatim', 'Verbatim')
+#
+# Every one of them has a starred twin, and they were missing here. That is not
+# a listing going unmeasured, which would be the harmless version: an
+# unrecognised environment is not blanked at all, so its body is read as English
+# and reported for quotes, dashes, contractions and spelling, while its \end
+# closes nothing.
+#
+# minted.sty declares the two aliases differently, and the difference decides
+# the waiver below. \newenvironment{NAME} reads an optional [options];
+# \newenvironment{NAME*} takes a mandatory {options}. So braces are an option
+# list after a starred name and nothing else - after a bare \begin{minted} they
+# hold the language.
+$verbatimEnvs = @('minted', 'verbatim', 'verbatim*', 'Verbatim', 'Verbatim*')
+$starredAliases = @()
 $preambleDir = Join-Path $bookPath 'preamble'
 if (Test-Path $preambleDir) {
     foreach ($f in Get-ChildItem $preambleDir -Filter '*.tex') {
         foreach ($m in [regex]::Matches((Get-Content $f.FullName -Raw), '\\newminted\[([A-Za-z]+)\]')) {
             $verbatimEnvs += $m.Groups[1].Value
+            $verbatimEnvs += $m.Groups[1].Value + '*'
+            $starredAliases += $m.Groups[1].Value + '*'
         }
     }
 }
@@ -923,6 +947,10 @@ foreach ($f in $texFiles) {
         # below wants captured listings and the other checks do not.
         $verbLine = $false
         if ($inVerb) {
+            # Matched on $raw, and that asymmetry with the \begin below is
+            # deliberate: inside a verbatim block % is a literal character
+            # rather than a comment, so stripping here would lose an \end that
+            # happens to follow one.
             if ($raw -match ('\\end\{' + [regex]::Escape($inVerb) + '\}')) {
                 $inVerb = $null
                 if ($null -ne $capture) {
@@ -953,22 +981,35 @@ foreach ($f in $texFiles) {
             $stripped = ''
             $verbLine = $true
         } else {
-            $bm = [regex]::Match($raw, '\\begin\{([A-Za-z]+\*?)\}')
+            # Comments come off before the \begin is looked for. A commented-out
+            # % \begin{minted} used to open a region that nothing ever closed,
+            # and the rest of the file went silent for every prose check.
+            $stripped = $raw -replace '(?<!\\)%.*$', ''
+
+            $bm = [regex]::Match($stripped, '\\begin\{([A-Za-z]+\*?)\}')
             if ($bm.Success -and $verbatimEnvs -contains $bm.Groups[1].Value) {
-                if ($raw -notmatch ('\\end\{' + [regex]::Escape($bm.Groups[1].Value) + '\}')) {
+                if ($stripped -notmatch ('\\end\{' + [regex]::Escape($bm.Groups[1].Value) + '\}')) {
                     $inVerb = $bm.Groups[1].Value
 
                     # A block that carries its own option list has had a
                     # typographic decision made about it - a smaller fontsize,
                     # an explicit breaklines - and whoever made it owns the
                     # block's width. The width check stands down for it.
-                    $listingWaived = $raw.Substring($bm.Index + $bm.Length) -match '^\s*\['
+                    #
+                    # Brackets count everywhere. Braces count only after a
+                    # starred \newminted alias, which is the one form that takes
+                    # its options that way; counting them everywhere would waive
+                    # every \begin{minted}{python} in the book and turn the
+                    # whole family off without saying so.
+                    $rest = $stripped.Substring($bm.Index + $bm.Length)
+                    $listingWaived = $rest -match '^\s*\[' -or
+                        ($starredAliases -contains $bm.Groups[1].Value -and $rest -match '^\s*\{')
 
                     # A claim arms the check only for the environments the book
                     # nominated as holding captured output. Listings that come
                     # out of a companion repo are checked by that repo, not
                     # here, and commands to type are not captures at all.
-                    if ($claimWindow -gt 0 -and $verbatimArmRe -and $researchBlob -and $raw -match $verbatimArmRe) {
+                    if ($claimWindow -gt 0 -and $verbatimArmRe -and $researchBlob -and $stripped -match $verbatimArmRe) {
                         $capture = [System.Collections.Generic.List[string]]::new()
                         $captureLine = $lineNo
                     }
@@ -976,8 +1017,6 @@ foreach ($f in $texFiles) {
                 }
                 $stripped = ''
                 $verbLine = $true
-            } else {
-                $stripped = $raw -replace '(?<!\\)%.*$', ''
             }
         }
 

@@ -256,6 +256,11 @@
     # width. That is the escape hatch, and it sits in the source where a reader
     # of the chapter can see it rather than in this file.
     #
+    # A starred \newminted alias waives the same way with {braces}, because that
+    # is the form minted declares it with: \begin{NAME} reads an optional
+    # [options] and \begin{NAME*} takes a mandatory {options}. Braces after an
+    # unstarred \begin{minted} hold the language and waive nothing.
+    #
     # What the count is not: display columns. It counts UTF-16 code units, so a
     # CJK glyph counts one and sets two, and an emoji counts two and sets one. A
     # tab counts one. autogobble strips a block's common indent before

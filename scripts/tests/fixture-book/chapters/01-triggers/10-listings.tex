@@ -24,3 +24,14 @@ $ dotnet run --project src/Gateway --configuration Release --no-restore --wide
 That block is the same width and reports nothing, because it carries its own
 option list. Naming an option for one block is a typographic decision made
 about that block, and whoever made it owns the width.
+
+\begin{fixturesdl*}{fontsize=\footnotesize}
+$ dotnet run "--project" src/Gateway --configuration Release --no-restore --it's
+\end{fixturesdl*}
+
+The starred alias is the same environment declared a second way, and its
+options arrive in braces because that is how minted declares it. It reports
+nothing either. The body line is deliberately loud: over budget, carrying a
+literal double quote and a contraction, so an environment the scrape failed to
+recognise announces itself as three prose findings rather than as one listing
+quietly going unmeasured.
