@@ -1,7 +1,35 @@
 \chapter{Entity Resolution Done Right}
 \label{ch:entity-resolution-done-right}
 
-\emph{Not yet drafted.} Planned scope: DataLoader-backed reference resolvers and representation batching internals; \code{@requires} and \code{@provides} in anger; computed fields; nullability at boundaries.
+Chapter~\ref{ch:enter-the-router} watched a router assemble the storefront out
+of two services and stopped at the boundary. This chapter goes through it.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/11-entity-resolution-done-right/01-section-name}
+Everything Mosaic hands the router comes back through one field.
+\code{Query.\_entities} takes a list of representations and answers a list of
+objects, and every federated query in this book since
+chapter~\ref{ch:how-a-federated-query-actually-runs} has gone through it. What
+happens inside that field is the subject here: how many times your resolver is
+called, what it is handed, what it is allowed to answer, and what the client
+sees when one of the answers is nothing.
+
+Tag \code{ch11} of the companion repository changes Mosaic for the first time
+since chapter~\ref{ch:the-first-cut-extracting-catalog}. \code{Product} gains a
+field, \code{shippingCost}, and it is the first field in the service that
+cannot be answered out of the service: the carrier's rate follows from what the
+thing is, and what the thing is belongs to Catalog. That one field is what
+\code{@requires} is for, and putting it in produced the non-uniform
+\code{dependencies} array chapter~\ref{ch:enter-the-router} predicted and could
+not show.
+
+The tag also adds \code{samples/entity-resolution}, two small subgraphs whose
+only job is to be watched. One of them writes down every call its reference
+resolver receives, which is how the first section stops being an argument about
+DataLoaders and becomes a listing.
+
+\input{chapters/11-entity-resolution-done-right/01-what-entities-asks-for}
+\input{chapters/11-entity-resolution-done-right/02-a-field-from-the-other-service}
+\input{chapters/11-entity-resolution-done-right/03-how-the-value-arrives}
+\input{chapters/11-entity-resolution-done-right/04-what-the-composer-insists-on}
+\input{chapters/11-entity-resolution-done-right/05-the-promise-provides-makes}
+\input{chapters/11-entity-resolution-done-right/06-null-at-the-boundary}
+\input{chapters/11-entity-resolution-done-right/07-your-turn}

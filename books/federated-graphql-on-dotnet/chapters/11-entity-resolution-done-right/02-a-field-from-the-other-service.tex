@@ -1,0 +1,325 @@
+\section{A Field That Needs the Other Service}
+\label{sec:ch11-a-field-from-the-other-service}
+\index{requires@\code{@requires}!on Mosaic|(}%
+
+Mosaic sells furniture, lighting, kitchenware, textiles and storage, and it
+ships them. A wardrobe goes on a pallet and a tea towel goes in a bag, so the
+delivery charge follows from the category. Pricing owns what things cost.
+Catalog owns what things are. Neither of them can work out the delivery charge
+alone.
+
+\index{computed field}%
+Apollo's documentation calls a field like this a computed field: one worked out
+from values of the same entity that another subgraph
+resolves~\autocite{apollo2026contributefields}. This one goes a step beyond the
+canonical example, because half its input is local. The category picks the
+rate, and the price, which Pricing does own, decides whether the rate is
+waived. A field that only echoed a remote value back would not need any of
+this, because the router could read it from Catalog and never call Mosaic at
+all.
+
+Here is the whole of it, in \code{Pricing/Types/ProductPricingNode.cs}, beside
+the \code{price} field that has been there since
+chapter~\ref{ch:hotchocolate-quickly}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+[Requires("category")]
+public static async Task<Money> GetShippingCostAsync(
+    [Parent] Product product,
+    IPriceByProductIdDataLoader priceByProductId,
+    CancellationToken cancellationToken)
+{
+    var category = product.Category
+        ?? throw new InvalidOperationException(
+            $"Product {product.Id} arrived without a category, so its shipping "
+            + "cost cannot be worked out. The field requires 'category' and the "
+            + "representation did not carry one.");
+
+    var rate = ShippingRates.For(category);
+
+    var price = await priceByProductId.LoadAsync(product.Id, cancellationToken);
+    var amount = price?.Amount
+        ?? throw new InvalidOperationException(
+            $"No price is seeded for product {product.Id}.");
+
+    return ShippingRates.IsWaived(category, amount.Amount)
+        ? new Money(0m, amount.Currency)
+        : new Money(rate, amount.Currency);
+}
+\end{minted}
+
+\index{layout rule!fields live with their domain}%
+It is in the Pricing folder, not the Catalog one, which is the layout rule this
+repository has held since chapter~\ref{ch:hotchocolate-quickly} and the reason
+chapter~\ref{ch:the-first-cut-extracting-catalog}'s extraction was a file move.
+The rates are in \code{Pricing/Model/ShippingRates.cs}: 39.00 for furniture,
+9.90 for lighting, 7.90 for storage, 5.90 for kitchen, 4.90 for textiles, and
+free at or above 100 except for furniture, because a pallet costs what a pallet
+costs. That threshold is a bare decimal and is compared against whatever the
+price says, which is only safe because every price Mosaic holds is in euros.
+Chapter~\ref{ch:hard-modeling-problems} is where a graph with two currencies in
+it would have to do better than that.
+
+The category is the other half, and it lives on the \code{Product} stub in the
+\code{Catalog} folder, which is where a Catalog concept belongs even in a
+service that does not own one:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+[External]
+[GraphQLNonNullType]
+public ProductCategory? Category { get; set; }
+\end{minted}
+
+Three things in those three lines are worth stopping on, and two of them are
+traps.
+
+\index{external@\code{@external}!what it declares}%
+\code{[External]} publishes the field and disclaims it in the same breath. The
+type needs the field in its schema so that \code{@requires(fields: "category")}
+has something to name, and the directive tells the composer that this is not a
+place the value can be got from. Ask the router for \code{Product.category} and
+it goes to Catalog. Nothing routes here for it, ever.
+
+\index{external@\code{@external}!needs a setter}%
+The property has a setter, and nothing in Mosaic ever assigns it. That is not
+an oversight, it is the mechanism, and
+section~\ref{sec:ch11-how-the-value-arrives} is about who does the assigning. A
+get-only property here compiles, composes, and leaves the resolver holding
+null for every product in the catalogue.
+
+And the two nullabilities disagree on purpose. The schema says the field cannot
+be null, because that is what Catalog says. The C\# property can be, because
+most representations carry no category at all.
+Section~\ref{sec:ch11-what-the-composer-insists-on} is where I found out what
+happens if you let those two agree.
+
+The enum itself is declared a second time, beside that stub, with the same five
+members Catalog has. A copy, like \code{ProductKey} in
+chapter~\ref{ch:the-first-cut-extracting-catalog} and for the same reason: the
+values are a contract between two services, and a shared project would turn an
+agreement about a wire format into a compile-time dependency. Unlike
+\code{ProductKey} this copy is visible in the schema, so the composer has an
+opinion about it, and chapter~\ref{ch:hard-modeling-problems} owns shared enums
+as a subject.
+
+\subsection*{What the schema says now}
+
+\index{SDL!requires@\code{@requires} in the published schema}%
+The published SDL, from \code{schema/mosaic.graphql} at tag \code{ch11}:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+type Product @key(fields: "id") {
+  availableQuantity: Int!
+  price: Money!
+  shippingCost: Money! @requires(fields: "category")
+  reviews(first: Int, after: String, last: Int, before: String): ReviewConnection!
+  averageRating: Float
+  id: ID!
+  category: ProductCategory! @external
+}
+\end{graphqlsdl}
+
+The \code{reviews} arguments carry descriptions in the real file and are
+collapsed here; nothing else is changed.
+
+One line I did not write also changed. The \code{@link} at the top of the
+schema grew two entries on its own, with nothing touched in \code{Program.cs}:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+import: ["@external", "@key", "@requires", "@shareable", "@tag", "FieldSet"]
+\end{graphqlsdl}
+
+HotChocolate imports the directives it emitted. That is the same machinery
+chapter~\ref{ch:composition} found putting \code{FieldSet} into the list, and
+this time it is doing exactly what it should.
+
+\subsection*{The plan stops being uniform}
+
+\index{query plan!dependencies array@\code{dependencies} array!non-uniform}%
+Chapter~\ref{ch:enter-the-router} read a query plan whose \code{dependencies}
+array had four entries that all said the same thing, and closed by saying that
+\code{@requires} is what should make one of them say something else. It does.
+Ask the router for a title and a shipping cost, with no category anywhere in
+the document, and the entity fetch carries this:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{json}
+{
+  "coordinate": { "typeName": "Product", "fieldName": "shippingCost" },
+  "isUserRequested": true,
+  "dependsOn": [
+    { "fetchId": 0, "subgraph": "catalog",
+      "coordinate": { "typeName": "Product", "fieldName": "category" },
+      "isKey": false, "isRequires": true },
+    { "fetchId": 0, "subgraph": "catalog",
+      "coordinate": { "typeName": "Product", "fieldName": "id" },
+      "isKey": true, "isRequires": false }
+  ]
+}
+\end{minted}
+
+Two dependencies for one field, and the flags are how they differ:
+\code{isKey} on the identifier, \code{isRequires} on the category. Every other
+entry in the array still has the single key dependency
+chapter~\ref{ch:enter-the-router} printed.
+
+The \code{representations} array of that fetch grew a second entry too, which
+is the same fact stated as a fragment the router will use to build each one:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{json}
+"representations": [
+  { "kind": "@key", "typeName": "Product",
+    "fragment": "fragment Key on Product { __typename id }" },
+  { "kind": "@requires", "typeName": "Product", "fieldName": "shippingCost",
+    "fragment": "fragment Requires_for_shippingCost on Product { category }" }
+]
+\end{minted}
+
+\index{query plan!fetch count unchanged by requires@\code{@requires}}%
+The number of fetches did not move. Two before, two after. The extra dependency
+travels in a call that was already being made, which is
+chapter~\ref{ch:enter-the-router}'s reading lesson holding up under the first
+case that could have broken it: what costs you a round trip is a distinct
+dependency that nothing else already satisfies, not a dependency as such.
+
+\subsection*{What actually went over the wire}
+
+\index{Advanced Request Tracing}%
+Here I hit the problem chapter~\ref{ch:enter-the-router} left me with. Neither
+Mosaic service logs request bodies, so I cannot do what
+chapter~\ref{ch:how-a-federated-query-actually-runs} did and read the
+representation out of a subgraph console. The router will tell me instead. Send
+the query with \code{X-WG-Trace: true} and the response carries a \code{trace}
+extension with every subgraph request in it, bodies included. It works for the
+same reason the query plan headers work: development mode.
+
+Two other spellings of that header, \code{X-WG-Trace-Enabled} and
+\code{X-WG-Include-Trace}, are ignored without complaint, which cost me a few
+minutes. Advanced Request Tracing as a subject belongs to
+chapters~\ref{ch:inside-the-router-and-the-composer}
+and~\ref{ch:observability}; here it is a tool.
+
+The client asked for this, with no category in it:
+
+\begin{minted}{graphql}
+{ browseProducts(first: 2) { nodes { title shippingCost { amount } } } }
+\end{minted}
+
+What the router sent Catalog:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{json}
+{
+  "query": "query($a: Int){browseProducts(first: $a){nodes {title category __typename id}}}",
+  "variables": { "a": 2 }
+}
+\end{minted}
+
+And what it then sent Mosaic:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{json}
+{
+  "query": "query($representations: [_Any!]!){_entities(representations: $representations){... on Product {__typename shippingCost {amount}}}}",
+  "variables": {
+    "representations": [
+      { "__typename": "Product", "category": "KITCHEN", "id": "UHJvZHVjdDoAAACgAAAAQIAAAAAAAAAW" },
+      { "__typename": "Product", "category": "FURNITURE", "id": "UHJvZHVjdDoAAACgAAAAQIAAAAAAAAAE" }
+    ]
+  }
+}
+\end{minted}
+
+\index{representation!key plus required fields}%
+A representation is a key plus whatever some field required. That is the whole
+mechanism, and the cost of it is visible in the first of those two bodies:
+Catalog is being asked for a column nobody wants to see. The client never
+receives \code{category} and has no way of knowing it was fetched.
+
+\index{router!localhost fallback, seen from the trace}%
+The same trace corroborates something chapter~\ref{ch:enter-the-router} could
+only demonstrate by turning it off. Two entries under \code{load\_stats} for the
+same fetch, with the timing fields every entry carries taken out:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+"get_conn":      { "host_port": "host.docker.internal:5101" }
+"connect_done":  { "addr": "127.0.0.1:5101",
+                   "err": "dial tcp 127.0.0.1:5101: connect: connection refused" }
+\end{minted}
+
+The router tried the URL as written, was refused, and went to the host instead.
+That is the fallback setting narrating itself.
+
+\subsection*{What it cost Mosaic}
+
+\index{measurement!requires@\code{@requires} on the storefront}%
+Mosaic still reports on itself, so this half is measurable. This is the
+storefront query at twenty-five products, warm, with and without
+\code{shippingCost} in the selection and nothing else different:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{graphql}
+{ browseProducts(first: 25) { nodes { title price { amount currency }
+    shippingCost { amount currency } availableQuantity averageRating } } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{text}
+                        resolvers   SQL
+without shippingCost           76     3
+with shippingCost             101     3
+\end{minted}
+
+\code{Product.reviews} is deliberately not in that selection, and leaving it
+out is the difference between a number and a measurement. A resolver runs for
+every review author, so a query that walks the reviews counts differently once
+anything has written one, and this book's own Postman collection submits a
+review every time it runs. \code{averageRating} still reaches the review table,
+so nothing about the statement count is being avoided.
+
+Twenty-five more resolvers, one per product, and no more database work at all.
+The shipping resolver takes the same DataLoader that \code{price} takes, so the
+second \code{LoadAsync} for a key finds it already resolved and the batch never
+grows.
+
+\index{gates!counts belong in one, timings do not}%
+Both rows are steps in the verification script rather than numbers I typed out
+of a terminal. Chapter~\ref{ch:enter-the-router} drew the line: a timing gets a
+committed script a reader can run, because asserting milliseconds makes a gate
+fail on a busier laptop, and a count gets an assertion, because a count is the
+same on every machine. These are counts. The gate warms both documents, sends
+each one once more, and reads the two timeline lines back out of Mosaic's own
+console.
+
+Catalog does slightly more work than it did, one more column in its projection,
+and Catalog reports nothing. The cheapest half of this change is the half I can
+measure, which is worth noticing about every number in this section.
+
+\subsection*{Verify it in Postman}
+
+\index{Postman!asserting a computed field}%
+This chapter's collection is \code{mosaic-entities}: five requests and nineteen
+assertions, two of the requests against the router and three against a subgraph
+directly, because the subgraph is where you can ask a question the router will
+not pass on. The rule rather than the rate is what it checks, so a change to
+the table fails on the product it broke:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{javascript}
+pm.test("every product is priced for delivery by its category", function () {
+    for (const node of nodes) {
+        const rate = RATES[node.category];
+        pm.expect(rate, `no rate for ${node.category}`).to.be.a("number");
+        const waived = node.category !== "FURNITURE" && node.price.amount >= 100;
+        pm.expect(node.shippingCost.amount, node.title).to.eql(waived ? 0 : rate);
+        pm.expect(node.shippingCost.currency).to.eql(node.price.currency);
+    }
+});
+\end{minted}
+
+Two assertions beside it keep that one honest, and they are the sort of thing
+easy to leave out: at least one product ships free, and not all of them do.
+Without those, a rule that waived everything would pass. Of the twenty-five
+seeded products, I counted nine that ship free, and the research note records
+how to count them again.
+
+\medskip
+So the value arrives. What I have not said yet is how it gets from the
+representation into that \code{product.Category} the resolver reads, and the
+answer is not the one I expected.
+
+\index{requires@\code{@requires}!on Mosaic|)}%

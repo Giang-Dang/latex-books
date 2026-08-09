@@ -903,3 +903,32 @@
               chapter cites are read out of the configuration schema published
               at tag router@0.337.1 rather than from this page}
 }
+
+% --- Chapter 11: entity resolution done right ---------------------------------
+
+@online{apollo2026contributefields,
+  author   = {{Apollo GraphQL}},
+  title    = {Contribute and reference entity fields},
+  organization = {Apollo GraphOS documentation},
+  year     = {2026},
+  url      = {https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/entities/contribute-fields},
+  urldate  = {2026-08-09},
+  addendum = {Source for what a computed field is and for the rule that fields
+              named in a @requires field set carry @external in the same
+              subgraph. Its account of the router including the required values
+              in the object passed to the resolver is true of the wire and not
+              of HotChocolate's implementation; see chapter 11}
+}
+
+@online{cosmo2026requires,
+  author   = {{WunderGraph}},
+  title    = {The @requires directive},
+  organization = {WunderGraph Cosmo documentation},
+  year     = {2026},
+  url      = {https://cosmo-docs.wundergraph.com/federation/directives/requires},
+  urldate  = {2026-08-09},
+  addendum = {Source for the three conditions the composer enforces: a @key on
+              the entity, @external on every field in the field set, and
+              another subgraph that resolves them. All three were measured
+              against wgc 0.129.7 rather than taken from this page}
+}

@@ -1,0 +1,123 @@
+\section{The Promise \code{@provides} Makes}
+\label{sec:ch11-the-promise-provides-makes}
+\index{provides@\code{@provides}|(}%
+
+\code{@requires} says: fetch me something before you call. \code{@provides}
+says the opposite. On this path, it says, you do not need to call the owner at
+all, because I already have the value.
+
+\index{provides@\code{@provides}!needs a copy of the data}%
+That is only ever true when the promising subgraph holds a copy. Mosaic holds
+none. Chapter~\ref{ch:the-first-cut-extracting-catalog} gave Catalog its own
+database precisely so that no join across the seam would be one connection
+string away, and what is left of \code{Product} in \code{Mosaic.Api} is a class
+with an identifier on it. There is no title here to promise, no sku, no
+category that was not just handed to us by the router.
+
+So Mosaic gets no \code{@provides} in this chapter, and that is the first thing
+worth knowing about the directive. A cleanly split system frequently has
+nowhere to put one. If you find a place, you have found a copy, and the
+question that follows is how the copy stays right.
+
+\subsection*{A subgraph that legitimately has a copy}
+
+\index{samples!crates subgraph}%
+The second subgraph in \code{samples/entity-resolution} has one. A
+\code{Crate} holds a widget and remembers what that widget was called on the
+day it was packed, which is the ordinary reason a service ends up with somebody
+else's data: it wrote it down at the time. Two fields return the same object,
+and they differ only in what the subgraph promises about it:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+type Crate {
+  widget: Widget! @provides(fields: "name")
+  widgetByKey: Widget!
+  id: ID!
+  label: String!
+}
+
+type Widget @key(fields: "id", resolvable: false) {
+  id: ID!
+  name: String! @external
+}
+\end{graphqlsdl}
+
+\index{resolvable false@\code{resolvable: false}!the honest use}%
+\code{resolvable: false} is the correct declaration here and it is the first
+honest use of it in this book. Chapter~\ref{ch:composition} met the flag as the
+cause of a satisfiability error and
+chapter~\ref{ch:enter-the-router} met it again as a way to break a graph on
+purpose. This is what it is for: nothing in \code{crates} can turn a widget key
+into a widget, the key exists only so that \code{@provides} has an entity to
+point at, and the flag is what stops the router from ever routing one here.
+
+\subsection*{What it buys}
+
+Two plans, from the same router, for two fields that return the same object:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+widget      @provides(fields: "name")   1 fetch:  crates
+widgetByKey no promise                  2 fetches: crates then catalog
+the second fetch's path                 crates.@.widgetByKey
+\end{minted}
+
+One round trip against two, on a graph where the second round trip is the only
+reason the second service is in the plan. That is a real saving and it is the
+whole case for the directive.
+
+\index{query plan!path@\code{path}!list traversal}%
+The path of that second fetch has something in it that
+chapter~\ref{ch:enter-the-router}'s did not. The \code{@} is how the router
+writes a step through a list. That chapter saw
+\code{browseProducts.nodes}, two object hops in a row, so the notation never
+came up.
+
+\subsection*{What it costs}
+
+\index{provides@\code{@provides}!and drift}%
+Widget \code{w2} in this sample is packed under a name Catalog does not agree
+with. Ask the router for all four crates through both fields and compare what
+comes back with what the owner says:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Crate one   w1  router says "Hex bolt"        catalog says "Hex bolt"
+Crate two   w2  router says "Butterfly nut"   catalog says "Wing nut"
+Crate three w3  router says "Split washer"    catalog says "Split washer"
+Crate four  w9  router says "Unknown part"    catalog says null
+\end{minted}
+
+Three things in one table.
+
+The promise is kept: the router believed \code{crates} and did not check.
+
+The promise is wrong for \code{w2}, and nothing anywhere raises an error. The
+client is told a widget is called \enquote{Butterfly nut} by the graph whose
+whole purpose is to be the single place that knows what things are called. A
+composition check cannot see this, a query plan cannot see this, and no
+assertion on the shape of the response can see it. The only thing that can is
+knowing that a copy exists.
+
+And the fourth row is the one I did not expect. \code{w9} is a key Catalog has
+never heard of, and through the \code{@provides} path it answers perfectly
+well. The directive does not only serve stale data, it also conceals a broken
+reference: the one query that would have found out is the one the router
+decided not to make.
+
+\index{provides@\code{@provides}!when to reach for it}%
+Which leaves me somewhere fairly unfashionable on this directive. It is
+genuinely the only thing in federation that removes a round trip rather than
+arranging one, and I would still reach for it last. The condition for using it
+honestly is that your copy is right, and if you can promise that, you have a
+cache and you owe it an invalidation story.
+Chapter~\ref{ch:resilience-and-performance} is where caching becomes a subject
+and that is where the story belongs. What
+chapter~\ref{ch:strangling-the-monolith} does with the same tension is
+different again: \code{@override} moves a field from one service to another
+rather than copying it, which is the answer when the copy was never meant to be
+permanent.
+
+\medskip
+Every listing in this section came back with data in it. The next one is about
+the ones that do not.
+
+\index{provides@\code{@provides}|)}%
