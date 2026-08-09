@@ -60,10 +60,26 @@ function Get-DefaultPolicy {
         # Ascii       - stricter, and an opt-in: no byte outside printable
         #               ASCII, tab, LF or CR.
         # Off         - no character scan.
+        #
+        # AllowInCapturedListings names listing environments, in the same
+        # 'name' or 'name:lexer' form the Verbatim family uses, inside which a
+        # character this mode would otherwise reject is allowed to stand. It
+        # exists because tooling writes prose: a compiler, a composer or a
+        # linter can emit a message containing an em dash, and a book that
+        # prints what a tool said has three bad options otherwise - edit the
+        # capture, weaken the mode for every file, or drop the evidence.
+        #
+        # Both halves are required and the second is the point. The character
+        # has to be inside one of the named environments, AND the line it sits
+        # on has to appear in a research note, by the same test the verbatim
+        # family uses for whether a listing was captured. Prose is not in a
+        # listing, and a listing somebody typed traces to nothing, so neither
+        # can reach this. A book with no research notes cannot use it at all.
         Characters   = [ordered]@{
-            Mode  = 'Punctuation'
-            Extra = @()
-            Allow = @()
+            Mode                    = 'Punctuation'
+            Extra                   = @()
+            Allow                   = @()
+            AllowInCapturedListings = @()
         }
 
         Citations    = [ordered]@{
@@ -413,6 +429,28 @@ if ($policy.Verbatim.Enabled) {
     }
 }
 
+# The same thing for Characters.AllowInCapturedListings. Built separately
+# rather than reusing the list above, because the two answer different
+# questions: Verbatim.Environments is where a claim may be armed, and this is
+# where a byte may survive. A book that wants them to be the same list says so
+# twice, which is cheaper than discovering they were never separable.
+$capturedArmRe = $null
+if ($policy.Characters.AllowInCapturedListings.Count -gt 0) {
+    $armParts = @()
+    foreach ($e in $policy.Characters.AllowInCapturedListings) {
+        if ($e -match '^([A-Za-z]+)[:]([A-Za-z0-9_+-]+)$') {
+            $armParts += '\\begin\{' + [regex]::Escape($Matches[1]) + '\}(?:\[[^\]]*\])?\{' + [regex]::Escape($Matches[2]) + '\}'
+        } elseif ($e -match '^[A-Za-z]+\*?$') {
+            $armParts += '\\begin\{' + [regex]::Escape($e) + '\}'
+        } else {
+            Write-Error "check-chapter.psd1: Characters.AllowInCapturedListings entry '$e' must be 'name' or 'name:lexer'"
+        }
+    }
+    if ($armParts.Count -gt 0) {
+        $capturedArmRe = '(?:' + ($armParts -join '|') + ')'
+    }
+}
+
 $citeMacroRe = ($policy.Citations.Macros | ForEach-Object { [regex]::Escape($_) }) -join '|'
 $identifierRe = '\\(?:' + (($policy.Macros.Identifiers | ForEach-Object { [regex]::Escape($_) }) -join '|') + ')(?:\[[^\]]*\])?\{[^}]*\}'
 
@@ -464,8 +502,13 @@ if (Test-Path $preambleDir) {
 
 # --- research notes, as one blob. A book without research notes simply skips
 # the number and verbatim checks rather than failing every number in it.
+#
+# Three families read it now, and the third is easy to forget: a book that
+# turns Numbers and Verbatim off but sets Characters.AllowInCapturedListings
+# still needs the notes, or its exemption silently never applies.
 $researchText = ''
-if ($policy.Numbers.Enabled -or $policy.Verbatim.Enabled) {
+if ($policy.Numbers.Enabled -or $policy.Verbatim.Enabled -or
+    $policy.Characters.AllowInCapturedListings.Count -gt 0) {
     $researchDir = Join-Path $bookPath $policy.Numbers.ResearchDir
     if (Test-Path $researchDir) {
         # A README in the notes folder documents the folder; it is not a note.
@@ -615,7 +658,15 @@ function Test-VerbatimClaim {
 
 function Format-Policy {
     $bits = @()
-    $bits += "chars=$charMode"
+    # The exemption is part of the mode, not a footnote to it. A run that
+    # forgives bytes somewhere has to say where on the same line that says the
+    # mode, or "chars=Ascii" reads as stricter than it is.
+    $charBit = "chars=$charMode"
+    if ($charMode -ne 'Off' -and $policy.Characters.AllowInCapturedListings.Count -gt 0) {
+        $where = $policy.Characters.AllowInCapturedListings -join ','
+        $charBit += if ($researchBlob) { "(captured:$where)" } else { "(captured:$where, no research notes so nothing traces)" }
+    }
+    $bits += $charBit
 
     if ($policy.Citations.Enabled) {
         $flags = @()
@@ -661,22 +712,81 @@ Write-Host "==> policy: $(Format-Policy)"
 $latin1 = [System.Text.Encoding]::GetEncoding(28591)
 $utf8Strict = [System.Text.UTF8Encoding]::new($false, $true)
 
+# The lines of one file on which Characters.AllowInCapturedListings applies:
+# inside one of the environments the book named, and traceable to a research
+# note. Empty unless the book asked for the setting and has notes to trace to,
+# so the ordinary case costs one comparison and no reading.
+function Get-CapturedLineNumbers {
+    param([System.IO.FileInfo]$File)
+
+    # Every return here is comma-wrapped: PowerShell unrolls a collection on
+    # the way out, which turns an empty set into $null and a full one into an
+    # int array, and both of those lose .Contains() at the call site.
+    $forgiven = [System.Collections.Generic.HashSet[int]]::new()
+    if (-not $capturedArmRe -or -not $researchBlob) { return , $forgiven }
+
+    # Decoded as UTF-8, deliberately, even for Ascii mode, which scans bytes.
+    # A line has to be compared with a research note as text, and the
+    # characters this setting exists for are exactly the ones the two decodings
+    # disagree about. A file that will not decode is forgiven nothing, which is
+    # the right answer: Ascii mode is about to complain about every byte in it.
+    try {
+        $text = [System.IO.File]::ReadAllText($File.FullName, $utf8Strict)
+    } catch {
+        return , $forgiven
+    }
+
+    # The same floor the verbatim family uses, and for the same reason: a short
+    # or punctuation-only line is contained in every document and proves
+    # nothing. Without it, a line holding one em dash and nothing else would
+    # trace to any note that happened to contain an em dash anywhere.
+    $minLength = $policy.Verbatim.MinLineLength
+
+    $inside = $false
+    $lineNo = 0
+    foreach ($line in ($text -split "`r?`n")) {
+        $lineNo++
+        if (-not $inside) {
+            if ($line -match $capturedArmRe) { $inside = $true }
+            continue
+        }
+        if ($line -match '\\end\{') { $inside = $false; continue }
+
+        $normalised = ($line.Trim() -replace '\s+', ' ')
+        if ($normalised.Length -lt $minLength) { continue }
+        if ($normalised -notmatch '[A-Za-z0-9]') { continue }
+        if ($researchBlob.Contains($normalised)) { [void]$forgiven.Add($lineNo) }
+    }
+
+    return , $forgiven
+}
+
 function Test-Characters {
     param([System.IO.FileInfo]$File)
+
+    $forgiven = Get-CapturedLineNumbers $File
 
     if ($charMode -eq 'Ascii') {
         # Raw bytes, everywhere including verbatim. Latin-1 maps each byte to
         # one char, so match positions are byte positions.
         $rawText = [System.IO.File]::ReadAllText($File.FullName, $latin1)
-        $bad = [regex]::Matches($rawText, '[^\x09\x0A\x0D\x20-\x7E]')
+        # Line numbers first, forgiveness second, reporting last. Filtering
+        # after the cap would make the "...and N more" count the bytes this
+        # book has already said it accepts.
+        $bad = @([regex]::Matches($rawText, '[^\x09\x0A\x0D\x20-\x7E]') | ForEach-Object {
+                [pscustomobject]@{
+                    Line  = 1 + [regex]::Matches($rawText.Substring(0, $_.Index), "`n").Count
+                    Value = $_.Value
+                }
+            } | Where-Object { -not $forgiven.Contains($_.Line) })
+
         $reported = 0
         foreach ($m in $bad) {
             if ($reported -ge 5) {
                 Add-Finding $File.FullName 0 'ascii' "...and $($bad.Count - 5) more non-ASCII bytes"
                 break
             }
-            $lineNo = 1 + [regex]::Matches($rawText.Substring(0, $m.Index), "`n").Count
-            Add-Finding $File.FullName $lineNo 'ascii' ('byte 0x{0:X2} is not printable ASCII' -f [int][char]$m.Value)
+            Add-Finding $File.FullName $m.Line 'ascii' ('byte 0x{0:X2} is not printable ASCII' -f [int][char]$m.Value)
             $reported++
         }
         return
@@ -705,6 +815,11 @@ function Test-Characters {
         $cp = [int]$ch
         $isControl = ($cp -lt 0x20) -or ($cp -ge 0x7F -and $cp -le 0x9F)
         if (-not ($isControl -or $bannedCodePoints.Contains($cp))) { continue }
+
+        # A control character is never captured output. It is a mangled edit,
+        # which is the one thing this family catches that nothing else would,
+        # so the forgiveness does not extend to it.
+        if (-not $isControl -and $forgiven.Contains($lineNo)) { continue }
 
         $total++
         if ($reported -ge 5) { continue }

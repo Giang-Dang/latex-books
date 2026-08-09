@@ -21,7 +21,7 @@ expectation: a composer is mostly a very thorough schema linter that happens to
 be reading two schemas at once, and the exotic distributed-systems check is one
 line item in it.
 
-The rest of this section is four failures, all produced from Mosaic's real pair
+The rest of this section is five failures, all produced from Mosaic's real pair
 of schemas with one edit each, because an error message printed from an invented
 fixture teaches you the fixture.
 
@@ -67,11 +67,28 @@ out.
 
 \index{composition!duplicated error messages}%
 One thing about it is worth a sentence, because it will otherwise cost you a
-minute of counting. The composer printed that error twice, identically. A
-different case I ran while researching this chapter printed its error three
-times. I have not established the pattern and I will not invent one, so take
-only this away: the number of blocks in the table is not the number of things
-wrong with your graph.
+minute of counting. The composer printed that error twice, identically, for one
+field with one problem. So the number of blocks in the table is not the number
+of things wrong with your graph.
+
+\subsection*{An enum that drifted, and the only error that tells you what to do}
+
+\index{composition!enum drift}%
+Declare \code{ProductCategory} in both subgraphs with different members. Catalog
+uses it as an output on \code{Product.category} and as an input in its filter,
+which is the condition that makes this strict:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Enum "ProductCategory" was used as both an input and output but was inconsistently defined across inclusive subgraphs. To update an Enum used as both an input and output, add any new Enum values with the @inaccessible directive in the origin subgraph. Next, add those new Enum values to all other subgraphs that define the Enum—this time without the @inaccessible directive. Finally, once all subgraphs have been updated, remove @inaccessible from the Enum values in the origin subgraph.
+\end{minted}
+
+\index{composition!errors that prescribe a migration}%
+That is the only message in this chapter that tells you what to do rather than
+what is wrong, and it is prescribing a three-step migration across two
+deployments because there is no safe single step. An enum read as output wants
+to grow; an enum accepted as input wants to shrink; and a value that exists on
+one side and not the other is unsafe in one direction or the other whichever way
+you add it.
 
 \subsection*{The two that name the wrong thing}
 
@@ -116,7 +133,7 @@ key field is implicitly shareable at home and an ordinary duplicated field
 abroad, so the composer reports it twice, once in each direction.
 
 \index{composition!three causes one error}%
-Three of the four failures in this section come out of a single error factory:
+Three of the five failures in this section come out of a single error factory:
 
 \begin{minted}[fontsize=\footnotesize,breaklines]{javascript}
 function invalidFieldShareabilityError(objectData, invalidFieldNames) { ... }

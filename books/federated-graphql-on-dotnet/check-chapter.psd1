@@ -16,6 +16,18 @@
     # the punctuation-only default.
     Characters = @{
         Mode = 'Ascii'
+
+        # The exception the rule above did not anticipate: tooling writes
+        # prose. Chapter 9 prints a composition error whose own text contains
+        # an em dash, and the three options without this setting were to edit
+        # the capture, drop the evidence, or weaken Ascii mode for the whole
+        # book. This is the narrowest of the four.
+        #
+        # It applies only inside `minted:text`, which is where this book puts
+        # console output, and only to a line that appears in a research note.
+        # Prose is not in a listing and an invented listing traces to nothing,
+        # so neither can reach it. A control character is never forgiven.
+        AllowInCapturedListings = @('minted:text')
     }
 
     # No contractions in the author's own voice; they appear only inside quoted

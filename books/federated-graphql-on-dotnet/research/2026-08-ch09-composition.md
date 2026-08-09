@@ -439,22 +439,37 @@ Three of the five - 2, 4 and 5 - are the same error factory,
 shapes are visible in its source: one for "shareable nowhere", one for
 "shareable in some and not others". [source]
 
-### A sixth case, measured and not committed
+### 6. `enum-drift`
 
-Declaring `enum ProductCategory` in both subgraphs with different members
-produces:
+Edit: `mosaic` gains its own `enum ProductCategory` with three of Catalog's five
+members. Catalog uses the enum as an output (`Product.category`) and as an input
+(`ProductFilterInput`), which is the condition the message is about.
+
+The composer's message, in full, and this is the line chapter 9 prints:
 
 ```
-Enum "ProductCategory" was used as both an input and output but was inconsistently
-defined across inclusive subgraphs. ...
+Enum "ProductCategory" was used as both an input and output but was inconsistently defined across inclusive subgraphs. To update an Enum used as both an input and output, add any new Enum values with the @inaccessible directive in the origin subgraph. Next, add those new Enum values to all other subgraphs that define the Enum—this time without the @inaccessible directive. Finally, once all subgraphs have been updated, remove @inaccessible from the Enum values in the origin subgraph.
 ```
 
-**Three identical copies.** This case is deliberately not in the committed set
-and the chapter does not print it: the message contains a U+2014 em dash
-("the Enum—this time"), and this book's `check-chapter.psd1` sets
-`Characters.Mode = 'Ascii'`, which is a rule about pasted listings that this
-message would break for a legitimate reason. Recording the finding here rather
-than weakening the rule or altering captured text. See the retro.
+**Printed twice**, identically, like `incompatible-type`.
+
+Two things about this one.
+
+It is the only message in the set that prescribes a fix rather than reporting a
+fault, and the fix is a three-step migration across two deployments: add the new
+values `@inaccessible` in the origin subgraph, add them without `@inaccessible`
+everywhere else, then remove `@inaccessible` from the origin. There is no safe
+single step, because an enum read as an output wants to grow and an enum
+accepted as an input wants to shrink.
+
+And it carries a U+2014 em dash, in "the Enum—this time". This book sets
+`Characters.Mode = 'Ascii'`, so the first version of the chapter measured this
+case and did not print it. It is printed now under
+`Characters.AllowInCapturedListings = @('minted:text')`, which forgives a
+character a tool wrote on a line this note records, and forgives nothing else.
+See decision 60. **The line above is load-bearing**: the check traces the
+chapter's listing to this file, so re-wrapping or editing it here silently turns
+the listing back into a finding.
 
 ## H. The switch that turns satisfiability off
 

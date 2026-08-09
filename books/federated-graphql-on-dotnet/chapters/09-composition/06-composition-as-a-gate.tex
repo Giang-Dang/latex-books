@@ -42,8 +42,8 @@ says so, which is what should happen to a chapter that documents a format.
 \index{composition!asserting error messages}%
 Every composer message in sections~\ref{sec:ch09-satisfiability}
 and~\ref{sec:ch09-reading-the-errors} is produced by
-\code{scripts/composition-cases.mjs} and checked on every verification run. Six
-cases: the real pair, which composes, and five edits, which do not.
+\code{scripts/composition-cases.mjs} and checked on every verification run.
+Seven cases: the real pair, which composes, and six edits, which do not.
 
 \begin{minted}[fontsize=\footnotesize]{text}
 node scripts/composition-cases.mjs --list
@@ -53,6 +53,7 @@ unsatisfiable-key   mosaic keeps its key but stops answering for it
 duplicate-field     both subgraphs declare Product.title, neither says shareable
 incompatible-type   a shared field whose return type differs
 missing-key         mosaic declares Product and forgets the key
+enum-drift          both subgraphs declare ProductCategory with different members
 key-mismatch        the two subgraphs key the same entity on different fields
 \end{minted}
 

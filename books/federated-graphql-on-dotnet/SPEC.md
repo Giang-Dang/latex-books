@@ -94,6 +94,7 @@ is re-opened only by recording what changed and why, in the row.
 | 57 | Composition cases are one node script, not two shell implementations | `scripts/composition-cases.mjs` mutates the real committed schema pair in memory, composes, and asserts the composer's messages; `verify.ps1` and `verify.sh` both call it. This is the first node script in the repository, and the alternative was writing the same mutate-compose-assert logic twice and letting it drift, which the chapter 04 open item records having already happened once to `verify.sh`. Each case's edit is a literal replacement that must match exactly once, so a schema change that invalidates a case fails with "matched 0 times" rather than composing the unedited pair and asserting nothing. Cases derive from the real schemas rather than a fixture, because an error message from a toy schema pair is a fact about the toy. Settled 2026-08-09. |
 | 58 | Chapter 09's TOC line widened | The approved line read "satisfiability, reading composition errors, `wgc router compose` (router-only), supergraph anatomy". Drafting found that "supergraph anatomy" names an artefact that does not exist in this stack, which became the chapter's second section; and that two topics the line did not name earned sections of their own, the `--disable-resolvability-validation` flag and composition as a build gate. The line now names all six. Same form as decisions 33 and 45: scope grew in detail, not in ambition. Settled 2026-08-09. |
 | 59 | Three numbers in chapter 09 were wrong until the audit, and all three had been "verified" | The independent auditor re-derived every number and found: the error catalogue is 123 errors, not 203, because 80 of the 203 declarations return a message `string` rather than an `Error`; the config composed with the resolvability check off differs from the good one in five leaves, not one, four of them being the schema edit echoing through content-addressed storage; and the four normalisation changes the chapter named all add bytes, so none of them could explain a document 903 bytes shorter, which turned out to be the federation entry points being stripped. Every one came from counting or diffing the wrong thing and reading the result as confirmation. The rule this leaves: a count is of a type, not of a line that mentions it, and a before-and-after needs the two sides to differ in exactly the one thing being claimed. Settled 2026-08-09. |
+| 60 | Captured output may keep the punctuation the tool wrote | `Characters.Mode = 'Ascii'` stays, and gains `AllowInCapturedListings = @('minted:text')`. The rule that produced Ascii mode is that a stray Unicode character in a listing is a paste that went through something; the case it did not anticipate is that compilers, composers and linters write prose, and their prose has punctuation. Chapter 09 met it as a composition error containing a U+2014 em dash. Both halves of the exemption are required: the character must be inside `minted:text`, and the line must appear in a research note, by the same test the verbatim family uses. Prose is not in a listing and a typed listing traces to nothing, so neither can reach it, and a control character is never forgiven because a mangled `sed` is the one thing this family catches that nothing else would. The setting is library-wide and defaults to empty, so no other book is affected; `scripts/check-chapter.tests.ps1` covers the three cases it must refuse. Settled 2026-08-09, after the chapter first shipped without the listing. |
 
 ## Version baseline
 
@@ -260,6 +261,14 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
 - Listings are drawn from the environments decisions 23 and 38 name, and each
   one exists as a `\newminted` alias or a stock lexer in preamble/packages.tex.
   Adding an environment is a decision, recorded in the log.
+- Every file in this book is ASCII, with one exception: a `minted:text` listing
+  may carry a non-ASCII character when the tool that produced the line wrote it
+  and the line is recorded in a research note. Captured output is not ours to
+  clean, and altering it would be the worse breach. The exception is enforced by
+  `Characters.AllowInCapturedListings` in check-chapter.psd1, which requires
+  both halves and forgives no control character, so it cannot reach prose or an
+  invented listing. It covers punctuation a tool emitted; it is not a licence to
+  paste a curly quote into a listing. See decision 60.
 - Prefer a figure wherever a figure carries the point better than prose does.
   One diagram replaces three paragraphs describing an architecture; one plotted
   series replaces a four-row table. A figure is not decoration. It is a second
@@ -291,16 +300,14 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
 
 ## Open items
 
-- **A composer message this book cannot print.** Declaring `ProductCategory` in
-  both subgraphs with different members produces a real and useful error, and
-  chapter 09 does not show it, because the message contains a U+2014 em dash
-  ("the Enum—this time") and this book sets `Characters.Mode = 'Ascii'`. The
-  three options were all bad: alter captured text, weaken the rule for the whole
-  book, or drop the listing. Chapter 09 dropped it and recorded the measurement
-  in its research note instead. This will recur, because vendor tooling writes
-  prose, so the library owes a decision on how an Ascii-mode book prints a
-  capture containing one non-ASCII character. See the retro proposal about a
-  `Characters.AllowInCapturedListings` setting.
+- (resolved 2026-08-09) The composer message chapter 09 could not print now
+  prints. `Characters.AllowInCapturedListings` exists, this book sets it to
+  `minted:text`, and the enum-drift case is committed in the companion repo like
+  the other six. See decision 60. What is worth carrying: the em-dash line in
+  research/2026-08-ch09-composition.md section G is load-bearing, because the
+  check traces the chapter's listing to it. Re-wrapping that line in the note
+  turns the listing back into a finding, and the failure will name the listing
+  rather than the note.
 - **The satisfiability error names one route out of four.** Catalog has four
   root fields returning `Product` and the unresolvable-path error names only
   `Query.products`. Whether that is the first route the walker tried, the
