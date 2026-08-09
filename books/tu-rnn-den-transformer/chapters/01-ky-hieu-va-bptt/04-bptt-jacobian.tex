@@ -6,7 +6,8 @@
 \section{Lan truyền ngược qua thời gian}
 \label{sec:ch01-bptt}
 
-BPTT không phải là một thuật toán mới. Nó là lan truyền ngược thông thường,
+BPTT không phải là một thuật toán mới. Nó là
+\tn{lan truyền ngược}{backpropagation} thông thường,
 áp dụng lên đồ thị tính toán đã được tháo cuộn của RNN. Điều duy nhất thay
 đổi là gradient phải đi qua $\mat{W}_{hh}$ nhiều lần; mỗi lần tại một bước
 thời gian; và chính sự lặp lại đó sẽ là nhân vật chính của ba chương tiếp
@@ -22,7 +23,8 @@ theo.
   \label{eq:bptt-dy}
 \end{equation}
 
-Đây là một vector $d_y$-chiều. Mỗi bước thời gian đóng góp gradient riêng,
+Đây là một vector $d_y$-chiều. Mỗi \tn{bước thời gian}{timestep} đóng góp
+gradient riêng,
 không phụ thuộc vào các bước khác; ít nhất là ở tầng này.
 
 \subsection{ gradient theo hidden state}
@@ -143,7 +145,7 @@ $\vect{a}_t$.
 \subsection{ gradient cho tham số}
 
 Từ $\pd{L}{\vect{a}_t}$ và $\pd{L}{\vect{y}_t}$, gradient cho năm tham số
-được tích luỹ qua toàn bộ chuỗi:
+được tích luỹ qua toàn bộ \tn{chuỗi}{sequence}:
 
 \begin{align}
   \pd{L}{\mat{W}_{xh}} &= \sum_{t=1}^{T}
@@ -165,8 +167,9 @@ Từ $\pd{L}{\vect{a}_t}$ và $\pd{L}{\vect{y}_t}$, gradient cho năm tham số
 
 Ký hiệu $\vect{u} \otimes \vect{v}\transpose$ là tích ngoài: nếu $\vect{u}
 \in \R^m$ và $\vect{v} \in \R^n$, kết quả là ma trận $m \times n$ với phần
-tử $(i,j) = u_i v_j$. Đây chính là dạng Jacobian của gradient theo ma trận
-trọng số: mỗi cặp (đầu vào, tín hiệu lỗi) đóng góp một hạng tử vào tổng.
+tử $(i,j) = u_i v_j$. Đây chính là dạng Jacobian của gradient theo
+\tn{ma trận trọng số}{weight matrix}: mỗi cặp (đầu vào, tín hiệu lỗi) đóng góp
+một hạng tử vào tổng.
 
 \subsection{Vì sao $\mat{W}_{hh}$ lặp $T$ lần}
 

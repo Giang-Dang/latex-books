@@ -26,7 +26,8 @@ tự nói ``từ $x$ tới $h$'', không cần bạn tra bảng.
 
 Vector được in đậm chữ thường, ma trận in đậm chữ hoa. Tại mỗi
 \tn{bước thời gian}{timestep} $t = 1, 2, \dots, T$, mạng nhận một vector đầu
-vào $\vect{x}_t \in \R^{d_x}$, giữ một trạng thái ẩn $\vect{h}_t \in \R^{d_h}$,
+vào $\vect{x}_t \in \R^{d_x}$, giữ một \tn{trạng thái ẩn}{hidden state}
+$\vect{h}_t \in \R^{d_h}$,
 và sinh một vector đầu ra $\vect{y}_t \in \R^{d_y}$. Ký hiệu $d_x, d_h, d_y$
 là số chiều của từng không gian; chúng là hằng số với một mô hình cho trước
 và không phụ thuộc vào $T$. Trạng thái ẩn ban đầu $\vect{h}_0$ luôn là vector
@@ -53,7 +54,7 @@ Phương trình~\eqref{eq:rnn-hidden} là trái tim của RNN. Tại mỗi bư�
 lấy đầu vào hiện tại $\vect{x}_t$ và trạng thái ẩn trước đó $\vect{h}_{t-1}$,
 nhân với hai \tn{ma trận trọng số}{weight matrix} $\mat{W}_{xh}$ (input
 $\to$ hidden) và $\mat{W}_{hh}$ (hidden $\to$ hidden), cộng
-\tn{bias}{bias} $\vect{b}_h$, rồi đẩy qua hàm $\tanh$. Kết quả là trạng thái
+bias $\vect{b}_h$, rồi đẩy qua hàm $\tanh$. Kết quả là trạng thái
 ẩn mới $\vect{h}_t$; một vector tổng kết mọi thứ mạng đã thấy từ bước~1 đến
 bước~$t$.
 
@@ -67,7 +68,8 @@ hiểu BPTT.
 \subsection{Tháo cuộn theo thời gian}
 
 Một RNN có vẻ tuần hoàn: $\vect{h}_t$ xuất hiện ở cả vế trái lẫn vế phải của
-\eqref{eq:rnn-hidden}. Nhưng với một chuỗi có độ dài $T$ cố định, ta có thể
+\eqref{eq:rnn-hidden}. Nhưng với một \tn{chuỗi}{sequence} có độ dài $T$ cố
+định, ta có thể
 \textbf{tháo cuộn} nó thành một mạng truyền thẳng sâu $T$ tầng, mỗi tầng dùng
 chung một bộ trọng số. Hình dung: tại $t=1$, mạng tính $\vect{h}_1$ từ
 $\vect{x}_1$ và $\vect{h}_0$; tại $t=2$, nó tính $\vect{h}_2$ từ $\vect{x}_2$
@@ -75,14 +77,16 @@ và $\vect{h}_1$; và cứ thế đến $T$.
 
 Chính hình ảnh tháo cuộn này là thứ làm cho BPTT khả thi. Một khi chuỗi đã
 được trải phẳng thành một đồ thị tính toán không có chu trình, ta có thể áp
-dụng đúng thuật toán lan truyền ngược thông thường; chỉ khác là gradient
+dụng đúng thuật toán \tn{lan truyền ngược}{backpropagation} thông thường; chỉ
+khác là gradient
 phải đi qua cùng một tập trọng số $\mat{W}_{hh}$ nhiều lần, mỗi lần tại một
 bước thời gian. Chính sự lặp lại đó là nguồn gốc của mọi hiện tượng mà phần~II
 của cuốn sách sẽ mổ xẻ.
 
 \subsection{Ký hiệu gradient}
 
-Cuốn sách này làm việc với gradient ở dạng \textbf{ma trận Jacobi}. Nếu
+Cuốn sách này làm việc với gradient ở dạng
+\tn{\textbf{ma trận Jacobi}}{Jacobian matrix}. Nếu
 $\vect{y} \in \R^m$ và $\vect{x} \in \R^n$, thì Jacobian
 $\jac{\vect{y}}{\vect{x}}$ là một ma trận $m \times n$ với phần tử
 $(i,j)$ là $\partial y_i / \partial x_j$. Với một \tn{hàm mất mát}{loss

@@ -16,7 +16,8 @@ Mọi số liệu đến từ \mintinline{text}{python verify.py}.
 \tierunderstand
 
 \begin{bt}
-  \item Bài toán cộng yêu cầu mạng nhớ \textbf{hai} giá trị trong toàn bộ
+  \item \tn{Bài toán cộng}{adding problem} yêu cầu mạng nhớ \textbf{hai} giá
+    trị trong toàn bộ
     chuỗi. Nếu ta đổi thành ba vị trí đánh dấu, độ khó tăng lên thế nào?
     Giải thích bằng khái niệm dung lượng trạng thái ẩn.
 
@@ -54,8 +55,9 @@ Mọi số liệu đến từ \mintinline{text}{python verify.py}.
     còn biến mất không? Nếu không, vì sao ReLU không giải quyết được vấn
     đề này trong RNN? (Gợi ý: ReLU không có upper bound.)
 
-  \item Dùng \mintinline{python}{torch.nn.RNN} (PyTorch) cài đặt lại bài
-    toán sao chép với $T_{\text{mem}} = 20$. Để PyTorch tự tính gradient.
+  \item Dùng \mintinline{python}{torch.nn.RNN} (PyTorch) cài đặt lại
+    \tn{bài toán sao chép}{copy task} với $T_{\text{mem}} = 20$. Để PyTorch tự
+    tính gradient.
     In ra norm của gradient theo $\mat{W}_{hh}$ tại mỗi bước thời gian.
     Kết quả có khớp với BPTT thủ công không?
 \end{bt}

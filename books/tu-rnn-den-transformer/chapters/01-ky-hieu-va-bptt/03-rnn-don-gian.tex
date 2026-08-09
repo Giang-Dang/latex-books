@@ -7,7 +7,8 @@
 \label{sec:ch01-rnn-xuoi}
 
 Với ký hiệu đã có, tôi viết lại lan truyền xuôi của RNN một cách tường minh
-cho toàn bộ chuỗi. Đây không phải là chỗ để đọc lướt; mỗi ký hiệu trong dẫn
+cho toàn bộ \tn{chuỗi}{sequence}. Đây không phải là chỗ để đọc lướt; mỗi ký
+hiệu trong dẫn
 xuất BPTT ở mục~4 đều quay về một dòng ở đây.
 
 \subsection{Một bước thời gian}
@@ -19,7 +20,7 @@ Tại bước $t$, ba thứ xảy ra theo thứ tự:
     $\vect{a}_t = \mat{W}_{xh} \vect{x}_t
                  + \mat{W}_{hh} \vect{h}_{t-1}
                  + \vect{b}_h$.
-  \item Qua hàm kích hoạt:
+  \item Qua \tn{hàm kích hoạt}{activation function}:
     $\vect{h}_t = \tanh(\vect{a}_t)$,
     với $\tanh$ áp dụng lên từng phần tử.
   \item Đọc ra output:
@@ -43,7 +44,8 @@ Với chuỗi dài $T$, lan truyền xuôi sinh ra ba dãy:
   \vect{a}_1, \vect{a}_2, \dots, \vect{a}_T.
 \]
 
-Trạng thái ẩn ban đầu $\vect{h}_0 = \vect{0}$ (vector không). Đây là lựa chọn
+\tn{Trạng thái ẩn}{hidden state} ban đầu $\vect{h}_0 = \vect{0}$ (vector
+không). Đây là lựa chọn
 đơn giản nhất và là mặc định trong mọi cài đặt; sau này LSTM và GRU cũng khởi
 tạo cell state và hidden state bằng vector không.
 
@@ -62,7 +64,8 @@ $\widehat{\vect{y}}_t$ là target tại bước $t$:
 Hệ số $1/2$ không thay đổi vị trí cực tiểu nhưng làm gọn gradient: đạo hàm
 của $z^2/2$ là $z$, không phải $2z$. Trong thực tế, bài toán phân loại chuỗi
 dùng cross-entropy, và bài toán sinh chuỗi dùng cross-entropy trên từng
-token. Nhưng những hàm mất mát đó thêm một tầng softmax và một tầng Jacobian
+token. Nhưng những \tn{hàm mất mát}{loss function} đó thêm một tầng softmax và
+một tầng Jacobian
 không giúp ích gì cho việc hiểu BPTT. Tổng bình phương sai số giữ gradient
 ở dạng đơn giản nhất: một phép trừ.
 

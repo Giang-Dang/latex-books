@@ -10,7 +10,8 @@
 
 \subsection{Định nghĩa}
 
-Bài toán sao chép kiểm tra trí nhớ theo cách trực tiếp nhất: mạng đọc một
+\tn{Bài toán sao chép}{copy task} kiểm tra trí nhớ theo cách trực tiếp nhất:
+mạng đọc một
 chuỗi, im lặng qua một khoảng trễ, rồi viết lại chính xác chuỗi đó.
 
 \begin{figure}[ht]
@@ -30,7 +31,8 @@ Cụ thể, với tham số $T_{\text{mem}}$ (hình~\ref{fig:ch02-copy-schema}):
     xuất ra đúng $T_{\text{mem}}$ vector đã đọc.
 \end{enumerate}
 
-Tổng chiều dài chuỗi: $2T_{\text{mem}} + 1$. Bài toán khó hơn bài toán cộng
+Tổng chiều dài chuỗi: $2T_{\text{mem}} + 1$. Bài toán khó hơn
+\tn{bài toán cộng}{adding problem}
 vì mạng phải nhớ \textbf{toàn bộ} chuỗi đầu vào qua $T_{\text{mem}}$ bước
 hoàn toàn im lặng; không một gợi ý nào từ input.
 
@@ -86,7 +88,8 @@ Ba đường cong cho thấy một quy luật: gradient suy giảm theo \textbf{
 của khoảng cách thời gian, không phải tuyến tính. $T_{\text{mem}} = 5$ cho
 đường cong thoải; $T_{\text{mem}} = 20$ cho đường cong dốc đứng; gradient
 gần như biến mất hoàn toàn sau khoảng 15 bước lùi. Đây chính là lý do RNN
-không học được phụ thuộc dài hạn: tín hiệu học từ tương lai không đến được
+không học được \tn{phụ thuộc dài hạn}{long-term dependencies}: tín hiệu học từ
+tương lai không đến được
 quá khứ xa.
 
 \index{copy task|)}%

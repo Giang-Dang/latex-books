@@ -12,14 +12,17 @@ là một ma trận trông hợp lý. Nó chỉ sai, và bạn sẽ không biế
 hình không hội tụ, mà một mô hình không hội tụ thì có hàng tá nguyên nhân
 khác ngoài gradient sai.
 
-Cách duy nhất để biết chắc một cài đặt lan truyền ngược là đúng: so sánh nó
-với gradient được tính bằng \textbf{sai phân hữu hạn}. Đây là kỹ thuật lâu đời
+Cách duy nhất để biết chắc một cài đặt
+\tn{lan truyền ngược}{backpropagation} là đúng: so sánh nó
+với gradient được tính bằng
+\tn{\textbf{sai phân hữu hạn}}{finite difference}. Đây là kỹ thuật lâu đời
 nhất trong tối ưu hóa số, và nó không phụ thuộc vào code của bạn; nó chỉ phụ
 thuộc vào định nghĩa của đạo hàm.
 
 \subsection{Công thức}
 
-Với một tham số vô hướng $\theta$ và một hàm mất mát $L(\theta)$, đạo hàm
+Với một tham số vô hướng $\theta$ và một \tn{hàm mất mát}{loss function}
+$L(\theta)$, đạo hàm
 được xấp xỉ bằng:
 
 \begin{equation}
@@ -33,7 +36,8 @@ hai: sai số tỉ lệ với $\varepsilon^2$, tốt hơn sai phân tiến bậc
 với $\varepsilon$). Cái giá là phải chạy lan truyền xuôi \emph{hai lần} cho
 mỗi tham số; một lần với $+\varepsilon$, một lần với $-\varepsilon$.
 
-Với một ma trận trọng số $\mat{W}$, ta áp dụng \eqref{eq:finite-diff} cho
+Với một \tn{ma trận trọng số}{weight matrix} $\mat{W}$, ta áp dụng
+\eqref{eq:finite-diff} cho
 từng phần tử một. Nếu $\mat{W}$ có $m \times n$ phần tử, ta cần $2mn$ lần
 chạy lan truyền xuôi. Với RNN đồ chơi $3 \times 2$ của tôi, đó là 12
 lần chạy cho $\mat{W}_{xh}$, 18 cho $\mat{W}_{hh}$, 6 cho $\mat{W}_{hy}$,
