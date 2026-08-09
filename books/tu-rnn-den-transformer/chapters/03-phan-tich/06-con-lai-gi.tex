@@ -1,0 +1,43 @@
+\section{Bài báo giải được gì, và để lại gì}
+\label{sec:ch03-con-lai-gi}
+
+\index{vanishing gradient!chưa giải được}%
+Bài này lấy một quan sát đã có từ 1994 và biến nó thành hai điều kiện kiểm được
+cùng hai biện pháp chạy được. Sau nó, câu hỏi \enquote{khi nào \tn{độ dốc}{gradient} tắt}
+không còn là chuyện cảm tính. Đó là một bước tiến thật, và biện pháp thứ nhất
+của bài vẫn còn nguyên trong PyTorch hôm nay dưới tên
+\code{torch.nn.utils.clip\_grad\_norm\_}.
+
+Nhưng hãy nhìn kỹ cái được sửa. Clipping chặn một bước đi quá dài. Nó làm huấn
+luyện không hỏng. Nó không làm mạng nhớ được lâu hơn một bước nào: sau khi cắt,
+gradient tại các bước xa vẫn nhỏ đúng như trước khi cắt, chỉ là toàn bộ vector
+được co lại cùng một tỷ lệ. Clipping sửa được tính ổn định của huấn luyện, và
+không sửa được trí nhớ.
+
+Phía trí nhớ là việc của regularizer, và ở đó bài để lại một chỗ mắc kẹt mà
+chính họ chỉ ra. Ép tín hiệu lỗi giữ nguyên norm khi đi ngược có nghĩa là đẩy
+mô hình ra xa \tn{điểm hút}{attractor} mà nó đang tiến về, vì ở gần một điểm hút thì thông tin
+buộc phải tắt dần. Đẩy ra xa điểm hút là đẩy lại gần ranh giới giữa các miền
+hút. Mà vượt ranh giới giữa hai \tn{miền hút}{basin of attraction} chính là \tn{điều kiện đủ}{sufficient condition} để gradient nổ,
+đúng như mục~\ref{sec:ch03-he-dong-luc} đã nói.
+
+Hai biện pháp của bài vì thế không phải hai lựa chọn thay thế nhau mà là một
+cặp buộc phải đi cùng: biện pháp xử lý phía tắt làm phía nổ dễ xảy ra hơn, nên
+phải có biện pháp kia chặn lại. Bài gọi cấu hình đó là SGD-CR, và trên tập
+test của cả ba bộ dữ liệu nhạc lẫn Penn Treebank, nó là cấu hình cho kết quả tốt
+nhất~\autocite{pascanu2013difficulty}. Trên tập train thì không phải lúc nào cũng
+vậy: ở ba trong bốn dòng, clipping một mình còn thấp hơn.
+
+Đó là chỗ đứng mà bài để lại. Một mạng hồi quy thường, để nhớ được xa, phải
+được giữ ở một chế độ mà động lực học của nó không tự đi tới, bằng một số hạng
+phạt kéo nó ra và một ngưỡng cắt chặn độ dài bước đi. Cân bằng ấy giữ được, và
+bài chứng minh là giữ được. Chỉ là nó phải được giữ, liên tục, bằng thuật toán
+huấn luyện.
+
+Câu hỏi tự nhiên tiếp theo là câu hỏi mà chương sau trả lời: nếu đường đi của
+gradient qua thời gian là thứ liên tục nhân với một cái gì đó nhỏ hơn 1, thì
+thay vì phạt cho cái gì đó ấy lệch khỏi 1, có thể dựng một kiến trúc mà nó
+\emph{bằng} 1 theo cấu tạo hay không.
+
+Câu trả lời đã có từ 1997, mười sáu năm trước bài này. Nó không sửa thuật
+toán huấn luyện. Nó sửa mạng.

@@ -1,0 +1,31 @@
+% Scope (SPEC table of contents): Pascanu, Mikolov, Bengio 2013. Điều kiện đủ cho vanishing qua giá trị kỳ dị lớn nhất của W_rec, điều kiện cần cho exploding; góc nhìn hệ động lực học và vách gradient; clipping và regularizer giữ norm, và vì sao chỉ một cái còn được dùng; gap: sửa được huấn luyện, không sửa được trí nhớ.
+\chapter{Phân tích: khi nào gradient tắt và khi nào nổ}
+\label{ch:phan-tich}
+
+Chương~\ref{ch:hien-tuong} để lại một hiện tượng đo được: \tn{độ dốc}{gradient} đi ngược qua
+đủ nhiều bước thời gian thì tắt, và mạng không học được thứ nó cần nhớ. Hiện
+tượng đó đã được mô tả từ 1994~\autocite{bengio1994}. Cái chưa có là
+câu trả lời cho hai câu hỏi mà bất kỳ ai định sửa nó đều phải hỏi: chính xác
+khi nào thì nó xảy ra, và chính xác cái gì gây ra nó.
+
+Pascanu, Mikolov và Bengio trả lời cả hai vào năm
+2013~\autocite{pascanu2013difficulty}. Bài báo đưa ra một \tn{điều kiện đủ}{sufficient condition} để
+gradient tắt, một \tn{điều kiện cần}{necessary condition} để nó nổ, một cách nhìn hình học giải thích vì
+sao huấn luyện thất bại ngay cả khi không có gì tắt, và hai biện pháp. Một
+trong hai biện pháp đó bây giờ nằm trong thư viện chuẩn của mọi framework. Biện
+pháp còn lại gần như không ai dùng, và lý do không phải vì nó không chạy.
+
+Bản tôi đọc là bản arXiv, arXiv:1211.5063v2, gồm chín trang thân bài và ba
+trang phụ lục phân tích; bản kỷ yếu ICML 2013 đánh trang 1310 tới 1318, nên số
+trang của hai bản không dùng lẫn được. Có một chỗ trong bài phát biểu không khớp
+với chính chứng minh của nó, và chỗ lệch ấy không phải chuyện chữ nghĩa: nó đổi
+câu trả lời cho câu hỏi \enquote{khi nào}. Tôi sẽ dựng lại lập luận của bài, rồi
+đo chỗ lệch đó.
+
+\input{chapters/03-phan-tich/01-tich-jacobian}
+\input{chapters/03-phan-tich/02-khe-ho}
+\input{chapters/03-phan-tich/03-vach-trong-mat-loi}
+\input{chapters/03-phan-tich/04-clipping}
+\input{chapters/03-phan-tich/05-regularizer}
+\input{chapters/03-phan-tich/06-con-lai-gi}
+\input{chapters/03-phan-tich/07-bai-tap}

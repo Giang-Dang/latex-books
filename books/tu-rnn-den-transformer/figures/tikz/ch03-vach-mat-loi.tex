@@ -1,0 +1,52 @@
+% Mặt lỗi của mô hình một đơn vị ẩn, cắt dọc theo b tại w = 5.0.
+% Số liệu: research/2026-08-ch03-phan-tich.md, mục "Đo 3".
+% Toạ độ: x_cm = (b + 2.620) * 500, y_cm = cost * 13.889.
+% Mono-safe: chỉ dùng nét liền, nét đứt và mức xám.
+\begin{tikzpicture}[
+  duongcong/.style = {line width = 0.9pt, black},
+  truc/.style      = {->, >={Stealth[length=2mm]}, gray!70, line width = 0.5pt},
+  ghichu/.style    = {font = \footnotesize},
+  moc/.style       = {densely dashed, gray!60, line width = 0.5pt},
+]
+
+  % Trục
+  \draw[truc] (-0.4, 0) -- (10.6, 0) node[right, ghichu, black] {\(b\)};
+  \draw[truc] (0, -0.4) -- (0, 5.4) node[above, ghichu, black] {\(L_{50}\)};
+
+  % Vạch trục x
+  \foreach \bx/\blabel in {0/-2.620, 5/-2.610, 10/-2.600} {
+    \draw[gray!70] (\bx, 0) -- (\bx, -0.12);
+    \node[below, ghichu] at (\bx, -0.12) {\(\blabel\)};
+  }
+  % Vạch trục y
+  \foreach \by/\blabel in {0.139/0.01, 4.861/0.35} {
+    \draw[gray!70] (0, \by) -- (-0.12, \by);
+    \node[left, ghichu] at (-0.12, \by) {\(\blabel\)};
+  }
+
+  % Nhánh trái: gần như phẳng
+  \draw[duongcong] (0, 4.768) -- (1.5, 4.758) -- (3.0, 4.748) -- (3.5, 4.744);
+
+  % Vách
+  \draw[duongcong] (3.5, 4.744) -- (4.0, 0.118);
+
+  % Nhánh phải: phẳng, dốc lên rất nhẹ
+  \draw[duongcong] (4.0, 0.118) -- (4.5, 0.142) -- (5.0, 0.146) -- (7.5, 0.158)
+                                -- (10.0, 0.168);
+
+  % Điểm dốc nhất. x = (-2.61234136 + 2.620) * 500 = 3.8293.
+  \draw[moc] (3.829, 0) -- (3.829, 5.0);
+  \node[ghichu, align = left, anchor = west] at (4.3, 4.6)
+    {đỉnh dốc tại \(b = -2.6123413600\)\\ \(\norm{\nabla L_{50}} = 6.773125 \times 10^{3}\)};
+
+  % Vùng phẳng nằm ngoài lát cắt này, ở b = -2.0, nên chú thích không có mốc
+  % chỉ vào đâu cả: vẽ một mốc ở đây là chỉ vào một điểm mà con số không lấy từ đó.
+  \node[ghichu, anchor = north east, align = right] at (10.5, 2.9)
+    {tại \(b = -2.0\), ngoài lát cắt này:\\
+     \(\norm{\nabla L_{50}} \approx 5.549566 \times 10^{-2}\)};
+
+  % Nhãn hai nhánh
+  \node[ghichu, anchor = south west] at (0.15, 4.85) {\(L_{50} \approx 0.342\)};
+  \node[ghichu, anchor = south west] at (4.6, 0.32) {\(L_{50} \approx 0.012\)};
+
+\end{tikzpicture}

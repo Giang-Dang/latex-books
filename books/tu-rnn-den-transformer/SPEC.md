@@ -16,15 +16,17 @@ picks a side. Chapter titles are quoted in Vietnamese exactly as they are set.
 
 ## Status
 
-Skeleton complete, no prose written. 60 pages of empty stubs build clean on
-LuaLaTeX: 6 parts, 16 chapters, 5 appendices, zero overfull boxes, zero
-undefined references, and `check-chapter.ps1` exits 0.
+Chapters 01, 02 and 03 drafted. Six appendices now: C was split out of B on
+2026-08-09 (decision 28) and the old C, D and E became D, E and F.
 
-Next action: chapter 01, "Chuỗi, ký hiệu, và lan truyền ngược qua thời gian". It
-owes three things before prose starts: the companion repo has to exist and be
-named (see open items), the notation of appendix A has to be settled because
-every later chapter inherits it, and the glossary of appendix B has to have its
-first entries because decision 16 binds from the first sentence.
+Chapter 03 was drafted out of order, in a session that branched before chapters
+01 and 02 landed on main. Nothing was lost, but the reconciliation cost real
+time; decision 30 exists so the next session does not repeat it.
+
+Next action: chapter 04, "Sửa bằng kiến trúc". It inherits a settled notation
+(decision 25), a companion repo with tags through `ch03`, and the requirement in
+decision 24 that its vocabulary stay inside software engineering, ML and
+mathematics.
 
 ## Decision log
 
@@ -38,7 +40,7 @@ is re-opened only by recording what changed and why, in the row.
 | 3 | Mathematical depth | Full derivations in the running text, not in an appendix. The vanishing and exploding conditions, the derivative through the LSTM constant error carousel, the variance argument behind 1/sqrt(d_k), and the cost of self-attention are all worked where the reader meets them. A student who cannot differentiate the architecture cannot modify it, and modifying it is goal three |
 | 4 | Code | A companion repo in PyTorch, built from scratch, tagged per chapter. Every listing in the book comes from it at that chapter's tag |
 | 5 | Scope beyond the six papers | Extended to 2026 for real, not as an epilogue. Part VI is four chapters: FlashAttention, RoPE and long context, SSMs and Mamba, and deployment reality. Reason: a book that stops at ViT presents 2021's open problems as open, and several of them were closed years ago. Intermediate papers the spine needs (Cho 2014, Luong 2015, Gers 2000, layer norm, residual, BERT, GPT) get bridge boxes rather than chapters |
-| 6 | Length | 330-380 pages, 16 chapters, 5 appendices. Not the "small book" the request opened with; decisions 2, 3, 4 and 5 each cost pages and the author took all four |
+| 6 | Length | 330-380 pages, 16 chapters, 6 appendices after decision 28. Not the "small book" the request opened with; decisions 2, 3, 4 and 5 each cost pages and the author took all four |
 | 7 | Numbers | Two kinds, kept visibly apart. Numbers a paper reported are cited. Numbers I measured go in a `measured` box and trace to a research note. Experiments are toy-scale on purpose (decision 13) |
 | 8 | Exercises | Three tiers per chapter, one per goal: "Kiểm tra hiểu" (questions on the derivation and the figures), "Để tay vào" (code against a repo tag, checkable), "Đẩy xa hơn" (open questions, at least one of which is a real unsolved gap, and the book says so) |
 | 9 | Tone | Chapter body takes the chapter role, end-of-chapter exercises the lab role, appendices the appendix role, `frontmatter/` the front matter role. Resolved through `humanizer-vi`: `tone-chuong-sach`, `tone-thuc-hanh`, `tone-phu-luc`, `tone-loi-noi-dau` |
@@ -56,6 +58,13 @@ is re-opened only by recording what changed and why, in the row.
 | 21 | Glosses are written through a macro | `\tn{vietnamese}{english}` in `preamble/macros.tex`, never by hand. It sets the parentheses once instead of 400 times, and it turns decision 16 from a discipline into something greppable later: a glossary term appearing in the prose outside `\tn` is a miss. See the open item on the gloss check |
 | 22 | The six PDFs stay out of the repo | `latex-books` has a public GitHub remote, and "Long Short-Term Memory" is an MIT Press journal article; committing it would be redistribution rather than archiving. `research/2026-08-nguon-sau-bai-bao.md` records the folder, the arXiv version of each copy, and a SHA-256 per file instead, so a later session can tell whether it is reading the same bytes the citations were checked against. Do not add a `*.pdf` ignore rule inside the book folder: `figures/images/` may hold PDF artwork |
 | 23 | Two language mappings in the preamble, and the load order they force | biblatex ships no `vietnamese.lbx` and csquotes ships no Vietnamese style, so both warn once Vietnamese is the main language. `\DeclareLanguageMapping{vietnamese}{english}` and `\DeclareQuoteAlias{english}{vietnamese}` fix them, and the second is correct rather than expedient: modern Vietnamese uses the same curly double quotes English does. This also pins the load order in `preamble/packages.tex` to minted, then csquotes, then biblatex, because fvextra (loaded by minted) wants csquotes after it and biblatex wants csquotes before it. Moving csquotes back up to the other packages reintroduces a warning on every run |
+| 24 | Vocabulary stays inside the book's own fields | This is a software engineering and AI book, so its prose takes words from software engineering, machine learning and mathematics, and does not reach into an unrelated domain for a metaphor. Settled 2026-08-09 when the author rejected "triệu chứng" (symptom). The whole medical register went with it: chapter 02's title became "Hiện tượng", chapter 03's became "Phân tích", and "căn bệnh", "chẩn đoán" and "chữa" were rewritten wherever chapters 01 and 02 used them, folders and labels included. Carve-out: a vivid word that is established terminology in this literature stays, and the error-surface geometry of Pascanu et al., the wall and the valley, is the case that matters most. The test is whether a reader would meet the word in a paper, not whether it is vivid |
+| 25 | The loss is `L`, and the state has two names | Chapter 01 was drafted with `L` for the cost and chapter 03 arrived using `\mathcal{E}`, which is what Pascanu writes. `L` wins, because one notation for the whole book beats matching any single paper, and chapter 03 was rewritten. Appendix A records that Pascanu writes `E`. Alongside it: `x_t` input, `a_t` pre-activation, `h_t = sigma(a_t)` hidden state. Two state variables rather than one, because Pascanu's recurrence *is* the book's pre-activation form: naming the argument of sigma in `h_t = sigma(W_hh h_{t-1} + ...)` as `a_t` turns their equation into this book's, symbol for symbol. That identity is what lets chapter 03 derive against the paper without a second notation, and chapter 01's code already used both names. Refines decision 11 |
+| 26 | The companion repo is organized by topic from chapter 03 on | Chapters 01 and 02 put one module per chapter in `rnn_to_transformer_lab/`, each exposing a `verify()`. From chapter 03 the package is organized **by topic**, because chapter 04 replaces the recurrence but keeps the Jacobian machinery and a per-chapter module would mean copying it. What pins a chapter's state is its tag. The chapter 01 and 02 modules are left exactly as they are, since their tags are published; the repo README names the seam. Two things found while doing it: the chapter 01 and 02 code is numpy rather than the PyTorch decision 4 asked for, and `environment.yml` listed `cpuonly` but resolved to `pytorch==2.6.0=cuda126_mkl_...`, installing several gigabytes of CUDA on a machine the book promised would not need one. It went unnoticed because that code imports torch nowhere. Fixed by installing torch from the CPU wheel index |
+| 27 | Per-experiment CPU time budget | 60 seconds per experiment and 600 seconds for a whole `verify.py` run, enforced by that script rather than written down as a note. Measured at tag `ch03`: 124 seconds in total, of which chapter 02's verify is 92 and the whole of chapter 03 is 32. Closes the open item that said budgets were unset |
+| 28 | Abbreviations are their own appendix | The abbreviation table arrived as a section inside appendix B during chapter 01. Split out into appendix C on 2026-08-09 at the author's request, so that notation, glossary and abbreviations are three lookups rather than two; the old C, D and E shifted to D, E and F. Nothing referenced an appendix by letter, so the shift cost only file renames |
+| 29 | Appendices are lookup only | Settled 2026-08-09 after the author cut three openers as redundant. An appendix carries entries, not argument: no scene-setting paragraph, no rationale section, no closing note about how the table is maintained, no transition between entries. Why a term was translated, why a symbol was chosen, and how a table grows all belong in this SPEC. A reader reaches an appendix from the index, reads one row, and leaves |
+| 30 | Check `origin/main` before drafting, not after | Chapter 03 was drafted in a worktree branched before chapters 01 and 02 landed, so it rebuilt appendix A and appendix B from scratch, duplicated the abbreviation table, and used a loss symbol the book had already chosen. None of it was lost, but the merge cost more than the drafting. The rule: `git fetch origin && git log --oneline origin/main -- books/<name>` before the first file is written, and read the SPEC from `origin/main` rather than from the working tree. This book's SPEC and its appendices are shared state, and two sessions can be editing them at once |
 
 ## Version baseline
 
@@ -92,14 +101,14 @@ created. That section is the hinge to the next chapter and is not optional.
 
 ### Part II - Gradient không đi xa được
 
-2. **Triệu chứng: vì sao huấn luyện RNN thất bại** - the adding problem and the
+2. **Hiện tượng: vì sao huấn luyện RNN thất bại** - the adding problem and the
    copy task; gradient norm measured against temporal distance; bridge boxes for
    Hochreiter 1991 and Bengio 1994
-3. **Chẩn đoán** (Pascanu, Mikolov, Bengio 2013) - the sufficient condition for
-   vanishing through the largest singular value of `W_rec`, the necessary
+3. **Phân tích: khi nào gradient tắt và khi nào nổ** (Pascanu, Mikolov, Bengio 2013) - the sufficient condition for
+   vanishing through the largest singular value of `W_hh`, the necessary
    condition for exploding; the dynamical-systems view and the gradient cliff;
    the paper's two remedies, clipping and the norm-preserving regularizer, and
-   why only one survived; gap: it fixes training, not memory
+   why only one is still used; gap: it fixes training, not memory
 4. **Sửa bằng kiến trúc** (Hochreiter, Schmidhuber 1997) - the constant error
    carousel and the derivative through it; input and output gates; the gradient
    truncation in the original; bridge boxes for the Gers 2000 forget gate,
@@ -164,10 +173,12 @@ created. That section is the hinge to the next chapter and is not optional.
   papers, so a reader opening a paper does not get lost
 - B. **Bảng thuật ngữ Việt-Anh** - which terms are translated and which are kept
   in English. This is the source of truth for `\tn` and for decision 16
-- C. **Các dẫn xuất dài** - the long manipulations the running text states the
+- C. **Bảng chữ viết tắt** - acronyms and their full forms, split out of B by
+  decision 28
+- D. **Các dẫn xuất dài** - the long manipulations the running text states the
   result of, cross-referenced from where they are used
-- D. **Dựng môi trường bằng conda và chạy companion repo**
-- E. **Cách đọc một bài báo machine learning**
+- E. **Dựng môi trường bằng conda và chạy companion repo**
+- F. **Cách đọc một bài báo machine learning**
 
 ## Progress
 
@@ -178,7 +189,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | Preface | not-started | Write last. Stub in place so front matter pagination is right from the start; front matter role, so `tone-loi-noi-dau` |
 | 01 | drafted | Companion repo `rnn-to-transformer-lab` tag `ch01`; notation in appendix A; glossary seeded in appendix B; research notes in `research/2026-08-09-*.md` |
 | 02 | drafted | Adding problem + copy task experiments; gradient norm measured against temporal distance; bridge boxes for Hochreiter 1991 and Bengio 1994; refs.bib first entries; CPU budgets ~10 min for two tasks |
-| 03 | not-started | Must verify the venue of the Pascanu paper; the PDF on file states none |
+| 03 | drafted | Venue confirmed: ICML 2013, PMLR 28(3):1310-1318. Companion tag `ch03`. Corrects the paper's eigenvalue wording against its own singular-value proof |
 | 04 | not-started | |
 | 05 | not-started | Must verify the venue of the Sutskever paper; the PDF on file states none |
 | 06 | not-started | |
@@ -194,15 +205,32 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 16 | not-started | Write after 12-15; it is their summary |
 | App A | drafted | Notation cross-reference table populated with LSTM 1997, Pascanu 2013, Sutskever 2014, Bahdanau 2015, Vaswani 2017 |
 | App B | drafted | Glossary seeded with 12 translated terms and 5 kept-English terms from chapter 01 |
-| App C | not-started | Grows as chapters push derivations out |
-| App D | not-started | Write when the companion repo exists |
-| App E | not-started | |
+| App C | drafted | Abbreviations, split out of B by decision 28 |
+| App D | not-started | Long derivations. Grows as chapters push derivations out |
+| App E | not-started | Conda environment. The repo it documents already exists |
+| App F | not-started | |
 
 ## Writing rules (book-specific)
 
 Library-wide defaults are in AGENTS.md; these are this book's additions. The
 machine-checkable half is `check-chapter.psd1` in this folder.
 
+- **Vocabulary** (decision 24): software engineering, machine learning and
+  mathematics only. No metaphor borrowed from an unrelated field: nothing
+  clinical, nothing military, nothing about journeys or winning. A vivid word
+  that is established terminology in this literature stays, and the wall and
+  the valley of the error surface are the case that matters most. The test is
+  whether a reader would meet the word in a paper.
+- **Appendices are lookup only** (decision 29): entries, not argument. No
+  opening paragraph, no rationale section, no closing note about how the table
+  is maintained. That reasoning lives here.
+- **How often a gloss repeats:** once per section. Decision 16 originally said
+  every occurrence, and chapter 03 is what showed the cost: it names the
+  spectral radius sixteen times, and a parenthesis on each turns the page into a
+  bilingual dictionary. Once per section still serves the reason decision 16
+  gave, because a reader opening the book anywhere lands inside a section. After
+  the gloss, carry the term as notation where there is one: `ho(W_hh)` reads
+  better than the words fifteen times over, and it is more precise.
 - **Voice:** First-person practitioner, the AGENTS.md default, which takes the
   chapter role. In Vietnamese that is "tôi" for the author and "bạn" for the
   reader, one pair for the whole book (decision 10). The book teaches other
@@ -237,7 +265,8 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   LSTM, GRU, MSE, SGD, ReLU, and any other the book introduces later) is
   written in full at its first occurrence in each chapter, because a reader
   opening at chapter 9 gets the same help as one who started at page 1.
-  Appendix B holds the master abbreviation table. Added 2026-08-09.
+  Appendix C holds the master abbreviation table, split out of appendix B by
+  decision 28. Added 2026-08-09.
 - **Chapter apparatus:** every chapter closes with `\exercises` and its three
   tiers, `\tierunderstand`, `\tierapply`, `\tierextend`, all starred so the
   table of contents does not grow forty-eight entries. Two recurring boxes:

@@ -13,9 +13,9 @@ một độ dài nhất định. Ở bài toán sao chép với $T_{\text{mem}} 
 tại bước đầu tiên yếu hơn gradient tại bước cuối cùng 25 lần. Loss sau 2000
 epoch huấn luyện cao hơn loss trước khi huấn luyện.
 
-Đó là triệu chứng. Còn căn bệnh thì sao?
+Đó là hiện tượng quan sát được. Còn nguyên nhân thì sao?
 
-Căn bệnh là \textbf{cấu trúc đại số của BPTT}. Mỗi bước lùi nhân gradient
+Nguyên nhân là \textbf{cấu trúc đại số của BPTT}. Mỗi bước lùi nhân gradient
 với $\mat{W}_{hh}\transpose$ và với đạo hàm của $\tanh$. Nếu trị riêng lớn
 nhất của $\mat{W}_{hh}$ nhỏ hơn 1, tích của $T$ ma trận như vậy tiến về 0
 khi $T$ lớn. Gradient từ bước cuối không đến được bước đầu. Các tham số ở

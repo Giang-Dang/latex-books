@@ -1,0 +1,90 @@
+\section{Biện pháp thứ hai: bắt tín hiệu lỗi giữ nguyên độ lớn}
+\label{sec:ch03-regularizer}
+
+\index{regularizer!giữ norm}%
+Clipping chặn phía nổ. Nó không làm gì cho phía tắt, và bài biết điều đó, nên
+họ đưa thêm một biện pháp thứ hai nhắm đúng vào phía còn lại. Biện pháp ấy là
+một số hạng phạt:
+
+\begin{equation}
+  \Omega = \sum_k \Omega_k
+         = \sum_k \left(
+             \frac{\norm{ \pd{L}{\vect{a}_{k+1}} \jac{\vect{a}_{k+1}}{\vect{a}_k} }}
+                  {\norm{ \pd{L}{\vect{a}_{k+1}} }}
+             - 1
+           \right)^{2}.
+  \label{eq:ch03-omega}
+\end{equation}
+
+Đọc nó như một tỷ số. Tử số là tín hiệu lỗi sau khi đi lùi thêm một bước, mẫu
+số là chính tín hiệu ấy trước bước đó. Tỷ số là thứ mà bước đó làm với độ lớn
+của tín hiệu. Bắt tỷ số bằng 1 ở mọi bước là bắt đường đi ngược giữ nguyên
+norm. Bình phương làm cho co và giãn đắt ngang nhau.
+
+Tôi in ra chính các tỷ số ấy, trước khi bình phương, để xem số hạng phạt nhìn
+thấy gì. Ba mạng, ba \tn{bán kính phổ}{spectral radius}, 32 đơn vị ẩn, 30 bước:
+
+\begin{measured}{tỷ số từng bước mà \(\Omega\) đo}
+\begin{minted}[fontsize=\footnotesize]{text}
+ radius k=0         k=10        k=28             mean      Omega
+  0.500 0.488384    0.500000    0.500000     0.499463   7.516259
+  0.900 0.879230    0.897886    0.899925     0.895816   0.326728
+  1.000 0.977480    0.982812    0.978343     0.978175   0.014876
+\end{minted}
+
+Đo bằng \code{experiments/ch03\_regularizer.py} tại tag \code{ch03}.
+\end{measured}
+
+Ở hai bán kính đầu, tỷ số bám sát chính bán kính phổ: trung bình 0.499463 ở 0.5
+và 0.895816 ở 0.9. Ở bán kính 1.0 thì trung bình chỉ 0.978175, nằm dưới, và nằm
+dưới vì đúng lý do mục~\ref{sec:ch03-tich-jacobian} đã đo: \(\sigma'\) của tanh
+nhỏ hơn 1 ở mọi trạng thái khác gốc. \(\Omega\) giảm đơn điệu khi mạng tiến về
+chỗ giữ được norm: 7.516259 ở bán kính 0.5, xuống 0.326728 ở 0.9, xuống 0.014876
+ở 1.0. Số hạng phạt đo đúng thứ nó tuyên bố đo.
+
+\subsection*{Vì sao chỉ một trong hai còn được dùng}
+
+\index{regularizer!chi phí}%
+Câu trả lời ngắn không phải là \enquote{cái kia không chạy}. Nó chạy, và bài có
+số để chứng minh. Trên bài toán thứ tự thời gian, với chuỗi dài hơn 20 bước, cả
+stochastic gradient descent, viết tắt là SGD, lẫn SGD cộng clipping đều không
+giải được; SGD cộng clipping cộng
+regularizer giải được với tỷ lệ thành công 100\% tới 200 bước, bằng một model
+duy nhất dùng cho mọi độ dài từ 50 tới 200~\autocite{pascanu2013difficulty}. Đó là khoảng cách giữa không làm
+được và làm được, chứ không phải một cải thiện vài phần trăm.
+
+Câu trả lời nằm ở giá phải trả, và giá ấy lộ ra ngay khi viết code. Nhìn
+lại~\eqref{eq:ch03-omega}: mỗi số hạng cần \(\pd{L}{\vect{a}_{k+1}}\),
+tức tín hiệu lỗi tại từng bước. Backward pass thường có tính ra các vector đó,
+nhưng tính xong thì vứt đi; giữ lại toàn bộ chúng là một khoản bộ nhớ tỷ lệ với
+độ dài chuỗi. Rồi còn phải đẩy đạo hàm của chính \(\Omega\) ngược vào
+\(\mat{W}_{hh}\), tức đạo hàm bậc hai qua một đồ thị đã trải dài theo thời gian.
+
+Bài không trả đủ giá đó. Các tác giả lấy đường tắt và ghi rõ trong bài: chỉ dùng
+đạo hàm riêng tức thời, coi \(\vect{a}_k\) và \(\pd{L}{\vect{a}_{k+1}}\)
+là hằng. Trong repo companion, đường tắt ấy là hai lời gọi \code{detach}:
+
+\begin{minted}{python}
+for k in range(len(backward_signals) - 1):
+    signal = backward_signals[k + 1].detach()
+    denominator = torch.linalg.vector_norm(signal)
+    if denominator.item() == 0.0:
+        continue
+    jacobian = model.jacobian_at(states[k].detach())
+    pushed = signal @ jacobian
+    ratio = torch.linalg.vector_norm(pushed) / denominator
+    terms.append((ratio - 1.0) ** 2)
+\end{minted}
+
+Đặt cạnh nhau thì đánh đổi rõ. Clipping là bốn dòng, không cần gì mà backward
+pass chưa có, và không có siêu tham số nào ngoài một ngưỡng mà bài bảo là không
+nhạy. Regularizer cần giữ tín hiệu lỗi của từng bước, cần một lượt truyền thứ
+hai, cần một hệ số \(\alpha\), và trong các thí nghiệm của chính bài thì hệ số
+ấy còn phải theo lịch giảm dần theo epoch trên các tác vụ thật.
+
+Một biện pháp đi vào thư viện chuẩn. Biện pháp kia phải viết tay mỗi lần dùng.
+Đó là toàn bộ khác biệt, và nó không phải khác biệt về chất lượng khoa học.
+
+Còn một lý do nữa, và nó là lý do sâu hơn: cùng năm ấy, hướng còn lại của bài
+toán đã có một lời giải khác, cũ hơn bài này mười sáu năm, và lời giải đó không
+sửa thuật toán huấn luyện mà sửa chính kiến trúc. Chương~\ref{ch:lstm} đọc nó.
