@@ -2,11 +2,8 @@
 \chapter{Bảng thuật ngữ Việt-Anh}
 \label{app:thuat-ngu}
 
-Cuốn sách này viết bằng tiếng Việt cho sinh viên sẽ đọc paper bằng tiếng
-Anh. Mỗi thuật ngữ được quyết định một lần: dịch sang tiếng Việt và dùng
-macro \texttt{\textbackslash tn} để mang bản tiếng Anh trong ngoặc ở \textbf{mọi} lần xuất
-hiện, hoặc giữ nguyên tiếng Anh và không cần ngoặc. Quy tắc này đến từ
-mục~15 và~16 trong decision log của sách.
+Thuật ngữ được dịch mang bản tiếng Anh trong ngoặc; thuật ngữ giữ nguyên
+tiếng Anh thì không.
 
 \footnotesize
 \begin{tabular}{@{}llp{4cm}@{}}
@@ -28,11 +25,30 @@ mạng hồi quy & recurrent neural network (RNN) & Dịch, dùng \texttt{\textb
 sai phân hữu hạn & finite difference & Dịch, dùng \texttt{\textbackslash tn} \\
 trạng thái ẩn & hidden state & Dịch, dùng \texttt{\textbackslash tn} \\
 \midrule
+\multicolumn{3}{@{}l@{}}{\textbf{Chương 03}} \\
+\midrule
+tiền kích hoạt & pre-activation & Dịch, dùng \texttt{\textbackslash tn} \\
+trị riêng & eigenvalue & Dịch, dùng \texttt{\textbackslash tn} \\
+giá trị kỳ dị & singular value & Dịch, dùng \texttt{\textbackslash tn} \\
+bán kính phổ & spectral radius & Dịch, dùng \texttt{\textbackslash tn} \\
+chuẩn phổ & spectral norm & Dịch, dùng \texttt{\textbackslash tn} \\
+ma trận chuẩn tắc & normal matrix & Dịch, dùng \texttt{\textbackslash tn} \\
+điều kiện đủ & sufficient condition & Dịch, dùng \texttt{\textbackslash tn} \\
+điều kiện cần & necessary condition & Dịch, dùng \texttt{\textbackslash tn} \\
+mặt lỗi & error surface & Dịch, dùng \texttt{\textbackslash tn} \\
+độ cong & curvature & Dịch, dùng \texttt{\textbackslash tn} \\
+hệ động lực & dynamical system & Dịch, dùng \texttt{\textbackslash tn} \\
+điểm rẽ nhánh & bifurcation & Dịch, dùng \texttt{\textbackslash tn} \\
+miền hút & basin of attraction & Dịch, dùng \texttt{\textbackslash tn} \\
+điểm hút & attractor & Dịch, dùng \texttt{\textbackslash tn} \\
+\midrule
 \multicolumn{3}{@{}l@{}}{\textbf{Giữ nguyên tiếng Anh (không dịch)}} \\
 \midrule
 \multicolumn{2}{@{}l}{bias} & Giữ nguyên \\
 \multicolumn{2}{@{}l}{Jacobian} & Giữ nguyên (tính từ); \emph{ma trận Jacobi} khi là danh từ \\
 \multicolumn{2}{@{}l}{sigmoid} & Giữ nguyên \\
+\multicolumn{2}{@{}l}{clipping} & Giữ nguyên (chương~03) \\
+\multicolumn{2}{@{}l}{regularizer} & Giữ nguyên (chương~03) \\
 \multicolumn{2}{@{}l}{softmax} & Giữ nguyên \\
 \multicolumn{2}{@{}l}{tanh} & Giữ nguyên \\
 \bottomrule
@@ -44,34 +60,3 @@ trạng thái ẩn & hidden state & Dịch, dùng \texttt{\textbackslash tn} \\
 nhiều biến và được dùng khi ``gradient'' là danh từ. Sách giữ nguyên
 ``gradient'' trong các tên riêng: ``gradient checking'', ``gradient
 descent'', ``vanishing gradient''.
-
-\vspace{1em}
-Bảng này được cập nhật ở mỗi chương: chương nào thêm thuật ngữ mới thì
-ghi thêm dòng, kèm tên chương để biết nó xuất hiện lần đầu ở đâu. Một
-thuật ngữ đã có quyết định rồi thì các chương sau không thay đổi.
-
-\section{Bảng chữ viết tắt}
-\label{sec:app-b-viet-tat}
-
-Mọi chữ viết tắt được viết đầy đủ ở lần đầu xuất hiện trong mỗi chương
-(xem SPEC, mục Writing rules). Bảng này là nơi tra cứu tập trung.
-
-\small
-\begin{tabular}{@{}ll@{}}
-\toprule
-Viết tắt & Dạng đầy đủ \\
-\midrule
-BPTT & Backpropagation Through Time \\
-GRU  & Gated Recurrent Unit \\
-LSTM & Long Short-Term Memory \\
-MSE  & Mean Squared Error \\
-ReLU & Rectified Linear Unit \\
-RNN  & Recurrent Neural Network \\
-SGD  & Stochastic Gradient Descent \\
-\bottomrule
-\end{tabular}
-\normalsize
-
-\vspace{0.5em}
-Bảng này được cập nhật ở mỗi chương: chương nào giới thiệu một chữ viết
-tắt mới thì ghi thêm một dòng.

@@ -1,6 +1,6 @@
 % Scope (SPEC table of contents): Adding problem và copy task; đo norm gradient theo khoảng cách thời gian; cầu nối Hochreiter 1991 và Bengio 1994.
-\chapter{Triệu chứng: vì sao huấn luyện RNN thất bại}
-\label{ch:trieu-chung}
+\chapter{Hiện tượng: vì sao huấn luyện RNN thất bại}
+\label{ch:hien-tuong}
 
 Chương~01 kết thúc bằng một nhận xét: $\mat{W}_{hh}\transpose$ xuất hiện trong
 mọi bước lùi của BPTT, và nếu chuỗi đủ dài, gradient từ bước cuối nhân với
@@ -14,15 +14,15 @@ dài hạn: \tn{bài toán cộng}{adding problem} và \tn{bài toán sao chép}
 task}. Ở mỗi bài toán, tôi đo $\|\partial L / \partial \mat{W}_{hh}\|$ tại
 từng bước thời gian để xem gradient biến mất ở đâu, nhanh đến mức nào, và
 hậu quả của nó lên loss ra sao. Cuối chương, hai hộp cầu nối tóm tắt những
-người đã thấy triệu chứng này từ thập niên 1990.
+người đã thấy hiện tượng này từ thập niên 1990.
 
-Đây là chương thực nghiệm. Chương~3 sẽ cho bạn công cụ toán học để chẩn đoán
-căn bệnh.
+Đây là chương thực nghiệm. Chương~3 sẽ cho bạn công cụ toán học để xác định
+nguyên nhân.
 
-\input{chapters/02-trieu-chung/01-dat-van-de}
-\input{chapters/02-trieu-chung/02-adding-problem}
-\input{chapters/02-trieu-chung/03-copy-task}
-\input{chapters/02-trieu-chung/04-vi-sao-gradient-bien-mat}
-\input{chapters/02-trieu-chung/05-cau-noi}
-\input{chapters/02-trieu-chung/06-hinge}
-\input{chapters/02-trieu-chung/07-bai-tap}
+\input{chapters/02-hien-tuong/01-dat-van-de}
+\input{chapters/02-hien-tuong/02-adding-problem}
+\input{chapters/02-hien-tuong/03-copy-task}
+\input{chapters/02-hien-tuong/04-vi-sao-gradient-bien-mat}
+\input{chapters/02-hien-tuong/05-cau-noi}
+\input{chapters/02-hien-tuong/06-hinge}
+\input{chapters/02-hien-tuong/07-bai-tap}

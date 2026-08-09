@@ -35,7 +35,7 @@ mỗi tham số; một lần với $+\varepsilon$, một lần với $-\varepsil
 
 Với một ma trận trọng số $\mat{W}$, ta áp dụng \eqref{eq:finite-diff} cho
 từng phần tử một. Nếu $\mat{W}$ có $m \times n$ phần tử, ta cần $2mn$ lần
-chạy lan truyền xuôi. Với RNN đồ chơi $3 \times 2$ của chúng ta, đó là 12
+chạy lan truyền xuôi. Với RNN đồ chơi $3 \times 2$ của tôi, đó là 12
 lần chạy cho $\mat{W}_{xh}$, 18 cho $\mat{W}_{hh}$, 6 cho $\mat{W}_{hy}$,
 3 cho $\vect{b}_h$, và 2 cho $\vect{b}_y$; tổng cộng 82 lần chạy, chưa đầy
 một phần nghìn giây trên CPU.

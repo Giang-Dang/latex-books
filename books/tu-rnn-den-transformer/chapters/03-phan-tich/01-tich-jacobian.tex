@@ -1,0 +1,133 @@
+\section{Gradient là một tích ma trận}
+\label{sec:ch03-tich-jacobian}
+
+\index{BPTT!dạng tổng tích}%
+Chương~\ref{ch:ky-hieu-va-bptt} dẫn ra lan truyền ngược qua thời gian, viết
+tắt là BPTT, theo cách quen thuộc: đẩy ngược
+từng bước một, cộng dồn vào các ma trận trọng số. Bài báo viết lại cùng công
+thức đó dưới dạng tổng tích, và chính cách viết lại này làm vấn đề lộ ra. Chi
+phí toàn chuỗi tách theo từng bước,
+
+\begin{equation}
+  \pd{L}{\theta} = \sum_{1 \le t \le T} \pd{L_t}{\theta},
+  \label{eq:ch03-tach-chi-phi}
+\end{equation}
+
+và phần của một bước lại tách tiếp theo mọi bước đứng trước nó:
+
+\begin{equation}
+  \pd{L_t}{\theta}
+    = \sum_{1 \le k \le t}
+      \pd{L_t}{\vect{a}_t}\,
+      \jac{\vect{a}_t}{\vect{a}_k}\,
+      \frac{\partial^{+} \vect{a}_k}{\partial \theta}.
+  \label{eq:ch03-tach-theo-buoc}
+\end{equation}
+
+Dấu cộng trên \(\partial^{+}\) là ký hiệu của bài: đạo hàm riêng \emph{tức
+thời} của \(\vect{a}_k\) theo \(\theta\), coi \(\vect{a}_{k-1}\) là hằng. Nó
+tách phần \enquote{\(\theta\) tác động ngay tại bước \(k\)} khỏi phần
+\enquote{tác động đó đi được bao xa}. Phần thứ hai là thừa số ở giữa, và nó là
+toàn bộ nội dung của chương này.
+
+Thừa số ấy là một tích:
+
+\begin{equation}
+  \jac{\vect{a}_t}{\vect{a}_k}
+    = \prod_{t \ge i > k} \jac{\vect{a}_i}{\vect{a}_{i-1}}
+    = \prod_{t \ge i > k} \mat{W}_{hh} \diag\!\left( \sigma'(\vect{a}_{i-1}) \right).
+  \label{eq:ch03-tich-jacobian}
+\end{equation}
+
+\index{Jacobian!tích qua thời gian}%
+Một tích của \(t - k\) ma trận. Bài báo có một câu về nó mà tôi thấy là câu
+đáng nhớ nhất trong cả bài: giống như tích của \(t-k\) số thực có thể co về
+không hoặc nổ ra vô cùng, tích ma trận này cũng vậy, nhưng \emph{theo một hướng
+nào đó}. Mệnh đề trong ngoặc là chỗ trực giác vô hướng đánh rơi, và
+mục~\ref{sec:ch03-khe-ho} dựa hoàn toàn vào chỗ đó.
+
+Một lưu ý về quy ước trước khi đi tiếp. Bài in thừa số trong~\eqref{eq:ch03-tich-jacobian}
+là \(\mat{W}_{hh}\transpose \diag(\sigma'(\vect{a}_{i-1}))\), vì họ đẩy \tn{độ dốc}{gradient}
+ngược dưới dạng vector hàng. Chuyển vị đúng của Jacobian cột phải là
+\(\diag(\sigma'(\vect{a}_{i-1})) \mat{W}_{hh}\transpose\), nên hai biểu thức
+không phải chuyển vị của nhau theo nghĩa đen. Không có hệ quả nào: mọi chặn
+trong bài đặt trên \tn{chuẩn phổ}{spectral norm}, và một ma trận với chuyển vị của nó có cùng chuẩn
+phổ. Sách khai báo quy ước thay vì thừa kế chỗ mập mờ; phụ
+lục~\ref{app:ky-hieu} ghi lại.
+
+\subsection*{Điều kiện đủ để gradient tắt}
+
+\index{vanishing gradient!điều kiện đủ}%
+Chặn từng thừa số một. Với \(\gamma\) là chặn trên của \(\abs{\sigma'(x)}\),
+
+\begin{equation}
+  \norm{\jac{\vect{a}_i}{\vect{a}_{i-1}}}
+    \le \norm{\mat{W}_{hh}} \cdot \norm{\diag(\sigma'(\vect{a}_{i-1}))}
+    \le \norm{\mat{W}_{hh}} \, \gamma.
+  \label{eq:ch03-chan-tung-thua-so}
+\end{equation}
+
+Nếu \(\norm{\mat{W}_{hh}} < 1/\gamma\) thì vế phải nhỏ hơn 1. Đặt \(\eta\) là
+một số nào đó nằm giữa, tức \(\norm{\jac{\vect{a}_i}{\vect{a}_{i-1}}} \le \eta < 1\)
+với mọi \(i\). Chuẩn của một tích không vượt quá tích các chuẩn, nên quy nạp
+cho ngay
+
+\begin{equation}
+  \norm{\jac{\vect{a}_t}{\vect{a}_k}} \le \eta^{\,t-k}.
+  \label{eq:ch03-chan-mu}
+\end{equation}
+
+Số hạng dài hạn, tức những \(k\) cách \(t\) rất xa, tắt theo cấp số nhân. Chứng
+minh dừng ở đó, sau bốn dòng.
+
+Với tanh thì \(\gamma = 1\), nên ngưỡng là 1. Với sigmoid thì \(\gamma = 1/4\),
+nên ngưỡng là 4: một mạng dùng sigmoid chịu được ma trận hồi quy lớn hơn nhiều
+trước khi gradient bắt đầu tắt, đổi lại nó tắt bằng một cơ chế khác, vì
+\(\sigma'\) của sigmoid không bao giờ vượt \(1/4\) ngay từ đầu.
+
+\subsection*{Điều kiện cần để gradient nổ}
+
+\index{exploding gradient!điều kiện cần}%
+Lật ngược lập luận trên: nếu gradient nổ thì bất đẳng thức~\eqref{eq:ch03-chan-mu}
+không được phép đúng, nên \(\norm{\mat{W}_{hh}}\) phải lớn hơn \(1/\gamma\).
+Đây là điều kiện \emph{cần}, không phải \tn{điều kiện đủ}{sufficient condition}, và sự bất đối xứng ấy có
+thật chứ không phải một câu rào đón. Vượt ngưỡng không có nghĩa là gradient sẽ
+nổ.
+
+Tôi đo thử. Bốn ma trận hồi quy chuẩn tắc với \tn{bán kính phổ}{spectral radius} đặt trước, 64 đơn vị
+ẩn, tanh, chạy 100 bước, rồi lấy chuẩn phổ của tích
+trong~\eqref{eq:ch03-tich-jacobian} theo từng khoảng cách:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+radius  norm   l=1         l=10        l=50        l=100      rate
+0.500   0.500  5.0000e-01  9.7532e-04  8.8705e-16  7.8786e-31 0.5000
+0.900   0.900  9.0000e-01  3.4200e-01  5.0259e-03  2.5902e-05 0.9000
+1.000   1.000  1.0000e+00  9.5614e-01  7.6328e-01  6.2852e-01 0.9961
+1.200   1.200  1.2000e+00  4.9458e+00  2.4703e+01  8.2505e+01 1.0244
+\end{minted}
+
+Ma trận chuẩn tắc là trường hợp dễ: với chúng, bán kính phổ và chuẩn phổ là cùng
+một số, nên chặn~\eqref{eq:ch03-chan-tung-thua-so} chặt và lý thuyết mô tả đúng
+thực tế. Hai dòng đầu khớp hoàn hảo: tốc độ đo được là 0.5000 và 0.9000, đúng
+bằng bán kính phổ.
+
+\begin{measured}{tốc độ tắt so với bán kính phổ}
+Hai dòng dưới mới là chỗ đáng nhìn.
+
+Ở bán kính phổ đúng bằng 1, tích vẫn tắt, chỉ là chậm: tốc độ đo được 0.9961
+chứ không phải 1, và sau 100 bước chuẩn còn 0.62852. Lý do nằm ở
+\(\sigma'\): tanh có \(\sigma'(x) = 1\) đúng một điểm duy nhất, tại gốc. Trạng
+thái vừa rời khỏi gốc là \(\gamma = 1\) trở thành một chặn không bao giờ đạt
+được.
+
+Ở bán kính phổ 1.2, tích tăng, nhưng tốc độ là 1.0244 chứ không phải 1.2. Sau
+100 bước nó đạt 82.505, trong khi \(1.2^{100}\) vào khoảng 8.2818 nhân mười mũ
+bảy, tức lớn hơn số đo được chừng một triệu lần. Trạng thái lớn dần, tanh bão hoà, \(\sigma'\) sụt về gần không, và
+mức tăng tự chặn lại. Đây chính là lý do điều kiện nổ chỉ là \tn{điều kiện cần}{necessary condition}.
+
+Đo bằng \code{experiments/ch03\_decay.py} tại tag \code{ch03}.
+\end{measured}
+
+Bão hoà tự chặn là một tin tốt và một tin xấu. Tin tốt: gradient nổ hiếm khi
+nổ mãi. Tin xấu: cơ chế chặn nó cũng là cơ chế xoá trí nhớ, vì
+\(\sigma'\) nhỏ ở mọi bước sau đó. Chương~\ref{ch:lstm} sẽ sửa đúng chỗ này.

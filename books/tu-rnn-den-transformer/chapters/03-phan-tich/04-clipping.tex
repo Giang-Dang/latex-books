@@ -1,0 +1,105 @@
+\section{Biện pháp thứ nhất: chặn độ dài bước}
+\label{sec:ch03-clipping}
+
+\index{clipping!thuật toán}%
+Toàn bộ biện pháp nằm gọn trong bốn dòng giả mã dưới đây, chép theo thuật toán 1
+của bài.
+
+\begin{algorithm}[htbp]
+  \caption{Clipping theo norm, giả mã theo thuật toán 1 của bài báo}
+  \label{alg:ch03-clipping}
+  \begin{algorithmic}[1]
+    \State \(\hat{\vect{g}} \gets \pd{L}{\theta}\)
+    \If{\(\norm{\hat{\vect{g}}} \ge \tau\)}
+      \State \(\hat{\vect{g}} \gets \dfrac{\tau}{\norm{\hat{\vect{g}}}}\, \hat{\vect{g}}\)
+    \EndIf
+  \end{algorithmic}
+\end{algorithm}
+
+\(\tau\) là ngưỡng. Phép gán ở dòng ba là một phép co tỷ lệ, nên hướng của
+\(\hat{\vect{g}}\) không đổi và bước đi vẫn là hướng giảm đối với mini-batch
+hiện tại. Chỉ độ dài bị chặn lại ở \(\tau\).
+
+Ba tính chất của giả mã này đáng giữ trong đầu. Nó chỉ đọc thứ mà backward pass
+đã tính xong, nên không tốn thêm gì. Nó so sánh với một số cố định, nên trên
+vùng phẳng nó không làm gì cả. Và nó dài bốn dòng.
+
+Bài ghi rõ xuất xứ: thuật toán này rất gần với đề xuất của Tomas Mikolov, người
+cắt theo từng phần tử thay vì theo norm, và bài chỉ lệch khỏi bản gốc để bảo
+đảm bước đi luôn là hướng giảm đối với mini-batch hiện tại. Họ nói thêm rằng
+trên thực tế hai biến thể hành xử tương tự nhau.
+
+\subsection*{Một bước tại đỉnh vách}
+
+Tôi lấy đúng điểm dốc nhất ở mục~\ref{sec:ch03-he-dong-luc}, tìm lại bằng chính
+hàm mà mục đó gọi, learning rate 0.1, rồi đi một bước hai lần: một lần không
+cắt, một lần có cắt.
+
+\begin{measured}{một bước gradient descent tại \(b = -2.6123413600\)}
+\begin{minted}[fontsize=\footnotesize]{text}
+cost at start      0.14960413
+dE/dw              -3.577721e+03
+dE/db              -5.751099e+03
+||grad||           6.773125e+03
+
+ thresh  fired        step        w after        b after        cost
+   none  False  6.7731e+02   362.77214318   572.49753848  0.09000000
+    1.0   True  1.0000e-01     5.05282231    -2.52743080  0.02586525
+    0.1   True  1.0000e-02     5.00528223    -2.60385030  0.01215804
+\end{minted}
+
+Đo bằng \code{experiments/ch03\_clipping.py} tại tag \code{ch03}.
+\end{measured}
+
+\index{clipping!hiệu quả đo được}%
+Bước không cắt đưa \((w, b)\) từ \((5.0, -2.61)\) tới
+\((362.77214318,\ 572.49753848)\). Không phải một bước hơi dài. Nó rời khỏi
+cửa sổ mà \tn{mặt lỗi}{error surface} được vẽ, rời khỏi mọi vùng tham số có nghĩa, và đi xa hơn
+điểm xuất phát khoảng sáu trăm bảy mươi bảy đơn vị trong một không gian mà toàn
+bộ bài toán nằm gọn trong một hình vuông cạnh chưa tới một.
+
+Chi phí sau bước đó là 0.09000000, và con số tròn trịa ấy không phải trùng hợp.
+Với \(w\) và \(b\) lớn như vậy, \(\sigma(a_{50})\) bão hoà về đúng 1 trong
+float64, nên chi phí bằng \((1 - 0.7)^2\). Mạng không rơi vào một cực tiểu tệ
+hơn. Nó rời khỏi bài toán, tới một chỗ mà \tn{độ dốc}{gradient} bằng không và không có đường
+quay lại.
+
+Hai bước có cắt thì ở lại. Ngưỡng 1.0 đưa tới \((5.05282231,\ -2.52743080)\) và
+chi phí xuống 0.02586525. Ngưỡng 0.1 đưa tới \((5.00528223,\ -2.60385030)\) và
+chi phí xuống 0.01215804. Cả hai đều giảm chi phí so với 0.14960413 lúc xuất
+phát, còn bước không cắt thì tăng.
+
+Tỷ số độ dài giữa bước không cắt và bước cắt ở ngưỡng 1.0 là 6.7731 nhân mười
+mũ ba, tức 3.8308 bậc. Đó là toàn bộ khoảng cách giữa một lần huấn luyện hỏng
+và một lần huấn luyện chạy tiếp.
+
+\subsection*{Chọn ngưỡng, và tìm nó ở đâu trong PyTorch}
+
+\index{clipping!chọn ngưỡng}%
+Bài đưa một heuristic thay vì một công thức: nhìn thống kê chuẩn gradient trung
+bình qua đủ nhiều bước cập nhật rồi lấy ngưỡng quanh đó. Họ nói thêm rằng huấn
+luyện không nhạy lắm với siêu tham số này, và thuật toán chạy tốt cả khi ngưỡng
+khá nhỏ. Số đo phía trên ủng hộ điều đó: ngưỡng 1.0 và ngưỡng 0.1 lệch nhau mười
+lần mà cả hai đều làm đúng việc cần làm, chỉ khác nhau ở chỗ đi được bao xa.
+
+Bạn không phải tự viết thuật toán~\ref{alg:ch03-clipping}. PyTorch có sẵn, và
+repo companion gói lại đúng một câu lệnh ấy:
+
+\begin{minted}{python}
+def clip_parameters(parameters, threshold: float) -> float:
+    return torch.nn.utils.clip_grad_norm_(
+        parameters, max_norm=threshold
+    ).item()
+\end{minted}
+
+Hàm của thư viện co tỷ lệ trên toàn bộ danh sách tham số coi như một vector duy
+nhất, sửa \code{.grad} tại chỗ, và trả về chuẩn nó thấy trước khi cắt. Gọi nó
+sau \code{loss.backward()} và trước \code{optimizer.step()}.
+
+Một chi tiết tôi chỉ thấy khi viết test cho nó: hàm này \emph{không} phải thuật
+toán~\ref{alg:ch03-clipping}. Nó nhân với \(\tau / (\norm{\hat{\vect{g}}} + 10^{-6})\)
+chứ không phải \(\tau / \norm{\hat{\vect{g}}}\), để khỏi chia cho không. Cái giá
+là kết quả nằm hơi dưới ngưỡng: với một gradient có chuẩn \(\sqrt{50}\), chuẩn
+sau khi cắt là 0.9999998585786636 chứ không phải 1. Không đáng kể trong huấn
+luyện, nhưng đáng biết nếu bạn định khẳng định một bất biến về chuẩn sau khi
+cắt.

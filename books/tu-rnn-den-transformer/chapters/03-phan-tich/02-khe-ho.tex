@@ -1,0 +1,111 @@
+\section{Khe hở giữa trị riêng và giá trị kỳ dị}
+\label{sec:ch03-khe-ho}
+
+\index{bán kính phổ!so với chuẩn phổ}%
+Cho tới đây tôi đã viết điều kiện qua \(\norm{\mat{W}_{hh}}\), \tn{chuẩn phổ}{spectral norm}. Bài
+báo không viết thế. Bài phát biểu \tn{điều kiện đủ}{sufficient condition} qua \(\lambda_1\), mà họ định
+nghĩa bằng chữ là \enquote{trị tuyệt đối của \tn{trị riêng}{eigenvalue} lớn nhất} của
+\(\mat{W}_{hh}\), tức \tn{bán kính phổ}{spectral radius} \(\rho(\mat{W}_{hh})\).
+
+Hai số đó không bằng nhau. Quan hệ giữa chúng chỉ có một chiều:
+
+\begin{equation}
+  \rho(\mat{W}) \le \norm{\mat{W}},
+  \label{eq:ch03-ro-nho-hon-chuan}
+\end{equation}
+
+và dấu bằng xảy ra khi \(\mat{W}\) là \tn{ma trận chuẩn tắc}{normal matrix}, tức
+\(\mat{W}\mat{W}\transpose = \mat{W}\transpose\mat{W}\). Ma trận trực giao là
+chuẩn tắc, ma trận đối xứng là chuẩn tắc. Một ma trận trọng số hồi quy được
+khởi tạo ngẫu nhiên rồi huấn luyện thì không.
+
+Chỗ lệch nằm ở đây. Chứng minh của bài, tức bất đẳng
+thức~\eqref{eq:ch03-chan-tung-thua-so}, chặn \(\norm{\mat{W}_{hh}}\): đó là một
+\tn{giá trị kỳ dị}{singular value}. Phát biểu bằng lời của bài nói về trị riêng.
+Với ma trận chuẩn tắc hai cách đọc trùng nhau và không ai nhận ra. Với ma trận
+không chuẩn tắc, \(\rho(\mat{W}_{hh}) < 1/\gamma\) \emph{không} kéo
+theo~\eqref{eq:ch03-chan-tung-thua-so}, nên chứng minh không chạy.
+
+Câu hỏi là chỗ lệch ấy có hậu quả thật hay chỉ là một dấu sao trong cước chú.
+Tôi dựng ma trận rẻ nhất tách được hai số đó:
+
+\begin{minted}{python}
+def jordan_block(
+    n: int, eigenvalue: float, off_diagonal: float
+) -> torch.Tensor:
+    w = torch.eye(n, dtype=torch.float64) * eigenvalue
+    idx = torch.arange(n - 1)
+    w[idx, idx + 1] = off_diagonal
+    return w
+\end{minted}
+
+\index{ma trận chuẩn tắc!phản ví dụ}%
+Ma trận tam giác trên với \(0.9\) trên đường chéo và \(3.0\) ngay phía trên nó.
+Mọi trị riêng đều bằng \(0.9\), nên bán kính phổ là \(0.9\) bất kể phần tử ngoài
+đường chéo lớn đến đâu. Chuẩn phổ thì lớn theo. Để tách phần đại số tuyến tính
+khỏi bão hoà, tôi chạy nó ở trường hợp tuyến tính, tức \(\sigma\) là ánh xạ đồng
+nhất, đúng bối cảnh phần phụ lục của bài: khi đó tích
+trong~\eqref{eq:ch03-tich-jacobian} thu về đúng luỹ thừa ma trận
+\(\mat{W}_{hh}^{\,l}\) với \(l = t-k\).
+
+\begin{measured}{tích Jacobian tăng dưới một bán kính phổ nhỏ hơn 1}
+\begin{minted}[fontsize=\footnotesize]{text}
+W = [[0.9, 3.0], [0, 0.9]]
+spectral radius (largest |eigenvalue|) = 0.900000
+spectral norm   (largest singular value) = 3.249286
+
+l     ||W^l||
+1     3.249286e+00
+5     9.876803e+00
+9     1.163551e+01
+10    1.163307e+01
+20    8.106934e+00
+50    8.589935e-01
+100   8.853879e-03
+
+peak at l=9, ||W^l||=11.635514
+amplification over l=1: 3.5809
+first l with ||W^l|| < 1: 49
+\end{minted}
+
+Đo bằng \code{experiments/ch03\_nonnormal.py} tại tag \code{ch03}.
+\end{measured}
+
+Bán kính phổ là \(0.9\), tức điều kiện đủ của bài, đọc theo đúng chữ họ viết,
+được thoả mãn. Vậy mà tích Jacobian \emph{tăng} suốt chín bước, đạt 11.635514,
+gấp 3.5809 lần giá trị của chính nó ở bước 1, và phải tới bước 49 mới lần đầu
+tụt xuống dưới 1.
+
+Kiểm lại bằng tay được, và nên kiểm: phần tử ngoài đường chéo của
+\(\mat{W}^{\,l}\) là \(l \cdot 3 \cdot 0.9^{\,l-1}\), đạo hàm theo \(l\) triệt
+tiêu tại \(l = -1/\ln 0.9\), tức khoảng 9.49. Đỉnh rơi vào giữa bước 9 và bước
+10, và số đo cho hai giá trị gần bằng nhau ở đúng hai bước đó.
+
+\subsection*{Phát biểu đúng là gì}
+
+\index{vanishing gradient!phát biểu chính xác}%
+Không nên đọc chỗ này thành \enquote{bài báo sai}. Trong trường hợp tuyến tính,
+đúng trường hợp vừa đo, phát biểu của họ đúng ở nghĩa tiệm cận: công thức
+Gelfand cho \(\norm{\mat{W}^{\,l}}^{1/l} \to \rho(\mat{W})\), nên
+\(\rho(\mat{W}_{hh}) < 1\) vẫn kéo theo \(\norm{\mat{W}_{hh}^{\,l}} \to 0\) và
+\tn{độ dốc}{gradient} rồi sẽ tắt. Cái không đúng là chặn đơn điệu \(\eta^{\,t-k}\)
+trong~\eqref{eq:ch03-chan-mu}. Chặn đó cần giá trị kỳ dị, và chỉ có nó mới cho
+phép nói gradient tắt \emph{ngay từ bước đầu}.
+
+Với \(\sigma\) phi tuyến thì ngay cả phần tiệm cận cũng không suy ra được theo
+kiểu ấy, vì tích trong~\eqref{eq:ch03-tich-jacobian} là tích của những ma trận
+\emph{khác nhau}, mỗi bước một \(\diag(\sigma'(\vect{a}_{i-1}))\) riêng, chứ
+không phải luỹ thừa của một ma trận. Công thức Gelfand không nói gì về tích như
+thế.
+
+Khoảng cách giữa hai phát biểu là khoảng cách giữa \enquote{tắt} và
+\enquote{tắt sau bao lâu}, và với chuỗi hữu hạn thì đó là toàn bộ vấn đề. Tích
+trên tăng tới bước 9, rồi giảm, nhưng phải tới bước 49 mới lần đầu xuống dưới 1.
+Trên một chuỗi dài 50 bước, không có bước nào mà tín hiệu lỗi đi ngược bị co
+lại: nó bị khuếch đại ở mọi khoảng cách mà chuỗi ấy có. Đó không phải vanishing
+gradient, dưới một bán kính phổ mà lý thuyết đọc lướt bảo là an toàn.
+
+Đây là lý do sách tách \(\rho(\mat{W}_{hh})\) và \(\norm{\mat{W}_{hh}}\) thành
+hai ký hiệu và không bao giờ dùng lẫn. Khi bạn đọc một bài báo nói
+\enquote{spectral radius nhỏ hơn 1 nên gradient tắt}, câu hỏi cần đặt là ma
+trận có chuẩn tắc không, và câu trả lời gần như luôn là không.

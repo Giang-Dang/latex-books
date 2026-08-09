@@ -1,0 +1,118 @@
+\section{Nhìn mạng như một hệ động lực}
+\label{sec:ch03-he-dong-luc}
+
+\index{hệ động lực!miền hút}%
+Hai mục vừa rồi trả lời câu hỏi \enquote{khi nào} bằng đại số tuyến tính. Bài
+báo còn trả lời nó lần thứ hai, bằng hình học, và lần này câu trả lời giải
+thích được một chuyện mà đại số tuyến tính không giải thích: vì sao huấn luyện
+hỏng đột ngột thay vì hỏng dần.
+
+Coi mạng không có input là một \tn{hệ động lực}{dynamical system}. Với mỗi bộ
+tham số \(\theta\), trạng thái chạy theo thời gian và tiến về một
+\tn{điểm hút}{attractor}. Không gian trạng thái chia thành các
+\tn{miền hút}{basin of attraction}, mỗi miền một điểm hút. Khi \(\theta\) đổi
+chậm, hành vi tiệm cận cũng đổi chậm, gần như ở mọi nơi. Gần như, chứ không
+phải mọi nơi: có những chỗ mà một thay đổi nhỏ của \(\theta\) làm điểm hút xuất
+hiện, biến mất hoặc đổi hình. Những chỗ ấy là
+\tn{điểm rẽ nhánh}{bifurcation}.
+
+Bài dựa cách nhìn này trên công trình của Doya từ 1993, và mở rộng nó theo hai
+hướng. Thứ nhất, họ phân biệt hai sự kiện: vượt qua ranh giới giữa hai miền hút,
+và vượt qua một điểm rẽ nhánh. Chỉ sự kiện thứ nhất là \tn{điều kiện đủ}{sufficient condition} để \tn{độ dốc}{gradient}
+nổ. Bài nói thẳng rằng vượt điểm rẽ nhánh \emph{không} phải \tn{điều kiện cần}{necessary condition} cũng
+không phải điều kiện đủ, vì điểm rẽ nhánh là sự kiện toàn cục và có thể chẳng
+ảnh hưởng gì tại chỗ mô hình đang đứng. Thứ hai, họ xử lý được cả mô hình có
+input, thứ mà lý thuyết hệ động lực cổ điển không nhận, bằng cách tách ánh xạ
+thành một phần cố định và một phần thay đổi theo thời gian.
+
+\subsection*{Vách trong mặt lỗi}
+
+\index{mặt lỗi!vách}%
+Phần đáng giá nhất của mục này là chỗ bài hạ bài toán xuống hai tham số để vẽ
+được \tn{mặt lỗi}{error surface}. Một đơn vị ẩn, không input:
+
+\begin{equation}
+  a_t = w\, \sigma(a_{t-1}) + b,
+  \label{eq:ch03-mo-hinh-mot-don-vi}
+\end{equation}
+
+với \(\sigma\) là sigmoid, \(a_0 = 0.5\), và chi phí đọc đúng một lần ở bước 50:
+\(L_{50} = (\sigma(a_{50}) - 0.7)^2\). Toàn bộ mô hình là hai số,
+\(w\) và \(b\), nên mặt lỗi vẽ ra được.
+
+Bài vẽ nó và chỉ vào một bức tường gần như dựng đứng. Hình vẽ thì thuyết phục,
+nhưng hình vẽ không phải số đo, và cái tôi muốn biết là bức tường ấy hẹp đến
+đâu. Tôi quét \(b\) ngang qua nó tại \(w = 5.0\), bước 0.001:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+         b          cost        ||grad||
+   -2.6140    0.34182245    2.457457e-01
+   -2.6130    0.34157104    2.942246e-01
+   -2.6120    0.00847633    9.281034e+00
+   -2.6110    0.01020121    5.137097e-01
+   -2.6100    0.01049210    2.777983e-01
+\end{minted}
+
+Giữa hai điểm cách nhau 0.001, chi phí rơi 0.33309471. Hình~\ref{fig:ch03-vach-mat-loi}
+vẽ lát cắt đó.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch03-vach-mat-loi}
+  \caption{Lát cắt mặt lỗi dọc theo \(b\) tại \(w = 5.0\). Hai nhánh gần như
+    phẳng, nối nhau bằng một vách rộng chưa tới một phần nghìn của \(b\). Độ dốc
+    tại đỉnh vách lớn hơn độ dốc vùng phẳng năm bậc độ lớn, nên một bước
+    gradient descent dùng chung một learning rate cho cả hai vùng không thể vừa
+    an toàn ở đây vừa tiến được ở kia.}
+  \label{fig:ch03-vach-mat-loi}
+\end{figure}
+
+Lưới 0.001 vẫn còn quá thô. Tìm bằng lưới lồng nhau bốn vòng thì đỉnh thật nằm
+ở \(b = -2.6123413600\), và ở đó chuẩn gradient là 6.773125 nhân mười mũ ba.
+
+\begin{measured}{độ dốc tại vách so với vùng phẳng}
+\begin{minted}[fontsize=\footnotesize]{text}
+    w          b at peak    max ||grad||    cost there
+  4.6      -2.3642758000    3.157208e+02    0.13157964
+  4.8      -2.4880230200    1.396279e+03    0.14229738
+  5.0      -2.6123413600    6.773125e+03    0.14960413
+  5.2      -2.7367973600    3.424156e+04    0.15545694
+  5.4      -2.8612821400    1.736738e+05    0.16071180
+\end{minted}
+
+Tại \(w = 5.0\), chuẩn gradient ở vùng phẳng \(b = -2.0\) là
+5.549566 nhân mười mũ trừ hai. Tỷ số giữa đỉnh vách và vùng phẳng là
+1.2205 nhân mười mũ năm, tức 5.0865 bậc độ lớn.
+
+Đỉnh vách di chuyển gần như tuyến tính theo \(w\), khoảng \(-0.62\) đơn vị
+\(b\) trên mỗi đơn vị \(w\), và độ dốc tại đỉnh tăng khoảng năm lần sau mỗi
+0.2 của \(w\).
+
+Đo bằng \code{experiments/ch03\_surface.py} tại tag \code{ch03}.
+\end{measured}
+
+Hai chi tiết trong lúc đo đáng nói, vì cả hai đều là cách dễ dàng để đo sai.
+
+Lần quét đầu tiên tôi dùng bước 0.01 và không thấy vách đâu cả: chuẩn gradient
+lớn nhất trên cả cửa sổ chỉ 0.2777983, và mặt lỗi trông như một cái dốc thoải.
+Lưới nhảy qua chỗ dốc. Con số ấy thấp hơn đỉnh thật bốn bậc độ lớn, nên nó không
+phải một ước lượng thô của đỉnh mà là một con số khác hẳn.
+
+Chi tiết thứ hai: tại \(w = 5.4\), đỉnh nằm ở \(b = -2.8612821400\), tức
+\emph{ngoài} cửa sổ mà chính bài báo vẽ. Giữ nguyên cửa sổ của bài thì tìm kiếm
+trả về 0.1355472 tại \(b = -2.80816320\), sát mép trái, và con số đó vô nghĩa.
+
+\subsection*{Vì sao vách làm hỏng một bước gradient descent}
+
+\index{độ cong!tại vách}%
+Giả thuyết của bài là chỗ này: khi gradient nổ thì \tn{độ cong}{curvature} cũng
+nổ theo, nên hình dạng cục bộ ở đó là một thung lũng có một bức tường dựng, chứ
+chưa bao giờ là một cái dốc đều. Nếu hướng gradient và hướng cong lớn nhất trùng nhau thì mặt lỗi
+dốc đứng theo phương vuông góc với tường, và một bước gradient descent chạm
+tường sẽ nhảy ngang qua thung lũng, ra khỏi vùng nó đang ở.
+
+Điều làm bước nhảy ấy tai hại không phải hướng mà là độ dài. Hướng vẫn là hướng
+giảm. Chỉ là nó dài tới mức thông tin cục bộ dùng để chọn nó đã hết hiệu lực từ
+lâu trước khi bước đi kết thúc.
+
+Nói cách đó thì cách sửa gần như tự viết ra: giữ hướng, chặn độ dài.

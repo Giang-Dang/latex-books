@@ -1,0 +1,100 @@
+\exercises
+
+\tierunderstand
+
+\begin{bt}
+  \item Chặn~\eqref{eq:ch03-chan-tung-thua-so} dùng bất đẳng thức chuẩn của tích
+    không vượt quá tích các chuẩn. Viết lại bước quy nạp dẫn
+    tới~\eqref{eq:ch03-chan-mu}, và chỉ ra chính xác chỗ nào cần
+    \(\eta < 1\) chứ không phải \(\eta \le 1\).
+
+  \item Với sigmoid, \(\gamma = 1/4\), nên ngưỡng của \tn{điều kiện đủ}{sufficient condition} là 4 chứ
+    không phải 1. Giải thích vì sao điều đó không có nghĩa là mạng dùng sigmoid
+    nhớ được lâu hơn mạng dùng tanh.
+
+  \item Cho \(\mat{W} = \begin{psmallmatrix} 0.9 & 3 \\ 0 & 0.9 \end{psmallmatrix}\).
+    Viết \(\mat{W}^{\,l}\) ở dạng đóng, rồi tìm \(l\) làm phần tử ngoài đường
+    chéo đạt cực đại. So kết quả với đỉnh đo được ở
+    mục~\ref{sec:ch03-khe-ho}.
+
+  \item Mục~\ref{sec:ch03-khe-ho} nói phát biểu của bài đúng ở nghĩa tiệm cận và
+    sai ở nghĩa từng bước. Phát biểu lại điều kiện đủ cho vanishing sao cho nó
+    đúng ở cả hai nghĩa, và nói rõ giả thiết bạn phải thêm vào.
+
+  \item Nhìn hình~\ref{fig:ch03-vach-mat-loi}. Nếu learning rate được chọn đủ
+    nhỏ để một bước tại đỉnh vách không vượt ra ngoài, bước đó dài bao nhiêu ở
+    vùng phẳng? Dùng hai số đo trong mục~\ref{sec:ch03-he-dong-luc} để trả lời,
+    rồi nói xem con số ấy có dùng được để huấn luyện không.
+
+  \item Mục~\ref{sec:ch03-con-lai-gi} lập luận rằng hai biện pháp của bài phải
+    đi cùng nhau. Dựng lại lập luận đó bằng ngôn ngữ \tn{miền hút}{basin of attraction} và ranh giới miền
+    hút, không dùng lại câu chữ của sách.
+\end{bt}
+
+\tierapply
+
+Trạng thái xuất phát cho cả bốn bài: clone repo companion, đứng ở thư mục gốc
+của nó, và checkout đúng tag của chương này.
+
+\begin{minted}{console}
+$ git clone https://github.com/Giang-Dang/rnn-to-transformer-lab.git
+$ cd rnn-to-transformer-lab
+$ git checkout ch03
+$ conda env create -f environment.yml
+$ conda activate rnn-to-transformer-lab
+$ python verify.py --only ch03
+\end{minted}
+
+Dòng cuối phải in ra \code{verify: ok}. Nếu không, đừng làm tiếp: mọi con số
+bạn đo sau đó sẽ không so được với sách.
+
+\begin{bt}
+  \item \code{experiments/ch03\_decay.py} chạy với tanh. Đổi sang sigmoid và
+    chạy lại bốn \tn{bán kính phổ}{spectral radius} cũ. Dự đoán trước khi chạy: dòng nào đổi nhiều
+    nhất, và theo chiều nào? Đối chiếu với \(\gamma = 1/4\).
+
+  \item \code{jordan\_block(2, 0.9, 3.0)} tách bán kính phổ khỏi \tn{chuẩn phổ}{spectral norm} bằng
+    một phần tử ngoài đường chéo. Viết một hàm dựng ma trận \(n \times n\) ngẫu
+    nhiên có bán kính phổ đặt trước nhưng chuẩn phổ lớn hơn một hệ số cho trước,
+    rồi đo lại đỉnh và bước đầu tiên tụt xuống dưới 1. Kiểm rằng hàm của bạn
+    không vô tình dựng ra \tn{ma trận chuẩn tắc}{normal matrix}.
+
+  \item \code{experiments/ch03\_clipping.py} đi đúng một bước. Sửa nó thành một
+    vòng lặp 50 bước từ cùng điểm xuất phát, chạy ba lần với ngưỡng
+    \code{None}, \code{1.0} và \code{0.1}, và in chi phí sau mỗi bước. Ngưỡng
+    nào xuống thấp nhất sau 50 bước, và ngưỡng ấy có phải ngưỡng bạn đoán
+    không?
+
+  \item Ngưỡng trong \code{clipping.py} so bằng \code{>=}. Đổi thành \code{>} và
+    chạy \code{python -m pytest -q}. Test nào hỏng, và nếu không có test nào
+    hỏng thì điều đó nói gì về bộ test? Viết thêm một test bắt được khác biệt
+    ấy, hoặc lập luận rằng khác biệt ấy không quan sát được và giải thích vì
+    sao.
+\end{bt}
+
+\tierextend
+
+\begin{bt}
+  \item Mọi ma trận hồi quy trong chương này đều do tôi đặt phổ bằng tay. Lấy
+    một mạng thật đã huấn luyện xong, đo \(\rho(\mat{W}_{hh})\) và
+    \(\norm{\mat{W}_{hh}}\) sau mỗi epoch, và xem khoảng cách giữa hai số ấy
+    thay đổi ra sao trong lúc huấn luyện. Huấn luyện đẩy ma trận về phía chuẩn
+    tắc hay ra xa nó?
+
+  \item Bài đưa heuristic chọn ngưỡng: nhìn chuẩn gradient trung bình qua nhiều
+    bước. Mười ba năm sau, ngưỡng clipping vẫn là một siêu tham số phải dò cho
+    từng tác vụ, và chưa có quy tắc nào độc lập tác vụ được chấp nhận rộng rãi.
+    Đây là một chỗ còn mở thật sự. Thử đề xuất một quy tắc dựa trên đại lượng
+    bạn đo được trong lúc huấn luyện, rồi tìm một tác vụ làm quy tắc đó hỏng.
+
+  \item Tăng trưởng tạm thời ở mục~\ref{sec:ch03-khe-ho} là hệ quả của tính
+    không chuẩn tắc. Kiến trúc nào trong các chương sau còn giữ một ma trận
+    được nhân lặp lại nhiều lần như vậy, và kiến trúc nào thì không? Trả lời
+    được câu này trước khi đọc chương~\ref{ch:transformer} sẽ làm chương đó dễ
+    hơn nhiều.
+
+  \item \(\Omega\) trong~\eqref{eq:ch03-omega} phạt mọi bước lệch khỏi tỷ số 1,
+    kể cả bước lớn hơn 1. Thiết kế một biến thể chỉ phạt phía co lại, đo nó trên
+    cùng ba mạng ở mục~\ref{sec:ch03-regularizer}, và giải thích vì sao bài báo
+    có thể đã chọn dạng đối xứng dù dạng một phía nghe hợp lý hơn.
+\end{bt}
