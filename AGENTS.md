@@ -9,7 +9,8 @@ preamble code; repo-wide consistency is structural only.
 - template/ - skeleton copied to start a new book (same layout as a real book)
 - books/<book-name>/ - one folder per book, fully self-contained
 - dist/ - final released PDFs, one per book, tracked with Git LFS
-- scripts/ - setup.ps1, new-book.ps1, release.ps1 (PowerShell 7+)
+- scripts/ - setup.ps1, new-book.ps1, release.ps1, check-chapter.ps1 (the
+  prose gate) and its tests (PowerShell 7+)
 - .githooks/pre-commit - local build gate: compiles every staged book before a commit
 - .claude/skills/ - draft-chapter, plus vendored copies of the skills it
   depends on; see the README there. The only tracked copy: .agents/skills is a
@@ -17,8 +18,9 @@ preamble code; repo-wide consistency is structural only.
 - AGENTS.md - this file, the one set of instructions. CLAUDE.md is a stub that
   imports it, because Claude Code reads CLAUDE.md and not AGENTS.md.
 
-Inside a book: main.tex, .latexmkrc, refs.bib, preamble/{packages,fonts,macros}.tex,
-frontmatter/, chapters/NN-name/, backmatter/, figures/{images,tikz}/, build/ (generated).
+Inside a book: main.tex, .latexmkrc, refs.bib, SPEC.md, check-chapter.psd1,
+preamble/{packages,fonts,macros}.tex, frontmatter/, chapters/NN-name/,
+backmatter/, figures/{images,tikz}/, research/ (optional), build/ (generated).
 
 ## Build commands
 
@@ -37,7 +39,9 @@ frontmatter/, chapters/NN-name/, backmatter/, figures/{images,tikz}/, build/ (ge
   milestones, never by hand-copying a draft PDF.
 - Books stay independent: never extract style files shared by several books.
   Improvements meant for future books go into template/ only; existing books
-  adopt them manually if wanted.
+  adopt them manually if wanted. This is about typesetting, not about tooling:
+  scripts/check-chapter.ps1 is deliberately shared, and a book states its own
+  policy in its check-chapter.psd1 rather than in the script.
 - This is an independent git repo nested inside F:\repo (which is a separate
   repo). Run all git commands from the latex-books root.
 - There is no CI. The pre-commit hook is the only compile check; never bypass
@@ -64,20 +68,42 @@ frontmatter/, chapters/NN-name/, backmatter/, figures/{images,tikz}/, build/ (ge
 ## Book specs
 
 Every books/<name>/ contains SPEC.md - that book's decision log, approved TOC,
-and progress tracker, started from template/SPEC.md. Read it before any work
-on a book; update its progress table (and its TOC, on structural changes)
-before finishing. A decision recorded there is settled - changing it means
-recording what changed and why in the log, not silently diverging.
+progress tracker and writing rules, started from template/SPEC.md. Read it
+before any work on a book; update its progress table (and its TOC, on
+structural changes) before finishing. A decision recorded there is settled -
+changing it means recording what changed and why in the log, not silently
+diverging.
+
+Beside it, check-chapter.psd1 holds the half of those writing rules a script
+can enforce: spelling variety and its exceptions, whether contractions are
+allowed, which characters are legal, which listing environments count as
+captured output. A book without one gets the library defaults, and
+check-chapter.ps1 prints the policy it resolved on every run, so a gate that
+has been weakened says so rather than passing quietly. Keep the two halves in
+step: a setting with no rule behind it is a rule nobody agreed to, and a rule
+with no setting is a rule nothing enforces.
 
 ## Writing defaults (all books)
 
-Per-book SPEC.md records deviations; otherwise:
+These are the starting points. A book's own SPEC.md names what it actually
+does, in its writing-rules section, and the machine-checkable half of that
+lives in the book's check-chapter.psd1. Where the two disagree with this list,
+the book wins.
 
 - Voice: first-person practitioner - direct, concrete, opinionated where
-  experience warrants it.
-- Prose must read as human-written. Load the humanizer skill before drafting
-  or reviewing any book prose and apply its full checklist. It is vendored
-  into .claude/skills/, so it travels with the repo and is always available.
-- Code shown in a book exists in that book's companion repo and compiles;
-  never present invented listings as real code.
-- ASCII punctuation only in source files - no Unicode dashes or quotes.
+  experience warrants it. This is the template's default, not a library rule;
+  a textbook or a narrative book says so in its SPEC's Voice line, and the
+  draft-chapter skill reads that line to pick a tone profile.
+- Prose must read as human-written. Load the humanizer skill for the book's
+  language before drafting or reviewing any book prose, and apply its full
+  checklist. One is vendored into .claude/skills/ per language the library
+  writes in, so a fresh clone always has the right one; the book's SPEC names
+  which.
+- A book that ships code keeps it in a companion repo where it compiles, and
+  never presents an invented listing as real code. A book that ships no code
+  says so in its SPEC and the rule does not apply to it.
+- No Unicode look-alikes of ASCII punctuation in source files: no curly quotes,
+  no en or em dashes, no non-breaking spaces. Letters are a different matter
+  and a book in any language may use its own. A book that wants the stricter
+  rule, plain ASCII and nothing else, sets Characters.Mode to Ascii in its
+  check-chapter.psd1.
