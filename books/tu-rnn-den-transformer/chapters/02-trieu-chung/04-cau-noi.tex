@@ -1,0 +1,72 @@
+% 04-cau-noi.tex -- Bridge boxes for Hochreiter 1991 and Bengio 1994
+%
+% Scope: half-page each; what they found, why they matter, why neither
+% solved the problem (that's chapter 04's job).
+
+\section{Ai đã thấy triệu chứng này trước chúng ta?}
+\label{sec:ch02-cau-noi}
+
+Những gì bạn vừa thấy; gradient biến mất theo chiều dài chuỗi, loss không
+giảm dù mạng đủ lớn; không phải là phát hiện mới. Hai bài báo đã mô tả nó
+từ những năm 1990, trước khi ``deep learning'' thành một từ. Mục này tóm tắt
+cả hai. Đây không phải là chương khảo cứu; mỗi bài được một hộp cầu nối, và
+lập luận chính của chương nằm ngoài các hộp đó.
+
+\begin{bridge}{Hochreiter 1991}
+\index{Hochreiter, Sepp|(}%
+\index{vanishing gradient!phát hiện đầu tiên|(}%
+
+Năm 1991, Sepp Hochreiter hoàn thành luận văn diploma tại TU Munich dưới sự
+hướng dẫn của Jürgen Schmidhuber. Tựa đề: \enquote{Untersuchungen zu
+dynamischen neuronalen Netzen} (Khảo sát về mạng nơ-ron động). Ông huấn luyện
+RNN trên các bài toán cần nhớ thông tin qua nhiều bước thời gian và quan sát
+thấy một hiện tượng: tín hiệu lỗi từ bước cuối truyền về bước đầu bị suy
+giảm theo hàm mũ.
+
+Hochreiter gọi đó là \enquote{vấn đề trễ thời gian dài} (the problem of long
+time lags). Ông chưa dùng cụm từ \enquote{vanishing gradient}; cụm từ đó
+xuất hiện sau này. Nhưng ông đã mô tả chính xác cơ chế: gradient bị nhân với
+đạo hàm của hàm kích hoạt và với ma trận trọng số hồi quy ở mỗi bước lùi,
+và nếu các hệ số đó nhỏ hơn 1, tích của chúng tiến về 0.
+
+Luận văn viết bằng tiếng Đức. Cộng đồng nghiên cứu quốc tế không đọc được nó.
+Phải sáu năm sau, chính Hochreiter và Schmidhuber mới công bố giải pháp: bộ
+nhớ LSTM, với cơ chế \enquote{băng chuyền lỗi hằng số}; chủ đề của chương~4.
+
+\index{Hochreiter, Sepp|)}%
+\index{vanishing gradient!phát hiện đầu tiên|)}%
+\end{bridge}
+
+\begin{bridge}{Bengio, Simard \& Frasconi 1994}
+\index{Bengio, Yoshua|(}%
+
+Ba năm sau Hochreiter, Yoshua Bengio, Patrice Simard và Paolo Frasconi công
+bố \enquote{Learning Long-Term Dependencies with Gradient Descent is
+Difficult} trên IEEE Transactions on Neural Networks~\autocite{bengio1994}.
+Đây là bài báo đầu tiên bằng tiếng Anh mô tả vanishing gradient một cách
+toán học chặt chẽ.
+
+Đóng góp chính của bài báo này là hai thứ. Thứ nhất: chứng minh rằng xác
+suất để gradient được bảo toàn qua $T$ bước giảm theo hàm mũ của $T$, với
+điều kiện các trọng số hồi quy không được ràng buộc đặc biệt. Nói cách khác,
+một RNN được khởi tạo ngẫu nhiên \emph{gần như chắc chắn} sẽ bị vanishing
+gradient nếu chuỗi đủ dài. Thứ hai: xác nhận bằng thực nghiệm trên bài toán
+parity và adding problem.
+
+Bài báo kết luận rằng gradient descent \emph{không đủ} để huấn luyện RNN học
+phụ thuộc dài hạn. Cần thay đổi kiến trúc hoặc thuật toán huấn luyện. Lời
+kêu gọi đó được trả lời ba năm sau; cũng bởi Hochreiter và Schmidhuber, với
+LSTM.
+
+\index{Bengio, Yoshua|)}%
+\end{bridge}
+
+Cả hai bài báo đều chẩn đoán đúng bệnh, nhưng không ai trong số họ chữa được
+nó. Hochreiter biết gradient biến mất nhưng chưa có giải pháp. Bengio chứng
+minh điều đó là tất yếu về mặt xác suất, nhưng cũng dừng ở chẩn đoán. Phải
+đến chương~4, với sự ra đời của LSTM, vấn đề này mới có một câu trả lời bằng
+kiến trúc.
+
+Còn trước mắt, chương tiếp theo; chương~3; sẽ cho bạn công cụ toán học để
+\emph{tự} chẩn đoán vanishing và exploding gradient, dựa trên bài báo của
+Pascanu, Mikolov và Bengio~2013.

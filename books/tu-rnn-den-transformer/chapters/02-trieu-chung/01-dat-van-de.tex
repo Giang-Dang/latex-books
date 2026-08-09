@@ -1,0 +1,35 @@
+% 01-dat-van-de.tex ;  Recap BPTT from ch01, state the empirical question
+%
+% Scope: remind reader of the BPTT recurrence; why the weight reuse matters;
+% set up the question: does the RNN actually learn long-range dependencies?
+
+\section{Điều chương 01 không trả lời}
+\label{sec:ch02-dat-van-de}
+
+Chương~01 dẫn xuất BPTT đến từng Jacobian. Ở trang cuối của dẫn xuất đó, tôi
+viết một câu mà bạn nên đọc lại: ``$\mat{W}_{hh}\transpose$ xuất hiện ở mọi
+bước lùi. Nếu bạn tháo cuộn công thức này từ $t = T$ về $t = 1$, bạn sẽ thấy
+$\partial L / \partial \vect{h}_1$ chứa $\mat{W}_{hh}\transpose$ nhân với chính
+nó $T$ lần.''
+
+Đó là một phát biểu đại số. Nó nói rằng gradient \emph{có thể} suy giảm hoặc
+bùng nổ, chứ chưa nói rằng nó \emph{thực sự} suy giảm hay bùng nổ trong một
+bài toán cụ thể. Chương này trả lời câu hỏi đó bằng thực nghiệm.
+
+Tôi sẽ huấn luyện một RNN đơn giản; đúng loại RNN mà chương~01 đã dẫn
+xuất; trên hai bài toán tổng hợp kinh điển:
+\tn{bài toán cộng}{adding problem} và \tn{bài toán sao chép}{copy task}. Cả
+hai được thiết kế để bắt buộc mạng phải nhớ thông tin qua nhiều bước thời
+gian. Nếu RNN có thể học phụ thuộc dài hạn, nó sẽ giải được cả hai. Nếu
+không, ta sẽ thấy loss không giảm và gradient biến mất ở những bước xa đầu
+ra; và đó chính là thứ ta sẽ đo.
+
+Tôi chọn hai bài toán này vì chúng cô lập vấn đề. Không có từ vựng, không có
+embedding, không có token hóa. Chỉ có những con số và một câu hỏi: mạng có
+nhớ được không?
+
+Trước khi chạy thí nghiệm, tôi cần nói rõ một điều. Chương này \textbf{không}
+dẫn xuất điều kiện toán học cho vanishing gradient. Đó là việc của chương~3,
+dựa trên bài báo của Pascanu và cộng sự~2013. Chương này chỉ \textbf{đo}:
+huấn luyện RNN, ghi lại loss, ghi lại norm của gradient tại từng bước thời
+gian, và cho bạn thấy những con số đó nói gì.

@@ -1,0 +1,86 @@
+% 03-copy-task.tex ;  The copy task and results
+%
+% Scope: definition, why it's harder than adding, results with clear gradient decay
+
+\section{Bài toán sao chép}
+\label{sec:ch02-copy}
+
+\index{copy task|(}%
+
+\subsection{Định nghĩa}
+
+Bài toán sao chép kiểm tra trí nhớ theo cách trực tiếp hơn: mạng phải đọc một
+chuỗi, im lặng qua một khoảng trễ, rồi viết lại chính xác chuỗi đó.
+
+Cụ thể, với tham số $T_{\text{mem}}$:
+\begin{enumerate}
+  \item $T_{\text{mem}}$ bước đầu tiên: mỗi bước là một vector 8-bit (mỗi
+    bit là 0 hoặc 1, dạng one-hot; tức chỉ một bit bằng 1, bảy bit còn lại
+    bằng 0).
+  \item Một bước \textbf{delimiter}: tất cả bit dữ liệu bằng 0, kênh đánh
+    dấu bằng 1.
+  \item $T_{\text{mem}}$ bước tiếp theo: toàn bộ đầu vào bằng 0 (cả dữ liệu
+    lẫn kênh đánh dấu). Mạng phải xuất ra đúng $T_{\text{mem}}$ vector 8-bit
+    mà nó đã đọc ở bước~1.
+\end{enumerate}
+
+Tổng chiều dài chuỗi: $2T_{\text{mem}} + 1$. Mạng có $T_{\text{mem}}$ bước
+để đọc, 1 bước để nhận tín hiệu ``bắt đầu chép'', và $T_{\text{mem}}$ bước
+để viết lại; trong khi đầu vào là toàn số 0.
+
+\begin{example}
+Với $T_{\text{mem}} = 3$, dữ liệu là $[1,0,0,0,0,0,0,0]$,
+$[0,0,1,0,0,0,0,0]$, $[0,0,0,0,1,0,0,0]$ (tương ứng với các ký hiệu A, C,
+E trong bảng chữ cái 8 ký tự). Chuỗi đầu vào:
+\[
+\texttt{A C E | 0 0 0}
+\]
+với \texttt{|} là delimiter. Target: \texttt{A C E}.
+\end{example}
+
+Bài toán này khó hơn bài toán cộng vì mạng phải nhớ \textbf{toàn bộ} chuỗi
+đầu vào (không chỉ hai giá trị), và phải duy trì trí nhớ đó qua $T_{\text{mem}}$
+bước hoàn toàn im lặng.
+
+\subsection{Kết quả}
+
+Tôi huấn luyện RNN với $d_h = 32$, learning rate $0.01$, 2000 epoch, khởi tạo
+$\mathcal{N}(0, 0.1)$. Hàm mất mát: cross-entropy trên từng bit đầu ra, chỉ
+tính ở $T_{\text{mem}}$ bước cuối. Loss của dự đoán ngẫu nhiên trên 8 lớp là
+$-\ln(1/8) \approx 2.08$ mỗi bước.
+
+\begin{measured}{Copy task, $d_h = 32$, 2000 epoch}
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+$T_{\text{mem}}$ & Loss trước & Loss sau &
+$\|\partial L / \partial \mat{W}_{hh}\|$ tại $t=1$ & tại $t=2T_{\text{mem}}+1$ \\
+\midrule
+5  & 8.74 & 8.34 & 0.233 & 0.033 \\
+10 & 7.49 & 8.34 & 0.416 & 0.017 \\
+20 & 7.91 & 8.37 & 0.832 & 0.033 \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{measured}
+
+Ba điều đáng chú ý trong bảng này.
+
+\textbf{Thứ nhất: gradient biến mất.} Tỉ lệ $\|\partial L / \partial
+\mat{W}_{hh}\|$ giữa bước đầu tiên và bước cuối cùng tăng từ 7 lần ở
+$T_{\text{mem}} = 5$ lên 25 lần ở $T_{\text{mem}} = 20$. Gradient tại những
+bước gần đầu ra mạnh hơn gradient tại những bước xa đầu ra 25 lần. Đây không
+phải là suy luận toán học; đây là con số đo được từ một RNN thật.
+
+\textbf{Thứ hai: loss không giảm.} Ở $T_{\text{mem}} = 20$, loss sau huấn
+luyện (8.37) cao hơn loss trước huấn luyện (7.91). Mạng không những không
+học được, mà còn tệ hơn cả trước khi học. Gradient yếu đến mức các bước cập
+nhật trọng số thực chất là nhiễu, và nhiễu đó phá hỏng cả những gì mạng đã
+có từ khởi tạo ngẫu nhiên.
+
+\textbf{Thứ ba: đây không phải là vấn đề năng lực.} Một RNN với $d_h = 32$
+có sức chứa quá đủ để giải bài toán sao chép $T_{\text{mem}} = 20$ (đầu vào
+21 bước, mỗi bước 9 chiều). Vấn đề không phải là mạng quá nhỏ; vấn đề là
+gradient không đến được nơi cần đến.
+
+\index{copy task|)}%
