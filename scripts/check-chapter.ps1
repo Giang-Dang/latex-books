@@ -1,7 +1,8 @@
 #!/usr/bin/env pwsh
 # Deterministic lint gate for one book's prose: the machine half of the
 # draft-chapter build gate. Checks bytes, citation ties and keys, quoting,
-# index termination, contractions, spellings, dashes, and the build log.
+# index termination, contractions, spellings, dashes, measured-number
+# provenance, and the build log.
 # Usage: pwsh scripts/check-chapter.ps1 books/<name> [-Chapter NN]
 
 param(
@@ -51,6 +52,19 @@ if (Test-Path $preambleDir) {
         foreach ($m in [regex]::Matches((Get-Content $f.FullName -Raw), '\\newminted\[([A-Za-z]+)\]')) {
             $verbatimEnvs += $m.Groups[1].Value
         }
+    }
+}
+
+# --- research notes, as one blob. A book without a research/ folder simply
+# skips the number check rather than failing every number in it.
+$researchText = ''
+$researchDir = Join-Path $bookPath 'research'
+if (Test-Path $researchDir) {
+    $researchFiles = @(Get-ChildItem $researchDir -Filter '*.md' -File)
+    if ($researchFiles.Count -gt 0) {
+        $researchText = ($researchFiles | ForEach-Object {
+                [System.IO.File]::ReadAllText($_.FullName)
+            }) -join "`n"
     }
 }
 
@@ -157,15 +171,20 @@ foreach ($f in $texFiles) {
     $inVerb = $null
     $codeDepth = 0
     $enqDepth = 0
+    $numCodeDepth = 0
 
     for ($i = 0; $i -lt $rawLines.Count; $i++) {
         $raw = $rawLines[$i]
         $lineNo = $i + 1
 
-        # stripped view: blank inside verbatim environments, drop % comments
+        # stripped view: blank inside verbatim environments, drop % comments.
+        # $verbLine records which branch we took, because the number check
+        # below wants captured listings and the other checks do not.
+        $verbLine = $false
         if ($inVerb) {
             if ($raw -match ('\\end\{' + [regex]::Escape($inVerb) + '\}')) { $inVerb = $null }
             $stripped = ''
+            $verbLine = $true
         } else {
             $bm = [regex]::Match($raw, '\\begin\{([A-Za-z]+\*?)\}')
             if ($bm.Success -and $verbatimEnvs -contains $bm.Groups[1].Value) {
@@ -173,6 +192,7 @@ foreach ($f in $texFiles) {
                     $inVerb = $bm.Groups[1].Value
                 }
                 $stripped = ''
+                $verbLine = $true
             } else {
                 $stripped = $raw -replace '(?<!\\)%.*$', ''
             }
@@ -228,10 +248,40 @@ foreach ($f in $texFiles) {
         if ($prose -match '(?<!-)---?(?!-)') {
             Add-Finding $f.FullName $lineNo 'dash' 'en/em dash ligature in prose; reword or use ASCII punctuation'
         }
+
+        # 9. number: a decimal printed in the book must appear somewhere in
+        # this book's research/ notes. Chapter 04 printed a request-timeline
+        # line that had never been captured, and chapter 02 asserted a latency,
+        # a line count and an API attribute name the same way; the SPEC rule is
+        # that a measured number is reproducible from the research file, and
+        # this is that rule with teeth.
+        #
+        # Captured listings are checked and \code{} spans are not: a timeline
+        # line inside a minted block is exactly where a made-up number hides,
+        # while an argument like `docker update --cpus 0.25` is an instruction
+        # rather than a measurement. Dotted versions (16.6.0) are skipped by
+        # the lookaround. Numbers written as words are not covered at all.
+        #
+        # The research side is matched from a digit boundary but left open at
+        # the end, so prose may round: 9.2 is accepted against a recorded 9.22.
+        # The cost of allowing that is a number which merely prefixes a real
+        # one slips through. Catching invented numbers is worth more than
+        # catching rounded ones, and demanding exact equality would flag every
+        # rounded figure in the book and get this check deleted within a week.
+        if ($researchText) {
+            $numberLine = if ($verbLine) { $raw } else { $stripped }
+            $numberLine = Remove-MacroSpans $numberLine 'code' ([ref]$numCodeDepth)
+            foreach ($m in [regex]::Matches($numberLine, '(?<![\d.])\d+\.\d+(?![\d.])')) {
+                $traced = [regex]::IsMatch($researchText, '(?<![\d.])' + [regex]::Escape($m.Value))
+                if (-not $traced) {
+                    Add-Finding $f.FullName $lineNo 'number' "'$($m.Value)' is in no research/ note; measure it, or record where it came from"
+                }
+            }
+        }
     }
 }
 
-# 9. log: parse an existing build/main.log; never invoke latexmk (perl is not
+# 10. log: parse an existing build/main.log; never invoke latexmk (perl is not
 # on PowerShell's PATH on this machine).
 $logPath = Join-Path $bookPath 'build/main.log'
 if (-not (Test-Path $logPath)) {
