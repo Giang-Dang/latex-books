@@ -149,6 +149,9 @@ $Expected = @(
     "chapters/01-triggers/05-language.tex:7: [spelling] 'gray' -> grey"
     "chapters/01-triggers/06-dashes.tex:4: [dash] en/em dash ligature in prose; reword or use ASCII punctuation"
     "chapters/01-triggers/07-numbers.tex:7: [number] '9.99' is in no research/ note; measure it, or record where it came from"
+    # 3.14 appears only in research/README.md, which documents the folder and is
+    # deliberately not counted as a note.
+    "chapters/01-triggers/07-numbers.tex:9: [number] '3.14' is in no research/ note; measure it, or record where it came from"
     "chapters/01-triggers/08-verbatim.tex:6: [verbatim] line~'this line was never captured anywhere' is in no research/ note, but line 4 calls this listing a capture ('in full')"
     "chapters/01-triggers/09-bytes.tex:5: [ascii] byte 0xC3 is not printable ASCII"
     "chapters/01-triggers/09-bytes.tex:5: [ascii] byte 0xA9 is not printable ASCII"

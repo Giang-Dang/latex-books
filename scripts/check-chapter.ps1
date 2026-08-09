@@ -453,7 +453,12 @@ $researchText = ''
 if ($policy.Numbers.Enabled -or $policy.Verbatim.Enabled) {
     $researchDir = Join-Path $bookPath $policy.Numbers.ResearchDir
     if (Test-Path $researchDir) {
-        $researchFiles = @(Get-ChildItem $researchDir -Filter $policy.Numbers.ResearchGlob -File)
+        # A README in the notes folder documents the folder; it is not a note.
+        # Counting it would let a number "trace" to the very file explaining
+        # what tracing means, and it would put a brand-new book on the far side
+        # of the cliff the README describes before it has a single note.
+        $researchFiles = @(Get-ChildItem $researchDir -Filter $policy.Numbers.ResearchGlob -File |
+            Where-Object { $_.BaseName -ne 'README' })
         if ($researchFiles.Count -gt 0) {
             $researchText = ($researchFiles | ForEach-Object {
                     [System.IO.File]::ReadAllText($_.FullName)

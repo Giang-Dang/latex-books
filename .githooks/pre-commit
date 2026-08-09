@@ -24,12 +24,10 @@ for t in $targets; do
         exit 1
     fi
     rm -f "$log"
-    if [ "$t" != template ]; then
-        echo "pre-commit: checking $t"
-        if ! pwsh scripts/check-chapter.ps1 "$t"; then
-            echo "pre-commit: $t failed checks; commit aborted."
-            echo "pre-commit: run 'pwsh scripts/check-chapter.ps1 $t' to reproduce."
-            exit 1
-        fi
+    echo "pre-commit: checking $t"
+    if ! pwsh scripts/check-chapter.ps1 "$t"; then
+        echo "pre-commit: $t failed checks; commit aborted."
+        echo "pre-commit: run 'pwsh scripts/check-chapter.ps1 $t' to reproduce."
+        exit 1
     fi
 done

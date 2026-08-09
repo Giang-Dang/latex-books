@@ -30,4 +30,6 @@ if (Test-Path $buildDir) {
 
 Write-Host "Created books/$Name"
 Write-Host "Next: edit the title metadata in books/$Name/preamble/macros.tex"
+Write-Host "Then: fill in books/$Name/SPEC.md - decisions, TOC, and the writing rules"
+Write-Host "Then: review books/$Name/check-chapter.psd1 - the prose gate this book wants"
 Write-Host "Build with: cd books/$Name; latexmk"
