@@ -11,12 +11,13 @@ Author: Giang Dang
 
 ## Status
 
-Chapters 01 to 04 drafted (04 on 2026-08-09). The companion repo is public at
-https://github.com/Giang-Dang/mosaic-graph, tagged `ch02`, `ch03`, `ch04-ef`
-and `ch04`. Mosaic now runs on PostgreSQL through EF Core and answers the
-catalog-with-reviews query in 3 statements rather than 146. Next action:
-chapter 05, which owes the reader a Relay connection on `reviews`, an error
-model, and abstract types; nothing blocks it.
+Chapters 01 to 05 drafted (05 on 2026-08-09). The companion repo is public at
+https://github.com/Giang-Dang/mosaic-graph, tagged `ch02`, `ch03`, `ch04-ef`,
+`ch04` and `ch05`. Mosaic now has global object identification, a connection on
+`Product.reviews`, a mutation with typed domain errors, one subscription, and a
+deprecated `products`. The catalog query still costs 146 resolvers and 3
+statements. Next action: chapter 06, the federation model, which is the first
+conceptual chapter since 01 and ships no companion code; nothing blocks it.
 
 ## Decision log
 
@@ -63,6 +64,11 @@ is re-opened only by recording what changed and why, in the row.
 | 36 | The lookup counter and the SQL counter are both kept | `ServiceCallCounter` counts questions asked of a domain service; a new EF Core `DbCommandInterceptor` counts statements that reach PostgreSQL. They were the same number for two chapters and stopped being the same number the moment a service could answer several questions at once. Both appear on the request timeline. Settled 2026-08-09. |
 | 37 | Batching numbers are asserted over five runs, not one | Measured over 400 warm requests, 398 reported 3 statements and 2 reported 4: the customers batch occasionally dispatches before its last keys arrive, which is `BatchDispatcher`'s documented settle-time behaviour and not a fault. Both verify scripts now send the query five times and assert that at least one run hit 3 exactly and that no run exceeded 4. Asserting an exact number against one sample would fail about one run in two hundred. Settled 2026-08-09. |
 | 38 | `sql`, `yaml` and `javascript` join the listing environments | Decision 23 named csharp, graphql, graphqlsdl, text and json. Chapter 04 needed three more: `sql` for generated statements, `yaml` for the compose file, and `javascript` for Postman test scripts. All three are stock Pygments lexers and render clean. Settled 2026-08-09. |
+| 39 | Chapter 05 takes two breaking changes rather than adding fields beside the old ones | `Product.reviews` becomes a connection and every `id` changes format, and both break clients. The alternative, decision 35's move of adding a second field, was used once on purpose and is not the default. Reasons: `products` had two chapters of published measurements riding on it and so was worth preserving, where `reviews` had nothing riding on it but this book's own tests; and a schema that grows a second field every time the first one is wrong ends up as two schemas. Mosaic has no external clients, which is the only condition under which this is free, and that condition expires once. The chapter's spine is the contrast between these two and the `products` deprecation. Settled 2026-08-09. |
+| 40 | `[ID]` did nothing until chapter 05, and the book says so | Measured: at tag `ch04`, `Product.id` answered with the raw `Guid` and accepted one as an argument, despite the `[ID]` attribute being present since ch 02. `AddGlobalObjectIdentification()` is what makes the attribute encode. The SDL is `id: ID!` before and after, so no schema-comparison tool can see the change. This is the chapter's headline finding and it also corrects a sentence of chapter 04; see open items. Settled 2026-08-09. |
+| 41 | A verification run starts from a dropped and reseeded database | The Postman collection submits a review from ch 05 on, so a run leaves the database changed and the next run would find 121 reviews. Both scripts now start the service with `MOSAIC_RESET_DATABASE=1` and the seeder drops the schema first. The alternative, loosening the seeded-count assertions, is banned by this book's own rules. Cost is a second or two per run; the check is that `verify.ps1` passes twice in a row. Settled 2026-08-09. |
+| 42 | Node resolvers use the source generator's `[NodeResolver]`, not the documented `[Node]` | The v16 documentation describes only the reflection route, with a method-naming convention resolved at schema build. The generator route is undocumented and enforces its rules at compile time instead: HC0104 (first parameter must be named `id`), HC0092 (no `[ID]` on it), HC0093 (must be public), HC0083 (only one field argument). Mosaic uses it because every domain type is already an `[ObjectType<T>]` partial class, so the node resolver sits in the folder of the domain that owns the type. Settled 2026-08-09. |
+| 43 | The subscription is deliberately outside the verification gate | Newman speaks request and response; a subscription is a connection that stays open. Rather than build a second harness for one field, chapter 05 states plainly in its own prose that the two SSE transcripts it prints are the only evidence nothing re-checks, and that a later chapter breaking `onReviewAdded` would not fail the gate. Chapter 19 owns subscription testing and owes this a fix. Settled 2026-08-09. |
 
 ## Version baseline
 
@@ -152,7 +158,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 02 | drafted | 2026-08-08. 18 pages (15-32), 7 numbered sections plus the lab, ~6,600 words, 3 TikZ figures, 35 index entries, 7 citations, 27 listings. First chapter with C# and the first use of minted's csharp lexer; it renders clean. Sources in research/2026-08-ch02-hotchocolate-16.md, which also carries the listing-provenance table. Companion repo tag `ch02`; every listing traceable to a file there and `scripts/verify.ps1` passes. TOC line updated (decision 28) because HC 16 names two authoring styles, not three. Not yet reviewed for line-level prose. |
 | 03 | drafted | 2026-08-08. 16 pages (33-48), 6 numbered sections plus the lab, ~5,900 words, 2 TikZ figures, 26 index entries, 1 citation, 29 listings. First source-guided chapter: everything internals-related is read out of `graphql-platform` at tag 16.6.0, commit `8fea46e`, cloned at F:/repo/graphql-platform. Sources in research/2026-08-ch03-request-lifecycle.md. Companion repo tag `ch03`; `scripts/verify.ps1` now also asserts the 13 middleware in order and the 146 resolvers. TOC line rewritten (decision 33) because the planned five-topic line missed the two caches, which turned out to be half the chapter. Not yet reviewed for line-level prose. |
 | 04 | drafted | 2026-08-09. 18 pages (49-66), 6 numbered sections plus the lab, ~7,400 words, 2 TikZ figures, 2 citations to primary sources plus 6 more in refs.bib, 40 listings. First chapter with a database. Sources in research/2026-08-ch04-ef-core-and-dataloaders.md. Two companion tags, `ch04-ef` and `ch04` (decision 34), both passing `verify.ps1`. The chapter's spine is three numbers on one timeline line: 146 resolvers, 3 lookups, 3 SQL. Also the first use of the `sql`, `yaml` and `javascript` lexers (decision 38). TOC line unchanged: EF Core, DataLoader usage and batching internals, projections/filtering/sorting/pagination all landed as scoped. Not yet reviewed for line-level prose. |
-| 05 | not-started | |
+| 05 | drafted | 2026-08-09. 24 pages (67-90), 6 numbered sections plus the lab, ~9,600 words, 2 TikZ figures, 8 citations to primary sources, 47 listings. Sources in research/2026-08-ch05-schema-design.md. Companion tag `ch05`, passing both verify scripts; the Postman collection went from 10 requests and 36 assertions to 19 and 74. The chapter's spine is one deprecation against two breaking changes (decision 39), and its headline finding is that `[ID]` was inert until this chapter (decision 40). TOC line unchanged: abstract types, Relay conventions, error design, deprecation and single-service subscriptions all landed as scoped, with abstract types arriving three times over as `Node`, the `Error` interface and the generated error union. Longest chapter so far, and the audit's structural note about section 5.4 being thinner than the rest is recorded below rather than fixed. Not yet reviewed for line-level prose. |
 | 06 | not-started | |
 | 07 | not-started | |
 | 08 | not-started | |
@@ -213,6 +219,42 @@ Library-wide defaults are in CLAUDE.md; these are this book's additions.
 
 ## Open items
 
+- **Chapter 05 corrects chapter 04's Postman gate, and the correction matters.**
+  Chapter 04's assertion named "the projection kept the identifier"
+  base64-decodes an id and asserts the decoded text does not contain an all-zero
+  `Guid`. At tag `ch04` ids were raw `Guid`s rather than base64, so the decode
+  produces binary noise and the test passes whichever value it is given.
+  Verified both ways with node. It could never have caught the bug it was
+  written for. Fixed at tag `ch05`, where ids really are base64 and the
+  assertion checks the prefix and the key bytes. Chapter 04's prose is right
+  about the bug and the fix; only its claim about the gate was wrong. If ch 04
+  is ever revised, say so there rather than leaving it to ch 05.
+- Chapter 04's prose says `[ID]` "has to encode the raw `Guid` into an opaque
+  identifier". At tag `ch04` it encoded nothing (decision 40). The projection
+  failure that sentence explains is real and follows from the field being
+  resolver-backed at all, so only the stated reason is wrong. One sentence to
+  tighten on any ch 04 revision.
+- Chapter 05's section 5.4, "When the answer is no", is the one section in the
+  chapter with no Mosaic code of its own; it was drafted from the documentation
+  and then given two measured Mosaic error responses during the audit. It still
+  reads more like an argument than the rest of the chapter. If the chapter is
+  revised, consider folding it into 5.5 rather than expanding it.
+- Chapter 05 leaves these unmeasured, and the research file's section M names an
+  owner for each: the WebSocket transport (only SSE was exercised), `[Topic]`
+  placeholder formatting, subscriptions with more than one subscriber or across
+  a restart, cursor stability when a row is inserted ahead of an open cursor
+  (ch 13), and `MaxPageSize` (ch 25).
+- The connection on `reviews` is **slower** than the list it replaced: a mean of
+  9.2 ms against 6.5 ms for the same 120 reviews, measured paired. The chapter
+  prints this because it is the only number that argues against the change. What
+  the connection buys is a cost the analyzer can compute: 30 flat for the
+  unbounded list, against 41 at `first: 2` and 521 at `first: 50`. If the book is
+  re-measured, keep both halves of that.
+- `schema export --output` resolves a relative path against the project
+  directory, not the working directory, so the README's own command run from the
+  repository root fails with a `DirectoryNotFoundException`. Harmless, and worth
+  fixing in the README the next time the companion repo is opened.
+
 - (resolved 2026-08-08) Companion repo created, verified and published:
   https://github.com/Giang-Dang/mosaic-graph, tags `ch02` and `ch03`.
   `scripts/verify.ps1` is the gate a tag has to pass; it builds in Release with
@@ -247,14 +289,12 @@ Library-wide defaults are in CLAUDE.md; these are this book's additions.
   request measures the runtime warming up rather than the pipeline. If the book
   is ever re-measured on other hardware, keep the ratios and replace the
   milliseconds.
-- Chapter 02 leaves three things deliberately unfixed, each promised to a named
-  chapter: `reviews` is a plain list (ch 05 makes it a connection), errors are
-  bare exceptions (ch 05 designs an error model), and nothing is authorised
-  (ch 15). If any of those chapters moves, ch 02's closing section needs
-  updating with it. Chapter 04 added a fourth: `products` returns the whole
-  catalog unpaged and will keep doing so, by decision 35, so ch 05's connection
-  work has both a field to fix and a worked example, `browseProducts`, to fix it
-  against.
+- (resolved 2026-08-09) Chapter 02's three deferred items are settled. `reviews`
+  is a connection and errors have a model, both in ch 05; only "nothing is
+  authorised" is still outstanding and still belongs to ch 15. Chapter 04's
+  addition is settled too: `products` is deprecated in favour of
+  `browseProducts` rather than paginated, which keeps decision 35 intact and
+  gives ch 05 its one survivable change.
 - House style says the prose references a figure before it appears. Chapters 02
   and 03 do not do this for any of their five figures; chapter 04 does for both
   of its. Worth one pass over ch 02 and ch 03 when either is next opened, rather

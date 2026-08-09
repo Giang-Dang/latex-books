@@ -1,0 +1,49 @@
+% Why a paged DataLoader has to branch. Referenced from chapter 05. Bare
+% tikzpicture: the figure environment, caption and label live at the call site.
+% Uses only arrows.meta and positioning. The numbers are the measured ones from
+% the aliased two-page query the lab asks for.
+\begin{tikzpicture}[
+    font=\small,
+    field/.style={draw, rounded corners=2pt, minimum width=34mm,
+                  minimum height=8mm, align=center, font=\scriptsize},
+    branch/.style={draw, fill=black!8, rounded corners=2pt, minimum width=34mm,
+                   minimum height=9mm, align=center, font=\scriptsize},
+    base/.style={draw, thick, rounded corners=2pt, minimum width=44mm,
+                 minimum height=7mm, align=center, font=\scriptsize},
+    key/.style={-{Stealth[length=1.6mm]}, gray},
+    fat/.style={-{Stealth[length=2mm]}, thick},
+    note/.style={font=\scriptsize\itshape, align=center}
+  ]
+
+  % ---- one generated DataLoader ----------------------------------------
+  \node[base] (gen) at (0,1.5) {ReviewsByProductIdDataLoader};
+
+  % ---- two call sites asking for different pages -----------------------
+  \node[field] (f1) at (-3.3,-0.2) {\texttt{a: reviews(first: 2)}};
+  \node[field] (f2) at (3.3,-0.2)  {\texttt{b: reviews(first: 5)}};
+
+  \draw[key] (f1.north) -- (gen.south west);
+  \draw[key] (f2.north) -- (gen.south east);
+
+  \node[note, text width=38mm] at (0,0.0)
+    {\texttt{.With(...)} hashes\\the page shape};
+
+  % ---- two branches ----------------------------------------------------
+  \node[branch] (b1) at (-3.3,-2.0) {branch \texttt{f:2}\\own cache, own batch};
+  \node[branch] (b2) at (3.3,-2.0)  {branch \texttt{f:5}\\own cache, own batch};
+
+  \draw[fat] (f1) -- (b1);
+  \draw[fat] (f2) -- (b2);
+
+  \draw[key] (-3.3,-2.5) -- (-3.3,-3.1);
+  \draw[key] (3.3,-2.5) -- (3.3,-3.1);
+
+  \node[field] (s1) at (-3.3,-3.6) {1 statement\\\texttt{row <= 3}};
+  \node[field] (s2) at (3.3,-3.6)  {1 statement\\\texttt{row <= 6}};
+
+  \node[note, text width=68mm] at (0,-5.0)
+    {One branch would have to serve both, and a promise cache keyed
+     only on the product would hand the second alias the first
+     alias's page.};
+
+\end{tikzpicture}

@@ -1,0 +1,149 @@
+\section{What a client can survive}
+\label{sec:ch05-what-a-client-can-survive}
+\index{schema!evolution|(}
+
+\code{products} returns every row in the catalog. That was defensible at
+twenty-five products and stops being defensible at some number nobody will
+notice passing, and chapter~\ref{ch:data-without-the-n-plus-1} already built the
+replacement. So the field has to go, and there is no version number in the URL
+to hide the removal behind.
+
+GraphQL schemas are versionless, which is true and is usually where the sentence
+stops. The part that matters is what replaces the version: a GraphQL schema
+gives its compatibility guarantees one field at a time, so somebody has to know,
+for each change, which of three kinds it is.
+Figure~\ref{fig:ch05-change-kinds} is that taxonomy, with this chapter's changes
+placed on it.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch05-change-kinds}
+  \caption{Three kinds of change, and where four of Mosaic's edits landed. The
+  top band costs nothing and is where most work should live. The middle band is
+  the only place a replacement can happen safely, and it is a process rather
+  than an edit. The bottom band cannot be softened, only decided on, and two of
+  this chapter's three changes are in it.}
+  \label{fig:ch05-change-kinds}
+\end{figure}
+
+\index{schema!additive change}%
+The top band is where a healthy schema spends most of its life. Adding a field,
+a type, an enum value that nobody is switching on exhaustively, or an argument
+with a default costs nothing, because a client asks for what it wants and is
+handed exactly that. A field it has never heard of is a field it never
+selects. \code{browseProducts} arrived in
+chapter~\ref{ch:data-without-the-n-plus-1} this way and no client noticed.
+
+The bottom band is anything that changes a name, a type, or a nullability in the
+direction that gives the client less. There is no gentle version of it. A field
+that was \code{[Review!]!} and is now \code{ReviewConnection!} does not degrade;
+it fails.
+
+\subsection*{Deprecating a field costs one attribute}
+
+\index{deprecation!GraphQLDeprecated}%
+The middle band is where \code{products} goes, and it is the reason the top and
+bottom bands are not the whole story.
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+[GraphQLDeprecated(
+    "Returns the whole catalog with no upper bound on its size. "
+    + "Use `browseProducts`, which pages, filters and sorts.")]
+public static Task<IReadOnlyList<Product>> GetProductsAsync(
+    CatalogService catalog,
+    CancellationToken cancellationToken)
+    => catalog.GetProductsAsync(cancellationToken);
+\end{minted}
+
+That is the entire change. In the exported schema:
+
+\begin{graphqlsdl}
+products: [Product!]!
+  @cost(weight: "10")
+  @deprecated(
+    reason: "Returns the whole catalog with no upper bound on its size. Use `browseProducts`, which pages, filters and sorts."
+  )
+\end{graphqlsdl}
+
+\index{deprecation!behaviour}%
+And the field goes on answering. That is worth stopping on, because the word
+suggests otherwise. \code{@deprecated} turns nothing off. It is a message to the
+people and the tools reading the schema, it shows up in introspection, and every
+query that used the field yesterday works today. What has changed is that a
+client generating code from this schema now gets a warning, and that the day the
+field is removed becomes a day somebody can see coming.
+
+Two smaller decisions are embedded in that attribute and both are worth copying.
+The first is that the reason names the replacement. A deprecation that says
+\enquote{do not use this} without saying what to use instead leaves every
+consumer to work the answer out separately, and some of them will work it out
+wrong. The second is that .NET's own \code{[Obsolete("reason")]} would have done
+the same job: for fields, arguments, input fields and enum values the two
+attributes behave identically~\autocite{chillicream2026versioning}. Mosaic uses
+the GraphQL one because the deprecation is a fact about the schema rather than
+about the C\#, and because the two stop being interchangeable the moment the
+target is a type rather than a field.
+
+\subsection*{What cannot be deprecated, and why the rule is right}
+
+\index{deprecation!limits}%
+There is one restriction, it is easy to trip over, and the reasoning behind it
+is better than most: a non-null argument or input field with no default value
+cannot be deprecated~\autocite{chillicream2026versioning}. The same restriction
+applies to \code{@requiresOptIn}.
+
+Think about what deprecating one would mean. The client is required to send it.
+The server is telling the client to stop sending it. Both cannot be true, and
+the day the argument is removed every query that supplies it stops parsing. So
+the schema refuses to let you write down the contradiction. If you want to
+retire a required argument, the move is to give it a default first, which is
+additive, and deprecate it in the release after.
+
+\index{deprecation!object types}%
+Object types are the other gap, and this one is a live edge of the
+specification rather than a settled rule. Deprecating a type itself needs an
+option turned on in \code{ModifyOptions}, and it is off by
+default because it is not in the released GraphQL specification at all: it
+tracks an open proposal on the specification
+repository~\autocite{graphqlspec2026objectdeprecation}. Mosaic leaves it off.
+Two details are worth knowing before anybody turns it on. \code{[Obsolete]} on a
+class deliberately does \emph{not} deprecate the type, only
+\code{[GraphQLDeprecated]} does, because honouring \code{[Obsolete]} here too
+would have silently deprecated types across every existing codebase the moment
+the option was enabled. And a field that is not itself deprecated cannot return
+a deprecated type; the schema fails to build. Reaching one through an interface
+or a union is fine~\autocite{chillicream2026versioning}.
+
+\subsection*{The other direction}
+
+\index{schema!requiresOptIn}%
+\code{@deprecated} marks what is leaving. There is a matching directive for what
+has not arrived yet, and it gets far less attention than it deserves.
+\code{@requiresOptIn} marks a field as unstable, hides it from introspection,
+and requires a consumer to name the feature before they can see it. Like object
+deprecation it is off until you ask for it, behind its own schema
+option~\autocite{chillicream2026versioning}. A schema can then carry an
+experiment
+without every client discovering it, generating a type for it, and treating it
+as a promise.
+
+Mosaic does not use it, which is a scoping decision rather than a judgement:
+nothing here is experimental enough to need it. I am pointing at it because the
+usual complaint about versionless schemas is that there is nowhere to put a
+half-finished idea, and there is.
+
+\subsection*{Nothing here is enforced}
+
+\index{deprecation!enforcement}%
+One admission before moving on, because the rest of this section reads more
+confidently than the situation deserves. A deprecation in Mosaic is a string in
+the schema. Nothing rejects a query that uses \code{products}, nothing counts
+how many clients still do, and nothing stops the field being deleted tomorrow
+by somebody who did not read the reason. Deprecation is only half a mechanism
+until a registry is watching the schema and a check is failing a pull request
+that removes a field somebody is still selecting.
+Chapter~\ref{ch:ci-cd-for-a-federated-graph} is where that half arrives.
+
+Which brings us to the first change in this chapter that a client cannot
+survive, and the reason it is worth taking anyway.
+\index{schema!evolution|)}

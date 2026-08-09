@@ -1,0 +1,93 @@
+\section*{Your turn}
+
+This chapter has one tag, and half the exercises need the previous one as well,
+because most of what it teaches is a difference between two versions of a
+schema.
+
+\begin{minted}{text}
+git clone https://github.com/Giang-Dang/mosaic-graph
+cd mosaic-graph
+docker compose up -d mosaic-db
+git checkout ch05
+pwsh scripts/verify.ps1 -KeepDatabase
+\end{minted}
+
+The script now drops the database and reseeds it before every run, because the
+collection writes. Run it twice in a row and watch it pass twice; that is the
+whole reason the reset exists.
+
+\begin{enumerate}
+  \item \textbf{Break a client on purpose.} At tag \code{ch04}, ask
+  \code{productById} for a product using the raw identifier
+  \code{a0000000-0000-4000-8000-000000000001} and keep the response. Now
+  \code{git checkout ch05} and send the identical request. Then diff the two
+  tags' \code{schema/mosaic.graphql} and find the line that says this would
+  happen. You will not find one. Write down, in a sentence, what a schema
+  comparison tool could have told you here and what it could not.
+
+  \item \textbf{Find the other opaque thing.} Section~\ref{sec:ch05-one-name-for-one-thing}
+  claims cursors belong to the same family as identifiers: values whose format
+  can change without the schema moving. Take an \code{endCursor} from
+  \code{browseProducts} at tag \code{ch04} and send it to \code{ch05}. Does it
+  still work? Whichever answer you get, say why, and say what would have to
+  change for the answer to flip.
+
+  \item \textbf{Make the connection into a list again.} In
+  \code{ProductReviewsNode}, change the return type from
+  \code{PageConnection<Review>} to \code{Task<IReadOnlyList<Review>>} and return
+  the page's contents, leaving \code{[UseConnection]} exactly where it is. It
+  compiles. Export the schema and read the \code{reviews} field. Then explain
+  what the attribute was doing all along.
+
+  \item \textbf{Watch the batch split.} Ask one query for two different pages of
+  the same product's reviews, using aliases:
+
+  \begin{minted}[fontsize=\footnotesize]{graphql}
+{ productBySku(sku: "MOS-FRN-0001") {
+    a: reviews(first: 2) { nodes { id } }
+    b: reviews(first: 5) { nodes { id } } } }
+  \end{minted}
+
+  Turn the database command log up to \code{Information} and count the
+  statements. Predict the number before you look. Then work out from
+  section~\ref{sec:ch05-the-list-that-became-a-connection} why the promise cache
+  could not have served both.
+
+  \item \textbf{Cost the difference.} Send the catalog query with
+  \code{GraphQL-Cost: validate} and \code{reviews(first: 2)}, then
+  \code{first: 50}, then with no page argument at all. Three numbers. Now do the
+  same at tag \code{ch04} where \code{reviews} is a list. The interesting result
+  is not that the numbers differ; it is which of the two schemas can be given a
+  cost limit that means anything.
+
+  \item \textbf{Put a domain error in the wrong channel.} Delete the
+  \code{[Error]} attribute naming the duplicate from
+  \code{SubmitReviewAsync} and submit
+  the same review twice. Read what the client gets: the HTTP status, the shape
+  of the response, and what is left of the message. Then name the three things a
+  client can no longer do.
+
+  \item \textbf{Deprecate something you cannot.} Put \code{[GraphQLDeprecated]}
+  on the \code{sku} argument of \code{productBySku}, which is a non-null
+  argument with no default. Read the failure. Then give the argument a default
+  and try again. The first failure is the schema refusing to let you write down
+  a contradiction; say what the contradiction is.
+
+  \item \textbf{Lose an event.} Open the subscription from
+  section~\ref{sec:ch05-one-service-pushed} in one terminal. In another, submit
+  a review for a \emph{different} product and confirm nothing arrives. Now move
+  the \code{SendAsync} call in \code{ReviewMutations} to \emph{before}
+  \code{SubmitReviewAsync}, submit a duplicate review, and watch a subscriber be
+  told about a review that was never written.
+\end{enumerate}
+
+Exercise 3 is the one to do if you do only one. Everything else here announces
+itself. A breaking change breaks, a bad rating produces an error type, and a
+missing \code{UseWebSockets} produces a handshake failure. A resolver annotated
+as a connection that quietly stays a list produces a service that starts,
+answers, and passes every test you thought to write, while the contract you
+published is not the contract you meant to publish. From
+chapter~\ref{ch:composition} onward that published contract is composed with
+five others by a machine that has never seen your C\#, and the only thing
+standing between you and a supergraph built from a schema you did not read is
+the habit of reading it.

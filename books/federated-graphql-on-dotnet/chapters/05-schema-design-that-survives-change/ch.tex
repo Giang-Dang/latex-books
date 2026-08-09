@@ -1,7 +1,42 @@
 \chapter{Schema Design That Survives Change}
 \label{ch:schema-design-that-survives-change}
 
-\emph{Not yet drafted.} Planned scope: Abstract types, Relay conventions, error design (payloads versus error modes), deprecation, and subscriptions in a single service.
+Mosaic has been read-only for four chapters and has never once had to tell a
+caller no. Nothing has been deprecated, because nothing has been replaced. No
+identifier has meant anything outside the request that produced it. The schema
+has been a description of what the service can do, which is the easy half; this
+chapter is about the other half, where the schema is a promise about what it
+will go on doing.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/05-schema-design-that-survives-change/01-section-name}
+Three changes land here, and the point of the chapter is that they are not the
+same kind of change. The \code{products} field is deprecated in favour of the
+paged one chapter~\ref{ch:data-without-the-n-plus-1} added, and every client
+that uses it keeps working. Identifiers stop being raw \code{Guid}s and become
+opaque, globally unique values, which breaks every client holding a stored one.
+\code{Product.reviews} stops being a list and becomes a connection, which breaks
+every client that selects it. A chapter about surviving change that ships two
+breakages is being honest about the ratio: some changes cannot be made
+survivably, and the skill is knowing which, and what the survivable ones cost.
+
+Along the way the schema acquires its first abstract types, its first mutation,
+its first error model and its first subscription. Those arrive together because
+they belong together. An error model needs something that can fail before it has
+anything to describe, and an interface and a union turn out to be what the
+description is made of.
+
+The numbers that matter carry over unchanged. A hundred and forty-six resolvers
+and three statements, which is where
+chapter~\ref{ch:data-without-the-n-plus-1} left the catalog query, are still a
+hundred and forty-six resolvers and three statements at the end of this one, and
+the statement in the middle has become a window function without anybody asking
+it to. Everything below is reproducible from tag \code{ch05} of the companion
+repository. Internals are read from HotChocolate at tag 16.6.0, commit
+\code{8fea46e}~\autocite{chillicream2026source}, as in the last two chapters.
+
+\input{chapters/05-schema-design-that-survives-change/01-what-a-client-can-survive}
+\input{chapters/05-schema-design-that-survives-change/02-one-name-for-one-thing}
+\input{chapters/05-schema-design-that-survives-change/03-the-list-that-became-a-connection}
+\input{chapters/05-schema-design-that-survives-change/04-when-the-answer-is-no}
+\input{chapters/05-schema-design-that-survives-change/05-errors-that-are-data}
+\input{chapters/05-schema-design-that-survives-change/06-one-service-pushed}
+\input{chapters/05-schema-design-that-survives-change/07-your-turn}

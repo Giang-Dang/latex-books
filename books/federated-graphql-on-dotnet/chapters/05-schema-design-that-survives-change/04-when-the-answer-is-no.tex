@@ -1,0 +1,142 @@
+\section{When the answer is no}
+\label{sec:ch05-when-the-answer-is-no}
+\index{errors!field errors|(}
+
+GraphQL does not have status codes. A request that reaches the execution engine
+answers 200, and that is true of a request where every field resolved and of a
+request where none of them did. Whatever a client learns about failure, it
+learns from the body.
+
+The body has two places to put it, and choosing between them is most of what
+error design is. This section is the first place: the \code{errors} array,
+which every GraphQL server has and which most services over-use.
+
+\subsection*{An error is per field, not per request}
+
+\index{errors!non-terminating}%
+The specification calls these field errors, and the important word in the
+definition is non-terminating: a resolver that fails returns null for its own
+field, an entry is added to \code{errors}, and every other field in the query
+goes on resolving~\autocite{chillicream2026errors}. Ask Mosaic's \code{node}
+field for an identifier naming a type nothing is registered for:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"errors":[{"message":"There is no node resolver registered for type `Widget`.",
+  "path":["node"]}],
+ "data":{"node":null}}
+\end{minted}
+
+\code{data} is there. The field that failed is null and everything beside it
+would have resolved. A client that reads the presence of \code{errors} as total
+failure is throwing away answers it was given.
+
+\index{errors!null propagation}%
+Now the same failure where the field cannot be null. The mutation that submits a
+review takes an argument typed to accept only a product, and this hands it a
+customer:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"errors":[{"message":"The node id type name `Customer` does not match
+  the expected type name `Product`.",
+  "path":["submitReview"]}],
+ "data":null}
+\end{minted}
+
+The field returns \code{SubmitReviewPayload!}, so there is nowhere to write a
+null, and the error walks up until it finds somewhere: the root. Same class of
+failure, same array, and the entire difference in blast radius is one
+exclamation mark. Chapter~\ref{ch:data-without-the-n-plus-1} met this from the
+other direction, when a missing \code{totalCount} took a whole page of products
+with it. Nullability is a statement about how far a single failure is allowed
+to travel, and it is the only lever you have over that distance.
+
+\subsection*{What a client is told by default}
+
+\index{errors!masking}%
+Both of those are HotChocolate's own errors, which is why they say something
+useful. An exception escaping one of your resolvers is treated quite
+differently: the documentation's example of it, since nothing in Mosaic throws
+an unhandled exception on any input I could find, is a response whose message
+reads \enquote{Unexpected Execution Error} and nothing
+else~\autocite{chillicream2026errors}.
+
+The message is gone. That default is correct and
+it is worth understanding rather than switching off, because the first thing
+most people do when they meet it is switch it off. An exception message is
+written for whoever reads the log, and it routinely contains a connection
+string, a file path, an internal identifier or a stack of type names that
+describes the shape of your system to somebody who was guessing. The engine
+cannot tell which exceptions were written for a client, so it assumes none of
+them were.
+
+\index{errors!ErrorBuilder}%
+Two supported ways to say more, neither of which Mosaic needs yet and both of
+which the documentation is the authority on. An error filter catches a typed
+exception on its way out and rewrites it:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+builder
+    .AddGraphQL()
+    .AddErrorFilter(error =>
+    {
+        if (error.Exception is NotFoundException ex)
+        {
+            return ErrorBuilder
+                .FromError(error)
+                .SetMessage(ex.Message)
+                .SetCode("NOT_FOUND")
+                .Build();
+        }
+
+        return error;
+    });
+\end{minted}
+
+Or a resolver throws \code{GraphQLException}, which is passed through as
+written~\autocite{chillicream2026errors}. The difference between the two is
+where the decision lives. A filter is central and catches a category of failure
+across the whole schema; an exception is local and is the resolver saying this
+particular message is for you. Errors are immutable, and the methods that look
+like mutations each return a new instance, which is why
+\code{ErrorBuilder.FromError} is the documented way to change more than one
+thing at once~\autocite{chillicream2026errors}.
+
+\code{SetCode} is the part to copy whichever route you take. A message is
+written for a person, gets reworded, translated and shortened, and any client
+that branched on its text breaks the day somebody improves it. A code is written
+for a program.
+
+\subsection*{The array is the wrong place for most of what goes wrong}
+
+\index{errors!when to use the array}%
+Here is the position this book takes, and it is a position rather than a
+consensus.
+
+The \code{errors} array is for failures the client cannot do anything about: a
+database that was unreachable when the resolver asked, or a bug that threw.
+What those have in common is that there is no branch for a client to take and
+nothing to say to the person at the keyboard beyond the fact that something went
+wrong.
+
+\enquote{You have already reviewed this product} is not that. It is the correct,
+expected outcome of a legitimate request, the client knows exactly what to do
+with it, and burying it in a channel meant for stack traces means the client has
+to string-match its way back out.
+
+Two things go wrong when a domain failure is put in the array, and the second is
+the one that compounds. The type system never sees it, so no client generator
+knows the failure can happen and no compiler will tell a client it has not
+handled it. And the shape of the error is then a convention rather than a
+contract: adding a field to it, or renaming one, is a change no schema check can
+see, which is the same blindness
+section~\ref{sec:ch05-one-name-for-one-thing} ran into with the identifier
+format.
+
+\index{errors!two channels}%
+So Mosaic ends up with two channels, and the line between them is about whether
+the caller has a decision to make. A failure with a branch behind it is data and
+belongs in the response. A failure with no branch behind it is an error and
+belongs in the array.
+
+That distinction needs a mutation to demonstrate, and Mosaic has never had one.
+\index{errors!field errors|)}

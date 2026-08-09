@@ -1,0 +1,54 @@
+% Three kinds of schema change, with Mosaic's three placed on them. Referenced
+% from chapter 05. Bare tikzpicture: the figure environment, caption and label
+% live at the call site. Uses only arrows.meta and positioning.
+\begin{tikzpicture}[
+    font=\small,
+    band/.style={draw, rounded corners=2pt, minimum width=34mm,
+                 minimum height=11mm, align=center, font=\scriptsize},
+    safe/.style={band},
+    warn/.style={band, fill=black!8},
+    bad/.style={band, fill=black!18, thick},
+    ex/.style={font=\scriptsize\ttfamily, anchor=west, align=left},
+    note/.style={font=\scriptsize\itshape, align=left, anchor=west},
+    flow/.style={-{Stealth[length=2mm]}, thick}
+  ]
+
+  % ---- the three bands -------------------------------------------------
+  \node[safe] (add)  at (0,0)    {additive\\nothing to do};
+  \node[warn] (dep)  at (0,-1.9) {replaceable\\deprecate, then remove};
+  \node[bad]  (brk)  at (0,-3.8) {breaking\\no way to soften it};
+
+  \draw[flow] (add) -- (dep);
+  \draw[flow] (dep) -- (brk);
+
+  % ---- what each one means ---------------------------------------------
+  \node[note, text width=52mm] at (2.2,0)
+    {a new field, a new type,\\a new optional argument};
+
+  \node[note, text width=52mm] at (2.2,-1.9)
+    {the old thing still answers\\while callers move off it};
+
+  \node[note, text width=52mm] at (2.2,-3.8)
+    {a name, a type or a\\nullability that changed};
+
+  % ---- Mosaic's three --------------------------------------------------
+  \node[font=\scriptsize\bfseries, anchor=west] at (-2.6,-5.3) {in this chapter};
+
+  \node[ex] at (-2.6,-6.0) {browseProducts};
+  \node[note, text width=40mm] at (0.6,-6.0) {added last chapter, additive};
+
+  \node[ex] at (-2.6,-6.7) {products};
+  \node[note, text width=40mm] at (0.6,-6.7) {deprecated, still answers};
+
+  \node[ex] at (-2.6,-7.4) {Product.id};
+  \node[note, text width=40mm] at (0.6,-7.4) {same SDL, new format};
+
+  \node[ex] at (-2.6,-8.1) {Product.reviews};
+  \node[note, text width=40mm] at (0.6,-8.1) {list became a connection};
+
+  % the two that bite
+  \draw[flow, dashed] (-2.9,-7.4) -- (-3.6,-7.4) -- (-3.6,-3.8) -- (brk.west);
+  \draw[flow, dashed] (-2.9,-8.1) -- (-4.0,-8.1) -- (-4.0,-4.2)
+    -- (-1.7,-4.2) -- (brk.south west);
+
+\end{tikzpicture}

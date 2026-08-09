@@ -1,0 +1,239 @@
+\section{One name for one thing}
+\label{sec:ch05-one-name-for-one-thing}
+\index{Relay!global object identification|(}
+
+Mosaic has had \code{[ID]} on four fields since
+chapter~\ref{ch:hotchocolate-quickly}. I put it there because it is what you
+write, and I did not check what it did. It did almost nothing, and finding that
+out is the most useful hour this chapter cost me.
+
+Here is tag \code{ch04}, the state the last chapter ended in:
+
+\begin{minted}[fontsize=\footnotesize]{graphql}
+{ productById(id: "a0000000-0000-4000-8000-000000000001") { id sku } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"productById":{"id":"a0000000-0000-4000-8000-000000000001",
+          "sku":"MOS-FRN-0001"}}}
+\end{minted}
+
+The \code{id} field answered with the raw \code{Guid}, and a raw \code{Guid} was
+accepted as an \code{[ID]} argument. Whatever the attribute was doing, it was
+not encoding anything.
+
+\index{Relay!AddGlobalObjectIdentification}%
+One line in \code{Program.cs} changes that, and changes rather more than I
+expected:
+
+\begin{minted}{csharp}
+builder.AddGraphQL()
+    .AddMosaic()
+    .AddGlobalObjectIdentification()
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"products":[{"id":"UHJvZHVjdDoAAACgAAAAQIAAAAAAAAAB"}, ...]}}
+\end{minted}
+
+\index{Relay!opaque identifiers}%
+Base64-decode that and you get twenty-four bytes: the ASCII text
+\code{Product:} followed by the sixteen raw bytes of the \code{Guid}. The type
+name is inside the identifier. That is the whole idea, and it solves a problem
+that only exists once a client caches anything: two types can both have a row
+numbered one, and a cache keyed on \code{id} alone will confuse them. An
+identifier that carries its type cannot collide with an identifier of another
+type in the same schema~\autocite{chillicream2026relay}. Hold on to that
+qualification. Two services can each mint an identifier for their own
+\code{Product}, and what happens when a router has to tell them apart is
+chapter~\ref{ch:hard-modeling-problems}'s problem.
+
+\subsection*{The part that is a breaking change}
+
+\index{schema!silent breaking change}%
+Send the old query to the new service:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"errors":[{"message":"The node ID string has an invalid format.",
+  "path":["productById"],
+  "extensions":{"originalValue":"a0000000-0000-4000-8000-000000000001"}}],
+ "data":{"productById":null}}
+\end{minted}
+
+Every identifier the service has ever handed out is now unusable, and every
+identifier it accepts has a format it did not have yesterday. A client that
+stored a product id last week is holding a string that no longer resolves.
+
+Now compare the two schemas. Before: \code{id: ID!}. After: \code{id: ID!}.
+
+\index{schema!what SDL cannot say}%
+That is the part worth carrying out of this section. The SDL does not change by
+one character, so every tool that compares schemas for breaking changes,
+including the one chapter~\ref{ch:ci-cd-for-a-federated-graph} puts in front of
+a pull request, reports that nothing happened. The type system has a name for
+the shape of an identifier and no name at all for its format, so a change of
+format is invisible to it. I would rather have found this by reading than by
+sending a query, and I did not.
+
+The lesson generalises past this one directive. Anything a schema treats as an
+opaque scalar can change meaning without changing type, and cursors are the
+other obvious member of that family. A serialisation you can alter without the
+schema moving is a compatibility surface nothing is watching.
+
+So: worth doing anyway, and worth doing early. Mosaic has no external clients,
+which is the only condition under which this is a free change, and that
+condition expires exactly once.
+
+\subsection*{The interface, and who is allowed in it}
+
+\index{abstract types!Node interface}%
+Along with the encoding, that one line adds Mosaic's first abstract type and two
+root fields~\autocite{chillicream2026relay}:
+
+\begin{graphqlsdl}
+"The node interface is implemented by entities that have a global unique identifier."
+interface Node {
+  id: ID!
+}
+
+type Query {
+  node(id: ID!): Node
+  nodes(ids: [ID!]!): [Node]!
+}
+\end{graphqlsdl}
+
+An interface is a promise that several object types share a field, and that a
+client holding the interface can select that field without knowing which type it
+has~\autocite{graphql2025spec}. \code{Node} is the smallest useful one: a single
+field, and the guarantee that anything implementing it can be fetched from that
+field alone.
+
+Four of Mosaic's types implement it: \code{Product}, \code{Customer},
+\code{Review} and \code{Order}. One deliberately does not, and the exclusion
+teaches more than the inclusions.
+
+\index{abstract types!what does not belong}%
+\code{OrderLine} has no identifier. Not a hidden one, not an inconvenient one:
+the domain does not have a concept of a line's identity apart from the order it
+sits in, which is why chapter~\ref{ch:data-without-the-n-plus-1} gave the table
+a shadow key rather than inventing a property nobody would use. Putting
+\code{OrderLine} in \code{Node} would mean promising a client that a line can be
+fetched on its own, and the honest answer is that there is nothing to fetch it
+by. The interface is a claim about the domain and not a badge to hand out.
+
+\subsection*{The bill the interface presents}
+
+\index{Relay!refetch cost}%
+Making four types refetchable had a consequence I did not anticipate and should
+have. Two of the four had no way to be fetched by their own identifier. The only
+route to an \code{Order} was through the customer who placed it; the only route
+to a \code{Review} was through the product it was written about. Both needed a
+new service method and a new DataLoader:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+public async Task<IReadOnlyDictionary<Guid, Order>> GetOrdersByIdsAsync(
+    IReadOnlyList<Guid> ids,
+    CancellationToken cancellationToken)
+{
+    counter.RecordLookup();
+
+    return await db.Orders
+        .AsNoTracking()
+        .Where(o => ids.Contains(o.Id))
+        .ToDictionaryAsync(o => o.Id, cancellationToken);
+}
+\end{minted}
+
+A batch rather than a single lookup, because \code{nodes(ids:)} can ask for many
+at once and resolving them one at a time would rebuild the problem the last
+chapter spent itself removing.
+
+That bill is worth naming, because it is the same bill twice. The Node interface
+says: give me an identifier and I will give you the thing. From
+chapter~\ref{ch:the-first-cut-extracting-catalog} onward, federation says
+exactly the same, in almost the same words, to a service that no longer holds
+the data the identifier refers to. A codebase that has already answered the
+question for its own graph has done most of the work of answering it for a
+router.
+
+\subsection*{Two routes to a node resolver, and the documentation knows one}
+
+\index{HotChocolate!NodeResolver}%
+The documentation describes a \code{[Node]} attribute on the class, with the
+resolver found by naming convention: a static method called \code{Get} or
+\code{GetAsync}, or either of those with the type name after the
+\code{Get}~\autocite{chillicream2026relay}. That route exists and is
+implemented by reflection in \code{NodeAttribute}.
+
+There is a second route, it is the one the source generator implements, and it
+appears nowhere in the documentation. Mark a method \code{[NodeResolver]}
+inside a class that already carries \code{[ObjectType<T>]}, and
+\code{ObjectTypeFileBuilder} emits this into the generated configuration:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+descriptor
+    .ImplementsNode()
+    .ResolveNode(resolvers.ResolveProductAsync().Resolver!);
+\end{minted}
+
+No \code{[Node]} attribute, no naming convention. Mosaic uses it because every
+domain type is already an \code{[ObjectType<T>]} partial class, so the node
+resolver lives beside the other fields of that type, in the folder of the domain
+that owns it:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+[NodeResolver]
+public static async Task<Product?> ResolveProductAsync(
+    Guid id,
+    IProductByIdDataLoader productById,
+    CancellationToken cancellationToken)
+    => await productById.LoadAsync(id, cancellationToken);
+\end{minted}
+
+\index{HotChocolate!analyzer diagnostics}%
+The generator enforces four rules that the documentation does not state, and
+each has its own diagnostic. The first parameter must be named \code{id},
+exactly, or you get HC0104. It must not carry \code{[ID]}, because a node
+resolver already declares it as one, or HC0092. The method must be public, or
+HC0093. And \code{id} must be the only field argument, or HC0083.
+
+I list them because every one of them is a compile-time error, which is the
+whole reason this route is the better one. The reflection route resolves its
+convention when the schema is built, so a method named wrongly is a runtime
+surprise. Here the compiler tells you before the service starts. That is worth
+more than the attribute being shorter.
+
+\subsection*{Refetching, end to end}
+
+\index{Relay!node field}%
+Which leaves the field the whole arrangement exists for. Hand it one of those
+identifiers and nothing else:
+
+\begin{minted}[fontsize=\footnotesize]{graphql}
+{
+  node(id: "UHJvZHVjdDoAAACgAAAAQIAAAAAAAAAB") {
+    __typename
+    ... on Product { title sku }
+  }
+}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"node":{"__typename":"Product","title":"Larsen Oak Dining Table",
+          "sku":"MOS-FRN-0001"}}}
+\end{minted}
+
+The inline fragment is not optional. \code{node} returns \code{Node}, and a
+\code{Node} has exactly one field, so anything beyond \code{id} has to be asked
+for on a concrete type. That is the cost of an abstract type and it is the same
+cost every time: the client does the narrowing, in the query, where it is
+visible.
+
+\code{\_\_typename} is doing real work in that document rather than decorating it.
+It is how a client that asked \code{node} for something knows what came back,
+and it is the field every cache in the GraphQL ecosystem keys on alongside
+\code{id}. The two together are why the encoding at the top of this section
+matters.
+
+Which is one field made honest. The next one changes shape entirely.
+\index{Relay!global object identification|)}

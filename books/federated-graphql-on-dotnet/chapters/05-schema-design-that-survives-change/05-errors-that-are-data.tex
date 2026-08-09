@@ -1,0 +1,340 @@
+\section{Errors that are data}
+\label{sec:ch05-errors-that-are-data}
+\index{mutations!conventions|(}
+
+Four chapters of a read-only graph, and here is the first write. It arrives now
+rather than in chapter~\ref{ch:hotchocolate-quickly}, where it would have been
+easy, because a mutation with nothing to refuse teaches nothing.
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+[Error<ProductNotFoundError>]
+[Error<CustomerNotFoundError>]
+[Error<RatingOutOfRangeError>]
+[Error<DuplicateReviewError>]
+public static async Task<Review> SubmitReviewAsync(
+    [ID<Product>] Guid productId,
+    [ID<Customer>] Guid customerId,
+    int rating,
+    string? body,
+    CatalogService catalog,
+    AccountsService accounts,
+    ReviewsService reviews,
+    ITopicEventSender sender,
+    CancellationToken cancellationToken)
+\end{minted}
+
+A method with loose parameters returning a \code{Review}. Here is what the
+schema makes of it:
+
+\begin{graphqlsdl}
+type Mutation {
+  submitReview(input: SubmitReviewInput!): SubmitReviewPayload!
+}
+
+type SubmitReviewPayload {
+  review: Review
+  errors: [SubmitReviewError!]
+}
+\end{graphqlsdl}
+
+\index{mutations!AddMutationConventions}%
+One call did that reshaping, registered on the builder with its
+\code{applyToAllMutations} flag set:
+
+\begin{minted}{csharp}
+.AddMutationConventions(applyToAllMutations: true)
+\end{minted}
+
+What it produces is the shape every mutation in this book will have from here:
+one argument called \code{input}, one payload, and the payload carrying the
+errors~\autocite{chillicream2026mutations}. Services and the
+\code{CancellationToken} are left out of the generated input, because only
+parameters that map to GraphQL arguments belong there.
+
+The \code{applyToAllMutations} flag is the decision worth defending. The
+alternative is an attribute on each mutation, applied by whoever remembers.
+Turning it on globally means the schema cannot drift into two shapes depending
+on who wrote which field, and the escape hatch for the case that genuinely
+differs is then explicit rather than accidental.
+
+\subsection*{Why the payload has an input type at all}
+
+\index{mutations!input types}%
+The single \code{input} argument looks like ceremony until you have needed it.
+Arguments on a field are positional in the sense that matters: adding one is
+additive, but you cannot deprecate a required one, you cannot reorder them
+meaningfully, and a client library generating a method signature has to
+regenerate every time the list changes. An input object is a type, so it evolves
+under the same rules every other type does, including the ones
+section~\ref{sec:ch05-what-a-client-can-survive} spent its length on.
+
+The payload is the same argument on the way out. A mutation that returns
+\code{Review} directly has nowhere to put anything else, ever. A mutation that
+returns \code{SubmitReviewPayload} can grow a field later without touching the
+one thing it already returns, and this one already has: \code{errors} is a field
+that exists only because the payload does.
+
+\subsection*{Four ways to be told no}
+
+\index{errors!typed domain errors}%
+The four attributes at the top of the method are the whole error model, and this
+is what they generate:
+
+\begin{graphqlsdl}
+union SubmitReviewError =
+  | ProductNotFoundError
+  | CustomerNotFoundError
+  | RatingOutOfRangeError
+  | DuplicateReviewError
+\end{graphqlsdl}
+
+A union is Mosaic's second abstract type and the counterpart to the interface in
+section~\ref{sec:ch05-one-name-for-one-thing}. An interface says these types
+share a field; a union says a value is one of these types and makes no claim
+about what they have in common. Which is the right relationship here: the four
+errors have nothing in common as data, and what they share is that exactly one
+of them can come back.
+
+\index{HotChocolate!Error attribute}%
+Two notes about the attribute. \code{[Error<T>]} is in the source but not in the
+documentation, which shows only \code{[Error(typeof(T))]}. They do the same
+thing, and Mosaic uses the generic form because the rest of the codebase already
+reads \code{[ObjectType<T>]} and \code{[QueryType]}.
+
+More important is what \code{T} points at. It can be the exception itself, which
+is what the documentation shows, and then the exception's \code{Message} becomes
+the payload's message~\autocite{chillicream2026mutations}. Mosaic points it at
+an error class instead:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+public sealed class RatingOutOfRangeError : IMosaicError
+{
+    private RatingOutOfRangeError(string message) => Message = message;
+
+    public string Message { get; }
+
+    public string Code => "RATING_OUT_OF_RANGE";
+
+    public int Min => 1;
+
+    public int Max => 5;
+
+    public static RatingOutOfRangeError CreateErrorFrom(
+        RatingOutOfRangeException exception)
+        => new($"A rating has to be between 1 and 5. Got {exception.Rating}.");
+}
+\end{minted}
+
+The static \code{CreateErrorFrom} is what the extra class buys. Pointing the
+attribute at the exception copies a message written for a log into a field a
+customer will read, and leaves nowhere at all to put a code. Here the exception
+is an internal signal and the error is a public type, and the factory is the
+seam between them.
+
+\index{errors!fields beyond the message}%
+\code{Min} and \code{Max} are the part I would push hardest. A client rendering
+a form can read them and correct the input without knowing what Mosaic considers
+a valid rating. That is not possible in the \code{errors} array at any price:
+the array's entries have a fixed shape, and anything extra goes into
+\code{extensions} as a bag with no type. Here it is two integers on a type, and
+a client that generates code from the schema gets them as two integers.
+
+It also answers a question the type system raises and cannot settle.
+\code{rating} is an \code{Int!}, and GraphQL has no way to say that an integer
+lies between one and five. Every constraint the type system cannot express has
+to live somewhere, and the only choice is whether it lives somewhere the client
+can read.
+
+\subsection*{An interface with a code on it}
+
+\index{errors!custom interface}%
+HotChocolate's default error interface carries one field, \code{message}.
+Mosaic replaces it:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+[GraphQLName("Error")]
+public interface IMosaicError
+{
+    string Message { get; }
+
+    string Code { get; }
+}
+\end{minted}
+
+\begin{minted}{csharp}
+builder.AddGraphQL()
+    .AddErrorInterfaceType<IMosaicError>()
+\end{minted}
+
+\begin{graphqlsdl}
+interface Error {
+  message: String!
+  code: String!
+}
+
+type RatingOutOfRangeError implements Error {
+  message: String!
+  code: String!
+  min: Int!
+  max: Int!
+}
+\end{graphqlsdl}
+
+Error classes are not required to implement the C\# interface; matching
+properties are enough~\autocite{chillicream2026mutations}. Mosaic implements it
+anyway, so that a new error type which forgets its code fails to compile rather
+than failing to build the schema.
+
+\index{errors!codes as strings}%
+The code is a \code{String} and not an enum, which is the less obvious choice
+and I will defend it. An enum would be checked at build time and would let a
+client switch exhaustively over the codes, which sounds better until you add the
+fifth error. Every exhaustive client then has a case it has never seen, and
+adding a domain error becomes a breaking change for the people most carefully
+handling your errors. A string means an unrecognised code falls back to
+displaying the message, which is what a client should do anyway with a failure
+it does not understand.
+
+\subsection*{What it looks like on the wire}
+
+\index{errors!union selection}%
+The union has a cost and it shows up the first time you write the query. This
+does not work:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+A union type cannot declare a field directly.
+Use inline fragments or fragments instead.
+\end{minted}
+
+A union makes no claim that its members share anything, so nothing can be
+selected on it directly, not even \code{message}. The working form leans on the
+interface:
+
+\begin{minted}[fontsize=\footnotesize]{graphql}
+errors {
+  __typename
+  ... on Error { message code }
+  ... on RatingOutOfRangeError { min max }
+}
+\end{minted}
+
+One fragment covers every member, because every member implements \code{Error},
+and a second fragment picks up the fields only one of them has. That first
+fragment is the return on the custom interface: with the default one a client
+would get \code{message} this way and would have no route to a code at all.
+
+Four requests, all HTTP 200, all with \code{data} non-null:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"submitReview":{
+  "review":{"id":"UmV2aWV3Og3knwEW8Fx4r17UOtwmS5o=","rating":4,
+            "body":"Solid, but the finish scratches.",
+            "author":{"displayName":"Sofia Ferrari"}},
+  "errors":null}}}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"submitReview":{"review":null,"errors":[
+  {"__typename":"DuplicateReviewError",
+   "message":"You have already reviewed this product.",
+   "code":"DUPLICATE_REVIEW"}]}}}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"submitReview":{"review":null,"errors":[
+  {"__typename":"RatingOutOfRangeError",
+   "message":"A rating has to be between 1 and 5. Got 9.",
+   "code":"RATING_OUT_OF_RANGE","min":1,"max":5}]}}}
+\end{minted}
+
+No \code{errors} key at the top level in any of them. A refused mutation is a
+successful request that returned a refusal, and the client reads the refusal the
+same way it reads the review: by selecting fields.
+
+\index{errors!what stays in the array}%
+Anything not named in one of the four attributes still goes to the array as an
+unexpected execution error, and that is the arrangement working rather than a
+gap in it. A bug is not a domain error. It has no branch behind it, the client
+can do nothing with it, and the last thing it should do is arrive looking like a
+considered answer.
+
+\subsection*{A check with an expiry date}
+
+\index{federation!referential integrity}%
+Two of the four errors are on borrowed time and the code says so in a comment.
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+if (await catalog.GetProductByIdAsync(productId, cancellationToken) is null)
+{
+    throw new ProductNotFoundException(productId);
+}
+\end{minted}
+
+Reviews can ask Catalog whether a product exists because Catalog is a folder in
+the same process, holding tables in the same database, inside the same
+transaction boundary. From
+chapter~\ref{ch:the-first-cut-extracting-catalog} onward it is neither, and this
+check becomes a network call on the write path or an accepted risk.
+
+I am flagging it now rather than discovering it then, because the flinch this
+produces is the thing worth having early. A referential check across a boundary
+that does not exist yet is the most common way a monolith turns out not to have
+been ready. \code{RatingOutOfRangeError} and \code{DuplicateReviewError} have no
+such problem: Reviews owns both rules and both rows, and both survive the move
+untouched. Notice that the two that survive are the two where the domain owns
+the data the rule is about. That is not a coincidence and it is a good test to
+apply to a rule before writing it.
+
+\subsection*{Verify it in Postman}
+
+\index{Postman!mutation assertions}%
+The collection grew by nine requests this chapter, six of them for the material
+in the sections above: refetching through \code{node}, a page of reviews, the
+next page from its cursor, a product nobody has reviewed, the deprecated field
+still answering, and the deprecation visible in introspection.
+
+The last three are the mutation, and they run in this order for a reason. First
+a rating of nine, which asserts the code, the message and both bounds without
+writing anything. Then a review from a customer who has not reviewed that
+product, which asserts the payload carries no errors, that the review came back
+holding what was sent, and that its identifier decodes to a \code{Review} node.
+Then the identical request again, which asserts \code{review} is null and that
+the single error is \code{DuplicateReviewError} with code
+\code{DUPLICATE\_REVIEW}.
+
+\index{Postman!ordering}%
+Order is load-bearing here for the first time in this book, and it changed how
+the whole gate works. The mutation writes a row. Every assertion about the
+seeded catalog, twenty-five products and a hundred and twenty reviews, has to
+run before it, or the second run of the collection finds a hundred and
+twenty-one and fails an assertion that is not wrong.
+
+That was not enough on its own. A verification run now leaves the database
+changed, so both scripts start the service with
+\code{MOSAIC\_RESET\_DATABASE=1}, and the seeder drops the schema and reseeds
+before the service takes a request. A gate whose result depends on how many
+times it has been run is not a gate. The cost is a second or two and the check
+that it worked is running \code{verify.ps1} twice in a row.
+
+\begin{minted}[fontsize=\footnotesize]{text}
+requests      19
+assertions    74
+\end{minted}
+
+\index{diagnostics!configuration binding}%
+One trap for anybody adding a switch like that. The obvious reading is the one
+that binds the value straight to a boolean:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+if (configuration.GetValue<bool>("MOSAIC_RESET_DATABASE"))
+\end{minted}
+
+That accepts only \code{true} and \code{false}. Given \code{1} it throws
+\code{InvalidOperationException}, unhandled, and the host fails to start. Not a
+fallback to false: the service does not come up. Mosaic's other switch is
+\code{MOSAIC\_KEEP\_DATABASE=1}, so \code{=1} was the shape I copied, and the
+seeder now reads the raw string and compares it by hand.
+
+So the schema can refuse now, and say why, in terms a client can act on. What it
+cannot do is start a sentence.
+\index{mutations!conventions|)}

@@ -682,3 +682,94 @@
               at when it refuses a volume mounted at the old
               /var/lib/postgresql/data path}
 }
+
+% --- Chapter 05: schema design that survives change ---------------------------
+
+@online{relay2026connections,
+  author   = {{Relay} contributors},
+  title    = {{GraphQL} Cursor Connections Specification},
+  organization = {Relay},
+  year     = {2026},
+  url      = {https://relay.dev/graphql/connections.htm},
+  urldate  = {2026-08-09},
+  addendum = {The connection, edge, cursor and pageInfo shapes HotChocolate
+              generates. The page carries no version number or date of its own}
+}
+
+@online{chillicream2026relay,
+  author   = {{ChilliCream}},
+  title    = {Relay},
+  organization = {Hot Chocolate v16 documentation},
+  year     = {2026},
+  url      = {https://chillicream.com/docs/hotchocolate/v16/defining-a-schema/relay},
+  urldate  = {2026-08-09},
+  addendum = {Authoritative on AddGlobalObjectIdentification and on the
+              reflection route to a node resolver, the [Node] attribute with
+              its method-naming convention. It does not mention the source
+              generator's [NodeResolver] route, which is what Mosaic uses and
+              what chapter 5 reads out of the tree instead}
+}
+
+@online{chillicream2026versioning,
+  author   = {{ChilliCream}},
+  title    = {Versioning},
+  organization = {Hot Chocolate v16 documentation},
+  year     = {2026},
+  url      = {https://chillicream.com/docs/hotchocolate/v16/defining-a-schema/versioning},
+  urldate  = {2026-08-09},
+  addendum = {Source for the rule that a non-null argument or input field with
+              no default value cannot be deprecated, for object-type
+              deprecation being off by default while graphql-spec RFC 997 is
+              open, and for the requiresOptIn directive}
+}
+
+@online{graphqlspec2026objectdeprecation,
+  author   = {{GraphQL} specification contributors},
+  title    = {{RFC}: Deprecation of object types},
+  organization = {graphql/graphql-spec},
+  year     = {2026},
+  url      = {https://github.com/graphql/graphql-spec/pull/997},
+  urldate  = {2026-08-09},
+  addendum = {Open at the time of writing. HotChocolate implements it behind
+              EnableObjectDeprecation and says in its own documentation that
+              the final shape could still change}
+}
+
+@online{chillicream2026mutations,
+  author   = {{ChilliCream}},
+  title    = {Mutations},
+  organization = {Hot Chocolate v16 documentation},
+  year     = {2026},
+  url      = {https://chillicream.com/docs/hotchocolate/v16/defining-a-schema/mutations},
+  urldate  = {2026-08-09},
+  addendum = {Source for AddMutationConventions, the generated input and
+              payload naming patterns, the three ways to map an exception to a
+              schema error, and AddErrorInterfaceType. It shows only the
+              Error(typeof(T)) form of the attribute; the generic Error<T> is
+              in the tree}
+}
+
+@online{chillicream2026errors,
+  author   = {{ChilliCream}},
+  title    = {Errors},
+  organization = {Hot Chocolate v16 documentation},
+  year     = {2026},
+  url      = {https://chillicream.com/docs/hotchocolate/v16/resolvers/errors},
+  urldate  = {2026-08-09},
+  addendum = {Source for field errors being non-terminating, for an unhandled
+              exception becoming the generic Unexpected Execution Error, and
+              for error filters and GraphQLException}
+}
+
+@online{chillicream2026subscriptions,
+  author   = {{ChilliCream}},
+  title    = {Subscriptions},
+  organization = {Hot Chocolate v16 documentation},
+  year     = {2026},
+  url      = {https://chillicream.com/docs/hotchocolate/v16/defining-a-schema/subscriptions},
+  urldate  = {2026-08-09},
+  addendum = {Source for the Subscribe, EventMessage and Topic attributes, for
+              the in-memory provider's single-server limits, and for the two
+              transports. Mosaic uses the custom subscribe resolver form rather
+              than a Topic placeholder}
+}

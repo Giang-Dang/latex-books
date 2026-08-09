@@ -1,0 +1,219 @@
+\section{One service, pushed}
+\label{sec:ch05-one-service-pushed}
+\index{subscriptions|(}
+
+A customer writes a review and somebody watching that product's page should see
+it. That is the whole requirement, and meeting it needs the one operation type
+Mosaic has not used: a query and a mutation each produce one response and close,
+where a subscription opens a stream and delivers one result per event for as
+long as the client stays connected~\autocite{chillicream2026subscriptions}.
+
+Mosaic gets exactly one, and the scope is deliberate. It is a single service pushing to
+clients connected to that service, over a pub/sub that lives in the process. The
+federated version, where a router holds the client connection and a subgraph
+publishes the event, is chapter~\ref{ch:real-time-in-a-federated-world}'s, and
+almost nothing here survives that trip unchanged. What does survive is the
+shape of the field and the discipline about the topic.
+
+\begin{graphqlsdl}
+type Subscription {
+  onReviewAdded(productId: ID!): Review!
+}
+\end{graphqlsdl}
+
+\subsection*{Two methods, and only one of them runs per event}
+
+\index{subscriptions!subscribe resolver}%
+A subscription field is two functions and the split matters more than it looks.
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+public static ValueTask<ISourceStream<Review>> SubscribeToReviewsAsync(
+    [ID<Product>] Guid productId,
+    ITopicEventReceiver receiver,
+    CancellationToken cancellationToken)
+    => receiver.SubscribeAsync<Review>(
+        ReviewTopics.ReviewAdded(productId),
+        cancellationToken);
+
+[Subscribe(With = nameof(SubscribeToReviewsAsync))]
+public static Review OnReviewAdded(
+    [ID<Product>] Guid productId,
+    [EventMessage] Review review)
+    => review;
+\end{minted}
+
+The first runs once, when the client subscribes, and its job is to produce the
+stream. The second runs once per event, receives the published message through
+\code{[EventMessage]}, and returns what the client asked for. Returning the
+message unchanged is the common case; the hook exists so a payload can be
+reshaped or an event dropped before it reaches anybody.
+
+\index{subscriptions!topics}%
+The documented way to filter by product is a placeholder in a \code{[Topic]}
+attribute, which interpolates an argument value into the topic
+name~\autocite{chillicream2026subscriptions}. It reads better than the above and
+I did not use it, for one reason: a topic is a contract between two pieces of
+code that never call each other, and with a placeholder the exact string a
+\code{Guid} formats into is something you establish by running it. So the topic
+is a function, and both ends call it:
+
+\begin{minted}{csharp}
+public static string ReviewAdded(Guid productId) => $"reviewAdded:{productId}";
+\end{minted}
+
+That is worth more than it costs. The publisher and the subscriber cannot drift,
+and the compiler is the thing keeping them together rather than a convention.
+
+\subsection*{Publishing, and when}
+
+\index{subscriptions!ITopicEventSender}%
+The mutation from section~\ref{sec:ch05-errors-that-are-data} ends like this:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+var review = await reviews.SubmitReviewAsync(
+    productId, customerId, rating, body, cancellationToken);
+
+await sender.SendAsync(
+    ReviewTopics.ReviewAdded(productId),
+    review,
+    cancellationToken);
+
+return review;
+\end{minted}
+
+\code{ITopicEventSender} is injected like any other service, and the abstraction
+is over the provider, so the same line publishes to an in-memory bus, to Redis
+or to NATS depending only on registration~\autocite{chillicream2026subscriptions}.
+
+The position of that call is the decision. It is after the write has committed,
+not before. A subscriber told about a review that then fails to save has been
+lied to, and there is no message that takes it back. Publishing after the commit
+means a crash between the two loses an event, and losing an event is recoverable
+in a way that inventing one is not: a client that missed a notification can
+refetch, and a client that acted on a notification about a row that does not
+exist cannot.
+
+\index{subscriptions!at-most-once}%
+Which is the honest characterisation of what Mosaic delivers. At most once, no
+durability, no replay. That is a real limitation and not a rounding error, and
+it is the same limitation almost every in-process pub/sub has.
+
+\subsection*{The registration, and the line that fails late}
+
+\index{subscriptions!in-memory provider}%
+Two lines of registration hold all of this up. One chooses the bus:
+
+\begin{minted}{csharp}
+builder.AddGraphQL()
+    .AddMosaic()
+    .AddInMemorySubscriptions()
+\end{minted}
+
+The other goes in the request pipeline:
+
+\begin{minted}{csharp}
+app.UseWebSockets();
+\end{minted}
+
+One warning about the second. Server-sent events already work
+through \code{MapGraphQL}, which is the transport everything below is measured
+over. The graphql-ws protocol over WebSocket is the one that needs
+\code{UseWebSockets}~\autocite{chillicream2026subscriptions}, and the line is
+here on the documentation's word rather than on mine: I did not exercise the
+WebSocket transport, so I can tell you the registration is required and not what
+the failure looks like without it. What is worth noticing either way is that
+only one of the two transports depends on a line you can forget, and the schema
+will build and the service will start regardless.
+
+The provider is a package of its own,
+\code{HotChocolate.Subscriptions.InMemory}, rather than something already in
+\code{HotChocolate.AspNetCore}. Redis, NATS, RabbitMQ and PostgreSQL providers
+sit beside it, and switching is a registration change with no effect on the
+field or the publisher.
+
+\subsection*{Watching it happen}
+
+\index{subscriptions!server-sent events}%
+Server-sent events are the easier of the two to try, because they are an
+ordinary HTTP POST that does not end. Open one:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+curl -N -X POST http://localhost:5100/graphql \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: text/event-stream' \
+  -d '{"query":"subscription { onReviewAdded(productId: \"...\")
+                { id rating body author { displayName } } }"}'
+\end{minted}
+
+Send the mutation from another terminal. It answers first, as a mutation does:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"submitReview":{"review":{"id":"UmV2aWV3Og7knwGk/wp1qg9QZb4xFzc="},
+          "errors":null}}}
+\end{minted}
+
+And the open connection produces this:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+event: next
+data: {"data":{"onReviewAdded":{"id":"UmV2aWV3Og7knwGk/wp1qg9QZb4xFzc=",
+       "rating":5,"body":"Boils fast, pours clean.",
+       "author":{"displayName":"Sofia Ferrari"}}}}
+\end{minted}
+
+\index{subscriptions!execution per event}%
+Two things in that payload are worth more than the fact that it arrived.
+
+The identifier is the same one the mutation's own payload returned, which is
+what you would hope and is not automatic: it is the same object, published
+rather than re-read.
+
+And \code{author} is populated. Nothing published a customer. The event carried
+a \code{Review}, and \code{displayName} came back because the subscription ran
+the selection set against that message, which meant running
+\code{Review.author}, which meant a DataLoader executing inside the
+subscription's own execution. A subscription is not a notification with a
+payload attached. It is a query executed per event, with the event as its root
+value, and every resolver behind every field runs each time. On a chatty topic
+with a wide selection set that is a per-event cost that nobody budgeted for.
+
+\subsection*{What breaks the moment there are two of them}
+
+\index{subscriptions!single instance}%
+Everything above works because the publisher and the subscriber are the same
+process. Run two copies of Mosaic behind a load balancer and it stops: a client
+connected to the first instance hears nothing about a review submitted through
+the second, because the bus is a data structure in memory and there are now two
+of them~\autocite{chillicream2026subscriptions}.
+
+The fix is a registration change to a provider with a broker behind it, and the
+reason it is not in this chapter is that swapping the provider is the easy part.
+What follows it is not: connection affinity, what a client is owed when its
+connection drops and reconnects somewhere else, whether events that happened
+during the gap are replayed or lost, and, once a router is in front, which
+process is holding the socket at all. Those are
+chapter~\ref{ch:real-time-in-a-federated-world}'s, and they are most of the
+subject.
+
+Say the limit out loud rather than leaving it implied. In-memory subscriptions
+are correct for exactly one instance, and one instance is a decision you have
+made whether or not you noticed making it.
+
+\index{subscriptions!not gated}%
+One more admission, and it is about this book's own machinery rather than about
+HotChocolate. Everything else in this chapter is asserted by
+\code{scripts/verify.ps1} or by the Postman collection, and the subscription is
+not. Newman speaks HTTP request and response, a subscription is a connection
+that stays open, and I did not build a second harness for one field. So the two
+transcripts above were produced by hand with \code{curl} and are the only
+evidence in this chapter that nothing re-checks. If a later chapter breaks
+\code{onReviewAdded}, the gate will pass. That is a real hole, it belongs to
+chapter~\ref{ch:the-postman-federation-workbook}, where subscription testing is
+the subject, and it is better written down than discovered.
+
+Which is the schema this chapter set out to build: identifiers a client can
+hold, a field with a bound on it, an answer for no, and a way to say something
+happened. Every one of those is a promise that has to survive the graph being
+split into six services, and chapter~\ref{ch:the-federation-model} starts
+finding out which of them do.
+\index{subscriptions|)}

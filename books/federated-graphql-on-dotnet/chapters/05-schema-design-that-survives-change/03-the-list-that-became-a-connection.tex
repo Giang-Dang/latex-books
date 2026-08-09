@@ -1,0 +1,358 @@
+\section{The list that became a connection}
+\label{sec:ch05-the-list-that-became-a-connection}
+\index{pagination!nested connection|(}
+
+Chapter~\ref{ch:hotchocolate-quickly} shipped \code{Product.reviews} as
+\code{[Review!]!} and said in as many words that a later chapter would make it
+a connection. This is that chapter, and the field is the second thing here a
+client cannot survive.
+
+\begin{graphqlsdl}
+reviews(
+  first: Int
+  after: String
+  last: Int
+  before: String
+): ReviewConnection!
+\end{graphqlsdl}
+
+There is no additive path to this. \code{reviews} was a list and is now an
+object with \code{nodes}, \code{edges}, \code{pageInfo} and
+\code{totalCount}~\autocite{relay2026connections}; every client that selected it
+breaks. The alternative was to leave \code{reviews} alone and add a second field
+beside it, which is what chapter~\ref{ch:data-without-the-n-plus-1} did with
+\code{browseProducts}, and I did not do it twice for a reason worth stating.
+\code{products} had two chapters of published measurements riding on it, so
+keeping it was buying something specific. \code{reviews} has nothing riding on
+it except this book's own tests, and a schema that grows a second field every
+time the first one is wrong ends up as two schemas. Take the breakage while
+there is nobody to break.
+
+\subsection*{The attribute that does not do what it says}
+
+\index{HotChocolate!UseConnection}%
+My first attempt put the paging attribute on the resolver, returned
+\code{Connection<Review>}, compiled clean, and produced this:
+
+\begin{graphqlsdl}
+reviews: [Review!]! @cost(weight: "10")
+\end{graphqlsdl}
+
+A list. No error, no warning, no diagnostic. The field I had annotated as a
+connection was still a list, and the only reason I noticed is that I export the
+schema and read it, which is the habit
+chapter~\ref{ch:hotchocolate-quickly} built for exactly this class of surprise.
+No tag holds that state, because it was a wrong turn rather than a step, but the
+lab rebuilds it in three lines if you want to watch it happen.
+
+\code{[UseConnection]} does not make a field a connection. Its own summary in
+the source says what it is for, and it is not what the name suggests: it
+overrides the global paging options for a specific field. What it adds is a
+validation middleware and a set of options. It never touches the field's type.
+The attribute that rewrites the type is \code{[UsePaging]}, whose configuration
+calls \code{UsePaging} on the field descriptor.
+
+What actually made \code{reviews} a connection is the return type:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+[UseConnection(IncludeTotalCount = true)]
+public static async Task<PageConnection<Review>> GetReviewsAsync(
+    [Parent("Id")] Product product,
+    IReviewsByProductIdDataLoader reviewsByProductId,
+    PagingArguments pagingArguments,
+    CancellationToken cancellationToken)
+{
+    var page = await reviewsByProductId
+        .With(pagingArguments)
+        .LoadAsync(product.Id, cancellationToken);
+
+    return page ?? Page<Review>.Empty;
+}
+\end{minted}
+
+\code{PageConnection<TNode>} carries a name attribute that expands to the node
+type followed by \code{Connection}, and declares an implicit conversion from
+\code{Page<TNode>}, which is why the last line of that method returns the wrong
+type and compiles anyway. The attribute is tuning; the return type is the
+contract.
+
+I am spending a page on a mistake I made because the failure mode is the
+chapter's second silent one, and it is worse than
+chapter~\ref{ch:data-without-the-n-plus-1}'s. That one produced an all-zero
+identifier at runtime, which at least happens. This one produces a schema that
+is quietly not the schema you thought you wrote, and the only detector is
+reading the SDL.
+
+\subsection*{One statement for twenty-five pages}
+
+\index{pagination!ToBatchPageAsync}%
+A connection on a child field is not the same problem as a connection on a root
+field, and this is where the chapter earns its keep. \code{browseProducts} pages
+one list. \code{reviews} pages twenty-five lists, one per product on the page,
+and every one of them needs its own first three rows.
+
+Fetching every review for every product and slicing in memory would make the
+connection a lie, because the whole argument for paging a child collection is
+that the rows nobody asked for never leave the database.
+\code{ToBatchPageAsync} is what makes the honest version one statement:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+var pages = await db.Reviews
+    .AsNoTracking()
+    .Where(r => productIds.Contains(r.ProductId))
+    .OrderBy(r => r.CreatedAt)
+    .ThenBy(r => r.Id)
+    .ToBatchPageAsync(r => r.ProductId, pagingArguments, cancellationToken);
+\end{minted}
+
+It returns a dictionary of pages, one per parent key. The \code{OrderBy} is not
+decoration: the cursor keys are read off the ordering already on the queryable,
+and the tiebreaker on the identifier is what makes that ordering total, for the
+same reason chapter~\ref{ch:data-without-the-n-plus-1} gave for
+\code{browseProducts}.
+
+Here is what PostgreSQL is asked, for \code{reviews(first: 3)}:
+
+\begin{minted}[fontsize=\footnotesize]{sql}
+SELECT r1.product_id, r3.id, r3.body, r3.created_at, r3.customer_id,
+       r3.product_id, r3.rating
+FROM (
+    SELECT r.product_id FROM reviews AS r
+    WHERE r.product_id = ANY (@productIds)
+    GROUP BY r.product_id
+) AS r1
+LEFT JOIN (
+    SELECT r2.id, r2.body, r2.created_at, r2.customer_id, r2.product_id, r2.rating
+    FROM (
+        SELECT r0.id, r0.body, r0.created_at, r0.customer_id, r0.product_id,
+               r0.rating,
+               ROW_NUMBER() OVER(PARTITION BY r0.product_id
+                                 ORDER BY r0.created_at, r0.id) AS row
+        FROM reviews AS r0
+        WHERE r0.product_id = ANY (@productIds)
+    ) AS r2
+    WHERE r2.row <= 4
+) AS r3 ON r1.product_id = r3.product_id
+ORDER BY r1.product_id, r3.product_id, r3.created_at, r3.id
+\end{minted}
+
+\index{PostgreSQL!window function}%
+A window function, partitioned by the parent key. PostgreSQL numbers each
+product's reviews in the sort order and throws away everything past the cut, so
+twenty-five separate pages come back in one round trip.
+
+Read the cut carefully: \code{row <= 4}, for a page of three. The extra row is
+how \code{hasNextPage} is answered. A connection has to say whether there is
+more, and the cheapest honest way to know is to ask for one more than you intend
+to return and see whether it arrives. If you have ever wondered why a page of
+ten sometimes reads eleven rows, that is why.
+
+\subsection*{Why the DataLoader has to split in two}
+
+\index{DataLoader!branching}%
+The DataLoader takes \code{PagingArguments} as a parameter, and it is not an
+ordinary service parameter. The generator recognises the type and emits a
+\code{GetRequiredState} call for it, which means the arguments arrive as
+DataLoader \emph{state} rather than as part of the key. What puts them there is
+the \code{.With} call in the resolver, and that call does something else at the
+same time:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+var branchKey = pagingArguments.ComputeHash(context);
+var state = new PagingState<TValue>(pagingArguments, context);
+return (IQueryDataLoader<TKey, Page<TValue>>)dataLoader.Branch(
+    branchKey, CreateBranch, state);
+\end{minted}
+
+It hashes the page shape and hands back a \emph{branch} of the DataLoader keyed
+on that hash. A branch wraps the same underlying loader with its own state and,
+crucially, its own promise cache.
+
+\index{DataLoader!cache key}%
+The necessity is easier to see from the failure it prevents. A DataLoader caches
+by key, and the key here is a product identifier. Two fields in one request
+asking for two different pages of the same product's reviews would both look up
+the same key, and one of them would be handed the other's page: correct-looking
+data, wrong rows, no error. Branching makes the page shape part of the identity
+of the loader rather than of the key, so the two cannot see each other at all.
+Figure~\ref{fig:ch05-branching} draws the case I measured: one product, asked
+for two different pages of its own reviews in a single document.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch05-branching}
+  \caption{One generated DataLoader, two page shapes, two branches. Everything
+  asking for the same page shares a branch and therefore a batch, which is what
+  keeps twenty-five products at one statement. A different page shape gets its
+  own branch and its own statement, and the two window cuts in the database log
+  show which is which.}
+  \label{fig:ch05-branching}
+\end{figure}
+
+That document costs three statements: one for the product, and one for each
+branch. The cuts in the two of them are \code{row <= 3} and \code{row <= 6},
+which is the n+1 rule from the last subsection applied to a page of two and a
+page of five separately. Nothing coordinated them, and nothing had to.
+
+The hash covers \code{first}, \code{after}, \code{last} and \code{before}, and
+also the filter, sort and projection when a \code{QueryContext} is passed. That
+is a wider notion of identity than the batching in
+chapter~\ref{ch:data-without-the-n-plus-1} needed, and it is the right one:
+anything that changes what a fetch would return has to change which loader you
+are talking to.
+
+\subsection*{An empty answer, again}
+
+\index{DataLoader!missing key}%
+\code{ToBatchPageAsync} returns entries only for keys that had rows, and three
+of Mosaic's twenty-five products have never been reviewed. \code{reviews} is
+non-nullable. That is exactly the shape of
+chapter~\ref{ch:data-without-the-n-plus-1}'s trap, arriving again in a new
+costume.
+
+The escape used last time is not available. That chapter fixed it by returning
+an \code{ILookup}, which answers an unknown key with an empty sequence, and a
+page is not a sequence. So the empty answer has to be written down:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+foreach (var productId in productIds)
+{
+    pages.TryAdd(productId, Page<Review>.Empty);
+}
+\end{minted}
+
+Two lines, and without them three products answer null for a non-nullable field
+and the request fails. What I take from meeting this twice is that the choice of
+return type on a batch fetch is a decision about semantics rather than about
+convenience, and the question to ask each time is what this thing says when it
+has nothing to say.
+
+\subsection*{The numbers, and the one that went the wrong way}
+
+\index{pagination!measured cost}%
+The chapter's query has to be written differently now:
+
+\begin{minted}[fontsize=\footnotesize]{graphql}
+{ products { title
+    reviews(first: 12) { nodes { rating author { displayName } } } } }
+\end{minted}
+
+\code{first: 12} is not arbitrary. The most-reviewed product has exactly twelve,
+so this still asks for all hundred and twenty reviews, and the number the
+verification script asserts is still the number chapters two to four asserted.
+
+\begin{minted}[fontsize=\footnotesize]{text}
+parse - validate - compile - coerce - execute 5.405ms total 5.529ms
+    (document cache hit, operation cache hit, 146 resolvers, 3 SQL)
+\end{minted}
+
+A hundred and forty-six resolvers and three statements. The same two numbers
+chapter~\ref{ch:data-without-the-n-plus-1} finished on, through a change that
+replaced the field's type, its resolver, its DataLoader and the SQL underneath
+it. Ask for a smaller page and the resolver count falls to 88, because 88 is one
+for \code{products} plus twenty-five for \code{reviews} plus sixty-two authors,
+and sixty-two is what you get by asking twenty-five products for three reviews
+each when some of them have fewer. The statement count stays at three. The
+window returns fewer rows; it does not run more times.
+
+Now the number that did not flatter the change, and one caveat about the
+milliseconds in the line above: they came from a quieter pass on the same
+afternoon, so they are a fair timeline and are not comparable with anything.
+Only a paired measurement is. Both tags, ten warm runs each, one sitting,
+because chapter~\ref{ch:data-without-the-n-plus-1} learned the hard way that
+measuring them hours apart measures the machine:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+ch04  reviews as a list       5.743  5.924  5.946  6.130  6.480
+                              6.560  6.662  6.730  7.074  7.260
+ch05  reviews(first: 12)      8.333  8.385  8.858  9.017  9.260
+                              9.368  9.556  9.691  9.838  10.178
+\end{minted}
+
+\index{pagination!honest cost}%
+A mean of 9.2 against 6.5, for the same hundred
+and twenty reviews. The connection is slower. A window function partitioned over
+a parent key is more work than a plain scan, and at a hundred and twenty rows
+the bound it buys is worth nothing at all, so this is what paying for insurance
+looks like on a day nothing goes wrong.
+
+I could have left this measurement out. Every argument in this section survives
+without it, and it is the only number in the chapter that argues against the
+change. It is here because a book that only prints the numbers that flatter its
+decisions is not teaching anybody how to decide.
+
+\subsection*{What the bound is actually for}
+
+\index{cost analysis!listSize}%
+Here is what was bought, and it is not really about pagination.
+
+The connection publishes a directive the list never could:
+
+\begin{graphqlsdl}
+reviews(first: Int, after: String, last: Int, before: String): ReviewConnection!
+  @listSize(
+    assumedSize: 50
+    slicingArguments: ["first", "last"]
+    slicingArgumentDefaultValue: 10
+    sizedFields: ["edges", "nodes"]
+    requireOneSlicingArgument: false
+  )
+  @cost(weight: "10")
+\end{graphqlsdl}
+
+\code{slicingArguments} tells the cost analyzer that \code{first} and
+\code{last} determine how big the answer is. Ask the analyzer what the catalog
+query costs, varying only the page size, using the header
+chapter~\ref{ch:hotchocolate-quickly} introduced:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+reviews, as a list at tag ch04      fieldCost  30   typeCost    4
+reviews(first: 2)                   fieldCost  41   typeCost    7
+reviews(first: 5)                   fieldCost  71   typeCost   13
+reviews(first: 50)                  fieldCost 521   typeCost  103
+reviews, no page argument           fieldCost 121   typeCost   23
+\end{minted}
+
+Ten per review, exactly, with the no-argument case resolving to the declared
+default of ten. And the list form, at the top: thirty, whatever came back.
+Thirty for two reviews and thirty for two hundred thousand.
+
+\index{cost analysis!unbounded lists}%
+That is the argument, and it has almost nothing to do with clients wanting pages.
+An unbounded list cannot be costed. If it cannot be costed it cannot be
+budgeted, rate-limited or refused, so every protection
+chapter~\ref{ch:security-hardening} builds on top of cost analysis is
+protecting a number that was never true. The connection did not primarily make
+the field pageable. It made the field's cost knowable, and under three
+milliseconds on this data is a reasonable price for that.
+
+\subsection*{The count that costs a round trip here and did not there}
+
+\index{pagination!totalCount}%
+One more measured surprise, and it contradicts something the last chapter said
+plainly. Select \code{totalCount} on the nested connection and a fourth
+statement appears:
+
+\begin{minted}[fontsize=\footnotesize]{sql}
+SELECT r.product_id AS "Key", count(*)::int AS "Count"
+FROM reviews AS r
+WHERE r.product_id = ANY (@productIds)
+GROUP BY r.product_id
+\end{minted}
+
+Chapter~\ref{ch:data-without-the-n-plus-1} measured the opposite for
+\code{browseProducts}, where the count arrived as a correlated subquery inside
+the page's own statement and cost no extra round trip at all. Both measurements
+are right, and the difference is structural rather than a caprice of the query
+planner. A root connection is one page, so its count is one scalar and folds
+into the same statement. A batched child connection is already a window over
+groups, and the count of each group is a second aggregate over the same rows.
+
+The practical form of that: on a root field, ask for \code{totalCount} freely.
+On a batched child field, know that you are asking for a statement. Neither is a
+rule about GraphQL, and both are things you find out by turning the database log
+on, which is the only way anybody ever finds them out.
+
+Three fields into the chapter, the schema can be read, paged and refetched.
+Nothing in it has ever had to say no.
+\index{pagination!nested connection|)}
