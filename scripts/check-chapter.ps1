@@ -2,7 +2,7 @@
 # Deterministic lint gate for one book's prose: the machine half of the
 # draft-chapter build gate. Checks bytes, citation ties and keys, quoting,
 # index termination, contractions, spellings, dashes, measured-number
-# provenance, and the build log.
+# provenance, verbatim-capture claims, and the build log.
 # Usage: pwsh scripts/check-chapter.ps1 books/<name> [-Chapter NN]
 
 param(
@@ -68,6 +68,13 @@ if (Test-Path $researchDir) {
     }
 }
 
+# --- research notes again, as one whitespace-collapsed blob. The verbatim
+# check below matches a listing line against this rather than against lines,
+# so that a capture re-wrapped for the page still traces to the note it came
+# from. Built once; it is the whole research folder and rebuilding it per line
+# would dominate the run.
+$researchBlob = if ($researchText) { $researchText -replace '\s+', ' ' } else { '' }
+
 # --- bibliography keys
 $bibKeys = [System.Collections.Generic.HashSet[string]]::new()
 $bibPath = Join-Path $bookPath 'refs.bib'
@@ -123,7 +130,60 @@ function Remove-MacroSpans([string]$line, [string]$name, [ref]$depth) {
     return $sb.ToString()
 }
 
+# Every line of a listing the prose called a capture has to appear in this
+# book's research/ notes, matched against the whitespace-collapsed blob so that
+# a capture re-wrapped to fit the measure still traces.
+#
+# Chapter 07 printed a query plan under "the only listing I have not trimmed"
+# whose embedded query strings had in fact been reformatted, and a JSON response
+# whose 749.00 had become 749.0 because the capture went through
+# `python -m json.tool` on the way to the page. Neither is a lie about the
+# system and both are lies about the listing, which is the same defect the
+# number check exists for, one level up.
+#
+# Short and punctuation-only lines are skipped: a bare brace or a two-character
+# fragment matches everything and proves nothing.
+function Test-VerbatimClaim {
+    param(
+        [string]$file,
+        [int]$listingLine,
+        [int]$claimLine,
+        [string]$phrase,
+        [System.Collections.Generic.List[string]]$lines,
+        [string]$blob
+    )
+
+    $missed = @()
+    foreach ($line in $lines) {
+        $n = ($line.Trim() -replace '\s+', ' ')
+        if ($n.Length -lt 12) { continue }
+        if ($n -notmatch '[A-Za-z0-9]') { continue }
+        if (-not $blob.Contains($n)) { $missed += $n }
+    }
+
+    if ($missed.Count -eq 0) { return }
+
+    $shown = $missed | Select-Object -First 2
+    foreach ($m in $shown) {
+        $snippet = if ($m.Length -gt 70) { $m.Substring(0, 70) + '...' } else { $m }
+        Add-Finding $file $listingLine 'verbatim' "line~'$snippet' is in no research/ note, but line $claimLine calls this listing a capture ('$phrase')"
+    }
+    if ($missed.Count -gt $shown.Count) {
+        Add-Finding $file $listingLine 'verbatim' "...and $($missed.Count - $shown.Count) more untraced line(s) in the same listing"
+    }
+}
+
 $contractionRe = "(?i)\b(?:aren't|can't|couldn't|didn't|doesn't|don't|hadn't|hasn't|haven't|here's|i'd|i'll|i'm|i've|isn't|it's|let's|mustn't|needn't|shouldn't|that's|there's|they're|they've|wasn't|we'll|we're|we've|weren't|what's|who's|won't|wouldn't|you'll|you're|you've)\b"
+
+# Prose that promises a listing is a capture rather than an illustration. Only
+# these phrases arm the verbatim check; a listing nobody claimed anything about
+# is not checked, because most text listings are commands to type rather than
+# output to trust.
+$verbatimClaimRe = '(?i)(?:\bverbatim\b|\bunmodified\b|\buntouched\b|character for character|(?:have|has|had)\s+not\s+(?:been\s+)?(?:trimmed|edited|altered)|\bnot\s+(?:been\s+)?trimmed\b|\bin full\b|exactly as)'
+
+# How many prose lines after the claim a listing may appear in before the claim
+# is considered to have been about something else.
+$verbatimClaimWindow = 6
 
 # American spellings the prose must not use. Deliberately NOT on this list:
 #   catalog    - Mosaic domain vocabulary (the Catalog service)
@@ -173,6 +233,14 @@ foreach ($f in $texFiles) {
     $enqDepth = 0
     $numCodeDepth = 0
 
+    # verbatim-claim state: how many lines the pending claim has left, what it
+    # said, and the block being collected once one starts.
+    $claimWindow = 0
+    $claimLine = 0
+    $claimPhrase = ''
+    $capture = $null
+    $captureLine = 0
+
     for ($i = 0; $i -lt $rawLines.Count; $i++) {
         $raw = $rawLines[$i]
         $lineNo = $i + 1
@@ -182,7 +250,15 @@ foreach ($f in $texFiles) {
         # below wants captured listings and the other checks do not.
         $verbLine = $false
         if ($inVerb) {
-            if ($raw -match ('\\end\{' + [regex]::Escape($inVerb) + '\}')) { $inVerb = $null }
+            if ($raw -match ('\\end\{' + [regex]::Escape($inVerb) + '\}')) {
+                $inVerb = $null
+                if ($null -ne $capture) {
+                    Test-VerbatimClaim $f.FullName $captureLine $claimLine $claimPhrase $capture $researchBlob
+                    $capture = $null
+                }
+            } elseif ($null -ne $capture) {
+                [void]$capture.Add($raw)
+            }
             $stripped = ''
             $verbLine = $true
         } else {
@@ -190,6 +266,17 @@ foreach ($f in $texFiles) {
             if ($bm.Success -and $verbatimEnvs -contains $bm.Groups[1].Value) {
                 if ($raw -notmatch ('\\end\{' + [regex]::Escape($bm.Groups[1].Value) + '\}')) {
                     $inVerb = $bm.Groups[1].Value
+
+                    # A claim arms the check only for captured output. csharp,
+                    # graphql and SDL listings come out of the companion repo,
+                    # which this script cannot read; text and json are where a
+                    # console paste lives, and where an invented one hides.
+                    $lm = [regex]::Match($raw, '\\begin\{minted\}(?:\[[^\]]*\])?\{(text|json)\}')
+                    if ($claimWindow -gt 0 -and $lm.Success -and $researchBlob) {
+                        $capture = [System.Collections.Generic.List[string]]::new()
+                        $captureLine = $lineNo
+                    }
+                    $claimWindow = 0
                 }
                 $stripped = ''
                 $verbLine = $true
@@ -278,10 +365,23 @@ foreach ($f in $texFiles) {
                 }
             }
         }
+
+        # 10. verbatim: arm the check when the prose promises a capture. The
+        # comparison itself happens where the block ends; see Test-VerbatimClaim.
+        if (-not $verbLine) {
+            $cm2 = [regex]::Match($prose, $verbatimClaimRe)
+            if ($cm2.Success) {
+                $claimWindow = $verbatimClaimWindow
+                $claimLine = $lineNo
+                $claimPhrase = $cm2.Value
+            } elseif ($claimWindow -gt 0) {
+                $claimWindow--
+            }
+        }
     }
 }
 
-# 10. log: parse an existing build/main.log; never invoke latexmk (perl is not
+# 11. log: parse an existing build/main.log; never invoke latexmk (perl is not
 # on PowerShell's PATH on this machine).
 $logPath = Join-Path $bookPath 'build/main.log'
 if (-not (Test-Path $logPath)) {

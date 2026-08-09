@@ -638,8 +638,17 @@ The router sends `Accept: application/json`, so HotChocolate answers
 ## I. Where docs and behaviour disagree
 
 1. **HotChocolate's own `_Service` description is stale.** The description
-   string it ships says the SDL "does not include the additions of the
-   federation spec". Measured, `_service { sdl }` returns `_service`,
+   string it ships, in full, exactly as it appears in every schema the package
+   generates:
+
+   ```
+   This type provides a field named sdl: String! which exposes the SDL of the
+   service's schema. This SDL (schema definition language) is a printed version of
+   the service's schema including the annotations of federation directives. This
+   SDL does not include the additions of the federation spec.
+   ```
+
+   Measured, `_service { sdl }` returns `_service`,
    `_entities`, `_Any`, `_Entity`, `FieldSet`, `@key` and `@link` along with
    everything else. The behaviour is legal - the Apollo spec permits it for
    Federation 2 and only forbids it for Federation 1 - so the string is

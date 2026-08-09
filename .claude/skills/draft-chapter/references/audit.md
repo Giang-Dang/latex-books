@@ -27,8 +27,12 @@ The cost of getting this wrong is on the record. Chapter 02 shipped a latency,
 a line count and an API attribute name asserted from memory, all three wrong.
 Chapter 04 printed a fabricated `11.3ms/11.4ms` request timeline inside a
 minted block, which is why `check-chapter.ps1` now traces every decimal back to
-a research note. Both were caught by an audit. Neither would have been caught
-by the draft reading itself.
+a research note. Chapter 07 called a query plan "the only listing I have not
+trimmed" after reformatting the query strings inside it, and printed a response
+whose `749.00` had become `749.0` on its way through `python -m json.tool`;
+that pair is why the script also traces listings the prose calls captures. All
+three were caught by an audit. None would have been caught by the draft reading
+itself.
 
 ## Run the machine gate first
 
@@ -36,7 +40,8 @@ Build, then run `pwsh scripts/check-chapter.ps1 books/<name>` from the repo
 root, and fix everything it reports before briefing the auditor.
 
 The script owns bytes, citation ties and keys, quoting, index termination,
-contractions, spellings, dashes, measured-number provenance and the log counts.
+contractions, spellings, dashes, measured-number provenance, verbatim-capture
+claims and the log counts.
 Attention the auditor spends re-deriving those findings is attention it is not
 spending on the half no script can check: whether a sentence is true, whether
 the voice is the book's, whether a listing says what the prose claims it says.

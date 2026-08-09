@@ -130,8 +130,15 @@ pwsh scripts/check-chapter.ps1 books/<name>
 
 Add `-Chapter NN` to lint one chapter while iterating. The script owns the
 mechanical checks - bytes, citation ties and keys, quoting, index termination,
-contractions, spellings, dashes, and the log's overfull and undefined counts.
-Fix findings rather than arguing with them.
+contractions, spellings, dashes, measured-number provenance, verbatim-capture
+claims, and the log's overfull and undefined counts. Fix findings rather than
+arguing with them.
+
+Two of those trace a claim back to `research/`. The `number` check wants every
+printed decimal recorded there. The `verbatim` check fires when prose calls a
+`text` or `json` listing a capture ("verbatim", "in full", "exactly as", "not
+trimmed") and a line of that listing appears in no research note. Both have the
+same fix: record what you actually captured, or stop claiming you captured it.
 
 Then read `build/main.pdf` and look at the chapter: figure placement, listings
 inside the measure, index entries, citations resolving. A clean log is not the
