@@ -1,0 +1,9 @@
+% A fixture, not a book. It is never compiled: check-chapter.ps1 only needs
+% main.tex to exist so it recognises this directory as a book, and everything
+% else here exists to trigger exactly one check each.
+%
+% This tree lives under scripts/ on purpose. .githooks/pre-commit builds only
+% books/* and template, so a fixture here costs nothing at commit time.
+\documentclass[11pt,a4paper]{book}
+\begin{document}
+\end{document}
