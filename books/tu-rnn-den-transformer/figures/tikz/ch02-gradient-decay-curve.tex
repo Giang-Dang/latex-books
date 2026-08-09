@@ -1,0 +1,53 @@
+% ch02-gradient-decay-curve.tex — Gradient norm decay curve (schematic)
+%
+% Stylised log-scale plot showing ||contrib_hh|| decaying exponentially
+% as BPTT walks backward from step T to step 1.  Three curves for T_mem=5,10,20.
+
+\begin{tikzpicture}[
+    >=Stealth,
+    every node/.style={font=\footnotesize},
+  ]
+
+  % Axes
+  \draw[->] (0,0) -- (8.5,0) node[right] {Bước lùi $T \to 1$};
+  \draw[->] (0,0) -- (0,5.5) node[above] {$\|\text{contrib\_hh}\|$ (log)};
+
+  % Y-axis labels (log scale)
+  \node[left] at (0,0) {$10^{-4}$};
+  \node[left] at (0,1.2) {$10^{-3}$};
+  \node[left] at (0,2.4) {$10^{-2}$};
+  \node[left] at (0,3.6) {$10^{-1}$};
+  \node[left] at (0,4.8) {$10^{0}$};
+
+  % X-axis labels
+  \node[below] at (0,0) {$T$};
+  \node[below] at (8,0) {$1$};
+  \node[below=0.8cm] at (4,0) {$\longleftarrow$ càng xa output, gradient càng yếu};
+
+  % T_mem = 5: shorter, less decay
+  \draw[thick, black!70]
+    (0,4.5) .. controls (1.5,4.2) and (3.5,3.5) .. (5,2.8)
+    .. controls (6,2.2) and (7,1.5) .. (8,1.0);
+  \node[right, black!70] at (8,1.0) {$T_{\text{mem}}=5$};
+
+  % T_mem = 10: medium decay
+  \draw[thick, black!50, dashed]
+    (0,4.5) .. controls (2,4.0) and (4,3.0) .. (6,1.8)
+    .. controls (7,1.0) and (7.5,0.5) .. (8,0.15);
+  \node[right, black!50] at (8,0.15) {$T_{\text{mem}}=10$};
+
+  % T_mem = 20: strongest decay
+  \draw[thick, black!30, dotted]
+    (0,4.5) .. controls (2.5,3.5) and (5,1.5) .. (7,0.2)
+    .. controls (7.5,0.05) .. (8,0.02);
+  \node[right, black!30] at (8,0.02) {$T_{\text{mem}}=20$};
+
+  % Annotation
+  \draw[<-] (3.5, 3.8) -- (5, 4.5)
+    node[right, font=\scriptsize, text width=3.5cm]
+    {Gradient mạnh ở gần output (bên phải)};
+  \draw[<-] (6.0, 0.6) -- (7.2, 1.8)
+    node[right, font=\scriptsize, text width=3.5cm]
+    {Gần như biến mất ở xa output (bên trái)};
+
+\end{tikzpicture}

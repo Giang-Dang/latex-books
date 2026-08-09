@@ -1,0 +1,82 @@
+% ch02-rnn-unrolled-gradient.tex — RNN unrolled 5 steps with gradient arrows
+%
+% Shows the forward pass (left to right) and BPTT backward pass (right to left).
+% Arrow thickness/opacity encodes gradient norm: thick+dark near output,
+% thin+light far from output.
+
+\begin{tikzpicture}[
+    >=Stealth,
+    node distance=1.8cm and 1.6cm,
+    every node/.style={font=\footnotesize},
+    % Forward arrows: standard
+    fwd/.style={->, thick, black!70},
+    % Gradient arrows: thickness varies by step
+    grad strong/.style={->, line width=1.2pt, black!80},
+    grad medium/.style={->, line width=0.7pt, black!50},
+    grad weak/.style={->, line width=0.4pt, black!25},
+    grad vweak/.style={->, line width=0.2pt, black!15},
+  ]
+
+  % Hidden states (top row)
+  \node[draw, circle, minimum size=0.7cm] (h0) {$\vect{h}_0$};
+  \node[draw, circle, minimum size=0.7cm, right=of h0] (h1) {$\vect{h}_1$};
+  \node[draw, circle, minimum size=0.7cm, right=of h1] (h2) {$\vect{h}_2$};
+  \node[draw, circle, minimum size=0.7cm, right=of h2] (h3) {$\vect{h}_3$};
+  \node[draw, circle, minimum size=0.7cm, right=of h3] (h4) {$\vect{h}_4$};
+  \node[draw, circle, minimum size=0.7cm, right=of h4] (h5) {$\vect{h}_5$};
+
+  % Inputs (bottom left)
+  \node[below=0.8cm of h1] (x1) {$\vect{x}_1$};
+  \node[below=0.8cm of h2] (x2) {$\vect{x}_2$};
+  \node[below=0.8cm of h3] (x3) {$\vect{x}_3$};
+  \node[below=0.8cm of h4] (x4) {$\vect{x}_4$};
+  \node[below=0.8cm of h5] (x5) {$\vect{x}_5$};
+
+  % Outputs (top)
+  \node[above=0.7cm of h1] (y1) {$\vect{y}_1$};
+  \node[above=0.7cm of h2] (y2) {$\vect{y}_2$};
+  \node[above=0.7cm of h3] (y3) {$\vect{y}_3$};
+  \node[above=0.7cm of h4] (y4) {$\vect{y}_4$};
+  \node[above=0.7cm of h5] (y5) {$\vect{y}_5$};
+
+  % Forward arrows (input → hidden, hidden → hidden, hidden → output)
+  \draw[fwd] (x1) -- (h1);
+  \draw[fwd] (x2) -- (h2);
+  \draw[fwd] (x3) -- (h3);
+  \draw[fwd] (x4) -- (h4);
+  \draw[fwd] (x5) -- (h5);
+
+  \draw[fwd] (h0) -- (h1) node[midway, above] {$\mat{W}_{hh}$};
+  \draw[fwd] (h1) -- (h2);
+  \draw[fwd] (h2) -- (h3);
+  \draw[fwd] (h3) -- (h4);
+  \draw[fwd] (h4) -- (h5);
+
+  \draw[fwd] (h1) -- (y1);
+  \draw[fwd] (h2) -- (y2);
+  \draw[fwd] (h3) -- (y3);
+  \draw[fwd] (h4) -- (y4);
+  \draw[fwd] (h5) -- (y5);
+
+  % Loss
+  \node[right=0.5cm of y5] (L) {$L$};
+  \draw[fwd] (y5) -- (L);
+
+  % Backward gradient arrows (below the hidden states, going right-to-left)
+  % Gradient is strongest near the output, weakest far away
+  \draw[grad strong, <-] (h4.south) to[bend left=30]
+    node[below=0.15cm, font=\tiny] {$\partial L/\partial\vect{h}_5$} (h5.south);
+  \draw[grad medium, <-] (h3.south) to[bend left=30]
+    node[below=0.15cm, font=\tiny] {$\partial L/\partial\vect{h}_4$} (h4.south);
+  \draw[grad weak, <-] (h2.south) to[bend left=30]
+    node[below=0.15cm, font=\tiny] {$\partial L/\partial\vect{h}_3$} (h3.south);
+  \draw[grad vweak, <-] (h1.south) to[bend left=30]
+    node[below=0.15cm, font=\tiny] {$\partial L/\partial\vect{h}_2$} (h2.south);
+  \draw[grad vweak, <-] (h0.south) to[bend left=40]
+    node[below=0.2cm, font=\tiny] {$\approx \vect{0}$} (h1.south);
+
+  % Label
+  \node[below=1.5cm of h3, font=\small\itshape, black!60]
+    {Mũi tên càng mảnh = gradient càng yếu};
+
+\end{tikzpicture}

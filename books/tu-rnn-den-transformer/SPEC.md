@@ -177,7 +177,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 |---------|--------|-------|
 | Preface | not-started | Write last. Stub in place so front matter pagination is right from the start; front matter role, so `tone-loi-noi-dau` |
 | 01 | drafted | Companion repo `rnn-to-transformer-lab` tag `ch01`; notation in appendix A; glossary seeded in appendix B; research notes in `research/2026-08-09-*.md` |
-| 02 | not-started | |
+| 02 | drafted | Adding problem + copy task experiments; gradient norm measured against temporal distance; bridge boxes for Hochreiter 1991 and Bengio 1994; refs.bib first entries; CPU budgets ~10 min for two tasks |
 | 03 | not-started | Must verify the venue of the Pascanu paper; the PDF on file states none |
 | 04 | not-started | |
 | 05 | not-started | Must verify the venue of the Sutskever paper; the PDF on file states none |
@@ -228,6 +228,16 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   unrolled recurrent networks, stacked encoder-decoders and attention score
   matrices. Mono-safe: meaning carried by dash pattern, grey level and fill,
   never by hue.
+- **Figures before prose where a picture is clearer.** When a concept can be
+  shown (unrolled network, gradient flow, attention matrix), draw it rather than
+  describe it in three paragraphs. A diagram replaces text; it is not decoration.
+  This book ships at least one TikZ figure per chapter where the architecture or
+  the data flow is load-bearing. Added 2026-08-09 during chapter 02 revision.
+- **Abbreviations spelled out per chapter.** Every abbreviation (RNN, BPTT,
+  LSTM, GRU, MSE, SGD, ReLU, and any other the book introduces later) is
+  written in full at its first occurrence in each chapter, because a reader
+  opening at chapter 9 gets the same help as one who started at page 1.
+  Appendix B holds the master abbreviation table. Added 2026-08-09.
 - **Chapter apparatus:** every chapter closes with `\exercises` and its three
   tiers, `\tierunderstand`, `\tierapply`, `\tierextend`, all starred so the
   table of contents does not grow forty-eight entries. Two recurring boxes:
@@ -284,14 +294,15 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   something real, and because it fits on a CPU. Chapters 02 to 04 use the adding
   and copy tasks; chapter 11 uses CIFAR-10. Settle the corpus, its license and
   its size when the companion repo is created.
-- **Per-experiment CPU time budgets are unset.** Decision 13 says minutes; which
-  experiment gets how many minutes decides how large each toy model can be, and
-  chapter 02 is the first that needs an answer.
+- **Per-experiment CPU time budgets are now set.** Chapter 02 uses ~10 min
+  total for adding problem (3×T, 5000 samples each) and copy task (3×T_mem,
+  2000 epochs each). Later chapters inherit this baseline: each experiment
+  should finish on CPU in single-digit minutes. Settled 2026-08-09.
 - **The final list of bridge papers is not closed.** The TOC names Cho 2014,
   Luong 2015, Gers 2000, Hochreiter 1991, Bengio 1994, layer norm, residuals,
-  BERT, GPT, Kaplan and Hoffmann. Each becomes a `refs.bib` entry only after the
-  chapter that cites it has fetched and read it; none are in `refs.bib` yet, on
-  purpose.
-- **The `Empty bibliography` warning is expected and will clear itself.** Chapter
-  01 is foundational and cites no papers, so the warning is still present.
-  Chapter 02 will be the first to add entries to `refs.bib`.
+  BERT, GPT, Kaplan and Hoffmann. Hochreiter 1991 and Bengio 1994 are now
+  summarised in chapter 02 bridge boxes; Bengio 1994 has a `refs.bib` entry.
+  The remaining bridge papers land in the chapter that cites them.
+- **The `Empty bibliography` warning is now cleared.** Chapter 02 added the
+  first `refs.bib` entry (Bengio 1994) and cites Pascanu 2013. The warning
+  should no longer appear in the build log.
