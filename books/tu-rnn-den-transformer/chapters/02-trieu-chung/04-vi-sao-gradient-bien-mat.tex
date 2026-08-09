@@ -1,0 +1,72 @@
+% 04-vi-sao-gradient-bien-mat.tex ;  Why gradient vanishes in the copy task
+%
+% Scope: apply BPTT recurrence from ch01 to copy task; show how W_hh
+% and tanh saturation combine to produce exponential decay.
+
+\section{Vì sao gradient biến mất trong bài toán sao chép}
+\label{sec:ch02-vi-sao}
+
+Những con số ở mục trên đặt ra một câu hỏi: \emph{tại sao} gradient yếu đi 25
+lần khi đi từ $t = 21$ về $t = 1$ trong bài toán sao chép $T_{\text{mem}} =
+10$? Câu trả lời nằm trong chính công thức BPTT mà chương~01 đã dẫn xuất.
+
+\subsection{Sự lặp lại của $\mat{W}_{hh}$}
+
+Nhìn lại phương trình~\eqref{eq:bptt-dh-recurrence}: gradient truyền từ
+$\vect{h}_{t+1}$ về $\vect{h}_t$ qua hai con đường. Con đường thứ nhất; từ
+output hiện tại qua $\mat{W}_{hy}\transpose$; chỉ đi một bước và không tích
+lũy. Con đường thứ hai; từ tương lai qua $\mat{W}_{hh}\transpose$; \emph{lặp
+lại} ở mọi bước lùi.
+
+Hình~\ref{fig:ch02-rnn-gradient} minh họa điều này: gradient từ $L$ truyền
+ngược qua từng hidden state, và mỗi lần nó đi qua một mũi tên $\vect{h}_{t+1}
+\to \vect{h}_t$, nó bị nhân với $\mat{W}_{hh}\transpose$ thêm một lần nữa.
+
+\begin{figure}[ht]
+  \centering
+  \input{figures/tikz/ch02-rnn-unrolled-gradient}
+  \caption{RNN unrolled 5 bước với BPTT. Mũi tên đậm: gradient mạnh ở gần $L$.
+    Mũi tên mảnh: gradient yếu dần khi lùi xa khỏi output. Độ dày mũi tên tỉ
+    lệ với norm gradient tại bước đó.}
+  \label{fig:ch02-rnn-gradient}
+\end{figure}
+
+Sau $T$ bước lùi, gradient tại $\vect{h}_1$ chứa tích của $T$ ma trận
+$\mat{W}_{hh}\transpose$ (xen kẽ với các ma trận đường chéo từ đạo hàm
+$\tanh$). Nếu $\|\mat{W}_{hh}\| < 1$, tích này tiến về 0 theo hàm mũ:
+
+\[
+\bigl\|\pd{L}{\vect{h}_1}\bigr\|
+\approx \|\mat{W}_{hh}\|^T \cdot \bigl\|\pd{L}{\vect{h}_T}\bigr\|.
+\]
+
+\subsection{Vai trò của $\tanh$ saturation}
+
+$\mat{W}_{hh}$ không phải là thủ phạm duy nhất. Đạo hàm của $\tanh$ tại
+$\vect{h}_{t+1}$ là $1 - \vect{h}_{t+1}^2$. Khi một phần tử của hidden
+state bão hòa (tiến gần đến $\pm 1$), đạo hàm của nó tiến gần đến 0, và
+gradient đi qua phần tử đó bị chặn lại.
+
+Trong bài toán sao chép, RNN có xu hướng đẩy hidden state đến gần bão hòa
+để ``ghi nhớ'' thông tin; các nghiên cứu sau này gọi đây là \enquote{storing
+information at the saturation points of the activation function}. Nhưng chính
+hành vi đó làm gradient yếu thêm: không chỉ $\mat{W}_{hh}\transpose$ làm nó
+nhỏ đi, mà các hệ số $1 - h_{t,i}^2$ còn nhân thêm một hệ số $< 1$ nữa ở mỗi
+bước.
+
+\subsection{Không phải mọi RNN đều bị vanishing như nhau}
+
+Kết quả từ bài toán cộng cho thấy vanishing gradient không phải là định mệnh:
+với $d_h = 24$, gradient gần như không suy giảm ở $T = 50$. Điều này là vì
+$\mat{W}_{hh}$ với khởi tạo $\mathcal{N}(0, 0.1)$ và $d_h = 24$ có trị riêng
+lớn nhất đủ nhỏ, và vì bài toán cộng không ép mạng phải dùng đến bão hòa
+$\tanh$.
+
+Nhưng với $d_h = 12$ và $T = 100$, vanishing xuất hiện. Với $d_h = 32$ và
+bài toán sao chép, nó xuất hiện ở $T_{\text{mem}} = 10$. Không có một ngưỡng
+cố định; vanishing gradient là một hàm của ba biến: kích thước mạng, khởi
+tạo, và áp lực từ bài toán.
+
+Chương~3 sẽ cho bạn công cụ để tính toán chính xác khi nào vanishing xảy ra,
+thông qua trị riêng lớn nhất của $\mat{W}_{hh}$ và điều kiện đủ của Pascanu
+và cộng sự.

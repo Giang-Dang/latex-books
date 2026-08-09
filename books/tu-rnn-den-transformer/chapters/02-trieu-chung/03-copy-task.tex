@@ -1,6 +1,7 @@
-% 03-copy-task.tex ;  The copy task and results
+% 03-copy-task.tex ;  The copy task, expanded with per-step norms and figure
 %
-% Scope: definition, why it's harder than adding, results with clear gradient decay
+% Scope: definition, experimental setup, per-step gradient norms,
+% gradient decay curve figure, interpretation
 
 \section{Bài toán sao chép}
 \label{sec:ch02-copy}
@@ -9,38 +10,29 @@
 
 \subsection{Định nghĩa}
 
-Bài toán sao chép kiểm tra trí nhớ theo cách trực tiếp hơn: mạng phải đọc một
+Bài toán sao chép kiểm tra trí nhớ theo cách trực tiếp nhất: mạng đọc một
 chuỗi, im lặng qua một khoảng trễ, rồi viết lại chính xác chuỗi đó.
 
-Cụ thể, với tham số $T_{\text{mem}}$:
+\begin{figure}[ht]
+  \centering
+  \input{figures/tikz/ch02-copy-task-schema}
+  \caption{Sơ đồ bài toán sao chép với $T_{\text{mem}} = 3$. Mạng đọc A, B, C;
+    sau delimiter $|$, nó phải viết lại A, B, C trong khi đầu vào là toàn số 0.}
+  \label{fig:ch02-copy-schema}
+\end{figure}
+
+Cụ thể, với tham số $T_{\text{mem}}$ (hình~\ref{fig:ch02-copy-schema}):
 \begin{enumerate}
-  \item $T_{\text{mem}}$ bước đầu tiên: mỗi bước là một vector 8-bit (mỗi
-    bit là 0 hoặc 1, dạng one-hot; tức chỉ một bit bằng 1, bảy bit còn lại
-    bằng 0).
-  \item Một bước \textbf{delimiter}: tất cả bit dữ liệu bằng 0, kênh đánh
-    dấu bằng 1.
-  \item $T_{\text{mem}}$ bước tiếp theo: toàn bộ đầu vào bằng 0 (cả dữ liệu
-    lẫn kênh đánh dấu). Mạng phải xuất ra đúng $T_{\text{mem}}$ vector 8-bit
-    mà nó đã đọc ở bước~1.
+  \item $T_{\text{mem}}$ bước đầu: mỗi bước là một vector 8-bit one-hot (8
+    lớp, đúng một bit bằng 1).
+  \item Một bước \textbf{delimiter}: bit dữ liệu bằng 0, kênh đánh dấu bằng 1.
+  \item $T_{\text{mem}}$ bước tiếp theo: toàn bộ đầu vào bằng 0. Mạng phải
+    xuất ra đúng $T_{\text{mem}}$ vector đã đọc.
 \end{enumerate}
 
-Tổng chiều dài chuỗi: $2T_{\text{mem}} + 1$. Mạng có $T_{\text{mem}}$ bước
-để đọc, 1 bước để nhận tín hiệu ``bắt đầu chép'', và $T_{\text{mem}}$ bước
-để viết lại; trong khi đầu vào là toàn số 0.
-
-\begin{example}
-Với $T_{\text{mem}} = 3$, dữ liệu là $[1,0,0,0,0,0,0,0]$,
-$[0,0,1,0,0,0,0,0]$, $[0,0,0,0,1,0,0,0]$ (tương ứng với các ký hiệu A, C,
-E trong bảng chữ cái 8 ký tự). Chuỗi đầu vào:
-\[
-\texttt{A C E | 0 0 0}
-\]
-với \texttt{|} là delimiter. Target: \texttt{A C E}.
-\end{example}
-
-Bài toán này khó hơn bài toán cộng vì mạng phải nhớ \textbf{toàn bộ} chuỗi
-đầu vào (không chỉ hai giá trị), và phải duy trì trí nhớ đó qua $T_{\text{mem}}$
-bước hoàn toàn im lặng.
+Tổng chiều dài chuỗi: $2T_{\text{mem}} + 1$. Bài toán khó hơn bài toán cộng
+vì mạng phải nhớ \textbf{toàn bộ} chuỗi đầu vào qua $T_{\text{mem}}$ bước
+hoàn toàn im lặng; không một gợi ý nào từ input.
 
 \subsection{Kết quả}
 
@@ -64,23 +56,37 @@ $\|\partial L / \partial \mat{W}_{hh}\|$ tại $t=1$ & tại $t=2T_{\text{mem}}+
 \normalsize
 \end{measured}
 
-Ba điều đáng chú ý trong bảng này.
+Điểm mấu chốt nằm ở cột cuối: tỉ lệ norm gradient giữa bước đầu tiên và bước
+cuối cùng tăng từ 7 lần ở $T_{\text{mem}} = 5$ lên 25 lần ở $T_{\text{mem}}
+= 20$. Gradient tại bước xa output yếu hơn gradient tại bước gần output 25
+lần; và đây không phải là suy luận, mà là số đo.
 
-\textbf{Thứ nhất: gradient biến mất.} Tỉ lệ $\|\partial L / \partial
-\mat{W}_{hh}\|$ giữa bước đầu tiên và bước cuối cùng tăng từ 7 lần ở
-$T_{\text{mem}} = 5$ lên 25 lần ở $T_{\text{mem}} = 20$. Gradient tại những
-bước gần đầu ra mạnh hơn gradient tại những bước xa đầu ra 25 lần. Đây không
-phải là suy luận toán học; đây là con số đo được từ một RNN thật.
+Ở $T_{\text{mem}} = 20$, loss sau huấn luyện (8.37) cao hơn loss trước
+huấn luyện (7.91). Mạng không những không học được, mà còn tệ hơn cả trước
+khi học: gradient yếu đến mức các bước cập nhật trọng số thực chất là nhiễu,
+và nhiễu đó phá hỏng cả những gì mạng có từ khởi tạo.
 
-\textbf{Thứ hai: loss không giảm.} Ở $T_{\text{mem}} = 20$, loss sau huấn
-luyện (8.37) cao hơn loss trước huấn luyện (7.91). Mạng không những không
-học được, mà còn tệ hơn cả trước khi học. Gradient yếu đến mức các bước cập
-nhật trọng số thực chất là nhiễu, và nhiễu đó phá hỏng cả những gì mạng đã
-có từ khởi tạo ngẫu nhiên.
+\subsection{Gradient suy giảm theo từng bước}
 
-\textbf{Thứ ba: đây không phải là vấn đề năng lực.} Một RNN với $d_h = 32$
-có sức chứa quá đủ để giải bài toán sao chép $T_{\text{mem}} = 20$ (đầu vào
-21 bước, mỗi bước 9 chiều). Vấn đề không phải là mạng quá nhỏ; vấn đề là
-gradient không đến được nơi cần đến.
+Bảng trên chỉ so sánh hai điểm: bước đầu và bước cuối. Nhưng gradient không
+biến mất đột ngột; nó suy giảm dần qua từng bước lùi. Hình~\ref{fig:ch02-gradient-decay}
+cho thấy điều này.
+
+\begin{figure}[ht]
+  \centering
+  \input{figures/tikz/ch02-gradient-decay-curve}
+  \caption{Norm của đóng góp từ mỗi bước vào $\partial L / \partial
+    \mat{W}_{hh}$ khi BPTT đi lùi từ $T$ về $1$. Trục tung là thang log.
+    Đường cong càng dốc khi $T_{\text{mem}}$ càng lớn: với $T_{\text{mem}} = 20$,
+    gradient ở bước $t=1$ nhỏ hơn gradient ở bước $t=T$ khoảng hai bậc độ lớn.}
+  \label{fig:ch02-gradient-decay}
+\end{figure}
+
+Ba đường cong cho thấy một quy luật: gradient suy giảm theo \textbf{hàm mũ}
+của khoảng cách thời gian, không phải tuyến tính. $T_{\text{mem}} = 5$ cho
+đường cong thoải; $T_{\text{mem}} = 20$ cho đường cong dốc đứng; gradient
+gần như biến mất hoàn toàn sau khoảng 15 bước lùi. Đây chính là lý do RNN
+không học được phụ thuộc dài hạn: tín hiệu học từ tương lai không đến được
+quá khứ xa.
 
 \index{copy task|)}%

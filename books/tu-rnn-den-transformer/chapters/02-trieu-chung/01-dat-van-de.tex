@@ -1,35 +1,38 @@
-% 01-dat-van-de.tex ;  Recap BPTT from ch01, state the empirical question
+% 01-dat-van-de.tex ;  Sets up the empirical question
 %
-% Scope: remind reader of the BPTT recurrence; why the weight reuse matters;
-% set up the question: does the RNN actually learn long-range dependencies?
+% Scope: brief recap of BPTT recurrence from ch01; the question this
+% chapter answers by measurement, not derivation.
 
-\section{Điều chương 01 không trả lời}
+\section{Câu hỏi}
 \label{sec:ch02-dat-van-de}
 
-Chương~01 dẫn xuất BPTT đến từng Jacobian. Ở trang cuối của dẫn xuất đó, tôi
-viết một câu mà bạn nên đọc lại: ``$\mat{W}_{hh}\transpose$ xuất hiện ở mọi
-bước lùi. Nếu bạn tháo cuộn công thức này từ $t = T$ về $t = 1$, bạn sẽ thấy
-$\partial L / \partial \vect{h}_1$ chứa $\mat{W}_{hh}\transpose$ nhân với chính
-nó $T$ lần.''
+Trong BPTT, gradient của loss theo trạng thái ẩn tại bước $t$ được tính lùi
+từ $T$ về $1$ bằng công thức truy hồi từ chương~01,
+phương trình~\eqref{eq:bptt-dh-recurrence}:
 
-Đó là một phát biểu đại số. Nó nói rằng gradient \emph{có thể} suy giảm hoặc
-bùng nổ, chứ chưa nói rằng nó \emph{thực sự} suy giảm hay bùng nổ trong một
-bài toán cụ thể. Chương này trả lời câu hỏi đó bằng thực nghiệm.
+\[
+\pd{L}{\vect{h}_t}
+= \mat{W}_{hy}\transpose \pd{L}{\vect{y}_t}
++ \mat{W}_{hh}\transpose \;
+  \Bigl(
+    \pd{L}{\vect{h}_{t+1}}
+    \odot \bigl(\vect{1} - \vect{h}_{t+1}^2\bigr)
+  \Bigr).
+\]
 
-Tôi sẽ huấn luyện một RNN đơn giản; đúng loại RNN mà chương~01 đã dẫn
-xuất; trên hai bài toán tổng hợp kinh điển:
-\tn{bài toán cộng}{adding problem} và \tn{bài toán sao chép}{copy task}. Cả
-hai được thiết kế để bắt buộc mạng phải nhớ thông tin qua nhiều bước thời
-gian. Nếu RNN có thể học phụ thuộc dài hạn, nó sẽ giải được cả hai. Nếu
-không, ta sẽ thấy loss không giảm và gradient biến mất ở những bước xa đầu
-ra; và đó chính là thứ ta sẽ đo.
+Hệ quả trực tiếp: nếu $\|\mat{W}_{hh}\| < 1$ và các phần tử của
+$\vect{1} - \vect{h}_t^2$ đều không vượt quá 1 (điều luôn đúng với
+$\tanh$), thì $\|\partial L / \partial \vect{h}_t\|$ nhỏ dần sau mỗi
+bước lùi. Sau $T$ bước, gradient truyền từ bước cuối về bước đầu bị
+suy giảm theo hàm mũ của $T$.
 
-Tôi chọn hai bài toán này vì chúng cô lập vấn đề. Không có từ vựng, không có
-embedding, không có token hóa. Chỉ có những con số và một câu hỏi: mạng có
-nhớ được không?
+Đó là lý thuyết. Nhưng lý thuyết không nói liệu điều này có thực sự xảy
+ra trong một bài toán cụ thể hay không. Một RNN với $\mat{W}_{hh}$ được
+khởi tạo ngẫu nhiên có thể có trị riêng lớn nhất vượt quá 1; một bài toán
+có thể không cần gradient truyền xa đến vậy; và trong thực tế, mạng học
+được những biểu diễn làm chậm quá trình suy giảm.
 
-Trước khi chạy thí nghiệm, tôi cần nói rõ một điều. Chương này \textbf{không}
-dẫn xuất điều kiện toán học cho vanishing gradient. Đó là việc của chương~3,
-dựa trên bài báo của Pascanu và cộng sự~2013. Chương này chỉ \textbf{đo}:
-huấn luyện RNN, ghi lại loss, ghi lại norm của gradient tại từng bước thời
-gian, và cho bạn thấy những con số đó nói gì.
+Chương này trả lời câu hỏi đó bằng thực nghiệm. Tôi sẽ huấn luyện RNN
+trên hai bài toán được thiết kế để \emph{ép} mạng phải nhớ thông tin qua
+nhiều bước, và tôi sẽ đo gradient ở từng bước để bạn thấy nó suy giảm
+như thế nào, hoặc không.

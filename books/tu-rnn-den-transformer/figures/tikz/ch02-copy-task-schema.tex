@@ -1,0 +1,55 @@
+% ch02-copy-task-schema.tex — Copy task architecture
+%
+% Shows the three phases: input sequence → delimiter → blank/output.
+
+\begin{tikzpicture}[
+    >=Stealth,
+    node distance=0.6cm and 0.0cm,
+    every node/.style={font=\footnotesize},
+    box/.style={draw, minimum width=0.75cm, minimum height=0.75cm},
+    blank/.style={draw, minimum width=0.75cm, minimum height=0.75cm, fill=black!5},
+    delim/.style={draw, minimum width=0.75cm, minimum height=0.75cm, fill=black!20},
+    label/.style={font=\small\bfseries},
+  ]
+
+  % Phase 1: Input
+  \node[label, above=0.3cm] at (1.5, 0) {Đọc vào (input)};
+  \foreach \i/\v in {1/A, 2/B, 3/C} {
+    \node[box] (in\i) at (\i*0.85, 0) {\v};
+  }
+
+  % Delimiter
+  \node[label, above=0.3cm] at (4.3, 0) {Delimiter};
+  \node[delim] (delim) at (4.3, 0) {$|$};
+
+  % Phase 2: Blank
+  \node[label, above=0.3cm] at (7.0, 0) {Khoảng trống};
+  \foreach \i in {1,2,3} {
+    \node[blank] (blank\i) at (5.0+\i*0.85, 0) {0};
+  }
+
+  % Output labels (below)
+  \foreach \i/\v in {1/A, 2/B, 3/C} {
+    \node[box, draw=black!40] (out\i) at (5.0+\i*0.85, -1.5) {\v};
+  }
+
+  % Arrows showing the RNN reads, then writes
+  \draw[->, thick, black!60] (in1.south) to[bend right=20] (out1.north);
+  \draw[->, thick, black!60] (in2.south) to[bend right=25] (out2.north);
+  \draw[->, thick, black!60] (in3.south) to[bend right=30] (out3.north);
+
+  % Phase labels
+  \node[below=0.2cm of out2, font=\small\bfseries] {Viết ra (output)};
+
+  % Arrow from input to output through RNN memory
+  \draw[->, thick, black!40]
+    (in3.east) -- (delim.west) node[midway, above=0.1cm, font=\tiny] {RNN nhớ};
+  \draw[->, thick, black!40]
+    (delim.east) -- (blank1.west) node[midway, above=0.1cm, font=\tiny] {nhớ tiếp};
+
+  % Legend
+  \node[below=3cm of blank2, font=\footnotesize\itshape, black!50, text width=6cm, align=center]
+    {RNN đọc A, B, C; bắt đầu chép sau dấu $|$;\\
+     phải nhớ toàn bộ chuỗi qua $T_{\text{mem}}$ bước im lặng.};
+
+\end{tikzpicture}

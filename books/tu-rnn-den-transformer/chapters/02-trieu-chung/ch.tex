@@ -2,16 +2,27 @@
 \chapter{Triệu chứng: vì sao huấn luyện RNN thất bại}
 \label{ch:trieu-chung}
 
-Chương này là một buổi khám bệnh. Bệnh nhân là RNN với hàm kích hoạt $\tanh$
-được huấn luyện bằng BPTT. Triệu chứng: loss không giảm khi chuỗi dài.
-Tôi sẽ cho bạn xem hai bài toán kinh điển mà RNN không giải được, đo gradient
-tại từng bước thời gian để bạn thấy nó biến mất ở đâu, và kể cho bạn về hai
-người đã thấy triệu chứng này từ những năm 1990. Đây là chương thực nghiệm;
-chương~3 sẽ đưa cho bạn công cụ toán học để chẩn đoán căn bệnh.
+Chương~01 kết thúc bằng một nhận xét: $\mat{W}_{hh}\transpose$ xuất hiện trong
+mọi bước lùi của BPTT, và nếu chuỗi đủ dài, gradient từ bước cuối nhân với
+$\mat{W}_{hh}\transpose$ hàng chục lần trước khi đến được bước đầu. Đó là một
+sự thật đại số. Chương này kiểm tra xem sự thật đó có nghĩa là gì trong thực
+tế: liệu một RNN thật, huấn luyện trên dữ liệu thật, có thực sự thất bại khi
+chuỗi dài lên không?
+
+Tôi sẽ huấn luyện RNN trên hai bài toán tổng hợp được thiết kế để đo trí nhớ
+dài hạn: \tn{bài toán cộng}{adding problem} và \tn{bài toán sao chép}{copy
+task}. Ở mỗi bài toán, tôi đo $\|\partial L / \partial \mat{W}_{hh}\|$ tại
+từng bước thời gian để xem gradient biến mất ở đâu, nhanh đến mức nào, và
+hậu quả của nó lên loss ra sao. Cuối chương, hai hộp cầu nối tóm tắt những
+người đã thấy triệu chứng này từ thập niên 1990.
+
+Đây là chương thực nghiệm. Chương~3 sẽ cho bạn công cụ toán học để chẩn đoán
+căn bệnh.
 
 \input{chapters/02-trieu-chung/01-dat-van-de}
 \input{chapters/02-trieu-chung/02-adding-problem}
 \input{chapters/02-trieu-chung/03-copy-task}
-\input{chapters/02-trieu-chung/04-cau-noi}
-\input{chapters/02-trieu-chung/05-hinge}
-\input{chapters/02-trieu-chung/06-bai-tap}
+\input{chapters/02-trieu-chung/04-vi-sao-gradient-bien-mat}
+\input{chapters/02-trieu-chung/05-cau-noi}
+\input{chapters/02-trieu-chung/06-hinge}
+\input{chapters/02-trieu-chung/07-bai-tap}

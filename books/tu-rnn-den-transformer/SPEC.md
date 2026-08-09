@@ -228,6 +228,11 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   unrolled recurrent networks, stacked encoder-decoders and attention score
   matrices. Mono-safe: meaning carried by dash pattern, grey level and fill,
   never by hue.
+- **Figures before prose where a picture is clearer.** When a concept can be
+  shown (unrolled network, gradient flow, attention matrix), draw it rather than
+  describe it in three paragraphs. A diagram replaces text; it is not decoration.
+  This book ships at least one TikZ figure per chapter where the architecture or
+  the data flow is load-bearing. Added 2026-08-09 during chapter 02 revision.
 - **Chapter apparatus:** every chapter closes with `\exercises` and its three
   tiers, `\tierunderstand`, `\tierapply`, `\tierextend`, all starred so the
   table of contents does not grow forty-eight entries. Two recurring boxes:
