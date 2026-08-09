@@ -71,11 +71,15 @@ The sequence matters more than any individual step.
    Scaffold to convention: `chapters/NN-slug/ch.tex` holds `\chapter`, `\label`
    and a short opener, then `\input`s one file per section, with every path
    written from the book root.
-5. **Audit.** Run a read-only subagent against the previous chapter, `CLAUDE.md`,
-   the SPEC writing rules and the humanizer checklist, reporting `file:line` for
-   every finding. Then verify each factual finding yourself before acting on it.
-   The audit is a lead, not a verdict.
-6. **Close out.** Build clean, run the check script, update SPEC, commit.
+5. **Audit, from outside.** Build and run the check script first so the machine
+   layer is already clean, then spawn one read-only subagent with **no drafting
+   context** and brief it per `references/audit.md`. Reviewing your own draft in
+   the context that wrote it is not this step: that reviewer accepted every
+   claim once already and fills the gaps from memory. Verify each factual
+   finding yourself before acting on it, and report the ones you reject along
+   with why. The audit is a lead, not a verdict.
+6. **Close out.** Rebuild after the audit fixes, run the check script again,
+   update SPEC, commit.
 7. **Retro, proposals only.** List what cost time this session. Sort each
    item: a machine-checkable mistake becomes a proposed new check in
    `scripts/check-chapter.ps1`; a book-specific lesson goes into that book's
@@ -100,6 +104,7 @@ Do not pass one of these without the previous one holding.
 | Report | Real schema and numbers posted before prose starts |
 | Prose | Every listing traceable to a file in the companion repo at the chapter's tag |
 | Build | `latexmk` exits 0; `pwsh scripts/check-chapter.ps1 books/<name>` exits 0 |
+| Audit | A subagent with no drafting context reported; every finding is fixed, or rejected on the record |
 | SPEC | Progress row, decisions, TOC and open items all reflect reality |
 | Commit | `.githooks/pre-commit` passes unaided; never `--no-verify` |
 
@@ -138,6 +143,8 @@ Load these when the task reaches them, not before.
   this repo: citations, quoting, index entries, listings, figures, labels.
 - `references/companion-code.md` - the code-before-prose workflow, and the
   subagent delegation pattern that keeps parallel work from colliding.
+- `references/audit.md` - the independent audit: why a fresh agent, what to
+  withhold from the brief, the brief itself, and how to triage what comes back.
 - `references/environment.md` - build and tooling traps specific to this
   machine and repo. Read it before the first `latexmk` run of a session.
 

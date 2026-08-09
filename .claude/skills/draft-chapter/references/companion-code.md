@@ -77,7 +77,8 @@ A pattern that worked for a six-domain service:
   dependents its exact contract so they can be written against it.
 - **Wave B** - samples, container files, verification scripts, in parallel.
 - **Wave C** - research file, bibliography block, figures, in parallel.
-- **Final** - one read-only voice-and-rules audit.
+- **Final** - one read-only audit by an agent with no drafting context; see
+  `references/audit.md`.
 
 ## Briefing a subagent
 
