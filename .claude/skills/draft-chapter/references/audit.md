@@ -81,7 +81,9 @@ Read before judging anything:
   books/federated-graphql-on-dotnet/SPEC.md - writing rules, decision log, and
         the TOC line for this chapter
   .claude/skills/draft-chapter/references/house-style.md
-  .claude/skills/humanizer/SKILL.md - apply its checklist
+  .claude/skills/humanizer/SKILL.md - apply its checklist. Judge each file
+      under its tone profile: chapter prose against references/tone-chapter.md,
+      the "Your turn" lab against references/tone-lab.md.
 
 Sources this chapter must trace back to:
   books/federated-graphql-on-dotnet/research/2026-08-ch05-schema-design.md
@@ -96,7 +98,8 @@ bottom.
   2. Violations of AGENTS.md, the SPEC writing rules or house-style. Include
      \ref targets that do not resolve, and a SPEC TOC line that no longer
      describes what the chapter actually does.
-  3. Voice drift from chapter 04, and anything on the humanizer checklist.
+  3. Voice drift from chapter 04, and anything on the humanizer checklist,
+     each file judged under the tone profile named above for it.
 
 Format: one line per finding - file:line, the quoted span, what is wrong, the
 rule or source it fails, and confidence (certain / likely / unsure). Flag

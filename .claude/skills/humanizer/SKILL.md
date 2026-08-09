@@ -1,15 +1,20 @@
 ---
 name: humanizer
 description: |
-  Remove signs of AI-generated writing from text. Use when editing or reviewing
-  text to make it sound more natural and human-written. Based on Wikipedia's
-  comprehensive "Signs of AI writing" guide. Detects and fixes patterns including:
-  inflated symbolism, promotional language, superficial -ing analyses, vague
-  attributions, em dash overuse, rule of three, AI vocabulary words, passive
-  voice, negative parallelisms, and filler phrases.
+  Removes signs of AI-generated writing from English text and rewrites it in the tone the
+  piece calls for. Use when editing or reviewing text to make it sound more natural and
+  human-written: academic papers and theses, technical docs and PR descriptions, blog posts,
+  work email and status reports, tutorials, social posts, talk scripts, peer reviews or
+  rebuttals, and book manuscripts: chapters, labs, appendices, prefaces, back-cover blurbs.
+  Fires on "make this sound human", "less like ChatGPT", "does this read as
+  AI-written", "fix the voice", "humanize this". Based on Wikipedia's comprehensive "Signs of
+  AI writing" guide: inflated symbolism, promotional language, superficial -ing analyses,
+  vague attributions, em dash overuse, rule of three, AI vocabulary words, passive voice,
+  negative parallelisms, and filler phrases. For Vietnamese text, use the humanizer-vi skill
+  instead of this one.
 license: MIT
 metadata:
-  version: "2.9.1"
+  version: "3.1.0"
 ---
 
 # Humanizer: Remove AI Writing Patterns
@@ -23,9 +28,47 @@ When given text to humanize:
 1. **Identify AI patterns** - Scan for the patterns listed below.
 2. **Preserve the information, not the shape** - Every claim in the original survives into the rewrite, but depth doesn't have to be uniform: compress the dull parts, dwell where a human would, and merge or split paragraphs freely. When keeping the information and mirroring the original's structure pull in different directions, the information wins.
 3. **Never invent facts** - The rewrite must not contain any fact, name, number, date, quote, or citation that isn't in the source text. Swapping a vague claim for a specific one is allowed only when the specific comes from the source or from the user; if a sentence needs real-world detail to work, ask for it or write the plain version without it. Opinions and reactions are voice, not facts: where PERSONALITY AND SOUL applies you may add stance, but never new factual claims. (In fiction, invented detail is the job. This rule governs everything else.)
-4. **Match the voice** - Fit the intended tone (formal, casual, technical). Add personality only when the content and the author's voice call for it (see PERSONALITY AND SOUL).
+4. **Match the voice** - Follow the tone profile you settle on (see Tone Selection). When they conflict, precedence runs: a user-provided writing sample beats the tone profile, and the tone profile beats the defaults in this file.
 
 How you're invoked changes what you deliver (see Invocation Modes). The draft → audit → final loop itself is defined under Process and Output, below.
+
+## Tone Selection
+
+A conference paper, a README, and a rebuttal to an area chair each have a different standard for
+"sounds human." Settle which one you're writing before drafting, then read that profile.
+
+| Tone | Profile | Use for |
+| --- | --- | --- |
+| Research | `references/tone-research.md` | papers, theses, related work, seminar reports |
+| Technical | `references/tone-technical.md` | README, ADR, docs, PR descriptions, code comments |
+| Blog | `references/tone-blog.md` | personal blog, essays, technical writeups |
+| Work | `references/tone-work.md` | email, status reports to an advisor or manager |
+| Teaching | `references/tone-teaching.md` | tutorials, onboarding docs |
+| Social | `references/tone-social.md` | LinkedIn and X posts |
+| Talk | `references/tone-talk.md` | talk scripts, slide notes, defense |
+| Peer review | `references/tone-peer-review.md` | reviews, rebuttals, meta-reviews |
+
+Book manuscripts get their own set, because a book's parts want different registers:
+
+| Tone | Profile | Use for |
+| --- | --- | --- |
+| Chapter | `references/tone-chapter.md` | main chapter prose in a practitioner or technical book |
+| Textbook | `references/tone-textbook.md` | coursebook and academic monograph chapters |
+| Narrative | `references/tone-narrative.md` | popular science and trade nonfiction, story-led chapters |
+| Lab | `references/tone-lab.md` | end-of-chapter labs, hands-on walkthroughs, cookbook recipes |
+| Appendix | `references/tone-appendix.md` | appendices, glossaries, reference tables, version matrices |
+| Front matter | `references/tone-front-matter.md` | preface, foreword, acknowledgments, how to read this book |
+| Blurb | `references/tone-blurb.md` | back cover copy, catalog and landing page descriptions |
+
+How to settle it:
+
+- The user named a tone, or gave a writing sample: use it, don't ask.
+- Otherwise call `AskUserQuestion` once. It accepts at most 4 options and there are 15 tones, so
+  offer the 4 most plausible for the text in front of you (book text draws on the book table
+  first) and name the likeliest of the rest in the last option's description with "pick Other
+  for one of these." One round trip, full coverage.
+- Once settled, read exactly one profile. Leave the rest unread.
+- In embedded mode, don't ask. Infer the tone from the artifact being produced.
 
 ## Voice Calibration
 
@@ -35,13 +78,13 @@ If the user provides a writing sample (their own previous writing), analyze it b
 2. Match those habits instead of merely deleting AI patterns. Do not upgrade casual words or regularize deliberate quirks.
 3. Without a sample, use the default behavior below.
 
-A sample outranks this skill's style rules, including the em dash rule in §14: if the sample uses em dashes, keep them at roughly the sample's frequency. Matching the author beats scrubbing the tell.
+A sample outranks the tone profile and this skill's style rules, including the em dash rule in §14: if the sample uses em dashes, keep them at roughly the sample's frequency. Matching the author beats scrubbing the tell. Nothing else reopens §14 - a tone profile cannot.
 
 ## PERSONALITY AND SOUL
 
 Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as obvious as slop. Good writing has a human behind it.
 
-**Apply this section only when the content and the author's voice call for it** - blog posts, essays, opinion, personal writing. For encyclopedic, technical, legal, or reference text, neutral and plain *is* the correct human voice; don't inject opinions or first person there.
+**How much voice a piece wants is set by the tone profile, not decided here.** Every `references/tone-*.md` states its level: `none` (neutral and plain *is* the correct human voice there, so don't inject opinions or first person), `restrained`, or `full`. This section defines what personality *is* once a profile asks for it.
 
 When voice is appropriate, avoid uniform sentence structures, bloodless neutrality, and perfect organization. Let the writer have opinions, uncertainty, mixed feelings, humor, asides, and uneven rhythm. Never add factual claims to create that personality.
 
@@ -394,14 +437,17 @@ When you see these, lean toward leaving the prose alone — they are evidence of
 
 **File mode.** The user points at a file. Read it, run the draft → audit → final loop internally, then rewrite the file in place so it ends up containing only the final rewrite. Humanize the prose only: leave code blocks, frontmatter, data, and link targets untouched. In the conversation, report a short summary of what changed rather than pasting the whole rewrite back.
 
-**Embedded mode.** Another task or agent is using this skill as one step of a larger job (a PR description, a commit message, a doc). Run the loop internally and output only the final text. No draft, no audit bullets, no summary. The caller wants prose, not ceremony.
+**Embedded mode.** Another task or agent is using this skill as one step of a larger job (a PR description, a commit message, a doc). Run the loop internally and output only the final text. No draft, no audit bullets, no summary. The caller wants prose, not ceremony. Don't ask about tone here; infer it from the artifact being produced (a PR description or commit message is Technical; a book chapter section is Chapter, its lab is Lab).
 
 ## Process and Output
 
-1. Read the input carefully and identify every instance of the patterns above.
-2. Write a **draft rewrite**. Check that it reads naturally aloud, varies sentence length, prefers specific details and simple constructions (is/are/has), and keeps the appropriate register.
-3. Ask two questions: **"What makes the below so obviously AI generated?"** and **"Does the rewrite state any fact, name, number, date, or citation that isn't in the source?"** Answer briefly. A fabrication is a defect even when it sounds more human than the vague original.
-4. Revise into a **final rewrite** that addresses them and contains no em or en dashes (see §14).
+1. Settle the tone and read its profile (see Tone Selection).
+2. Read the input carefully and identify every instance of the patterns above.
+3. Write a **draft rewrite**. Check that it reads naturally aloud, varies sentence length, prefers specific details and simple constructions (is/are/has), and keeps the appropriate register.
+4. Ask two questions: **"What makes the below so obviously AI generated?"** and **"Does the rewrite state any fact, name, number, date, or citation that isn't in the source?"** Answer briefly. A fabrication is a defect even when it sounds more human than the vague original.
+5. Revise into a **final rewrite** that addresses them and contains no em or en dashes (see §14).
+
+Scan the final rewrite before returning it: no em or en dashes, straight quotes, one consistent person throughout (don't drift between *I*, *we*, and *the author*), and a register that matches the profile's personality level.
 
 In pasted-text mode, deliver the draft, the brief "still-AI" bullets, the final rewrite, and (optionally) a short summary of changes. In file and embedded modes, run the same loop but deliver only what the mode calls for (see Invocation Modes).
 

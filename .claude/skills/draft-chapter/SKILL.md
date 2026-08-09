@@ -68,6 +68,19 @@ The sequence matters more than any individual step.
    looks wrong, and silence means continue.
 4. **Draft.** Load the `humanizer` skill first and apply its checklist, along
    with the writing defaults in `AGENTS.md` and the SPEC's own writing rules.
+   The humanizer runs embedded here: never ask which tone, pick the profile
+   from what is being drafted and read only that one.
+
+   | Target | Tone profile |
+   |---|---|
+   | Chapter section prose | what the SPEC voice row names: "first-person practitioner" (the AGENTS.md default) is `tone-chapter`; a SPEC declaring a textbook or narrative voice is `tone-textbook` / `tone-narrative` |
+   | "Your turn" lab, step-by-step walkthrough | `tone-lab` |
+   | Appendix, glossary, version matrix | `tone-appendix` |
+   | Files under `frontmatter/` | `tone-front-matter` |
+   | Back-cover, catalog, or landing-page copy | `tone-blurb` |
+
+   One chapter can span tones: the lab section of an otherwise `tone-chapter`
+   chapter is judged as `tone-lab`.
    Scaffold to convention: `chapters/NN-slug/ch.tex` holds `\chapter`, `\label`
    and a short opener, then `\input`s one file per section, with every path
    written from the book root.
