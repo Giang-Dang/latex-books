@@ -1,0 +1,61 @@
+% Ô nhớ LSTM 1997, vẽ lại hình 1 của bài báo theo ký hiệu của sách.
+% Bản 1997: không có cổng quên, tự nối cố định 1.0.
+% Mono-safe: chỉ dùng nét liền, nét đứt, mức xám và hình dạng node.
+\begin{tikzpicture}[
+  >= Stealth,
+  ham/.style     = {draw, circle, minimum size = 7mm, inner sep = 0pt,
+                    font = \footnotesize},
+  nhan/.style    = {draw, circle, fill = black, minimum size = 2.2mm,
+                    inner sep = 0pt},
+  cong/.style    = {draw, circle, minimum size = 8mm, inner sep = 0pt,
+                    font = \footnotesize},
+  mui/.style     = {->, line width = 0.6pt, black!75},
+  ghichu/.style  = {font = \footnotesize},
+  nho/.style     = {font = \scriptsize},
+]
+
+  % --- đường chính: cell input -> g -> nhân -> CEC -> g_out -> nhân -> output
+  \node[ham]  (g)    at (1.4, 1.6) {\(g_{\mathrm{in}}\)};
+  \node[nhan] (nin)  at (2.9, 1.6) {};
+  \node[ham]  (cec)  at (4.4, 1.6) {\(\vect{c}_t\)};
+  \node[ham]  (gout) at (5.9, 1.6) {\(g_{\mathrm{out}}\)};
+  \node[nhan] (nout) at (7.4, 1.6) {};
+
+  % --- khung ô nhớ
+  \begin{scope}[on background layer]
+    \draw[black!55, line width = 0.5pt] (0.6, 0.75) rectangle (8.1, 2.75);
+  \end{scope}
+  \node[ghichu, anchor = north west, black!60] at (0.65, 2.72) {ô nhớ};
+
+  % --- tự nối cố định 1.0: đây là CEC
+  \draw[mui] (cec) to[out = 120, in = 60, looseness = 6]
+    node[above, nho] {\(1.0\)} (cec);
+
+  % --- luồng ngang
+  \draw[mui] (0.0, 1.6) -- (g) node[midway, above, nho] {\(\vect{a}^{c}_t\)};
+  \draw[mui] (g)    -- (nin);
+  \draw[mui] (nin)  -- (cec);
+  \draw[mui] (cec)  -- (gout);
+  \draw[mui] (gout) -- (nout);
+  \draw[mui] (nout) -- (8.7, 1.6) node[right, nho] {\(\vect{h}_t\)};
+
+  % --- hai cổng, nằm dưới khung
+  \node[cong] (cin)  at (2.9, -0.35) {\(\vect{i}_t\)};
+  \node[cong] (cout) at (7.4, -0.35) {\(\vect{o}_t\)};
+  \draw[mui] (cin)  -- (nin);
+  \draw[mui] (cout) -- (nout);
+  \draw[mui] (2.9, -1.35) -- (cin)
+    node[midway, right, nho] {\(\vect{a}^{i}_t\)};
+  \draw[mui] (7.4, -1.35) -- (cout)
+    node[midway, right, nho] {\(\vect{a}^{o}_t\)};
+  \node[nho, anchor = north] at (2.9, -1.4) {cổng vào};
+  \node[nho, anchor = north] at (7.4, -1.4) {cổng ra};
+
+  % --- chỗ trống mà bản 2000 sẽ lấp vào.
+  % Đường dẫn đi thẳng xuống dưới hai nhãn cổng rồi mới có chữ: kéo ngang ở
+  % cao độ của cổng thì chữ đâm vào chính node cổng ra.
+  \draw[densely dashed, black!45, line width = 0.5pt] (4.4, 0.75) -- (4.4, -2.0);
+  \node[nho, anchor = north, black!55, align = center] at (4.4, -2.05)
+    {chỗ cổng quên của Gers 2000 sẽ nối vào;\\ bản 1997 để trống};
+
+\end{tikzpicture}

@@ -1,0 +1,115 @@
+\section{Giải phương trình \enquote{đạo hàm bằng 1}}
+\label{sec:ch04-dong-loi-khong-doi}
+
+\index{vòng quay lỗi không đổi!phương trình gốc}%
+Mục 3.2 của bài bắt đầu từ chỗ nhỏ nhất có thể: một unit duy nhất, tự nối vào
+chính nó bằng đúng một trọng số \(w_{jj}\), không có gì khác. Viết
+\(\vartheta_j(t)\) cho tín hiệu lỗi tới unit \(j\) ở bước \(t\), tức ký hiệu
+của bài cho đại lượng mà chương~\ref{ch:ky-hieu-va-bptt} đẩy ngược qua thời
+gian. Với một unit như trên, tín hiệu ấy đi ngược một bước thì bị nhân với
+
+\begin{equation}
+  \pd{\vartheta_j(t)}{\vartheta_j(t+1)} = f_j'(a_j(t))\, w_{jj},
+  \label{eq:ch04-thua-so-mot-unit}
+\end{equation}
+
+trong đó \(a_j(t)\) là \tn{tiền kích hoạt}{pre-activation} của unit và \(f_j\)
+là \tn{hàm kích hoạt}{activation function} của nó. Bài không hỏi làm sao cho
+thừa số này gần 1. Bài đặt nó bằng 1 rồi giải:
+
+\begin{equation}
+  f_j'(a_j(t))\, w_{jj} = 1.0 \quad \text{với mọi } t.
+  \label{eq:ch04-rang-buoc}
+\end{equation}
+
+Đây là một phương trình vi phân theo \(a_j\), và nó chỉ có một họ nghiệm. Lấy
+tích phân hai vế theo \(a_j(t)\):
+
+\begin{equation}
+  f_j(a_j(t)) = \frac{a_j(t)}{w_{jj}} + C.
+  \label{eq:ch04-nghiem}
+\end{equation}
+
+Đọc kết quả này chậm, vì nó nói hai chuyện chứ không phải một. Chuyện thứ nhất:
+\(f_j\) phải \emph{affine}, và nếu muốn unit giữ nguyên activation chứ không
+trôi đều thì hằng số \(C\) phải bằng không, tức \(f_j\) tuyến tính. Không phải
+\enquote{nên chọn hàm ít bão hòa}, mà là tuyến tính, không còn lựa chọn nào
+khác. Bài in nghiệm với \(C = 0\) mà không nhắc tới hằng số; bài tập~1 cuối
+chương hỏi lại chỗ này. Chuyện thứ hai đến khi thay \(w_{jj} = 1.0\) vào, lúc
+đó \(f_j\) là ánh xạ đồng nhất và
+
+\begin{equation}
+  y_j(t+1) = f_j(w_{jj}\, y_j(t)) = y_j(t).
+  \label{eq:ch04-giu-nguyen}
+\end{equation}
+
+Activation của unit đứng yên. Không phải nó nhớ lâu; nó không quên gì cả, vì
+không có gì trong phép cập nhật làm nó thay đổi. Bài gọi cấu trúc này là
+\tn{vòng quay lỗi không đổi}{constant error carousel}, viết tắt là CEC, và nó
+là hạt nhân của toàn bộ kiến trúc còn lại.
+
+\subsection*{Lệch khỏi 1 đắt bao nhiêu}
+
+\index{vòng quay lỗi không đổi!vì sao cố định trọng số}%
+Một câu hỏi hợp lý ở đây là vì sao phải \emph{cố định} \(w_{jj}\) ở 1 thay vì
+để mạng học lấy một giá trị gần 1. Chương~\ref{ch:phan-tich} đã trả lời bằng lý
+thuyết, nhưng con số cụ thể thì đáng nhìn. Với unit tuyến tính, dòng lỗi qua
+\(q\) bước đúng bằng \(w^{q}\):
+
+\begin{minted}{text}
+     w  q=1         q=10        q=50        q=100
+  0.90  9.0000e-01  3.4868e-01  5.1538e-03  2.6561e-05
+  0.99  9.9000e-01  9.0438e-01  6.0501e-01  3.6603e-01
+  1.00  1.0000e+00  1.0000e+00  1.0000e+00  1.0000e+00
+  1.01  1.0100e+00  1.1046e+00  1.6446e+00  2.7048e+00
+  1.10  1.1000e+00  2.5937e+00  1.1739e+02  1.3781e+04
+\end{minted}
+
+Lệch một phần trăm, tức \(w = 0.99\), làm tín hiệu còn 0.36603 sau 100 bước;
+lệch một phần trăm theo chiều kia làm nó thành 2.7048. Lệch mười phần trăm cho
+0.000026561 và 13781. Một tham số học được thì trong lúc huấn luyện nó \emph{sẽ}
+lang thang quanh 1, và bảng trên là bảng giá của việc lang thang. Cố định nó
+không phải là lười; đó là chỗ duy nhất trong kiến trúc mà một con số được biết
+chính xác, và tiêu nó đi để đổi lấy một tham số nữa là một đổi chác tồi.
+
+\subsection*{Vì sao một unit sigmoid không làm được}
+
+\index{bão hoà!chặn 1/4 của sigmoid}%
+Ràng buộc~\eqref{eq:ch04-rang-buoc} cũng loại luôn khả năng dùng một unit phi
+tuyến thông thường, và đáng bỏ ra hai phút để thấy nó loại theo kiểu nào.
+
+Với sigmoid, \(f'\) không bao giờ vượt \(1/4\). Vậy để tích \(f'(a) w\) chạm
+tới 1 thì cần \(w \ge 4\), đó là điều kiện cần và nó đến từ số học chứ không từ
+huấn luyện. Nhưng đúng tại \(w = 4\) thì \(f'(a) \cdot 4 = 1\) chỉ đúng khi
+\(f'(a) = 1/4\), tức chỉ tại đúng một điểm \(a = 0\). Trạng thái rời khỏi điểm
+đó là ràng buộc gãy. Tôi cho chạy thử một unit sigmoid tự nối, không input,
+không bias, 100 bước:
+
+\begin{minted}{text}
+     w  factor t=1   factor t=100 product q=100
+  1.00  0.235004     0.224704     1.5382e-65
+  2.00  0.393224     0.263401     2.1187e-58
+  4.00  0.419974     0.076133     1.2052e-111
+  8.00  0.141302     0.002689     5.5338e-256
+\end{minted}
+
+\begin{measured}{unit sigmoid không giữ được dòng lỗi ở bất kỳ trọng số nào}
+\(w = 4\) là trọng số nhỏ nhất mà về lý thuyết ràng buộc có thể đạt được, và nó
+cho tích \(1.2052\) nhân mười mũ trừ 111, tức \emph{tệ hơn} \(w = 2\) khoảng
+năm mươi ba bậc độ lớn. Ở \(w = 8\) thì hệ số mỗi bước tụt xuống 0.002689 ngay
+tại bước 100.
+
+Đo bằng \code{experiments/ch04\_cec.py} tại tag \code{ch04}.
+\end{measured}
+
+Thứ tự của các con số ấy mới là chỗ đáng nhìn, chứ không phải độ nhỏ của chúng.
+Trọng số lớn nhất trong bảng cho tích nhỏ nhất, và lý do là
+\tn{bão hòa}{saturation}: \(w\) lớn đẩy tiền kích hoạt ra xa gốc, \(f'\) sụt
+theo, và mức sụt ấy ăn hết phần mà \(w\) lớn mang lại. Không có \(w\) nào cứu
+được unit sigmoid, và bảng trên cho thấy lý do không phải là \(w\) chưa đủ lớn.
+Đường thoát duy nhất là đổi \(f\), và
+phương trình~\eqref{eq:ch04-nghiem} đã nói đổi thành gì.
+
+Đến đây bài đã có một unit giữ được thông tin vô hạn lâu. Nó cũng có một unit
+vô dụng: một hằng số không đọc được input và không ai đọc được nó. Mục sau là
+chỗ bài tự phá cái nghiệm nó vừa tìm ra.

@@ -1,0 +1,99 @@
+\section{Phép cắt gradient trong bản gốc}
+\label{sec:ch04-cat-gradient}
+
+\index{lan truyền ngược cắt cụt!ba phép thế}%
+Tóm tắt của bài mở câu thứ ba bằng \enquote{Truncating the gradient where this
+does not do harm}~\autocite{hochreiter1997lstm}. Phép cắt nằm ngay ở đó, trong
+tóm tắt, câu liền sau câu giới thiệu cái tên LSTM. Thuật toán 1997 không tính
+gradient; nó tính gradient với ba đạo hàm bị thay bằng không, và ba đạo hàm ấy
+được liệt kê tên trong phụ lục A.1:
+
+\begin{equation}
+  \jac{\vect{a}^{i}_t}{\vect{h}_{t-1}} \to \mat{0}, \qquad
+  \jac{\vect{a}^{o}_t}{\vect{h}_{t-1}} \to \mat{0}, \qquad
+  \jac{\vect{a}^{c}_t}{\vect{h}_{t-1}} \to \mat{0}.
+  \label{eq:ch04-ba-phep-the}
+\end{equation}
+
+Đọc kỹ ba dòng này thì thấy chúng cắt đúng một thứ: đường đi ngược \emph{qua}
+\(\vect{h}_{t-1}\) về quá khứ. Bài nói rõ phần còn lại được giữ, rằng lỗi tới
+net input của \tn{ô nhớ}{memory cell} và của cổng \enquote{do not get
+propagated back further in time (although they \emph{do} serve to change the
+incoming weights)}~\autocite{hochreiter1997lstm}.
+
+Khác biệt ấy quan trọng, và trong code nó là một chữ:
+
+\begin{minted}{python}
+for t in range(inputs.shape[0]):
+    h_prev = states[-1].h.detach() if truncate else states[-1].h
+    states.append(self.step(states[-1].c, h_prev, inputs[t]))
+\end{minted}
+
+\code{detach} trên \(\vect{h}_{t-1}\) làm đúng việc bài mô tả: tích với
+\(\vect{h}_{t-1}\) vẫn được lấy nên \(\mat{W}_{hi}\), \(\mat{W}_{ho}\) và
+\(\mat{W}_{hc}\) vẫn nhận gradient của mình, nhưng không có gì chảy ngược tiếp
+qua \(\vect{h}_{t-1}\). Chỗ \emph{không} được detach là \code{states[-1].c}.
+Đường đó là CEC, và cắt nó là bỏ đi thứ duy nhất bài xây.
+
+\subsection*{Phép cắt đắt bao nhiêu}
+
+\index{lan truyền ngược cắt cụt!chi phí đo được}%
+Bài khẳng định phép cắt không gây hại, và khẳng định ấy có chống lưng: họ nói
+đã chạy vài thí nghiệm với LSTM không cắt và không thấy khác biệt đáng kể, với
+lý do là ngoài CEC thì dòng lỗi vốn tắt rất nhanh. Đó là một khẳng định về
+\emph{kết quả huấn luyện}. Tôi muốn một con số cho một thứ hẹp hơn và kiểm được
+rẻ hơn: hai vector gradient ấy lệch nhau bao nhiêu về hướng.
+
+\begin{measured}{góc giữa gradient cắt cụt và gradient đầy đủ}
+16 đơn vị ẩn, trọng số trong \([-0.1, 0.1]\), loss ở cuối chuỗi, cosine lấy
+trên cả chín tensor trọng số ghép lại. 20 lần rút mỗi độ dài, vì một lần rút
+cho một con số chứ không cho một xu hướng:
+
+\begin{minted}{text}
+    T  mean cosine  min cosine   mean norm ratio
+   10  0.991283     0.983478     0.985044
+   25  0.946810     0.882489     0.941741
+   50  0.804282     0.657828     0.740773
+  100  0.451933     0.202544     0.567376
+\end{minted}
+
+Ở chuỗi 10 bước hai gradient gần như trùng nhau. Ở 100 bước cosine trung bình
+còn 0.451933, và lần rút tệ nhất còn 0.202544.
+
+Đo bằng \code{experiments/ch04\_truncation.py} tại tag \code{ch04}.
+\end{measured}
+
+Con số này không mâu thuẫn với bài, và chỗ nó không mâu thuẫn đáng nói rõ, vì
+đọc lướt thì nó trông như một cái bẫy vừa sập. Bài nói về kết quả huấn luyện
+sau khi chạy xong; tôi đo góc giữa hai vector tại khởi tạo. Hai phát biểu về
+hai đại lượng khác nhau, và cả hai có thể cùng đúng.
+
+Chỗ thú vị là ghép nó với số đo ở mục~\ref{sec:ch04-dao-ham}. Thành phần mà
+phép cắt vứt đi chính là thành phần phình theo khoảng cách, thành phần đưa
+\(\norm{\jac{\vect{c}_t}{\vect{c}_k}}\) lên 128.34 ở khoảng cách 100. Hai bảng
+đo hai thứ nhưng chúng khớp vào nhau: gradient đầy đủ ở chuỗi dài lệch khỏi
+gradient cắt cụt \emph{vì} nó bị thành phần rò rỉ ấy chi phối. Vậy nên
+\enquote{cắt đi mà không hại} có một cách đọc mạnh hơn cách bài viết ra. Cái bị
+cắt không phải thông tin bị hy sinh cho tốc độ. Nó là đường duy nhất trong ô
+nhớ vẫn còn hành xử như một RNN thường, và cắt nó là chỗ lời hứa
+\enquote{không đổi} chuyển từ gần đúng sang đúng. Con số 128.34 và bảng cosine
+ở trên là hai cách nhìn cùng một thành phần.
+
+Tôi không đọc chỗ này thành \enquote{bài trình bày sai lý do của chính mình}.
+Bài nói phép cắt hiệu quả và không hại, và cả hai vế đều đúng. Chỉ là phần
+\enquote{không hại} hoá ra không phải một sự nhân nhượng, và
+phương trình~\eqref{eq:ch04-jac-cat} của mục trước không tồn tại nếu thiếu nó.
+
+\subsection*{Cái phép cắt thật sự lấy đi}
+
+\index{lan truyền ngược cắt cụt!giới hạn}%
+Có một cái giá, và bài tự nêu ở mục 6 chứ không giấu. Bản cắt cụt không giải
+được những bài kiểu \enquote{strongly delayed XOR}, nơi phải lấy XOR của hai
+input cách xa nhau. Lý do không phải là dòng lỗi: lưu \emph{một} trong hai
+input không làm giảm sai số kỳ vọng chút nào, nên bài toán không phân rã được
+thành một mục tiêu con dễ hơn để bám vào. Mạng không có bậc thang nào để leo.
+
+Bài nói thẳng rằng về lý thuyết dùng gradient đầy đủ có thể vòng qua chỗ này,
+và nói luôn là họ không khuyến nghị: nó tốn hơn, dòng lỗi không đổi qua CEC chỉ
+chứng minh được cho bản cắt cụt, và mấy thí nghiệm họ đã chạy với bản không cắt
+không cho khác biệt đáng kể.

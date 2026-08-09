@@ -16,17 +16,19 @@ picks a side. Chapter titles are quoted in Vietnamese exactly as they are set.
 
 ## Status
 
-Chapters 01, 02 and 03 drafted. Six appendices now: C was split out of B on
+Chapters 01, 02, 03 and 04 drafted. Six appendices now: C was split out of B on
 2026-08-09 (decision 28) and the old C, D and E became D, E and F.
 
 Chapter 03 was drafted out of order, in a session that branched before chapters
 01 and 02 landed on main. Nothing was lost, but the reconciliation cost real
-time; decision 30 exists so the next session does not repeat it.
+time; decision 30 exists so the next session does not repeat it. Chapter 04
+followed it and cost nothing to reconcile.
 
-Next action: chapter 04, "Sửa bằng kiến trúc". It inherits a settled notation
-(decision 25), a companion repo with tags through `ch03`, and the requirement in
-decision 24 that its vocabulary stay inside software engineering, ML and
-mathematics.
+Next action: chapter 05, "Encoder-decoder". Two things are owed to it before
+drafting starts. The venue of the Sutskever paper is still unverified: the copy
+on file states none, and the source manifest has carried that debt since the
+skeleton session. And the running example is still proposed rather than settled
+(see open items), which chapter 05 is the first chapter that actually needs.
 
 ## Decision log
 
@@ -66,6 +68,10 @@ is re-opened only by recording what changed and why, in the row.
 | 29 | Appendices are lookup only | Settled 2026-08-09 after the author cut three openers as redundant. An appendix carries entries, not argument: no scene-setting paragraph, no rationale section, no closing note about how the table is maintained, no transition between entries. Why a term was translated, why a symbol was chosen, and how a table grows all belong in this SPEC. A reader reaches an appendix from the index, reads one row, and leaves |
 | 30 | Check `origin/main` before drafting, not after | Chapter 03 was drafted in a worktree branched before chapters 01 and 02 landed, so it rebuilt appendix A and appendix B from scratch, duplicated the abbreviation table, and used a loss symbol the book had already chosen. None of it was lost, but the merge cost more than the drafting. The rule: `git fetch origin && git log --oneline origin/main -- books/<name>` before the first file is written, and read the SPEC from `origin/main` rather than from the working tree. This book's SPEC and its appendices are shared state, and two sessions can be editing them at once |
 | 31 | Listings are 73 columns wide | Measured 2026-08-09, not derived: `\the\textwidth` is 441.01773pt under this book's geometry, one character of texgyrecursor at `\small` in an 11pt class advances exactly 6.0pt, and a built page confirms that a 73-column line carrying a break point sets flush to the margin while the same line at 74 gains a continuation arrow. Enforced by `Listings.MaxLineLength` in `check-chapter.psd1`. The reason it needed a rule at all: `\setminted` loads `breaklines`, which breaks an over-wide line silently, so no Overfull box is raised and `MaxOverfull = 0` never fires. An Overfull box comes back only for a line with no break point anywhere, which real code never is. Chapter 03 shipped three tables at 82 to 101 columns and two code listings at 80 and 81 through that blind spot; all five were found by reading the PDF. A block that needs more width says so in its own option list and is not measured, which is how chapter 01's `\footnotesize` listings pass |
+
+| 32 | The two squashing functions of LSTM 1997 are `g_in` and `g_out` | The paper writes them `g` (range [-2,2]) and `h` (range [-1,1]), and `h` collides with the book's hidden state `h_t` head-on: the cell output equation sets `y^c = y^out h(s_c)`, which in the book's notation would be `h_t` on both sides meaning two different things. Renamed rather than worked around, and appendix A carries the mapping plus two further reading traps: the paper's table 10 contradicts its own appendix A.1 about which range belongs to which function, and `c_j` in the paper is the *name* of a cell rather than its state, which is `s_{c_j}`. That last one had already gone wrong: appendix A shipped with LSTM 1997 writing `c_t` for the cell state. Fixed in the chapter 04 session |
+| 33 | The book sets the memory cell in layer form, and the parameter count follows from that | The 1997 paper's hidden layer is fully connected: a gate receives connections from every memory cell *and* every other gate unit. What the field converged on, and what `torch.nn.LSTM` implements, is a layer form where all blocks read the same `h_{t-1}`. The book teaches the layer form, because it is what a reader will meet, and says so in the chapter rather than letting the difference pass silently. The difference is not cosmetic: it is exactly why the paper quotes a factor of `3^2` while everyone else quotes 4. Measured at tag `ch04`: layer form gives 3 for LSTM 1997, 4 for LSTM 2000, 3 for Cho's unit; the paper's own topology gives exactly 9.0000 on the recurrent block and 8.2603 over a whole layer once input weights and biases are counted. **This also corrects the chapter's own TOC line**, which said "four times the parameters" and was describing the 2000 architecture, not the one chapter 04 reads. Every derivative argument in the chapter holds under both topologies, because neither has a path into `c_{t-1}` other than the first term of the state update |
+| 34 | Truncation is load-bearing, not a shortcut, and the chapter says so | The paper presents the gradient truncation as an efficiency measure that does no harm. Measured at tag `ch04`, the untruncated derivative through the cell *grows* with distance, reaching 128.34 at distance 100 even at the paper's own initialization scale, while the truncated one is bit-exactly 1 at every distance. So the truncation is also what makes the constant error carousel constant rather than approximately constant. The chapter states this as a reading of the paper's own equations, explicitly not as a correction: the paper's "no harm" claim is about training outcomes, and the chapter's cosine measurement is about gradient direction at initialization, which are two different quantities. Keeping those apart is the whole point of the passage |
 
 ## Version baseline
 
@@ -111,9 +117,13 @@ created. That section is the hinge to the next chapter and is not optional.
    the paper's two remedies, clipping and the norm-preserving regularizer, and
    why only one is still used; gap: it fixes training, not memory
 4. **Sửa bằng kiến trúc** (Hochreiter, Schmidhuber 1997) - the constant error
-   carousel and the derivative through it; input and output gates; the gradient
-   truncation in the original; bridge boxes for the Gers 2000 forget gate,
-   peepholes, and Cho's GRU; gap: still sequential, four times the parameters
+   carousel derived by solving the constant-error equation, and the derivative
+   through it; the input and output weight conflicts, the second of them solved
+   in closed form; input and output gates; the gradient truncation in the
+   original, and the measurement showing it is what makes the carousel exactly
+   constant; bridge boxes for the Gers 2000 forget gate, peepholes, and Cho's
+   gated unit; gap: still sequential, and three times the parameters of a plain
+   layer rather than four (decision 33)
 
 ### Part III - Ánh xạ chuỗi sang chuỗi
 
@@ -191,7 +201,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 01 | drafted | Companion repo `rnn-to-transformer-lab` tag `ch01`; notation in appendix A; glossary seeded in appendix B; research notes in `research/2026-08-09-*.md` |
 | 02 | drafted | Adding problem + copy task experiments; gradient norm measured against temporal distance; bridge boxes for Hochreiter 1991 and Bengio 1994; refs.bib first entries; CPU budgets ~10 min for two tasks |
 | 03 | drafted | Venue confirmed: ICML 2013, PMLR 28(3):1310-1318. Companion tag `ch03`. Corrects the paper's eigenvalue wording against its own singular-value proof |
-| 04 | not-started | |
+| 04 | drafted | Companion tag `ch04`. Reads the 1997 paper rather than the modern cell: no forget gate, squashing functions that are not tanh, truncation as three named substitutions. Input weight conflict solved in closed form (`w* = 1/T`). Two TikZ figures. Corrects appendix A, which had the paper writing `c_t` for the cell state when it writes `s_c` |
 | 05 | not-started | Must verify the venue of the Sutskever paper; the PDF on file states none |
 | 06 | not-started | |
 | 07 | not-started | |
@@ -364,6 +374,32 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   2026-08-09 by decision 31 and the `Listings` family in
   `scripts/check-chapter.ps1`. Two of the five listings it was written for were
   still wrapping in the merged chapter when the family first ran.
+- **Chapter 03's captured tables sit at `\footnotesize` without needing to.**
+  Found by the chapter 04 audit 2026-08-10, in chapter 04's own tables, and
+  fixed there: all eight were between 19 and 68 columns, well inside the
+  73-column budget at `\small`, so the smaller size bought nothing and cost the
+  page a third type size. Decision 31 says the option list is for a block that
+  genuinely needs the width, and it also waives `Listings.MaxLineLength`, so
+  every one of those blocks was invisible to the gate that exists to measure
+  them. Chapter 03 has the same pattern and was left alone, because it is not
+  this session's chapter. Whoever opens chapter 03 next should widen them and
+  let the check see them.
+- **Chapter 04 leans on chapter 02's adding problem, which chapter 02 says is
+  the wrong test.** Chapter 02 measured a gradient ratio near 1.0 out to
+  `T = 100` and concluded in bold that the adding problem is not a good test
+  for vanishing gradients. Chapter 04 uses the same task to show the memory
+  cell succeeding where the plain RNN does not, which is true and reproducible,
+  but it is not evidence about the carousel. The chapter now says so and points
+  the result at the input weight conflict instead, which is what the task
+  actually probes. Recorded because the first draft did not say so, and the
+  audit is what caught it. If a later chapter wants a task that does isolate
+  the carousel, chapter 02's copy task is the one with the measured decay.
+- **The `hòa` / `hoà` split.** Appendix B spells it `bão hòa`; chapters 01 and
+  02 follow, chapters 03 and 04 wrote `bão hoà`. Chapter 04 was changed to
+  match appendix B. Chapter 03 still differs, and the same split will bite any
+  Vietnamese word with this diphthong, so the book should state which
+  orthography it uses rather than settling it one word at a time. Both spellings
+  are standard; this is a house-style choice, not a correctness one.
 
 
 - **The companion repo now exists.** Named `rnn-to-transformer-lab`, public
@@ -406,7 +442,11 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   along with the appendix B row and its footnote. Both are defensible; the
   second is what a Vietnamese ML reader would probably expect, and the first is
   what the book currently promises. Whichever wins gets a decision row, because
-  this is the term the first three chapters are about.
+  this is the term the first three chapters are about. **Now four chapters:**
+  chapter 04 writes the bare English "gradient" on 22 lines and `do doc` once,
+  at its first use in the chapter, which is what the borrowed-term rule asks
+  for and still leaves the appendix B entry unhonoured. The split widens by one
+  chapter per session, and the cost of choosing the first option grows with it.
 - **The running example is proposed, not settled.** A toy Vietnamese-English
   parallel set carried from chapter 05 to chapter 08, chosen because Vietnamese
   and English word order differ enough that chapter 06's alignment matrix shows

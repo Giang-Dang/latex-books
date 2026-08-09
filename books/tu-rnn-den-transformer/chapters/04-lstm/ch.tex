@@ -1,3 +1,38 @@
-% Scope (SPEC table of contents): Hochreiter và Schmidhuber 1997. CEC và dẫn xuất đạo hàm qua nó; cổng vào và cổng ra; gradient bị cắt cụt trong bản gốc; cầu nối forget gate của Gers 2000, peephole, GRU của Cho 2014; gap: vẫn tuần tự, tham số gấp bốn.
+% Scope (SPEC table of contents): Hochreiter và Schmidhuber 1997. CEC dẫn ra bằng cách giải phương trình đạo hàm bằng 1, và đạo hàm qua nó; hai xung đột trọng số, cái thứ nhất giải bằng dạng đóng; cổng vào và cổng ra; gradient bị cắt cụt trong bản gốc, và số đo cho thấy chính phép cắt làm CEC không đổi; cầu nối forget gate của Gers 2000, peephole, đơn vị có cổng của Cho 2014; gap: vẫn tuần tự, và gấp ba tham số một tầng thường chứ không phải gấp bốn (quyết định 33).
 \chapter{Sửa bằng kiến trúc}
 \label{ch:lstm}
+
+Chương~\ref{ch:phan-tich} dừng lại ở một câu hỏi. Đường đi của \tn{độ dốc}{gradient} qua thời
+gian là một tích, và mỗi thừa số trong tích đó là một con số mà huấn luyện phải
+giữ cho đừng lệch khỏi 1. Pascanu và cộng sự giữ nó bằng một số hạng phạt.
+Câu hỏi là có dựng được một kiến trúc mà thừa số ấy \emph{bằng} 1 do cấu tạo
+hay không.
+
+Câu trả lời có trước câu hỏi mười sáu năm. Hochreiter và Schmidhuber công bố
+Long Short-Term Memory, viết tắt là LSTM, năm 1997~\autocite{hochreiter1997lstm},
+và toàn bộ kiến trúc mọc ra từ đúng một ràng buộc: viết phương trình
+\enquote{đạo hàm bằng 1} rồi giải nó, xem nó bắt hàm kích hoạt và trọng số phải
+là gì, rồi dựng phần còn lại của mạng quanh cái nghiệm đó.
+
+Bản tôi đọc là bản Neural Computation 9(8):1735-1780. File PDF đánh 32 trang,
+kỷ yếu đánh từ 1735, nên số trang hai bản không dùng lẫn được. Bài dài, có sáu
+bộ thí nghiệm và một phụ lục hai phần, và phần đáng đọc nhất không phải phần mô
+tả kiến trúc mà là mục 3.2, chỗ họ dựng một phiên bản hỏng trước đã.
+
+Có một chuyện cần nói trước khi vào bài, vì nó quyết định bạn đọc chương này
+với kỳ vọng nào. \textbf{LSTM năm 1997 không phải LSTM bạn đã dùng.} Nó không
+có \tn{cổng quên}{forget gate}. Hai hàm nén của nó không phải tanh. Và gradient
+của nó bị cắt cụt có chủ ý, ở ba chỗ được liệt kê tên. Ba khác biệt ấy không
+phải chi tiết lịch sử: cái thứ nhất là một kiến trúc khác, cái thứ hai là hai
+hàm lệch khỏi tanh tới hơn 0.8 ở chỗ xa nhau nhất, và cái thứ ba là thứ làm cho
+lời hứa trung tâm của bài đúng theo nghĩa đen thay vì gần đúng. Chương này đọc
+bài 1997, không đọc bản trong đầu bạn.
+
+\input{chapters/04-lstm/01-dong-loi-khong-doi}
+\input{chapters/04-lstm/02-hai-xung-dot}
+\input{chapters/04-lstm/03-o-nho-va-cong}
+\input{chapters/04-lstm/04-dao-ham-qua-cec}
+\input{chapters/04-lstm/05-cat-gradient}
+\input{chapters/04-lstm/06-cau-noi}
+\input{chapters/04-lstm/07-con-lai-gi}
+\input{chapters/04-lstm/08-bai-tap}

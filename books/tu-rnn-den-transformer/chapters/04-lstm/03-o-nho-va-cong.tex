@@ -1,0 +1,129 @@
+\section{Ô nhớ}
+\label{sec:ch04-o-nho}
+
+\index{ô nhớ!kiến trúc 1997}%
+Bài đặt CEC vào giữa và dựng hai cổng nhân quanh nó. Kết quả gọi là
+\tn{ô nhớ}{memory cell}. Cổng thứ nhất, \tn{cổng vào}{input gate}, quyết định
+lúc nào input được ghi vào; cổng thứ hai, \tn{cổng ra}{output gate}, quyết định
+lúc nào nội dung được đọc ra. Mỗi cổng là một unit sigmoid bình thường, có
+trọng số riêng, huấn luyện bình thường. Cái không bình thường là cách dùng
+output của chúng: nhân, chứ không cộng.
+
+Viết theo ký hiệu của sách. Ba tiền kích hoạt, mỗi cái một khối trọng số:
+
+\begin{align}
+  \vect{a}^{i}_t &= \mat{W}_{xi}\vect{x}_t + \mat{W}_{hi}\vect{h}_{t-1} + \vect{b}_i,
+  \label{eq:ch04-a-i} \\
+  \vect{a}^{o}_t &= \mat{W}_{xo}\vect{x}_t + \mat{W}_{ho}\vect{h}_{t-1} + \vect{b}_o,
+  \label{eq:ch04-a-o} \\
+  \vect{a}^{c}_t &= \mat{W}_{xc}\vect{x}_t + \mat{W}_{hc}\vect{h}_{t-1} + \vect{b}_c.
+  \label{eq:ch04-a-c}
+\end{align}
+
+Hai cổng, rồi trạng thái, rồi output:
+
+\begin{align}
+  \vect{i}_t &= \sigma(\vect{a}^{i}_t), \qquad
+  \vect{o}_t = \sigma(\vect{a}^{o}_t),
+  \label{eq:ch04-cong} \\
+  \vect{c}_t &= \vect{c}_{t-1} + \vect{i}_t \odot g_{\mathrm{in}}(\vect{a}^{c}_t),
+  \qquad \vect{c}_0 = \vect{0},
+  \label{eq:ch04-cap-nhat-c} \\
+  \vect{h}_t &= \vect{o}_t \odot g_{\mathrm{out}}(\vect{c}_t).
+  \label{eq:ch04-h}
+\end{align}
+
+\index{trạng thái ô nhớ!hệ số bằng 1}%
+Phương trình~\eqref{eq:ch04-cap-nhat-c} là chỗ cả chương xoay quanh. Hệ số của
+\(\vect{c}_{t-1}\) là 1. Không phải một tham số khởi tạo gần 1, không phải một
+đại lượng mạng tính ra: số 1, cố định, không học. Đó là
+nghiệm~\eqref{eq:ch04-nghiem} của mục trước, đặt vào chỗ nó thuộc về.
+\(\odot\) là nhân từng phần tử, và \tn{trạng thái ô nhớ}{cell state}
+\(\vect{c}_t\) là đại lượng chạy dọc CEC.
+
+Hình~\ref{fig:ch04-o-nho} vẽ một ô nhớ.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch04-o-nho}
+  \caption{Một ô nhớ của bài 1997, vẽ theo hình 1 của bài. Đường ngang qua giữa
+    là CEC: trạng thái \(\vect{c}_t\) mang tự nối cố định 1.0, vẽ thành vòng
+    lặp phía trên nó, và đó là hệ số 1 trong~\eqref{eq:ch04-cap-nhat-c}. Hai
+    cổng nằm dưới khung và tác động bằng phép nhân tại hai chấm đen: cổng vào
+    chặn đường ghi, cổng ra chặn đường đọc. Nét đứt chỉ vào chỗ
+    \tn{cổng quên}{forget gate} sẽ được lắp ba năm sau; bản 1997 không có gì ở
+    đó.}
+  \label{fig:ch04-o-nho}
+\end{figure}
+
+\subsection*{Hai hàm nén không phải tanh}
+
+\index{hàm kích hoạt!g và h của bài 1997}%
+Chỗ này là chỗ trí nhớ hay phản bội. Phụ lục A.1 của bài định nghĩa ba hàm, và
+chỉ một trong ba là hàm bạn đoán:
+
+\begin{align}
+  \sigma(x) &= \frac{1}{1 + e^{-x}}, & &\text{khoảng giá trị } [0, 1],
+  \label{eq:ch04-sigma} \\
+  g_{\mathrm{out}}(x) &= \frac{2}{1 + e^{-x}} - 1, & &\text{khoảng giá trị } [-1, 1],
+  \label{eq:ch04-g-out} \\
+  g_{\mathrm{in}}(x) &= \frac{4}{1 + e^{-x}} - 2, & &\text{khoảng giá trị } [-2, 2].
+  \label{eq:ch04-g-in}
+\end{align}
+
+Cả hai hàm nén là sigmoid co giãn, không phải tanh. Quan hệ đúng là
+\(g_{\mathrm{out}}(x) = \tanh(x/2)\) và \(g_{\mathrm{in}}(x) = 2\tanh(x/2)\),
+tức tanh với đối số bị chia đôi. Khoảng lệch giữa \(g_{\mathrm{in}}\) và
+\(\tanh\) trên đoạn \([-6, 6]\) vượt 0.8 ở chỗ xa nhau nhất, nên đây không phải
+sai số làm tròn mà là hai hàm khác nhau.
+
+Một ghi chú về tên gọi. Bài viết hai hàm này là \(g\) và \(h\), nhưng \(h\) là
+\tn{trạng thái ẩn}{hidden state} của sách, nên dùng nguyên tên của bài thì hai
+ký hiệu đâm vào nhau ngay trong~\eqref{eq:ch04-h}. Sách viết
+\(g_{\mathrm{in}}\) và \(g_{\mathrm{out}}\); phụ lục~\ref{app:ky-hieu} ghi lại
+cả hai chiều.
+
+\begin{minted}{python}
+def g_in(x: torch.Tensor) -> torch.Tensor:
+    """The paper's g, equation (5) of appendix A.1. Range [-2, 2]."""
+    return 4.0 * torch.sigmoid(x) - 2.0
+
+
+def g_out(x: torch.Tensor) -> torch.Tensor:
+    """The paper's h, equation (4) of appendix A.1. Range [-1, 1]."""
+    return 2.0 * torch.sigmoid(x) - 1.0
+\end{minted}
+
+Một bước của ô nhớ, từ repo companion, là bảy dòng:
+
+\begin{minted}{python}
+a_i = x @ self.w_xi.T + h_prev @ self.w_hi.T + self.b_i
+a_o = x @ self.w_xo.T + h_prev @ self.w_ho.T + self.b_o
+a_c = x @ self.w_xc.T + h_prev @ self.w_hc.T + self.b_c
+i = torch.sigmoid(a_i)
+o = torch.sigmoid(a_o)
+c = c_prev + i * g_in(a_c)
+h = o * g_out(c)
+\end{minted}
+
+\subsection*{Khối ô nhớ, và một chỗ sách đi chệch khỏi bài}
+
+\index{khối ô nhớ!chia sẻ cổng}%
+Bài không dừng ở một cell một cặp cổng. Nhiều cell dùng chung một cổng vào và
+một cổng ra thì thành \tn{khối ô nhớ}{memory cell block}, và bài chọn cách này
+vì lưu một thông tin phân tán vào một cell đơn lẻ không dễ. Khối cỡ 1 là một
+cell thường; các thí nghiệm của bài dùng khối cỡ 1 và cỡ 2.
+
+Còn một khác biệt lớn hơn, và nó lớn đến mức mục~\ref{sec:ch04-con-lai-gi} phải
+quay lại đếm tham số theo cả hai cách. Trong bài, tầng ẩn nối \emph{đầy đủ}:
+mỗi cổng nhận kết nối từ mọi ô nhớ \emph{và} từ mọi cổng khác. Thứ mà ngành
+chốt lại về sau, và thứ \code{torch.nn.LSTM} cài đặt, là dạng tầng, nơi cả ba
+khối trọng số đọc chung một \(\vect{h}_{t-1}\). Ba
+phương trình~\eqref{eq:ch04-a-i} tới~\eqref{eq:ch04-a-c} ở trên là dạng tầng,
+và repo companion cũng vậy.
+
+Tôi chọn dạng tầng vì đó là thứ bạn sẽ gặp, không phải vì nó đúng với bài hơn.
+Với mọi lập luận về đạo hàm trong chương này thì hai topology cho cùng kết
+luận, vì cả hai đều không có đường nào chạy qua \(\vect{c}_{t-1}\) ngoài số
+hạng đầu của~\eqref{eq:ch04-cap-nhat-c}. Chỗ chúng khác nhau là số tham số, và
+đó là chỗ tôi sẽ nói lại.
