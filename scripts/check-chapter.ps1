@@ -122,6 +122,21 @@ function Get-DefaultPolicy {
             Identifiers = @('begin', 'end', 'label', 'ref', 'pageref', 'input', 'include', 'autocite')
         }
 
+        # TikZ style names that pgfkeys has already taken. house-style.md has
+        # listed these in prose since the first book; nothing enforced it, and
+        # the cost of that is one full compile that dies with a pgfkeys error
+        # naming the key rather than the style, which reads as a missing
+        # library and is not. The list is exactly the documented one: a check
+        # wider than its rule is a rule nobody agreed to.
+        #
+        # Figures are outside Paths.Prose on purpose, so this is the only
+        # family that reads them.
+        Figures      = [ordered]@{
+            Enabled      = $true
+            Paths        = @('figures/tikz')
+            ReservedKeys = @('in', 'out', 'step', 'shift', 'scale', 'text', 'style')
+        }
+
         Log          = [ordered]@{
             Enabled      = $true
             Path         = 'build/main.log'
@@ -625,6 +640,11 @@ function Format-Policy {
     } else { $bits += 'numbers=off' }
 
     $bits += "verbatim=$(if ($verbatimArmRe -and $researchBlob) { $policy.Verbatim.Environments -join ',' } else { 'off' })"
+
+    if ($policy.Figures.Enabled) {
+        $bits += "figures=$($policy.Figures.ReservedKeys.Count) reserved keys"
+    } else { $bits += 'figures=off' }
+
     $bits += "log=$(if ($policy.Log.Enabled) { "$($policy.Log.MaxOverfull)/$($policy.Log.MaxUndefined)" } else { 'off' })"
 
     return ($bits -join ' ')
@@ -894,7 +914,54 @@ foreach ($f in $charFiles) {
 }
 
 # ---------------------------------------------------------------------------
-# 11. log: parse an existing build log; never invoke latexmk (perl is not on
+# 11. figures: TikZ style names pgfkeys has already taken
+# ---------------------------------------------------------------------------
+
+# `step/.style={...}` does not shadow anything. It fails the build, and the
+# error names the key rather than the style, so it reads as a missing
+# \usetikzlibrary and sends you looking in the preamble. The whole picture is
+# lost for a word.
+#
+# Deliberately narrow. A style name is only flagged where it is being declared,
+# so `-{Stealth}` arrowheads, `text=gray` on a node and every ordinary use of
+# these keys are untouched. -Chapter does not restrict this: figures live
+# outside chapters/ and a book's figure is worth checking whichever chapter is
+# being linted.
+
+if ($policy.Figures.Enabled -and $policy.Figures.ReservedKeys.Count -gt 0) {
+    $figureFiles = @()
+    foreach ($part in $policy.Figures.Paths) {
+        $p = Join-Path $bookPath $part
+        if (Test-Path $p) {
+            $figureFiles += @(Get-ChildItem $p -Recurse -Filter '*.tex' | Sort-Object FullName)
+        }
+    }
+
+    # A declaration is `name/.style` or `name/.style args`, optionally preceded
+    # by other keys. The name may contain spaces, which TikZ allows, so the
+    # match starts after a brace or a comma rather than at a word boundary.
+    $declPattern = '(?:^|[\[,{])\s*([A-Za-z][A-Za-z0-9 ]*?)\s*/\.style'
+
+    foreach ($f in $figureFiles) {
+        $n = 0
+        foreach ($line in [System.IO.File]::ReadAllLines($f.FullName)) {
+            $n++
+            if ($line -match '^\s*%') { continue }
+
+            foreach ($m in [regex]::Matches($line, $declPattern)) {
+                $name = $m.Groups[1].Value.Trim()
+                if ($policy.Figures.ReservedKeys -contains $name) {
+                    Add-Finding $f.FullName $n 'tikz' (
+                        "style name '$name' is a pgfkeys key already; the picture will " +
+                        'fail to compile with an error naming the key rather than the style')
+                }
+            }
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 12. log: parse an existing build log; never invoke latexmk (perl is not on
 # PowerShell's PATH on this machine).
 # ---------------------------------------------------------------------------
 

@@ -1,0 +1,190 @@
+\section{Three Things That Only Break Together}
+\label{sec:ch08-only-breaks-together}
+\index{composition!failures a subgraph cannot see|(}%
+
+Both subgraphs work. Each publishes a schema, answers its own root fields,
+resolves representations and passes its tests. Hand the two schemas to a
+composer and none of that is enough.
+
+Composition is chapter~\ref{ch:composition}'s subject and I am not going to
+spend it here. But three of the errors I met belong to this chapter rather than
+to that one. Each is a setting on a subgraph, each is on by default, and no
+test of a single service can reach any of them. Until a schema has been put
+beside another one, nobody has really read it.
+
+\subsection*{Two services cannot both have \code{node}}
+
+\index{Node interface@\code{Node} interface!and federation}%
+The first error names a field neither service wrote:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The Object "Query" defines the same fields in multiple subgraphs without the
+"@shareable" directive:
+ The field "node" is defined in the following subgraphs: "catalog", "mosaic".
+ However, it is not declared "@shareable" in any of them.
+ The field "nodes" is defined in the following subgraphs: "catalog", "mosaic".
+ However, it is not declared "@shareable" in any of them.
+\end{minted}
+
+Chapter~\ref{ch:schema-design-that-survives-change} gave Mosaic the \code{Node}
+interface and the two root fields that come with it. Both services still have
+types that implement it, so both ask for global object identification, so both
+declare \code{node} and \code{nodes}. Federation~v2 refuses a field that two
+subgraphs define unless one of them says it is
+shareable~\autocite{apollo2026compositionrules}.
+
+\index{shareable@\code{@shareable}!when it would be a lie}%
+The tempting fix is to mark them shareable and move on. It would compose, and it
+would be a lie. \code{@shareable} means two subgraphs can resolve the field
+interchangeably, and these two cannot: Catalog's \code{node} knows how to fetch
+a \code{Product} and has never heard of an \code{Order}, and Mosaic's is the
+mirror image. A router free to send \code{node(id:)} to whichever service was
+convenient would answer null for roughly half the identifiers it was given, and
+which half would depend on the query plan.
+
+So the field goes. One argument to one call, in both services:
+
+\begin{minted}{csharp}
+.AddGlobalObjectIdentification(registerNodeInterface: false)
+\end{minted}
+
+That reads like it removes more than it does, and I checked exactly what
+survives. The node identifier serialiser stays registered, so every \code{[ID]}
+still encodes and the federation keys of
+section~\ref{sec:ch08-the-key-you-already-designed} are unaffected. The
+\code{Node} interface stays in both schemas. \code{Customer}, \code{Order} and
+\code{Review} still say \code{implements Node}, and so does Catalog's
+\code{Product}. The node resolvers still compile and are still there. What goes
+is \code{Query.node} and \code{Query.nodes}, and nothing else.
+
+\index{Node interface@\code{Node} interface!what the split costs}%
+That is a real loss and it should be recorded as one rather than smoothed over.
+Global object identification was two promises: that every object has an
+identifier you can hold on to, and that there is one field you can hand it back
+to. The first survives the split intact. The second does not, and it does not
+survive because it was never a property of a schema so much as of a process that
+could see everything. Chapter~\ref{ch:hard-modeling-problems} is where a
+federated graph gets a \code{node} field back, and it is a harder problem than
+it looks, because whoever answers it has to know which subgraph owns a type it
+has only ever seen as base64.
+
+\subsection*{The cost directives are not the ones the composer knows}
+
+\index{cost analysis!and composition}%
+The second error arrives once per field, for most of the fields in both
+services:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The value ""10"" provided to argument "@cost(weight: ...)" is not a valid "Int!" type.
+The definition for "@listSize" does not define the following argument that is
+provided: "slicingArgumentDefaultValue"
+\end{minted}
+
+HotChocolate stamps \code{@cost(weight: "10")} on every resolver-backed field by
+default, with the weight as a string. The composer in wgc 0.129.7 carries a
+definition whose weight is an \code{Int!}. I am not going to adjudicate which of
+them is reading the cost specification correctly, because it does not matter to
+anybody trying to ship: two tools disagree about the type of one directive
+argument, and the first thing in the world that ever compares them is the
+composer.
+
+The \code{@listSize} half is not even a disagreement. HotChocolate's own option
+for that argument is called \code{ApplySlicingArgumentDefaultValue} and its
+documentation comment reads \enquote{Defines if the non-spec slicing argument
+default value shall be applied}. The library knows it is emitting something
+outside the specification, has a switch for it, and leaves the switch on.
+
+Both switches live in one call, and both services need it:
+
+\begin{minted}{csharp}
+.ModifyCostOptions(options =>
+{
+    options.ApplyCostDefaults = false;
+    options.ApplySlicingArgumentDefaultValue = false;
+})
+\end{minted}
+
+\index{cost analysis!what turning defaults off costs}%
+What that turns off is narrower than the name suggests, and I checked this too
+because I did not want to disable a security control by accident.
+\code{ApplyCostDefaults} and \code{SkipAnalyzer} are separate settings on the
+same options class. The analyzer is still in the pipeline, the limits are still
+enforced, and an explicit \code{[Cost]} still counts. What goes away is the
+automatic weight on every resolver-backed field, and with it the cost numbers
+chapter~\ref{ch:schema-design-that-survives-change} printed for
+\code{Product.reviews}. Those measurements stand for the schema that produced
+them and do not survive this setting, which is worth saying plainly rather than
+letting a reader find out by rerunning them.
+Chapter~\ref{ch:security-hardening} is where cost is a subject rather than a
+composition problem, and it will have to set weights deliberately.
+
+\subsection*{The type nobody wrote}
+
+\index{PageCursor@\code{PageCursor}!and shareability}%
+The third error names a type that appears in neither codebase:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The Object "PageCursor" defines the same fields in multiple subgraphs without the
+"@shareable" directive:
+ The field "page" is defined in the following subgraphs: "catalog", "mosaic".
+ The field "cursor" is defined in the following subgraphs: "catalog", "mosaic".
+\end{minted}
+
+Both services have a connection, so both have a \code{PageInfo}, so both have
+the \code{PageCursor} that \code{PageInfo.forwardCursors} returns. Two subgraphs
+declaring the same object is the same problem as \code{node}, and this time
+\code{@shareable} is the right answer: a page cursor is a value with no identity
+and either service can produce one.
+
+What makes it worth a page is that HotChocolate already knows about this
+problem and fixes half of it. Read \code{FederationTypeInterceptor} at tag
+\code{16.6.0} and the comment is right there, typo and all:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+// if we find a PagingInfo we will make all fields sharable.
+if (configuration is ObjectTypeConfiguration typeCfg
+    && typeCfg.Name.Equals(PageInfoType.Names.PageInfo))
+\end{minted}
+
+\index{HotChocolate!PageInfo auto-shareable@\code{PageInfo} auto-shareable}%
+It matches one type by name. \code{PageInfo} comes out marked and every one of
+its fields is shareable in the published schema, which is why that type is not
+in the error. \code{PageCursor} arrives in the schema through \code{PageInfo},
+gets missed, and takes the blame. Any two HotChocolate subgraphs that both have
+a connection will hit this.
+
+The fix is two attributes on an empty class, in both services, and it is the
+same mechanism the rest of this repository already uses to add something to a
+type it does not own:
+
+\begin{minted}{csharp}
+[Shareable]
+[ObjectType<PageCursor>]
+public static partial class PageCursorExtension;
+\end{minted}
+
+\code{@shareable} on an object makes every field on it shareable, so there is
+nothing else to write. The published schema then says
+\code{type PageCursor @shareable} and the composer stops caring.
+
+\subsection*{What that leaves}
+
+With those three settled the two schemas compose, and I ran the composer once to
+be sure of it before writing any of this down. That is the whole of what
+chapter~\ref{ch:the-first-cut-extracting-catalog} does with composition: one
+command, no output shown, used as a gate rather than as a subject. The
+repository's verification script runs it on every pass for the same reason. A
+pair of subgraphs that has quietly stopped composing is precisely the breakage
+that no test of either service can find.
+
+The pattern across all three is the thing to carry forward. None of them was a
+mistake in the extraction. Each was a default that is correct for one service
+and wrong for two, and each became visible only when a second schema existed to
+compare against.
+
+So the expensive part of the first cut was not moving the code. It was finding
+out that a schema I had been shipping for seven chapters had opinions in it that
+only mattered once somebody else had opinions too.
+Chapter~\ref{ch:composition} is where those get read properly.
+
+\index{composition!failures a subgraph cannot see|)}%

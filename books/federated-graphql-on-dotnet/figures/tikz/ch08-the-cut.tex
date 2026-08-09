@@ -1,0 +1,61 @@
+% One service becomes two, and Product is declared on both sides of the
+% boundary with the same key. Referenced from chapter 08. Bare tikzpicture; the
+% figure environment, caption and label live at the call site.
+\begin{tikzpicture}[
+    font=\small,
+    svc/.style={draw, rounded corners=2pt, minimum width=46mm,
+                minimum height=9mm, align=center},
+    fld/.style={draw, rounded corners=2pt, minimum width=14mm,
+                minimum height=5mm, font=\scriptsize, align=center},
+    typ/.style={draw, rounded corners=2pt, minimum width=46mm,
+                minimum height=19mm, align=left, font=\scriptsize},
+    boundary/.style={gray, dashed, thick},
+    shared/.style={{Stealth[length=2mm]}-{Stealth[length=2mm]}, gray},
+    feed/.style={-{Stealth[length=2mm]}},
+    lbl/.style={font=\scriptsize, align=center, inner sep=1pt}
+  ]
+
+  % the process boundary
+  \draw[boundary] (6.35,0.9) -- (6.35,-5.4);
+  \node[lbl, gray, anchor=south] at (6.35,1.0) {two processes};
+
+  % -- Catalog, on the left ------------------------------------------------
+  \node[svc] (cat) at (3.05,0.2)
+    {\code{Mosaic.Catalog}\\\scriptsize :5101, database \code{catalog}};
+
+  \node[fld] (catfld) at (3.05,-1.85) {\code{Catalog/}};
+
+  \node[typ] (catp) at (3.05,-4.0)
+    {\code{type Product @key(fields: "id")}\\[2pt]
+     \code{id}\\
+     \code{sku}\\
+     \code{title}\\
+     \code{description}\\
+     \code{category}};
+
+  \draw[feed] (catfld) -- (3.05,-3.05);
+
+  % -- Mosaic, on the right ------------------------------------------------
+  \node[svc] (mos) at (9.65,0.2)
+    {\code{Mosaic.Api}\\\scriptsize :5100, database \code{mosaic}};
+
+  \node[fld] (pri) at (9.65,-1.2) {\code{Pricing/}};
+  \node[fld] (inv) at (9.65,-1.85) {\code{Inventory/}};
+  \node[fld] (rev) at (9.65,-2.5) {\code{Reviews/}};
+
+  \node[typ] (mosp) at (9.65,-4.0)
+    {\code{type Product @key(fields: "id")}\\[2pt]
+     \code{id}\\
+     \code{price}\\
+     \code{availableQuantity}\\
+     \code{reviews}\\
+     \code{averageRating}};
+
+  \draw[feed] (rev) -- (9.65,-3.05);
+
+  % -- the one thing they share --------------------------------------------
+  \draw[shared] (5.35,-4.0) -- (7.35,-4.0);
+  \node[lbl, anchor=north, align=center] at (6.35,-5.5)
+    {one type, because both sides\\spell the name and the key the same way};
+
+\end{tikzpicture}

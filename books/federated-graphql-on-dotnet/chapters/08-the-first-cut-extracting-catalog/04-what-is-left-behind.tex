@@ -1,0 +1,162 @@
+\section{Extending an Entity You Do Not Own}
+\label{sec:ch08-extending-a-foreign-entity}
+\index{federation!extending a foreign entity|(}%
+
+Mosaic still has a \code{Catalog} folder. It holds two files.
+
+\begin{minted}{csharp}
+[Key("id")]
+public sealed class Product
+{
+    [ID]
+    public required Guid Id { get; init; }
+
+    [ReferenceResolver]
+    public static Product? ResolveReference(string id, IResolverContext context)
+        => ProductKey.TryDecode(id, context, out var productId)
+            ? new Product { Id = productId }
+            : null;
+}
+\end{minted}
+
+That is the whole of Catalog inside Mosaic: a key, and how to build one of these
+from a key. There is no lookup because there is nothing to look up. This service
+does not know which products exist, cannot find out, and does not need to: it is
+handed an identifier by something that does know, and its own four fields answer
+against that identifier.
+
+\index{federation!no @extends directive}%
+Notice what is not here. There is no \code{@extends}, no \code{@external}, no
+marker of any kind saying that another service owns this type. Under
+Federation~v2 both subgraphs simply declare \code{Product} with the same key,
+contribute whatever fields they have, and the composer works out that they are
+the same type~\autocite{apollo2026entities}.
+Chapter~\ref{ch:the-federation-model} said so in the abstract, and this is what
+it looks like when it is your own code. The Mosaic side of \code{Product} is not
+an extension of anything. It is a declaration that happens to be smaller.
+
+\index{ID attribute@\code{[ID]} attribute!on a stub}%
+The \code{[ID]} on the property rather than a resolver is deliberate and dull:
+nothing in this service projects a product out of a database, so the reason
+chapter~\ref{ch:data-without-the-n-plus-1} needed a resolver here does not
+apply. What the attribute still has to do is encode, because what this field
+answers is what a router will hand back to Catalog as a representation.
+
+\subsection*{The published shape}
+
+Here is what Mosaic now says about \code{Product}, from its own
+\code{\_service}:
+
+\begin{graphqlsdl}
+type Product @key(fields: "id") {
+  availableQuantity: Int!
+  price: Money!
+  reviews(first: Int, after: String, last: Int, before: String): ReviewConnection!
+  averageRating: Float
+  id: ID!
+}
+\end{graphqlsdl}
+
+Four fields and a key, and \code{id} is last because it is the only one declared
+on the class itself. The other four arrive from three
+\code{[ObjectType<Product>]} partial classes in three different folders, in the
+order the source generator found them.
+
+\code{Product} does not implement \code{Node} here, and Catalog's does. That is
+not an inconsistency to fix: a node resolver is a promise that an identifier is
+enough to fetch the whole object, and Mosaic cannot keep that promise for a
+product. It can answer four fields about one. Those are different claims and the
+schema says so.
+
+\subsection*{An order line hands out a key}
+
+\index{federation!referencing a foreign entity}%
+The other direction is where a service points at an entity it does not own.
+\code{Order.lines} is Ordering's, and each line sold a product:
+
+\begin{minted}{csharp}
+public static Product GetProduct([Parent] OrderLine line)
+    => new() { Id = line.ProductId };
+\end{minted}
+
+Until this chapter that method took a DataLoader, asked Catalog for the row, and
+threw if it was missing. Now it wraps an identifier the line was already
+storing. Ask Mosaic for an order, and this is all a line can say about what it
+sold. Three things here are mine rather than the server's: the line breaks, the
+removal of the customer's second order, and the removal of each line's
+\code{unitPrice}, which is real and is not what this section is about.
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"ordersByCustomer":[
+  {"id":"T3JkZXI6AAAA0AAAAECAAAAAAAAAAQ==",
+   "total":{"amount":2812.00,"currency":"EUR"},
+   "lines":[
+     {"quantity":1,"product":{"id":"UHJvZHVjdDoAAACgAAAAQIAAAAAAAAAB"}},
+     {"quantity":6,"product":{"id":"UHJvZHVjdDoAAACgAAAAQIAAAAAAAAAC"}},
+     {"quantity":1,"product":{"id":"UHJvZHVjdDoAAACgAAAAQIAAAAAAAAAH"}}]}]}}
+\end{minted}
+
+The first line's \code{product.id} is character for character the string Catalog
+answers for the same product. Two processes, no shared code, one identifier.
+That is the entire contract, visible in one response, and it is the thing to
+check first when a federated graph you inherited returns nulls where it should
+return objects.
+
+\index{correction!chapter 4's missing Include}%
+That response could not have been produced at any earlier tag in this book, and
+not for a federation reason. \code{OrderingService} never called
+\code{.Include(o => o.Lines)}, and an order line is a related entity with a
+shadow key rather than an owned type, so the navigation was never loaded:
+\code{lines} answered with an empty array for every order and \code{total} threw
+on the empty collection. Present since
+chapter~\ref{ch:data-without-the-n-plus-1}, fixed here.
+
+Chapter~\ref{ch:data-without-the-n-plus-1}'s prose is not wrong about any of
+this; it says plainly that the lines are not owned, because an owned collection
+is a navigation and \code{OrderLine} is a positional record. Only the service's
+own comment claimed otherwise, and the missing call went with it. What is worth
+carrying is why it lasted four chapters: no request in the verification
+collection had ever asked an order for anything. This chapter found it by
+accident, because \code{OrderLine.product} is the first place the book had a
+reason to read an order line at all, and the gate now asks for one.
+
+\medskip\noindent\textbf{What it costs.} The old version could tell you that a
+line sold a product the catalog has never heard of, because it looked. This one
+cannot, and neither can anything else in this service. A dangling identifier now
+surfaces as a null product one hop away, in a process that will be asked about
+it by a router rather than by the code that noticed.
+
+\medskip\noindent\textbf{What it buys.} This resolver can no longer be slow. No
+DataLoader, no batch, no statement. The order query got cheaper here and more
+expensive somewhere else, and chapter~\ref{ch:enter-the-router} is where both
+halves of that trade are visible at once.
+
+\subsection*{The check that could not survive}
+
+\index{federation!validation across a boundary}%
+Chapter~\ref{ch:schema-design-that-survives-change} gave Mosaic a mutation with
+four typed errors on its payload. \code{submitReview} now has three.
+
+\code{ProductNotFoundError} is gone, because the check behind it is gone. That
+resolver used to ask \code{CatalogService} whether the product existed before
+writing the review, and the code comment beside it said, in
+chapter~\ref{ch:hotchocolate-quickly}'s own words, that the check was on
+borrowed time and that once Catalog was a separate service the honest answer
+would be either a network call on the write path or an accepted risk.
+
+This chapter takes the risk. An unknown product identifier is now stored without
+complaint, and the union on the payload lost a member, which is a breaking
+change for any client that was handling it. I want to be plain that I do not
+love this. The alternative on the table was a synchronous call from Reviews to
+Catalog on every write, which reintroduces exactly the coupling the extraction
+was for and makes the write path fail when a service it does not depend on is
+down. Chapter~\ref{ch:entity-resolution-done-right} has \code{@requires}, which
+is as close as federation comes to giving the check back, and
+chapter~\ref{ch:strangling-the-monolith} argues about whether it is worth
+taking.
+
+What I would not accept is leaving the error in the schema with nothing able to
+raise it. An error type that can never occur is a lie told in a contract, and it
+is worse than the missing check because a client will write a branch for it.
+
+\index{federation!extending a foreign entity|)}%
