@@ -69,6 +69,17 @@
     #     # Code points to allow back in, each written as U+XXXX. Every entry is
     #     # a hole in the check, so name the one character the book needs.
     #     Allow = @()
+    #
+    #     # Listing environments inside which a character this mode would
+    #     # otherwise reject is allowed to stand, in the same 'name' or
+    #     # 'name:lexer' form Verbatim.Environments uses. Tooling writes prose:
+    #     # a compiler or a linter can emit a message containing an em dash, and
+    #     # a book that prints what a tool said should not have to edit the
+    #     # capture, weaken the mode for every file, or drop the evidence. Both
+    #     # halves are required and the second is the point: the character has
+    #     # to be inside one of these environments AND the line it sits on has
+    #     # to appear in a research note. A book with no notes cannot use it.
+    #     AllowInCapturedListings = @()
     # }
 
     # -- 3. Citations ---------------------------------------------------------
@@ -218,7 +229,44 @@
     #     MinLineLength = 12
     # }
 
-    # -- 11. Macros -----------------------------------------------------------
+    # -- 11. Listings ---------------------------------------------------------
+    # A listing line wider than the measure is the one typographic defect the
+    # log check cannot see. A book that loads minted with breaklines has asked
+    # for an over-wide line to be broken to fit, and it is obliged silently: no
+    # Overfull box, and a wrap on the page nobody chose. The Overfull box comes
+    # back only when the line offers no break point at all, which is the case
+    # real code never falls into.
+    # Enabled       - the master switch.
+    # MaxLineLength - the column budget. 0 means no budget has been declared and
+    #                 the check does not run, which is the default. The number
+    #                 falls out of this book's measure, its mono font and the
+    #                 size its listings are set at, so the library will not
+    #                 guess it.
+    #
+    # Measure it rather than deriving it. Put lines of N and N+1 columns, each
+    # carrying a break point, in a listing at this book's own settings, build,
+    # and see which one gains a continuation arrow. The arithmetic agrees when
+    # the mono font is Courier-metric: \the\textwidth over the advance width of
+    # one character at the listing's fontsize, both of which \settowidth and
+    # \typeout will tell you.
+    #
+    # A block whose \begin line carries its own [option list] is not measured.
+    # Naming a fontsize, or an explicit breaklines, for one block is a
+    # typographic decision taken about that block, and whoever took it owns the
+    # width. That is the escape hatch, and it sits in the source where a reader
+    # of the chapter can see it rather than in this file.
+    #
+    # What the count is not: display columns. It counts UTF-16 code units, so a
+    # CJK glyph counts one and sets two, and an emoji counts two and sets one. A
+    # tab counts one. autogobble strips a block's common indent before
+    # typesetting, so an indented block is measured wider than it sets. A book
+    # absorbs all three by measuring its own number instead of borrowing one.
+    # Listings = @{
+    #     Enabled       = $true
+    #     MaxLineLength = 0
+    # }
+
+    # -- 12. Macros -----------------------------------------------------------
     # The masking macros: what is blanked out of a line before the line is read
     # as English. These are library facts rather than book decisions, and they
     # are settable only so that a book which renames one of them keeps its
@@ -238,7 +286,26 @@
     #     Identifiers = @('begin', 'end', 'label', 'ref', 'pageref', 'input', 'include', 'autocite')
     # }
 
-    # -- 12. Log --------------------------------------------------------------
+    # -- 13. Figures ----------------------------------------------------------
+    # TikZ style names pgfkeys has already taken. `step/.style={...}` shadows
+    # nothing: it fails the build with an error naming the key rather than the
+    # style, which reads as a missing \usetikzlibrary and sends you looking in
+    # the preamble.
+    # Enabled      - the master switch.
+    # Paths        - which folders hold picture sources, relative to the book
+    #                root. They sit outside Paths.Prose on purpose, so this is
+    #                the only check that reads them, and -Chapter does not
+    #                narrow them.
+    # ReservedKeys - the names to reject. Emptying the list is the other way to
+    #                switch the check off, so a book that disagrees with one
+    #                name does not have to disable the family to say so.
+    # Figures = @{
+    #     Enabled      = $true
+    #     Paths        = @('figures/tikz')
+    #     ReservedKeys = @('in', 'out', 'step', 'shift', 'scale', 'text', 'style')
+    # }
+
+    # -- 14. Log --------------------------------------------------------------
     # Reads the build log that latexmk already wrote. The check never runs
     # latexmk itself, so a missing log is a warning and a log older than the
     # sources is a warning; build first if you want these numbers to mean
@@ -246,7 +313,10 @@
     # Path         - the log, relative to the book root.
     # MaxOverfull  - how many Overfull boxes are tolerated. Zero means every
     #                line that runs into the margin is a finding. Raising it is
-    #                how a book stops noticing that it sets badly.
+    #                how a book stops noticing that it sets badly. It does not
+    #                cover a listing line that was too wide and got broken to
+    #                fit: that raises no box at all, and section 11 is what
+    #                catches it.
     # MaxUndefined - how many log lines may mention an undefined reference or
     #                citation. Above zero, broken cross-references ship.
     # Log = @{

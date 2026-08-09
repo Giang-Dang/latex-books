@@ -1,0 +1,26 @@
+\section{Listing width}
+\label{sec:ch01-listings}
+
+A body line wider than the book's column budget is the defect this file
+triggers. It is the one the log family cannot see: a book that loads minted
+with breaklines has asked for the line to be broken, so no Overfull box is
+raised and the page gains a wrap nobody chose.
+
+\begin{fixturesdl}
+short enough to pass
+$ dotnet run --project src/Gateway --configuration Release --no-restore --flag
+\end{fixturesdl}
+
+Only the second body line is over budget. The lines that open and close the
+environment set no columns of their own and are never measured. The long line
+also carries four hyphen pairs, which the dash check must not see: a listing
+body is blanked before the prose checks read it, so a masking regression shows
+up here as an extra finding rather than a missing one.
+
+\begin{fixturesdl}[obeytabs]
+$ dotnet run --project src/Gateway --configuration Release --no-restore --wide
+\end{fixturesdl}
+
+That block is the same width and reports nothing, because it carries its own
+option list. Naming an option for one block is a typographic decision made
+about that block, and whoever made it owns the width.

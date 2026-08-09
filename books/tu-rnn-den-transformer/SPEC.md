@@ -65,6 +65,7 @@ is re-opened only by recording what changed and why, in the row.
 | 28 | Abbreviations are their own appendix | The abbreviation table arrived as a section inside appendix B during chapter 01. Split out into appendix C on 2026-08-09 at the author's request, so that notation, glossary and abbreviations are three lookups rather than two; the old C, D and E shifted to D, E and F. Nothing referenced an appendix by letter, so the shift cost only file renames |
 | 29 | Appendices are lookup only | Settled 2026-08-09 after the author cut three openers as redundant. An appendix carries entries, not argument: no scene-setting paragraph, no rationale section, no closing note about how the table is maintained, no transition between entries. Why a term was translated, why a symbol was chosen, and how a table grows all belong in this SPEC. A reader reaches an appendix from the index, reads one row, and leaves |
 | 30 | Check `origin/main` before drafting, not after | Chapter 03 was drafted in a worktree branched before chapters 01 and 02 landed, so it rebuilt appendix A and appendix B from scratch, duplicated the abbreviation table, and used a loss symbol the book had already chosen. None of it was lost, but the merge cost more than the drafting. The rule: `git fetch origin && git log --oneline origin/main -- books/<name>` before the first file is written, and read the SPEC from `origin/main` rather than from the working tree. This book's SPEC and its appendices are shared state, and two sessions can be editing them at once |
+| 31 | Listings are 73 columns wide | Measured 2026-08-09, not derived: `\the\textwidth` is 441.01773pt under this book's geometry, one character of texgyrecursor at `\small` in an 11pt class advances exactly 6.0pt, and a built page confirms that a 73-column line carrying a break point sets flush to the margin while the same line at 74 gains a continuation arrow. Enforced by `Listings.MaxLineLength` in `check-chapter.psd1`. The reason it needed a rule at all: `\setminted` loads `breaklines`, which breaks an over-wide line silently, so no Overfull box is raised and `MaxOverfull = 0` never fires. An Overfull box comes back only for a line with no break point anywhere, which real code never is. Chapter 03 shipped three tables at 82 to 101 columns and two code listings at 80 and 81 through that blind spot; all five were found by reading the PDF. A block that needs more width says so in its own option list and is not measured, which is how chapter 01's `\footnotesize` listings pass |
 
 ## Version baseline
 
@@ -249,6 +250,14 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   describe a mechanism rather than ship as code use `algpseudocode`, and the
   prose calls them pseudo-code so nothing pretends to be runnable that is not.
   No `\newminted` aliases are declared; if one is added, record it here.
+- **Listings are 73 columns wide** (decision 31). That is what this measure
+  holds at `\small`, measured rather than assumed, and `Listings.MaxLineLength`
+  in `check-chapter.psd1` enforces it. Narrow the source until it fits: a
+  captured table gets a narrower experiment, a signature gets wrapped the way
+  Python wraps one. A block that genuinely needs more says so in its own option
+  list, `[fontsize=\footnotesize]`, where the same measure holds 81, and the
+  check stands down for it. Do not reach for the smaller size to avoid an edit:
+  a page with three type sizes in its listings reads as a page nobody set.
 - **Figures:** TikZ, sources in `figures/tikz/chNN-<slug>.tex` as a bare
   `tikzpicture`; the `figure` environment, caption and label stay at the call
   site. Beyond the template's `arrows.meta` and `positioning`, this book loads
@@ -306,12 +315,10 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   it is next opened rather than in a pass of its own. This is also the first real
   data point for the deferred `gloss` check, which needs a second before it can
   be proposed as a family in `scripts/check-chapter.ps1`.
-- **A listing wider than the measure is a defect no check catches.** Three tables
-  in chapter 03 shipped at 82 to 101 characters and wrapped with continuation
-  markers inside a 155mm measure; all three were found by reading the PDF, not by
-  the gate. The fix each time was to narrow the experiment's output at the
-  source. Whether this becomes a check in `scripts/check-chapter.ps1` depends on
-  it biting a second book; until then, read the built pages.
+- **A listing wider than the measure is now a check.** Was an open item; closed
+  2026-08-09 by decision 31 and the `Listings` family in
+  `scripts/check-chapter.ps1`. Two of the five listings it was written for were
+  still wrapping in the merged chapter when the family first ran.
 
 
 - **The companion repo now exists.** Named `rnn-to-transformer-lab`, public

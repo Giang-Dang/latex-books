@@ -104,6 +104,10 @@ $BaseSections = [ordered]@{
     Characters   = "@{ Mode = 'Ascii' }"
     Contractions = "@{ Enabled = `$true; Preset = 'english' }"
     Spelling     = "@{ Enabled = `$true; Preset = 'en-GB' }"
+    # 60, not any real book's number: the fixture is not typeset and has no
+    # measure. It only has to be a budget the trigger clears and the listing in
+    # 08-verbatim.tex, whose widest body line is 37, does not.
+    Listings     = "@{ Enabled = `$true; MaxLineLength = 60 }"
 }
 
 $bookPolicy = Join-Path $bookFix 'check-chapter.psd1'
@@ -155,10 +159,14 @@ $Expected = @(
     "chapters/01-triggers/08-verbatim.tex:6: [verbatim] line~'this line was never captured anywhere' is in no research/ note, but line 4 calls this listing a capture ('in full')"
     "chapters/01-triggers/09-bytes.tex:5: [ascii] byte 0xC3 is not printable ASCII"
     "chapters/01-triggers/09-bytes.tex:5: [ascii] byte 0xA9 is not printable ASCII"
+    # Exactly one line of that file may be reported. The other body line is 20
+    # columns, the \begin and \end lines are not measured at all, and the second
+    # block is the same width but carries its own option list, so it is waived.
+    "chapters/01-triggers/10-listings.tex:11: [listing] listing line is 78 columns against a budget of 60; it will wrap or overflow the measure"
     # One line out of a picture that also grids on step=0.5cm, scales a node,
     # sets text=gray and names a style with a space in it. Exactly one of those
     # is a style declaration using a reserved name.
-    "figures/tikz/10-reserved-key.tex:10: [tikz] style name 'step' is a pgfkeys key already; the picture will fail to compile with an error naming the key rather than the style"
+    "figures/tikz/11-reserved-key.tex:10: [tikz] style name 'step' is a pgfkeys key already; the picture will fail to compile with an error naming the key rather than the style"
     "build/main.log: [log] 1 Overfull box(es); locate with: grep -A3 Overfull build/main.log"
     "build/main.log: [log] 1 line(s) mentioning undefined references or citations"
 )
@@ -181,8 +189,9 @@ if (Compare-Findings 'fixture-book with every check on' $Expected $actual) {
 # ---------------------------------------------------------------------------
 
 # A book that says nothing gets a gate that assumes nothing about its language:
-# letters of any script pass, spelling has no variety to enforce, and whether
-# contractions belong in the voice is left to the book.
+# letters of any script pass, spelling has no variety to enforce, whether
+# contractions belong in the voice is left to the book, and no column budget has
+# been declared, so the listing-width check does not run either.
 $DefaultIds = @('cite-key', 'dash', 'index-pct', 'log', 'number', 'quote', 'tikz', 'tilde-cite', 'verbatim')
 $defaultIds = Get-FindingIds (Invoke-BookFixture -NoPolicy)
 if (($defaultIds -join ',') -ne ($DefaultIds -join ',')) {
@@ -211,6 +220,12 @@ $WiringCases = @(
     @{ Name = 'Spelling';     Override = @{ Spelling = '@{ Enabled = $false }' };          Silences = @('spelling') }
     @{ Name = 'Numbers';      Override = @{ Numbers = '@{ Enabled = $false }' };           Silences = @('number') }
     @{ Name = 'Verbatim';     Override = @{ Verbatim = '@{ Enabled = $false }' };          Silences = @('verbatim') }
+    # Two ways to switch the width check off, and both have to work. Neither row
+    # gets the other half for free the way Figures does: the budget defaults to
+    # 0, so a row naming only Enabled would silence the family for the wrong
+    # reason and pass even if Enabled were wired to nothing.
+    @{ Name = 'Listings';     Override = @{ Listings = '@{ Enabled = $false; MaxLineLength = 60 }' }; Silences = @('listing') }
+    @{ Name = 'Listings.Max'; Override = @{ Listings = '@{ Enabled = $true; MaxLineLength = 0 }' };   Silences = @('listing') }
     @{ Name = 'Figures';      Override = @{ Figures = '@{ Enabled = $false }' };           Silences = @('tikz') }
     # Emptying the reserved list is the other way to turn it off, and it has to
     # work: a book that disagrees with one name should not have to disable the
@@ -221,7 +236,7 @@ $WiringCases = @(
     # and must survive, which is what keeps the two lists genuinely separate.
     @{ Name = 'Paths.Prose';  Override = @{ Paths = '@{ Prose = @() }' }
        Silences = @('tilde-cite', 'cite-key', 'quote', 'index-pct', 'contraction',
-                    'spelling', 'dash', 'number', 'verbatim') }
+                    'spelling', 'dash', 'number', 'verbatim', 'listing') }
 )
 
 $baselineIds = Get-FindingIds $actual

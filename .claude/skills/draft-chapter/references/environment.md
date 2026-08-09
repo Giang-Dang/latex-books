@@ -7,7 +7,9 @@ session.
 
 - latexmk needs perl
 - Never sed a LaTeX macro
+- Heredocs eat backslashes
 - Overfull boxes
+- A listing wider than the measure
 - Citation keys
 - Concurrent builds
 - minted and Pygments
@@ -35,6 +37,23 @@ under the looser policy too: `Punctuation` mode admits letters of any script but
 still rejects control characters, and the byte a mangled `sed` emits is a
 control character. Only `Characters.Mode = 'Off'` loses this warning.
 
+## Heredocs eat backslashes
+
+The same family, one layer up. A bash heredoc whose delimiter is unquoted
+expands `\` and `$` before the body ever reaches the program reading it, so a
+`\rho` inside a Python snippet or a Markdown paragraph arrives as a carriage
+return and the letters `ho`. What lands in the file is a line that ends early
+and a next line starting at column zero, which is exactly what an ordinary
+paragraph wrap looks like. One shipped that way in a book's SPEC and survived
+two reviews.
+
+Nothing in the gate will find it. `scripts/check-chapter.ps1` walks `.tex`
+files, so a mangled `.md` is outside it entirely, and a carriage return is legal
+under every `Characters.Mode`. Quote the delimiter, `<<'EOF'`, when a heredoc is
+unavoidable, but prefer the Write tool for any content carrying a backslash; it
+passes the bytes through untouched and is the reason the rule above says the
+same thing.
+
 ## Overfull boxes
 
 The build gate is zero overfull boxes, and the usual cause is a long inline
@@ -45,7 +64,9 @@ changes the number, so take it from its `preamble/packages.tex`. Fixes, in order
 of preference:
 
 1. Reword so the identifier sits where it fits, or name the thing in words.
-2. Promote it to a displayed listing.
+2. Promote it to a displayed listing, and then check its width: a listing has
+   its own budget and moving the problem there can hide it rather than fix it.
+   See the next section.
 3. For a single stubborn captured output, set `fontsize=\footnotesize` on that
    one verbatim block. Do not alter captured text to make it fit.
 
@@ -57,6 +78,29 @@ grep -A3 Overfull build/main.log
 
 The `lines X--Y` in each report refer to the source file named in the enclosing
 `(./path/to/file.tex` line above it.
+
+## A listing wider than the measure
+
+A zero-overfull log does not mean every listing fits. A book that loads minted
+with `breaklines` has asked for an over-wide line to be broken to fit, and it is
+obliged silently: the page gains a continuation arrow nobody chose and the log
+says nothing. The Overfull box comes back only for a line that offers no break
+point anywhere, which prose and real code never are, so the case that actually
+happens is the invisible one.
+
+The `listing` check in `scripts/check-chapter.ps1` is what catches it, and it
+runs only for a book that has declared `Listings.MaxLineLength`. Measure that
+number once per book rather than copying another book's: put lines of N and N+1
+columns, each carrying a break point, into a listing at the book's own settings,
+build, and see which gains the arrow. `\settowidth` on one character at the
+listing's fontsize, divided into `\the\textwidth`, predicts the same answer when
+the mono font is Courier-metric.
+
+Fix it at the source, by narrowing what the listing shows: a captured table
+comes from an experiment that can print fewer columns, and a long signature
+wraps the way its own language wraps one. A block that genuinely needs more
+declares its own `fontsize` in its option list, which is also how it tells the
+check to stand down.
 
 ## Citation keys
 

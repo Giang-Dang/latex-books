@@ -68,6 +68,12 @@ must frame them as sketches; check the book's decision log.
 Long inline `\code{}` spans cause overfull boxes because a 40-character
 identifier will not break. Display it as a listing or reword around it.
 
+A listing has a column budget of its own, set per book in `check-chapter.psd1`
+as `Listings.MaxLineLength`. Over it, the line wraps on the page and the build
+log stays silent, so write the listing to fit rather than trusting a clean log;
+a block that needs more width declares its own `fontsize`. See
+`references/environment.md`.
+
 ## Figures
 
 TikZ sources live in `figures/tikz/chNN-<slug>.tex` as a **bare
