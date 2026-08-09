@@ -8,18 +8,22 @@
 .DESCRIPTION
     check-chapter.ps1 is the only prose gate in the repository, and "it still
     prints clean" proves nothing about it: a version with every check disabled
-    prints clean too. So this runs it against scripts/tests/fixture-book, a
-    directory whose only purpose is to trigger exactly one of each check, and
-    compares the findings against the list below.
+    prints clean too. So this runs it against two fixtures and asserts what
+    comes out.
 
-    The fixture lives under scripts/ rather than books/ because
-    .githooks/pre-commit builds only books/* and template. Nothing here is ever
-    compiled and nothing here costs anything at commit time.
+    scripts/tests/fixture-book triggers exactly one of each prose check.
+    scripts/tests/fixture-punctuation covers the character check, whose default
+    mode has to pass letters of any script and still reject a pasted smart
+    quote.
 
-    Add a check to check-chapter.ps1 and you add a trigger to the fixture and a
-    line to $Expected. That is the point: until this file existed there was no
-    cost to hard-coding one book's policy into the shared script, because
-    nothing else exercised it.
+    Both live under scripts/ rather than books/ because .githooks/pre-commit
+    builds only books/* and template. Nothing here is compiled and nothing here
+    costs anything at commit time.
+
+    Add a check to check-chapter.ps1 and you add a trigger to a fixture, a line
+    to $Expected, and a row to $WiringCases. That is the point: until these
+    existed there was no cost to hardcoding one book's policy into the shared
+    script, because nothing else exercised it.
 
 .EXAMPLE
     pwsh scripts/check-chapter.tests.ps1
@@ -27,26 +31,113 @@
 
 [CmdletBinding()]
 param(
-    # Print the whole run, not only the differences. Not named -Verbose:
+    # Print each run in full, not only the differences. Not named -Verbose:
     # CmdletBinding already defines that one.
     [switch] $ShowOutput
 )
 
 $ErrorActionPreference = 'Stop'
 
-$root    = Split-Path -Parent $PSScriptRoot
-$checker = Join-Path $PSScriptRoot 'check-chapter.ps1'
-$fixture = Join-Path $PSScriptRoot 'tests' 'fixture-book'
-$prefix  = 'scripts/tests/fixture-book'
+$checker  = Join-Path $PSScriptRoot 'check-chapter.ps1'
+$bookFix  = Join-Path $PSScriptRoot 'tests' 'fixture-book'
+$punctFix = Join-Path $PSScriptRoot 'tests' 'fixture-punctuation'
+
+$failed = $false
+
+function Write-Fail {
+    param([string]$Message)
+    Write-Host "[FAIL] $Message" -ForegroundColor Red
+    $script:failed = $true
+}
+
+# check-chapter.ps1 reports with Write-Host, which writes to the information
+# stream, so an in-process call would capture nothing. A child pwsh turns it
+# into ordinary stdout, and it is also how .githooks/pre-commit invokes it.
+function Invoke-Checker {
+    param([string]$Fixture)
+
+    $prefix = 'scripts/tests/' + (Split-Path -Leaf $Fixture)
+    $lines = @(& pwsh -NoProfile -File $checker $Fixture 2>&1 | ForEach-Object { "$_" })
+    if ($ShowOutput) {
+        Write-Host "--- $Fixture ---"
+        $lines | ForEach-Object { Write-Host $_ }
+        Write-Host ''
+    }
+    return @($lines |
+        Where-Object { $_ -like "$prefix/*" } |
+        ForEach-Object { $_.Substring($prefix.Length + 1) })
+}
+
+function Get-FindingIds {
+    param([string[]]$Lines)
+    return @($Lines |
+        ForEach-Object { if ($_ -match '\[([a-z-]+)\]') { $Matches[1] } } |
+        Sort-Object -Unique)
+}
+
+function Compare-Findings {
+    param([string]$What, [string[]]$Expected, [string[]]$Actual)
+
+    $bad = $false
+    $max = [Math]::Max($Expected.Count, $Actual.Count)
+    for ($i = 0; $i -lt $max; $i++) {
+        $want = if ($i -lt $Expected.Count) { $Expected[$i] } else { '(nothing)' }
+        $got = if ($i -lt $Actual.Count) { $Actual[$i] } else { '(nothing)' }
+        if ($want -cne $got) {
+            if (-not $bad) { Write-Fail "$What did not produce the expected findings"; $bad = $true }
+            Write-Host "  at $($i + 1):"
+            Write-Host "    expected: $want"
+            Write-Host "    actual:   $got"
+        }
+    }
+    return (-not $bad)
+}
 
 # ---------------------------------------------------------------------------
-# What the fixture must produce, in order
+# fixture-book: the prose checks
 # ---------------------------------------------------------------------------
 
-# Every finding id check-chapter.ps1 can emit appears here at least once, and
+# The fixture ships no check-chapter.psd1. This script writes one before each
+# run instead, which is what lets the same tree serve as both "every check on"
+# and "library defaults" without two copies of the prose drifting apart.
+$BaseSections = [ordered]@{
+    Characters   = "@{ Mode = 'Ascii' }"
+    Contractions = "@{ Enabled = `$true; Preset = 'english' }"
+    Spelling     = "@{ Enabled = `$true; Preset = 'en-GB' }"
+}
+
+$bookPolicy = Join-Path $bookFix 'check-chapter.psd1'
+
+function New-BookConfig {
+    param([System.Collections.IDictionary]$Override = @{})
+
+    $sections = [ordered]@{}
+    foreach ($k in $BaseSections.Keys) { $sections[$k] = $BaseSections[$k] }
+    foreach ($k in $Override.Keys) { $sections[$k] = $Override[$k] }
+
+    $body = ($sections.Keys | ForEach-Object { "    $_ = $($sections[$_])" }) -join [Environment]::NewLine
+    return "@{" + [Environment]::NewLine + $body + [Environment]::NewLine + "}"
+}
+
+function Invoke-BookFixture {
+    param([System.Collections.IDictionary]$Override, [switch]$NoPolicy)
+
+    if ($NoPolicy) {
+        Remove-Item -LiteralPath $bookPolicy -Force -ErrorAction SilentlyContinue
+    } else {
+        Set-Content -LiteralPath $bookPolicy -Value (New-BookConfig $Override) -Encoding utf8
+    }
+    try {
+        return Invoke-Checker $bookFix
+    } finally {
+        Remove-Item -LiteralPath $bookPolicy -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# Every finding id the prose half can emit appears here at least once, and
 # 01-clean.tex appears nowhere: it holds a contraction, two American spellings,
 # a dash ligature and a literal quote, all inside \code{}, so a masking
-# regression shows up as an extra line rather than as a missing one.
+# regression shows up as an extra line rather than a missing one.
 $Expected = @(
     "chapters/01-triggers/02-citations.tex:4: [tilde-cite] use a non-breaking tie: ~\autocite{...}"
     "chapters/01-triggers/02-citations.tex:8: [cite-key] citation key 'missingkey' not found in refs.bib"
@@ -65,149 +156,125 @@ $Expected = @(
     "build/main.log: [log] 1 line(s) mentioning undefined references or citations"
 )
 
-# ---------------------------------------------------------------------------
-# Run
-# ---------------------------------------------------------------------------
-
-if (-not (Test-Path -LiteralPath $fixture)) {
-    Write-Host "[FAIL] the fixture is missing: $fixture" -ForegroundColor Red
-    exit 1
-}
-
 # The log check warns when a .tex file is newer than build/main.log, and that
 # warning is noise here: the fixture's log is fabricated and its freshness
-# means nothing. Touch it so the warning never fires and the output stays
-# comparable run to run.
-$fixtureLog = Join-Path $fixture 'build' 'main.log'
+# means nothing.
+$fixtureLog = Join-Path $bookFix 'build' 'main.log'
 if (Test-Path -LiteralPath $fixtureLog) {
     (Get-Item -LiteralPath $fixtureLog).LastWriteTime = Get-Date
 }
 
-# Through a child pwsh rather than with the call operator: check-chapter.ps1
-# reports with Write-Host, which writes to the information stream, so an
-# in-process call would capture nothing at all. A child process turns it into
-# ordinary stdout, and it is also exactly how .githooks/pre-commit invokes it.
-$output = @(& pwsh -NoProfile -File $checker $fixture 2>&1 | ForEach-Object { "$_" })
-
-# Findings are the lines naming a file inside the fixture. Everything else is
-# the header, the policy line and the trailing count.
-$actual = @($output |
-    Where-Object { $_ -like "$prefix/*" } |
-    ForEach-Object { $_.Substring($prefix.Length + 1) })
-
-if ($ShowOutput) {
-    Write-Host '--- run output ---'
-    $output | ForEach-Object { Write-Host $_ }
-    Write-Host ''
+$actual = Invoke-BookFixture @{}
+if (Compare-Findings 'fixture-book with every check on' $Expected $actual) {
+    Write-Host "[ok]   prose: $($Expected.Count) findings, all as expected"
 }
 
 # ---------------------------------------------------------------------------
-# Compare
+# The library defaults, which are not the same policy
 # ---------------------------------------------------------------------------
 
-$failed = $false
-
-# Order matters as well as membership: the script walks files and lines in a
-# fixed order, and a reordering usually means a check moved between passes.
-$max = [Math]::Max($Expected.Count, $actual.Count)
-for ($i = 0; $i -lt $max; $i++) {
-    $want = if ($i -lt $Expected.Count) { $Expected[$i] } else { '(nothing)' }
-    $got = if ($i -lt $actual.Count) { $actual[$i] } else { '(nothing)' }
-    if ($want -cne $got) {
-        if (-not $failed) {
-            Write-Host '[FAIL] the fixture did not produce the expected findings' -ForegroundColor Red
-            $failed = $true
-        }
-        Write-Host "  at $($i + 1):"
-        Write-Host "    expected: $want"
-        Write-Host "    actual:   $got"
-    }
+# A book that says nothing gets a gate that assumes nothing about its language:
+# letters of any script pass, spelling has no variety to enforce, and whether
+# contractions belong in the voice is left to the book.
+$DefaultIds = @('cite-key', 'dash', 'index-pct', 'log', 'number', 'quote', 'tilde-cite', 'verbatim')
+$defaultIds = Get-FindingIds (Invoke-BookFixture -NoPolicy)
+if (($defaultIds -join ',') -ne ($DefaultIds -join ',')) {
+    Write-Fail 'the library defaults are not the expected reduced set'
+    Write-Host "    expected: $($DefaultIds -join ', ')"
+    Write-Host "    actual:   $($defaultIds -join ', ')"
+} else {
+    Write-Host '[ok]   defaults: ascii, contraction and spelling are off until a book asks'
 }
-
-if ($failed) {
-    Write-Host ''
-    Write-Host "--- $($actual.Count) finding(s), $($Expected.Count) expected ---"
-    Write-Host 'FAIL' -ForegroundColor Red
-    exit 1
-}
-
-Write-Host "[ok]   defaults: $($Expected.Count) findings, all as expected"
 
 # ---------------------------------------------------------------------------
 # Wiring: every setting silences the check it names, and only that one
 # ---------------------------------------------------------------------------
 
-# The baseline above proves the checks fire. It says nothing about whether the
-# policy keys are connected to them: a key wired to the wrong check, or to
-# nothing, passes every test so far. So each section is switched off in turn
-# and the findings that disappear are compared against the findings that were
-# supposed to disappear.
+# The baseline proves the checks fire. It says nothing about whether the policy
+# keys are connected to them: a key wired to the wrong check, or to nothing,
+# passes every test above. So each section is switched off in turn and what
+# disappears is compared against what was supposed to disappear.
 $WiringCases = @(
-    @{ Name = 'Characters';   Config = "@{ Characters = @{ Mode = 'Off' } }";        Silences = @('ascii') }
-    @{ Name = 'Citations';    Config = '@{ Citations = @{ Enabled = $false } }';     Silences = @('tilde-cite', 'cite-key') }
-    @{ Name = 'Quotes';       Config = '@{ Quotes = @{ Enabled = $false } }';        Silences = @('quote') }
-    @{ Name = 'Index';        Config = '@{ Index = @{ Enabled = $false } }';         Silences = @('index-pct') }
-    @{ Name = 'Dashes';       Config = '@{ Dashes = @{ Enabled = $false } }';        Silences = @('dash') }
-    @{ Name = 'Contractions'; Config = '@{ Contractions = @{ Enabled = $false } }';  Silences = @('contraction') }
-    @{ Name = 'Spelling';     Config = '@{ Spelling = @{ Enabled = $false } }';      Silences = @('spelling') }
-    @{ Name = 'Numbers';      Config = '@{ Numbers = @{ Enabled = $false } }';       Silences = @('number') }
-    @{ Name = 'Verbatim';     Config = '@{ Verbatim = @{ Enabled = $false } }';      Silences = @('verbatim') }
-    @{ Name = 'Log';          Config = '@{ Log = @{ Enabled = $false } }';           Silences = @('log') }
+    @{ Name = 'Characters';   Override = @{ Characters = "@{ Mode = 'Off' }" };            Silences = @('ascii') }
+    @{ Name = 'Citations';    Override = @{ Citations = '@{ Enabled = $false }' };         Silences = @('tilde-cite', 'cite-key') }
+    @{ Name = 'Quotes';       Override = @{ Quotes = '@{ Enabled = $false }' };            Silences = @('quote') }
+    @{ Name = 'Index';        Override = @{ Index = '@{ Enabled = $false }' };             Silences = @('index-pct') }
+    @{ Name = 'Dashes';       Override = @{ Dashes = '@{ Enabled = $false }' };            Silences = @('dash') }
+    @{ Name = 'Contractions'; Override = @{ Contractions = '@{ Enabled = $false }' };      Silences = @('contraction') }
+    @{ Name = 'Spelling';     Override = @{ Spelling = '@{ Enabled = $false }' };          Silences = @('spelling') }
+    @{ Name = 'Numbers';      Override = @{ Numbers = '@{ Enabled = $false }' };           Silences = @('number') }
+    @{ Name = 'Verbatim';     Override = @{ Verbatim = '@{ Enabled = $false }' };          Silences = @('verbatim') }
+    @{ Name = 'Log';          Override = @{ Log = '@{ Enabled = $false }' };               Silences = @('log') }
     # Paths.Prose empties the prose pass. The character scan reads its own list
     # and must survive, which is what keeps the two lists genuinely separate.
-    @{ Name = 'Paths.Prose';  Config = '@{ Paths = @{ Prose = @() } }'
+    @{ Name = 'Paths.Prose';  Override = @{ Paths = '@{ Prose = @() }' }
        Silences = @('tilde-cite', 'cite-key', 'quote', 'index-pct', 'contraction',
                     'spelling', 'dash', 'number', 'verbatim') }
 )
 
-function Get-FindingIds {
-    param([string[]]$Lines)
-    return @($Lines |
-        ForEach-Object { if ($_ -match '\[([a-z-]+)\]') { $Matches[1] } } |
-        Sort-Object -Unique)
-}
-
-$fixturePolicy = Join-Path $fixture 'check-chapter.psd1'
 $baselineIds = Get-FindingIds $actual
+foreach ($case in $WiringCases) {
+    $ids = Get-FindingIds (Invoke-BookFixture $case.Override)
+    $want = @($baselineIds | Where-Object { $case.Silences -notcontains $_ }) | Sort-Object
+    $got = @($ids) | Sort-Object
 
-function Invoke-Fixture {
-    param([string]$Config)
-    Set-Content -LiteralPath $fixturePolicy -Value $Config -Encoding utf8
-    try {
-        return @(& pwsh -NoProfile -File $checker $fixture 2>&1 |
-            ForEach-Object { "$_" } |
-            Where-Object { $_ -like "$prefix/*" })
-    } finally {
-        Remove-Item -LiteralPath $fixturePolicy -Force -ErrorAction SilentlyContinue
+    if (($want -join ',') -ne ($got -join ',')) {
+        Write-Fail "$($case.Name) did not silence exactly what it names"
+        Write-Host "    expected to remain: $($want -join ', ')"
+        Write-Host "    actually remained:  $($got -join ', ')"
     }
 }
 
+# The masking macros are not a check, so emptying them must ADD findings rather
+# than remove them: 01-clean.tex passes only because \code{} hides a
+# contraction, two American spellings, a dash ligature and a literal quote.
+$unmasked = Invoke-BookFixture @{ Macros = '@{ Code = @() }' }
+if (@($unmasked | Where-Object { $_ -like '*01-clean.tex*' }).Count -eq 0) {
+    Write-Fail 'Macros.Code is not wired: emptying it left 01-clean.tex silent'
+}
+
+if (-not $failed) {
+    Write-Host "[ok]   wiring: $($WiringCases.Count) settings silence exactly the check they name"
+}
+
+# ---------------------------------------------------------------------------
+# fixture-punctuation: the character check under the default mode
+# ---------------------------------------------------------------------------
+
+$PunctExpected = @(
+    'chapters/01-modes/02-lookalikes.tex:8: [unicode] U+2014 is em dash, a Unicode look-alike of ASCII punctuation'
+    'chapters/01-modes/02-lookalikes.tex:9: [unicode] U+201C is left double quote, a Unicode look-alike of ASCII punctuation'
+    'chapters/01-modes/02-lookalikes.tex:10: [unicode] U+201D is right double quote, a Unicode look-alike of ASCII punctuation'
+    'chapters/01-modes/02-lookalikes.tex:11: [unicode] U+2026 is ellipsis, a Unicode look-alike of ASCII punctuation'
+    'chapters/01-modes/02-lookalikes.tex:12: [unicode] U+00A0 is no-break space, a Unicode look-alike of ASCII punctuation'
+)
+
+$punct = Invoke-Checker $punctFix
+if (Compare-Findings 'fixture-punctuation' $PunctExpected $punct) {
+    Write-Host '[ok]   punctuation: look-alikes caught, letters of five scripts passed'
+}
+
+# A file that is not valid UTF-8 has to be reported, not silently repaired.
+# Reading it with a lenient decoder would turn the bad byte into U+FFFD and let
+# the file pass, which is worse than the byte-level complaint Ascii mode makes.
+# Written here rather than committed, so no git text filter can normalise the
+# one thing the case depends on.
+$latin1File = Join-Path $punctFix 'chapters' '01-modes' '03-latin1.tex'
 try {
-    foreach ($case in $WiringCases) {
-        $ids = Get-FindingIds (Invoke-Fixture $case.Config)
-        $want = @($baselineIds | Where-Object { $case.Silences -notcontains $_ }) | Sort-Object
-        $got = @($ids) | Sort-Object
-
-        if (($want -join ',') -ne ($got -join ',')) {
-            Write-Host "[FAIL] $($case.Name) did not silence exactly what it names" -ForegroundColor Red
-            Write-Host "    expected to remain: $($want -join ', ')"
-            Write-Host "    actually remained:  $($got -join ', ')"
-            $failed = $true
-        }
-    }
-
-    # The masking macros are not a check, so switching them off must ADD
-    # findings rather than remove them: 01-clean.tex hides a contraction, two
-    # American spellings, a dash ligature and a literal quote inside \code{}.
-    $unmasked = Invoke-Fixture '@{ Macros = @{ Code = @() } }'
-    $leaked = @($unmasked | Where-Object { $_ -like '*01-clean.tex*' })
-    if ($leaked.Count -eq 0) {
-        Write-Host '[FAIL] Macros.Code is not wired: emptying it left 01-clean.tex silent' -ForegroundColor Red
-        Write-Host '    that file only passes because \code{} masks what is inside it'
-        $failed = $true
+    [System.IO.File]::WriteAllBytes($latin1File, [byte[]]@(
+        0x25, 0x20, 0x4C, 0x61, 0x74, 0x69, 0x6E, 0x2D, 0x31, 0x0A,   # "% Latin-1\n"
+        0x63, 0x61, 0x66, 0xE9, 0x0A))                                # "caf<E9>\n"
+    $enc = Invoke-Checker $punctFix
+    $wanted = 'chapters/01-modes/03-latin1.tex: [encoding] not valid UTF-8; re-save the file as UTF-8'
+    if ($enc -notcontains $wanted) {
+        Write-Fail 'a file that is not valid UTF-8 was not reported'
+        Write-Host "    expected among the findings: $wanted"
+        $enc | ForEach-Object { Write-Host "    actual: $_" }
+    } else {
+        Write-Host '[ok]   encoding: a mis-encoded file is reported, not silently repaired'
     }
 } finally {
-    Remove-Item -LiteralPath $fixturePolicy -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $latin1File -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host ''
@@ -215,7 +282,5 @@ if ($failed) {
     Write-Host 'FAIL' -ForegroundColor Red
     exit 1
 }
-
-Write-Host "[ok]   wiring: $($WiringCases.Count) settings silence exactly the check they name"
 Write-Host 'PASS' -ForegroundColor Green
 exit 0

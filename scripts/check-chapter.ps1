@@ -52,12 +52,16 @@ function Get-DefaultPolicy {
             Characters = @('chapters', 'frontmatter', 'backmatter')
         }
 
-        # Ascii      - no byte outside printable ASCII, tab, LF or CR.
         # Punctuation - letters of any script are fine; control characters and
-        #               Unicode look-alikes of ASCII punctuation are not.
-        # Off        - no character scan.
+        #               Unicode look-alikes of ASCII punctuation are not. This
+        #               is what the repo rule actually bans, and it is the only
+        #               setting under which a book in a language with diacritics
+        #               can exist at all.
+        # Ascii       - stricter, and an opt-in: no byte outside printable
+        #               ASCII, tab, LF or CR.
+        # Off         - no character scan.
         Characters   = [ordered]@{
-            Mode  = 'Ascii'
+            Mode  = 'Punctuation'
             Extra = @()
             Allow = @()
         }
@@ -74,8 +78,10 @@ function Get-DefaultPolicy {
         Index        = [ordered]@{ Enabled = $true; RangeMarkers = $true }
         Dashes       = [ordered]@{ Enabled = $true }
 
+        # Off by default: whether contractions belong in the author's voice is
+        # a voice decision, and most books have not made it.
         Contractions = [ordered]@{
-            Enabled = $true
+            Enabled = $false
             Preset  = 'english'
             Allow   = @()
         }
@@ -85,7 +91,7 @@ function Get-DefaultPolicy {
         # variety chosen and the check does not run.
         Spelling     = [ordered]@{
             Enabled = $true
-            Preset  = 'en-GB'
+            Preset  = ''
             Exempt  = @()
             Extra   = @{}
         }

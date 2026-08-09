@@ -18,6 +18,15 @@
         Mode = 'Ascii'
     }
 
+    # No contractions in the author's own voice; they appear only inside quoted
+    # material, which the check already exempts because \enquote{} spans are
+    # masked before it runs. Off by default across the library, because whether
+    # contractions belong in a voice is a decision most books have not made and
+    # this one has.
+    Contractions = @{
+        Enabled = $true
+    }
+
     Spelling = @{
         Preset = 'en-GB'
 
