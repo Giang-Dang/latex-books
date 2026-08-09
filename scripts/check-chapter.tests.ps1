@@ -124,13 +124,98 @@ for ($i = 0; $i -lt $max; $i++) {
     }
 }
 
-Write-Host ''
 if ($failed) {
+    Write-Host ''
     Write-Host "--- $($actual.Count) finding(s), $($Expected.Count) expected ---"
     Write-Host 'FAIL' -ForegroundColor Red
     exit 1
 }
 
-Write-Host "check-chapter.tests: $($Expected.Count) findings, all as expected"
+Write-Host "[ok]   defaults: $($Expected.Count) findings, all as expected"
+
+# ---------------------------------------------------------------------------
+# Wiring: every setting silences the check it names, and only that one
+# ---------------------------------------------------------------------------
+
+# The baseline above proves the checks fire. It says nothing about whether the
+# policy keys are connected to them: a key wired to the wrong check, or to
+# nothing, passes every test so far. So each section is switched off in turn
+# and the findings that disappear are compared against the findings that were
+# supposed to disappear.
+$WiringCases = @(
+    @{ Name = 'Characters';   Config = "@{ Characters = @{ Mode = 'Off' } }";        Silences = @('ascii') }
+    @{ Name = 'Citations';    Config = '@{ Citations = @{ Enabled = $false } }';     Silences = @('tilde-cite', 'cite-key') }
+    @{ Name = 'Quotes';       Config = '@{ Quotes = @{ Enabled = $false } }';        Silences = @('quote') }
+    @{ Name = 'Index';        Config = '@{ Index = @{ Enabled = $false } }';         Silences = @('index-pct') }
+    @{ Name = 'Dashes';       Config = '@{ Dashes = @{ Enabled = $false } }';        Silences = @('dash') }
+    @{ Name = 'Contractions'; Config = '@{ Contractions = @{ Enabled = $false } }';  Silences = @('contraction') }
+    @{ Name = 'Spelling';     Config = '@{ Spelling = @{ Enabled = $false } }';      Silences = @('spelling') }
+    @{ Name = 'Numbers';      Config = '@{ Numbers = @{ Enabled = $false } }';       Silences = @('number') }
+    @{ Name = 'Verbatim';     Config = '@{ Verbatim = @{ Enabled = $false } }';      Silences = @('verbatim') }
+    @{ Name = 'Log';          Config = '@{ Log = @{ Enabled = $false } }';           Silences = @('log') }
+    # Paths.Prose empties the prose pass. The character scan reads its own list
+    # and must survive, which is what keeps the two lists genuinely separate.
+    @{ Name = 'Paths.Prose';  Config = '@{ Paths = @{ Prose = @() } }'
+       Silences = @('tilde-cite', 'cite-key', 'quote', 'index-pct', 'contraction',
+                    'spelling', 'dash', 'number', 'verbatim') }
+)
+
+function Get-FindingIds {
+    param([string[]]$Lines)
+    return @($Lines |
+        ForEach-Object { if ($_ -match '\[([a-z-]+)\]') { $Matches[1] } } |
+        Sort-Object -Unique)
+}
+
+$fixturePolicy = Join-Path $fixture 'check-chapter.psd1'
+$baselineIds = Get-FindingIds $actual
+
+function Invoke-Fixture {
+    param([string]$Config)
+    Set-Content -LiteralPath $fixturePolicy -Value $Config -Encoding utf8
+    try {
+        return @(& pwsh -NoProfile -File $checker $fixture 2>&1 |
+            ForEach-Object { "$_" } |
+            Where-Object { $_ -like "$prefix/*" })
+    } finally {
+        Remove-Item -LiteralPath $fixturePolicy -Force -ErrorAction SilentlyContinue
+    }
+}
+
+try {
+    foreach ($case in $WiringCases) {
+        $ids = Get-FindingIds (Invoke-Fixture $case.Config)
+        $want = @($baselineIds | Where-Object { $case.Silences -notcontains $_ }) | Sort-Object
+        $got = @($ids) | Sort-Object
+
+        if (($want -join ',') -ne ($got -join ',')) {
+            Write-Host "[FAIL] $($case.Name) did not silence exactly what it names" -ForegroundColor Red
+            Write-Host "    expected to remain: $($want -join ', ')"
+            Write-Host "    actually remained:  $($got -join ', ')"
+            $failed = $true
+        }
+    }
+
+    # The masking macros are not a check, so switching them off must ADD
+    # findings rather than remove them: 01-clean.tex hides a contraction, two
+    # American spellings, a dash ligature and a literal quote inside \code{}.
+    $unmasked = Invoke-Fixture '@{ Macros = @{ Code = @() } }'
+    $leaked = @($unmasked | Where-Object { $_ -like '*01-clean.tex*' })
+    if ($leaked.Count -eq 0) {
+        Write-Host '[FAIL] Macros.Code is not wired: emptying it left 01-clean.tex silent' -ForegroundColor Red
+        Write-Host '    that file only passes because \code{} masks what is inside it'
+        $failed = $true
+    }
+} finally {
+    Remove-Item -LiteralPath $fixturePolicy -Force -ErrorAction SilentlyContinue
+}
+
+Write-Host ''
+if ($failed) {
+    Write-Host 'FAIL' -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "[ok]   wiring: $($WiringCases.Count) settings silence exactly the check they name"
 Write-Host 'PASS' -ForegroundColor Green
 exit 0

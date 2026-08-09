@@ -1,0 +1,35 @@
+@{
+    # This book's half of the prose gate. scripts/check-chapter.ps1 supplies the
+    # checks and the defaults; everything below is where this book differs, and
+    # only that. Anything absent here is the library default, and the resolved
+    # policy is printed at the top of every run.
+    #
+    # The reasons live in SPEC.md's "Writing rules (book-specific)" section.
+    # Keep the two in step: a setting here without a rule there is a rule
+    # nobody agreed to, and a rule there without a setting here is a rule
+    # nothing enforces.
+
+    # Every listing in this book is captured console output, SDL or C#, and all
+    # of it is ASCII. A stray Unicode character in a listing is a paste that
+    # went through something, which is exactly the class of defect the verbatim
+    # check exists for, so this book wants the strictest setting rather than
+    # the punctuation-only default.
+    Characters = @{
+        Mode = 'Ascii'
+    }
+
+    Spelling = @{
+        Preset = 'en-GB'
+
+        # Four words the en-GB preset flags that are not mistakes here. Each
+        # one is a name or a title rather than a spelling choice, and the whole
+        # point of an exemption is that it is narrower than turning the check
+        # off. Matched whole against the offending word, case-insensitively.
+        Exempt = @(
+            'catalogs?'                             # Catalog is a Mosaic domain service
+            'analyz\w*'                             # HotChocolate ships Types.Analyzers
+            'authoriz\w*'                           # chapter 15's title, and the OAuth term of art
+            'modell?ing'                            # chapter 13's title
+        )
+    }
+}
