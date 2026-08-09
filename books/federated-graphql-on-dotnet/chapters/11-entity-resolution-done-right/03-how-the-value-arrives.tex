@@ -1,0 +1,156 @@
+\section{How the Required Value Arrives}
+\label{sec:ch11-how-the-value-arrives}
+\index{external setter|(}%
+
+Apollo's documentation says that when the router calls a subgraph for a
+computed field it \enquote{includes the \code{size} and \code{weight} of the
+\code{Product} object passed to the
+resolver}~\autocite{apollo2026contributefields}. That is a fair description of
+the wire and it is not what happens in the code, and the gap between the two is
+this section.
+
+I expected the required field to be a parameter. It is not. Mosaic's reference
+resolver has not changed since
+chapter~\ref{ch:the-first-cut-extracting-catalog} and still takes one argument
+that means anything:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+[ReferenceResolver]
+public static Product? ResolveReference(string id, IResolverContext context)
+    => ProductKey.TryDecode(id, context, out var productId)
+        ? new Product { Id = productId }
+        : null;
+\end{minted}
+
+That builds a \code{Product} holding a key and nothing else. It never sees the
+category. And yet \code{GetShippingCostAsync}, running a moment later, reads
+\code{product.Category} and gets \code{KITCHEN}.
+
+\index{HotChocolate!ExternalSetter@\code{ExternalSetter}}%
+What sits between them is at the bottom of \code{EntitiesResolver}, read at the
+same tag as section~\ref{sec:ch11-what-entities-asks-for}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+var entity = await resolver(context);
+
+if (entity is not null
+    && type.Features.TryGet(out ExternalSetter? externalSetter))
+{
+    externalSetter.Invoke(context.Schema, type, representation, entity);
+}
+
+return entity;
+\end{minted}
+
+The reference resolver returns an object, and then something writes onto it out
+of the representation. Nothing was passed to anything.
+Figure~\ref{fig:ch11-required-field-route} is the whole route, and the middle
+of the three boxes inside Mosaic is the step no documentation describes.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch11-required-field-route}
+  \caption{Everything up to the fourth arrow is federation and is written down
+  in the specification. The two steps after it are HotChocolate: the reference
+  resolver hands back an object that knows only its own key, and a compiled
+  setter fills in the rest from the representation before any field resolver
+  runs. A property with no setter is where this route quietly ends.}
+  \label{fig:ch11-required-field-route}
+\end{figure}
+
+\index{HotChocolate!expression trees at schema build}%
+That setter is not reflection at request time. \code{ExternalSetterExpression\-Helper}
+builds an expression tree once per type when the schema is built and compiles
+it, so what runs per entity is a delegate. Reading how it is built is where the
+interesting part is.
+
+\subsection*{Key fields are left alone}
+
+\code{BuildFiller} walks the object type's fields and skips any field that
+appears in a \code{@key}. The source says why in as many words:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+// Fields that participate in a '@key' identify the entity and are owned by the reference
+// resolver. The representation echoes them back only so the entity can be located, so the
+// resolver's returned values are preserved instead of being overwritten.
+\end{minted}
+
+Which is the right call. The representation carries the key in whatever form
+the other service encoded it, and Mosaic's \code{ProductKey.TryDecode} turned
+that into a \code{Guid} on the way in. Copying the encoded string back over the
+decoded one would undo the decode.
+
+\subsection*{Everything else is fair game}
+
+\index{external setter!ignores @external on object types}%
+Here is the part I did not expect. For an object type, the walk does not check
+for \code{@external} at all. It emits a setter call for every field whose
+member is a property with a setter, key fields excepted.
+\code{TryAddExternalSetter} has two overloads, one for object types and one for
+interfaces; the interface one tests each field for an \code{ExternalDirective}
+before it emits anything. The object one, which is the one that runs for
+\code{Product} and for every other entity in this book, does not.
+
+The class summary states the rule its author had in mind, and it is a
+reasonable rule. Its second sentence:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The representation is authoritative wherever it carries a value, while resolver
+values survive where it is silent.
+\end{minted}
+
+\enquote{Wherever it carries a value} is doing more work than it looks like.
+The sample makes it concrete. \code{Widget.Name} in the sample's \code{catalog}
+subgraph is that subgraph's own field: it carries no \code{@external} there,
+and the store is the authority on it. Send three representations, one of them
+carrying a \code{name} of its own:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+representation 0 -> Hex bolt
+representation 1 -> NOT WHAT THE STORE SAYS
+representation 2 -> Split washer
+\end{minted}
+
+Representation 1 won. Representation 2 carried \code{nonsense: 42}, a field the
+type does not have, and was ignored without comment.
+
+\index{security!a subgraph reachable from outside}%
+I want to be careful about how large a claim this is. A router never does this.
+It sends the key fields and the fields some \code{@requires} named, and nothing
+else, so no client of the graph can reach the behaviour. What can reach it is
+anything that can post to the subgraph, which in this book's compose file is
+anything on the machine. That is a reason to keep subgraphs off the public
+network rather than a defect to report, and
+chapter~\ref{ch:security-hardening} is where a subgraph stops being reachable
+from outside the cluster. It also means that if you ever put a subgraph behind
+nothing but a network policy, \code{\_entities} is the field to think hardest
+about.
+
+\subsection*{The trap this leaves in your own code}
+
+\index{external@\code{@external}!needs a settable property}%
+The practical consequence is small and will cost somebody an afternoon.
+\textbf{The property behind an \code{@external} field must have a setter.} Not
+\code{init}, which does work here because the compiled expression calls the
+setter directly and init-only is a rule the compiler keeps rather than the
+runtime, but not get-only. A get-only property compiles, composes, passes every
+schema check, and hands your resolver null for every entity in the graph.
+
+What the client then sees is up to the resolver, and the two possibilities are
+worth knowing apart. A resolver that treats the missing value as an ordinary
+null answers null for every product, quietly, which looks exactly like the
+router forgetting to send the field. Mosaic's throws instead, so it answers
+\code{Unexpected Execution Error} for every product, which is louder and no
+more informative. Both are one property away from working.
+
+Whichever you get, the trace from
+section~\ref{sec:ch11-a-field-from-the-other-service} tells the two causes
+apart in five seconds. If the representation in \code{extensions.trace} carries
+the field and your resolver does not have it, the property is the problem and
+the router is not.
+
+\medskip
+That is the runtime half. The composer has three opinions about the same two
+directives, and one of them changed my code.
+
+\index{external setter|)}%

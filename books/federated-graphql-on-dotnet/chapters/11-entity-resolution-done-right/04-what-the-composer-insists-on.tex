@@ -1,0 +1,136 @@
+\section{What the Composer Insists On}
+\label{sec:ch11-what-the-composer-insists-on}
+\index{composition!external@\code{@external} and requires@\code{@requires}|(}%
+
+Chapter~\ref{ch:composition} produced its errors by taking the real pair of
+schemas and applying one literal edit, on the grounds that an error message
+from a toy schema is a fact about the toy. The three below are made the same
+way, in \code{scripts/entity-cases.mjs}, and the messages are wgc 0.129.7's own
+with the box it draws around them stripped off.
+
+\subsection*{An \code{@external} field nothing requires}
+
+Take the \code{@requires} off \code{shippingCost} and leave the
+\code{@external} where it is:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The subgraph "mosaic" could not be federated for the following reason:
+The Object field "Product.category" is invalidly declared "@external". An Object field should only be declared
+"@external" if it is part of a "@key", "@provides", or "@requires" field set, or the field is necessary to satisfy an
+Interface implementation. In the case that none of these conditions is true, the "@external" directive should be
+removed.
+\end{minted}
+
+The line breaks are the composer's own; it wraps to a fixed width inside its
+table. Two lines above this one, wgc says \enquote{We found composition errors,
+while composing} and invites you to check them below, which is where every
+listing in this section starts and none of them repeats.
+
+\index{composition!errors that name the fix}%
+This is the most useful composition error in the book so far, and the reason is
+that it enumerates the four legal cases and then tells you what to do. Compare
+it with the three from chapter~\ref{ch:composition} that all reported as a
+shareability problem on the key field and none of which named a key.
+
+\index{suppress-warnings@\code{--suppress-warnings}}%
+It also settles two flags chapter~\ref{ch:composition} could not exercise. That
+chapter had nothing to say about \code{--suppress-warnings} because Mosaic
+produced no warnings for it to suppress, and this was the first edit I made
+that looked like a warning candidate. It is not one. The case runs the same
+edit twice, once plain and once with the flag, and asserts that the two exit
+codes match. They do, at 1. An orphaned \code{@external} is an error, and a
+flag that suppresses warnings has nothing to say about it.
+
+\index{ignore-external-keys@\code{--ignore-external-keys}}%
+Chapter~\ref{ch:composition} handed the other one here by name:
+\code{--ignore-external-keys} needs an \code{@external}, and Mosaic now has
+one. Composing the committed pair with the flag produces a file byte-identical
+to the one without it. That is the answer rather than an evasion, and the
+reason is in the flag's name: Mosaic's \code{@external} field is not part of a
+key. \code{Product} is keyed on \code{id}, which Mosaic resolves for itself.
+Somebody whose key fields are marked \code{@external}, which is how federation
+v1 required them to be written, would have something for the flag to ignore.
+
+\subsection*{A \code{@requires} on a field you own}
+
+The mirror image. Leave the \code{@requires} and take the \code{@external} off
+\code{category}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The subgraph "mosaic" could not be federated for the following reason:
+The field "Product.shippingCost" in subgraph "mosaic" defines a "@requires" directive with the following field set:
+ "category".
+However, neither the field "Product.category" nor any of its field set ancestors are declared "@external".
+Consequently, "Product.category" is already provided by subgraph "mosaic" and should not form part of a "@requires"
+directive field set.
+\end{minted}
+
+\index{requires@\code{@requires}!rules the composer enforces}%
+Between them the two errors pin the pair: the directive and the declaration
+only mean anything together. Cosmo's documentation states the three rules and
+the composer enforces all three, which is worth saying because
+chapter~\ref{ch:hotchocolate-quickly} found a documentation page whose sample
+code does not compile and this book has been sceptical of vendor pages ever
+since. The entity needs a \code{@key}; the fields named in \code{@requires}
+must be \code{@external} here; and some other subgraph must actually
+resolve them~\autocite{cosmo2026requires}.
+
+\subsection*{The one that composed}
+
+\index{composition!nullability of an @external copy}%
+This is the case that changed my code, and it is the only one of the three that
+produces no error at all.
+
+Catalog declares \code{category: ProductCategory!}. My first version of the
+\code{@external} copy in Mosaic was nullable, because the C\# property is
+nullable and I let the schema follow the property without thinking about it.
+The pair composes. Nothing is printed. And the client-facing schema comes out
+like this:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+catalog owns it and declares it     ProductCategory!
+mosaic declares its @external copy  ProductCategory
+the client-facing schema says       ProductCategory
+the composer said                   nothing
+\end{minted}
+
+A field that Catalog guarantees became a field that might be null, for every
+client of the whole graph, because a second service declared a copy it never
+resolves and got the nullability wrong. There is no error, no warning, and
+nothing in Mosaic's own schema that looks incorrect: \code{ProductCategory} is
+a perfectly ordinary nullable enum field.
+
+\index{external@\code{@external}!is a copy of somebody else's contract}%
+The rule I take from it is that an \code{@external} declaration is not a
+declaration at all. It is a copy of somebody else's, and it has to match theirs
+in every respect that composition merges, which includes nullability and takes
+the more permissive side. If your subgraph disagrees with the owner about a
+type, composition believes whichever of you was more relaxed.
+
+Hence the pair of attributes in
+section~\ref{sec:ch11-a-field-from-the-other-service}:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+[External]
+[GraphQLNonNullType]
+public ProductCategory? Category { get; set; }
+\end{minted}
+
+\code{[GraphQLNonNullType]} forces the schema to say what Catalog says. The
+property stays nullable because it holds a value that arrives for some
+representations and not others, and a non-nullable \code{ProductCategory} would
+answer \code{FURNITURE} for absent, zero being a value of every C\# enum. Two
+different nullabilities for the same thing, each right about its own layer.
+
+\index{gates!a case for a behaviour that produces no error}%
+All three are cases in the gate, and the third one is the argument for having a
+gate at all. A composition error announces itself. A composed schema that is
+subtly weaker than the one you meant announces nothing, and the only way I
+noticed was reading the client schema the composer wrote. The case now reads it
+for me on every run.
+
+\medskip
+So much for the directive that fetches something. The other half of the pair
+promises not to.
+
+\index{composition!external@\code{@external} and requires@\code{@requires}|)}%

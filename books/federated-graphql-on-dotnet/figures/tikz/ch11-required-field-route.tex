@@ -1,0 +1,63 @@
+% The route a @requires field's value takes, from the subgraph that owns it to
+% the resolver that needs it. Referenced from chapter 11. Bare tikzpicture; the
+% figure environment, caption and label live at the call site.
+%
+% The point of the picture is the last two steps. Everything up to the
+% representation is federation; the step after it is HotChocolate writing a
+% value onto an object the reference resolver already returned, which is the
+% part no documentation describes.
+\begin{tikzpicture}[
+    font=\small,
+    party/.style={draw, rounded corners=2pt, minimum width=24mm,
+                  minimum height=8mm, align=center},
+    life/.style={gray, dashed},
+    msg/.style={-{Stealth[length=2mm]}},
+    back/.style={-{Stealth[length=2mm]}, gray},
+    inside/.style={draw, rounded corners=2pt, minimum width=40mm,
+                   minimum height=7mm, align=center, font=\scriptsize,
+                   fill=black!5},
+    flow/.style={-{Stealth[length=2mm]}, thick},
+    lbl/.style={font=\scriptsize, align=center, fill=white, inner sep=1pt}
+  ]
+
+  \node[party] (client) at (0,0)   {Client};
+  \node[party] (router) at (3.8,0) {Router};
+  \node[party] (cat)    at (8.0,0) {Catalog\\\scriptsize :5101};
+  \node[party] (mos)    at (12.2,0) {Mosaic\\\scriptsize :5100};
+
+  \foreach \x in {0, 3.8, 8.0, 12.2} {
+    \draw[life] (\x,-0.5) -- (\x,-4.2);
+  }
+
+  % 1. the client asks for shippingCost and nothing else
+  \draw[msg] (0,-1.0) -- (3.8,-1.0);
+  \node[lbl, anchor=south] at (1.9,-0.95) {\code{\{ title shippingCost \}}};
+
+  % 2 and 3. fetch 0, with the required field added
+  \draw[msg] (3.8,-2.0) -- (8.0,-2.0);
+  \node[lbl, anchor=south] at (5.9,-1.95)
+    {\code{title category}\\\code{\_\_typename id}};
+  \draw[back] (8.0,-2.9) -- (3.8,-2.9);
+  \node[lbl, anchor=south] at (5.9,-2.85) {2 products};
+
+  % 4. the representation
+  \draw[msg] (3.8,-3.9) -- (12.2,-3.9);
+  \node[lbl, anchor=south] at (8.0,-3.85)
+    {\code{\_entities}, each representation \code{\{\_\_typename, id, category\}}};
+
+  % -- what happens inside Mosaic ---------------------------------------------
+  %
+  % The three boxes sit under the Mosaic lifeline rather than beside it, and
+  % they are the only part of the picture that is not a message.
+  \node[inside] (ref) at (11.9,-5.4)
+    {reference resolver returns\\a \code{Product} holding only the key};
+  \node[inside] (set) at (11.9,-6.9)
+    {the external setter copies \code{category}\\out of the representation onto it};
+  \node[inside] (res) at (11.9,-8.4)
+    {\code{shippingCost} reads\\\code{product.Category}};
+
+  \draw[flow] (12.2,-4.2) -- (12.2,-4.7) -- (11.9,-4.7) -- (ref.north);
+  \draw[flow] (ref.south) -- (set.north);
+  \draw[flow] (set.south) -- (res.north);
+
+\end{tikzpicture}

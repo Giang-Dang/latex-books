@@ -1,0 +1,102 @@
+\section*{Your turn}
+
+Check out tag \code{ch11} of the companion repository and run \code{npm ci}
+once. Exercises 1 to 4 need the database, both subgraphs and the router.
+Exercises 5 to 8 need node, Docker and the .NET SDK, and nothing started by
+hand: the cases script builds the sample, starts both of its subgraphs on ports
+of its own, and stops them again.
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+docker compose up -d mosaic-db
+dotnet run --project src/Mosaic.Catalog     # 5101
+dotnet run --project src/Mosaic.Api         # 5100
+docker compose up -d mosaic-router          # 3002
+\end{minted}
+
+The two \code{dotnet run} commands want a terminal each. If port 3002 is
+already taken, \code{docker compose --profile wire down} clears
+chapter~\ref{ch:how-a-federated-query-actually-runs}'s router.
+
+\begin{enumerate}
+  \item \textbf{Watch the router fetch something nobody asked for.} Send this
+  to port 3002 with the header \code{X-WG-Trace: true}:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{graphql}
+{ browseProducts(first: 2) { nodes { title shippingCost { amount } } } }
+  \end{minted}
+
+  Read \code{extensions.trace.fetches} in the response. Find the document the
+  router sent Catalog and the representations it sent Mosaic. Then take
+  \code{shippingCost} out of your query and send it again. One word disappears
+  from Catalog's document and the representations lose a field.
+
+  \item \textbf{Make the subgraph fail the way the router never will.} Take one
+  of those representations, delete its \code{category}, and post an
+  \code{\_entities} query straight to port 5100 with three representations of
+  which that is the middle one. Note which entity is null, which are not, and
+  where the error's \code{path} points. Then look in Mosaic's console for the
+  sentence the client did not get.
+
+  \item \textbf{Break the setter.} Find \code{Category} on the \code{Product}
+  stub in \code{Mosaic.Api}, change its \code{\{ get; set; \}} to
+  \code{\{ get; \}}, and give it an initialiser so that it compiles. Restart
+  Mosaic and ask the router for a shipping cost. Before you read the error,
+  write down which of the two services you would have investigated first. Put
+  the property back with \code{git checkout}.
+
+  \item \textbf{Find out what a category is worth.} Ask the router for the
+  storefront query at \code{first: 25} with \code{shippingCost} and again
+  without it, three times each to warm both documents, reading Mosaic's
+  timeline line after each. The resolver count moves by twenty-five and the SQL
+  count does not move at all. Then work out what would have to change in
+  \code{ProductPricingNode} for the second number to move as well.
+
+  \item \textbf{Feel the difference a DataLoader makes.} Run
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/entity-cases.mjs --print batch-is-one-lookup
+node scripts/entity-cases.mjs --print naive-is-four-lookups
+  \end{minted}
+
+  and put the two logs side by side. The second one has four lookups, which is
+  the obvious difference. Find the other one, and then find the line in
+  \code{samples/entity-resolution} that causes it. If the script complains that
+  a port is taken, an earlier run is still up.
+
+  \item \textbf{Break a schema three ways.} Print each of these cases in turn:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+external-unused    requires-not-external    external-nullability-wins
+  \end{minted}
+
+  Two of them print a composition error and one prints four lines and no error
+  at all. Decide which of the three you would be most likely to ship, then read
+  \code{scripts/entity-cases.mjs} to see what each one edited.
+
+  \item \textbf{Give \code{@provides} something to lie about.} Print the case
+  \code{provides-serves-what-it-stored} and read its four rows. Then open
+  \code{Crates.cs} in the sample and change crate three's \code{PackedAs} so
+  that it disagrees with Catalog too. Rerun the case. It fails, and the failure
+  message is the assertion telling you that the sample no longer contains
+  exactly one deliberate lie. No re-export is needed, because \code{PackedAs}
+  is not in the schema. \code{git checkout} puts it back.
+
+  \item \textbf{Decide a nullability, then test it.} Print the case
+  \code{dangling-key-nulls-the-answer}. Then, in the same file, make
+  \code{widgetByKey} return a nullable widget, and re-export that subgraph's
+  schema over its file under \code{schema/samples/} before you rerun. Skip the
+  re-export and the script stops before any case runs, because it checks each
+  subgraph against its committed schema first. With the schema updated, the
+  case fails on one assertion: the response no longer collapses. Read the new
+  answer and decide which of the two you would rather hand a client.
+  \code{git checkout} puts both files back.
+\end{enumerate}
+
+Exercise 3 is the one to do properly, and the reason is the sentence you write
+down before reading the error. A missing setter compiles, passes composition,
+and then breaks a field whose symptom points at the router and at the other
+service. Where you look first is the whole cost of that bug, and writing the
+guess down is the only way to find out afterwards whether you were right.
+Chapter~\ref{ch:strangling-the-monolith} takes the remaining five domains out
+of \code{Mosaic.Api}, and the arrangement it produces is four more copies of
+what section~\ref{sec:ch11-null-at-the-boundary} just measured.

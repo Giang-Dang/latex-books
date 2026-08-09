@@ -1,0 +1,132 @@
+\section{Null at the Boundary}
+\label{sec:ch11-null-at-the-boundary}
+\index{nullability!at a federation boundary|(}%
+
+One signature decides most of what follows:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+_entities(representations: [_Any!]!): [_Entity]!
+\end{graphqlsdl}
+
+A non-null list of nullable elements. Every representation you send is
+answered, and any of the answers may be nothing. That is the specification's
+design and it is the right one: a subgraph handed twenty-five keys should not
+have to fail all of them because it cannot answer
+one~\autocite{apollo2026subgraphspec}.
+
+\subsection*{One representation that cannot be answered}
+
+\index{nullability!an error scoped to one representation}%
+Three representations to Mosaic, the middle one carrying no category, all three
+selecting \code{shippingCost}. The resolver in
+section~\ref{sec:ch11-a-field-from-the-other-service} throws for the middle
+one, on purpose, because a shipping cost worked out from a category nobody sent
+would be a wrong number rather than a missing one:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+entities: 5.9, null, 39
+error: Unexpected Execution Error at _entities.1.shippingCost
+\end{minted}
+
+\code{Money!} cannot be null, so the null propagates up to the \code{\_Entity}
+element, which is nullable and stops it there. The neighbours are untouched.
+The index in the path is how the client works out which of its representations
+failed, and it is the only thing in the response that says so.
+
+\index{errors!Unexpected Execution Error@\code{Unexpected Execution Error}}%
+The message is worth a moment. \code{Unexpected Execution Error} is what
+HotChocolate says about an exception it was not told how to describe, and the
+sentence I wrote into that \code{InvalidOperationException} is in the server
+log and nowhere else. That is correct behaviour for a production service, and
+the consequence is worth knowing in advance: the client is handed something
+that means \enquote{one of your subgraphs threw}, and the text that says which
+one and why is in a different process from the one the client is talking to.
+
+\subsection*{Null and null are not the same}
+
+\index{reference resolver!returning null against throwing}%
+Now the same batch with a key that does not decode instead of a category that
+is missing. Chapter~\ref{ch:the-first-cut-extracting-catalog}'s gate has
+asserted this since that chapter and I had never put it beside the case above:
+the element is null, and there is no error at all.
+
+Two failures, two identical-looking holes in the data, and one of them is
+silent. The difference is what the reference resolver did. Returning null is a
+subgraph saying \enquote{not mine}, which the specification treats as an
+ordinary answer. Throwing is a subgraph saying \enquote{something went wrong},
+which produces an error beside the null. Both are legitimate and you choose
+between them every time you write one of these:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+=> ProductKey.TryDecode(id, context, out var productId)
+    ? new Product { Id = productId }
+    : null;
+\end{minted}
+
+Mosaic returns null there because a key it cannot read is genuinely not its
+product. If it threw, every router that ever mangled an identifier would fill
+your logs on the wrong side of the boundary.
+
+\subsection*{What a client sees, which is worse}
+
+\index{nullability!propagation through a non-null chain}%
+Everything above is what the subgraph answered. What the client gets depends
+entirely on the nullability of the path the entity hangs from, and that is
+where a small local failure stops being small.
+
+The sample has a crate holding a widget key Catalog has never heard of, which
+is what a dangling foreign key looks like once the two tables are two services.
+Ask for it through the field with no \code{@provides} on it, so the router
+really does go and ask:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+data: null
+error: Cannot return null for non-nullable field 'Query.crates.widgetByKey.name'.
+path: crates.3.widgetByKey.name
+\end{minted}
+
+One crate out of four, and the whole response is \code{data: null}. Follow the
+chain outwards from the failure:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+name: String!   inside   widgetByKey: Widget!   inside   crates: [Crate!]!
+\end{graphqlsdl}
+
+Every link is non-null, so there is nowhere for the null to stop and it walks
+out of the document.
+
+\index{nullability!the argument for nullable boundary fields}%
+This is the measured version of something
+chapter~\ref{ch:the-first-cut-extracting-catalog} claimed and did not test. The
+doc comment on \code{OrderLineNode.GetProduct} says a dangling identifier
+\enquote{surfaces as a null product at the router}. It surfaces as a null
+product only where the field is nullable. Where it is not, it surfaces as a
+null response, and the three crates that were perfectly fine go with it.
+
+So the rule I would give someone extracting a service, and I did not hold it
+myself until this chapter measured it: \textbf{a field that crosses a subgraph
+boundary should be nullable unless you can guarantee referential integrity
+across a network}. You almost certainly cannot. Mosaic's own
+\code{OrderLine.product} is non-null and would take an order query down the same
+way, and the only reason it has never happened is that
+the seed data is consistent by construction.
+Chapter~\ref{ch:strangling-the-monolith} carves four more domains out and will
+have to decide this field by field; I would rather it decided with this listing
+in front of it.
+
+\index{provides@\code{@provides}!hides a broken reference}%
+And notice what section~\ref{sec:ch11-the-promise-provides-makes} would have
+done here. Through the \code{@provides} path the same broken reference answered
+\enquote{Unknown part} and nobody was any the wiser. The directive that saved a
+round trip is also the directive that turned a loud failure into a quiet wrong
+answer. Neither behaviour is a bug. Both are the graph doing exactly what its
+schema told it to.
+
+\medskip
+That is the boundary, in both directions: what the router sends, what a
+subgraph does with it, and what comes back when it cannot.
+Chapter~\ref{ch:strangling-the-monolith} takes the other five domains out of
+\code{Mosaic.Api}, and every one of them will hang fields off a type it does not
+own, which is the arrangement this chapter has been taking apart.
+
+\index{nullability!at a federation boundary|)}%
