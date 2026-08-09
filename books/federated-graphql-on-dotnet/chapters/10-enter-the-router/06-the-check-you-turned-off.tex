@@ -1,0 +1,175 @@
+\section{The Check You Turned Off}
+\label{sec:ch10-the-check-you-turned-off}
+\index{satisfiability!what the router does with it off|(}%
+
+Chapter~\ref{ch:composition} ended a section by refusing to guess. It had
+composed a deliberately unsatisfiable graph with
+\code{--disable-resolvability-validation}, found that the config it produced
+carries a client schema \code{===} identical to a healthy one, and said that
+what a router does with such a file was not something it was going to describe
+without watching. One request answers it. Here is the request.
+
+The setup is chapter~\ref{ch:composition}'s \code{unsatisfiable-key} case
+unchanged. Mosaic's \code{Product} keeps its key and gains one argument,
+\code{resolvable: false}, and the composer answers with four unresolvable-path
+errors and no output. With the flag it produces a config instead, in which the
+only thing recording that anything is wrong is one property on one key:
+
+\begin{minted}{json}
+{ "typeName": "Product", "selectionSet": "id", "disableEntityResolver": true }
+\end{minted}
+
+I gave that file to a router. Five things happen, in this order.
+
+\subsection*{It starts, and says nothing}
+
+\index{router!silent on a broken graph}%
+The router comes up. \code{/health} answers 200. The startup log is eleven
+lines again, and it differs from
+section~\ref{sec:ch10-one-process-two-files}'s in exactly one of them: this
+config does not turn watching on, so where Mosaic's router says it is watching
+the execution config, this one says that a static config was provided and
+updating it needs a restart. The other ten are identical, warning about the
+missing graph token and about development mode, and carrying nothing whatsoever
+about the graph it just loaded. I counted the warning lines mentioning
+resolvability, unreachable fields, entities or subgraphs, and there are none.
+
+That is the first surprise and the largest. The router has, in one file, a
+schema promising four fields on \code{Product} and a routing table saying the
+only service holding them may not be entered. Both halves are in front of it at
+startup. It could compare them. It does not.
+
+\subsection*{Most of the graph works}
+
+Ask for something that stays inside Catalog and it is fine:
+
+\begin{minted}{graphql}
+{ browseProducts(first: 2) { nodes { title sku } } }
+\end{minted}
+
+Two products, HTTP 200, no errors. Which makes this worse rather than better.
+A deployment of this config passes a smoke test that reads a list, and passes
+whatever health check you have, and serves the majority of a storefront
+correctly. What it cannot do is the thing federation was for.
+
+\subsection*{Crossing the boundary is a 500}
+
+\begin{minted}{graphql}
+{ browseProducts(first: 2) { nodes { title price { amount } } } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{text}
+HTTP 500
+
+{"errors":[{"message":"internal server error"}]}
+\end{minted}
+
+\index{errors!internal server error@\code{internal server error}}%
+No field name. No subgraph name. No hint that the graph was composed with a
+check switched off. A client developer receiving this has no route from the
+message to the cause, and the operator reading it has one only if they already
+suspect the answer.
+
+Note also that this one is a 500 where
+section~\ref{sec:ch10-sixty-six-settings}'s unreachable subgraph was a 200. The
+distinction is real: an upstream that will not answer is a data problem the
+GraphQL response can carry, and a query the router cannot plan is not a query at
+all.
+
+\subsection*{The log knows, and names the wrong type}
+
+The router's own log has the cause:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+1 error occurred: * printOperation planner id: 1: validation failed: external: Cannot query field "price" on type "Query"., locations: [], path: [query]
+\end{minted}
+
+\index{errors!that name the wrong type}%
+\code{price} is not a field of \code{Query}. It never has been, in any schema in
+this book, and nothing the client sent suggests it should be. Read the message
+twice before dismissing it, because it is not nonsense: it is about a document
+the planner wrote, not the one the client sent. Denied the only route into
+Mosaic, the planner built a subgraph request that asks for \code{price} at the
+root, and that document failed validation against Mosaic's schema. The words
+\code{printOperation planner} at the front are the tell that the subject is the
+router's own output.
+
+Figure~\ref{fig:ch10-where-the-failure-went} is the whole trade the flag makes.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch10-where-the-failure-went}
+  \caption{The same fault, twice. Without the flag it is a build-time message
+  that names the field, the path a client would take to it and why the walk
+  failed. With it, everything to the left of the router is quiet, and what
+  reaches the operator instead is a 500 with no field in it and a log line about
+  a document nobody wrote.}
+  \label{fig:ch10-where-the-failure-went}
+\end{figure}
+
+\subsection*{It fails before anything is called}
+
+\index{query plan!failing at plan time}%
+The last measurement is the one that surprised me most, and it is a timing. The
+request logger records the failed request at \code{"latency": 0.000822445},
+which is eight hundred microseconds. No network call fits in that.
+
+The confirmation is stronger than the timing: the same 500 comes back with
+\code{X-WG-Skip-Loader: true} set, and that header means the router does not
+execute the plan at all. So the failure is not a subgraph refusing the request.
+It is the router failing to build one.
+
+Which is, in a bleak way, the good news buried in this section. The graph is
+broken deterministically rather than intermittently, every query that crosses
+the boundary fails the same way every time, and it fails before it costs a
+subgraph anything. There is no partially-served response and no half-written
+data. What there is instead is a class of query that has stopped working with no
+message anybody can act on.
+
+\subsection*{Both halves are asserted}
+
+\index{verification!router cases}%
+Chapter~\ref{ch:composition} made its composition errors a gate, on the grounds
+that a printed error message goes stale as easily as a schema. Everything in
+this section is the same kind of claim, so it is the same kind of gate:
+\code{scripts/router-cases.mjs}, called by both verification scripts, one node
+implementation for the reason chapter~\ref{ch:composition} gives.
+
+\begin{minted}[fontsize=\footnotesize]{text}
+node scripts/router-cases.mjs --list
+
+config-beats-env    a value in config.yaml wins over the environment variable for it
+localhost-fallback  localhost in a routing URL reaches the host, until you turn that off
+resolvability-off   a graph composed with --disable-resolvability-validation, in front of a router
+\end{minted}
+
+Each case starts real containers against a real config and each carries its own
+control, which is the part I would keep if I kept one thing. The precedence case
+fails if \code{LOG\_LEVEL=debug} ever stops producing debug lines on its own;
+the fallback case fails if the query succeeds with the fallback off. Without
+those, both would go on passing against a router that had simply stopped
+answering, and a green gate that cannot fail is worse than no gate.
+
+\index{verification!a counting trap}%
+The precedence case earned its control immediately. My first version counted
+zero debug lines in both runs and would have reported the finding backwards. The
+router colours its log, so the bytes around the word are escape sequences rather
+than the spaces I was matching on, and every level check returned zero. The
+control caught it in one run. Chapter~\ref{ch:composition} spent a decision on
+this exact lesson and I still walked into it: a count is of a thing, not of what
+your pattern happened to match.
+
+\medskip
+So the flag does what its help text warns, and now the warning can be stated in
+full. It converts a build-time failure that names four fields, the query path to
+each of them and the key that was missing, into a runtime failure that names
+nothing, arrives after deployment, and reaches whoever is on call rather than
+whoever caused it. Chapter~\ref{ch:composition} called that the worst available
+outcome without having seen it. It was right.
+
+That is the router as a process: what it loads, what it costs, and what it does
+with a graph you told it not to check.
+Chapter~\ref{ch:entity-resolution-done-right} goes back to the subgraphs and
+makes the second hop do more work than a key lookup.
+
+\index{satisfiability!what the router does with it off|)}%

@@ -1,0 +1,210 @@
+\section{Sixty-Six Settings, and the Five Mosaic Uses}
+\label{sec:ch10-sixty-six-settings}
+\index{router!configuration|(}%
+
+Chapter~\ref{ch:how-a-federated-query-actually-runs} configured its router with
+three environment variables and did not explain them. That is the whole of one
+way to configure this thing. The other way is a file, and Mosaic uses it:
+
+\begin{minted}{yaml}
+version: "1"
+
+execution_config:
+  file:
+    path: /etc/mosaic/supergraph.json
+    watch: true
+    watch_interval: 1s
+
+listen_addr: "0.0.0.0:3002"
+dev_mode: true
+log_level: info
+\end{minted}
+
+\index{router!config.yaml@\code{config.yaml}}%
+That is \code{router/config.yaml} at tag \code{ch10}, minus its comments. Five
+settings. I counted the top-level keys the router accepts at 0.337.1 by reading
+the configuration schema it publishes at the matching release tag, and there
+are sixty-six of them.
+
+\index{router!a misspelt key stops it}%
+The root of that schema carries \code{additionalProperties: false}, and the
+router enforces it rather than leaving it to your editor. I misspelt
+\code{dev\_mode} as \code{dev\_moed} and the container exited 1 before serving
+anything:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Could not load config: errors while loading config files: router config validation error for /etc/mosaic-router/config.yaml: jsonschema validation failed
+- at '': additional properties 'dev_moed' not allowed
+\end{minted}
+
+That is the right way round. A gateway which starts up carrying a setting you
+thought you had set is worse than one that refuses to start at all.
+
+The rest of this section is the two settings in that file whose behaviour is
+not what the name suggests, and two more that Mosaic never sets and relies on
+anyway.
+
+\subsection*{The default listen address does not work in a container}
+
+\index{router!listen\_addr@\code{listen\_addr}}%
+\code{listen\_addr} defaults to \code{localhost:3002}. Inside a container that
+is the container's own loopback interface, so the router starts, logs that it
+is serving requests, reports the address it is listening on, and refuses every
+connection from outside. Nothing about it looks broken from the log.
+
+\code{0.0.0.0:3002} is the fix and it is one line. I am pointing at it because
+the failure mode is a healthy-looking process that answers nothing, which is
+the kind of thing you can lose twenty minutes to while checking your firewall.
+
+\subsection*{The file beats the environment}
+
+\index{router!configuration precedence}%
+Here is the one that surprised me. Cosmo's documentation says
+\enquote{Values specified in the config file have precedence over Environment
+variables. This also includes empty values so only specify values that should be
+overwritten}~\autocite{cosmo2026routerconfiguration}.
+
+That is backwards from every container runtime I have used. The convention
+everywhere else is that the image carries defaults and the deployment overrides
+them with environment variables, because the environment is the thing you can
+change without rebuilding.
+
+I did not want to take a documentation sentence for it, and a precedence claim
+needs a control or it proves nothing, so I ran two routers. Both in development
+mode, both with \code{LOG\_LEVEL=debug} in the environment, differing only in
+whether a configuration file said otherwise:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+environment alone, LOG_LEVEL=debug:         9 debug lines
+config.yaml says info, environment debug:   0 debug lines
+\end{minted}
+
+The file wins. The control is the first row: without it, zero debug lines in
+the second run would be equally consistent with debug logging producing nothing
+at startup, and I would have reported the finding either way.
+
+\index{router!announces its own precedence}%
+And the router does say so. It is the second line of
+section~\ref{sec:ch10-one-process-two-files}'s startup log:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+INFO cmd/main.go:125 Config file provided. Values in the config file have higher priority than environment variables
+\end{minted}
+
+Which is fair of it, and does nobody any good. That line goes past at container
+start, once, above two warnings that look more urgent. Where this bites is a
+deployment that sets \code{LISTEN\_ADDR} or \code{LOG\_LEVEL} in its
+orchestrator, against an image whose baked-in \code{config.yaml} happens to name
+the same keys. The orchestrator is ignored and the manifest still says what you
+meant.
+
+My rule after this: put a key in one place. If the file names it, the
+environment must not, and the way to make a value deployment-specific is
+\code{"\$\{VAR\}"} interpolation inside the file rather than a second copy of
+the setting outside it.
+
+\subsection*{Localhost is not the container}
+
+\index{router!localhost fallback inside Docker}%
+The composed configuration from chapter~\ref{ch:composition} carries the
+routing URLs it was given by the input file:
+
+\begin{minted}{text}
+catalog   http://localhost:5101/graphql
+mosaic    http://localhost:5100/graphql
+\end{minted}
+
+Those are correct on the host and wrong inside a container, where
+\code{localhost} is the router. By the argument above the storefront query
+should have failed, and it did not, which meant I had a working system I could
+not explain.
+
+The answer is a setting nobody sets:
+
+\begin{minted}{text}
+localhost_fallback_inside_docker
+\end{minted}
+
+It defaults to \code{true}. When the router notices it is inside a container it
+rewrites a \code{localhost} upstream to \code{host.docker.internal}, and its own
+schema describes the setting as being for development and testing.
+
+The control was that same key, set to \code{false} in the configuration file.
+Same container, same graph, same query:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'catalog'."}],"data":null}
+\end{minted}
+
+\index{errors!a failed fetch is an HTTP 200}%
+Note the status code, which is 200. A GraphQL error is not a transport error,
+and a router whose every upstream is unreachable answers 200 with nulls all
+day. Anything watching status codes, a load balancer or a naive uptime check,
+sees a healthy service. So does \code{/health/ready}, for the reason
+section~\ref{sec:ch10-one-process-two-files} ended on: readiness is the router
+reporting on itself. Chapter~\ref{ch:resilience-and-performance} is where
+partial failure is the subject rather than an aside.
+
+The message is also all you get. It names the subgraph and stops, because the
+router's error propagation defaults to the mode called \code{wrapped}, which
+exists to keep internal detail away from clients. At the default log level, with
+development mode on, the router's own log adds that the request errored and not
+why the dial failed.
+
+\index{router!routing URL overrides}%
+I have left the fallback on, and I want to be clear that this is a development
+convenience rather than an architecture. It keeps one composed config working
+whether the subgraphs were started with \code{dotnet run} or by compose, at the
+cost of the router leaving the machine and coming back in through a published
+port. The deployment answer is a key Mosaic does not set:
+
+\begin{minted}{text}
+overrides.subgraphs.<name>.routing_url
+\end{minted}
+
+That replaces a subgraph's URL at the router rather than at the composer, and
+it is exactly the seam you want. The composed graph stays the same artefact in
+every environment, and where each service actually answers becomes a property
+of the environment. Mosaic does not need it yet.
+Chapter~\ref{ch:ci-cd-for-a-federated-graph} will.
+
+\subsection*{Reloading without restarting}
+
+\index{router!hot reload}%
+\code{execution\_config.file.watch} is the setting that makes
+chapter~\ref{ch:composition} and this one join up. With it on, the router
+re-reads the file when it changes and swaps the graph over.
+
+I measured it rather than trusting the phrase \enquote{without downtime}.
+\code{scripts/measure-router.mjs --reload} composes a second config from a
+schema with one field removed, drops it over the watched file, and polls every
+100 ms until the field disappears from introspection. At a one-second watch
+interval the change appeared after 1{,}090 ms on one run and 1{,}326 ms on
+another, and no request failed on either. The router logs the swap:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+INFO core/router.go:1744 Config file changed. Updating server with new config {"watcher_label": "execution_config", "path": "/etc/mosaic/supergraph.json"}
+\end{minted}
+
+There is an obvious way for this to fail that it turns out not to. The compose
+file bind-mounts the single file rather than its directory, and a bind mount of
+one file survives an overwrite but not a replacement: a tool that writes to a
+temporary file and renames it over the target leaves the container holding the
+old inode. So I checked what \code{wgc} does. Composing straight into the
+mounted path leaves the inode unchanged, which the script asserts on every run.
+
+\index{router!the watcher reads the timestamp}%
+And a way for it to fail that I found by falling into it. The first version of
+that script restored the healthy config with a file copy, and the router went
+on serving the thin graph afterwards, for minutes. The watcher reads the file's
+modification time, and on Windows a copy carries the source's timestamp across,
+so the restored file looked older than the graph already loaded and no reload
+fired. Rewriting the same bytes fixed it, and confirms what the watcher is
+looking at: I rewrote a byte-identical file and the router reloaded two seconds
+later. It notices a changed timestamp, not changed content.
+
+Which means the loop the rest of this book will use is two commands and no
+restart. Change a subgraph, export its schema, recompose, and the router in
+front of it is serving the new graph a second later.
+
+\index{router!configuration|)}%

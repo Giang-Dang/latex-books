@@ -1,0 +1,184 @@
+\section{The Plan on a Real Graph}
+\label{sec:ch10-the-plan-on-a-real-graph}
+\index{query plan!on Mosaic|(}%
+
+Chapter~\ref{ch:how-a-federated-query-actually-runs} took a query plan apart on
+a sample built for the purpose: two subgraphs, three products, two fields. That
+is where \code{Sequence} and \code{Parallel}, \code{Single} and
+\code{BatchEntity}, \code{dependsOnFetchIds} and the \code{dependencies} array
+were established, and none of it is re-derived here. The headers are the same
+two as well~\autocite{cosmo2026queryplan}: \code{X-WG-Include-Query-Plan} to get
+the plan, and \code{X-WG-Skip-Loader} to get it without executing anything.
+
+What follows is what the sample could not show, because the sample had no
+connections, no pagination and one field per subgraph.
+
+Here is the plan for the query in
+section~\ref{sec:ch10-the-query-that-stopped-working}. The second fetch carries
+one more key, \code{dependencies}, taken out here and printed on its own
+further down:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{json}
+{
+  "version": "1",
+  "kind": "Sequence",
+  "children": [
+    { "kind": "Single",
+      "fetch": {
+        "kind": "Single", "subgraphName": "catalog", "subgraphId": "0", "fetchId": 0,
+        "query": "query($a: Int){ browseProducts(first: $a){ nodes { title __typename id } } }" } },
+    { "kind": "Single",
+      "fetch": {
+        "kind": "BatchEntity", "path": "browseProducts.nodes",
+        "subgraphName": "mosaic", "subgraphId": "1", "fetchId": 1,
+        "dependsOnFetchIds": [0],
+        "representations": [
+          { "kind": "@key", "typeName": "Product",
+            "fragment": "fragment Key on Product { __typename id }" } ],
+        "query": "query($representations: [_Any!]!, $b: Int){ _entities(representations: $representations){ ... on Product { __typename price { amount currency } availableQuantity averageRating reviews(first: $b){ totalCount nodes { rating author { displayName } } } } } }" } }
+  ],
+  "normalizedQuery": "query($a: Int, $b: Int){browseProducts(first: $a){nodes {title price {amount currency} availableQuantity averageRating reviews(first: $b){totalCount nodes {rating author {displayName}}}}}}"
+}
+\end{minted}
+
+\index{listings!whitespace collapsed}%
+The router writes those embedded query strings across several lines with
+four-space indentation. I have collapsed them, as
+chapter~\ref{ch:how-a-federated-query-actually-runs} did, and changed nothing
+else.
+
+Two fetches for a document with fourteen selections in it, spanning two
+services. The shape is chapter~\ref{ch:how-a-federated-query-actually-runs}'s
+exactly. Three details in it are not.
+
+\subsection*{The path points inside the connection}
+
+\index{query plan!path@\code{path}}%
+\code{"path": "browseProducts.nodes"}, not \code{"browseProducts"}.
+
+Chapter~\ref{ch:schema-design-that-survives-change} turned \code{reviews} into a
+connection and chapter~\ref{ch:data-without-the-n-plus-1} added
+\code{browseProducts} as a paged field, so the products are not the root field's
+value; they are one level below it, under \code{nodes}. The entity fetch has to
+say where in the first fetch's response its representations came from and where
+its answers go back, and that is what \code{path} is.
+
+It is a small thing and it is the first sign that Relay-style pagination and
+federation have to know about each other. They do, here, and
+chapter~\ref{ch:hard-modeling-problems} is where they stop getting along: a
+connection whose pages come from one service and whose page contents come from
+another is a harder problem than this one.
+
+\subsection*{Four fields, one key, one round trip}
+
+\index{query plan!dependencies array@\code{dependencies} array}%
+The \code{dependencies} array I took out has four entries, one for each field
+the client asked Mosaic for. Flattened, and with the
+\code{isUserRequested: true} that every one of them carries left off:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+price              dependsOn  catalog.Product.id   isKey: true
+availableQuantity  dependsOn  catalog.Product.id   isKey: true
+averageRating      dependsOn  catalog.Product.id   isKey: true
+reviews            dependsOn  catalog.Product.id   isKey: true
+\end{minted}
+
+Four entries, one distinct dependency. Every field on the far side of the
+boundary needs the same key from the same subgraph, so all four travel in one
+\code{BatchEntity} fetch, and the plan has two children rather than five.
+
+\index{query plan!what its length does not tell you}%
+The reading lesson is in there, and it took me a second look to get right. The
+length of that array is not a count of round trips and not a count of anything
+expensive. It is one entry per user-requested field, and a chatty-looking array
+can be a single fetch. The number that costs you something is the number of
+\code{fetch} nodes, and the thing that determines it is how many distinct
+dependencies there are, not how many fields have one.
+
+Every entry here says the same thing, because every field crosses on one key.
+\code{@requires} is what should make one of them say something else, and
+chapter~\ref{ch:entity-resolution-done-right} is where that gets measured
+rather than predicted. Mosaic has no \code{@requires} yet, so this chapter has
+not seen a non-uniform \code{dependencies} array and does not claim to know
+what one costs.
+
+\subsection*{The router rewrote the question}
+
+\index{query plan!normalisation of literals}%
+Look at what fetch 0 sends:
+
+\begin{minted}{graphql}
+query($a: Int){ browseProducts(first: $a){ nodes { title __typename id } } }
+\end{minted}
+
+The client sent \code{first: 3}. A literal. What went to Catalog is a variable,
+and the plan's \code{normalizedQuery} shows the same thing happening to the
+client's own document, which now opens \code{query(\$a: Int, \$b: Int)} with
+both numbers lifted out.
+
+The \code{\_\_typename} and \code{id} in that fetch are
+chapter~\ref{ch:how-a-federated-query-actually-runs}'s finding, unchanged: the
+router adds them because fetch 1 cannot be built without a key.
+
+The variables are new, and the consequence is worth measuring rather than
+inferring. If literals become variables, two clients asking for different page
+sizes are sending the router the same document. I checked it three ways.
+
+\medskip\noindent\textbf{Different literals, same plan.} A two-field query at
+\code{first: 3}, \code{first: 5} and \code{first: 7} produces three plans that
+compare equal as JSON strings, and the storefront query at \code{(3, 2)} and at
+\code{(7, 4)} does the same.
+
+\medskip\noindent\textbf{Client-side variables give a different plan.} A client
+that declares its variables properly, which is what every generated client
+does, sends this:
+
+\begin{minted}{graphql}
+query Storefront($first: Int!, $reviews: Int!) {
+  browseProducts(first: $first) {
+    nodes {
+      title
+      price { amount currency }
+      availableQuantity
+      averageRating
+      reviews(first: $reviews) {
+        totalCount
+        nodes { rating author { displayName } }
+      }
+    }
+  }
+}
+\end{minted}
+
+That normalises to \code{query Storefront(\$a: Int!, \$b: Int!)}, keeping the
+operation name and the non-null types. Compared with the inlined form's
+\code{query(\$a: Int, \$b: Int)} using \code{===}: false. Two documents that
+mean the same thing to a person are two different documents here.
+
+\medskip
+\index{query plan!and the plan cache}%
+Now the part where I stop. What I have shown is that the plan \emph{documents}
+are identical in one case and different in the other. Whether the router keeps a
+plan cache, and whether it keys that cache on any of this, I have not looked at,
+and chapter~\ref{ch:inside-the-router-and-the-composer} is where the planner
+gets read properly. What is fair to take from here is narrower and still useful:
+inlining a literal argument costs you nothing at this layer, because the planner
+takes it out again, and naming your operation changes the document even though
+it does not change the answer.
+
+\subsection*{What the plan still does not tell you}
+
+Everything above is the router's account of what it intends to do, which is
+chapter~\ref{ch:how-a-federated-query-actually-runs}'s caution and still holds.
+With \code{X-WG-Skip-Loader} set it is an account of what it did not do at all.
+
+For the sample, that chapter closed the gap by logging what the subgraphs
+received. Mosaic cannot do that: neither service has request-body logging on,
+and section~\ref{sec:ch10-the-query-that-stopped-working} showed that only one
+of the two reports anything about a request at all. So for Mosaic the plan is
+checked against the answer and against Mosaic's own resolver and SQL counts,
+and not against the bytes. That is a weaker check than
+chapter~\ref{ch:how-a-federated-query-actually-runs} had, and it is weaker in a
+direction the next section makes concrete.
+
+\index{query plan!on Mosaic|)}%

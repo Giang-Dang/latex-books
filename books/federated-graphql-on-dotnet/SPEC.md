@@ -11,22 +11,24 @@ Author: Giang Dang
 
 ## Status
 
-Chapters 01 to 09 drafted (09 on 2026-08-09). The companion repo is public at
+Chapters 01 to 10 drafted (10 on 2026-08-09). The companion repo is public at
 https://github.com/Giang-Dang/mosaic-graph, tagged `ch02`, `ch03`, `ch04-ef`,
-`ch04`, `ch05`, `ch07`, `ch08` and `ch09`. Mosaic is no longer one service. At
-`ch08` Catalog lives in `src/Mosaic.Catalog` on port 5101 with its own database
-and owns the `Product` entity; `src/Mosaic.Api` keeps the other five domains on
-5100 and contributes `price`, `availableQuantity`, `reviews` and
-`averageRating` to the same type. Both are Apollo Federation subgraphs, both
-publish `_service` and `_entities`, and the two schemas compose. Neither service
-changed at `ch09`, which adds the composed router execution config as a
-committed file and five composition failures produced on purpose. Nothing routes
-them yet.
-Next action: chapter 10, the router, which now has `federation/supergraph.json`
-to load. Chapter 09 owes it two questions it could not answer without a router:
-what the router does with a config composed with the resolvability check off,
-and whether the `GRAPHQL_SUBSCRIPTION_PROTOCOL_WS` in that config is what it
-actually uses against a subgraph chapter 05 exercised over SSE.
+`ch04`, `ch05`, `ch07`, `ch08`, `ch09` and `ch10`. Mosaic is no longer one
+service. At `ch08` Catalog lives in `src/Mosaic.Catalog` on port 5101 with its
+own database and owns the `Product` entity; `src/Mosaic.Api` keeps the other
+five domains on 5100 and contributes `price`, `availableQuantity`, `reviews`
+and `averageRating` to the same type. Both are Apollo Federation subgraphs,
+both publish `_service` and `_entities`, and the two schemas compose. Neither
+service changed at `ch09`, which adds the composed router execution config as a
+committed file and five composition failures produced on purpose, nor at
+`ch10`, which puts the Cosmo Router in front of the pair as a compose service
+with its own `router/config.yaml`. The graph answers: the storefront query that
+no single service has been able to answer since `ch08` works again, through
+port 3002.
+Next action: chapter 11, entity resolution. It inherits a working router, and
+owes an answer to what a reference resolver does when the router batches
+representations into it, plus the first non-uniform `dependencies` array, which
+`@requires` is what produces.
 
 ## Decision log
 
@@ -95,6 +97,8 @@ is re-opened only by recording what changed and why, in the row.
 | 58 | Chapter 09's TOC line widened | The approved line read "satisfiability, reading composition errors, `wgc router compose` (router-only), supergraph anatomy". Drafting found that "supergraph anatomy" names an artefact that does not exist in this stack, which became the chapter's second section; and that two topics the line did not name earned sections of their own, the `--disable-resolvability-validation` flag and composition as a build gate. The line now names all six. Same form as decisions 33 and 45: scope grew in detail, not in ambition. Settled 2026-08-09. |
 | 59 | Three numbers in chapter 09 were wrong until the audit, and all three had been "verified" | The independent auditor re-derived every number and found: the error catalogue is 123 errors, not 203, because 80 of the 203 declarations return a message `string` rather than an `Error`; the config composed with the resolvability check off differs from the good one in five leaves, not one, four of them being the schema edit echoing through content-addressed storage; and the four normalisation changes the chapter named all add bytes, so none of them could explain a document 903 bytes shorter, which turned out to be the federation entry points being stripped. Every one came from counting or diffing the wrong thing and reading the result as confirmation. The rule this leaves: a count is of a type, not of a line that mentions it, and a before-and-after needs the two sides to differ in exactly the one thing being claimed. Settled 2026-08-09. |
 | 60 | Captured output may keep the punctuation the tool wrote | `Characters.Mode = 'Ascii'` stays, and gains `AllowInCapturedListings = @('minted:text')`. The rule that produced Ascii mode is that a stray Unicode character in a listing is a paste that went through something; the case it did not anticipate is that compilers, composers and linters write prose, and their prose has punctuation. Chapter 09 met it as a composition error containing a U+2014 em dash. Both halves of the exemption are required: the character must be inside `minted:text`, and the line must appear in a research note, by the same test the verbatim family uses. Prose is not in a listing and a typed listing traces to nothing, so neither can reach it, and a control character is never forgiven because a mangled `sed` is the one thing this family catches that nothing else would. The setting is library-wide and defaults to empty, so no other book is affected; `scripts/check-chapter.tests.ps1` covers the three cases it must refuse. Settled 2026-08-09, after the chapter first shipped without the listing. |
+| 61 | Chapter 10's TOC line widened | The approved line read "Cosmo Router locally: config, first federated query, reading query plans". Drafting added three things it did not name: what the router costs in milliseconds, which chapter 08 assigned to this chapter and the line never picked up; what a router does with a config composed with the resolvability check off, which chapter 09 owed it; and configuration as a subject in its own right, because two of the settings behave in ways their names do not suggest. The line now names all six sections. Same form as decisions 33, 45 and 58: scope grew in detail, not in ambition. Settled 2026-08-09. |
+| 62 | A timing gets a script, not a gate | `scripts/measure-router.mjs` is committed and is deliberately not called by either verification script. Decision 55 says a measurement worth printing is worth committing, and the independent audit found chapter 10 printing a latency table with no harness behind it and no reproduction recipe. But asserting single-machine milliseconds in a gate makes the gate fail on a busier laptop, which teaches nobody anything and trains people to ignore red. So the rule splits: a **behaviour** the chapter prints becomes a case in a `*-cases.mjs` that both gates run, and a **timing** the chapter prints becomes a committed script a reader can run twice, named in the chapter and in the research note. Settled 2026-08-09. |
 
 ## Version baseline
 
@@ -132,7 +136,7 @@ session. Chapter folders in chapters/ carry the same scope lines.
 7. **How a Federated Query Actually Runs** - query plans, representations, `_entities`/`_service`, exact router-subgraph HTTP traffic captured inside the subgraphs; `_entities` and `_service` exercised from Postman
 8. **The First Cut: Extracting Catalog** - HotChocolate.ApolloFederation, reference resolvers, extending foreign entities; the global object identifier as a federation key, and decoding it; testing a naked subgraph in Postman before any router exists; the three subgraph defaults that only fail once two schemas meet
 9. **Composition** - `wgc router compose` (router-only); what a router execution config actually contains, against Apollo's supergraph schema; satisfiability as a graph walk; reading composition errors and the causes they do not name; the flag that disables the check; composition as a build gate and what it structurally cannot see
-10. **Enter the Router** - Cosmo Router locally: config, first federated query, reading query plans
+10. **Enter the Router** - Cosmo Router locally: what it loads and what it serves; the storefront query answering across two services for the first time; configuration, its 66 keys and the two whose behaviour surprises; reading a query plan on a real graph; what the router costs in milliseconds; and what it does with a graph composed with the resolvability check off
 
 ### Part III - Decomposition in Practice
 
@@ -191,7 +195,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 07 | drafted | 2026-08-09. 18 pages (103--120), 6 numbered sections plus the lab, ~8,400 words, 2 TikZ figures, 6 citations, 45 listings. Sources in research/2026-08-ch07-federated-query-execution.md. Companion tag `ch07`; Mosaic is untouched and the code is `samples/federated-wire/`, two subgraphs and the Cosmo Router (decision 44). Both verify scripts grew a federation section and pass. The chapter's spine is one query followed end to end: the plan the router prints, then the two request bodies the subgraphs logged, then what the second hop costs. Headline findings: HotChocolate 16.6.0 emits federation v2.6 against a spec at v2.15; the router never calls `_service`; a subgraph publishes no `_entities` at all if no root field reaches the entity; and the router forwards no client headers. TOC line corrected (decision 45). Not yet reviewed for line-level prose. |
 | 08 | drafted | 2026-08-09. 18 pages (121--138), 6 numbered sections plus the lab, ~8,200 words, 2 TikZ figures, 52 index entries, 4 citations, 36 listings. Sources in research/2026-08-ch08-first-cut.md. Companion tag `ch08`, the first tag that changes Mosaic itself: `src/Mosaic.Catalog` on 5101 with its own database, `src/Mosaic.Api` on 5100 with five domains, both federation subgraphs, both gates passing and the two schemas composing. The chapter's spine is that the extraction was a file move and the schema was the work: eight files changed path, five of them changing nothing but their namespace and using lines, and the three `[ObjectType<Product>]` classes in Pricing, Inventory and Reviews did not change by a character. Headline findings: `[ReferenceResolver]` in an `[ObjectType<T>]` class silently becomes a public field (decision 47); the federation key is chapter 5's base64 identifier and nothing decodes it, so a `Guid` parameter answers null rather than erroring (decision 48); and three subgraph defaults block composition, of which `Query.node` in two subgraphs is the one that costs a feature (decisions 50 and 51). Measured: 146 resolvers and 2 SQL for the catalog page through `_entities`, against 146 and 3 as a monolith, and 1 statement for 25 representations in one call against 25 for the same keys one call at a time. Four citations, all to Apollo's own documentation for claims about what the specification requires rather than what this build does; everything else was measured or read out of the source tree. The TOC line was widened in the same session (decision 53 explains what was deliberately left out). Audited by a fresh agent, which found seven real defects; see decision 55 and the open items. Not yet reviewed for line-level prose. |
 | 09 | drafted | 2026-08-09. 16 pages (139--154), 6 numbered sections plus the lab, ~7,400 words, 2 TikZ figures, 51 index entries, 5 citations, 36 listings. Sources in research/2026-08-ch09-composition.md. Companion tag `ch09`; neither service changed by a line, and the tag adds `federation/supergraph.json` (committed, decision 56) and `scripts/composition-cases.mjs` (decision 57). Both gates pass, both run to completion on this machine. The chapter's spine is that the artefact is not what its name says and the errors do not name their causes. Headline findings: a Cosmo router execution config carries no `join__` directives at all, splitting into a clean client schema plus a routing table where Apollo has one annotated document; each subgraph's SDL is in the file twice, verbatim and normalised, the normalised copy content-addressed under the SHA-1 of itself and stripped of `_service`, `_entities`, `_Service`, `_Entity` and `_Any`; satisfiability is one error out of 123 and renders as a query document; three different mistakes all report as a shareability error on the key field and none names a key; and `--disable-resolvability-validation` emits a config whose client schema is `===` identical to a healthy one. TOC line widened in the same session (decision 58). Audited by a fresh agent, which found three wrong numbers that had survived my own verification; see decision 59 and the open items. Not yet reviewed for line-level prose. |
-| 10 | not-started | |
+| 10 | drafted | 2026-08-09. 18 pages (155--172), 6 numbered sections plus the lab, ~7,500 words, 2 TikZ figures, 51 index entries, 2 citations, 38 listings. Sources in research/2026-08-ch10-enter-the-router.md. Companion tag `ch10`; neither service changed by a line, and the tag adds the router as a compose service, `router/config.yaml`, a third Postman collection, `scripts/router-cases.mjs` and `scripts/measure-router.mjs`. Both gates pass, 33 steps. The chapter's spine is that the graph finally answers and the process in front of it is configured rather than written. Headline findings: a value in `config.yaml` beats the environment variable that sets it, measured both ways, and the router says so on the second line of its own startup log; `localhost` in a routing URL reaches the host from inside a container because `localhost_fallback_inside_docker` defaults to true, with the control showing the same query failing when it is off; the planner lifts literal arguments into variables, so `first: 3` and `first: 7` produce identical plans while a properly declared variable produces a different one; and a config composed with `--disable-resolvability-validation` starts silently, serves everything inside one subgraph, and answers HTTP 500 `internal server error` at plan time to anything that crosses, with the real cause in the log naming the wrong type. Router overhead measured at roughly 2 to 3 ms across seven passes; the two-hop and one-hop figures are not distinguishable and the chapter says so. Also records that chapter 03's instrumentation stayed in `Mosaic.Api` at the extraction, so half of every federated query is unobserved. TOC line widened in the same session (decision 61) and a new decision 62 on timings. Audited by a fresh agent, which found the latency table and the reload timings had no committed harness; both now have one. Not yet reviewed for line-level prose. |
 | 11 | not-started | |
 | 12 | not-started | |
 | 13 | not-started | |
@@ -299,6 +303,56 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
   project, or delete them once they have been read.
 
 ## Open items
+
+- (resolved 2026-08-09) **Chapter 10 answered the question chapter 09 refused
+  to guess at.** A router handed a config composed with
+  `--disable-resolvability-validation` starts with no warning, serves every
+  query that stays inside one subgraph, and answers HTTP 500 `internal server
+  error` to anything that crosses. It fails at plan time, in under a
+  millisecond, with `X-WG-Skip-Loader` set, so no subgraph is called. The
+  router's log carries the cause and it names the wrong type: `Cannot query
+  field "price" on type "Query"`, because the planner is describing a document
+  it wrote rather than the one the client sent. Committed as the
+  `resolvability-off` case. Chapter 09's other owed question, the subscription
+  protocol in the config, is still chapter 14's.
+- (resolved 2026-08-09) **The latency cost of chapter 08's extraction, which
+  chapter 08 assigned to chapter 10.** Roughly 2 to 3 ms of router overhead on
+  this machine across seven passes, against a hand-assembled two-call baseline
+  rather than against the monolith, which no longer exists to measure.
+  `scripts/measure-router.mjs` reproduces it. Two things not to carry forward:
+  these are upper bounds, because the router crosses Docker's bridge and the
+  direct rows do not; and the difference between one-hop and two-hop overhead
+  is smaller than the run-to-run spread, so there is no finding there.
+- **Chapter 09 and an early draft of chapter 10 both overclaimed the same
+  thing.** Chapter 09 closes by saying the router will answer across a boundary
+  "for the first time anything in this book will have answered one across a
+  boundary without me assembling the answer by hand". Chapter 07's sample
+  router did it first, on `samples/federated-wire`. Chapter 10 now says "the
+  first answer about Mosaic"; chapter 09's sentence is unchanged and is one
+  clause to tighten whenever that chapter is next opened. The audit caught it
+  in chapter 10 and only then in chapter 09, which is the usual direction.
+- **Half of every federated query is unobserved, and nothing announced it.**
+  Chapter 03 built the request timeline, the resolver count and the lookup
+  counter inside `Mosaic.Api`; chapter 08's extraction left all three there, so
+  `Mosaic.Catalog` reports nothing about any request. Chapter 10 says so and
+  can only measure the graph from outside all three processes. Chapter 23 owns
+  the fix, and the shape of it is tracing that spans both services rather than
+  a copy of chapter 03's listener in the second one.
+- **The router's execution-config watcher reads the file's modification time,
+  not its content.** Rewriting a byte-identical config reloads the graph;
+  restoring an older-stamped copy over a newer one does not reload at all. That
+  second half bit while writing `scripts/measure-router.mjs`, whose restore
+  path used `copyFileSync`, which carries the source's mtime across on Windows.
+  The script writes bytes now and says why. Worth remembering anywhere a
+  deployment copies a config into place rather than writing it.
+- Chapter 10 leaves these unmeasured, and the research file's section L names
+  an owner for each: the router's plan cache and whether it keys on the
+  normalised document (ch 17), mutations and subscriptions through the router
+  (ch 12 and 14), `subgraph_extension_propagation` (ch 23), a subgraph that is
+  down, slow or erroring beyond one accidental data point (ch 24), header
+  forwarding and the `headers` block (ch 15), the Prometheus endpoint (ch 23),
+  `overrides.subgraphs.routing_url` (ch 21 or 22), and the 61 of 66 top-level
+  configuration keys nothing in this chapter touches.
 
 - (resolved 2026-08-09) The composer message chapter 09 could not print now
   prints. `Characters.AllowInCapturedListings` exists, this book sets it to

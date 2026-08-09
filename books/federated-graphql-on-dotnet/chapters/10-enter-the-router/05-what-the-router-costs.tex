@@ -1,0 +1,94 @@
+\section{What the Router Costs}
+\label{sec:ch10-what-the-router-costs}
+\index{router!latency cost|(}%
+
+Chapter~\ref{ch:the-first-cut-extracting-catalog} split a service in two and
+left the price of that unmeasured, on the grounds that half the cost is a hop
+nothing was making yet. The hop exists now, so here is the bill.
+
+Five rows, all timed in one run, sixty requests each after fifteen warm-ups.
+This is \code{scripts/measure-router.mjs} at tag \code{ch10}, and it is not part
+of the verification gate: these are single-machine numbers and asserting them
+would make the gate fail on a busier laptop. Medians in milliseconds, printed
+twice for a reason that comes after the table:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+                                             pass 1   pass 2
+catalog direct, titles only                     1.1      1.4
+router, titles only (one fetch)                 3.3      4.5
+mosaic direct, _entities for 10 products        1.9      2.4
+the two calls by hand, in sequence              3.7      3.9
+router, the storefront query (two fetches)      6.2      6.4
+\end{minted}
+
+\index{measurement!measuring both sides in one sitting}%
+Every row is measured in the same sitting, which is
+chapter~\ref{ch:data-without-the-n-plus-1}'s rule and not a formality: that
+chapter recorded measuring the same code at 10 to 12 ms one afternoon and 19 to
+20 ms another, purely because the machine was busier. Rows compared across
+sittings say nothing.
+
+The two subtractions the script prints:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+router overhead on a single-subgraph query      2.2      3.1
+router overhead on the two-hop query            2.5      2.5
+\end{minted}
+
+\index{measurement!what survives repetition}%
+So the claim that survives is that the router adds roughly two to three
+milliseconds to a query on this machine.
+
+The claim that does not survive is anything about one of those rows being
+larger than the other. Pass 1 has the two-hop query paying slightly more
+overhead, pass 2 has it paying slightly less, and the run-to-run spread on the
+first row alone is nearly a millisecond. That is why both passes are printed.
+One pass would have supported a tidy story about the cost of fan-out, and it
+would have been a story about this machine's scheduler.
+
+\index{measurement!upper bounds}%
+All five rows are upper bounds on what a deployment would pay, for the reason
+chapter~\ref{ch:how-a-federated-query-actually-runs} recorded about its own
+table: the router is in a container reaching the subgraphs across Docker's
+bridge and back in through a published port, while the direct rows are loopback
+on the host. A router sitting beside its subgraphs pays less than this.
+
+\subsection*{The row that is really the comparison}
+
+\index{router!against assembling by hand}%
+The interesting row is the fourth, not the second. \enquote{The two calls by
+hand} is what I have been doing since
+chapter~\ref{ch:the-first-cut-extracting-catalog}: ask Catalog for the products
+and their identifiers, take the identifiers, ask Mosaic for everything else
+through \code{\_entities}. It is the same two round trips the router makes, and
+it costs 3.7 and 3.9 ms.
+
+Against 6.2 and 6.4 for the router doing it. So the router is not buying
+throughput. It is charging a couple of milliseconds to do something a client
+could do itself in the same number of network calls.
+
+What it buys is that the client does not know there are two of anything. That is
+worth a great deal and it is worth exactly nothing on a latency graph, which is
+the honest way to hold both facts. If a team asks what the gateway costs, the
+answer here is single-digit milliseconds and a hop they were making anyway; if
+they ask what it saves, the answer is not in this table.
+
+\subsection*{The half of the query nobody is measuring}
+
+\index{observability!half a query}%
+One more number, and it is the absence of one.
+Section~\ref{sec:ch10-the-query-that-stopped-working} showed Mosaic reporting
+nineteen resolvers and six SQL statements for its part of the storefront query.
+Catalog reports nothing, because chapter~\ref{ch:the-life-of-a-request}'s
+instrumentation stayed in \code{Mosaic.Api} when Catalog left.
+
+So the two subtractions above are the only view I have of where the time goes,
+and they are measured from outside all three processes. I cannot tell you which
+of the 6.2 ms was Catalog, which was Mosaic, which was the router's planning and
+which was Docker's bridge, and no amount of running this table again will tell
+me. That is what distributed tracing is for, it is
+chapter~\ref{ch:observability}'s subject, and the reason to name the gap here is
+that a two-service system is exactly where you stop being able to reason about
+latency by subtraction and start needing spans.
+
+\index{router!latency cost|)}%
