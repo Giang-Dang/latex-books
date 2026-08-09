@@ -137,29 +137,44 @@ So the split needed no new shared file and no seed data changes.
 This is the question the SPEC's open item posed, and the answer is that the two
 attributes behave differently.
 
-Measured with a probe project against HotChocolate 16.6.0, four placements,
-each on its own type in one schema:
+The evidence is a committed sample, `samples/entity-attribute-placement`, added
+at tag `ch08` under decision 31: four placements, one type each, in one schema
+so the answers cannot be confused with each other. Its exported SDL is
+committed at `schema/samples/entity-attribute-placement.graphql`.
 
-| Placement | `@key` emitted | Reference resolver registered | Side effect |
-|---|---|---|---|
-| Both on the runtime type | yes | yes | none |
-| Both on the `[ObjectType<T>]` class | yes | **no** | a public field appears |
-| `[Key]` on the type, `[ReferenceResolver]` on the class | yes | **no** | a public field appears |
-| `[Key]` on the class, `[ReferenceResolver]` on the type | yes | yes | none |
+| Type | `[Key]` on | `[ReferenceResolver]` on | `@key` emitted | resolves |
+|---|---|---|---|---|
+| `Alpha` | the extension | the extension | yes | **no** |
+| `Bravo` | the record | the record | yes | yes |
+| `Charlie` | the record | the extension | yes | **no** |
+| `Delta` | the extension | the record | yes | yes |
 
 `[Key]` works in either place. `[ReferenceResolver]` works only on the runtime
-type.
+type. All four types appear in `union _Entity = Alpha | Charlie | Delta | Bravo`.
+
+Measured, one representation each:
+
+```
+Alpha    {"errors":[{"message":"Unexpected Execution Error","path":["_entities"]}],"data":null}
+Bravo    {"data":{"_entities":[{"title":"bravo one"}]}}
+Charlie  {"errors":[{"message":"Unexpected Execution Error","path":["_entities"]}],"data":null}
+Delta    {"data":{"_entities":[{"title":"delta one"}]}}
+```
+
+An earlier throwaway probe reached the same answer with relay identifiers and a
+`Node` interface in the way. The sample deliberately has neither, so that the
+one variable is where the attribute sits.
 
 ### The failure is silent and it is worse than a no-op
 
 With `[ReferenceResolver]` on a static method inside an `[ObjectType<T>]`
 partial class, the source generator treats the method as an ordinary field.
-Exported SDL from the probe, verbatim:
+From the committed SDL:
 
 ```
-type Alpha implements Node @key(fields: "id") {
-  id: ID!
-  resolveByKey(id: UUID!): Alpha
+type Alpha @key(fields: "id") {
+  resolveByKey(id: String!): Alpha
+  id: String!
   title: String!
 }
 ```
@@ -167,8 +182,8 @@ type Alpha implements Node @key(fields: "id") {
 `resolveByKey` is callable. Measured:
 
 ```
-{ alphas { resolveByKey(id: "11111111-1111-1111-1111-111111111111") { title } } }
-{"data":{"alphas":[{"resolveByKey":{"title":"alpha one"}},{"resolveByKey":{"title":"alpha one"}}]}}
+{ alphas { resolveByKey(id: "1") { title } } }
+{"data":{"alphas":[{"resolveByKey":{"title":"alpha one"}}]}}
 ```
 
 The type is still in the `_Entity` union, because `[Key]` did land, so the
@@ -703,11 +718,16 @@ dotnet run --project src/Mosaic.Catalog     # :5101
 dotnet run --project src/Mosaic.Api         # :5100
 ```
 
-The federation-attribute probe of section C is not in the repository; it was a
-throwaway project with five entity types, one per placement, exported with
-`dotnet run -- schema export` and queried over HTTP. To rebuild it: one
-`[QueryType]`, one type per row of the table in section C, and
-`AddApolloFederation()` plus `AddGlobalObjectIdentification()` in `Program.cs`.
+The federation-attribute sample of section C is in the repository:
+
+```
+dotnet run --project samples/entity-attribute-placement       # :5301
+```
+
+Send it one representation per type and read which two fail. Its schema is
+committed at `schema/samples/entity-attribute-placement.graphql`, and
+`verify.ps1` checks the export against that file, so the SDL chapter 8 prints
+cannot go stale without the gate saying so.
 
 To count Catalog's statements:
 
@@ -747,15 +767,21 @@ in either `Program.cs` and run
 
 ## O. Bibliography keys
 
-Reused from chapter 7, no new entries needed for the federation surface:
+Four citations, all reusing keys already in `refs.bib`. No new entries.
 
-- `apollo2026subgraphspec` - the subgraph specification: `_service`,
-  `_entities`, representations, the `[_Entity]` nullability
-- `apollo2026shareable` - `@shareable` semantics, for section G
+- `apollo2026subgraphspec` - the `[_Entity]` nullability, cited twice: in
+  section 8.3 where a `Guid` parameter produces a null, and in section 8.5
+  where the chapter argues for failing the entity rather than the batch
+- `apollo2026entities` - that Federation v2 needs no `@extends` marker, cited
+  in section 8.4
+- `apollo2026compositionrules` - that a field two subgraphs define needs
+  `@shareable`, cited in section 8.6
 
-New:
+There is no `apollo2026shareable` key in `refs.bib`; an earlier draft of this
+note said there was. `apollo2026compositionrules` covers the same ground and is
+what the chapter uses.
 
-- `graphqlspec2026costdraft` - only if the chapter names the cost specification
-  draft that HotChocolate follows. Check the byline and status before citing;
-  if it is a draft with no named editor, say so in the prose or drop it and
-  describe the disagreement without a citation.
+No citation for the cost specification. HotChocolate and wgc disagree about the
+type of `@cost(weight:)`, and the chapter describes the disagreement without
+adjudicating it, because naming a draft as the authority would be a claim about
+which tool is right that nothing here establishes.

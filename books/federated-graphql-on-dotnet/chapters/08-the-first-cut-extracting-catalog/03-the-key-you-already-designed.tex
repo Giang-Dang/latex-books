@@ -23,9 +23,12 @@ They do agree, and the reason is the part of the encoding that looks like
 decoration. The GraphQL type name is inside the key. Both services call the type
 \code{Product}, both use HotChocolate's default node identifier serialiser, so
 both turn the same \code{Guid} into the same string without ever having spoken.
-Rename the type in one of them and every representation stops matching, with no
-composition error anywhere to warn you, because the schemas would still be
-perfectly compatible. Figure~\ref{fig:ch08-key-round-trip} is the round trip.
+Neither of those two conditions is enforced anywhere: the serialiser is
+configurable, and a key is a string that either side can produce by any means it
+likes. I have not built the graph where they disagree, so I will not tell you
+what it looks like from the outside. I will say that a composer compares
+schemas, and two schemas can be identical while the strings behind them are not.
+Figure~\ref{fig:ch08-key-round-trip} is the round trip.
 
 \begin{figure}[htbp]
   \centering
@@ -41,10 +44,9 @@ perfectly compatible. Figure~\ref{fig:ch08-key-round-trip} is the round trip.
 \subsection*{Nothing decodes it for you}
 
 \index{federation!and relay identifiers}%
-Here is the finding this section exists for. The federation package and the
-global object identification feature do not know about each other at all. Grep
-the whole federation package's source at tag \code{16.6.0} for \code{NodeId} or
-for \code{Relay} and you get nothing back.
+The federation package and the global object identification feature do not know
+about each other at all. Grep the whole federation package's source at tag
+\code{16.6.0} for \code{NodeId} or for \code{Relay} and you get nothing back.
 
 A reference resolver's key parameter is read out of the representation by the
 federation argument parser, which coerces the literal with the field's own
@@ -68,9 +70,9 @@ nothing, and answers:
 \index{federation!silent null entity}%
 Not an error. A null, in the slot where the router expected a product, for every
 representation. And the specification's \code{[\_Entity]} return type is
-nullable precisely so that a subgraph can answer null for one entity without
-failing the batch, which means nothing anywhere in the system considers this
-worth reporting.
+nullable so that a subgraph can answer null for one entity without failing the
+batch~\autocite{apollo2026subgraphspec}, which means nothing anywhere in the
+system considers this a fault.
 
 \code{[ID]} on the parameter does not help. I tried it, because it is the first
 thing anybody tries. An entity whose reference resolver was declared
@@ -154,12 +156,13 @@ habit.
 \subsection*{Two copies of one file, on purpose}
 
 \index{extraction!contracts between services}%
-\code{ProductKey} exists twice, once in each service, byte for byte the same. I
-considered a shared package and decided against it, and I would decide the same
-way again: the moment the two services share a class, the format of the key
-becomes a compile-time dependency between them, and the fact that they have to
-\emph{agree about a string} disappears into a project reference. It is a
-contract. Contracts get written down twice.
+\code{ProductKey} exists twice, once in each service, with the same method body
+and a different comment above it. I considered a shared package and decided
+against it, and I would decide the same way again: the moment the two services
+share a class, the format of the key becomes a compile-time dependency between
+them, and the fact that they have to \emph{agree about a string} disappears
+into a project reference. Two services that must agree about a format are
+better off saying so twice than importing it once.
 
 That is also the honest version of what the extraction actually did to
 \code{Product}. There are two \code{Product} types in this repository now, in

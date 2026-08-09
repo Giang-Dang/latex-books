@@ -67,15 +67,20 @@ and its node resolver live. So the obvious place for two more attributes about
 \code{Product} is \code{ProductNode}, beside everything else the graph knows
 about the type.
 
-That compiles. It publishes a schema. It composes. And the entity is broken.
+That compiles, publishes a schema and composes, and the entity it produces
+cannot be resolved by anything.
 
-Here is what \code{\_service} returns for a type declared that way, taken from a
-probe I built for exactly this question:
+\index{samples!entity-attribute-placement}%
+The evidence is a sample in the companion repository,
+\code{samples/entity-attribute-placement}, which declares the same trivial
+entity four times, once per placement, in one schema so that the four answers
+cannot be confused with each other. Here is what its \code{\_service} returns
+for the type that puts both attributes on the extension class:
 
 \begin{graphqlsdl}
-type Alpha implements Node @key(fields: "id") {
-  id: ID!
-  resolveByKey(id: UUID!): Alpha
+type Alpha @key(fields: "id") {
+  resolveByKey(id: String!): Alpha
+  id: String!
   title: String!
 }
 \end{graphqlsdl}
@@ -92,8 +97,7 @@ than to Apollo Federation.
 So \code{resolveByKey} is now something a client can call:
 
 \begin{minted}[fontsize=\footnotesize]{json}
-{"data":{"alphas":[{"resolveByKey":{"title":"alpha one"}},
-                   {"resolveByKey":{"title":"alpha one"}}]}}
+{"data":{"alphas":[{"resolveByKey":{"title":"alpha one"}}]}}
 \end{minted}
 
 \index{federation!entities field@\code{\_entities} field!with no resolver}%
@@ -126,21 +130,24 @@ it. And the schema has grown a field nobody designed.
 
 \subsection*{Where each attribute may go}
 
-I tested the four placements against HotChocolate 16.6.0, one type each in one
-schema, so that the answers could not be confused with each other:
+The sample's four types answer like this, against HotChocolate 16.6.0:
 
 \begin{center}
-\begin{tabular}{llll}
+\begin{tabular}{lllll}
 \toprule
-\code{[Key]} on & \code{[ReferenceResolver]} on & key emitted & resolver registered \\
+ & \code{[Key]} on & \code{[ReferenceResolver]} on & key emitted & resolves \\
 \midrule
-the record          & the record          & yes & yes \\
-the type extension  & the type extension  & yes & no \\
-the record          & the type extension  & yes & no \\
-the type extension  & the record          & yes & yes \\
+\code{Alpha}   & the extension & the extension & yes & no \\
+\code{Bravo}   & the record    & the record    & yes & yes \\
+\code{Charlie} & the record    & the extension & yes & no \\
+\code{Delta}   & the extension & the record    & yes & yes \\
 \bottomrule
 \end{tabular}
 \end{center}
+
+All four are in the \code{\_Entity} union. Two of them answer a representation
+and two return \enquote{Unexpected Execution Error}, and the two that fail are
+exactly the two that put \code{[ReferenceResolver]} on the extension class.
 
 \index{federation!ReferenceResolver attribute@\code{[ReferenceResolver]} attribute}%
 \code{[Key]} works in either place. \code{[ReferenceResolver]} works on the
@@ -161,26 +168,25 @@ an afternoon. Anything the reference resolver declares is first offered to the
 federation argument builder, which reads it out of the representation by name.
 Measured, this is what works:
 
-\medskip\noindent\textbf{The key, by name.} A parameter called \code{id} gets
-the \code{id} field of the representation. A composite key spreads across
-several parameters, and \code{[Map("variation.id")]} reaches into a nested one.
+A parameter called \code{id} gets the \code{id} field of the representation.
+Anything registered in the \emph{application} container arrives as a service:
+\code{CatalogService}, a DataLoader, whatever the resolver needs. So does an
+\code{IResolverContext}, which is how
+section~\ref{sec:ch08-the-key-you-already-designed} reaches something it cannot
+ask for directly.
 
-\medskip\noindent\textbf{Application services.} \code{CatalogService}, a
-DataLoader, anything registered in the application container. HotChocolate's own
-certification schema does this, so it is the supported shape.
+What does not work is a service registered only with the schema. Ask for one of
+those and the argument builder claims the parameter instead, looks for a
+representation field by that name, finds nothing, and hands the resolver a null
+that it promptly throws on. The caller sees \enquote{Unexpected Execution
+Error} again.
 
-\medskip\noindent\textbf{\code{IResolverContext}.} Which is how
-section~\ref{sec:ch08-the-key-you-already-designed} reaches something it needs.
-
-\medskip\noindent\textbf{Not a service registered only with the schema.} Ask for
-one of those and the argument builder claims the parameter instead, tries to
-find a representation field by that name, finds nothing, and hands the resolver
-a null. The resolver then throws on it, and what the caller sees is
-\enquote{Unexpected Execution Error} again.
-
-\medskip
-The rule underneath all four is the same: a reference resolver's parameter list
-is a description of a representation first and a dependency list second. Write
-it in that order and it behaves.
+The rule underneath is that a reference resolver's parameter list is a
+description of a representation first and a dependency list second. Write it in
+that order and it behaves. HotChocolate's own certification schema takes a
+repository as a second parameter, so the service shape is the intended one; it
+also shows a composite key spread across several parameters, with
+\code{[Map]} reaching into a nested one, which Mosaic does not need and I have
+not run.
 
 \index{federation!Key attribute@\code{[Key]} attribute|)}%

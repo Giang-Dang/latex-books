@@ -20,9 +20,10 @@ ps} should show \code{mosaic-db} healthy.
 \begin{enumerate}
   \item \textbf{Read both contracts.} Send \code{\{ \_service \{ sdl \} \}} to
   port 5101 and then to port 5100, and put the two \code{Product} blocks side by
-  side. Nine fields between them, one key each, no overlap. Then find the two
-  differences that are not fields: one type implements \code{Node} and the other
-  does not, and only one of them has \code{ProductCategory} in its schema at all.
+  side. Nine distinct fields between them, and the only one declared twice is
+  the key. Then find the two differences that are not fields: one type
+  implements \code{Node} and the other does not, and only one of them has
+  \code{ProductCategory} in its schema at all.
 
   \item \textbf{Assemble one product by hand.} Ask Catalog for
   \code{\{ products \{ id title \} \}} and copy the first \code{id}. Send it to
@@ -89,12 +90,16 @@ npx wgc router compose -i federation/mosaic.yaml -o supergraph.json
 
   \begin{minted}[fontsize=\footnotesize]{text}
 dotnet run --project src/Mosaic.Catalog -- \
-    schema export --output schema/catalog.graphql
+    schema export --output ../../schema/catalog.graphql
   \end{minted}
 
-  and compose again. Read the error. Then do the same for the two cost options,
-  and again for the shareable page cursor class. Three settings, three errors,
-  and none of the three is visible from inside either service.
+  The doubled-back path is not a typo. \code{schema export} resolves
+  \code{--output} against the \emph{project} directory rather than the one you
+  are standing in, so the obvious spelling of that command writes a file inside
+  \code{src/Mosaic.Catalog/} and leaves the committed schema untouched. Compose
+  again and read the error. Then put it back and do the same for the two cost
+  options, and again for the shareable page cursor class. Three settings, three
+  errors, and no test of a single service would have found any of them.
 
   \item \textbf{Run the gate.} \code{pwsh scripts/verify.ps1}. It starts both
   services, checks both published schemas against the committed files, asks the
@@ -103,7 +108,6 @@ dotnet run --project src/Mosaic.Catalog -- \
   stale number in this chapter would look like to the build.
 \end{enumerate}
 
-Exercise~2 is the one to repeat. Every chapter from here to
-chapter~\ref{ch:enter-the-router} adds machinery that does that assembly for
-you, and the machinery is much easier to reason about once you have done it by
-hand and know exactly how little of it is magic.
+If you do only one of these, do exercise~8. Everything else here can be worked
+out from one service at a time, and that is the last chapter in this book where
+that is true.

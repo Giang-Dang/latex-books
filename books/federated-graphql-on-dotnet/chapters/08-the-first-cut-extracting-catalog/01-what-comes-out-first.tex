@@ -26,7 +26,7 @@ Figure~\ref{fig:ch08-the-cut} is the shape of the change.
   of the line with the same key, and four of its fields answer from a process
   that has never seen a product row. Ordering is left out of the picture
   because it contributes nothing to \code{Product}; it only holds identifiers,
-  which is section~\ref{sec:ch08-what-is-left-behind}. The dashed boundary is
+  which is section~\ref{sec:ch08-extending-a-foreign-entity}. The dashed boundary is
   the only new thing here. Every folder was already where it is.}
   \label{fig:ch08-the-cut}
 \end{figure}
@@ -81,14 +81,12 @@ instrumentation than with somebody else's.
 
 \index{extraction!the type that did not move}%
 One file in that folder did not move at all, and its absence from the list is
-the whole of section~\ref{sec:ch08-what-is-left-behind}: \code{Model/Product.cs}
+the whole of section~\ref{sec:ch08-extending-a-foreign-entity}: \code{Model/Product.cs}
 exists on both sides now, as two different types.
 
 \subsection*{The three files that did not change}
 
 \index{ObjectType@\code{[ObjectType<T>]}!across a service boundary}%
-This is the part worth stopping on.
-
 \code{Product.price} is a resolver in \code{Pricing/Types/}.
 \code{Product.availableQuantity} is one in \code{Inventory/Types/}.
 \code{Product.reviews} and \code{Product.averageRating} are two more in

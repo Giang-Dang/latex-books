@@ -30,11 +30,12 @@ field.
 
 \medskip\noindent\textbf{Are the fields on the side you intended?} Mosaic
 publishes \code{price}, \code{availableQuantity}, \code{reviews} and
-\code{averageRating} on \code{Product} and nothing else. Catalog publishes
-\code{sku}, \code{title}, \code{description} and \code{category}. A field on
-both sides is a composition error waiting for
-chapter~\ref{ch:composition}; a field on neither is a client error waiting for
-production.
+\code{averageRating} on \code{Product}. Catalog publishes the sku, the title,
+the description and the category. Both publish \code{id}, and that one is
+fine: a key field is shareable by definition, because every subgraph declaring
+the entity has to answer with it. Any \emph{other} field on both sides is a
+composition error waiting for chapter~\ref{ch:composition}, and a field on
+neither is a client error waiting for production.
 
 \subsection*{Can you answer for a key?}
 
@@ -72,7 +73,7 @@ requests and no new software.
 \subsection*{A key that does not decode}
 
 \index{representations!an unresolvable key}%
-Two representations worth sending on purpose. First, obvious rubbish:
+Send two bad ones on purpose. First, obvious rubbish:
 
 \begin{minted}{json}
 { "representations": [ { "__typename": "Product", "id": "not-a-key" } ] }
@@ -90,26 +91,24 @@ Both answer the same way:
 {"data":{"_entities":[null]}}
 \end{minted}
 
-A null, no \code{errors} key, HTTP 200. The second one is worth dwelling on: that
-string is a real product identifier, and it is what this field answered before
+A null, no \code{errors} key, HTTP 200. Stop on the second one: that string is a
+real product identifier, and it is what this field answered before
 chapter~\ref{ch:schema-design-that-survives-change} made it a global object
 identifier. A representation carrying it is now indistinguishable from garbage,
 and the subgraph says so in the mildest possible way.
 
 I think the null is the right answer and I want to be clear about why, because
 the first instinct is to throw. \code{\_entities} returns \code{[\_Entity]},
-nullable on purpose, so that one bad key in a batch of twenty-five does not cost
-the other twenty-four their answers. A subgraph that throws instead turns a
-single malformed representation into a failed fetch, and the router turns that
-into a failed field, and the client gets nothing for a page of products because
-one of them was wrong. Fail the entity, not the batch.
+nullable on purpose~\autocite{apollo2026subgraphspec}, so that one bad key in a
+batch of twenty-five does not cost the other twenty-four their answers. A
+subgraph that throws instead turns a single malformed representation into a
+failed fetch, the router turns that into a failed field, and the client gets
+nothing for a page of products because one of them was wrong. Fail the entity,
+not the batch.
 
 \subsection*{One call for twenty-five, and what happens when it is not}
 
 \index{federation!representation batching!measured}%
-Now the number I would put in front of anyone who thinks representation batching
-is an implementation detail.
-
 Catalog's reference resolver goes through the same DataLoader its node resolver
 uses. I asked it for all twenty-five products, first as one \code{\_entities}
 call carrying twenty-five representations, then as twenty-five calls carrying
@@ -188,16 +187,17 @@ three, in two processes.
 
 That is the most reassuring measurement in this chapter and I would not read too
 much into it. It says the extraction did not cost the database anything, which
-is worth knowing and is not the same as saying it cost nothing. What it leaves
-out is the round trip between the two services, which does not exist yet because
-there is nothing between them.
+is useful and is not the same as saying it cost nothing. What it leaves out is
+the round trip between the two services, which does not exist yet because there
+is nothing between them.
 
 \subsection*{Verify it in Postman}
 
 \index{Postman!federation collection}%
-Everything above is a request in the companion repository's collection, and the
-collection is worth running rather than reading. Both files live in
-\code{postman/}:
+Every response above is in the companion repository's collection, apart from the
+statement counts, which no HTTP assertion can see and which the chapter's
+research note records instead. Run the collection rather than reading it. Both
+files live in \code{postman/}:
 
 \begin{minted}{text}
 mosaic-federation.postman_collection.json
@@ -211,15 +211,15 @@ npx newman run postman/mosaic-federation.postman_collection.json \
     -e postman/mosaic-federation.local.postman_environment.json
 \end{minted}
 
-\index{Postman!assertions worth stealing}%
-Two assertions in it are worth stealing for a graph of your own. One sends
-Catalog three representations in a deliberately shuffled order and checks that
-the three entities come back in that same shuffled order, because the contract
-is positional and nothing in the response would tell you if a subgraph had
+\index{Postman!assertions to steal}%
+Two assertions in it I would steal for a graph of my own. One sends Catalog
+three representations in a deliberately shuffled order and checks that the three
+entities come back in that same shuffled order, because the contract is
+positional and nothing in the response would tell you if a subgraph had
 helpfully sorted them. The other asks Mosaic for \code{products} and asserts
-that it fails, which is a strange-looking test until you consider what it
-catches: a field quietly surviving on the wrong side of a cut is the failure
-mode of every extraction, and it is invisible to a test that only checks that
+that it fails, which looks like a strange thing to test until you consider what
+it catches. A field quietly surviving on the wrong side of a cut is the failure
+mode of every extraction, and it is invisible to a suite that only checks that
 the right things work.
 
 \index{subgraph!testing without a router|)}%

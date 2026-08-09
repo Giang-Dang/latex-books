@@ -8,10 +8,9 @@ composer and none of that is enough.
 
 Composition is chapter~\ref{ch:composition}'s subject and I am not going to
 spend it here. But three of the errors I met belong to this chapter rather than
-to that one, because all three are settings on a subgraph, all three are on by
-default, and all three describe something you cannot see from inside either
-service. A subgraph that has never been composed is a subgraph whose schema
-nobody has read.
+to that one. Each is a setting on a subgraph, each is on by default, and no
+test of a single service can reach any of them. Until a schema has been put
+beside another one, nobody has really read it.
 
 \subsection*{Two services cannot both have \code{node}}
 
@@ -31,7 +30,8 @@ Chapter~\ref{ch:schema-design-that-survives-change} gave Mosaic the \code{Node}
 interface and the two root fields that come with it. Both services still have
 types that implement it, so both ask for global object identification, so both
 declare \code{node} and \code{nodes}. Federation~v2 refuses a field that two
-subgraphs define unless one of them says it is shareable.
+subgraphs define unless one of them says it is
+shareable~\autocite{apollo2026compositionrules}.
 
 \index{shareable@\code{@shareable}!when it would be a lie}%
 The tempting fix is to mark them shareable and move on. It would compose, and it
@@ -81,10 +81,11 @@ provided: "slicingArgumentDefaultValue"
 \end{minted}
 
 HotChocolate stamps \code{@cost(weight: "10")} on every resolver-backed field by
-default, with the weight as a string, following the current draft of the cost
-specification. The composer in wgc 0.129.7 carries a definition whose weight is
-an \code{Int!}. Neither is wrong; they were written against different versions
-of the same document, and the first thing that ever compares them is the
+default, with the weight as a string. The composer in wgc 0.129.7 carries a
+definition whose weight is an \code{Int!}. I am not going to adjudicate which of
+them is reading the cost specification correctly, because it does not matter to
+anybody trying to ship: two tools disagree about the type of one directive
+argument, and the first thing in the world that ever compares them is the
 composer.
 
 The \code{@listSize} half is not even a disagreement. HotChocolate's own option
@@ -176,13 +177,14 @@ repository's verification script runs it on every pass for the same reason. A
 pair of subgraphs that has quietly stopped composing is precisely the breakage
 that no test of either service can find.
 
-The pattern across all three is worth carrying forward. None of them was a
+The pattern across all three is the thing to carry forward. None of them was a
 mistake in the extraction. Each was a default that is correct for one service
 and wrong for two, and each became visible only when a second schema existed to
-compare against. That is the real cost of the first cut: not the code that
-moved, but the discovery that a schema you have been shipping for seven chapters
-had opinions in it you never had to have.
+compare against.
 
-Chapter~\ref{ch:composition} is where those opinions get read properly.
+So the expensive part of the first cut was not moving the code. It was finding
+out that a schema I had been shipping for seven chapters had opinions in it that
+only mattered once somebody else had opinions too.
+Chapter~\ref{ch:composition} is where those get read properly.
 
 \index{composition!failures a subgraph cannot see|)}%

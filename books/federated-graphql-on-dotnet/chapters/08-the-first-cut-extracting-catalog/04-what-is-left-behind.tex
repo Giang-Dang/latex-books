@@ -1,5 +1,5 @@
 \section{Extending an Entity You Do Not Own}
-\label{sec:ch08-what-is-left-behind}
+\label{sec:ch08-extending-a-foreign-entity}
 \index{federation!extending a foreign entity|(}%
 
 Mosaic still has a \code{Catalog} folder. It holds two files.
@@ -27,10 +27,10 @@ against that identifier.
 
 \index{federation!no @extends directive}%
 Notice what is not here. There is no \code{@extends}, no \code{@external}, no
-marker of any kind saying that another service owns this type. Federation~v2
-dropped the distinction: both subgraphs simply declare \code{Product} with the
-same key, contribute whatever fields they have, and the composer works out that
-they are the same type.
+marker of any kind saying that another service owns this type. Under
+Federation~v2 both subgraphs simply declare \code{Product} with the same key,
+contribute whatever fields they have, and the composer works out that they are
+the same type~\autocite{apollo2026entities}.
 Chapter~\ref{ch:the-federation-model} said so in the abstract, and this is what
 it looks like when it is your own code. The Mosaic side of \code{Product} is not
 an extension of anything. It is a declaration that happens to be smaller.
@@ -82,8 +82,9 @@ public static Product GetProduct([Parent] OrderLine line)
 Until this chapter that method took a DataLoader, asked Catalog for the row, and
 threw if it was missing. Now it wraps an identifier the line was already
 storing. Ask Mosaic for an order, and this is all a line can say about what it
-sold. Line breaks are mine; it arrives as one line, and the customer has a
-second order that I have cut.
+sold. Three things here are mine rather than the server's: the line breaks, the
+removal of the customer's second order, and the removal of each line's
+\code{unitPrice}, which is real and is not what this section is about.
 
 \begin{minted}[fontsize=\footnotesize]{json}
 {"data":{"ordersByCustomer":[
@@ -100,6 +101,24 @@ answers for the same product. Two processes, no shared code, one identifier.
 That is the entire contract, visible in one response, and it is the thing to
 check first when a federated graph you inherited returns nulls where it should
 return objects.
+
+\index{correction!chapter 4's missing Include}%
+That response could not have been produced at any earlier tag in this book, and
+not for a federation reason. \code{OrderingService} never called
+\code{.Include(o => o.Lines)}, and an order line is a related entity with a
+shadow key rather than an owned type, so the navigation was never loaded:
+\code{lines} answered with an empty array for every order and \code{total} threw
+on the empty collection. Present since
+chapter~\ref{ch:data-without-the-n-plus-1}, fixed here.
+
+Chapter~\ref{ch:data-without-the-n-plus-1}'s prose is not wrong about any of
+this; it says plainly that the lines are not owned, because an owned collection
+is a navigation and \code{OrderLine} is a positional record. Only the service's
+own comment claimed otherwise, and the missing call went with it. What is worth
+carrying is why it lasted four chapters: no request in the verification
+collection had ever asked an order for anything. This chapter found it by
+accident, because \code{OrderLine.product} is the first place the book had a
+reason to read an order line at all, and the gate now asks for one.
 
 \medskip\noindent\textbf{What it costs.} The old version could tell you that a
 line sold a product the catalog has never heard of, because it looked. This one
