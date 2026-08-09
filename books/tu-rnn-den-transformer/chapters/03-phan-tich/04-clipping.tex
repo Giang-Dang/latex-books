@@ -83,11 +83,13 @@ khá nhỏ. Số đo phía trên ủng hộ điều đó: ngưỡng 1.0 và ngư
 lần mà cả hai đều làm đúng việc cần làm, chỉ khác nhau ở chỗ đi được bao xa.
 
 Bạn không phải tự viết thuật toán~\ref{alg:ch03-clipping}. PyTorch có sẵn, và
-repo companion gói lại đúng một dòng ấy:
+repo companion gói lại đúng một câu lệnh ấy:
 
 \begin{minted}{python}
 def clip_parameters(parameters, threshold: float) -> float:
-    return torch.nn.utils.clip_grad_norm_(parameters, max_norm=threshold).item()
+    return torch.nn.utils.clip_grad_norm_(
+        parameters, max_norm=threshold
+    ).item()
 \end{minted}
 
 Hàm của thư viện co tỷ lệ trên toàn bộ danh sách tham số coi như một vector duy

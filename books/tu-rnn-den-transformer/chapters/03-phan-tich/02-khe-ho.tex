@@ -30,7 +30,9 @@ Câu hỏi là chỗ lệch ấy có hậu quả thật hay chỉ là một dấ
 Tôi dựng ma trận rẻ nhất tách được hai số đó:
 
 \begin{minted}{python}
-def jordan_block(n: int, eigenvalue: float, off_diagonal: float) -> torch.Tensor:
+def jordan_block(
+    n: int, eigenvalue: float, off_diagonal: float
+) -> torch.Tensor:
     w = torch.eye(n, dtype=torch.float64) * eigenvalue
     idx = torch.arange(n - 1)
     w[idx, idx + 1] = off_diagonal
