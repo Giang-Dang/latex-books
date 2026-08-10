@@ -17,8 +17,9 @@ lên 30.6.
 Lập luận thì đáng đọc kỹ hơn con số, vì nó là lập luận về khoảng cách và nó
 kiểm được. Nối câu nguồn với \tn{câu đích}{target sentence} lại thành một
 chuỗi, rồi hỏi mỗi từ nguồn
-cách từ đích tương ứng của nó bao xa. Bài viết: đảo câu nguồn để nguyên khoảng
-cách \emph{trung bình} giữa các cặp từ tương ứng, \enquote{however, the first
+cách từ đích tương ứng của nó bao xa. Bài viết rằng đảo câu nguồn để nguyên
+khoảng cách \emph{trung bình} giữa các cặp từ tương ứng, rồi nói tiếp:
+\enquote{however, the first
 few words in the source language are now very close to the first few words in
 the target language, so the problem's minimal time lag is greatly reduced}.
 
@@ -92,14 +93,16 @@ lại dự đoán sai của chính mình. Các tác giả viết rằng ban đ�
 chỉ làm mạng tự tin hơn ở \emph{đầu} câu đích và kém tự tin hơn ở
 \emph{cuối} câu, tức một phép đổi chỗ chứ không phải một phép cải thiện. Rồi họ
 đo và thấy mạng huấn luyện trên câu đảo làm tốt hơn hẳn trên câu dài, và họ kết
-luận rằng phép đảo cho \enquote{LSTMs with better memory utilization}.
+luận rằng phép đảo cho ra những mạng dùng bộ nhớ tốt hơn
+(\enquote{LSTMs with better memory utilization}).
 
 Bảng trên nói cùng một chuyện bằng một phép đo khác: cột \code{short} không mất
 gì, cột \code{long} được rất nhiều. Không có chỗ nào tệ đi để đổi lấy chỗ tốt
 lên. Nếu đây chỉ là đổi chỗ, phải có một cột đi xuống, và không có.
 
 Còn một câu nữa trong mục 5 đáng ghi, vì nó là một chỗ bài để ngỏ: họ không
-huấn luyện nổi một mạng hồi quy thường trên bài toán không đảo, nhưng
+huấn luyện nổi một mạng hồi quy thường trên bài toán không đảo, nhưng tin rằng
+một mạng như thế sẽ huấn luyện được dễ dàng khi câu nguồn đã đảo. Nguyên văn:
 \enquote{we believe that a standard RNN should be easily trainable when the
-source sentences are reversed}, và nói thẳng ra là họ không kiểm bằng thí
+source sentences are reversed}. Và họ nói thẳng ra là không kiểm bằng thí
 nghiệm. Bài tập cuối chương có một câu hỏi về chỗ đó.

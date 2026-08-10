@@ -6,15 +6,16 @@ Bài 2014 không mọc ra từ đất trống, và ba bài dưới đây là ba 
 biết chuyện đó. Bài thứ nhất là bài mà chính Sutskever nhường quyền ưu tiên.
 Bài thứ hai dựng cùng kiến trúc gần như cùng lúc, ở một chỗ khác, với một chi
 tiết khác hẳn. Bài thứ ba là bài đo được thứ mà người ta vẫn gán nhầm cho
-chương này, và phân biệt nó với bài thứ hai là việc mà cả chương này lẫn
-chương~\ref{ch:dong-chinh} phải làm cho đúng.
+chương này. Phân biệt nó với bài thứ hai là chỗ cả chương này lẫn
+chương~\ref{ch:dong-chinh} phải cẩn thận nhất.
 
 \begin{bridge}{Kalchbrenner và Blunsom 2013: ai làm trước}
 Mục 4 của bài 2014 viết thẳng: công trình của họ gần nhất với Kalchbrenner và
-Blunsom, \enquote{who were the first to map the input sentence into a vector and
-then back to a sentence}. Chỗ khác nhau, cũng theo lời họ, là bài 2013 mã hoá
-câu bằng mạng tích chập, và mạng tích chập thì \enquote{lose the ordering of the
-words}.
+Blunsom, hai người đầu tiên ánh xạ cả câu input thành một vector rồi bung ngược
+vector ấy trở lại thành câu (\enquote{who were the first to map the input
+sentence into a vector and then back to a sentence}). Chỗ khác nhau, cũng theo
+lời họ, là bài 2013 mã hoá câu bằng mạng tích chập, mà mạng tích chập thì làm
+mất thứ tự từ (\enquote{lose the ordering of the words}).
 
 Nghĩa là ý tưởng \enquote{nén cả câu vào một vector rồi bung ra} có trước bài
 này một năm. Cái bài 2014 thêm vào là dùng một mạng hồi quy có cổng cho cả hai
@@ -93,8 +94,9 @@ sentences with a model similar to ours}.
 
 Người đo được độ tụt là Cho và cộng sự trong bài 2014b, trên một mô hình khác,
 với chỗ nối khác và bề rộng khác. Và chính Sutskever ghi nhận điều đó trong mục
-4 khi mô tả bài Bahdanau là dùng attention \enquote{to overcome the poor
-performance on long sentences experienced by Cho et al.}.
+4, khi mô tả bài Bahdanau là dùng attention để khắc phục chỗ mô hình của Cho
+làm kém trên câu dài (\enquote{to overcome the poor performance on long
+sentences experienced by Cho et al.}).
 
 Bốn chỗ, cùng một bài, cùng một hướng. Cái sai không nằm ở chỗ tin rằng chỗ thắt
 có thật, vì mục~\ref{sec:ch05-bop-vector} vừa đo nó. Nó nằm ở chỗ gán kết quả

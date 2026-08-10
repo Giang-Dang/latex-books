@@ -27,15 +27,17 @@ chính nó đã viết ra.
 \index{vector ngữ cảnh!bề rộng cố định}%
 Và \(\vect{v}\) có bề rộng cố định. Câu nguồn năm token hay năm mươi token thì
 \(\vect{v}\) vẫn là chừng ấy số thực. Bài nói thẳng con số của mô hình họ: bốn
-tầng, mỗi tầng một nghìn cell, nên \enquote{the deep LSTM uses 8000 real numbers
-to represent a sentence}.
+tầng, mỗi tầng một nghìn cell, tức tám nghìn số thực cho một câu. Nguyên văn:
+\enquote{the deep LSTM uses 8000 real numbers to represent a sentence}.
 
 \subsection*{Ký hiệu \(\langle\)EOS\(\rangle\) làm một việc cụ thể}
 
 \index{vector ngữ cảnh!ký hiệu kết thúc}%
 Mỗi câu kết thúc bằng một token đặc biệt, viết là \(\langle\)EOS\(\rangle\).
-Không phải quy ước cho gọn. Bài nêu đúng lý do: nó \enquote{enables the model to
-define a distribution over sequences of all possible lengths}. Không có nó thì
+Không phải quy ước cho gọn. Bài nêu đúng lý do: ký hiệu ấy cho mô hình định
+nghĩa được một phân phối trên các chuỗi thuộc mọi độ dài, nguyên văn
+\enquote{enables the model to define a distribution over sequences of all
+possible lengths}. Không có nó thì
 \eqref{eq:ch05-phan-ra} là phân phối trên các chuỗi độ dài \(T'\) cố định, mà
 \(T'\) thì mô hình phải tự quyết. Có nó thì độ dài trở thành một thứ mô hình
 sinh ra, giống như sinh ra một từ.
@@ -46,10 +48,11 @@ Mục 2 của bài liệt kê ba chỗ, và cả ba đều đáng đọc vì c�
 hôm nay.
 
 Thứ nhất, \emph{hai} LSTM chứ không phải một: một cho câu nguồn, một cho câu
-đích, trọng số riêng biệt. Lý do bài đưa ra là nó tăng số tham số
-\enquote{at negligible computational cost} và làm cho việc huấn luyện nhiều cặp
-ngôn ngữ cùng lúc trở nên tự nhiên. Trong repo companion, đó là hai module
-\code{encoder} và \code{decoder} độc lập nhau.
+đích, trọng số riêng biệt. Lý do bài đưa ra là nó tăng số tham số mà gần như
+không tốn thêm tính toán, nguyên văn \enquote{at negligible computational
+cost}, và làm cho việc huấn luyện nhiều cặp ngôn ngữ cùng lúc trở nên tự nhiên.
+Trong repo companion, đó là hai module \code{encoder} và \code{decoder} độc lập
+nhau.
 
 Thứ hai, bốn tầng. Bài đo được mỗi tầng thêm vào giảm perplexity gần mười phần
 trăm.

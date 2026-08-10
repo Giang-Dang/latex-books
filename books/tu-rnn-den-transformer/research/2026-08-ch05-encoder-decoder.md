@@ -175,12 +175,12 @@ Bảng 2, dùng chung với hệ SMT: baseline 33.30; Cho và cộng sự 34.54;
 WMT'14 tốt nhất 37.0; rescoring 1000-best bằng một LSTM xuôi 35.61, bằng một
 LSTM đảo 35.85, bằng ensemble 5 LSTM đảo 36.5; oracle khoảng 45.
 
-Mục 3.6, câu bài tự tổng kết chỗ đứng của kết quả, chép nguyên: kết quả của họ
-là lần đầu \"a pure neural translation system outperforms a phrase-based SMT
-baseline on a large scale MT task by a sizeable margin, despite its inability
-to handle out-of-vocabulary words\". Và ngay sau đó: \"The LSTM is within 0.5
-BLEU points of the best WMT'14 result if it is used to rescore the 1000-best
-list of the baseline system.\"
+Mục 3.6, bài tự nói kết quả của nó đáng giá tới đâu. Hai câu, chép nguyên:
+"it is the first time that a pure neural translation system outperforms a
+phrase-based SMT baseline on a large scale MT task by a sizeable margin,
+despite its inability to handle out-of-vocabulary words". Và ngay sau đó: "The
+LSTM is within 0.5 BLEU points of the best WMT'14 result if it is used to
+rescore the 1000-best list of the baseline system."
 
 Mục 3.2 về beam search, chép nguyên đoạn quyết định: "We search for the most
 likely translation using a simple left-to-right beam search decoder which

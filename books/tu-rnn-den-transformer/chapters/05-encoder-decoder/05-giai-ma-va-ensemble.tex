@@ -94,7 +94,8 @@ bình là 13.877.
 \end{measured}
 
 \index{beam search!lợi ích bão hòa rất sớm}%
-Hình dạng khớp với điều bài nói: hệ chạy tốt ngay ở beam 1, và
+Hình dạng khớp với điều bài nói: hệ chạy tốt ngay ở beam 1, và beam 2 đã lấy
+được gần hết phần mà beam search mang lại. Nguyên văn:
 \enquote{a beam of size 2 provides most of the benefits of beam search}. Ở đây
 beam 2 lấy được 0.0200 trên tổng 0.0300 mà beam mang lại, tức hai phần ba, và
 beam 12 không hơn beam 5 một chữ số nào.
@@ -129,9 +130,10 @@ chứng có bug.
 
 \index{ensemble!cách gộp}%
 Thứ thứ hai lắp thêm lúc giải mã là ensemble: huấn luyện vài mô hình rồi cho
-chúng cùng quyết định. Bài dùng năm LSTM \enquote{that differ in their random
-initializations and in the random order of minibatches}, và cả hai thứ ấy ở đây
-đều do một seed điều khiển.
+chúng cùng quyết định. Bài dùng năm LSTM khác nhau ở khởi tạo ngẫu nhiên và ở
+thứ tự ngẫu nhiên của các minibatch (\enquote{that differ in their random
+initializations and in the random order of minibatches}), và cả hai thứ ấy ở
+đây đều do một seed điều khiển.
 
 Cách gộp là chỗ đáng nói rõ. Ensemble không phải một cuộc bỏ phiếu chọn câu cuối
 cùng. Ở mỗi bước giải mã, log xác suất của các mô hình được lấy trung bình
