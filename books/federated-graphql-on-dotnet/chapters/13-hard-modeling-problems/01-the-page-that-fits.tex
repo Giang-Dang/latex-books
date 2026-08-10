@@ -1,0 +1,242 @@
+\section{The Page That Fits in One Service}
+\label{sec:ch13-the-page-that-fits}
+\index{pagination!across a subgraph boundary|(}%
+
+\code{Product.reviews} is the only field in Mosaic that pages something one
+service owns off an entity another service owns. It has been that shape since
+chapter~\ref{ch:schema-design-that-survives-change} and it survived the
+extraction without anybody thinking about it, so I want to start by saying what
+it costs, which is nothing.
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{graphql}
+{ browseProducts(first: 2) { nodes { title
+    reviews(first: 2) { totalCount pageInfo { endCursor hasNextPage } nodes { rating } } } } }
+\end{minted}
+
+Each product comes back with a page of its own, its own \code{totalCount} and
+its own \code{endCursor}. The first two products in the catalogue report six
+reviews and three, and their cursors are different strings.
+
+\index{pagination!why the reviews connection works}%
+The reason it works is that nothing about the page crosses a boundary. The
+router locates \code{Product} in Catalog, hands Reviews a representation, and
+Reviews runs one keyset query per branch of its DataLoader, which is
+chapter~\ref{ch:schema-design-that-survives-change}'s arrangement untouched. The
+items, the cursors, the count and the ordering are four answers from one service
+about one table.
+The boundary is above the connection, not through it. That distinction is the
+whole of section~\ref{sec:ch13-the-page-you-cannot-ask-for}, and it is easier to
+see now, while it is still working.
+
+\subsection*{What a cursor actually is}
+
+\index{cursor!what it encodes}%
+It is worth decoding one, because the rest of this section depends on what is
+inside. Take a cursor off a page of products and base64-decode it:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+e31CZWVjaCBDdXR0aW5nIEJvYXJkOmEwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAxNg==
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+{}Beech Cutting Board:a0000000-0000-4000-8000-000000000016
+\end{minted}
+
+\index{pagination!keyset rather than offset}%
+That is the sort key, a colon, and the tiebreaker.
+\code{CatalogService.DefaultOrder} sorts by \code{Title} and appends \code{Id},
+and both are in there. Which tells you the important thing about HotChocolate
+16's connections: they are \textbf{keyset} paged, not offset paged. The cursor
+does not say \enquote{you have had twenty rows}. It says \enquote{you stopped
+just after this one}, and the next page is a \code{WHERE} clause rather than an
+\code{OFFSET}.
+
+The same holds for reviews, whose order is \code{OrderBy(r => r.CreatedAt)}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+{}202505311348000000000+0000:e0000000-0000-4000-8000-000000000087
+\end{minted}
+
+Ascending, so a page of reviews is oldest first. The doc comment on that
+resolver said \enquote{newest page first} until this chapter, which is the kind
+of thing that stays wrong for five chapters because nobody reads a comment next
+to a field that works.
+
+\subsection*{A row arriving ahead of an open cursor}
+
+\index{cursor!stability under an insert}%
+Chapter~\ref{ch:schema-design-that-survives-change} left a question here: what
+happens to a client holding a cursor when a row is inserted ahead of it. Now
+there is an answer, and it is the good one.
+
+Take page one of a product's reviews, then insert a review into the Reviews
+database dated one second before the row the cursor points at, then ask for page
+two:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+page 1                          page 2, after the insert
+2025-05-31T13:48:00Z  rating 5  2025-10-09T10:12:00Z  rating 5
+2025-08-20T17:35:00Z  rating 4  2026-01-05T19:26:00Z  rating 4
+totalCount 6                    totalCount 7
+\end{minted}
+
+Nothing repeated and nothing skipped that the client had not already gone past.
+Ask the same database the same question by position and it is a different story:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{sql}
+select created_at, rating from reviews where product_id = ...
+  order by created_at offset 2 limit 2;
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+2025-08-20 17:35:00+00|4
+2025-10-09 10:12:00+00|5
+\end{minted}
+
+The first of those is the row page one already showed. That is what offset
+paging does to a list that is being written to, and it is the reason
+chapter~\ref{ch:schema-design-that-survives-change} took a breaking change to
+introduce connections in the first place.
+
+The keyset version is not free of consequences either. The inserted review is
+invisible to that client until it starts again from page one, because the cursor
+has already gone past where the row landed. A client is being shown a stable
+view of a list that has moved, which is a different thing from a correct view
+and is usually what you want.
+
+\subsection*{The defect that was hiding behind the router}
+
+\index{pagination!the cursor that could not tell two rows apart|(}%
+While measuring all that, I found something wrong with the other connection.
+Everything in this subsection reproduces at tag \code{ch12} and not at
+\code{ch13}, because the last part of it is the repair.
+
+Check out \code{ch12}, ask Catalog for a page of products, and select nothing
+but the title:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{graphql}
+{ browseProducts(first: 2) { edges { cursor node { title } } } }
+\end{minted}
+
+The cursors decode to this:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+{}Beech Cutting Board:00000000-0000-0000-0000-000000000000
+{}Brant Ottoman:00000000-0000-0000-0000-000000000000
+\end{minted}
+
+Every tiebreaker is an empty \code{Guid}. Add \code{id} to the selection set and
+they are real identifiers again. And a cursor that cannot tell two rows apart
+does exactly what you would expect on the next page:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+page 1: Beech Cutting Board | Brant Ottoman
+page 2: Brant Ottoman | Brant Two-Seat Sofa
+\end{minted}
+
+The client is handed \enquote{Brant Ottoman} twice. This is not a rare
+interleaving or a race. It is every second page of every query that does not
+happen to ask for the identifier, and it has been in the repository since
+chapter~\ref{ch:data-without-the-n-plus-1} created the field.
+
+\index{projection!and the sort key}%
+The cause is two mechanisms that each work and do not know about each other. The
+sort is applied to the query: \code{DefaultOrder} appends \code{Id} and the
+\code{ORDER BY} really does carry it. The projection is built somewhere else
+entirely, out of the client's selection set, by
+\code{QueryContextParameterExpressionBuilder}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+return new QueryContext<T>(
+    selection.AsSelector<T>(context.IncludeFlags),
+    filterContext?.AsPredicate<T>(),
+    sortContext?.AsSortDefinition<T>());
+\end{minted}
+
+Three things built from three sources, and nothing adds the sort keys to the
+selector. So EF Core loads the two columns the client asked about, materialises
+a \code{Product} whose \code{Id} is default, and the cursor is serialised from
+that object rather than from the row.
+
+\subsection*{Why eight chapters of federated queries never found it}
+
+Here is the part that belongs in this book rather than in a HotChocolate issue.
+Through the router, the same page is correct as soon as the query asks for
+anything at all from another subgraph:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+selection                            page 2
+title                                Brant Ottoman | Brant Two-Seat Sofa
+title price { amount }               Brant Two-Seat Sofa | Canvas Storage Bin
+title availableQuantity              Brant Two-Seat Sofa | Canvas Storage Bin
+title reviews(first: 1){ totalCount} Brant Two-Seat Sofa | Canvas Storage Bin
+\end{minted}
+
+\index{query plan!adds the key to a fetch}%
+The planner needs \code{Product.id} to build representations, so it adds it to
+the Catalog fetch, which puts the key back in the projection, which fixes the
+cursor. The only query that reproduces the defect is one that stays inside a
+single subgraph, and this book has spent five chapters demonstrating queries
+that do not.
+
+I want to be careful about what that is evidence of. It is not evidence that
+federation is safer. It is evidence that a query plan changes the selection set
+a subgraph sees, so a subgraph tested through a router has been tested against a
+different query than the one a client wrote. That is worth knowing about long
+after this particular defect stops being interesting.
+
+\subsection*{One line, and a constructor}
+
+The fix is a supported API and it is one line:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+return await db.Products
+    .AsNoTracking()
+    .With((query ?? QueryContext<Product>.Empty).Include(p => p.Id), DefaultOrder)
+    .ToPageAsync(pagingArguments, cancellationToken);
+\end{minted}
+
+\code{QueryContext.Include} adds a property to the selector whatever the client
+selected. It also does not work, first time, on any of Mosaic's domain records,
+and the reason is worth a paragraph because the failure says nothing.
+\code{Include} builds its selector by calling \code{ExpressionHelpers.Rewrite},
+which ends with
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+var newInitExpression = Expression.MemberInit(Expression.New(typeof(TRoot)), bindings);
+\end{minted}
+
+and \code{Expression.New(Type)} wants a parameterless constructor.
+\code{Product} is a positional record and has none, so the expression throws
+while the resolver is being executed and the client gets
+\code{Unexpected Execution Error} with nothing in the log. \code{Product} gained
+a parameterless constructor whose only caller is that expression, and whose
+doc comment says so.
+
+\index{schema!a fix no schema can see}%
+Afterwards the query is still projected, which was the point of doing it this
+way rather than dropping the selector:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{sql}
+SELECT p.title AS "Title", p.id AS "Id"
+FROM products AS p
+ORDER BY p.title, p.id
+LIMIT @p
+\end{minted}
+
+Two columns out of five, and the tiebreaker among them. And the published schema
+is byte-identical before and after. Re-export \code{catalog.graphql} and
+\code{git diff} says nothing changed, so no schema-comparison tool, no
+composition check and no breaking-change gate could have seen either the defect
+or the repair. Chapter~\ref{ch:schema-design-that-survives-change} made the same
+point about \code{[ID]} doing nothing for four chapters while the SDL said
+\code{id: ID!} throughout. The schema is a contract about shapes, and both of
+these were faults in what the shape was filled with.
+
+\medskip
+So a page inside one service can be got right. The next question is the one a
+client asks about ten minutes after seeing this graph, and the answer to that one
+is no.
+
+\index{pagination!the cursor that could not tell two rows apart|)}%
+\index{pagination!across a subgraph boundary|)}%

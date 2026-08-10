@@ -1,0 +1,115 @@
+\section{The Enum Declared Twice}
+\label{sec:ch13-the-enum-declared-twice}
+\index{enum!declared in two subgraphs|(}%
+
+The \code{ProductCategory} enum has five members and is declared in two
+services. Catalog owns \code{Product.category}; Pricing declares an
+\code{@external} copy of that field because \code{shippingCost} requires it, and
+declaring the field means declaring the enum. Nobody chose to duplicate it. It
+arrived with the directive.
+
+\index{composition!checks structure}%
+Chapter~\ref{ch:composition} already has a case where the two copies disagree and
+the composer refuses, so the obvious question is answered. The interesting
+question is what \enquote{disagree} means, and the answer is that it depends on
+something neither declaration mentions.
+
+\subsection*{Both directions at once}
+
+Add a member to Pricing's copy and the composer produces the longest single
+message in this book:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+Enum "ProductCategory" was used as both an input and output but was inconsistently defined across inclusive subgraphs.
+To update an Enum used as both an input and output, add any new Enum values with the @inaccessible directive in the
+origin subgraph. Next, add those new Enum values to all other subgraphs that define the Enum—this time without the
+@inaccessible directive. Finally, once all subgraphs have been updated, remove @inaccessible from the Enum values in
+the origin subgraph.
+\end{minted}
+
+Remove a member instead and the message is identical, which is a small point
+against it and a large point in its favour: it is not describing your edit, it is
+describing the constraint.
+
+The constraint is in the first line. The enum is the return type of
+\code{Product.category}, and it is also an argument type, inside the filter
+input that chapter~\ref{ch:data-without-the-n-plus-1} generated when it added
+filtering:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+input ProductCategoryOperationFilterInput {
+  eq: ProductCategory
+  neq: ProductCategory
+  in: [ProductCategory!]
+  nin: [ProductCategory!]
+}
+\end{graphqlsdl}
+
+A
+value travelling out and a value travelling in want opposite things from a merge,
+so there is no safe answer and the composer declines to pick one. Three of those
+five lines are then a migration recipe, which I have not seen a composer offer
+anywhere else and which is genuinely useful: mark the new value
+\code{@inaccessible} where it is added, roll it out everywhere, then take the
+directive off.
+
+\subsection*{One direction, and the two different answers}
+
+\index{enum!output position, values unioned}%
+Now the half that is easy to miss. Take a new enum that is only ever returned.
+Two services declare it with different members:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+enum StockCondition { NEW  REFURBISHED }   # inventory
+enum StockCondition { NEW  DAMAGED }       # pricing
+\end{graphqlsdl}
+
+This composes, silently, and the client-facing enum is the union:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+enum StockCondition { NEW  DAMAGED  REFURBISHED }
+\end{graphqlsdl}
+
+\index{enum!input position, values intersected}%
+Now the same two declarations used only as an argument. The pair has to change,
+because three of Mosaic's seven subgraphs have no root field to hang an argument
+on and Pricing is one of them, so the committed case declares the enum in
+Inventory and Accounts instead. The members are the same two sets:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+enum StockCondition { NEW  REFURBISHED }   # inventory
+enum StockCondition { NEW  DAMAGED }       # accounts
+\end{graphqlsdl}
+
+That composes silently too, and the client-facing enum is this:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+enum StockCondition { NEW }
+\end{graphqlsdl}
+
+Both merges are correct and I would defend either. Every value some service can
+emit has to be nameable by a client reading, so an output enum is unioned. Only
+values every service accepts can be safely offered to a client writing, so an
+input enum is intersected. What is uncomfortable is the second one's failure
+mode. Inventory has a field that takes \code{REFURBISHED}, that field is in the
+public graph, and \code{REFURBISHED} is not, because a service in another domain
+happens to declare an enum of the same name without it. Nothing was reported at
+any severity. Somebody's feature left the API because somebody else's schema was
+merged with theirs.
+
+\index{enum!which merge you get depends on use}%
+Which leaves a rule that is easy to state and hard to remember: \textbf{the
+composer's treatment of an enum is decided by where the enum is used, not by how
+it is declared}. The same two files compose three different ways depending on
+whether the type appears in a return position, an argument position, or both. And
+the position is a property of the whole graph rather than of either declaration,
+so it can change because of a schema you have never read. Add a filter argument
+to your enum in one service and an unrelated service's spare member becomes a
+composition error.
+
+\medskip
+So enums are checked, and checked in a way that repays understanding. The
+question the last section asks is what happens when there is nothing left to
+check.
+
+\index{enum!declared in two subgraphs|)}%
