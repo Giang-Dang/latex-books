@@ -1,7 +1,41 @@
 \chapter{Hard Modeling Problems}
 \label{ch:hard-modeling-problems}
 
-\emph{Not yet drafted.} Planned scope: Pagination across subgraphs, abstract types across boundaries, shared enums and scalars, and global ID design.
+Chapter~\ref{ch:strangling-the-monolith} finished the extraction and left a
+graph that works. This chapter is about the things in it that were already
+wrong, or already impossible, and that nobody had looked at because the
+extraction was the work.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/13-hard-modeling-problems/01-section-name}
+Four of them were sitting in the graph already, and they have nothing obvious in
+common. An enum is declared in two subgraphs. A \code{Money} type is declared in
+two others. Four types implement \code{Node} and no field in the entire graph
+returns one, so the interface is decoration. And \code{Product.reviews} is a
+page of one service's rows hanging off another service's entity, which turns out
+to work, while the thing you would expect to work next does not. A fifth problem
+is one Mosaic does not have and most graphs eventually do: a field that belongs
+on every implementation of an interface, contributed by a service that cannot
+name any of them.
+
+What they have in common is where the difficulty lives. None of these is a bug
+in HotChocolate or in the router, and none of them is fixed by a directive. Each
+one is a modelling decision that was free inside one process and costs something
+across seven, and the cost is only visible if you go and look for it. Two of
+them compose without a word from the composer, which is the part worth being
+nervous about.
+
+I also found a defect while measuring the first one, and it had been in the
+repository since chapter~\ref{ch:data-without-the-n-plus-1}. It is not a
+federation defect. What federation did was hide it.
+
+Everything the composer says in this chapter was said by wgc 0.129.7, which
+bundles \code{@wundergraph/composition} 0.63.2, and every line of library source
+it reads is HotChocolate at tag \code{16.6.0}, commit \code{8fea46e}. The router
+is Cosmo 0.337.1, unchanged since chapter~\ref{ch:enter-the-router}.
+
+\input{chapters/13-hard-modeling-problems/01-the-page-that-fits}
+\input{chapters/13-hard-modeling-problems/02-the-page-you-cannot-ask-for}
+\input{chapters/13-hard-modeling-problems/03-giving-the-graph-a-node-field}
+\input{chapters/13-hard-modeling-problems/04-abstract-types-across-a-boundary}
+\input{chapters/13-hard-modeling-problems/05-the-enum-declared-twice}
+\input{chapters/13-hard-modeling-problems/06-money-and-the-scalar}
+\input{chapters/13-hard-modeling-problems/07-your-turn}

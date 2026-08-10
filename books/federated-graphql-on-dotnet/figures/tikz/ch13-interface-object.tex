@@ -1,0 +1,41 @@
+% What @interfaceObject does with a type name. Referenced from chapter 13. Bare
+% tikzpicture; the figure environment, caption and label live at the call site.
+%
+% The point of the picture is the label on the middle arrow. The router reads
+% keys off concrete types it knows about and sends them typed as the interface,
+% so the subgraph on the right answers about a book without ever being told it
+% is answering about a book.
+\begin{tikzpicture}[
+    font=\small,
+    svc/.style={draw, rounded corners=2pt, minimum width=26mm,
+                minimum height=15mm, align=center, font=\scriptsize},
+    tp/.style={draw, rounded corners=2pt, minimum width=15mm,
+               minimum height=5mm, align=center, font=\scriptsize},
+    flow/.style={-{Stealth[length=2mm]}},
+    note/.style={font=\scriptsize, gray, align=center, inner sep=1pt}
+  ]
+
+  % -- left: the owner --------------------------------------------------------
+  \node[note, anchor=south] at (1.7,1.5) {\code{library}};
+  \draw[rounded corners=2pt] (0.2,-1.9) rectangle (3.2,1.4);
+
+  \node[tp] (media) at (1.7,0.9) {\code{interface Media}};
+  \node[tp] (book)  at (1.7,-0.4) {\code{Book}};
+  \node[tp] (film)  at (1.7,-1.3) {\code{Film}};
+
+  \node[note, anchor=north, align=center] at (1.7,-2.1) {both entities,\\keyed on \code{id}};
+
+  % -- right: the contributor -------------------------------------------------
+  \node[note, anchor=south] at (8.6,1.5) {\code{ratings}};
+  \draw[rounded corners=2pt] (7.1,-1.9) rectangle (10.1,1.4);
+
+  \node[tp, minimum width=22mm] (io) at (8.6,0.5) {\code{type Media}\\\code{@interfaceObject}};
+  \node[note, anchor=north, align=center] at (8.6,-0.8)
+    {no \code{Book} here,\\no \code{Film},\\no way to list them};
+
+  % -- the wire ---------------------------------------------------------------
+  \draw[flow] (3.3,0.2) -- node[note, above, align=center]
+    {keys read off\\\code{Book} and \code{Film}} node[note, below, align=center]
+    {sent as\\\code{\_\_typename: Media}} (7.0,0.2);
+
+\end{tikzpicture}

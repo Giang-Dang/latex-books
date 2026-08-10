@@ -1,0 +1,122 @@
+\section{The Page You Cannot Ask For}
+\label{sec:ch13-the-page-you-cannot-ask-for}
+\index{pagination!sorting by a field somebody else owns|(}%
+
+Show a client the graph Mosaic now serves and one of the first things they will
+try is cheapest first.
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{graphql}
+{ browseProducts(first: 3, order: [{ price: { amount: ASC } }]) { nodes { title } } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Field "price" is not defined by type "ProductSortInput".
+\end{minted}
+
+Filtering goes the same way:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Field "availableQuantity" is not defined by type "ProductFilterInput".
+\end{minted}
+
+Both are validation failures at the router, before any subgraph is asked
+anything. And the composed inputs are exactly Catalog's own columns:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+sort:   id, sku, title, description, category
+filter: and, or, id, sku, title, description, category
+\end{minted}
+
+\index{ProductSortInput@\code{ProductSortInput}!is Catalog's table}%
+Which is correct, and is the shape of the problem rather than a gap in it. The
+sort input is generated from the entity Catalog holds. Pricing contributes a
+field to \code{Product}, and contributing a field to a type is not the same as
+contributing a column to somebody else's table. The order of a page is decided
+by whoever runs the query that produces the page, and only Catalog runs that
+query.
+
+\subsection*{Why no directive rescues this}
+
+\index{requires@\code{@requires}!nested field sets}%
+The tempting move is \code{@requires}. Catalog needs a price to sort by; there is
+a directive whose entire job is getting a value from another subgraph into a
+resolver; connect the two. Chapter~\ref{ch:entity-resolution-done-right} left two
+questions about how far that directive stretches, so before arguing about
+whether it fits, here is how far it does stretch.
+
+A nested field set composes. Inventory can declare Pricing's \code{price} as
+\code{@external} and require a path through it:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+type Product @key(fields: "id") {
+  availableQuantity: Int!
+  restockThreshold: Int! @requires(fields: "price { amount }")
+  id: ID!
+  price: Money! @external
+}
+\end{graphqlsdl}
+
+\index{requires@\code{@requires}!spanning two other subgraphs}%
+And a field set spanning two other subgraphs composes. Pricing's
+\code{shippingCost} can require \code{category}, which Catalog owns, and
+\code{availableQuantity}, which Inventory owns, in one directive, and the routing
+table afterwards has the three fields in three different services:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+Product.category           catalog
+Product.shippingCost       pricing
+Product.availableQuantity  inventory
+\end{minted}
+
+So the answer to both of chapter~\ref{ch:entity-resolution-done-right}'s
+questions is yes, and neither helps here. \code{@requires} feeds a field
+resolver on an entity, and it runs after the router has located that entity. The
+router locates an entity by being handed a key, and a key comes from the fetch
+that produced the page. There is no page yet when the ordering has to be decided,
+so there is nothing for the value to be required onto. The directive is not too
+weak. It is in the wrong half of the request.
+
+The same argument disposes of \code{@provides}, of an \code{@external} copy of
+the price, and of every other federation directive, because all of them describe
+what happens once the router knows which entities it is dealing with.
+
+\subsection*{Three things that do work, and what each costs}
+
+\index{pagination!denormalising a sort key}%
+The first is to copy the sort key into the service that owns the page. Catalog
+grows a \code{price\_cents} column, keeps it up to date from Pricing's events,
+and sorts on it. This is the one most teams end up with and it is worth being
+honest about what it is: a second copy of somebody else's data, with a staleness
+window, in the service whose whole reason for existing was not knowing about
+prices. What it buys is a page that sorts correctly in one query, and a page is
+the thing clients ask for constantly.
+
+\index{pagination!a service that owns the ordering}%
+The second is to move the ordering somewhere that can see everything. A search
+or listing service subscribes to both domains, holds an index, and answers
+\code{searchProducts} with a page of \code{Product} keys the router then resolves
+in the ordinary way. The page is one service's answer again, which is the
+property section~\ref{sec:ch13-the-page-that-fits} showed is what makes a
+connection work at all. The cost is a service, an index, and a second definition
+of what a product is; the benefit is that this is also where full-text search,
+facets and relevance were going to end up anyway.
+
+The third is to admit the page is not sortable that way and give the client a
+narrower field: \code{cheapestInCategory}, answered by Pricing, returning a
+handful of keys. Small, honest, and it stops being enough the moment somebody
+wants page four.
+
+\index{federation!what it does not remove}%
+What none of them is is a schema change. That is the thing to take away, and it
+is worth stating plainly because a graph that presents six services as one
+schema invites the assumption that it presents six databases as one database.
+It does not. A query that ranks rows by a column two services would have to
+share is a distributed join, and this stack has no distributed join in it. What
+it has is a mechanism for fetching fields of things it has already found, which
+is a different and much cheaper thing.
+
+\medskip
+That is a limit with no way round it. The next one turned out to have a way
+round it, which cost a service.
+
+\index{pagination!sorting by a field somebody else owns|)}%

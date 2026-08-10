@@ -1,0 +1,143 @@
+\section*{Your turn}
+
+Check out tag \code{ch13} of the companion repository and run \code{npm ci}
+once. Exercises 1, 2, 5 and 10 need the database, the seven subgraphs and the
+router. Exercises 3 and 4 need all that and a second checkout at tag \code{ch12},
+because what they measure is the defect this chapter repaired. Exercises 6, 7 and
+9 need node and nothing started at all. Exercise 8 needs two more processes and a
+router of its own.
+
+There are seven services now, plus the router:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+docker compose up -d --build mosaic-db mosaic-catalog mosaic-pricing \
+    mosaic-inventory mosaic-accounts mosaic-reviews mosaic-ordering \
+    mosaic-nodes mosaic-router
+docker compose ps
+\end{minted}
+
+Nine containers, all healthy. \code{mosaic-nodes} is the one with no database
+beside it in the table; if it is the only one that will not start, something else
+has 5107.
+
+\begin{enumerate}
+  \item \textbf{Follow one identifier.} Take a product identifier out of
+  \code{browseProducts}, and send this to port 3002 with the two query-plan
+  headers chapter~\ref{ch:enter-the-router} used:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+X-WG-Include-Query-Plan: true
+X-WG-Skip-Loader: true
+  \end{minted}
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{graphql}
+{ node(id: "...") { ... on Product {
+    title price { amount } availableQuantity } } }
+  \end{minted}
+
+  Count the fetches in \code{extensions.queryPlan}, then look at what the first
+  one asked the node service for. It is two fields and nothing else, and the
+  whole rest of the answer is keyed on them.
+
+  \item \textbf{Ask for something that is not there.} Base64-encode
+  \code{Product:} followed by sixteen zero bytes and send that to \code{node},
+  selecting \code{title}. Note which service the error comes from, and which
+  service it is actually about. Then send the same identifier selecting only
+  \code{\_\_typename} and \code{id}: it answers \code{Product} and hands the
+  identifier straight back, because nothing on that path ever had to find a row.
+  Decide whether you would rather \code{node} answered null instead, and what the
+  node service would have to do to manage it.
+
+  \item \textbf{Break the paging on purpose.} Ask the router for
+  \code{browseProducts(first: 2)} selecting \code{cursor} and
+  \code{node \{ title \}}, and base64-decode the second cursor. Now do the same
+  thing at tag \code{ch12}, in a second checkout, and decode it again. One of
+  them ends in an all-zero \code{Guid}. Use each cursor as \code{after:} and see
+  which page repeats a row.
+
+  \item \textbf{Then hide the bug the way this book did for eight chapters.}
+  Still at \code{ch12}, add \code{price \{ amount \}} to the same query and
+  decode the cursor again. It is correct. Write down, before reading
+  section~\ref{sec:ch13-the-page-that-fits} again, why one more field from
+  another service repaired a cursor Catalog built.
+
+  \item \textbf{Ask for the page that cannot exist.} Send
+  \code{browseProducts(first: 3, order: [\{ price: \{ amount: ASC \} \}])}.
+  Read the error and note where it came from: no subgraph was asked anything.
+  Then look at \code{ProductSortInput} through the router's introspection and
+  satisfy yourself that no directive would have changed the list.
+
+  \item \textbf{Make the composer merge one enum two ways.} Print these in turn:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/modeling-cases.mjs --print enum-in-output-only-is-unioned
+node scripts/modeling-cases.mjs --print enum-in-input-only-is-intersected
+  \end{minted}
+
+  The two cases declare the same two sets of members and get opposite answers.
+  Read both case definitions in \code{scripts/modeling-cases.mjs} and find the
+  two differences between them, then work out which of the two is doing the
+  work. Then decide which merge you would rather discover in production, and
+  what would have told you.
+
+  \item \textbf{Watch a composer stop being a composer.} Print the case named
+  for an implementation without a key:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/modeling-cases.mjs --print interface-object-implementation-without-a-key
+  \end{minted}
+
+  Then read the case in \code{scripts/modeling-cases.mjs} and find the two edits
+  it makes to \code{schema/samples/interface-object-library.graphql}. One of them
+  is the mistake and the other is the bookkeeping that follows from it. Consider
+  what a build pipeline does with that exit code, and what a reviewer would have
+  to know to catch the one-directive cause.
+
+  \item \textbf{Give a type a field nobody declared on it.} Start the two
+  interface-object subgraphs, compose them, and bring up the router on 3004:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+dotnet run --project samples/interface-object/Mosaic.Sample.InterfaceObject.Library
+dotnet run --project samples/interface-object/Mosaic.Sample.InterfaceObject.Ratings
+npx wgc router compose -i samples/interface-object/graph.yaml \
+                       -o samples/interface-object/supergraph.json
+docker compose --profile interfaces up -d interfaces-router
+  \end{minted}
+
+  Ask 3004 for \code{\{ library \{ \_\_typename title averageRating \} \}}, then
+  ask 5208 for \code{\{ resolutionLog \}}. Compare what the ratings subgraph was
+  asked with what the client asked for. Then add a third implementation to
+  \code{Library.cs}, a \code{Podcast} with its own key, recompose, and see what
+  it costs the ratings subgraph to support it.
+
+  \item \textbf{Find out what a scalar is worth.} In a scratch copy of
+  \code{schema/ordering.graphql}, change \code{Decimal}'s \code{@specifiedBy}
+  url to anything you like and compose the seven by hand. Then change
+  \code{Money.currency} to \code{String} in the same copy and compose again.
+  Both succeed. Write down which of the two you would expect a reviewer to catch
+  in a pull request, and then go and look at how the two edits differ in a diff.
+
+  \item \textbf{Verify it in Postman.} The collection for this chapter is
+  \code{postman/mosaic-nodes}, seven requests against the router:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+npx newman run postman/mosaic-nodes.postman_collection.json \
+    -e postman/mosaic-nodes.local.postman_environment.json
+  \end{minted}
+
+  Twenty-seven assertions, all green at \code{ch13}. Now run the same collection
+  against a \code{ch12} checkout with its own graph up, and sort the failures
+  into two piles. One pile is requests that fail because a field is not in the
+  schema. The other is the last two requests, which fail with the schema
+  unchanged, because a page repeats a row. Decide which pile a
+  schema-comparison tool would have warned you about, and what you would have
+  had to run to catch the other.
+\end{enumerate}
+
+Exercise 4 is the one to do properly. Everything else in this chapter is a
+property of federation; that one is a property of testing anything behind a
+layer that rewrites the request. The query the client wrote and the query the
+subgraph answered were different documents, so the subgraph was never tested
+against the thing that was broken.
+Chapter~\ref{ch:automated-tests} is where a test suite gets told about that
+distinction.

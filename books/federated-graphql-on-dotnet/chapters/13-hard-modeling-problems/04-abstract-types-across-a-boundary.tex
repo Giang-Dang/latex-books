@@ -1,0 +1,185 @@
+\section{Abstract Types Across a Boundary}
+\label{sec:ch13-abstract-types-across-a-boundary}
+\index{abstract types!across subgraphs|(}%
+
+\index{abstract types!interface implementations in different subgraphs}%
+The easy case is one you have already seen working, and it is worth naming
+before the hard one. \code{Node} is declared in five of Mosaic's seven
+subgraphs, and the four types implementing it are owned by four different
+services: \code{Product} in Catalog, \code{Customer} in Accounts, \code{Review}
+in Reviews, \code{Order} in Ordering. That composes, has composed since
+chapter~\ref{ch:composition}, and the merged interface in
+section~\ref{sec:ch13-giving-the-graph-a-node-field} is what came out.
+
+So an interface whose implementations live in different subgraphs is not a
+problem. Each subgraph declares the interface and its own implementations,
+nobody declares anybody else's, and the composer merges the implementation
+lists. That is the arrangement a team reaches for first, and it works.
+
+Mosaic's other two abstract types do not cross anything: \code{SubmitReviewError}
+and the \code{Error} interface belong to Reviews and nothing else declares them.
+So a union whose members are owned by different services is a case this graph
+has no instance of, and rather than inventing one in the storefront I have left
+it as something this chapter did not exercise; the research note records it with
+chapter~\ref{ch:inside-the-router-and-the-composer} as its owner.
+
+\subsection*{The one that needs a directive}
+
+\index{interfaceObject@\code{@interfaceObject}|(}%
+What does not work by declaration alone is contributing a field to \emph{every}
+implementation of an interface without knowing what the implementations are.
+Chapter~\ref{ch:the-federation-model} described the directive for that from
+Apollo's documentation. This is the smallest arrangement in which
+\code{@interfaceObject} can be watched, and it lives under \code{samples/} in
+the companion repository.
+
+One subgraph owns a media library:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+interface Media @key(fields: "id") { id: ID! title: String! }
+type Book implements Media @key(fields: "id") { id: ID! title: String! pages: Int! }
+type Film implements Media @key(fields: "id") { id: ID! title: String! runtimeMinutes: Int! }
+\end{graphqlsdl}
+
+\code{@key} on an \emph{interface} is the part to notice. It makes this an entity
+interface rather than an ordinary abstract type, and it is what the other
+subgraph attaches to. That other subgraph has never heard of books or films:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+type Media @key(fields: "id") @interfaceObject {
+  id: ID!
+  averageRating: Float
+  ratingCount: Int!
+}
+\end{graphqlsdl}
+
+An interface on one side, an object on the other, and the directive is what tells
+the composer they are the same type. Compose the pair and both new fields land on
+the interface and on every implementation of it:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Media  INTERFACE  id, title, averageRating, ratingCount
+Book   OBJECT     id, title, pages, averageRating, ratingCount           implements Media
+Film   OBJECT     id, title, runtimeMinutes, averageRating, ratingCount  implements Media
+\end{minted}
+
+Point a router at that and ask the library for a field the library has never
+heard of:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+{ "__typename": "Book", "title": "The Mezzanine",  "averageRating": 4.666666666666667, "ratingCount": 3 }
+{ "__typename": "Book", "title": "Pale Fire",      "averageRating": 5,                 "ratingCount": 2 }
+{ "__typename": "Film", "title": "La Jetee",       "averageRating": 4.5,               "ratingCount": 4 }
+{ "__typename": "Film", "title": "Sans Soleil",    "averageRating": null,              "ratingCount": 0 }
+\end{minted}
+
+\code{Sans Soleil} has no ratings row, and the field is nullable for exactly that
+reason: a subgraph contributing to an interface cannot know which
+implementations exist, so \enquote{I have nothing for this key} has to be an
+ordinary answer rather than an error.
+
+\subsection*{What the contributing subgraph is actually told}
+
+\index{interfaceObject@\code{@interfaceObject}!the representation's typename}%
+This is the mechanism, and it is stranger than the schema suggests.
+Figure~\ref{fig:ch13-interface-object} has the shape of it.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch13-interface-object}
+  \caption{The type name changes on the wire. The router reads keys off the
+  concrete types the owning subgraph returned, and sends them to the
+  contributing subgraph typed as the interface, which is the only type name that
+  subgraph has. That is what lets it answer about a book without a \code{Book}
+  type: it is never told that is what it is answering about.}
+  \label{fig:ch13-interface-object}
+\end{figure}
+
+The sample's ratings subgraph writes down every reference-resolver call it
+serves, in chapter~\ref{ch:entity-resolution-done-right}'s style. After the query
+above:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+_entities  Media/b1
+_entities  Media/b2
+_entities  Media/f1
+_entities  Media/f2
+\end{minted}
+
+Four keys, all typed \code{Media}, and nothing about books or films. Now the
+router's own plan for the same query:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+representations:
+  @key  Book   fragment Key on Book  { __typename id }
+  @key  Film   fragment Key on Film  { __typename id }
+query: query($representations: [_Any!]!){ _entities(representations: $representations){
+         ... on Media { averageRating } } }
+\end{minted}
+
+The router reads the keys as \code{Book} and \code{Film}, because that is what
+the library returned, and sends them as \code{Media}, because that is the only
+type the ratings subgraph has. The rewrite in the middle is the whole feature.
+It is also why the promise holds for implementations that do not exist yet: add
+a \code{Podcast} to the library tomorrow and it gets \code{averageRating} with no
+change on the other side, because the other side was never told about the first
+two either.
+
+Narrowing the question narrows the work. Ask for the rating inside a fragment on
+\code{Book} alone and the ratings log is two entries rather than four.
+
+\subsection*{Three ways it goes wrong, and one of them is a crash}
+
+\index{interfaceObject@\code{@interfaceObject}!forgetting the directive}%
+Leave the directive off, so the contributing subgraph declares \code{Media} as an
+ordinary object, and the composer is clear:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+"Media" is defined using incompatible types across subgraphs. It is defined as type "Interface" in subgraph "library"
+but type "Object" in subgraph "ratings".
+\end{minted}
+
+That is the clearest message in this chapter and the only one that names both
+subgraphs and the disagreement between them. Chapters~\ref{ch:composition}
+and~\ref{ch:strangling-the-monolith} between them collected four different
+mistakes that all report as a shareability error naming a type; this one reports
+what actually happened.
+
+\index{interfaceObject@\code{@interfaceObject}!an implementation with no key}%
+Then the one that cost an afternoon. Give the interface a key, give one
+implementation a key, and leave the other without one. There is no composition
+error for this:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+Error: Fatal: Expected key "Film" to exist in the map "entityDataByTypeName".
+    at invalidKeyFatalError (.../@wundergraph/composition/dist/errors/errors.js:433:12)
+    at getOrThrowError (.../@wundergraph/composition/dist/utils/utils.js:28:49)
+    at FederationFactory.handleEntityInterfaces (.../v1/federation/federation-factory.js:1337:68)
+\end{minted}
+
+wgc prints a box above that asking you to upgrade or open an issue, which is the
+right thing for a tool to do when it has genuinely lost its footing, and it is
+not much help when the cause is one missing directive in a schema you wrote a
+minute ago. The rule to carry is short: \textbf{an entity interface needs every
+implementation to be an entity, keyed the same way}. The composer does not
+enforce it and cannot tell you when you break it.
+
+This is committed as a case in \code{scripts/modeling-cases.mjs}, asserted by the
+crash message, so a release that turns it into a proper error fails the gate
+rather than quietly making this paragraph wrong.
+
+\index{interfaceObject@\code{@interfaceObject}!an interface with no key}%
+The third one I mention and did not chase. Give the contributing subgraph its key
+and leave the owning \emph{interface} without one, and the pair composes. I never
+pointed a router at that config, so I do not know what it serves, and the
+research note records it as unmeasured with
+chapter~\ref{ch:inside-the-router-and-the-composer} as its owner. What I will say
+is that of the three, this is the one I would expect to reach production, because
+it is the only one that produces no output at all.
+
+\medskip
+Interfaces and unions are structure, and structure is what a composer is good at
+checking. The last two sections are about what happens as the structure runs out.
+
+\index{interfaceObject@\code{@interfaceObject}|)}%
+\index{abstract types!across subgraphs|)}%

@@ -11,32 +11,40 @@ Author: Giang Dang
 
 ## Status
 
-Chapters 01 to 12 drafted (12 on 2026-08-10). The companion repo is public at
+Chapters 01 to 13 drafted (13 on 2026-08-10). The companion repo is public at
 https://github.com/Giang-Dang/mosaic-graph, tagged `ch02`, `ch03`, `ch04-ef`,
-`ch04`, `ch05`, `ch07`, `ch08`, `ch09`, `ch10`, `ch11` and `ch12`.
+`ch04`, `ch05`, `ch07`, `ch08`, `ch09`, `ch10`, `ch11`, `ch12` and `ch13`.
 
-**Mosaic is six services.** `src/Mosaic.Api` does not exist. Catalog owns
+**Mosaic is seven services.** `src/Mosaic.Api` does not exist. Catalog owns
 `Product` on 5101; Pricing (5102), Inventory (5103) and Reviews (5105) each
 contribute fields to it; Accounts (5104) owns `Customer`, which became an entity
 at `ch12` because two services reference one; Ordering (5106) owns `Order` and
 references `Product` and `Customer` with `resolvable: false` on both. Six
 databases on one PostgreSQL container, created by `EnsureCreatedAsync` on first
-start. `src/Mosaic.ServiceDefaults` is the first project in the repo that is not
-a service: the request timeline, the two counters, the snake_case convention and
+start. The seventh service, `src/Mosaic.Nodes` on 5107, arrived at `ch13` and is
+the only one with no database and no domain: it owns `Query.node` and
+`Query.nodes` for the whole graph and declares four two-line stubs to do it.
+`src/Mosaic.ServiceDefaults` is the first project in the repo that is not a
+service: the request timeline, the two counters, the snake_case convention and
 the builder calls that make a subgraph composable. The Cosmo Router in front of
-all six is unchanged from `ch10` and was handed a different execution config.
+all seven is unchanged from `ch10` and is handed a different execution config.
 
 Getting there: `ch08` extracted Catalog; `ch09` added the composed config as a
 committed file and five composition failures on purpose; `ch10` put the router
 in front; `ch11` added `Product.shippingCost` with `@requires(fields:
 "category")` and `samples/entity-resolution`; `ch12` emptied and deleted the
 monolith, added `scripts/override-cases.mjs`, and retired
-`mosaic-federation.postman_collection.json` for `mosaic-subgraphs`.
+`mosaic-federation.postman_collection.json` for `mosaic-subgraphs`; `ch13` added
+the node service, made `Review` and `Order` entities, fixed a paging cursor
+chapter 4 broke, and added `scripts/modeling-cases.mjs` and
+`samples/interface-object`.
 
-Next action: chapter 13, hard modeling problems. It inherits a graph with six
-subgraphs, an enum declared twice, a `Money` type declared twice and marked
-`@shareable` in both, no `Query.node` anywhere, and a connection on
-`Product.reviews` whose pages are on a different service from the products.
+Next action: chapter 14, real-time in a federated world. It inherits a
+subscription, `onReviewAdded`, that chapter 5 built over SSE against one service
+and that nothing has exercised through a router since; decision 43's admission
+that it is outside the verification gate; and chapter 9's unanswered question
+about `GRAPHQL_SUBSCRIPTION_PROTOCOL_WS` in the composed config. Mutations
+through the router are owed here too.
 
 ## Decision log
 
@@ -119,6 +127,12 @@ is re-opened only by recording what changed and why, in the row.
 | 72 | Chapter 9's composition messages are pinned to `ch11` and earlier | `scripts/composition-cases.mjs` edited the subgraph named `mosaic`, which does not exist at `ch12`, so the same six mistakes are now made in `pricing` and the composer says different words about three of them. Chapter 9's listings reproduce at tag `ch11` and earlier, which is what a chapter tag is for, and chapter 12 says so. What is worth carrying: a catalogue of composition errors is a fact about a particular set of subgraphs, not about the composer. Settled 2026-08-10. |
 | 73 | The resolver count has always measured resolver tasks | Reviews' `_entities` query went from 146 resolvers to 26 at `ch12`, and 120 of the missing ones are authors that are still resolved. `ReviewNode.GetAuthor` has no await in it, so `OperationCompiler.CompileResolver` turns it into a `PureFieldDelegate` that runs inline, and `DiagnosticEvents.ResolveFieldValue` is raised only inside `ResolverTask.Execute` and `BatchResolverTask`. So chapter 3's number counts resolver tasks rather than fields resolved, and always did; nothing before chapter 12 was wrong, because every field on that path used to be asynchronous. Read at tag `16.6.0`, commit `8fea46e`. Settled 2026-08-10. |
 | 74 | Chapter 12's TOC line widened | The approved line read "carving Orders/Inventory/Pricing/Accounts/Reviews, `@override` progressive migration, team contracts". Three things were wrong with it by the time the chapter existed. It named "Orders" for a domain the repository calls Ordering and omitted the order the extraction happens in, which turned out to be the first section and the thing the dependency graph decides. It did not name the query plan at six subgraphs, where the `Parallel` node is the chapter's evidence that the seams were cut in the right places. And it did not name boundary nullability, which decision 65 explicitly assigned here and which became a section arguing the rule down from five fields to three. The line now names all six sections. Same form as decisions 33, 45, 58, 61 and 63: scope grew in detail, not in ambition. Settled 2026-08-10. |
+| 75 | `Query.node` gets a service of its own | Whoever publishes `node` has to be able to return every globally addressable type, because a resolver can only return a type its own schema declares. That coupling is unavoidable; where it sits is the decision. Putting it in Catalog would make the product service declare `Customer`, `Review` and `Order`, which is the knowledge chapter 12 spent a chapter removing from one process. So `src/Mosaic.Nodes` on 5107 owns the two root fields and nothing else: four `resolvable: false` stubs, no database, no `depends_on`, no `_entities`. Its file listing is a description of the graph rather than of a domain, which is the honest form of the coupling. Measured working for all four types through the router. Settled 2026-08-10. |
+| 76 | `Node` and `@key` are different promises, and Mosaic had kept only one for two types | `Node` says a client may hold this identifier and come back; `@key` says another service may hand it to the router and have the thing found. Inside one process both mean "there is a primary key". `Review` and `Order` implemented `Node` with no resolvable key, so no router could fetch either, and a `node` field returning one was impossible. Both became entities at `ch13`, with `[Key("id")]` and a reference resolver on the record behind the DataLoader their node resolvers already used. Ordering published `_entities` for the first time as a result. Settled 2026-08-10. |
+| 77 | A domain record gains a parameterless constructor for one caller | `browseProducts` had shipped a broken keyset cursor since chapter 4: the selector is built from the selection set alone, so a client selecting only `title` got a `Product` whose `Id` was default and every cursor on the page carried the same tiebreaker, and page two repeated a row. The fix is `QueryContext.Include(p => p.Id)`, which does not work on a positional record: `ExpressionHelpers.Rewrite` ends in `Expression.MemberInit(Expression.New(typeof(TRoot)), ...)` and `Expression.New(Type)` wants a parameterless constructor, so it throws and the field answers `Unexpected Execution Error` with nothing in the log. `Product` therefore has a constructor whose only caller is an expression tree, and whose doc comment says so. The projection survives: two columns and the key. Settled 2026-08-10. |
+| 78 | A fix no schema can see needs a gate step that does not look at the schema | The cursor repair above changes no byte of `schema/catalog.graphql`, so no composition check, schema diff or breaking-change gate could see the defect or the fix. Both verify scripts now ask for a page selecting only `title`, decode the cursor, refuse an all-zero tiebreaker, and refuse a second page that repeats a title from the first. This is the second time this book has met a fault invisible to the SDL; decision 40 was the first, where `[ID]` encoded nothing for four chapters while the schema said `id: ID!` throughout. Settled 2026-08-10. |
+| 79 | A gate assertion a later chapter falsifies is updated with its reason, never loosened | Two assertions written earlier became false at `ch13` because the facts changed. `mosaic-router` asserted that `Query.node` is gone from the graph, which chapter 13 undoes on purpose; `mosaic-subgraphs` asserted that Ordering has no `_Entity` union at all, which stopped being true when `Order` became an entity. Both now assert the new fact and carry a comment saying what they used to assert and why it changed, so the diff reads as a recorded change rather than as a weakened test. The second one keeps its original claim intact in sharper form: the union exists and holds `Order`, and neither referenced type is in it. Settled 2026-08-10. |
+| 80 | Chapter 13's TOC line widened | The approved line read "cross-subgraph pagination, abstract types across boundaries, shared enums/scalars, global ID design". Four topics became six sections, and two things the line did not name earned their place. Pagination split in two, because the connection that works and the page that cannot exist are different findings with different causes, and the first of them turned up a defect chapter 4 shipped. And "shared enums/scalars" turned out to be two different stories rather than one: an enum is checked and the answer depends on where it is used, a scalar is not checked at all, and putting them in one section would have buried the point that the composer's protection tracks how much structure a type has. The line now names all six sections. Same form as decisions 33, 45, 58, 61, 63 and 74: scope grew in detail, not in ambition. Settled 2026-08-10. |
 
 ## Version baseline
 
@@ -163,7 +177,7 @@ session. Chapter folders in chapters/ carry the same scope lines.
 
 11. **Entity Resolution Done Right** - what `_entities` does with a list of representations, and what a DataLoader behind a reference resolver is worth; `@requires` and computed fields on the real graph, in the plan and on the wire; how the required value actually reaches the resolver; what the composer insists on around `@external`; `@provides`, what it saves and what it hides; nullability at the boundary
 12. **Strangling the Monolith** - the order the dependency graph dictates, and carving Pricing/Inventory/Accounts/Reviews/Ordering out until the monolith is deleted; what a subgraph costs to make beyond its domain code; what gets copied and what gets shared, as team contracts; `@override`, its four failure modes and the progressive form this stack cannot compose; the query plan at six subgraphs and what the split actually cost; nullability at the boundary, and the checks that stop being possible
-13. **Hard Modeling Problems** - cross-subgraph pagination, abstract types across boundaries, shared enums/scalars, global ID design
+13. **Hard Modeling Problems** - the connection that works because it never crosses a seam, and what a keyset cursor is; the page you cannot ask for, why no directive fixes it, and how far `@requires` really stretches; giving a federated graph its `node` field back, and what a service that owns nothing costs; interfaces and unions across subgraphs, and `@interfaceObject`; the enum whose merge depends on where it is used; and value types and scalars, where the composer stops checking
 14. **Real-Time in a Federated World** - subscriptions through the router, Cosmo EDFS with NATS/Kafka, `@defer`/`@stream` reality check
 15. **Identity and Authorization Across the Graph** - JWT at router vs subgraph, claim forwarding, `@authorize`, `@authenticated`/`@requiresScopes`, public vs internal graphs
 
@@ -219,7 +233,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 10 | drafted | 2026-08-09. 18 pages (155--172), 6 numbered sections plus the lab, ~7,500 words, 2 TikZ figures, 51 index entries, 2 citations, 38 listings. Sources in research/2026-08-ch10-enter-the-router.md. Companion tag `ch10`; neither service changed by a line, and the tag adds the router as a compose service, `router/config.yaml`, a third Postman collection, `scripts/router-cases.mjs` and `scripts/measure-router.mjs`. Both gates pass, 33 steps. The chapter's spine is that the graph finally answers and the process in front of it is configured rather than written. Headline findings: a value in `config.yaml` beats the environment variable that sets it, measured both ways, and the router says so on the second line of its own startup log; `localhost` in a routing URL reaches the host from inside a container because `localhost_fallback_inside_docker` defaults to true, with the control showing the same query failing when it is off; the planner lifts literal arguments into variables, so `first: 3` and `first: 7` produce identical plans while a properly declared variable produces a different one; and a config composed with `--disable-resolvability-validation` starts silently, serves everything inside one subgraph, and answers HTTP 500 `internal server error` at plan time to anything that crosses, with the real cause in the log naming the wrong type. Router overhead measured at roughly 2 to 3 ms across seven passes; the two-hop and one-hop figures are not distinguishable and the chapter says so. Also records that chapter 03's instrumentation stayed in `Mosaic.Api` at the extraction, so half of every federated query is unobserved. TOC line widened in the same session (decision 61) and a new decision 62 on timings. Audited by a fresh agent, which found the latency table and the reload timings had no committed harness; both now have one. Not yet reviewed for line-level prose. |
 | 11 | drafted | 2026-08-09. 18 pages (173--190), 6 numbered sections plus the lab, ~8,000 words, 2 TikZ figures, 55 index entries, 4 citations, 40 listings. Sources in research/2026-08-ch11-entity-resolution.md. Companion tag `ch11`, the first since `ch08` to change Mosaic: `Product.shippingCost` carries `@requires(fields: "category")` against an `@external` copy of Catalog's field, and `samples/entity-resolution` is two subgraphs built to be watched. Both gates pass, 38 steps. The chapter's spine is one field that cannot be answered without the other service, followed end to end. Headline findings: `_entities` calls a reference resolver once per representation and starts all of them before awaiting any, which is what makes one DataLoader batch, and the naive version of the same resolver runs strictly in sequence because its tasks complete synchronously; the required value never reaches the resolver as a parameter but is written onto the returned entity by a compiled setter that, for object types, ignores `@external` entirely and will let a representation overwrite a field the subgraph owns; a nullable `@external` copy silently weakens the field for every client with no composition error (decision 64); `@provides` saves a round trip, serves whatever the promising subgraph stored, and hides a dangling reference while doing it; and one unresolvable key through a non-null chain takes the whole response to `data: null` (decision 65). Answers two flags chapter 09 left open: `--suppress-warnings` does not touch an orphaned `@external`, which is an error, and `--ignore-external-keys` composes byte-identically because Mosaic's key is not external. TOC line widened (decision 63) and three more decisions recorded. Audited by a fresh agent, which found 26 defects including a printed cost table with no harness behind it; all fixed, and the fix moved the numbers (decision 66). Not yet reviewed for line-level prose. |
 | 12 | drafted | 2026-08-10. 16 pages (191--206), 6 numbered sections plus the lab, ~7,700 words, 2 TikZ figures, 45 index entries, 38 listings, 1 new citation. Sources in research/2026-08-ch12-strangling-the-monolith.md. Companion tag `ch12`, the biggest change to the repo since it was created: `src/Mosaic.Api` is deleted, five services take its place on 5102 to 5106 with a database each, and `src/Mosaic.ServiceDefaults` is the first project there that is not a service. Both gates pass; verify.ps1 is 43 steps and verify.sh was brought to parity in the same commit. The chapter's spine is that the monolith is emptied and then deleted, and that the split moved work without adding any database work. Headline findings: progressive `@override` is rejected by wgc 0.129.7 although HotChocolate emits it (decision 71); the book's first composition warning, which finally gives `--suppress-warnings` something to do and composes a byte-identical config; a misspelled `from:` reports as a shareability error naming neither `@override` nor the misspelling; three of the six subgraphs have no root field and need an explicit `AddQueryType()`, whose failure never mentions federation; the storefront costs four statements across four services and cost four before, three of them counted and one invisible; and Reviews' resolver count fell from 146 to 26 because a pure resolver never reaches the diagnostic event the count comes from (decision 73). Decision 65's five predicted nullability changes turned out to be three, with an argument for the other two (decision 70). TOC line widened in the same session (decision 74): the approved line named a domain "Orders" that the repository calls Ordering, and did not name the extraction order, the six-subgraph query plan or boundary nullability, which are three of the six sections. Adopted from an interrupted earlier session that had done the research, the companion tag and the prose but no gates: this session ran the build, both gate scripts and the independent audit against that draft. Audited by a fresh agent, which found 30 defects; 28 were fixed, 2 rejected on the record (see open items). The expensive ones were a quotation attributed to chapter 10 that chapter 10 does not contain, ten hardcoded chapter numbers in prose where chapters 01 to 11 have none between them, and a lab exercise predicting the opposite of what the router does. Not yet reviewed for line-level prose. |
-| 13 | not-started | |
+| 13 | drafted | 2026-08-10. 16 pages (207--222), 6 numbered sections plus the lab, ~7,700 words, 2 TikZ figures, 48 index entries, 59 listings, no new citations. Sources in research/2026-08-ch13-hard-modeling-problems.md. Companion tag `ch13`: `src/Mosaic.Nodes` is a seventh subgraph with no database (decision 75), `Review` and `Order` became entities (decision 76), `browseProducts` got its cursor tiebreaker back (decisions 77 and 78), and there are two new artefacts, `scripts/modeling-cases.mjs` with sixteen cases and `samples/interface-object`. Both gates pass; verify.ps1 is 98 steps. The chapter's spine is that the four problems it inherited are all decisions that were free in one process, and that two of the four compose without a word from the composer. Headline findings: an enum used only as an input is silently intersected across subgraphs, so a value one service accepts disappears from the graph, while the same enum in output position is unioned; two subgraphs declaring `Query.node` with `@shareable` composes and puts both in the routing table, which measures decision 50's assertion for the first time; a `@shareable` value type whose copies differ in nullability composes and takes the weaker side, which is decision 64's rule sighted a second time; a scalar whose two `@specifiedBy` urls disagree composes with no message and both urls are dropped; and an entity interface with one implementation missing its key crashes the composer with a stack trace rather than producing an error. The chapter also fixes a defect chapter 4 shipped: `browseProducts` built keyset cursors from a projected entity whose key was not projected, so a page selecting only `title` repeated a row, and through the router any query touching another subgraph hides it. Chapter 5's cursor-stability open item is closed with a measurement. TOC line widened (decision 80). Audited by a fresh agent; see the open items. Not yet reviewed for line-level prose. |
 | 14 | not-started | |
 | 15 | not-started | |
 | 16 | not-started | |
@@ -325,6 +339,54 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
 
 ## Open items
 
+- **The composer crashes rather than erroring on one modelling mistake.** An
+  entity interface whose interface carries `@key` and one of whose
+  implementations does not makes `@wundergraph/composition` 0.63.2 throw out of
+  `handleEntityInterfaces` with a stack trace and a "please open an issue" box.
+  It is committed as a case in `scripts/modeling-cases.mjs`, asserted by the
+  crash message, so a release that turns it into a proper error fails the gate
+  rather than making chapter 13 quietly wrong. Worth reporting upstream; nobody
+  has.
+- **Chapter 13 leaves these unmeasured, and the research note's section Q names
+  an owner for each**: a router pointed at an `@interfaceObject` graph whose
+  owning interface has no `@key`, which composes and was never run (ch 17); two
+  subgraphs both contributing to the same interface (ch 17); whether an
+  implementation added after the contributing subgraph was deployed really does
+  get the field for free, which follows from the composition rules and was not
+  run (ch 22); whether the plan cache keys on the `node` field's argument (ch
+  17); what `node` costs in milliseconds against a typed root field, which
+  decision 62 keeps out of the gate and no committed script measures (ch 24);
+  `Query.nodes` with a list long enough to matter (ch 24); authorisation on a
+  single field that can return anything in the graph (ch 15); and a cursor whose
+  sort key is not unique, which the seed data has no case of, so the
+  tiebreaker's job was read out of the code rather than out of a collision
+  (ch 24 or a seed change).
+- **`node` is a single field that returns anything in the graph, and nothing
+  authorises it.** Chapter 15 owns this and should treat it as a named risk
+  rather than as another field to decorate: one coarse rule on `Query.node`
+  either blocks identifiers a client is entitled to or admits ones it is not,
+  and the type is only known after the identifier is decoded. Worth deciding
+  whether the node service should refuse types rather than the router refusing
+  fields.
+- **The composer can be made to run out of memory, and it reports that as a
+  disagreement.** During a full `verify.ps1` run with seven .NET services and
+  PostgreSQL up, one `modeling-cases.mjs` case exited non-zero having printed
+  nothing at all, and the script reported it as "expected these schemas to
+  compose" with an empty "what wgc actually said". The same case passed five
+  times standalone. The script now retries once when the output is completely
+  empty and, if it happens twice, says plainly that wgc never reported on the
+  schemas. Worth carrying: a gate that cannot tell "the tool disagrees" from
+  "the tool did not run" will eventually send somebody to look at the wrong
+  thing.
+- **Line endings bit a case script, and this is the second time they have bitten
+  this repository.** `dotnet run -- schema export` writes CRLF on Windows, and
+  every case script matches multi-line literals written with `\n`, so
+  re-exporting a schema on this platform makes five cases fail with "matched 0
+  times" until the next commit normalises the file back. `modeling-cases.mjs`
+  normalises on read and says why; `composition-cases.mjs` and
+  `override-cases.mjs` do not and have the same latent fault. The chapter 8 open
+  item records the first sighting, a carriage return inside a JSON key under Git
+  Bash. Worth fixing in the two older scripts the next time either is opened.
 - **The audit found twenty-six defects in chapter 11 and the expensive one was
   a table.** Four numbers were printed as measured with nothing in the repo
   that could produce them again, which is the same defect the chapter 10 audit
@@ -392,14 +454,21 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
   router. It was honest at two services where the two calls really were
   sequential on both sides. Anybody re-running it should either parallelise the
   hand-assembled row or stop treating the difference as router overhead.
-- **Chapter 11 leaves these unmeasured, and the research note's section N names
-  an owner for each**: nested and multi-subgraph `@requires` field sets (ch 13),
-  `@override` (ch 12), `@provides` where the copy is a real cache with an
-  invalidation story (ch 24), whether the plan cache keys on any of the
-  representation machinery (ch 17), `@interfaceObject` (ch 13), shared enums as
-  a subject rather than as a composition case (ch 13), two overlapping
-  `_entities` requests under load (ch 24), and what a subgraph should do about a
-  representation that can set its own fields (ch 25).
+- (mostly resolved 2026-08-10) **Chapter 11 left these unmeasured, and the
+  research note's section N named an owner for each**: nested and multi-subgraph
+  `@requires` field sets (ch 13), `@override` (ch 12), `@provides` where the copy
+  is a real cache with an invalidation story (ch 24), whether the plan cache keys
+  on any of the representation machinery (ch 17), `@interfaceObject` (ch 13),
+  shared enums as a subject rather than as a composition case (ch 13), two
+  overlapping `_entities` requests under load (ch 24), and what a subgraph should
+  do about a representation that can set its own fields (ch 25). **Chapter 13
+  answered its three.** A nested field set composes, and so does one naming
+  fields from two other subgraphs, with the three fields landing in three
+  services in the routing table; what `@requires` cannot do is help choose which
+  entities a page contains, because it runs after the router has located them.
+  `@interfaceObject` got a sample and a router. And the enum question turned out
+  to have three answers rather than one, depending on where the enum is used.
+  Chapter 12 answered `@override`; the other four are still open.
 - (resolved 2026-08-09) **Chapter 10 answered the question chapter 09 refused
   to guess at.** A router handed a config composed with
   `--disable-resolvability-validation` starts with no warning, serves every
@@ -551,7 +620,9 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
   a DataLoader is called concurrently for one batch (ch 11), the latency cost of
   the extraction (ch 10), what happens when Catalog is down (ch 24), mutations
   and subscriptions through a federated graph (ch 12 and 14), and whether
-  `Query.node` can be given back to a federated graph at all (ch 13).
+  `Query.node` can be given back to a federated graph at all (ch 13, answered:
+  yes, at the price of a service that declares every addressable type and owns
+  no data, and of two types having to become entities first).
 - Mosaic has no root field that lists customers, so at tag `ch08` the only way
   to obtain a customer key is through a review's author. Both verification
   scripts do exactly that and then walk the authors until one of them has an
@@ -604,7 +675,13 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
   owner for each: the WebSocket transport (only SSE was exercised), `[Topic]`
   placeholder formatting, subscriptions with more than one subscriber or across
   a restart, cursor stability when a row is inserted ahead of an open cursor
-  (ch 13), and `MaxPageSize` (ch 25).
+  (ch 13, answered), and `MaxPageSize` (ch 25). **The cursor question is
+  closed.** HotChocolate 16's connections are keyset paged, so a review inserted
+  a second before the row a cursor points at neither repeats nor skips anything
+  on the next page, where the same data by `offset 2 limit 2` repeats the row
+  page one already returned. The price of the stable view is that the inserted
+  row is invisible to that client until it starts again from page one. Chapter
+  13's research note section D records the insert and both results.
 - The connection on `reviews` is **slower** than the list it replaced: a mean of
   9.2 ms against 6.5 ms for the same 120 reviews, measured paired. The chapter
   prints this because it is the only number that argues against the change. What

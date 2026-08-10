@@ -1,0 +1,45 @@
+% How one identifier reaches four owners. Referenced from chapter 13. Bare
+% tikzpicture; the figure environment, caption and label live at the call site.
+%
+% The point of the picture is the shape of the first hop. Everything the node
+% service returns is the type name and the key it was already given, and every
+% field the client actually wanted comes out of a second round of fetches that
+% could not start until it answered.
+\begin{tikzpicture}[
+    font=\small,
+    box/.style={draw, rounded corners=2pt, minimum width=18mm,
+                minimum height=6mm, align=center, font=\scriptsize},
+    owner/.style={box, minimum width=16mm},
+    par/.style={draw, dashed, rounded corners=2pt, gray},
+    flow/.style={-{Stealth[length=2mm]}},
+    note/.style={font=\scriptsize, gray, align=center, inner sep=1pt}
+  ]
+
+  \node[box] (client) at (0.6,0) {client};
+  \node[box] (router) at (4.8,0) {router};
+  \node[box, fill=black!8] (nodes) at (9.0,0) {\code{nodes}};
+
+  \draw[flow] (client) -- node[note, above, align=center]
+    {\code{node(id:)}} (router);
+  \draw[flow] (router) -- node[note, above, align=center]
+    {\code{\_\_typename}\\and the key} (nodes);
+
+  \node[note, anchor=north, align=center] at (9.0,-0.55)
+    {no database,\\no domain};
+
+  % -- second round -----------------------------------------------------------
+  \draw[par] (1.5,-3.0) rectangle (8.1,-2.1);
+  \node[owner] (cat) at (2.6,-2.55) {\code{catalog}};
+  \node[owner] (pri) at (4.8,-2.55) {\code{pricing}};
+  \node[owner] (inv) at (7.0,-2.55) {\code{inventory}};
+
+  \draw[flow] (router) .. controls (4.8,-1.4) and (2.6,-1.4) .. (cat);
+  \draw[flow] (router) .. controls (4.8,-1.4) and (4.8,-1.4) .. (pri);
+  \draw[flow] (router) .. controls (4.8,-1.4) and (7.0,-1.4) .. (inv);
+
+  \node[note, anchor=west, align=left] at (8.3,-2.55)
+    {\code{\_entities}, in\\parallel, keyed on\\what came back};
+
+  \node[note, anchor=east, align=right] at (1.3,-2.55) {title, price,\\quantity};
+
+\end{tikzpicture}

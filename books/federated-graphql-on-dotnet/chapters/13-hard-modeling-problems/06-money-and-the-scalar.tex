@@ -1,0 +1,136 @@
+\section{\code{Money}, and the Scalar That Promises Nothing}
+\label{sec:ch13-money-and-the-scalar}
+\index{value type!declared in two subgraphs|(}%
+
+\code{Money} is two fields and is declared twice, in Pricing and in Ordering,
+\code{@shareable} in both. It is not an entity, has no key and cannot be fetched:
+it is a shape that two services independently know how to fill in. Federation
+calls that a value type, and Mosaic has had one since
+chapter~\ref{ch:strangling-the-monolith} without anybody testing what holds it
+together.
+
+Three edits, three different outcomes, and they get progressively quieter.
+
+\subsection*{An extra field: caught, and not for the reason you would guess}
+
+Give Ordering's copy a field Pricing's does not have:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+type Money @shareable { amount: Decimal!  currency: String!  formatted: String! }
+\end{graphqlsdl}
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+The field "formatted" is unresolvable at the following path:
+ query {
+  products {
+   price {
+    formatted <--
+   }
+  }
+ }
+This is because:
+ - The root type field "Query.products" is defined in the following subgraph: "catalog".
+ - The field "Money.formatted" is defined in the following subgraph: "ordering".
+ - The entity ancestor "Product" in subgraph "pricing" has no accessible target entities (resolvable @key directives)
+in the subgraphs where "Money.formatted" is defined.
+ - The type "Money" is not a descendant of any other entity ancestors that can provide a shared route to access
+"formatted".
+ - The type "Money" has no accessible target entities (resolvable @key directives) in any other subgraph, so accessing
+other subgraphs is not possible.
+\end{minted}
+
+\index{satisfiability!and value types}%
+Not one word of that is about value types. It is chapter~\ref{ch:composition}'s
+satisfiability walk, arriving at a field it cannot reach and listing every route
+it tried. The last two lines are the finding: \code{Money} has no key, so there
+is no representation the router could send to go and get \code{formatted}. A
+value type has to be identical in every subgraph that declares it, and the reason
+is not a rule about value types. It is that the graph has no way to fetch part of
+one.
+
+\subsection*{A missing \code{@shareable}: caught, and specific}
+
+Take the directive off Ordering's copy:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+The Object "Money" defines the same fields in multiple subgraphs without the "@shareable" directive:
+ The field "amount" is defined and declared "@shareable" in the following subgraph: "pricing".
+ However, it is not declared "@shareable" in the following subgraph: "ordering".
+ The field "currency" is defined and declared "@shareable" in the following subgraph: "pricing".
+ However, it is not declared "@shareable" in the following subgraph: "ordering".
+\end{minted}
+
+Chapters~\ref{ch:composition} and~\ref{ch:strangling-the-monolith} between them
+have four different mistakes that report as a shareability error, and this is the
+one case where the error is about what it says it is about. Worth recording,
+because it means the message is not useless: it is over-used.
+
+\subsection*{A nullability drift: not caught at all}
+
+Now change one character. Ordering declares \code{currency: String} where Pricing
+declares \code{currency: String!}:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+type Money { amount: Decimal!  currency: String }
+\end{graphqlsdl}
+
+That is the composed client schema. It composes, and the weaker declaration wins
+for every client of the graph.
+
+\index{nullability!the more permissive side wins}%
+Chapter~\ref{ch:entity-resolution-done-right} found this exact behaviour for an
+\code{@external} field and recorded it as a decision: an \code{@external} copy is
+a copy of somebody else's contract and has to match it. Here it is again for a
+shared value type, and the second sighting is what makes it a rule rather than an
+anecdote. \textbf{Where two subgraphs declare the same thing and differ only in
+strictness, composition takes the looser side and says nothing.} A team that
+relaxes a field in their own service relaxes it in everybody's.
+
+\subsection*{And a scalar, where there is nothing to check}
+
+\index{scalar!has no structure to check}%
+\code{Decimal} is declared in Pricing and in Ordering, both with a
+\code{@specifiedBy} url pointing at ChilliCream's definition. Point one of them
+somewhere else entirely:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+scalar Decimal @specifiedBy(url: "https://example.com/mosaic/cents-as-an-integer")
+\end{graphqlsdl}
+
+The graph composes. There is no message. And the composed client schema is this:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+scalar Decimal
+\end{graphqlsdl}
+
+Both urls are dropped on the way in, so a client introspecting the graph cannot
+even see that there was a disagreement to have. Two teams can mean euros and
+cents by the same name and every tool in this stack will agree that the graph is
+fine.
+
+\index{composition!what it can and cannot check}%
+Which is the whole point of putting these three edits next to each other. The
+composer is a structural tool and its protection tracks how much structure a type
+has, exactly. An object type has fields, so a missing field is unreachable and a
+weakened field is merged permissively and silently. An enum has members, so its
+members are checked against the direction they travel. A scalar has a name and
+nothing else, so a scalar is checked for having a name.
+
+That is not a defect to be fixed in a later version. Nothing could check it: the
+meaning of a custom scalar exists in two codebases and in no document either tool
+can read. What follows is a working rule rather than a complaint. Every shared
+type in a federated graph needs an owner and a written definition somewhere
+outside both schemas, and the amount of that written definition you need is
+inversely proportional to how much structure the type has. \code{Money} needs a
+sentence. \code{Decimal} needs a paragraph about precision and rounding, and the
+teams have to read it, because nothing else in this toolchain ever will.
+
+\medskip
+Four problems, and only one of them was solved rather than described. That is a
+fair summary of the chapter and of the subject: a federated graph makes the
+shapes agree and cannot make the meanings agree, and the second half is a
+question for people. Chapter~\ref{ch:real-time-in-a-federated-world} takes the
+graph this chapter leaves and asks what happens when the answer arrives more than
+once.
+
+\index{value type!declared in two subgraphs|)}%

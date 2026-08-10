@@ -1,0 +1,239 @@
+\section{Giving the Graph a \code{node} Field}
+\label{sec:ch13-giving-the-graph-a-node-field}
+\index{node@\code{Query.node}!in a federated graph|(}%
+
+Read the composed schema at tag \code{ch12} and you find this:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+type Product implements Node { ... }
+type Customer implements Node { ... }
+type Review implements Node { ... }
+type Order implements Node { ... }
+\end{graphqlsdl}
+
+Four types promising that a client can hold their identifier and come back for
+them. Then grep the same document for a field that returns a \code{Node} and
+there is not one. The interface is in the schema, four types implement it,
+nothing can reach it.
+
+\index{registerNodeInterface@\code{registerNodeInterface}!what it drops}%
+That is chapter~\ref{ch:the-first-cut-extracting-catalog}'s bill arriving. All
+six services reach the global identification setting through the shared
+\code{AddMosaicSubgraph}, and until this chapter it was hard-coded there to
+register no node interface at all. That keeps the identifier format, the
+interface, the \code{implements Node} clauses and every node resolver, and drops
+exactly two root fields. It had to: two subgraphs declaring \code{Query.node} is
+a composition error, so a service that turned it back on broke everybody's build
+rather than its own. The feature left and the promise stayed, which is the worst
+of the available arrangements and is what this section is for.
+
+\subsection*{Two identities, and only one of them travels}
+
+\index{Node interface@\code{Node} interface!versus a federation key}%
+Before building anything it is worth being precise about what \code{Node}
+promises, because Mosaic has two notions of identity and I had been treating them
+as one.
+
+\code{Node} says: a client may hold this identifier and ask the graph for the
+thing again. \code{@key} says: another service may hand this identifier to the
+router and have the thing found. They look identical from inside one process,
+where both mean \enquote{there is a primary key}. Across a network they are
+different promises kept by different machinery, and Mosaic kept the first for
+four types and the second for two.
+
+\begin{minted}[fontsize=\footnotesize]{text}
+                implements Node   @key(fields: "id")
+Product              yes               yes
+Customer             yes               yes
+Review               yes               no
+Order                yes               no
+\end{minted}
+
+A \code{node} field that can return a \code{Review} needs the router to be able
+to fetch one from an identifier, and nothing in the graph could. So the first
+part of the work was not about \code{node} at all: \code{Review} and
+\code{Order} became entities, with a \code{[Key("id")]} on the record and a
+reference resolver behind the DataLoader their node resolvers were already
+using. Ordering had never declared a resolvable key before, so its published
+schema grew an \code{\_entities} field and a one-member \code{\_Entity} union.
+
+\subsection*{The service that owns the field}
+
+\index{Mosaic.Nodes@\code{Mosaic.Nodes}!the seventh subgraph}%
+Somebody has to publish \code{node}, and whoever does it has to be able to return
+any type the graph considers addressable, because a resolver can only return a
+type its own schema declares. That is real coupling and there is no version of
+this feature without it. The choice is where to put it.
+
+Putting it in Catalog would mean the product service declaring \code{Customer},
+\code{Review} and \code{Order}, which is exactly the knowledge
+chapter~\ref{ch:strangling-the-monolith} spent a chapter removing from one
+process. So Mosaic gets a seventh service instead, on 5107, and it owns nothing
+else. Its published schema is sixty lines. Below is everything in it that is not
+the \code{Node} interface, \code{\_Service}, the federation scalars and the two
+directive definitions every subgraph in this book carries:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+type Query {
+  "Fetches an object given its ID."
+  node("ID of the object." id: ID!): Node
+  "Lookup nodes by a list of IDs."
+  nodes("The list of node IDs." ids: [ID!]!): [Node]!
+  _service: _Service!
+}
+
+type Customer implements Node @key(fields: "id", resolvable: false) {
+  id: ID!
+}
+
+type Order implements Node @key(fields: "id", resolvable: false) {
+  id: ID!
+}
+\end{graphqlsdl}
+
+\code{Product} and \code{Review} are the same three lines with a different name.
+
+No \code{\_entities}, because every key is \code{resolvable: false} and nothing
+here is an entity this service answers for. No database, no connection string and
+no \code{depends\_on} in the compose file. It is the smallest service in the
+repository and the only one whose file listing is a description of the whole
+graph rather than of a domain.
+
+\index{node resolver!handing the key back}%
+The resolvers are two lines each and there is a nice surprise in them:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+[NodeResolver]
+public static Product ResolveProduct(Guid id) => new() { Id = id };
+\end{minted}
+
+Nothing in this project parses a base64 string. HotChocolate's \code{node} field
+decodes the identifier itself, reads the type name out of it, finds the node type
+of that name and calls its resolver with the internal identifier. Four copies of
+\code{ProductKey.TryDecode} exist elsewhere in this repository, and two more of
+exactly the same shape for \code{Review} and \code{Order}, because a
+\emph{reference} resolver is handed its key raw, and the federation package has
+never heard of relay identifiers. The
+\code{node} field is the one place in the stack that has, because global object
+identification is HotChocolate's own convention rather than federation's. The
+two mechanisms meet here and only one of them needs telling what the string is.
+
+\subsection*{What comes back}
+
+Figure~\ref{fig:ch13-node-dispatch} is the shape of it, and the shape is what
+makes the feature worth the service.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch13-node-dispatch}
+  \caption{One identifier, and the three services that answer for a product.
+  The node service replies with the type name and the key it was handed, which
+  is all it has; every field the client actually asked for arrives in a second
+  round of entity fetches that could not begin until the first hop said what
+  kind of thing this was. The service in the middle knows the whole graph's type
+  list and none of its data, which is the trade the feature is.}
+  \label{fig:ch13-node-dispatch}
+\end{figure}
+
+Asking for all four types, with fields the node service does not have:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+Product:  { "__typename": "Product", "title": "Beech Cutting Board",
+            "price": { "amount": 69 }, "availableQuantity": 61 }
+Review:   { "__typename": "Review", "rating": 5,
+            "author": { "displayName": "Katharina Brandt" } }
+Customer: { "__typename": "Customer", "displayName": "Katharina Brandt",
+            "email": "k.brandt@example.org" }
+Order:    { "__typename": "Order", "placedAt": "2026-04-07T19:20:00Z",
+            "total": { "amount": 858 }, "lines": [ { "quantity": 2 } ] }
+\end{minted}
+
+Four services answered the first of those and none of them was asked for by
+name. The plan says how:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+Sequence
+  Single  nodes    node(id: $a){ __typename ... on Product { __typename id } }
+  Parallel
+    Entity catalog  dependsOnFetchIds [0]   ... on Product { __typename title }
+    Entity pricing  dependsOnFetchIds [0]   ... on Product { price { amount } }
+\end{minted}
+
+\code{nodes(ids:)} works the same way and answers a mixed list positionally, so a
+client that asked for a product, a review and a customer gets three objects back
+in that order.
+
+\subsection*{What it cannot do, and what it must not do}
+
+\index{node@\code{Query.node}!an identifier for a row nobody has}%
+Hand it a well-formed identifier for a row that does not exist:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Cannot return null for non-nullable field 'Query.node.title'.
+\end{minted}
+
+The node service cannot check anything. It decodes a string, finds a type name it
+recognises, and returns a stub, because it has nothing to look the identifier up
+in. The failure surfaces two hops later at the owner, as a non-null violation on
+a field the client happened to select. That is the honest cost of the design and
+it is not fixable from inside it: the only service that could answer
+\enquote{does this exist} is the one that owns the data, and asking it would make
+this service a router.
+
+The failures it does catch, it catches well:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+There is no node resolver registered for type `OrderLine`.
+The node ID string has an invalid format.
+\end{minted}
+
+\code{OrderLine} is a type in the graph and is deliberately not a \code{Node}: a
+line has no identity outside the order it belongs to. There is no stub for it in
+the node service and there never will be, and the error names the type.
+
+\index{shareable@\code{@shareable}!on \code{Query.node}}%
+Then there is the arrangement to avoid, and it is the one that composes.
+Chapter~\ref{ch:the-first-cut-extracting-catalog} asserted that marking
+\code{Query.node} \code{@shareable} in two subgraphs \enquote{would be a lie}
+without measuring it. Without the directive, the composer refuses:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The Object "Query" defines the same fields in multiple subgraphs without the "@shareable" directive:
+ The field "node" is defined in the following subgraphs: "catalog", "nodes".
+ However, it is not declared "@shareable" in any of them.
+\end{minted}
+
+Add it to both and the graph composes, and the routing table is the finding:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+Query.node    catalog, nodes
+\end{minted}
+
+Two services advertised as able to answer, a router free to pick either, and one
+of them able to resolve one type out of four. \code{@shareable} is a promise
+that every service declaring the field gives the same answer, and there is no
+error for making that promise about two services that do not. The build goes green and half the identifiers in the graph
+start answering null.
+
+\index{key@\code{@key}!makes a field implicitly shareable}%
+One more thing about those stubs, because it explains why they are legal at all.
+Drop the \code{@key} from the four of them, leaving \code{implements Node} and an
+\code{id}, and the composer produces four errors:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The Object "Product" defines the same fields in multiple subgraphs without the "@shareable" directive:
+ The field "id" is defined and declared "@shareable" in the following subgraphs: "catalog", "pricing", "inventory",
+"reviews", "ordering".
+ However, it is not declared "@shareable" in the following subgraph: "nodes".
+\end{minted}
+
+A key field is implicitly shareable and an ordinary field is not. That is the
+only reason five services can all declare \code{Product.id} without saying
+anything about it, and it is why the same two-line stub is unremarkable with the
+directive and a build failure without it.
+
+\medskip
+\code{Node} is an interface, and interfaces are the next thing that stops being
+simple at a boundary.
+
+\index{node@\code{Query.node}!in a federated graph|)}%
