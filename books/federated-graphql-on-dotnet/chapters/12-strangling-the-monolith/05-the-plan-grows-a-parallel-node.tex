@@ -1,0 +1,206 @@
+\section{The Plan Grows a Parallel Node}
+\label{sec:ch12-the-plan-grows-a-parallel-node}
+\index{query plan!at six subgraphs|(}%
+
+Six schemas composed on the first attempt, with no edit to any of them. That is
+worth one sentence and not more: the three settings in
+section~\ref{sec:ch12-what-a-service-costs-to-make} are what makes it true, and
+chapter~\ref{ch:composition} already spent a chapter on what happens when they
+are not.
+
+\index{composition!errors are a fact about a schema set}%
+One consequence of the graph growing does need saying, because it makes an
+earlier chapter's listings unreproducible at this tag.
+Chapter~\ref{ch:composition}'s error catalogue was produced by breaking a
+subgraph called \code{mosaic}, which no longer exists, so the same six mistakes
+are now made in \code{pricing} and the composer says different words about three
+of them. The shareability errors name four subgraphs where they used to name
+one, and the unsatisfiable-key error names two unresolvable fields where it used
+to name four. Those listings reproduce at tag \code{ch11} and earlier, which is
+what a chapter tag is for. The lesson is smaller than it looks and worth having
+anyway: a catalogue of composition errors is a fact about a particular set of
+subgraphs rather than a fact about the composer, and it goes stale when the set
+changes.
+
+What is worth more than a sentence is the plan. Here is the storefront query
+with reviews and their authors in it, sent with
+\code{X-WG-Include-Query-Plan} and \code{X-WG-Skip-Loader}, flattened to the
+shape rather than printed in full:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Sequence
+  Single catalog id=0 depends=[] path=
+  Parallel
+    BatchEntity pricing   id=1 depends=[0] path=browseProducts.nodes
+    BatchEntity inventory id=2 depends=[0] path=browseProducts.nodes
+    BatchEntity reviews   id=3 depends=[0] path=browseProducts.nodes
+  BatchEntity accounts    id=4 depends=[3] path=browseProducts.nodes.@.reviews.nodes.@.author
+\end{minted}
+
+Two fetches became five, in three steps, and
+figure~\ref{fig:ch12-query-plan} is the same thing as a picture.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch12-query-plan}
+  \caption{The storefront plan before and after. The middle node on the right is
+  the one worth having: three subgraphs depend on the same key and on nothing
+  else, so the planner runs them together. The fourth cannot join them, because
+  its keys are customer identifiers that do not exist until Reviews has
+  answered. Depth in the graph is sequencing in the plan.}
+  \label{fig:ch12-query-plan}
+\end{figure}
+
+\index{query plan!Parallel node@\code{Parallel} node}%
+The \code{Parallel} node is the first one in this book, and it is the clearest
+evidence that the cut was made in the right places. Three services contribute
+fields to \code{Product}; all three need the same key and nothing else; so all
+three go at once. A graph where the planner had to sequence those would be a
+graph where the domains had been carved along the wrong seam, and the plan would
+say so before any measurement did.
+
+\index{query plan!path@\code{path}!two list traversals}%
+The fourth fetch is the interesting one. Its path is the longest in this book:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+browseProducts.nodes.@.reviews.nodes.@.author
+\end{minted}
+
+Two \code{@} steps, which is chapter~\ref{ch:entity-resolution-done-right}'s
+notation for a walk through a list, twice over. And it depends on fetch 3 rather
+than on fetch 0, because the keys it sends are customer identifiers and nothing
+knows what those are until Reviews has answered. That single dependency is the
+one place Mosaic's domain graph has any depth at all, and the plan found it
+without being told.
+
+Every dependency in the plan is a key. The router collection walks all of them
+and asserts \code{isKey} and a field name of \code{id} on every one, which is
+the return on chapter~\ref{ch:hotchocolate-quickly}'s rule that no entity holds
+a navigation property to a type another domain owns.
+
+\subsection*{What it cost}
+
+\index{measurement!the storefront across six services}%
+The storefront query at twenty-five products, warm, through the router, read off
+each subgraph's own request timeline. Counts rather than timings, which is why
+they are in the gate at all: chapter~\ref{ch:enter-the-router} drew that line
+and chapter~\ref{ch:entity-resolution-done-right} kept it.
+
+This is not the query the plan above was drawn from. It is
+chapter~\ref{ch:entity-resolution-done-right}'s measurement query, which stops
+short of \code{Product.reviews} on purpose, because a resolver runs per review
+author and the Postman collection submits a review earlier in the same gate: a
+count that walked the reviews would be true only of a database nothing had
+written to. Four services answer it rather than five, and the same query at the
+previous tag is what makes the two columns comparable at all.
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{graphql}
+{ browseProducts(first: 25) { nodes { title price { amount currency }
+    shippingCost { amount currency } availableQuantity averageRating } } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{text}
+                without shippingCost      with shippingCost
+                resolvers      SQL        resolvers      SQL
+catalog                 1        1                1        1
+pricing                26        1               51        1
+inventory              26        1               26        1
+reviews                26        1               26        1
+accounts                -        -                -        -
+ordering                -        -                -        -
+total                  79        4              104        4
+\end{minted}
+
+Chapter~\ref{ch:entity-resolution-done-right} printed 76 and 101 resolvers and 3
+statements for the same query. The arithmetic between the two tags is where the
+chapter's real claim is, and it has three parts.
+
+\index{measurement!what an extraction moves and what it adds}%
+101 became 103 across the three contributing services, because there are three
+\code{\_entities} root fields where there was one. Two extra resolver
+invocations for two extra HTTP round trips: that is what the split added, and it
+is a rounding error against the work itself.
+
+Catalog's row is the one chapter~\ref{ch:entity-resolution-done-right} could not
+print. One resolver and one statement, invisible at that tag because Catalog had
+no instrumentation, which chapter~\ref{ch:enter-the-router} called half of every
+federated query going unmeasured. It was not half. It was one statement out of
+four, and the interesting part is that nobody could have told you which.
+
+\textbf{So the statement count did not move at all.} Four after, and four
+before, although the two fours are not the same kind of number and it is worth
+being exact about that. Three of them were measured at
+tag~\code{ch11}. The fourth was not, because Catalog could not count then. What
+lets me claim it anyway is that the two queries in \code{CatalogService} are
+unchanged between the tags and the only edit to that file was the counter
+itself, so the statement being counted here is the statement that was running
+there. An extraction moves work between
+processes and this one added no database work whatsoever, which is the thing I
+would want to know before agreeing to do it.
+
+The two silent rows are asserted too. Accounts and Ordering answer nothing for
+this query and the gate checks that they answer nothing, which is the assertion
+that would catch a router fetching from a service the query never mentions.
+
+\subsection*{The number that moved for a strange reason}
+
+\index{resolver count!measures tasks rather than fields}%
+One number fell off a cliff, and chasing it turned up something about the count
+itself that has been true since chapter~\ref{ch:the-life-of-a-request} and that
+I had never noticed.
+
+The \code{\_entities} call the gate sends Reviews directly, twenty-five products
+and every review they have:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+                     at ch11        at ch12
+resolvers               146             26
+SQL                       2              1
+lookups                   2              1
+\end{minted}
+
+The statement is the author batch leaving for Accounts, which is what an
+extraction does and needs no explanation. The resolvers do.
+
+The engine still produces a hundred and twenty authors. What it no longer does
+is run a hundred and twenty resolver \emph{tasks} to get them.
+\code{ReviewNode.GetAuthor} takes a parent and returns a new object with no
+await in it, so HotChocolate compiles it to a \code{PureFieldDelegate} and runs
+it inline. Read at tag \code{16.6.0}, commit \code{8fea46e}, the compiler makes
+that choice in one condition:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+if (field.PureResolver is not null && selection.Directives.Count == 0)
+{
+    return field.PureResolver;
+}
+\end{minted}
+
+And the event the count comes from is raised in exactly two places, both of them
+inside a task:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+src/HotChocolate/Core/src/Types/Execution/Processing/Tasks/ResolverTask.Execute.cs
+src/HotChocolate/Core/src/Types/Execution/Processing/Tasks/BatchResolverTask.cs
+\end{minted}
+
+\index{resolver count!what chapter 3 was really counting}%
+So the number chapter~\ref{ch:the-life-of-a-request} introduced counts resolver
+tasks and not fields resolved, and it always did. Nothing was wrong with any
+earlier chapter's arithmetic, because until this one every field on that path
+did something asynchronous and the two numbers were the same. The moment a
+resolver stopped needing to wait for anything, they parted company, and a metric
+that had been reliable for ten chapters started measuring something adjacent to
+what its name says.
+
+That is the second time in this book that a number turned out to be answering a
+slightly different question than the one it was asked. The first was
+chapter~\ref{ch:schema-design-that-survives-change}'s discovery that \code{[ID]}
+had been inert for three chapters. Both were found the same way: by changing
+something and being surprised by which direction a number moved.
+
+\medskip
+Three of those numbers went down and none of them is a saving. The work went
+somewhere, and where it went is the last thing this chapter has to account for.
+
+\index{query plan!at six subgraphs|)}%

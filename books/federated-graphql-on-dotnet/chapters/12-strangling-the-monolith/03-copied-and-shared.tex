@@ -1,0 +1,119 @@
+\section{What Is Copied and What Is Shared}
+\label{sec:ch12-copied-and-shared}
+\index{duplication!the line worth drawing|(}%
+
+Chapter~\ref{ch:the-first-cut-extracting-catalog} duplicated one file on purpose
+and said the duplication was the point. That is an easy position to hold once. At
+four copies a reader is entitled to ask whether it is still a principle or just a
+habit, so here is the whole ledger at tag \code{ch12}:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+ProductKey.TryDecode      3 copies   pricing, inventory, reviews
+CustomerKey.TryDecode     1 copy     accounts; ProductKey, one name changed
+Product stub              4 copies   three that resolve one, one that cannot
+Customer stub             2 copies   beside the real Customer in accounts
+ProductCategory           1 copy     pricing, beside Catalog's
+Money                     2 copies   pricing and ordering, both @shareable
+PageCursorExtension       2 copies   the two subgraphs with a connection
+\end{minted}
+
+Fifteen files that exist because another file exists. The test I applied to
+every one of them is the same question: \textbf{do two services have to agree
+about this?} If they do, it is a contract, and a contract gets copied. If they
+do not, it is platform, and platform gets shared.
+
+\index{key format!an agreement rather than a class}%
+\code{ProductKey.TryDecode} is the clearest case of the first kind. It encodes
+one subgraph's belief about how another subgraph spells a product. A shared
+class would make that belief a compile-time fact, and the entire value of a
+federated graph is that it is not one: the moment those five teams cannot deploy
+without agreeing on a build, the extraction has bought nothing.
+
+That argument has a cost and it is worth naming rather than skating past.
+Five files parse against \code{typeof(Guid)} and check a type name: the four
+that decode a product key, and Accounts decoding a customer one. If Mosaic ever
+changed how it encodes identifiers, five files in five repositories owned by
+five teams would have to change, and \emph{there is no build that would fail if
+one of them did not}. The decoupling is paid for in coordination. What
+catches it instead is the gate, which now asks Pricing to price every key
+Catalog handed out and asks Accounts to resolve every key Reviews handed out.
+Those two assertions exist for exactly this and nothing else.
+
+\subsection*{The copy the composer actually inspects}
+
+\index{shareable@\code{@shareable}!on a value type}%
+\code{Money} is the third kind of duplication and the only one the composer
+looks at field by field. A key format is a string both sides agree to parse. An
+enum is a list of names. \code{Money} is an object type that two subgraphs
+declare, and Apollo Federation refuses that outright unless somebody says the
+fields may be resolved in more than one place:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+[Shareable]
+public sealed record Money(decimal Amount, string Currency);
+\end{minted}
+
+The attribute goes on the class, and \code{ShareableAttribute.TryConfigure}
+applies it to the object type descriptor, which marks every field. Marking every
+field is what matters, because the composer checks one field at a time. Strip
+the attribute off both records and the complaint comes back per field rather
+than per type: a heading naming \code{Money}, then two lines for \code{amount}
+and two more for \code{currency}, all four naming \code{pricing} and
+\code{ordering}. You forgot one attribute on one record and the composer hands
+you back four complaints about fields.
+
+\index{shareable@\code{@shareable}!what it does not promise}%
+It is worth being precise about what \code{@shareable} is not, because the name
+oversells it. It does not merge the two declarations and it does not make the
+router prefer either. It says the graph may take this field from whichever
+subgraph it is already talking to. Which is fine here and would not be fine
+everywhere, and the reason is visible in what the two services mean by the type:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Pricing's Money    what a product costs now
+Ordering's Money   what a customer paid on the day
+\end{minted}
+
+Two services sharing a value type do not necessarily share anything else, and
+nothing in composition can tell which situation it is looking at. This is
+chapter~\ref{ch:entity-resolution-done-right}'s argument about \code{@provides}
+arriving in a different shape: a value two services can both produce is a value
+two services can disagree about.
+
+\subsection*{The library, and what is deliberately not in it}
+
+\index{Mosaic.ServiceDefaults@\code{Mosaic.ServiceDefaults}}%
+\code{src/Mosaic.ServiceDefaults} holds the other side of the test. The request
+timeline, the diagnostic listener, the pipeline report, the two counters, the
+snake\_case convention, and four builder extensions, of which
+section~\ref{sec:ch12-what-a-service-costs-to-make} showed one. None of those is
+anything two services have to agree about; they are things all six should do the
+same way so that six logs can be read by one person.
+
+One line in its \code{csproj} is worth a sentence because it will catch
+somebody:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+\end{minted}
+
+\code{DbCommandInterceptor} is a relational type, not a core one. The six
+services never name that package because the Npgsql provider brings it in; a
+library with no provider has to ask for it, and the error until it does is
+\code{CS0246} on a type that looks like it should be in the package the project
+already references.
+
+\index{team contracts!the two lists}%
+If I were handing this to five teams tomorrow, the two lists are the whole
+handover document. \emph{Shared, and you take a version bump when it changes}:
+the platform library, the compose file, the router config, the key format's
+shape. \emph{Yours, and nobody else's business}: your database, your seed data,
+your DataLoaders, your resolvers, and which fields you contribute to somebody
+else's entity. The second list is longer than the first and that is the test of
+whether a split was worth doing.
+
+\medskip
+Which leaves the part of a migration that cannot be done by moving files: taking
+over a field that is already answering traffic.
+
+\index{duplication!the line worth drawing|)}%

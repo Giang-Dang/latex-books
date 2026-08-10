@@ -1,0 +1,171 @@
+\section{What the Boundary Costs}
+\label{sec:ch12-what-the-boundary-costs}
+\index{boundary!what stops being checkable|(}%
+
+Chapter~\ref{ch:entity-resolution-done-right} ended with a rule and handed it
+here: a field that crosses a subgraph boundary should be nullable unless you can
+guarantee referential integrity across a network, and you almost certainly
+cannot. It said this chapter would apply that five more times.
+
+It applies three times, and the three it does not are the more useful half.
+
+\subsection*{Three references, all nullable}
+
+\index{nullability!a reference to somebody else's entity}%
+These three are the arrows from section~\ref{sec:ch12-the-order-the-graph-decides}
+and they all became nullable:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+Review.author       Customer!  ->  Customer
+Order.customer      Customer!  ->  Customer
+OrderLine.product   Product!   ->  Product
+\end{minted}
+
+\code{OrderLine.product} is the one
+chapter~\ref{ch:the-first-cut-extracting-catalog} got wrong in a comment and
+chapter~\ref{ch:entity-resolution-done-right} measured. That comment claimed a
+dangling identifier
+\enquote{surfaces as a null product at the router}; it does not, because the
+field was \code{Product!} inside \code{lines: [OrderLine!]!}, so a product
+Catalog cannot resolve takes the whole order history with it. The only reason it
+never bit is that the seeder builds every line from a product it has just
+written, and a guarantee that holds because of how the test data was made is not
+a guarantee.
+
+The other two are new boundaries and got the same treatment for the same reason.
+What is worth looking at is what the resolvers became, because the shape is the
+argument:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+public static Customer? GetAuthor([Parent] Review review)
+    => new() { Id = review.CustomerId };
+\end{minted}
+
+Fourteen lines became two. The old version called a DataLoader, got a whole
+customer out of the same database, and threw if there was not one. This one
+wraps a key it is already holding.
+
+\index{measurement!work that moved rather than went away}%
+Two things follow and they pull in opposite directions. It got cheaper here: no
+DataLoader, no batch, no statement, so a page of a hundred and twenty reviews
+costs Reviews nothing at all for its authors, which is the statement that left
+in section~\ref{sec:ch12-the-plan-grows-a-parallel-node}. And it got more
+expensive somewhere else: the router makes a fifth fetch, and the twelve
+distinct customers behind those reviews arrive at Accounts as twelve
+representations. The work did not go away. It moved, and grew a network hop on
+the way.
+
+It also lost something that is easy to miss. Inside the monolith,
+\code{Review.author} and \code{Order.customer} called the same DataLoader
+instance, so a query that reached a customer through their orders and again
+through their reviews fetched them once and handed both fields the same object.
+Two processes, two request scopes, two caches. What replaces it is the router's
+own batching, and whether those two sets of keys end up in the same entity fetch
+is the planner's decision rather than mine.
+Chapter~\ref{ch:inside-the-router-and-the-composer} reads the planner properly
+and owns the answer.
+
+\subsection*{Where the rule stops, and why}
+
+\index{nullability!contributed fields are not references}%
+Three of the six boundary fields did not change, and I want to make the argument
+rather than let it look like an oversight, because
+chapter~\ref{ch:entity-resolution-done-right} predicted five.
+
+\begin{minted}[fontsize=\footnotesize]{text}
+Product.price              Money!  unchanged
+Product.shippingCost       Money!  unchanged
+Product.availableQuantity  Int!    unchanged
+\end{minted}
+
+The difference is between a reference and a contribution. \code{Review.author}
+is a reference: this service hands the router a key and the router has to go and
+find the thing, and finding may fail. \code{Product.price} is not a reference at
+all. The router has already located the entity; Pricing is being asked a
+question about a key it has been handed, and either it has the row or it does
+not, and its answer is authoritative either way.
+
+Which means the two failures are different failures. A dangling reference is
+ordinary in a distributed system, and a schema that pretends otherwise is
+lying. A product Catalog has and Pricing does not is a broken invariant between
+two databases, and answering null for it would hand a client a hole where a
+price should be, with no way to tell that from a product that is genuinely
+free. Pricing throws instead, which
+chapter~\ref{ch:entity-resolution-done-right} measured turning into
+\code{Unexpected Execution Error} at the boundary. Loud and unhelpful is the
+right trade for a state that should not exist.
+
+\code{Product.availableQuantity} is the third and it is neither: Inventory
+answers zero for a product it has never counted, because \enquote{we have never
+counted this} is not something a storefront can render, and the field is total.
+
+\index{nullability!the rule with its boundary}%
+So the rule chapter~\ref{ch:entity-resolution-done-right} gave has a boundary of
+its own, and it is worth stating
+in the sharper form: \textbf{a reference to an entity you do not own must be
+nullable. A field you contribute to an entity somebody else owns need not be,
+and the test is whether the failure is a missing datum or a broken invariant.}
+That is more useful than making everything nullable, which is where a rule of
+thumb about boundaries eventually lands if nobody argues with it.
+
+\subsection*{The check that could not be given back}
+
+\index{submitReview@\code{submitReview}!loses its second check}%
+Chapter~\ref{ch:the-first-cut-extracting-catalog} took
+\code{ProductNotFoundError} off \code{submitReview}, because Reviews could no
+longer ask whether a product existed, and recorded that this chapter would argue
+about whether \code{@requires} could give it back. Here is the argument, and
+also the same thing happening a second time.
+
+Accounts is a separate service now, so Reviews cannot check a customer either.
+\code{@requires} cannot help. It feeds a field resolver on an entity the router
+has already located, and the mutation is a root field handed a customer
+identifier by a client that may have invented it. There is no entity to locate
+and no subgraph the router would think to consult.
+
+That leaves three options and none of them is good. A synchronous call to
+Accounts on the write path gives the check back and puts a second service's
+availability in front of every review anybody submits. Leaving
+\code{CustomerNotFoundError} in the union with nothing able to raise it is the
+worst of the three, because it is a branch a client will write and never reach.
+So the third: accept the write.
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+union SubmitReviewError = RatingOutOfRangeError | DuplicateReviewError
+\end{graphqlsdl}
+
+Four members at chapter~\ref{ch:schema-design-that-survives-change}, three at
+chapter~\ref{ch:the-first-cut-extracting-catalog}, two now. The collection asserts
+what that means rather than describing it. A review submitted against a
+\code{Customer} node identifier nobody has ever seeded succeeds, the payload's
+errors are null, and the code that used to name the problem is nowhere in the
+response, because nothing can raise it.
+
+\index{errors!a rule you own against data you do not}%
+What survives is the pair of rules Reviews owns outright. A rating is between
+one and five, and one customer reviews one product once, and both still raise a
+typed error. The line between what left and what stayed is exact: a domain that
+owns a rule can still enforce it, and a domain that has stopped owning the data
+cannot.
+
+Chapter~\ref{ch:the-first-cut-extracting-catalog} called its version of this a
+decision. Doing it a second time is
+closer to a consequence, and that is the honest summary of what a split costs at
+the boundary. Every check you had that reached across a seam is now a check
+somebody else could do and you cannot, and the schema is where you admit it.
+\code{Review.author} answering null at read time is the same check, moved from
+write to read and from an error a client can handle to a hole it has to.
+
+\medskip
+Which is the whole balance sheet, for the storefront query the gate measures:
+four statements before and four after, two extra resolvers, two extra round
+trips, three fields that admit they might not answer, one error type gone, and a
+monolith that is not in the repository any more. Ask for the reviews as well and
+it is three extra round trips rather than two, which is the shape of the whole
+trade: the bill grows with how far across the graph a query reaches, not with
+how many services there are. Chapter~\ref{ch:hard-modeling-problems} takes the arrangement this
+chapter produced and asks the questions it cannot answer: what a page of
+something looks like when the pages are on two services, what \code{Query.node}
+means now, and what to do about the enum that is declared twice.
+
+\index{boundary!what stops being checkable|)}%
