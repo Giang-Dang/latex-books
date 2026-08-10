@@ -23,11 +23,12 @@ khoảng cách \emph{trung bình} giữa các cặp từ tương ứng, rồi n�
 few words in the source language are now very close to the first few words in
 the target language, so the problem's minimal time lag is greatly reduced}.
 
-Chữ \enquote{minimal time lag} ấy là chữ của chương~\ref{ch:lstm}. Nó là quãng
-ngắn nhất mà tín hiệu lỗi phải đi được để mạng bắt đầu học được gì. Encoder đọc
-xong dừng lại ở từ \emph{cuối} của câu nguồn, và decoder viết ra từ
-\emph{đầu} của câu đích ngay sau đó. Không đảo thì hai từ ấy ứng với hai đầu
-đối diện của câu, tức xa nhất có thể. Đảo thì chúng cạnh nhau.
+Chữ \enquote{minimal time lag} ấy đã có trong chương~\ref{ch:hien-tuong}, ở hộp
+cầu nối về Hochreiter 1991. Nó là quãng ngắn nhất mà tín hiệu lỗi phải đi được
+để mạng bắt đầu học được cái gì đó. Encoder đọc xong thì dừng ở từ \emph{cuối}
+của câu nguồn, và decoder viết ra từ \emph{đầu} của câu đích ngay sau đó. Không
+đảo thì từ đích đầu tiên và từ nguồn ứng với nó nằm ở hai đầu đối diện của chuỗi
+ghép, tức xa nhau nhất có thể. Đảo thì chúng thành cạnh nhau.
 
 \subsection*{Lập luận ấy dự đoán một thứ sắc hơn \enquote{đảo thì tốt hơn}}
 

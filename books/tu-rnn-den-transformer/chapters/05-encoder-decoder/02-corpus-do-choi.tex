@@ -14,7 +14,8 @@ Ba ràng buộc phải thoả cùng lúc, và không tập dữ liệu công kha
 Nó phải chạy xong trên CPU trong ngân sách của sách. Nó phải tái lập được từ một
 seed, không tải gì, để \code{verify.py} chạy được trên máy người khác. Và hai
 thứ tiếng phải khác thứ tự từ đủ nhiều, vì chương~\ref{ch:dong-chinh} cần một
-ma trận đồng chỉnh có chỗ bắt chéo chứ không phải một đường chéo.
+\tn{ma trận đồng chỉnh}{alignment matrix} có chỗ bắt chéo chứ không phải một
+đường chéo.
 
 Nên corpus được sinh ra từ một văn phạm nhỏ nằm trong repo. Anh sang Việt, cùng
 chiều với bài, vì tiếng Anh là câu nguồn ở cả hai bên.
@@ -33,9 +34,10 @@ the black cat  ->  con  mèo  đen
 a  new  lamp   ->  một cái  đèn  mới
 \end{minted}
 
-Một mô hình dịch bài này bằng cách chép vị trí sang vị trí sẽ sai tính từ ở mọi
-cụm có tính từ. Đó chính là điểm: một đồng chỉnh đường chéo không giải được
-corpus này, nên một đồng chỉnh giải được nó đã học được cái gì đó.
+Một mô hình dịch corpus này bằng cách chép vị trí sang vị trí sẽ sai tính từ ở
+mọi cụm có tính từ. Và đó là chỗ đáng giá: một ma trận đồng chỉnh đường chéo
+không giải được corpus này, nên một mô hình đồng chỉnh được nó thì đã học được
+cái gì đó thật.
 
 Văn phạm sinh câu một hoặc hai mệnh đề, mỗi mệnh đề là chủ ngữ, động từ, tân
 ngữ, cộng một cụm chỉ nơi chốn tuỳ chọn. Mỗi động từ tiếng Anh đúng một token,
@@ -80,9 +82,9 @@ Danh sách này quan trọng ngang danh sách trên, vì mọi con số ở bố
 Văn phạm hữu hạn và phi ngữ cảnh, nên một mô hình đủ lớn học thuộc được nó. Ở
 đây không có hình thái, không có hợp giống số, không có nhập nhằng, không có từ
 hiếm. Từ điển đóng và mọi token xuất hiện hàng nghìn lần, nên bài toán
-\tn{ngoài từ điển}{out-of-vocabulary}, thứ ăn mất một phần điểm Bilingual
-Evaluation Understudy, viết tắt là BLEU, của bài báo và được bài nhắc tới ngay
-trong tóm tắt, không thể xảy ra ở đây. Và câu
+\tn{ngoài từ điển}{out-of-vocabulary} không thể xảy ra ở đây. Chính bài toán ấy
+ăn mất một phần điểm Bilingual Evaluation Understudy, viết tắt là BLEU, của bài
+báo, và bài nhắc tới nó ngay trong tóm tắt. Và câu
 thì vô nghĩa về nội dung: văn phạm ràng buộc cú pháp, không ràng buộc nghĩa, nên
 \enquote{con mèo mang một cái đèn mới} là một câu hợp lệ của nó.
 
@@ -126,7 +128,7 @@ Cắt gradient thì \emph{không} lệch: ngưỡng norm 5.0, đúng con số b�
 3.4, và chương~\ref{ch:phan-tich} đã dẫn ra vì sao phép cắt ấy hoạt động.
 
 Và 14 epoch là ngân sách chứ không phải hội tụ. Cùng mô hình chạy 20 epoch cho
-0.9200 và chạy 40 epoch cho 0.9425, so với 0.8533 ở 14. Tôi in số ở 14 vì mười
+0.9533 và chạy 40 epoch cho 0.9600, so với 0.8533 ở 14. Tôi in số ở 14 vì mười
 lăm lần huấn luyện phải nằm gọn trong ngân sách cả lần chạy, và vì mọi so sánh
 trong chương chỉ cần hai vế dừng ở cùng một chỗ. Khi đọc một con số tuyệt đối
-trong chương này, nhớ rằng nó còn cách chỗ mô hình đi được vài điểm.
+trong chương này, nhớ rằng nó còn cách chỗ mô hình đi được khoảng mười điểm.

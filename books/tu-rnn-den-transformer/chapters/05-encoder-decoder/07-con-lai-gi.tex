@@ -2,13 +2,13 @@
 \label{sec:ch05-con-lai-gi}
 
 \index{encoder-decoder!bài giải được gì}%
-Cái bài này giải được, phát biểu cho gọn: nó cho một mạng nơ-ron duy nhất, huấn
-luyện đầu cuối, không giả định gì về cấu trúc bài toán, thắng một hệ dịch thống
+Cái bài này giải được, phát biểu cho gọn: một mạng nơ-ron duy nhất, huấn luyện
+đầu cuối và không giả định gì về cấu trúc bài toán, vượt được một hệ dịch thống
 kê trên một tác vụ dịch quy mô lớn. BLEU 34.81 cho ensemble năm LSTM đảo với
 beam 12, so với 33.30 của hệ đối chứng. Bài nói rõ đây là lần đầu một hệ dịch
-thuần nơ-ron thắng một hệ đối chứng cụm từ với khoảng cách đáng kể, và thắng dù
-không xử lý nổi từ ngoài từ điển; nguyên văn là \enquote{by a sizeable margin,
-despite its inability to handle out-of-vocabulary words}.
+thuần nơ-ron vượt một hệ đối chứng cụm từ với khoảng cách đáng kể, và vượt được
+dù không xử lý nổi từ ngoài từ điển; nguyên văn là \enquote{by a sizeable
+margin, despite its inability to handle out-of-vocabulary words}.
 
 Cạnh con số ấy phải đặt thêm một con số nữa, không thì dễ đọc nhầm: 37.0, kết
 quả WMT'14 tốt nhất lúc bấy giờ. Mạng thuần chưa vượt nó. Chỗ mạng chạm tới 36.5
@@ -38,7 +38,7 @@ chạy.
 Đây là chỗ chương này phải cẩn thận nhất, vì hai câu đúng nằm cạnh nhau và
 nghe như mâu thuẫn.
 
-Câu thứ nhất: chỗ thắt là có thật.
+Câu thứ nhất: \tn{chỗ thắt}{bottleneck} là có thật.
 Mục~\ref{sec:ch05-bop-vector} đo được nó, và đo được cả hình dạng của nó, tức
 câu ngắn bão hòa trước còn câu dài cần vector rộng hơn hẳn. Ở \(d_h = 64\), câu
 ngắn được 0.9797 còn câu dài được 0.0724.
@@ -79,6 +79,6 @@ bước. Mười ngày trên tám GPU là cái giá của chuyện đó ở quy 
 Chương~\ref{ch:dong-chinh} giải quyết hai thứ đầu và không đụng tới thứ ba. Nó
 thêm một đường đi từ mọi bước của encoder tới mọi bước của decoder, đo cái chỗ
 thắt \emph{trước} khi vá nó, rồi cho thấy đường mới ấy làm gì với gradient. Cái
-giá là attention lúc đó vẫn là một thứ lắp thêm vào một mạng hồi quy, và mạng
-hồi quy thì vẫn tuần tự. Phải tới chương~\ref{ch:transformer} mới có người
-quyết định trả giá để bỏ hẳn phép hồi quy.
+giá là attention lúc đó vẫn là một thứ lắp thêm vào một mạng hồi quy, nên thứ
+ba trong danh sách trên còn nguyên vẹn suốt cả chương ấy. Trong lịch sử thật nó
+còn nguyên thêm hai năm nữa.

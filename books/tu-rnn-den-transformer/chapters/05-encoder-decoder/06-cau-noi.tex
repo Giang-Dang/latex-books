@@ -78,10 +78,13 @@ Cộng ba hộp trên với chính lời bài 2014 thì trả lời được câ
 này xoay quanh, và câu trả lời không phải câu hay được kể.
 
 Sutskever và cộng sự \emph{không} báo cáo mô hình của họ tụt theo độ dài câu.
-Ngược lại, và ở bốn chỗ.
+Ngược lại, và ở năm chỗ.
 
-Tóm tắt, câu áp chót: \enquote{Additionally, the LSTM did not have difficulty on
-long sentences.} Mục 3.7 của họ tên là \enquote{Performance on long sentences}
+Ngay trong tóm tắt: \enquote{Additionally, the LSTM did not have difficulty on
+long sentences.} Phần mở đầu, mục 1: \enquote{Surprisingly, the LSTM did not
+suffer on very long sentences, despite the recent experience of other
+researchers with related architectures}. Mục 3.7 của họ tên là
+\enquote{Performance on long sentences}
 và mở đầu bằng \enquote{We were surprised to discover that the LSTM did well on
 long sentences}. Chú thích hình 3 ghi \enquote{There is no degradation on
 sentences with less than 35 words, there is only a minor degradation on the
@@ -93,12 +96,24 @@ limited memory, and other researchers reported poor performance on long
 sentences with a model similar to ours}.
 
 Người đo được độ tụt là Cho và cộng sự trong bài 2014b, trên một mô hình khác,
-với chỗ nối khác và bề rộng khác. Và chính Sutskever ghi nhận điều đó trong mục
-4, khi mô tả bài Bahdanau là dùng attention để khắc phục chỗ mô hình của Cho
-làm kém trên câu dài (\enquote{to overcome the poor performance on long
-sentences experienced by Cho et al.}).
+với chỗ nối khác và bề rộng khác.
 
-Bốn chỗ, cùng một bài, cùng một hướng. Cái sai không nằm ở chỗ tin rằng chỗ thắt
+Chỗ này còn một lớp nữa, và tôi suýt đọc lướt qua nó. Sutskever cũng nhắc tới
+chuyện đó trong mục 4, khi mô tả bài Bahdanau như một bài dùng attention để
+khắc phục chỗ mô hình của Cho làm kém trên câu dài (\enquote{to overcome the
+poor performance on long sentences experienced by Cho et al.}). Nhưng số trong
+ngoặc vuông ngay sau chữ \enquote{Cho et al.} ở bài Sutskever trỏ tới
+arXiv:1406.1078, tức bài \emph{2014a}. Sutskever không trích bài 2014b ở đâu
+cả.
+
+Hai chuyện ấy không đá nhau, và phân biệt được chúng là phân biệt giữa một mô
+hình với một phép đo trên mô hình đó: 2014a là bài dựng ra kiến trúc, 2014b là
+bài đem chính kiến trúc ấy ra đo theo độ dài câu. Nhưng nó có nghĩa là câu gán
+kết quả đo cho 2014b là câu của Bahdanau, không phải của Sutskever, và chương
+này không được mượn Sutskever để chống lưng cho nó.
+
+Năm chỗ, cùng một bài, cùng một hướng. Cái sai không nằm ở chỗ tin rằng
+\tn{chỗ thắt}{bottleneck}
 có thật, vì mục~\ref{sec:ch05-bop-vector} vừa đo nó. Nó nằm ở chỗ gán kết quả
 cho bài không đưa ra kết quả ấy, và một sinh viên mở bài 1409.3215 ra tìm hình
 BLEU tụt theo độ dài sẽ tìm mãi không thấy.

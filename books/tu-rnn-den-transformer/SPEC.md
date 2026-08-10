@@ -532,6 +532,22 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   measurement taken before the recipe is pinned has to be retaken after, or
   dropped; there is no third option, and "it was close enough" is how the first
   draft of this chapter got four wrong decimals past a green gate.
+  **A second audit then found two more from the same probe run**, 0.9200 and
+  0.9425 for the 20-epoch and 40-epoch comparison, true values 0.9533 and
+  0.9600. That is the part worth keeping: when the first audit reported four
+  wrong numbers I fixed those four and did not sweep the chapter for anything
+  else sharing their origin. A finding is a symptom, and the question to ask it
+  is always "what else came from here", not "is this one fixed now".
+- **The cheapest check on a measured number in this book is divisibility, and
+  nothing was using it.** Every exact-match figure is a count over a test split,
+  so it has to be a multiple of 1/N for that split. Chapter 05 prints against
+  N = 300, and `0.9425 * 300 = 282.75` is not an integer, while
+  `0.9425 * 400 = 377` is - which identifies both that the number is wrong and
+  which discarded run it came from, without rerunning anything. This is worth
+  more than it looks: the `number` family checks that a decimal appears in a
+  note, which a number from a dead configuration does. Whoever builds the next
+  check family should consider this one first; it is a few lines and it catches
+  the failure the existing gate is structurally blind to.
 - **The running example is now settled.** Closed 2026-08-10 by decision 35: a
   corpus generated from a grammar inside the companion repo, English to
   Vietnamese, carried from chapter 05 to chapter 08. License is a non-question

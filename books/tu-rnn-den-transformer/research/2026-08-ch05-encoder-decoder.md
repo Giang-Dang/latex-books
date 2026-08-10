@@ -330,10 +330,28 @@ vào từng script: 6000 cặp huấn luyện, 300 cặp test, batch 128, 14 epo
 learning rate 0.005, Adam, cắt gradient ở norm 5.0, `d_hidden = 128`,
 embedding 32 chiều.
 
-**14 epoch là ngân sách chứ không phải hội tụ.** Cùng mô hình chạy 20 epoch cho
-exact match 0.9200 và 40 epoch cho 0.9425, so với 0.8533 ở 14 epoch. Chương in
-số ở 14 vì mọi so sánh trong chương cần hai vế dừng ở cùng một chỗ, và vì 15
-lần huấn luyện phải nằm trong ngân sách cả lần chạy.
+**14 epoch là ngân sách chứ không phải hội tụ.** Đo lại ngày 2026-08-10 trên
+đúng cấu hình đã chốt, `train_one(0, reverse_source=True, epochs=N)` với
+`disjoint_splits(6000, 300, seed=5)` và giải mã tham lam:
+
+```
+epochs= 14  exact=0.8533  (256/300)
+epochs= 20  exact=0.9533  (286/300)
+epochs= 40  exact=0.9600  (288/300)
+```
+
+Chương in số ở 14 vì mọi so sánh trong chương cần hai vế dừng ở cùng một chỗ,
+và vì 15 lần huấn luyện phải nằm trong ngân sách cả lần chạy.
+
+**Bản nháp ghi 0.9200 và 0.9425 ở chỗ này, và cả hai đều sai.** Chúng đến từ
+cùng lần chạy thăm dò `N_TEST = 400` đã sinh ra bốn con số beam sai ở đo 4.
+Lần audit thứ nhất bắt bốn số kia, tôi sửa bốn số kia, và không quét lại cả
+chương xem còn số nào cùng nguồn. Lần audit thứ hai bắt tiếp. Có một cách kiểm
+số học lẽ ra phải thấy ngay mà không cần chạy lại gì: tập test có 300 câu, nên
+mọi exact match phải là bội của 1/300; `0.9425 * 300 = 282.75` không nguyên,
+còn `0.9425 * 400 = 377` thì nguyên. **Bất kỳ số nào trong chương này cũng phải
+chia hết cho mẫu số của tập nó được đo trên.** Đây là phép kiểm rẻ nhất có, và
+nó bắt được đúng loại lỗi mà gate `number` không bắt được.
 
 ### Đo 1: chỗ thắt, đo bằng cách bóp vector ngữ cảnh
 

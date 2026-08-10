@@ -46,7 +46,7 @@ bản chạy được là \code{beam\_decode} trong repo companion.
 Dòng 6 là dòng tôi phải sửa lại sau khi đo, và nó đáng kể ra vì cái sai của nó
 không hiện ra thành lỗi. Bản đầu tôi viết dừng ngay khi \(\mathcal{F}\) đủ
 \(B\) phần tử, rồi vứt hết \(\mathcal{L}\). Nghe hợp lý, và sai: một giả thuyết
-dài hơn còn đang sống có thể đang dẫn điểm so với cả \(B\) giả thuyết vừa kết
+dài hơn còn đang sống có thể đang có điểm cao hơn cả \(B\) giả thuyết vừa kết
 thúc.
 
 \begin{measured}{luật dừng sai, đo lại trên đúng cấu hình của tag \code{ch05}}
@@ -62,19 +62,24 @@ fixed      5     0.8833   1.0000   0.7697   13.877
 
 Bản \code{broken} là \code{beam\_decode} với dòng 6 thay bằng
 \enquote{dừng khi \(\mathcal{F}\) đủ \(B\) phần tử}, tức đúng phép sửa ngược mà
-bài tập~3 phần \enquote{Để tay vào} yêu cầu bạn dựng lại. Nó không nằm trong
-tag; hàm đầy đủ nằm trong research note của chương.
+bài tập~3 phần \enquote{Để tay vào} yêu cầu bạn dựng lại.
+
+Đây là bảng duy nhất trong chương không đo bằng một script nằm trong tag, vì
+bản \code{broken} cố ý không được commit. Mô hình thì vẫn là mô hình của tag
+\code{ch05}, dựng bằng \code{train\_one(0, reverse\_source=True)}; hàm
+\code{broken} chép đầy đủ trong research note của chương.
 \end{measured}
 
 Ở beam 2, luật sai cho 0.8400 trong khi giải mã tham lam cho 0.8533. Beam rộng
-hơn mà lại thua beam bằng một, và chỗ mất nằm gọn ở câu \emph{ngắn}: 1.0000 tụt
+hơn mà lại kém beam bằng một, và chỗ mất nằm gọn ở câu \emph{ngắn}: 1.0000 tụt
 xuống 0.9527, còn câu dài thì lại nhích lên. Đúng chiều mà cơ chế dự đoán, vì
 câu ngắn là câu có giả thuyết kết thúc sớm, nên chúng là nhóm bị luật dừng cắt
 ngang.
 
 Bản ở dòng 6 thì cắt tỉa theo một bất đẳng thức chứ không theo một số đếm. Log
-xác suất chỉ có giảm, nên một giả thuyết còn sống mà đã thua giả thuyết hoàn tất
-tốt nhất thì không bao giờ đuổi kịp được nữa. Cắt nó đi là phép cắt chính xác,
+xác suất chỉ có giảm, nên một giả thuyết còn sống mà đã thấp điểm hơn giả thuyết
+hoàn tất tốt nhất thì không bao giờ vượt lên được nữa. Cắt nó đi là phép cắt
+chính xác,
 không phải phép xấp xỉ, và nó cho tìm kiếm dừng sớm mà không mất gì: cùng mô
 hình, beam 2 lên 0.8733 và beam 5 lên 0.8833.
 
@@ -103,10 +108,10 @@ beam 12 không hơn beam 5 một chữ số nào.
 \subsection*{Một cách đọc sai, và cách số liệu bác bỏ nó}
 
 \index{beam search!thiên lệch độ dài}%
-Lúc beam 2 còn thua tham lam, cách đọc đầu tiên của tôi là thiên lệch độ dài:
+Lúc beam 2 còn kém tham lam, cách đọc đầu tiên của tôi là thiên lệch độ dài:
 điểm của một giả thuyết là tổng các log xác suất, toàn số âm, nên câu càng dài
-điểm càng thấp và beam search sẽ chuộng câu ngắn. Đây là một hiện tượng có thật
-và có tên, nên nó dễ tin.
+điểm càng thấp và beam search sẽ chuộng câu ngắn. Hiện tượng ấy có thật và có
+tên, thiên lệch độ dài, nên nó dễ tin.
 
 Nó sai ở đây, và cột cuối của bảng trên là chỗ bác bỏ. Ở luật dừng sai, độ dài
 output trung bình là 13.827 tại beam 2, so với 13.877 của câu tham chiếu. Lệch
@@ -114,10 +119,10 @@ output trung bình là 13.827 tại beam 2, so với 13.877 của câu tham chi�
 hoá theo độ dài, tức chia điểm cho số token trước khi so, và cả ba cột 0.8400,
 0.9527 và 0.7303 đứng nguyên không đổi một chữ số nào; thứ duy nhất nhúc nhích
 là độ dài trung bình, 13.827 thành 13.840. Chuẩn hoá độ dài là bản vá cho một
-lỗi corpus này không có, và tôi đã suýt áp nó vì cái tên nghe đúng.
+lỗi mà corpus này không có, và tôi đã suýt áp nó vì cái tên nghe đúng.
 
-Còn một chuyện về beam search mà tôi tin sai theo chiều khác, và ghi lại vì nó
-là một cái bẫy sạch sẽ. Beam rộng sinh ra tập ứng viên bao tập của beam hẹp, nên
+Còn một chuyện về beam search tôi cũng tin sai, theo chiều khác. Tôi ghi lại vì
+đây là cái bẫy rất dễ sập vào. Beam rộng sinh ra tập ứng viên bao tập của beam hẹp, nên
 có vẻ hiển nhiên là nó phải trả về giả thuyết có log xác suất không thấp hơn.
 Không đúng: mỗi bước chỉ giữ \(B\) ứng viên tốt nhất, và tiền tố mà beam hẹp giữ
 lại có thể xếp dưới hạng \(B\) trong tập ứng viên lớn hơn của beam rộng, nên bị
@@ -129,7 +134,7 @@ chứng có bug.
 \subsection*{Ensemble}
 
 \index{ensemble!cách gộp}%
-Thứ thứ hai lắp thêm lúc giải mã là ensemble: huấn luyện vài mô hình rồi cho
+Cái thứ hai lắp thêm lúc giải mã là ensemble: huấn luyện vài mô hình rồi cho
 chúng cùng quyết định. Bài dùng năm LSTM khác nhau ở khởi tạo ngẫu nhiên và ở
 thứ tự ngẫu nhiên của các minibatch (\enquote{that differ in their random
 initializations and in the random order of minibatches}), và cả hai thứ ấy ở
@@ -171,7 +176,7 @@ Chuyện thứ hai: đặt hai phép cải thiện cạnh nhau. Nới beam từ 
 0.7500 lên 0.9737. Ensemble ba mô hình cũng cao hơn mô hình đơn \emph{tốt nhất}
 trong ba, nên đây không phải chuyện gộp lại để đỡ rút phải mô hình xấu.
 
-Bài cho cùng thứ tự độ lớn ở quy mô của nó. Một LSTM đảo với beam 12 được BLEU
+Bài cho cùng bậc độ lớn ở quy mô của nó. Một LSTM đảo với beam 12 được BLEU
 30.59; ensemble năm LSTM với beam 12 được 34.81. Còn nới beam từ 1 lên 12 trên
 cùng ensemble năm mô hình chỉ đi từ 33.00 lên 34.81. Chú thích bảng 1 của bài
 rút ra kết luận thực dụng từ đúng chỗ đó: một ensemble năm LSTM chạy beam 2 rẻ

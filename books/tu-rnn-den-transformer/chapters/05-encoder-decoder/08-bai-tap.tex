@@ -6,7 +6,7 @@
   \item Phương trình~\eqref{eq:ch05-phan-ra} không có \(\vect{x}\) ở vế phải.
     Viết ra chính xác chỗ nào trong mô hình làm cho chuyện đó đúng, rồi trả
     lời: nếu decoder được đọc lại \(\vect{v}\) ở mọi bước thay vì chỉ ở bước
-    khởi tạo, vế phải đổi thế nào và chỗ thắt dịch đi đâu?
+    khởi tạo, vế phải đổi thế nào và \tn{chỗ thắt}{bottleneck} dịch đi đâu?
 
   \item Bài viết ô nhớ của họ mang 8000 số thực cho một câu. Dẫn ra con số ấy
     từ cấu hình mà mục 3.4 mô tả. Rồi tính con số tương ứng cho mô hình ở
@@ -70,7 +70,7 @@ hỏng.
     chạy lại \code{ch05\_bottleneck.py} ở riêng \(d_h = 128\) và nói độ chính
     xác đổi bao nhiêu. Con số ấy nhỏ hay lớn hơn bạn đoán?
 
-  \item Mục~\ref{sec:ch05-giai-ma} kể một luật dừng sai làm beam 2 thua giải mã
+  \item Mục~\ref{sec:ch05-giai-ma} kể một luật dừng sai làm beam 2 kém giải mã
     tham lam. Dựng lại nó: trong \code{beam\_decode}, bỏ dòng cắt tỉa theo
     \code{best\_finished}, cho vòng lặp nạp lại \(\mathcal{L}\) đủ \(B\) phần
     tử bất kể bao nhiêu giả thuyết vừa kết thúc, rồi thoát khi
@@ -84,7 +84,7 @@ hỏng.
     hơn ensemble ba không, và phần hơn ấy so với phần hơn khi đi từ một lên ba
     thì thế nào? Ghi lại thời gian chạy.
 
-  \item Corpus hiện sinh câu tối đa hai mệnh đề. Trong
+  \item Hiện corpus chỉ sinh câu tối đa hai mệnh đề. Trong
     \code{ch05\_bottleneck.py}, tìm lời gọi \code{disjoint\_splits} rồi đặt
     tham số \code{max\_clauses} của nó bằng 3. Giữ nguyên mọi thứ khác và chạy
     lại cả bảng. Ngưỡng \(d_h\) mà câu dài bắt đầu giải được dịch đi đâu, và
