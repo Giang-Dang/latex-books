@@ -1,0 +1,145 @@
+\section{Một vector cho cả câu}
+\label{sec:ch05-mot-vector}
+
+\index{vector ngữ cảnh!định nghĩa}%
+\tn{Mạng hồi quy}{recurrent neural network} của chương~\ref{ch:ky-hieu-va-bptt}
+ánh xạ chuỗi sang chuỗi được, nhưng chỉ khi hai chuỗi khớp nhau từng bước: mỗi
+\(\vect{x}_t\) cho một \(\vect{y}_t\). Dịch không như thế.
+\tn{Câu nguồn}{source sentence} dài \(T\) token,
+\tn{câu đích}{target sentence} dài \(T'\), hai số ấy khác nhau, và bạn không
+biết \(T'\) trước khi dịch xong.
+
+Bài giải bằng cách tách bài toán làm hai. Viết \(\vect{v}\) cho
+\tn{vector ngữ cảnh}{context vector}, tức trạng thái cuối của encoder sau khi
+nó đọc hết câu nguồn. Khi ấy
+
+\begin{equation}
+  p(\vect{y}_1, \dots, \vect{y}_{T'} \mid \vect{x}_1, \dots, \vect{x}_T)
+  = \prod_{t=1}^{T'} p(\vect{y}_t \mid \vect{v}, \vect{y}_1, \dots, \vect{y}_{t-1}),
+  \label{eq:ch05-phan-ra}
+\end{equation}
+
+đúng phương trình (1) của bài. Đọc nó chậm, vì cả chương nằm trong đó. Vế phải
+không còn nhắc tới \(\vect{x}\) nữa. Sau khi encoder chạy xong, câu nguồn biến
+mất khỏi bài toán; thứ duy nhất decoder còn thấy là \(\vect{v}\) và những gì
+chính nó đã viết ra.
+
+\index{vector ngữ cảnh!bề rộng cố định}%
+Và \(\vect{v}\) có bề rộng cố định. Câu nguồn năm token hay năm mươi token thì
+\(\vect{v}\) vẫn là chừng ấy số thực. Bài nói thẳng con số của mô hình họ: bốn
+tầng, mỗi tầng một nghìn cell, nên \enquote{the deep LSTM uses 8000 real numbers
+to represent a sentence}.
+
+\subsection*{Ký hiệu \(\langle\)EOS\(\rangle\) làm một việc cụ thể}
+
+\index{vector ngữ cảnh!ký hiệu kết thúc}%
+Mỗi câu kết thúc bằng một token đặc biệt, viết là \(\langle\)EOS\(\rangle\).
+Không phải quy ước cho gọn. Bài nêu đúng lý do: nó \enquote{enables the model to
+define a distribution over sequences of all possible lengths}. Không có nó thì
+\eqref{eq:ch05-phan-ra} là phân phối trên các chuỗi độ dài \(T'\) cố định, mà
+\(T'\) thì mô hình phải tự quyết. Có nó thì độ dài trở thành một thứ mô hình
+sinh ra, giống như sinh ra một từ.
+
+\subsection*{Ba chỗ mô hình thật khác mô tả trên}
+
+Mục 2 của bài liệt kê ba chỗ, và cả ba đều đáng đọc vì cả ba đều còn sống tới
+hôm nay.
+
+Thứ nhất, \emph{hai} LSTM chứ không phải một: một cho câu nguồn, một cho câu
+đích, trọng số riêng biệt. Lý do bài đưa ra là nó tăng số tham số
+\enquote{at negligible computational cost} và làm cho việc huấn luyện nhiều cặp
+ngôn ngữ cùng lúc trở nên tự nhiên. Trong repo companion, đó là hai module
+\code{encoder} và \code{decoder} độc lập nhau.
+
+Thứ hai, bốn tầng. Bài đo được mỗi tầng thêm vào giảm perplexity gần mười phần
+trăm.
+
+Thứ ba, đảo thứ tự từ của câu nguồn. Đây là chỗ tôi để dành hẳn
+mục~\ref{sec:ch05-dao-cau-nguon}, vì nó là thứ duy nhất trong bài không đụng
+tới kiến trúc mà vẫn đổi kết quả nhiều nhất.
+
+\subsection*{\enquote{LSTM formulation from Graves} là bản nào}
+
+\index{ô nhớ!bản Graves 2013}%
+Bài viết đúng một câu về ô nhớ nó dùng: \enquote{We use the LSTM formulation
+from Graves}~\autocite{graves2013generating}. Câu ấy đáng tra, vì
+chương~\ref{ch:lstm} vừa dành cả chương để chỉ ra rằng \enquote{LSTM} không
+phải một kiến trúc mà là vài kiến trúc.
+
+Tra ra thì bản Graves dùng, mục 2.1 phương trình (7) tới (11), có
+\tn{cổng quên}{forget gate} của Gers 2000, có peephole của Gers 2002, và dùng
+tanh ở cả hai chỗ nén. Nghĩa là đúng hai hộp cầu nối mà mục~\ref{sec:ch04-cau-noi}
+đã dựng, cộng lại. Graves ghi rõ các ma trận từ cell sang cổng là ma trận chéo.
+Ông cũng nói thẳng chỗ mà mục~\ref{sec:ch04-cat-gradient} đã mổ: bản gốc 1997
+dùng một phép tính gradient xấp xỉ tự thiết kế, còn bài của ông tính gradient
+đầy đủ bằng lan truyền ngược qua thời gian.
+
+Repo companion cài bản có cổng quên và tanh, không có peephole, và một tầng
+thay vì bốn. Hai chỗ bớt đi ấy là quyết định về kích thước để mọi thí nghiệm
+chạy xong trên CPU trong ngân sách của sách, không phải bất đồng với bài; tôi
+nói ra đây thay vì để listing ngầm bảo rằng bài đơn giản hơn nó thật sự.
+
+\begin{minted}{python}
+c = f * c_prev + i * torch.tanh(g)
+h = o * torch.tanh(c)
+\end{minted}
+
+\index{vector ngữ cảnh!đường truyền duy nhất}%
+Chỗ nối giữa hai mạng là hai hàm, và đọc chúng cạnh nhau thì thấy ngay
+\(\vect{v}\) hẹp tới mức nào. Encoder trả về một cặp trạng thái; decoder nhận
+đúng cặp ấy làm trạng thái khởi tạo rồi không bao giờ nhìn lại câu nguồn nữa:
+
+\begin{minted}{python}
+def encode(
+    self, source: torch.Tensor
+) -> tuple[torch.Tensor, torch.Tensor]:
+    projected = self.encoder.project(self.source_embedding(source))
+    state = self.encoder.initial_state(source.shape[1], projected.dtype)
+    for t in range(source.shape[0]):
+        live = (source[t] != PAD_INDEX).unsqueeze(-1).to(projected.dtype)
+        c_next, h_next = self.encoder.step_projected(projected[t], state)
+        state = (
+            live * c_next + (1.0 - live) * state[0],
+            live * h_next + (1.0 - live) * state[1],
+        )
+    return state
+\end{minted}
+
+\begin{minted}{python}
+def decode_forced(
+    self,
+    context: tuple[torch.Tensor, torch.Tensor],
+    target_in: torch.Tensor,
+) -> torch.Tensor:
+    projected = self.decoder.project(self.target_embedding(target_in))
+    state = context
+    outputs = []
+    for t in range(target_in.shape[0]):
+        state = self.decoder.step_projected(projected[t], state)
+        outputs.append(state[1])
+    return self.readout(torch.stack(outputs))
+\end{minted}
+
+Hai dòng \code{live} trong \code{encode} là chỗ dễ bỏ sót nhất trong cả module.
+Chúng đóng băng trạng thái ở mọi vị trí mà input là token đệm, nên một câu ngắn
+nằm chung batch với câu dài vẫn kết thúc ở trạng thái tại từ cuối của
+\emph{chính nó}. Bỏ hai dòng ấy đi thì \(\vect{v}\) của một câu phụ thuộc vào
+việc nó bị xếp chung batch với ai, hàm loss không hề kêu, và cái duy nhất bạn
+thấy là một độ chính xác nhúc nhích khi đổi batch size. Repo có test riêng khoá
+chuyện đó lại.
+
+Hình~\ref{fig:ch05-encoder-decoder} vẽ toàn bộ kiến trúc.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch05-encoder-decoder}
+  \caption{Encoder-decoder, vẽ theo hình 1 của bài. Encoder đọc câu nguồn đã
+    đảo và không sinh ra gì. Decoder sinh từ, và hai hàng nhãn của nó đọc lệch
+    nhau một bước vì mỗi từ nó sinh ra quay lại làm input của bước sau: hàng
+    trên là X, Y, Z, \(\langle\)EOS\(\rangle\) và hàng dưới là
+    \(\langle\)SOS\(\rangle\), X, Y, Z. Chỗ duy nhất nối hai nửa là mũi tên đậm
+    ở giữa, mang \(\vect{v}\): bề rộng của nó cố định, nên toàn bộ câu nguồn
+    phải đi lọt qua đó dù dài bao nhiêu. Chương~\ref{ch:dong-chinh} là chương
+    nối thêm đường thứ hai qua chỗ thắt này.}
+  \label{fig:ch05-encoder-decoder}
+\end{figure}

@@ -1,0 +1,102 @@
+\section{Ba bài đứng quanh bài này}
+\label{sec:ch05-cau-noi}
+
+\index{encoder-decoder!ba bài liên quan}%
+Bài 2014 không mọc ra từ đất trống, và ba bài dưới đây là ba lý do khác nhau để
+biết chuyện đó. Bài thứ nhất là bài mà chính Sutskever nhường quyền ưu tiên.
+Bài thứ hai dựng cùng kiến trúc gần như cùng lúc, ở một chỗ khác, với một chi
+tiết khác hẳn. Bài thứ ba là bài đo được thứ mà người ta vẫn gán nhầm cho
+chương này, và phân biệt nó với bài thứ hai là việc mà cả chương này lẫn
+chương~\ref{ch:dong-chinh} phải làm cho đúng.
+
+\begin{bridge}{Kalchbrenner và Blunsom 2013: ai làm trước}
+Mục 4 của bài 2014 viết thẳng: công trình của họ gần nhất với Kalchbrenner và
+Blunsom, \enquote{who were the first to map the input sentence into a vector and
+then back to a sentence}. Chỗ khác nhau, cũng theo lời họ, là bài 2013 mã hoá
+câu bằng mạng tích chập, và mạng tích chập thì \enquote{lose the ordering of the
+words}.
+
+Nghĩa là ý tưởng \enquote{nén cả câu vào một vector rồi bung ra} có trước bài
+này một năm. Cái bài 2014 thêm vào là dùng một mạng hồi quy có cổng cho cả hai
+đầu, nhờ đó thứ tự từ sống sót qua chỗ nén.
+
+EMNLP 2013, trang 1700-1709~\autocite{kalchbrenner2013recurrent}. Tôi chỉ tra
+thư mục bài này, chưa đọc nó, nên đây là đúng câu gán quyền ưu tiên của
+Sutskever và không hơn.
+\end{bridge}
+
+\begin{bridge}{Cho và cộng sự 2014a: cùng kiến trúc, khác một chỗ nối}
+Đây là bài chương~\ref{ch:lstm} đã trích cho đơn vị có cổng hai cổng. Nửa còn
+lại của nó, và là nửa mang tên bài, là RNN Encoder-Decoder: cùng ý tưởng nén
+câu vào một vector, công bố cùng năm.
+
+Chỗ khác nhau nằm ở một chi tiết mà mục~\ref{sec:ch05-mot-vector} đã nhấn. Ở
+bài 2014 của Sutskever, \tn{vector ngữ cảnh}{context vector} vào đúng một lần,
+làm trạng thái khởi tạo của decoder, rồi thôi. Ở Cho, decoder đọc lại vector ấy
+ở \emph{mọi} bước. Hai cách đều là \enquote{encoder-decoder} và chúng đặt chỗ
+thắt ở hai chỗ khác nhau: cách thứ nhất bắt vector đi qua toàn bộ chuỗi trạng
+thái của decoder, cách thứ hai không.
+
+Mục tiêu của hai bài cũng khác. Cho và cộng sự chủ yếu nhắm vào việc lắp mạng
+của họ vào một hệ dịch thống kê có sẵn, tức chấm điểm lại các cụm từ, chứ không
+dịch thẳng; chính Sutskever ghi nhận chỗ đó trong mục 4.
+
+EMNLP 2014, trang 1724-1734~\autocite{cho2014encdec}.
+\end{bridge}
+
+\begin{bridge}{Cho và cộng sự 2014b: bài thật sự đo độ tụt theo độ dài câu}
+Đây là bài mà cả chương này lẫn chương~\ref{ch:dong-chinh} phải gọi đúng tên,
+vì gọi nhầm là cách nhanh nhất để kể sai lịch sử.
+
+\enquote{Cho và cộng sự 2014} là \emph{hai} bài khác nhau, và Bahdanau phân biệt
+chúng bằng chữ cái: 2014a là bài EMNLP ở hộp trên, còn 2014b là
+\enquote{On the Properties of Neural Machine Translation}, một bài workshop
+ngắn hơn ở SSST-8, Doha, tháng 10 năm 2014.
+
+Bài 2014b mới là bài đo. Tóm tắt của nó: \enquote{We show that the neural
+machine translation performs relatively well on short sentences without unknown
+words, but its performance degrades rapidly as the length of the sentence and
+the number of unknown words increase}. Và phần mở đầu của Bahdanau dẫn đúng bài
+này khi nói \enquote{Cho et al. (2014b) showed that indeed the performance of a
+basic encoder-decoder deteriorates rapidly as the length of an input sentence
+increases}.
+
+Chú ý luôn vế thứ hai trong câu của bài 2014b: độ dài \emph{và} số từ ngoài từ
+điển. Corpus của mục~\ref{sec:ch05-corpus} có từ điển đóng nên không nói được gì
+về vế sau.
+
+SSST-8, trang 103-111~\autocite{cho2014properties}. Tôi mới đọc tóm tắt bài này,
+chưa đọc thân bài, nên chương chỉ dùng nó ở mức phát biểu và không trích số nào
+của nó.
+\end{bridge}
+
+\subsection*{Vậy ai nói encoder-decoder hỏng ở câu dài}
+
+\index{encoder-decoder!ai đo độ tụt theo độ dài}%
+Cộng ba hộp trên với chính lời bài 2014 thì trả lời được câu hỏi mà cả chương
+này xoay quanh, và câu trả lời không phải câu hay được kể.
+
+Sutskever và cộng sự \emph{không} báo cáo mô hình của họ tụt theo độ dài câu.
+Ngược lại, và ở bốn chỗ.
+
+Tóm tắt, câu áp chót: \enquote{Additionally, the LSTM did not have difficulty on
+long sentences.} Mục 3.7 của họ tên là \enquote{Performance on long sentences}
+và mở đầu bằng \enquote{We were surprised to discover that the LSTM did well on
+long sentences}. Chú thích hình 3 ghi \enquote{There is no degradation on
+sentences with less than 35 words, there is only a minor degradation on the
+longest sentences}. Có suy giảm, ở nhóm câu dài nhất, và bài gọi nó là nhỏ; đây
+là nửa câu hay bị bỏ khi người ta trích chú thích ấy. Kết luận thì nhắc lại lần
+nữa, kèm chỗ họ nói rõ đã tưởng ngược lại: \enquote{We were
+initially convinced that the LSTM would fail on long sentences due to its
+limited memory, and other researchers reported poor performance on long
+sentences with a model similar to ours}.
+
+Người đo được độ tụt là Cho và cộng sự trong bài 2014b, trên một mô hình khác,
+với chỗ nối khác và bề rộng khác. Và chính Sutskever ghi nhận điều đó trong mục
+4 khi mô tả bài Bahdanau là dùng attention \enquote{to overcome the poor
+performance on long sentences experienced by Cho et al.}.
+
+Bốn chỗ, cùng một bài, cùng một hướng. Cái sai không nằm ở chỗ tin rằng chỗ thắt
+có thật, vì mục~\ref{sec:ch05-bop-vector} vừa đo nó. Nó nằm ở chỗ gán kết quả
+cho bài không đưa ra kết quả ấy, và một sinh viên mở bài 1409.3215 ra tìm hình
+BLEU tụt theo độ dài sẽ tìm mãi không thấy.

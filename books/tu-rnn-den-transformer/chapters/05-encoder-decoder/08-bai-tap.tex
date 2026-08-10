@@ -1,0 +1,127 @@
+\exercises
+
+\tierunderstand
+
+\begin{bt}
+  \item Phương trình~\eqref{eq:ch05-phan-ra} không có \(\vect{x}\) ở vế phải.
+    Viết ra chính xác chỗ nào trong mô hình làm cho chuyện đó đúng, rồi trả
+    lời: nếu decoder được đọc lại \(\vect{v}\) ở mọi bước thay vì chỉ ở bước
+    khởi tạo, vế phải đổi thế nào và chỗ thắt dịch đi đâu?
+
+  \item Bài viết ô nhớ của họ mang 8000 số thực cho một câu. Dẫn ra con số ấy
+    từ cấu hình mà mục 3.4 mô tả. Rồi tính con số tương ứng cho mô hình ở
+    dòng cuối bảng của mục~\ref{sec:ch05-bop-vector}, và nói tỷ số giữa hai
+    con số là bao nhiêu.
+
+  \item Trong bảng ở mục~\ref{sec:ch05-bop-vector}, dòng \(d_h = 64\) cho câu
+    ngắn 0.9797 và câu dài 0.0724. Giải thích chênh lệch ấy chỉ bằng bề rộng
+    \tn{vector ngữ cảnh}{context vector}, rồi nói xem lời giải thích của bạn dự
+    đoán gì cho một corpus mà câu dài gấp đôi corpus này.
+
+  \item Lập luận của bài về phép đảo nói khoảng cách trung bình giữa các cặp từ
+    tương ứng \emph{không đổi}. Chứng minh câu đó cho một câu \(n\) từ với
+    đồng chỉnh một-một theo thứ tự. Rồi chỉ ra đại lượng nào thật sự đổi, và
+    vì sao đại lượng đó mới là đại lượng chương~\ref{ch:lstm} quan tâm.
+
+  \item Mục~\ref{sec:ch05-giai-ma} nói beam rộng hơn không bảo đảm trả về giả
+    thuyết có log xác suất cao hơn. Dựng một phản ví dụ nhỏ nhất bạn nghĩ ra
+    được: một từ điển ba token, một cây xác suất bạn tự đặt, và hai bề rộng
+    beam cho hai kết quả khác nhau theo chiều đó.
+
+  \item Ensemble lấy trung bình log xác suất của các mô hình ở mỗi bước, chứ
+    không bỏ phiếu chọn câu cuối. Nêu một tình huống cụ thể mà hai cách cho hai
+    câu khác nhau, rồi nói cách nào khớp với \eqref{eq:ch05-argmax} hơn và vì
+    sao.
+
+  \item Corpus ở mục~\ref{sec:ch05-corpus} có \tn{câu đích}{target sentence}
+    dài hơn \tn{câu nguồn}{source sentence} ở 0.7800 số cặp. Kể tên hai cơ chế
+    trong văn phạm gây ra chuyện đó, rồi nói cơ chế nào trong hai cái đó cũng
+    có trong cặp Anh-Pháp mà bài dùng.
+\end{bt}
+
+\tierapply
+
+Trạng thái xuất phát cho cả năm bài: clone repo companion, đứng ở thư mục gốc
+của nó, và checkout đúng tag của chương này.
+
+\begin{minted}{console}
+$ git clone https://github.com/Giang-Dang/rnn-to-transformer-lab.git
+$ cd rnn-to-transformer-lab
+$ git checkout ch05
+$ conda env create -f environment.yml
+$ conda activate rnn-to-transformer-lab
+$ python verify.py --only ch05
+\end{minted}
+
+Dòng cuối phải in ra \code{verify: ok}. Nếu không, đừng làm tiếp: mọi con số
+bạn đo sau đó sẽ không so được với sách. Nếu output hiện ra toàn dấu hỏi thay
+cho chữ tiếng Việt thì console của bạn không ở UTF-8; số vẫn đúng, chỉ chữ
+hỏng.
+
+\begin{bt}
+  \item Bảng ở mục~\ref{sec:ch05-bop-vector} dừng ở \(d_h = 128\). Thêm 256 vào
+    \code{WIDTHS} trong \code{ch05\_bottleneck.py} rồi chạy lại. Cột
+    \code{long} đi tới đâu, và thời gian chạy đội lên bao nhiêu? Ngân sách của
+    script là 360 giây; nói rõ bạn đã bỏ dòng nào đi để đo tiếp nếu phải bỏ.
+
+  \item \code{encode} đóng băng trạng thái ở vị trí đệm bằng hai dòng
+    \code{live}. Bỏ chúng đi, cho \code{c\_next, h\_next} chạy thẳng, rồi chạy
+    \code{python -m pytest -q tests/test\_ch05.py} và nói test nào hỏng. Sau đó
+    chạy lại \code{ch05\_bottleneck.py} ở riêng \(d_h = 128\) và nói độ chính
+    xác đổi bao nhiêu. Con số ấy nhỏ hay lớn hơn bạn đoán?
+
+  \item Mục~\ref{sec:ch05-giai-ma} kể một luật dừng sai làm beam 2 thua giải mã
+    tham lam. Dựng lại nó: trong \code{beam\_decode}, bỏ dòng cắt tỉa theo
+    \code{best\_finished}, cho vòng lặp nạp lại \(\mathcal{L}\) đủ \(B\) phần
+    tử bất kể bao nhiêu giả thuyết vừa kết thúc, rồi thoát khi
+    \code{len(finished) >= beam}. Chạy lại bảng beam trên mô hình seed 0 và xác
+    nhận 0.8400 ở beam 2, so với 0.8533 của tham lam. Rồi giải thích, bằng một
+    câu test khẳng định được, vì sao chỗ mất nằm ở câu \emph{ngắn}.
+
+  \item \code{ch05\_search.py} huấn luyện ba mô hình khác nhau ở seed. Đổi
+    \code{SEEDS} thành năm seed, và nhớ đổi cả dãy \code{(1, 2, 3)} ở vòng lặp
+    in bảng ensemble, vì nó được viết cứng và sẽ vẫn dừng ở ba. Ensemble năm có
+    hơn ensemble ba không, và phần hơn ấy so với phần hơn khi đi từ một lên ba
+    thì thế nào? Ghi lại thời gian chạy.
+
+  \item Corpus hiện sinh câu tối đa hai mệnh đề. Trong
+    \code{ch05\_bottleneck.py}, tìm lời gọi \code{disjoint\_splits} rồi đặt
+    tham số \code{max\_clauses} của nó bằng 3. Giữ nguyên mọi thứ khác và chạy
+    lại cả bảng. Ngưỡng \(d_h\) mà câu dài bắt đầu giải được dịch đi đâu, và
+    chuyện đó ủng hộ hay bác bỏ cách đọc bảng ở
+    mục~\ref{sec:ch05-bop-vector}?
+\end{bt}
+
+\tierextend
+
+\begin{bt}
+  \item Mục 5 của bài viết rằng họ không huấn luyện nổi một mạng hồi quy thường
+    trên bài toán không đảo, nhưng tin rằng nó sẽ huấn luyện được khi câu nguồn
+    đảo, và nói rõ họ không kiểm bằng thí nghiệm. Kiểm hộ họ trên corpus này:
+    thay \code{LstmLayer} bằng một tầng hồi quy tanh thường trong cả encoder
+    lẫn decoder, chạy cả hai vế đảo và không đảo, ba seed mỗi vế. Kết quả của
+    bạn ủng hộ hay bác bỏ niềm tin ấy, và ở quy mô này thì câu trả lời có ý
+    nghĩa gì đối với quy mô của họ?
+
+  \item Bảng ở mục~\ref{sec:ch05-giai-ma} cho ba mô hình cùng thiết lập tản gần
+    hai mươi điểm. Tìm xem cái gì trong lần huấn luyện của seed 1 khác hai seed
+    kia: vẽ đường loss của cả ba, tìm chỗ chúng tách nhau, và xem có can thiệp
+    nào rẻ hơn việc huấn luyện thêm hai mô hình mà kéo được seed 1 lên không.
+    Nếu có thì ensemble còn đáng giá như bảng nói không?
+
+  \item Mục~\ref{sec:ch05-con-lai-gi} phát biểu rằng chỗ thắt là một tỷ lệ giữa
+    bề rộng vector và lượng thông tin phải đi qua, chứ không phải một tính chất
+    của kiến trúc. Biến câu đó thành một phát biểu đo được: định nghĩa
+    \enquote{lượng thông tin của một câu} trên corpus này bằng một đại lượng
+    tính được, rồi kiểm xem ngưỡng \(d_h\) mà độ chính xác vượt một mức cho
+    trước có tỷ lệ với đại lượng ấy không. Nói rõ định nghĩa của bạn hỏng ở đâu.
+
+  \item Đây là chỗ còn mở thật sự. \(\vect{v}\) là \(2 d_h\) số dấu phẩy động,
+    nên về lý thuyết nó chứa được rất nhiều bit, thừa sức mã hoá mọi câu của
+    corpus này ngay ở \(d_h = 8\). Vậy mà \(d_h = 8\) cho 0.0000. Nghĩa là giới
+    hạn không nằm ở dung lượng biểu diễn mà ở chỗ khác: ở cái mà huấn luyện
+    bằng gradient tìm được, hoặc ở chỗ decoder giải mã được. Tách hai khả năng
+    ấy ra bằng một thí nghiệm, và biết trước rằng chưa có phát biểu nào được
+    chấp nhận rộng rãi về việc một vector trạng thái học được thật sự giữ được
+    bao nhiêu.
+\end{bt}

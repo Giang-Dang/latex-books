@@ -1,0 +1,180 @@
+\section{Hai thứ lắp thêm lúc giải mã}
+\label{sec:ch05-giai-ma}
+
+\index{beam search!bài toán nó giải}%
+Phương trình~\eqref{eq:ch05-phan-ra} cho xác suất của một
+\tn{câu đích}{target sentence} cho trước, khi đã có
+\tn{câu nguồn}{source sentence} và \tn{vector ngữ cảnh}{context vector} rút ra
+từ nó. Dịch thì cần chiều ngược lại: tìm câu đích có xác suất cao nhất,
+
+\begin{equation}
+  \hat{T} = \argmax_{T} p(T \mid S),
+  \label{eq:ch05-argmax}
+\end{equation}
+
+và phép \(\argmax\) ấy chạy trên mọi chuỗi token thuộc mọi độ dài. Không tính
+được. Lấy từ có xác suất cao nhất ở mỗi bước, tức giải mã tham lam, thì tính
+được nhưng không giải \eqref{eq:ch05-argmax}: một từ rẻ ở bước này có thể ép mọi
+bước sau vào một nhánh đắt.
+
+\subsection*{Beam search}
+
+\index{beam search!thuật toán}%
+Beam search là chỗ ở giữa. Giữ \(B\) \tn{giả thuyết}{hypothesis} tốt nhất thay
+vì một. Bài mô tả nó trong mục 3.2, và bản giả mã dưới đây chép theo mô tả ấy;
+bản chạy được là \code{beam\_decode} trong repo companion.
+
+\begin{algorithm}[htbp]
+  \caption{Beam search, giả mã theo mô tả ở mục 3.2 của bài báo}
+  \label{alg:ch05-beam}
+  \begin{algorithmic}[1]
+    \State \(\mathcal{L} \gets \{(\varepsilon,\ 0)\}\),
+           \(\mathcal{F} \gets \emptyset\)
+    \While{\(\mathcal{L} \neq \emptyset\)}
+      \State \(\mathcal{C} \gets \{(\vect{u} \cdot w,\ s + \log p(w \mid \vect{u}))
+              : (\vect{u}, s) \in \mathcal{L},\ w \in V\}\)
+      \State giữ \(B\) phần tử điểm cao nhất của \(\mathcal{C}\)
+      \State chuyển phần tử kết thúc bằng \(\langle\)EOS\(\rangle\) sang
+             \(\mathcal{F}\); số còn lại thành \(\mathcal{L}\)
+      \State bỏ khỏi \(\mathcal{L}\) mọi giả thuyết có điểm thấp hơn
+             \(\max \mathcal{F}\)
+    \EndWhile
+    \State \Return phần tử điểm cao nhất của \(\mathcal{F}\)
+  \end{algorithmic}
+\end{algorithm}
+
+Dòng 6 là dòng tôi phải sửa lại sau khi đo, và nó đáng kể ra vì cái sai của nó
+không hiện ra thành lỗi. Bản đầu tôi viết dừng ngay khi \(\mathcal{F}\) đủ
+\(B\) phần tử, rồi vứt hết \(\mathcal{L}\). Nghe hợp lý, và sai: một giả thuyết
+dài hơn còn đang sống có thể đang dẫn điểm so với cả \(B\) giả thuyết vừa kết
+thúc.
+
+\begin{measured}{luật dừng sai, đo lại trên đúng cấu hình của tag \code{ch05}}
+\begin{minted}{text}
+stop rule  beam  exact    short    long     mean output length
+greedy     -     0.8533   1.0000   0.7105   13.883
+broken     2     0.8400   0.9527   0.7303   13.827
+broken     5     0.8767   1.0000   0.7566   13.863
+broken     12    0.8800   1.0000   0.7632   13.867
+fixed      2     0.8733   1.0000   0.7500   13.887
+fixed      5     0.8833   1.0000   0.7697   13.877
+\end{minted}
+
+Bản \code{broken} là \code{beam\_decode} với dòng 6 thay bằng
+\enquote{dừng khi \(\mathcal{F}\) đủ \(B\) phần tử}, tức đúng phép sửa ngược mà
+bài tập~3 phần \enquote{Để tay vào} yêu cầu bạn dựng lại. Nó không nằm trong
+tag; hàm đầy đủ nằm trong research note của chương.
+\end{measured}
+
+Ở beam 2, luật sai cho 0.8400 trong khi giải mã tham lam cho 0.8533. Beam rộng
+hơn mà lại thua beam bằng một, và chỗ mất nằm gọn ở câu \emph{ngắn}: 1.0000 tụt
+xuống 0.9527, còn câu dài thì lại nhích lên. Đúng chiều mà cơ chế dự đoán, vì
+câu ngắn là câu có giả thuyết kết thúc sớm, nên chúng là nhóm bị luật dừng cắt
+ngang.
+
+Bản ở dòng 6 thì cắt tỉa theo một bất đẳng thức chứ không theo một số đếm. Log
+xác suất chỉ có giảm, nên một giả thuyết còn sống mà đã thua giả thuyết hoàn tất
+tốt nhất thì không bao giờ đuổi kịp được nữa. Cắt nó đi là phép cắt chính xác,
+không phải phép xấp xỉ, và nó cho tìm kiếm dừng sớm mà không mất gì: cùng mô
+hình, beam 2 lên 0.8733 và beam 5 lên 0.8833.
+
+\begin{measured}{độ chính xác theo bề rộng beam, một mô hình}
+\begin{minted}{text}
+beam  exact    short    long     mean output length
+1     0.8533   1.0000   0.7105   13.883
+2     0.8733   1.0000   0.7500   13.887
+5     0.8833   1.0000   0.7697   13.877
+12    0.8833   1.0000   0.7697   13.877
+\end{minted}
+
+Mô hình seed 0, câu nguồn đảo, 300 câu test. Độ dài câu đích tham chiếu trung
+bình là 13.877.
+
+Đo bằng \code{experiments/ch05\_search.py} tại tag \code{ch05}.
+\end{measured}
+
+\index{beam search!lợi ích bão hòa rất sớm}%
+Hình dạng khớp với điều bài nói: hệ chạy tốt ngay ở beam 1, và
+\enquote{a beam of size 2 provides most of the benefits of beam search}. Ở đây
+beam 2 lấy được 0.0200 trên tổng 0.0300 mà beam mang lại, tức hai phần ba, và
+beam 12 không hơn beam 5 một chữ số nào.
+
+\subsection*{Một cách đọc sai, và cách số liệu bác bỏ nó}
+
+\index{beam search!thiên lệch độ dài}%
+Lúc beam 2 còn thua tham lam, cách đọc đầu tiên của tôi là thiên lệch độ dài:
+điểm của một giả thuyết là tổng các log xác suất, toàn số âm, nên câu càng dài
+điểm càng thấp và beam search sẽ chuộng câu ngắn. Đây là một hiện tượng có thật
+và có tên, nên nó dễ tin.
+
+Nó sai ở đây, và cột cuối của bảng trên là chỗ bác bỏ. Ở luật dừng sai, độ dài
+output trung bình là 13.827 tại beam 2, so với 13.877 của câu tham chiếu. Lệch
+0.05 token, không phải một xu hướng chuộng câu ngắn. Tôi có thử thêm phép chuẩn
+hoá theo độ dài, tức chia điểm cho số token trước khi so, và cả ba cột 0.8400,
+0.9527 và 0.7303 đứng nguyên không đổi một chữ số nào; thứ duy nhất nhúc nhích
+là độ dài trung bình, 13.827 thành 13.840. Chuẩn hoá độ dài là bản vá cho một
+lỗi corpus này không có, và tôi đã suýt áp nó vì cái tên nghe đúng.
+
+Còn một chuyện về beam search mà tôi tin sai theo chiều khác, và ghi lại vì nó
+là một cái bẫy sạch sẽ. Beam rộng sinh ra tập ứng viên bao tập của beam hẹp, nên
+có vẻ hiển nhiên là nó phải trả về giả thuyết có log xác suất không thấp hơn.
+Không đúng: mỗi bước chỉ giữ \(B\) ứng viên tốt nhất, và tiền tố mà beam hẹp giữ
+lại có thể xếp dưới hạng \(B\) trong tập ứng viên lớn hơn của beam rộng, nên bị
+loại mất. Tôi viết hẳn một test khẳng định tính đơn điệu ấy trước khi phát hiện
+ra nó sai; test bây giờ khẳng định đúng thứ nó bảo vệ, và phản ví dụ nằm trong
+research note. Nói cách khác, một cột beam đi xuống ở đâu đó không phải bằng
+chứng có bug.
+
+\subsection*{Ensemble}
+
+\index{ensemble!cách gộp}%
+Thứ thứ hai lắp thêm lúc giải mã là ensemble: huấn luyện vài mô hình rồi cho
+chúng cùng quyết định. Bài dùng năm LSTM \enquote{that differ in their random
+initializations and in the random order of minibatches}, và cả hai thứ ấy ở đây
+đều do một seed điều khiển.
+
+Cách gộp là chỗ đáng nói rõ. Ensemble không phải một cuộc bỏ phiếu chọn câu cuối
+cùng. Ở mỗi bước giải mã, log xác suất của các mô hình được lấy trung bình
+\emph{trước} khi beam search xếp hạng, nên mọi thành viên đều góp phần nặn ra
+từng bước một chứ không phải chọn giữa vài bản dịch làm sẵn.
+
+\begin{measured}{ba mô hình chỉ khác nhau ở seed, và ensemble của chúng}
+\begin{minted}{text}
+one model at a time, beam 2:
+seed  exact    short    long
+0     0.8733   1.0000   0.7500
+1     0.6767   0.9797   0.3816
+2     0.8700   1.0000   0.7434
+
+ensemble size, beam 2:
+models  exact    short    long
+1       0.8733   1.0000   0.7500
+2       0.9467   1.0000   0.8947
+3       0.9867   1.0000   0.9737
+\end{minted}
+
+Đo bằng \code{experiments/ch05\_search.py} tại tag \code{ch05}.
+\end{measured}
+
+\index{ensemble!so với beam search}%
+Bảng trên có hai chuyện, và chuyện thứ nhất không phải chuyện về ensemble.
+
+Ba mô hình ấy khác nhau đúng một con số seed. Chúng cho 0.8733, 0.6767 và
+0.8700. Gần hai mươi điểm tản, trên cùng dữ liệu, cùng kiến trúc, cùng số bước
+cập nhật. Đây là bối cảnh mà mọi con số khác trong chương phải được đọc cùng, và
+là lý do mục~\ref{sec:ch05-dao-cau-nguon} phải chạy ba seed rồi so theo cặp.
+
+Chuyện thứ hai: đặt hai phép cải thiện cạnh nhau. Nới beam từ 1 lên 12 được
+0.0300. Thêm hai mô hình được 0.1134, gấp gần bốn lần, và trên câu dài thì từ
+0.7500 lên 0.9737. Ensemble ba mô hình cũng cao hơn mô hình đơn \emph{tốt nhất}
+trong ba, nên đây không phải chuyện gộp lại để đỡ rút phải mô hình xấu.
+
+Bài cho cùng thứ tự độ lớn ở quy mô của nó. Một LSTM đảo với beam 12 được BLEU
+30.59; ensemble năm LSTM với beam 12 được 34.81. Còn nới beam từ 1 lên 12 trên
+cùng ensemble năm mô hình chỉ đi từ 33.00 lên 34.81. Chú thích bảng 1 của bài
+rút ra kết luận thực dụng từ đúng chỗ đó: một ensemble năm LSTM chạy beam 2 rẻ
+hơn một LSTM đơn chạy beam 12, và nó cho điểm cao hơn.
+
+Cả hai thứ trong mục này đều không đụng tới cái mà
+mục~\ref{sec:ch05-bop-vector} đo. Chúng lấy được nhiều hơn từ những vector ngữ
+cảnh đã có, chứ không nới rộng vector nào cả.

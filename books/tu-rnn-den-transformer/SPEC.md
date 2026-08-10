@@ -16,19 +16,25 @@ picks a side. Chapter titles are quoted in Vietnamese exactly as they are set.
 
 ## Status
 
-Chapters 01, 02, 03 and 04 drafted. Six appendices now: C was split out of B on
-2026-08-09 (decision 28) and the old C, D and E became D, E and F.
+Chapters 01, 02, 03, 04 and 05 drafted. Six appendices now: C was split out of B
+on 2026-08-09 (decision 28) and the old C, D and E became D, E and F.
 
 Chapter 03 was drafted out of order, in a session that branched before chapters
 01 and 02 landed on main. Nothing was lost, but the reconciliation cost real
-time; decision 30 exists so the next session does not repeat it. Chapter 04
-followed it and cost nothing to reconcile.
+time; decision 30 exists so the next session does not repeat it. Chapters 04 and
+05 followed it and cost nothing to reconcile.
 
-Next action: chapter 05, "Encoder-decoder". Two things are owed to it before
-drafting starts. The venue of the Sutskever paper is still unverified: the copy
-on file states none, and the source manifest has carried that debt since the
-skeleton session. And the running example is still proposed rather than settled
-(see open items), which chapter 05 is the first chapter that actually needs.
+Both debts chapter 05 was carrying are paid. The venue of the Sutskever paper is
+NIPS 2014, Advances in Neural Information Processing Systems 27, pages
+3104-3112; and the running example is settled by decision 35 as a corpus
+generated from a grammar rather than a real one.
+
+Next action: chapter 06, "Đồng chỉnh". It inherits the corpus of decision 35 and
+the companion module `seq2seq.py` at tag `ch05`, and it owes one reading: Cho et
+al. 2014b (arXiv:1409.1259) has only been read as far as its abstract, and
+chapter 06 is the chapter that wants its BLEU-against-length curve. Note also
+that the whole-run budget now has about forty seconds of headroom (see open
+items), so chapter 06 cannot simply add four more training scripts.
 
 ## Decision log
 
@@ -72,6 +78,11 @@ is re-opened only by recording what changed and why, in the row.
 | 32 | The two squashing functions of LSTM 1997 are `g_in` and `g_out` | The paper writes them `g` (range [-2,2]) and `h` (range [-1,1]), and `h` collides with the book's hidden state `h_t` head-on: the cell output equation sets `y^c = y^out h(s_c)`, which in the book's notation would be `h_t` on both sides meaning two different things. Renamed rather than worked around, and appendix A carries the mapping plus two further reading traps: the paper's table 10 contradicts its own appendix A.1 about which range belongs to which function, and `c_j` in the paper is the *name* of a cell rather than its state, which is `s_{c_j}`. That last one had already gone wrong: appendix A shipped with LSTM 1997 writing `c_t` for the cell state. Fixed in the chapter 04 session |
 | 33 | The book sets the memory cell in layer form, and the parameter count follows from that | The 1997 paper's hidden layer is fully connected: a gate receives connections from every memory cell *and* every other gate unit. What the field converged on, and what `torch.nn.LSTM` implements, is a layer form where all blocks read the same `h_{t-1}`. The book teaches the layer form, because it is what a reader will meet, and says so in the chapter rather than letting the difference pass silently. The difference is not cosmetic: it is exactly why the paper quotes a factor of `3^2` while everyone else quotes 4. Measured at tag `ch04`: layer form gives 3 for LSTM 1997, 4 for LSTM 2000, 3 for Cho's unit; the paper's own topology gives exactly 9.0000 on the recurrent block and 8.2603 over a whole layer once input weights and biases are counted. **This also corrects the chapter's own TOC line**, which said "four times the parameters" and was describing the 2000 architecture, not the one chapter 04 reads. Every derivative argument in the chapter holds under both topologies, because neither has a path into `c_{t-1}` other than the first term of the state update |
 | 34 | Truncation is load-bearing, not a shortcut, and the chapter says so | The paper presents the gradient truncation as an efficiency measure that does no harm. Measured at tag `ch04`, the untruncated derivative through the cell *grows* with distance, reaching 128.34 at distance 100 even at the paper's own initialization scale, while the truncated one is bit-exactly 1 at every distance. So the truncation is also what makes the constant error carousel constant rather than approximately constant. The chapter states this as a reading of the paper's own equations, explicitly not as a correction: the paper's "no harm" claim is about training outcomes, and the chapter's cosine measurement is about gradient direction at initialization, which are two different quantities. Keeping those apart is the whole point of the passage |
+
+| 35 | The running example is generated from a grammar, not taken from a real corpus | Settled 2026-08-10, closing the open item that had carried it as a proposal since the skeleton session. Three constraints have to hold at once and no public parallel corpus holds all three: the experiments finish on a CPU inside decision 27's budget, the data is reproducible from a seed with no download so `verify.py` runs on someone else's machine, and the two languages differ in word order enough that chapter 06's alignment matrix shows a crossing rather than a diagonal. So `toy_corpus.py` generates English-to-Vietnamese pairs from a small context-free grammar. The one thing it models for real is the noun phrase reversing: English sets determiner, adjective, noun and Vietnamese sets classifier, noun, adjective, with the classifier answering to no English word at all. What it does not model is written into the module docstring and into the chapter, because it is load-bearing: the grammar is finite so a model can learn it exactly, the vocabulary is closed so the out-of-vocabulary problem that penalised Sutskever et al.'s BLEU cannot arise, and the sentences are semantically silly. The consequence the chapters must hold to: no number measured on this corpus is ever compared with a BLEU score from a paper. What these experiments test is the papers' *arguments*, which do not change with scale |
+| 36 | From chapter 05 the book's own cell is the 2000 forget-gate LSTM with tanh, not chapter 04's 1997 cell | Chapter 04 derives the 1997 cell, whose self-connection is a fixed 1.0 and whose squashing functions are scaled logistics. Chapter 05 needs a cell that trains on a real task, and Sutskever et al. name theirs in one sentence: \enquote{the LSTM formulation from Graves}. Graves (2013) section 2.1, equations (7) to (11), read in full: forget gate *and* peephole connections, tanh on both the cell input and the cell output. So the honest reading is that this paper's LSTM is chapter 04's cell plus both of chapter 04's bridge boxes. `seq2seq.py` implements the forget gate and tanh, and not the peepholes, and uses one layer where the paper uses four; both are size decisions forced by the CPU budget, and chapter 05 states them in the prose rather than letting the listing imply the paper was simpler than it is. This also settles the open item saying `LstmForget` was left at bridge-box quality: chapter 05 does not extend it, it writes a separate trainable layer, and the chapter 04 module is untouched because its tag is published |
+| 37 | The per-experiment budget is 60 seconds **per model trained**, from chapter 05 on | Amends decision 27, which set 60 seconds per experiment. That figure was measured against chapters 1 to 4, where each script probes a computation that is fixed before the script starts. From chapter 05 a script trains several models in order to compare them: the reversal table is six trainings, and no amount of care makes six trainings fit one training's budget. The rule is now one training's budget per model, with a floor of 30 seconds for a script that trains none, and `verify.py` carries the reasoning next to the table it applies to. What is deliberately **not** amended is `BUDGET_TOTAL`, because that is the number standing behind the promise decision 13 makes to the reader. Measured at tag `ch05`: 557.52 seconds against a 600 second budget |
+| 38 | The `algorithm` float is named in Vietnamese | `\floatname{algorithm}{Thuật toán}` in `preamble/macros.tex`. babel localizes every caption label this book uses except this one, because the `algorithm` package sets its own name rather than taking one from the language, so a Vietnamese page was printing \enquote{Algorithm 1}. Chapter 03 shipped that way and chapter 05 would have been the second; recorded as a decision rather than fixed silently because it changes how an already-drafted chapter sets |
 
 ## Version baseline
 
@@ -128,10 +139,15 @@ created. That section is the hinge to the next chapter and is not optional.
 ### Part III - Ánh xạ chuỗi sang chuỗi
 
 5. **Encoder-decoder** (Sutskever, Vinyals, Le 2014) - the fixed-length context
-   vector; source reversal; beam search; ensembling; a bridge box for Cho 2014.
+   vector, and the bottleneck measured by shrinking that vector rather than by
+   lengthening sentences; the generated English-Vietnamese corpus that chapters
+   05 to 08 run on (decision 35); source reversal, with the paper's distance
+   argument turned into a prediction and tested; beam search; ensembling; bridge
+   boxes for Kalchbrenner and Blunsom 2013, Cho 2014a and Cho 2014b.
    Careful here: this paper's own abstract says its LSTM did **not** struggle on
-   long sentences, and the length-degradation result belongs to Cho. See the
-   research note
+   long sentences, and the length-degradation result belongs to Cho **2014b**,
+   the SSST-8 paper, not to the EMNLP one chapter 04 cites. See the research
+   note
 6. **Đồng chỉnh** (Bahdanau, Cho, Bengio 2015) - the bottleneck measured before
    it is fixed; additive attention; the derivation showing a direct gradient
    path from every source step to every target step; the BiRNN encoder; a
@@ -202,7 +218,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 02 | drafted | Adding problem + copy task experiments; gradient norm measured against temporal distance; bridge boxes for Hochreiter 1991 and Bengio 1994; refs.bib first entries; CPU budgets ~10 min for two tasks |
 | 03 | drafted | Venue confirmed: ICML 2013, PMLR 28(3):1310-1318. Companion tag `ch03`. Corrects the paper's eigenvalue wording against its own singular-value proof |
 | 04 | drafted | Companion tag `ch04`. Reads the 1997 paper rather than the modern cell: no forget gate, squashing functions that are not tanh, truncation as three named substitutions. Input weight conflict solved in closed form (`w* = 1/T`). Two TikZ figures. Corrects appendix A, which had the paper writing `c_t` for the cell state when it writes `s_c` |
-| 05 | not-started | Must verify the venue of the Sutskever paper; the PDF on file states none |
+| 05 | drafted | Companion tag `ch05`. Venue confirmed: NIPS 2014, Advances in NIPS 27, pages 3104-3112 (pages from DBLP, since the publisher's own BibTeX export leaves the field empty). Settles the running example as a generated corpus (decision 35). The bottleneck measured by shrinking the context vector rather than by lengthening sentences, which is what lets the chapter say the bottleneck is real *and* that this paper never hit it. Separates Cho 2014a from Cho 2014b, which is who the length-degradation result actually belongs to. One TikZ figure |
 | 06 | not-started | |
 | 07 | not-started | |
 | 08 | not-started | |
@@ -339,7 +355,14 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   already ruled out. Hence the second amendment to decision 16 and the new
   writing rule scoping the cadence to a chapter's own terms. Under that rule all
   three chapters are now complete: 83 term-section sites, 0 unglossed, counted
-  on prose with comments and headings excluded.
+  on prose with comments and headings excluded. **Chapter 05 then missed fifteen
+  or more sites anyway**, in a session that had read this item before drafting:
+  its own `cau nguon`, `cau dich` and `dao cau nguon` were never wrapped in
+  `\tn` anywhere in the chapter, `vector ngu canh` missed three sections, and
+  `tu dien` was glossed twice inside one. All fixed by that chapter's audit. The
+  lesson is not that the rule is unclear. It is that a rule this mechanical does
+  not survive being carried in a human head while prose is being written, which
+  is exactly what the deferred `gloss` check below exists to fix.
 - **Three defects the sweep turned up that were not about cadence.** All fixed
   2026-08-09. `02-ky-hieu.tex` carried `\tn{bias}{bias}`, which set as "bias
   (bias)" - the exact shape decision 16 names as the thing not to do, on a term
@@ -426,6 +449,12 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   the sweep's own tooling had to flatten whitespace before matching, because a
   term broken across two source lines hides from a line-at-a-time scan, and had
   to drop `%` comments and heading lines or it reported both as prose.
+  **Chapter 05 is the fourth consecutive chapter whose audit found misses a
+  script would have caught mechanically**, and the first where the drafting
+  session had read this rule the same morning it broke it. Evidence is no longer
+  what is missing. `draft-chapter` forbids editing `scripts/check-chapter.ps1`
+  during a drafting session, so this wants its own session, and it is worth
+  having one before chapter 06 rather than after.
 - **The book disagrees with itself about `do doc`, and it is the central term.**
   Found by the cadence sweep 2026-08-09 and deliberately not fixed by it,
   because this is a decision and not a gloss. Appendix B lists `do doc` /
@@ -447,12 +476,51 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   at its first use in the chapter, which is what the borrowed-term rule asks
   for and still leaves the appendix B entry unhonoured. The split widens by one
   chapter per session, and the cost of choosing the first option grows with it.
-- **The running example is proposed, not settled.** A toy Vietnamese-English
-  parallel set carried from chapter 05 to chapter 08, chosen because Vietnamese
-  and English word order differ enough that chapter 06's alignment matrix shows
-  something real, and because it fits on a CPU. Chapters 02 to 04 use the adding
-  and copy tasks; chapter 11 uses CIFAR-10. Settle the corpus, its license and
-  its size when the companion repo is created.
+  **Now five chapters:** chapter 05 writes the bare English "gradient" three
+  times and `do doc` zero times. It is a passing use in all three (the paper's
+  gradient clipping, and two exercises), so nothing here is load-bearing, but
+  the split is now wider than the evidence that opened this item.
+- **Chapter 05's own numbers nearly shipped from the wrong configuration, and
+  the gate could not have caught it.** Four decimals about a deliberately broken
+  beam-search stopping rule were measured during exploration, before the shared
+  training recipe was pinned, at `N_TEST = 400` and a different batch-order
+  seed. Every one of them appeared in the research note, so the `number` family
+  passed: the note is what that check compares against, and a note recording a
+  number from a configuration nobody can name is still a note. The audit caught
+  it by re-running. Two things follow. A number belongs in the note **with the
+  configuration that produced it**, not on its own, and chapter 05's note now
+  carries the reverted function verbatim for exactly that reason. And a
+  measurement taken before the recipe is pinned has to be retaken after, or
+  dropped; there is no third option, and "it was close enough" is how the first
+  draft of this chapter got four wrong decimals past a green gate.
+- **The running example is now settled.** Closed 2026-08-10 by decision 35: a
+  corpus generated from a grammar inside the companion repo, English to
+  Vietnamese, carried from chapter 05 to chapter 08. License is a non-question
+  because nothing is redistributed. Chapters 02 to 04 keep the adding and copy
+  tasks; chapter 11 still uses CIFAR-10.
+- **The whole-run budget has about forty seconds of headroom, and that is the
+  next thing to bite.** Measured at tag `ch05`: 557.52 seconds against
+  `BUDGET_TOTAL = 600`. Chapter 05 added 268 seconds of it, and chapter 06 wants
+  the same corpus and at least one more comparison. Two things are worth knowing
+  before anyone tries to buy room back. The single largest item is not chapter
+  05: chapter 02's verify took 197.59 seconds in that run against the 99.66
+  seconds recorded at tag `ch04`, on the same machine, which means the total is
+  also sensitive to load and a passing run is not proof the next one passes. And
+  the cheapest real saving in chapter 05 would be dropping the reversal
+  experiment from three seeds to two, which is exactly the thing that experiment
+  exists to avoid; the per-seed spread there is wider than the effect. So the
+  honest options are speeding chapter 02 up, raising `BUDGET_TOTAL` with a
+  recorded reason, or letting chapter 06 share chapter 05's trained models.
+- **`torch.nn.LSTM` is still not used anywhere, and from chapter 05 that costs
+  measurable time.** Every recurrent layer in this repo is a Python loop over
+  time steps, which is the right choice for chapters 01 to 04 because those
+  chapters reach inside the loop. Chapter 05 does not: it trains and measures.
+  Fifteen trainings at roughly nineteen seconds each is most of what chapter 05
+  spends, and the fused-kernel version would be a large multiple faster. Not
+  changed, because a book that builds from scratch and then quietly swaps in the
+  library for the chapter where it matters has stopped building from scratch.
+  Recorded so that whoever hits the budget wall knows this lever exists and what
+  it costs to pull.
 - **Per-experiment CPU time budgets are now set.** Chapter 02 uses ~10 min
   total for adding problem (3×T, 5000 samples each) and copy task (3×T_mem,
   2000 epochs each). Later chapters inherit this baseline: each experiment
@@ -461,7 +529,20 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   Luong 2015, Gers 2000, Hochreiter 1991, Bengio 1994, layer norm, residuals,
   BERT, GPT, Kaplan and Hoffmann. Hochreiter 1991 and Bengio 1994 are now
   summarised in chapter 02 bridge boxes; Bengio 1994 has a `refs.bib` entry.
-  The remaining bridge papers land in the chapter that cites them.
+  The remaining bridge papers land in the chapter that cites them. **The TOC's
+  \enquote{Cho 2014} is two papers, not one**, and chapter 05 had to split them:
+  `cho2014encdec` is the EMNLP encoder-decoder paper that chapter 04 already
+  cited for the gated unit, and `cho2014properties` is the SSST-8 paper that
+  measured the length degradation. Bahdanau distinguishes them as 2014a and
+  2014b and the whole received story about chapter 05 turns on which one is
+  meant.
+- **Three papers are cited from less than a full read, and each entry says so.**
+  `cho2014properties` from its abstract only; `kalchbrenner2013recurrent` from
+  its ACL Anthology record only, used for nothing beyond the priority claim
+  Sutskever et al. themselves make; `graves2013generating` from section 2.1
+  only, which is the part that matters because it is where the LSTM equations
+  are. Chapter 06 wants a number out of the first of those and will have to read
+  the body before it can print one.
 - **The `Empty bibliography` warning is now cleared.** Chapter 02 added the
   first `refs.bib` entry (Bengio 1994) and cites Pascanu 2013. The warning
   should no longer appear in the build log.

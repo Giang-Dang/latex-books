@@ -1,0 +1,70 @@
+\section{Thu hẹp vector ngữ cảnh, và xem chỗ nào hỏng trước}
+\label{sec:ch05-bop-vector}
+
+\index{vector ngữ cảnh!đo bằng cách bóp hẹp}%
+\tn{Vector ngữ cảnh}{context vector} có bề rộng cố định, và ai cũng nói đó là
+chỗ thắt. Câu ấy dễ nói và khó kiểm, vì trên một mô hình thật thì bề rộng
+vector dính chặt với số tham số, với sức chứa của encoder, với sức chứa của
+decoder, và một mô hình hẹp hơn thì kém hơn ở mười lý do cùng lúc.
+
+Cách tách chúng ra là giữ nguyên tất cả rồi chỉ đổi một thứ. Cùng corpus, cùng
+optimizer, cùng seed, cùng số lần cập nhật; chỉ \(d_h\) đổi, và decoder nhận
+đúng \(2 d_h\) số thực dù \tn{câu nguồn}{source sentence} dài bao nhiêu.
+
+\begin{measured}{độ chính xác theo bề rộng vector ngữ cảnh}
+\begin{minted}{text}
+d_hidden  context  params   loss     exact    short    long
+4         8        3641     1.5756   0.0000   0.0000   0.0000
+8         16       5229     1.1748   0.0000   0.0000   0.0000
+16        32       9173     0.8733   0.0033   0.0068   0.0000
+32        64       20133    0.5584   0.1433   0.2905   0.0000
+64        128      54341    0.1429   0.5200   0.9797   0.0724
+128       256      171909   0.0251   0.8533   1.0000   0.7105
+\end{minted}
+
+6000 cặp huấn luyện, 300 cặp test, 14 epoch, câu nguồn đảo, giải mã tham lam.
+Một seed mỗi dòng.
+
+Đo bằng \code{experiments/ch05\_bottleneck.py} tại tag \code{ch05}.
+\end{measured}
+
+\index{vector ngữ cảnh!hỏng không đều theo độ dài}%
+Cột \code{exact} đi từ 0 lên 0.8533 và đó là chuyện dự đoán được. Hai cột cuối
+mới là chỗ đáng dừng lại.
+
+Vector hẹp \emph{không} hỏng đều. Ở \(d_h = 64\), tức 128 số thực, câu ngắn đã
+đạt 0.9797 trong khi câu dài còn 0.0724. Cùng một mô hình, cùng một lần huấn
+luyện, chênh nhau hơn chín mươi điểm, và thứ duy nhất phân biệt hai nhóm là câu
+nguồn dài bao nhiêu token. Ở \(d_h = 32\) thì câu ngắn được 0.2905 còn câu dài
+tròn 0 không sót câu nào.
+
+Đó là hình dạng của câu \enquote{câu phải nhét vừa vào vector}, khi đo thay vì
+khi phát biểu. Một vector rộng \(2 d_h\) số thực chứa được câu ngắn trước, và
+ngưỡng mà nó bắt đầu chứa nổi câu dài nằm cao hơn hẳn. Giữa hai ngưỡng ấy có cả
+một dải, và trong dải đó mô hình dịch đúng gần như mọi câu ngắn rồi hỏng gần như
+mọi câu dài.
+
+\subsection*{Vì sao một seed một dòng là đủ ở đây và không đủ ở mục sau}
+
+\index{đo lường!khi nào một lần rút là một xu hướng}%
+Mục~\ref{sec:ch05-giai-ma} sẽ cho thấy ba mô hình chỉ khác nhau ở seed cho
+0.8733, 0.6767 và 0.8700, tức tản gần hai mươi điểm. Với độ tản như thế, một
+bảng chênh nhau vài điểm mà chỉ chạy một seed thì không đo được gì.
+
+Bảng trên không ở tình huống đó. Hiệu ứng giữa hai đầu bảng là cả quãng từ 0 tới
+0.8533, và mỗi bước tăng gấp đôi bề rộng lại cho một bước nhảy lớn hơn độ tản
+seed. Còn mục~\ref{sec:ch05-dao-cau-nguon} đo một hiệu ứng cỡ mười tới ba mươi
+điểm, nên nó chạy ba seed mỗi vế và in ra từng seed một. Chọn số lần lặp theo cỡ
+hiệu ứng chứ không theo một quy tắc cố định, và nói ra mình chọn thế nào, là
+phần rẻ nhất của việc đo đạc.
+
+\subsection*{Cái bảng này chưa nói}
+
+Nó không nói bài báo sai. Mô hình của bài mang 8000 số thực cho một câu, tức xa
+bên phải mọi dòng trong bảng, và câu WMT dài hơn câu ở đây nhưng không dài hơn
+theo tỷ lệ 8000 so với 256. Bảng này nói rằng chỗ thắt là có thật và đo được;
+nó không nói mọi mô hình đều đã chạm vào nó.
+
+Chuyện ai chạm vào nó, ai không, và ai là người đầu tiên viết ra điều đó, là
+mục~\ref{sec:ch05-con-lai-gi}. Trước đó còn hai thứ bài làm mà tôi muốn kiểm,
+và cả hai đều không đụng tới bề rộng vector.
