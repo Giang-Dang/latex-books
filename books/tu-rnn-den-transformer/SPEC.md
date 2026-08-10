@@ -483,6 +483,39 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   what is missing. `draft-chapter` forbids editing `scripts/check-chapter.ps1`
   during a drafting session, so this wants its own session, and it is worth
   having one before chapter 06 rather than after.
+
+  **Planned in detail 2026-08-10, and the plan measured the thing that decides
+  its shape.** Two halves of decision 16 behave completely differently against
+  the four drafted chapters, and the numbers below are the plan's own prototype
+  run, to be confirmed by fixtures when the family is actually built:
+
+  - The **once-per-section** half reports **0** findings on the current tree,
+    which matches the sweep's "83 term-section sites, 0 unglossed" exactly. Its
+    whole value is regression prevention: against the pre-sweep tree it would
+    have reported dozens. That half is worth building.
+  - The **once-per-chapter** half, for terms an earlier chapter owns, reports
+    **20**, of which 13 are ordinary Vietnamese words like `chuoi`, `buoc thoi
+    gian` and `trang thai an`. Every one is defensible against the letter of the
+    rule and none was treated as a defect by the sweep that wrote the rule. So
+    that half is not worth checking mechanically and ships switched off, behind
+    a documented `Gloss.Borrowed` setting, rather than being omitted or forced
+    on.
+
+  The plan also surfaced a **forward reference** the writing rule does not cover
+  at all: chapter 02 uses `tri rieng` and `dieu kien du`, which chapter 03 owns.
+  Five of the twenty are that shape. Whoever settles `Gloss.Borrowed` has to
+  settle this too.
+- **The gloss check's largest hole is the defect chapter 05 actually had.** A
+  term that is central to a chapter but was never added to appendix B is
+  invisible to any version of this check, because decision 16 makes appendix B
+  the source of truth and a term in neither the glossary nor a `\tn` call cannot
+  be told from ordinary Vietnamese. `cho that` / bottleneck was exactly that:
+  the chapter's headline term, ten occurrences including the bolded conclusion,
+  in neither place until an audit read the prose. The cheap partial inverse is
+  worth taking in the same session, because it needs no new setting: flag a
+  `\tn{term}{...}` whose term is absent from the glossary. That catches the four
+  terms the 2026-08-09 sweep found by hand, and it catches `\tn{bias}{bias}`.
+  It does not catch the unglossed-and-unlisted case, which stays a reading job.
 - **The book disagrees with itself about `do doc`, and it is the central term.**
   Found by the cadence sweep 2026-08-09 and deliberately not fixed by it,
   because this is a decision and not a gloss. Appendix B lists `do doc` /
