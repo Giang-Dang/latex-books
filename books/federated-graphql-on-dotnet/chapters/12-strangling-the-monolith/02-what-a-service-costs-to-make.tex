@@ -1,0 +1,130 @@
+\section{What a Service Costs to Make}
+\label{sec:ch12-what-a-service-costs-to-make}
+\index{subgraph!what a new one costs|(}%
+
+The domain code moved with \code{git mv} and changed in its namespace and using
+lines and nowhere else, which is
+chapter~\ref{ch:the-first-cut-extracting-catalog}'s finding repeated five times
+and not worth a second section. What is worth a section is everything that had to be
+written around it, because that is the real price of a service and nobody quotes
+it.
+
+Every one of the five needs a \code{csproj}, a \code{Program.cs}, a
+\code{DbContext}, a data registration, a database seeder, a Dockerfile, a launch
+profile, two \code{appsettings} files and a one-line \code{ModuleInfo.cs}, and
+then a stanza in the compose file that is not its own. Ten files apiece that
+contain no domain logic at all. Multiply by five and that is fifty files a
+reader could be forgiven for thinking are the interesting part of a migration,
+and they are the part that will take the longest and teach the least.
+
+\index{Module attribute@\code{Module} attribute!one per assembly}%
+The smallest of them is the one that explains the rest:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+[assembly: Module("Pricing")]
+\end{minted}
+
+That attribute is assembly-scoped, which is why \code{Mosaic.Api} could collect
+six domains behind one \code{AddMosaic()} and why there are six of these now,
+each collecting one. It is the clearest single marker of what changed: the unit
+of registration used to be the process and is now the domain.
+
+\subsection*{Three subgraphs with no root field}
+
+\index{Query type!a subgraph with no root field}%
+Pricing, Inventory and Reviews contribute only fields to entities somebody else
+owns. None of them has a root field, and that is the right shape rather than an
+omission: the only way into those services is a representation the router
+builds.
+
+It is also the one thing in this chapter that failed at build time with an error
+that names the wrong subject. All three refused to start:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Unhandled exception: HotChocolate.SchemaException:
+
+1. The schema builder was unable to identify the query type of the schema.
+   Either specify which type is the query type or set the schema builder to
+   non-strict validation mode.
+\end{minted}
+
+\code{AddApolloFederation()} puts \code{\_service} and \code{\_entities} on the
+query type. It does not create one, and the source generator only emits one when
+it finds a \code{[QueryType]} class. So a subgraph that is pure contribution
+needs a line saying so:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+builder.AddGraphQL()
+    .AddMosaicSubgraph()
+    .AddQueryType()
+    .AddPricing()
+    .RegisterDbContextFactory<PricingDbContext>();
+\end{minted}
+
+Nothing in that error mentions federation, and the message a reader will search
+for is about a query type rather than about a subgraph. Worth knowing before you
+spend twenty minutes reading \code{AddApolloFederation} looking for the bug,
+which is what I did.
+
+\subsection*{The three settings that stopped being comments}
+
+\index{subgraph defaults!in a shared library}%
+Chapter~\ref{ch:the-first-cut-extracting-catalog} found three subgraph settings
+that only fail once two schemas meet. They are the two cost options, and
+\code{registerNodeInterface} set to false. At two services those were two copies
+of a long comment.
+At six they are a package, and the reason is a property of that class of setting
+rather than of these three: a service that gets one of them wrong does not break
+itself. It breaks everybody's composition, and the error names a type rather
+than a service.
+
+So they live in one method now, in the first project in this repository that is
+not a service:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+public static IRequestExecutorBuilder AddMosaicSubgraph(this IRequestExecutorBuilder builder)
+    => builder
+        .AddApolloFederation()
+        .AddGlobalObjectIdentification(registerNodeInterface: false)
+        .ModifyCostOptions(options =>
+        {
+            options.ApplyCostDefaults = false;
+            options.ApplySlicingArgumentDefaultValue = false;
+        })
+        .AddApplicationService<ILoggerFactory>()
+        .AddDiagnosticEventListener<RequestTimelineListener>();
+\end{minted}
+
+The gate asserts that all six assemble the same thirteen middleware in the same
+order. That check was chapter~\ref{ch:the-life-of-a-request}'s and it has a
+second job now: six services calling one method should produce one pipeline, and
+if one of them does not, its registrations have drifted from the platform's.
+
+\subsection*{Catalog gets its instrumentation back}
+
+\index{observability!six timelines are not a trace}%
+Chapter~\ref{ch:the-first-cut-extracting-catalog} took the
+\code{ServiceCallCounter} out of Catalog and gave a reason: the counter was the
+monolith's instrumentation, and a service answering one domain's questions has
+nothing to count with it. Chapter~\ref{ch:enter-the-router} then put the
+consequence plainly: \enquote{Half of every federated query in this system is
+now unmeasured, and the extraction that caused it did not warn me.}
+
+That reason was true of two services and false of six. A graph in which one
+process reports its costs and five do not is a graph where every question about
+cost has the same answer, which is that it happened somewhere else. So all six
+count now, and the counting is in the shared library so that the six answers
+mean the same thing.
+
+I want to be careful about how much that fixes, because it is less than it
+looks. Six services each reporting their own timeline is six unrelated
+timelines. Nothing in a response says which of them belong to the same federated
+query, and joining them up is a different piece of work rather than a bigger
+version of this one. Chapter~\ref{ch:observability} owns it and this chapter has
+not done it.
+
+\medskip
+That is the boilerplate. The genuinely difficult decision in a split this size
+is not which files to write but which ones to write twice.
+
+\index{subgraph!what a new one costs|)}%

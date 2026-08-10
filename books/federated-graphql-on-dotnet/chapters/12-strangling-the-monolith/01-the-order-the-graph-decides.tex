@@ -1,0 +1,112 @@
+\section{The Order the Graph Decides}
+\label{sec:ch12-the-order-the-graph-decides}
+\index{extraction!order of|(}%
+
+There is no interesting question about \emph{whether} the five remaining domains
+could be extracted. Chapter~\ref{ch:the-first-cut-extracting-catalog} did one and
+the rest are the same shape. The interesting question is the order, and the graph
+answers it if you ask it properly.
+
+\index{domain dependencies!read off the type files}%
+Asking it properly means reading the type files rather than the folder names. A
+dependency that matters here is not a \code{using} line; it is a field that
+returns a type another domain owns, because that is the only kind of coupling
+that survives a process boundary. Eight classes in \code{Mosaic.Api} carry an
+\code{[ObjectType<T>]} attribute at tag \code{ch11}. Seven of them are domain
+types and the whole answer is in those; the eighth is the empty partial that
+marks \code{PageCursor} shareable.
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Pricing/Types/ProductPricingNode.cs      [ObjectType<Product>]
+Inventory/Types/ProductInventoryNode.cs  [ObjectType<Product>]
+Reviews/Types/ProductReviewsNode.cs      [ObjectType<Product>]
+Reviews/Types/ReviewNode.cs              [ObjectType<Review>]
+Accounts/Types/CustomerNode.cs           [ObjectType<Customer>]
+Ordering/Types/OrderNode.cs              [ObjectType<Order>]
+Ordering/Types/OrderLineNode.cs          [ObjectType<OrderLine>]
+\end{minted}
+
+Three of them hang a field off \code{Product}, and hanging a field off a type is
+not a dependency on the domain that owns it:
+chapter~\ref{ch:the-first-cut-extracting-catalog}'s extraction proved that by
+moving Catalog out from under all three without any of them changing by a
+character. A dependency is a field whose \emph{return type} belongs elsewhere,
+and there are exactly three of those:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Review.author       -> Customer     Reviews  depends on Accounts
+Order.customer      -> Customer     Ordering depends on Accounts
+OrderLine.product   -> Product      Ordering depends on Catalog
+\end{minted}
+
+So Pricing, Inventory and Accounts reference nobody, Reviews references
+Accounts, and Ordering references both Accounts and Catalog.
+Figure~\ref{fig:ch12-domain-dependencies} puts the two states side by side, and the
+thing to notice about it is that the arrows do not move. The same three
+references exist before and after. What changes is what an arrow costs.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch12-domain-dependencies}
+  \caption{The same three references, twice. On the left they are method calls
+  inside one process, resolved by a DataLoader against a table in the same
+  database. On the right they are keys in wrappers, resolved by the router
+  against another service. Nothing about the domain model changed; the
+  extraction order is read straight off the arrow directions, because a box
+  nothing points away from can leave without anybody noticing.}
+  \label{fig:ch12-domain-dependencies}
+\end{figure}
+
+\index{extraction!leaves first}%
+The order that falls out is Pricing, Inventory, Accounts, then Reviews, then
+Ordering. A domain that references nobody can be lifted out on its own: nothing
+in the service it leaves has to change, because nothing in the service it leaves
+was calling it. A domain that references somebody has to go after the domain it
+references, or it goes out holding a compile-time reference to a project that is
+about to become a network hop.
+
+That is the rule chapter~\ref{ch:hotchocolate-quickly} wrote down as a layout
+convention and has been holding ever since, and this chapter is where it gets
+paid. I want to be honest that the payment is smaller than the rule makes it
+sound. Extracting the three leaves cost nothing because there was nothing to
+untangle; extracting Reviews and Ordering cost exactly the three fields above,
+and section~\ref{sec:ch12-what-the-boundary-costs} is where the bill for those
+three arrives.
+
+\subsection*{Six databases, and one server}
+
+\index{database!one per service}%
+Each service takes a database of its own on the PostgreSQL container all six
+share. Chapter~\ref{ch:the-first-cut-extracting-catalog} did this once for
+Catalog and called it a deployment detail. Doing it five more times is where a
+detail turns into a policy, and the policy is that two services never share a
+table.
+
+Nothing in the compose file creates any of them. \code{EnsureCreatedAsync} does,
+on each service's first start, which is why this extraction and
+chapter~\ref{ch:the-first-cut-extracting-catalog}'s between them added six
+services to \code{docker-compose.yml} and no storage at all:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+catalog    5101   database catalog
+pricing    5102   database pricing
+inventory  5103   database inventory
+accounts   5104   database accounts
+reviews    5105   database reviews
+ordering   5106   database ordering
+\end{minted}
+
+Six services on one server is a convenience I would not defend in production and
+would not spend a chapter apologising for either. What is being defended is the
+line above it: no service can read another's tables, so no shortcut across a
+seam is one connection string away. The credentials are still the shared
+development ones, and that would be a finding anywhere but here.
+
+There is one number in that table worth pausing on, and it is the one that is
+missing. Nothing listens on 5100.
+
+\medskip
+That is the plan. What it costs to carry out is a different question, and the
+answer is mostly boring, which is the good outcome.
+
+\index{extraction!order of|)}%

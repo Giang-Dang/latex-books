@@ -11,27 +11,32 @@ Author: Giang Dang
 
 ## Status
 
-Chapters 01 to 11 drafted (11 on 2026-08-09). The companion repo is public at
+Chapters 01 to 12 drafted (12 on 2026-08-10). The companion repo is public at
 https://github.com/Giang-Dang/mosaic-graph, tagged `ch02`, `ch03`, `ch04-ef`,
-`ch04`, `ch05`, `ch07`, `ch08`, `ch09`, `ch10` and `ch11`. Mosaic is no longer
-one service. At `ch08` Catalog lives in `src/Mosaic.Catalog` on port 5101 with
-its own database and owns the `Product` entity; `src/Mosaic.Api` keeps the
-other five domains on 5100 and contributes `price`, `availableQuantity`,
-`reviews` and `averageRating` to the same type. Both are Apollo Federation
-subgraphs, both publish `_service` and `_entities`, and the two schemas
-compose. Neither service changed at `ch09`, which adds the composed router
-execution config as a committed file and five composition failures produced on
-purpose, nor at `ch10`, which puts the Cosmo Router in front of the pair as a
-compose service with its own `router/config.yaml`. The graph answers: the
-storefront query that no single service has been able to answer since `ch08`
-works again, through port 3002. `ch11` changes Mosaic for the first time since
-the extraction: `Product.shippingCost` is the first field that cannot be
-answered without Catalog, declared `@requires(fields: "category")` against an
-`@external` copy of that field, and `samples/entity-resolution` is where the
-batching mechanism and `@provides` are watched.
-Next action: chapter 12, strangling the monolith. It inherits one worked
-`@requires`, an argument about `@provides` that Mosaic could not have, and a
-rule about boundary nullability it has to apply five more times.
+`ch04`, `ch05`, `ch07`, `ch08`, `ch09`, `ch10`, `ch11` and `ch12`.
+
+**Mosaic is six services.** `src/Mosaic.Api` does not exist. Catalog owns
+`Product` on 5101; Pricing (5102), Inventory (5103) and Reviews (5105) each
+contribute fields to it; Accounts (5104) owns `Customer`, which became an entity
+at `ch12` because two services reference one; Ordering (5106) owns `Order` and
+references `Product` and `Customer` with `resolvable: false` on both. Six
+databases on one PostgreSQL container, created by `EnsureCreatedAsync` on first
+start. `src/Mosaic.ServiceDefaults` is the first project in the repo that is not
+a service: the request timeline, the two counters, the snake_case convention and
+the builder calls that make a subgraph composable. The Cosmo Router in front of
+all six is unchanged from `ch10` and was handed a different execution config.
+
+Getting there: `ch08` extracted Catalog; `ch09` added the composed config as a
+committed file and five composition failures on purpose; `ch10` put the router
+in front; `ch11` added `Product.shippingCost` with `@requires(fields:
+"category")` and `samples/entity-resolution`; `ch12` emptied and deleted the
+monolith, added `scripts/override-cases.mjs`, and retired
+`mosaic-federation.postman_collection.json` for `mosaic-subgraphs`.
+
+Next action: chapter 13, hard modeling problems. It inherits a graph with six
+subgraphs, an enum declared twice, a `Money` type declared twice and marked
+`@shareable` in both, no `Query.node` anywhere, and a connection on
+`Product.reviews` whose pages are on a different service from the products.
 
 ## Decision log
 
@@ -106,6 +111,14 @@ is re-opened only by recording what changed and why, in the row.
 | 64 | An `@external` field's schema nullability is not its property's | Catalog declares `Product.category` as `ProductCategory!`. Mosaic's `@external` copy was first written nullable, to match the C# property, and the pair composes silently with the client-facing field becoming nullable for every client of the graph: composition merges the two declarations and takes the more permissive side. The copy is now `[External] [GraphQLNonNullType] public ProductCategory? Category { get; set; }`. The schema declaration is a copy of another service's contract and has to match it; the property is not a copy of anything and holds a value that arrives for some representations and not others, where a non-nullable enum would report `FURNITURE` for absent. Committed as the `external-nullability-wins` case, which reads the composed client schema rather than the composer's exit code, because there is no error to read. Settled 2026-08-09. |
 | 65 | A field that crosses a subgraph boundary should be nullable | Measured on the sample: one crate out of four holding a widget key Catalog has never heard of takes the whole response to `data: null`, because `name: String!` inside `widgetByKey: Widget!` inside `[Crate!]!` has nowhere to stop. Chapter 8's `OrderLineNode` doc comment claimed a dangling identifier "surfaces as a null product at the router"; `OrderLine.product` is `Product!`, so it does not, and the comment is corrected at `ch11`. Referential integrity across a network is not a thing a schema can assume, so the default at a boundary is nullable and non-null is the exception that needs an argument. Chapter 12 applies this five more times. Settled 2026-08-09. |
 | 66 | A count belongs in a gate; a timing does not | Decision 62 sent timings to a committed script because asserting milliseconds makes a gate fail on a busier laptop. Counts are the other half of that split and go the other way: they are the same on every machine, so chapter 11's resolver and statement counts are steps of both verification scripts rather than numbers read off a terminal. The measurement query deliberately stops short of `Product.reviews`, because a resolver runs per review author and `postman/mosaic-federation` submits a review on every pass, so a count that walked the reviews would be true only of a database nothing had written to. That is how the first draft's 144 and 169 turned into 76 and 101: both pairs are correct, and only one of them is correct twice. Settled 2026-08-09. |
+| 67 | The monolith is deleted rather than emptied | `src/Mosaic.Api` is gone at `ch12`, not left as a shell with the shared infrastructure in it. The strangler pattern is named after a fig that stands up when its host rots away, and a host that never rots is a second deployment unit nobody owns. What was genuinely shared went to `src/Mosaic.ServiceDefaults`; what was a contract between services was duplicated. The cost is that chapters 2 to 11 refer to a project a reader checking out `ch12` will not find, which is what tags are for. Settled 2026-08-10. |
+| 68 | A shared library is allowed, and the test for it is agreement | Decision 48 duplicated `ProductKey` because a shared class turns a wire contract into a build dependency, and chapter 12 duplicates fifteen files on that argument. `Mosaic.ServiceDefaults` is the other side of the same test: the request timeline, the two counters, the snake_case convention and `AddMosaicSubgraph` are things all six should do the same way and nothing any two of them have to agree about. The line is the question "do two services have to agree about this?" - if yes it is a contract and gets copied, if no it is platform and gets shared. Settled 2026-08-10. |
+| 69 | Catalog's lookup counter comes back, reversing part of decision 47's chapter | Chapter 8 dropped `ServiceCallCounter` from Catalog on the argument that a single-domain service has nothing to count. True of two services and false of six: a graph where one process reports and five do not answers every question about cost with "somewhere else". All six count now and the counting is in the shared library so the six answers mean the same thing. This does not close chapter 10's open item about unobserved queries - six unrelated timelines are still six unrelated timelines - and chapter 23 still owns the trace that joins them. Settled 2026-08-10. |
+| 70 | Decision 65's rule has a boundary of its own, and it is three not five | Decision 65 predicted chapter 12 would make five more fields nullable. Three became nullable, all of them references to an entity another subgraph owns: `Review.author`, `Order.customer`, `OrderLine.product`. Three did not: `Product.price`, `Product.shippingCost` and `Product.availableQuantity`, which are fields a subgraph contributes to an entity the router has already located. The sharper rule: a reference you do not own must be nullable because the router may fail to find the thing; a contribution need not be, because there is no second lookup and the subgraph's answer is authoritative. The test is whether the failure is a missing datum or a broken invariant. Settled 2026-08-10. |
+| 71 | Progressive `@override` is described and not exercised | HotChocolate 16.6.0 ships `[Override(from, label)]` and emits the label when a subgraph links federation 2.7; wgc 0.129.7 defines `@override` with one argument and rejects the second with "The definition for `@override` does not define the following argument that is provided: `label`". So the chapter describes the feature from Apollo's documentation, prints the composer's refusal, and does not pretend to have run it. Chapter 28 compares the two stacks and is where an Apollo Router could be pointed at a 2.7 config. Settled 2026-08-10. |
+| 72 | Chapter 9's composition messages are pinned to `ch11` and earlier | `scripts/composition-cases.mjs` edited the subgraph named `mosaic`, which does not exist at `ch12`, so the same six mistakes are now made in `pricing` and the composer says different words about three of them. Chapter 9's listings reproduce at tag `ch11` and earlier, which is what a chapter tag is for, and chapter 12 says so. What is worth carrying: a catalogue of composition errors is a fact about a particular set of subgraphs, not about the composer. Settled 2026-08-10. |
+| 73 | The resolver count has always measured resolver tasks | Reviews' `_entities` query went from 146 resolvers to 26 at `ch12`, and 120 of the missing ones are authors that are still resolved. `ReviewNode.GetAuthor` has no await in it, so `OperationCompiler.CompileResolver` turns it into a `PureFieldDelegate` that runs inline, and `DiagnosticEvents.ResolveFieldValue` is raised only inside `ResolverTask.Execute` and `BatchResolverTask`. So chapter 3's number counts resolver tasks rather than fields resolved, and always did; nothing before chapter 12 was wrong, because every field on that path used to be asynchronous. Read at tag `16.6.0`, commit `8fea46e`. Settled 2026-08-10. |
+| 74 | Chapter 12's TOC line widened | The approved line read "carving Orders/Inventory/Pricing/Accounts/Reviews, `@override` progressive migration, team contracts". Three things were wrong with it by the time the chapter existed. It named "Orders" for a domain the repository calls Ordering and omitted the order the extraction happens in, which turned out to be the first section and the thing the dependency graph decides. It did not name the query plan at six subgraphs, where the `Parallel` node is the chapter's evidence that the seams were cut in the right places. And it did not name boundary nullability, which decision 65 explicitly assigned here and which became a section arguing the rule down from five fields to three. The line now names all six sections. Same form as decisions 33, 45, 58, 61 and 63: scope grew in detail, not in ambition. Settled 2026-08-10. |
 
 ## Version baseline
 
@@ -122,6 +135,7 @@ that depend on them.
 | Federation version HotChocolate 16.6.0 emits | v2.6. `FederationVersion.Default = Federation26`, `Latest = Federation27`, so 2.7 is the ceiling against a spec at v2.15. Measured in the published SDL; see the ch07 research file. |
 | ChilliCream Fusion (ch 27) | 16.5 |
 | Apollo Federation specification | v2.15 (LTS, Jul 2026) |
+| Microsoft.EntityFrameworkCore.Relational | 10.0.10, added at ch12. `Mosaic.ServiceDefaults` holds the `DbCommandInterceptor` that counts statements, and an interceptor is a relational type: the six services get it from the Npgsql provider and a library with no provider has to name it. |
 | .NET | 10 (LTS) |
 
 ## Table of contents
@@ -148,7 +162,7 @@ session. Chapter folders in chapters/ carry the same scope lines.
 ### Part III - Decomposition in Practice
 
 11. **Entity Resolution Done Right** - what `_entities` does with a list of representations, and what a DataLoader behind a reference resolver is worth; `@requires` and computed fields on the real graph, in the plan and on the wire; how the required value actually reaches the resolver; what the composer insists on around `@external`; `@provides`, what it saves and what it hides; nullability at the boundary
-12. **Strangling the Monolith** - carving Orders/Inventory/Pricing/Accounts/Reviews, `@override` progressive migration, team contracts
+12. **Strangling the Monolith** - the order the dependency graph dictates, and carving Pricing/Inventory/Accounts/Reviews/Ordering out until the monolith is deleted; what a subgraph costs to make beyond its domain code; what gets copied and what gets shared, as team contracts; `@override`, its four failure modes and the progressive form this stack cannot compose; the query plan at six subgraphs and what the split actually cost; nullability at the boundary, and the checks that stop being possible
 13. **Hard Modeling Problems** - cross-subgraph pagination, abstract types across boundaries, shared enums/scalars, global ID design
 14. **Real-Time in a Federated World** - subscriptions through the router, Cosmo EDFS with NATS/Kafka, `@defer`/`@stream` reality check
 15. **Identity and Authorization Across the Graph** - JWT at router vs subgraph, claim forwarding, `@authorize`, `@authenticated`/`@requiresScopes`, public vs internal graphs
@@ -204,7 +218,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 09 | drafted | 2026-08-09. 16 pages (139--154), 6 numbered sections plus the lab, ~7,400 words, 2 TikZ figures, 51 index entries, 5 citations, 36 listings. Sources in research/2026-08-ch09-composition.md. Companion tag `ch09`; neither service changed by a line, and the tag adds `federation/supergraph.json` (committed, decision 56) and `scripts/composition-cases.mjs` (decision 57). Both gates pass, both run to completion on this machine. The chapter's spine is that the artefact is not what its name says and the errors do not name their causes. Headline findings: a Cosmo router execution config carries no `join__` directives at all, splitting into a clean client schema plus a routing table where Apollo has one annotated document; each subgraph's SDL is in the file twice, verbatim and normalised, the normalised copy content-addressed under the SHA-1 of itself and stripped of `_service`, `_entities`, `_Service`, `_Entity` and `_Any`; satisfiability is one error out of 123 and renders as a query document; three different mistakes all report as a shareability error on the key field and none names a key; and `--disable-resolvability-validation` emits a config whose client schema is `===` identical to a healthy one. TOC line widened in the same session (decision 58). Audited by a fresh agent, which found three wrong numbers that had survived my own verification; see decision 59 and the open items. Not yet reviewed for line-level prose. |
 | 10 | drafted | 2026-08-09. 18 pages (155--172), 6 numbered sections plus the lab, ~7,500 words, 2 TikZ figures, 51 index entries, 2 citations, 38 listings. Sources in research/2026-08-ch10-enter-the-router.md. Companion tag `ch10`; neither service changed by a line, and the tag adds the router as a compose service, `router/config.yaml`, a third Postman collection, `scripts/router-cases.mjs` and `scripts/measure-router.mjs`. Both gates pass, 33 steps. The chapter's spine is that the graph finally answers and the process in front of it is configured rather than written. Headline findings: a value in `config.yaml` beats the environment variable that sets it, measured both ways, and the router says so on the second line of its own startup log; `localhost` in a routing URL reaches the host from inside a container because `localhost_fallback_inside_docker` defaults to true, with the control showing the same query failing when it is off; the planner lifts literal arguments into variables, so `first: 3` and `first: 7` produce identical plans while a properly declared variable produces a different one; and a config composed with `--disable-resolvability-validation` starts silently, serves everything inside one subgraph, and answers HTTP 500 `internal server error` at plan time to anything that crosses, with the real cause in the log naming the wrong type. Router overhead measured at roughly 2 to 3 ms across seven passes; the two-hop and one-hop figures are not distinguishable and the chapter says so. Also records that chapter 03's instrumentation stayed in `Mosaic.Api` at the extraction, so half of every federated query is unobserved. TOC line widened in the same session (decision 61) and a new decision 62 on timings. Audited by a fresh agent, which found the latency table and the reload timings had no committed harness; both now have one. Not yet reviewed for line-level prose. |
 | 11 | drafted | 2026-08-09. 18 pages (173--190), 6 numbered sections plus the lab, ~8,000 words, 2 TikZ figures, 55 index entries, 4 citations, 40 listings. Sources in research/2026-08-ch11-entity-resolution.md. Companion tag `ch11`, the first since `ch08` to change Mosaic: `Product.shippingCost` carries `@requires(fields: "category")` against an `@external` copy of Catalog's field, and `samples/entity-resolution` is two subgraphs built to be watched. Both gates pass, 38 steps. The chapter's spine is one field that cannot be answered without the other service, followed end to end. Headline findings: `_entities` calls a reference resolver once per representation and starts all of them before awaiting any, which is what makes one DataLoader batch, and the naive version of the same resolver runs strictly in sequence because its tasks complete synchronously; the required value never reaches the resolver as a parameter but is written onto the returned entity by a compiled setter that, for object types, ignores `@external` entirely and will let a representation overwrite a field the subgraph owns; a nullable `@external` copy silently weakens the field for every client with no composition error (decision 64); `@provides` saves a round trip, serves whatever the promising subgraph stored, and hides a dangling reference while doing it; and one unresolvable key through a non-null chain takes the whole response to `data: null` (decision 65). Answers two flags chapter 09 left open: `--suppress-warnings` does not touch an orphaned `@external`, which is an error, and `--ignore-external-keys` composes byte-identically because Mosaic's key is not external. TOC line widened (decision 63) and three more decisions recorded. Audited by a fresh agent, which found 26 defects including a printed cost table with no harness behind it; all fixed, and the fix moved the numbers (decision 66). Not yet reviewed for line-level prose. |
-| 12 | not-started | |
+| 12 | drafted | 2026-08-10. 16 pages (191--206), 6 numbered sections plus the lab, ~7,700 words, 2 TikZ figures, 45 index entries, 38 listings, 1 new citation. Sources in research/2026-08-ch12-strangling-the-monolith.md. Companion tag `ch12`, the biggest change to the repo since it was created: `src/Mosaic.Api` is deleted, five services take its place on 5102 to 5106 with a database each, and `src/Mosaic.ServiceDefaults` is the first project there that is not a service. Both gates pass; verify.ps1 is 43 steps and verify.sh was brought to parity in the same commit. The chapter's spine is that the monolith is emptied and then deleted, and that the split moved work without adding any database work. Headline findings: progressive `@override` is rejected by wgc 0.129.7 although HotChocolate emits it (decision 71); the book's first composition warning, which finally gives `--suppress-warnings` something to do and composes a byte-identical config; a misspelled `from:` reports as a shareability error naming neither `@override` nor the misspelling; three of the six subgraphs have no root field and need an explicit `AddQueryType()`, whose failure never mentions federation; the storefront costs four statements across four services and cost four before, three of them counted and one invisible; and Reviews' resolver count fell from 146 to 26 because a pure resolver never reaches the diagnostic event the count comes from (decision 73). Decision 65's five predicted nullability changes turned out to be three, with an argument for the other two (decision 70). TOC line widened in the same session (decision 74): the approved line named a domain "Orders" that the repository calls Ordering, and did not name the extraction order, the six-subgraph query plan or boundary nullability, which are three of the six sections. Adopted from an interrupted earlier session that had done the research, the companion tag and the prose but no gates: this session ran the build, both gate scripts and the independent audit against that draft. Audited by a fresh agent, which found 30 defects; 28 were fixed, 2 rejected on the record (see open items). The expensive ones were a quotation attributed to chapter 10 that chapter 10 does not contain, ten hardcoded chapter numbers in prose where chapters 01 to 11 have none between them, and a lab exercise predicting the opposite of what the router does. Not yet reviewed for line-level prose. |
 | 13 | not-started | |
 | 14 | not-started | |
 | 15 | not-started | |
@@ -333,6 +347,51 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
   because Mosaic's `@external` field is not part of a key. A schema in the
   federation v1 style, where key fields carry `@external`, is what would
   exercise it, and appendix C is where that style is described.
+- **What the chapter 12 audit found, and the two things it got wrong.** A fresh
+  agent reported 30 defects. The three worth carrying: the chapter twice put
+  `\enquote{half of every federated query is unobserved}` in chapter 10's mouth,
+  and those are the SPEC open item's words rather than chapter 10's, which say
+  "unmeasured" and say it differently - quoting a planning document back as
+  though it were the book is a failure mode no gate can see, because the
+  `\enquote{}` is well formed and the sentence is true. Ten hardcoded chapter
+  numbers in prose, in a book whose other eleven chapters contain none between
+  them, which suggests the house-style rule is easy to forget precisely when a
+  chapter refers back a lot. And a lab exercise that predicted a `Parallel` node
+  losing a child and staying, where the router deletes the node: written from
+  the plan in the research note rather than from a run, which is the same
+  root cause as the chapter 10 and 11 audits found in their printed tables, now
+  in a lab instead. The two findings rejected: the lab's "four services, four
+  statements" was called unmeasured and is correct, now measured and recorded in
+  the research note's section J.1 (catalog 1, pricing 1, reviews 1, accounts 1,
+  with inventory and ordering silent); and the "second time a number answered a
+  different question" claim was called a possible third, but decisions 59 and 66
+  are wrong counts rather than numbers answering a different question, which is
+  a distinct failure and the sentence stands.
+- **Chapter 12 leaves these unmeasured, and the research file's section P names
+  an owner for each**: what a router does with a graph in which a key field was
+  overridden, which the composer permits and which strips the field from the
+  owner's routing table (ch 17); progressive `@override` against a router that
+  implements it, which this stack cannot reach because composition refuses first
+  (ch 28); the latency cost of two services becoming six, which
+  `scripts/measure-router.mjs` was updated for and deliberately not run, because
+  its hand-assembled row is sequential where the router's three entity fetches
+  are parallel (ch 24); mutations through the router, which are still exercised
+  against the Reviews subgraph directly (ch 14); `onReviewAdded` through the
+  router (ch 14); and whether six services need six databases rather than six
+  schemas in one, which is asserted as policy and was not compared (ch 21 or
+  26).
+- **The Postman collection was replaced rather than patched, for the second
+  time.** Decision 54 retired the single-service collection at `ch08` because
+  most of its requests asked a port that had moved. `mosaic-federation` went the
+  same way at `ch12` for the same reason, and `mosaic-subgraphs` replaces it with
+  fourteen requests across all six services. Worth noticing as a pattern: a
+  collection outlives roughly two extractions before its URLs are more wrong
+  than right, and patching one is slower than rewriting it.
+- **`scripts/measure-router.mjs` now compares four sequential calls against four
+  fetches the router makes in parallel**, and that comparison flatters the
+  router. It was honest at two services where the two calls really were
+  sequential on both sides. Anybody re-running it should either parallelise the
+  hand-assembled row or stop treating the difference as router overhead.
 - **Chapter 11 leaves these unmeasured, and the research note's section N names
   an owner for each**: nested and multi-subgraph `@requires` field sets (ch 13),
   `@override` (ch 12), `@provides` where the copy is a real cache with an
@@ -368,13 +427,17 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
   first answer about Mosaic"; chapter 09's sentence is unchanged and is one
   clause to tighten whenever that chapter is next opened. The audit caught it
   in chapter 10 and only then in chapter 09, which is the usual direction.
-- **Half of every federated query is unobserved, and nothing announced it.**
-  Chapter 03 built the request timeline, the resolver count and the lookup
-  counter inside `Mosaic.Api`; chapter 08's extraction left all three there, so
-  `Mosaic.Catalog` reports nothing about any request. Chapter 10 says so and
-  can only measure the graph from outside all three processes. Chapter 23 owns
-  the fix, and the shape of it is tracing that spans both services rather than
-  a copy of chapter 03's listener in the second one.
+- **(half resolved 2026-08-10) Half of every federated query was unobserved, and
+  nothing announced it.** Chapter 03 built the request timeline, the resolver
+  count and the lookup counter inside `Mosaic.Api`; chapter 08's extraction left
+  all three there, so `Mosaic.Catalog` reported nothing about any request.
+  Chapter 12 moved all three into `Mosaic.ServiceDefaults` and all six services
+  report now, which turned "half of every query" into a measured number: it was
+  one statement out of four, and the interesting part is that nobody could have
+  said which. That is the registration half. The other half is untouched and is
+  the one chapter 23 owns: six services each reporting their own timeline is six
+  unrelated timelines, and nothing in a response says which of them belong to
+  the same federated query. Do not read chapter 12's change as closing this.
 - **The router's execution-config watcher reads the file's modification time,
   not its content.** Rewriting a byte-identical config reloads the graph;
   restoring an older-stamped copy over a newer one does not reload at all. That
@@ -411,19 +474,25 @@ Library-wide defaults are in AGENTS.md; these are this book's additions.
   nobody's documented intent. Chapter 25 should decide whether a production
   graph does anything about it; chapter 28 is where the two stacks are compared
   and it is evidence.
-- Chapter 09 leaves these unmeasured, and the research file's section M names an
-  owner for each: anything a router does with this config including what it does
-  with one composed with the resolvability check off (ch 10), the
-  `GRAPHQL_SUBSCRIPTION_PROTOCOL_WS` in the config against a subscription
-  chapter 05 exercised over SSE (ch 14), `--split-configs-enabled`,
-  `--ignore-external-keys` and `--suppress-warnings` (the second needs
-  `@external`, ch 11), composition warnings of any kind since Mosaic produces
-  none, composition across more than two subgraphs (ch 12), and whether an
-  Apollo-style annotated supergraph SDL can be obtained from wgc at all (ch 28).
-  Chapter 11 answered both flags: `--suppress-warnings` changes nothing about
-  an orphaned `@external`, which is an error rather than a warning, and
-  `--ignore-external-keys` composes byte-identically because Mosaic's key field
-  is not the external one.
+- (mostly resolved 2026-08-10) Chapter 09 left these unmeasured, and the
+  research file's section M named an owner for each: anything a router does with
+  this config including what it does with one composed with the resolvability
+  check off (ch 10, done), the `GRAPHQL_SUBSCRIPTION_PROTOCOL_WS` in the config
+  against a subscription chapter 05 exercised over SSE (ch 14),
+  `--split-configs-enabled`, `--ignore-external-keys` and `--suppress-warnings`,
+  composition warnings of any kind since Mosaic produces none, composition
+  across more than two subgraphs, and whether an Apollo-style annotated
+  supergraph SDL can be obtained from wgc at all (ch 28). Chapter 11 answered two
+  flags: `--suppress-warnings` changes nothing about an orphaned `@external`,
+  which is an error rather than a warning, and `--ignore-external-keys` composes
+  byte-identically because Mosaic's key field is not the external one. **Chapter
+  12 answered the other two.** Six subgraphs compose, first time, with no edit
+  to any schema, and the messages the six composition cases produce changed in
+  three of the six because they now name a different subgraph (decision 72).
+  And Mosaic finally produces a warning: `@override` naming a subgraph that is
+  not in the graph, exit code 0, config written, and `--suppress-warnings`
+  silences it while composing a byte-identical file. Only
+  `--split-configs-enabled` is still untouched.
 - The composer prints some errors more than once: twice for the incompatible
   type case, three times for the uncommitted enum case, identically each time.
   No pattern was established, so chapter 09 says only that a count of blocks is

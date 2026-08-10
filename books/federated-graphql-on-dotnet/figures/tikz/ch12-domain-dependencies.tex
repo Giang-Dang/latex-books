@@ -1,0 +1,62 @@
+% Which Mosaic domain references which, before and after the extraction.
+% Referenced from chapter 12. Bare tikzpicture; the figure environment, caption
+% and label live at the call site.
+%
+% The point of the picture is that the arrows do not move. The same three
+% references exist on both sides; what changes is that on the left they are
+% method calls inside one process and on the right they are keys crossing a
+% network. The extraction order falls straight out of the arrow directions:
+% a box nothing points away from can go first.
+\begin{tikzpicture}[
+    font=\small,
+    head/.style={font=\small\bfseries, align=center},
+    dom/.style={draw, rounded corners=2pt, minimum width=19mm,
+                minimum height=5.5mm, align=center, font=\scriptsize},
+    svc/.style={draw, rounded corners=2pt, minimum width=19mm,
+                minimum height=5.5mm, align=center, font=\scriptsize,
+                fill=black!8},
+    proc/.style={draw, dashed, rounded corners=2pt, gray},
+    ref/.style={-{Stealth[length=2mm]}},
+    note/.style={font=\scriptsize, gray, align=center, inner sep=1pt}
+  ]
+
+  % -- left: one process, five domains, plus Catalog next door ---------------
+  \node[head] at (2.4,0.8) {at \code{ch11}: a method call};
+
+  \draw[proc] (0.15,-3.45) rectangle (4.65,0.3);
+  \node[note, anchor=north west] at (0.2,-3.5) {one process};
+
+  \node[dom] (pri) at (1.4,-0.1)  {Pricing};
+  \node[dom] (inv) at (3.4,-0.1)  {Inventory};
+  \node[dom] (acc) at (1.4,-1.2)  {Accounts};
+  \node[dom] (rev) at (3.4,-1.2)  {Reviews};
+  \node[dom] (ord) at (2.4,-2.4)  {Ordering};
+  \node[svc] (cat) at (2.4,-4.3)  {Catalog};
+
+  \draw[ref] (rev) -- (acc);
+  \draw[ref] (ord) -- (acc);
+  \draw[ref] (ord) -- (cat);
+
+  % -- right: six processes, the same three arrows ---------------------------
+  \node[head] at (9.6,0.8) {at \code{ch12}: a key and a hop};
+
+  \node[svc] (pri2) at (8.6,-0.1)  {Pricing};
+  \node[svc] (inv2) at (10.6,-0.1) {Inventory};
+  \node[svc] (acc2) at (8.6,-1.2)  {Accounts};
+  \node[svc] (rev2) at (10.6,-1.2) {Reviews};
+  \node[svc] (ord2) at (9.6,-2.4)  {Ordering};
+  \node[svc] (cat2) at (9.6,-4.3)  {Catalog};
+
+  \draw[ref] (rev2) -- (acc2);
+  \draw[ref] (ord2) -- (acc2);
+  \draw[ref] (ord2) -- (cat2);
+
+  % -- the extraction order, read off the arrows -----------------------------
+  \draw[gray] (7.2,-0.05) -- (6.95,-0.05) -- (6.95,-1.25) -- (7.2,-1.25);
+  \node[note, anchor=east, align=right] at (6.85,-0.65)
+    {reference nobody:\\go first};
+  \draw[gray] (7.2,-1.6) -- (6.95,-1.6) -- (6.95,-2.45) -- (7.2,-2.45);
+  \node[note, anchor=east, align=right] at (6.85,-2.05)
+    {reference somebody:\\go last};
+
+\end{tikzpicture}

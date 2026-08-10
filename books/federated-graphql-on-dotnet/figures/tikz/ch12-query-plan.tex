@@ -1,0 +1,50 @@
+% The storefront query plan at tag ch11 and at tag ch12. Referenced from
+% chapter 12. Bare tikzpicture; the figure environment, caption and label live
+% at the call site.
+%
+% The point of the picture is the middle node on the right. Three of the four
+% new fetches happen at once because they depend on the same key and on nothing
+% else, and the fourth cannot, because its keys do not exist until the fetch
+% above it has answered. Depth in the graph is sequencing in the plan.
+\begin{tikzpicture}[
+    font=\small,
+    head/.style={font=\small\bfseries, align=center},
+    fetch/.style={draw, rounded corners=2pt, minimum width=20mm,
+                  minimum height=5.5mm, align=center, font=\scriptsize},
+    par/.style={draw, dashed, rounded corners=2pt, gray},
+    flow/.style={-{Stealth[length=2mm]}},
+    note/.style={font=\scriptsize, gray, align=center, inner sep=1pt}
+  ]
+
+  % -- left: two fetches ------------------------------------------------------
+  \node[head] at (1.5,0.8) {two, at \code{ch11}};
+
+  \node[fetch] (a1) at (1.5,0.0)  {\code{catalog}};
+  \node[fetch] (a2) at (1.5,-1.5) {\code{mosaic}};
+
+  \draw[flow] (a1) -- (a2);
+  \node[note, anchor=west] at (2.7,-0.75) {one key};
+
+  % -- right: five fetches in three steps -------------------------------------
+  \node[head] at (8.4,0.8) {five, at \code{ch12}};
+
+  \node[fetch] (b1) at (8.4,0.0)   {\code{catalog}};
+
+  \draw[par] (5.6,-1.9) rectangle (11.2,-1.1);
+  \node[fetch] (bp) at (6.7,-1.5)  {\code{pricing}};
+  \node[fetch] (bi) at (8.4,-1.5)  {\code{inventory}};
+  \node[fetch] (br) at (10.1,-1.5) {\code{reviews}};
+
+  \node[fetch] (ba) at (10.1,-3.1) {\code{accounts}};
+
+  \draw[flow] (b1) -- (bp);
+  \draw[flow] (b1) -- (bi);
+  \draw[flow] (b1) -- (br);
+  \draw[flow] (br) -- (ba);
+
+  \node[note, anchor=east, align=right] at (5.5,-1.5)
+    {at once: same\\key, nothing else};
+  \node[note, anchor=east, align=right] at (8.9,-3.1)
+    {after: these keys do not\\exist until reviews answers};
+
+\end{tikzpicture}

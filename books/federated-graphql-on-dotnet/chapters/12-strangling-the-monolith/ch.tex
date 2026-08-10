@@ -1,7 +1,32 @@
 \chapter{Strangling the Monolith}
 \label{ch:strangling-the-monolith}
 
-\emph{Not yet drafted.} Planned scope: Carving Orders, Inventory, Pricing, Accounts, and Reviews out of the monolith; progressive migration with \code{@override}; what teams share and what they never share.
+Chapter~\ref{ch:the-first-cut-extracting-catalog} took one domain out of Mosaic
+and chapters~\ref{ch:composition} to~\ref{ch:entity-resolution-done-right} spent
+three chapters on what that one cut produced. This chapter takes the other five
+out, and then deletes what is left.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/12-strangling-the-monolith/01-section-name}
+That last part is the difference between a refactor and a strangler. The pattern
+is named after a fig that grows around its host and stands up on its own when
+the host rots away, and the host is supposed to rot. At tag \code{ch12} there is
+no \code{src/Mosaic.Api}. There are six services, one database each, and a
+router in front of them, and every number chapter~\ref{ch:enter-the-router} and
+chapter~\ref{ch:entity-resolution-done-right} printed about a single process is
+now a number about four of them.
+
+Most of the work was mechanical, which is the return on a decision made in
+chapter~\ref{ch:hotchocolate-quickly} and held since: no entity in Mosaic holds
+a navigation property to a type another domain owns. Six databases out of one
+cost no \code{Include} and no dropped constraint. What was not mechanical is
+everything this chapter is actually about: which service goes first and why, how
+you move a field that is already answering traffic, what six teams share and
+what they must never share, and which of the promises the schema makes stop
+being checkable the moment the check is on the other side of a network.
+
+\input{chapters/12-strangling-the-monolith/01-the-order-the-graph-decides}
+\input{chapters/12-strangling-the-monolith/02-what-a-service-costs-to-make}
+\input{chapters/12-strangling-the-monolith/03-copied-and-shared}
+\input{chapters/12-strangling-the-monolith/04-moving-a-field-that-answers}
+\input{chapters/12-strangling-the-monolith/05-the-plan-grows-a-parallel-node}
+\input{chapters/12-strangling-the-monolith/06-what-the-boundary-costs}
+\input{chapters/12-strangling-the-monolith/07-your-turn}

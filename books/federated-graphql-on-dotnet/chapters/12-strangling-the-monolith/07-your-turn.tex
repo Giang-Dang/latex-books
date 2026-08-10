@@ -1,0 +1,119 @@
+\section*{Your turn}
+
+Check out tag \code{ch12} of the companion repository and run \code{npm ci}
+once. Exercises 1 to 5 need the database, the six subgraphs and the router.
+Exercises 6 to 9 need node and nothing started at all: every one of them is a
+composition.
+
+Six services is more than a terminal each, so start them from the compose file.
+The first run builds six images and is slow:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+docker compose up -d --build mosaic-db mosaic-catalog mosaic-pricing \
+    mosaic-inventory mosaic-accounts mosaic-reviews mosaic-ordering mosaic-router
+docker compose ps
+\end{minted}
+
+Eight containers, all healthy. If \code{mosaic-router} is the only one that is
+not, port 3002 is taken, and the one other thing in this repository that wants
+it is chapter~\ref{ch:how-a-federated-query-actually-runs}'s sample router:
+\code{docker compose --profile wire down} clears it.
+Chapter~\ref{ch:entity-resolution-done-right}'s router is behind the
+\code{entities} profile and listens on 3003, so it is never the culprit.
+
+\begin{enumerate}
+  \item \textbf{Read the plan that grew.} Send this to port 3002 with the
+  headers \code{X-WG-Include-Query-Plan: true} and
+  \code{X-WG-Skip-Loader: true}:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{graphql}
+{ browseProducts(first: 3) { nodes { title price { amount }
+    reviews(first: 2) { nodes { author { displayName } } } } } }
+  \end{minted}
+
+  Find the \code{Parallel} node in \code{extensions.queryPlan} and count the
+  fetches under it. There are two rather than the three this chapter printed,
+  because this query asks Pricing and Reviews for something and Inventory for
+  nothing. Then take \code{price} out and send it again. The node does not lose
+  a child and carry on: it disappears, because one fetch is nothing to run in
+  parallel and the planner stops describing it that way. Then take the reviews
+  out too, and watch the accounts fetch go with them, because its keys came from
+  the fetch you just deleted.
+
+  \item \textbf{Find the fetch that could not be parallel.} In the first plan,
+  read the \code{path} on the accounts fetch and the \code{dependsOnFetchIds}
+  beside it. Write down, before looking, which fetch you expect it to depend on.
+  The catalog fetch is the tempting answer, because that is where the query
+  started and where every other dependency in this plan points.
+
+  \item \textbf{Watch four services answer one question.} Send the same query
+  without the two headers, so the loader runs. Then read the last timeline line
+  out of each service:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+docker compose logs --tail 5 mosaic-catalog mosaic-pricing mosaic-reviews mosaic-accounts
+  \end{minted}
+
+  Four services, four statements. Now ask the same of
+  \code{mosaic-ordering} and notice that the answer is nothing.
+
+  \item \textbf{Break a key format on purpose.} Open Pricing's copy of
+  \code{ProductKey.cs}, under \code{Catalog/Model/}, and change the type name it
+  checks from \code{nameof(Product)} to \code{"Widget"}. Rebuild Pricing and ask
+  the router for a page of products with prices. Note which field is null, what
+  the error says, and which service it names. Then work out which of the four
+  copies of that file you would have had to check if the error had not named
+  one. \code{git checkout} puts it back.
+
+  \item \textbf{Submit a review from a customer who does not exist.} Take a
+  product key out of Catalog, invent a \code{Customer} node identifier by
+  base64-encoding \code{Customer:} followed by sixteen bytes of your choosing,
+  and post \code{submitReview} to port 5105 with both. It succeeds. Then read
+  the review back through the router and look at its author. Decide whether you
+  would rather have had the write refused, and what it would have cost.
+
+  \item \textbf{Make the composer say four different things about one
+  directive.} Print these in turn:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/override-cases.mjs --print two-owners-no-override
+node scripts/override-cases.mjs --print override-takes-the-field
+node scripts/override-cases.mjs --print override-a-typo-with-a-real-loser
+node scripts/override-cases.mjs --print override-from-yourself
+  \end{minted}
+
+  Two of them are the same error. Not one of the four contains the string
+  \code{@override}; the closest any of them comes is the word \enquote{override}
+  as a verb, in the case where you named your own subgraph, which is the mistake
+  least likely to reach a build.
+
+  \item \textbf{Suppress a warning and check nothing else moved.} Print
+  \code{override-a-subgraph-that-is-not-there}, then read the case in
+  \code{scripts/override-cases.mjs} to see how it proves that
+  \code{--suppress-warnings} changes the output and not the config. Then change
+  the case's expected routing so that it claims the field goes to
+  \code{pricing}, and rerun to see what the failure tells you.
+
+  \item \textbf{Hit the wall progressive \code{@override} is behind.} Print
+  \code{progressive-override-is-rejected} and read the error. Then find
+  \code{OverrideLegacySupportAttribute} in the HotChocolate source and satisfy
+  yourself that the library would have emitted the label if the composer had
+  asked for it. Two tools, both current, one specification version apart.
+
+  \item \textbf{Override a key field, which composes.} Add
+  \code{@override(from: "catalog")} to \code{Product.id} in a scratch copy of
+  \code{schema/pricing.graphql} and compose the six by hand. It succeeds. Then
+  read \code{engineConfig.datasourceConfigurations} in the output and find what
+  catalog can no longer provide. This is the one thing in the lab the chapter
+  itself does not cover: I composed it and read the routing table, and I never
+  pointed a router at the result. If you do, you will know something this book
+  does not.
+\end{enumerate}
+
+Exercise 4 is the one to do properly. Four services carry their own copy of a
+file that decodes one key format, and nothing in any build would fail if one of
+them drifted. The error you get is real and the question it raises is the one
+worth carrying out of this chapter: the duplication that keeps five teams
+independent is the same duplication that makes a format change a coordination
+problem. Chapter~\ref{ch:ci-cd-for-a-federated-graph} is where a change like
+that gets a workflow around it.

@@ -1,0 +1,230 @@
+\section{Moving a Field That Is Already Answering}
+\label{sec:ch12-moving-a-field-that-answers}
+\index{override@\code{@override}|(}%
+
+Everything so far assumed a field can be picked up in one service and put down
+in another between two deployments. Sometimes it can. When it cannot, because
+the field is answering traffic and the two services will be running side by side
+for a while, \code{@override} is the directive for it, and it is the only one in
+Apollo Federation whose whole purpose is a migration rather than a shape.
+
+The declaration goes on the subgraph that is \emph{taking} the field:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+type Product @key(fields: "id") {
+  id: ID!
+  availableQuantity: Int! @override(from: "catalog")
+}
+\end{graphqlsdl}
+
+The subgraph it is taken from changes nothing at all. It keeps declaring the
+field, keeps resolving it if asked, and stops being asked.
+
+\index{override@\code{@override}!cases derived from the real schemas}%
+Every composer message in this section is asserted by
+\code{scripts/override-cases.mjs}, which both verification scripts run. Nine
+cases, each one the six committed schemas with literal edits that have to match
+exactly once, composed with wgc 0.129.7. One thing about them needs saying
+plainly rather than being discovered later. At tag \code{ch12} no two subgraphs
+declare the same field, because the extraction is finished, so a case that needs
+a \enquote{before} has to invent one: five of the nine add
+\code{availableQuantity} back to \code{catalog}, which stands in for the
+monolith, and take it away again from \code{inventory}. The other four need only
+one declaration to make their point and leave Catalog alone. The edit is
+fictional. Everything the composer says about it is not.
+
+\subsection*{What it is suppressing}
+
+Start with the control, because the directive is easier to understand as a
+silencer than as an instruction. The same pair with no \code{@override} anywhere:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The Object "Product" defines the same fields in multiple subgraphs without the "@shareable" directive:
+ The field "availableQuantity" is defined in the following subgraphs: "catalog", "inventory".
+ However, it is not declared "@shareable" in any of them.
+\end{minted}
+
+Chapter~\ref{ch:composition} spent a section on that error and on how little it
+tells you. Add the directive and it goes away. The composer's own walker says
+why, in \code{@wundergraph/composition} 0.63.2, and the comment is one line:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+// overridden fields should not trigger shareable errors
+\end{minted}
+
+\index{override@\code{@override}!invisible in the client schema}%
+Now the part that surprised me. The composition succeeds and \emph{the
+client-facing schema is identical either way}. There is no trace of the
+migration in what a client can see, which is correct and is also why nobody
+notices a stale \code{@override} for two years. The only place the effect is
+visible is the routing table inside the execution config:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+without @override    the pair does not compose at all
+with    @override    Product.availableQuantity -> inventory
+\end{minted}
+
+Catalog still publishes the field in its own schema. The router will never ask
+it for one. That is the whole mechanism, and the case asserts it by reading the
+datasource configurations rather than by reading the client schema, because the
+client schema cannot see it.
+
+\subsection*{Three ways to get it wrong}
+
+\index{override@\code{@override}!from: naming yourself}%
+Name your own subgraph in \code{from:} and the composer is direct about it:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Cannot override field "Product.availableQuantity" because the source and target subgraph names are both "inventory"
+\end{minted}
+
+\index{override@\code{@override}!declared twice}%
+Have two subgraphs claim the same field from a third and it is direct again,
+although it has clearly been assembled from parts:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The "@override" directive must only be declared on one single instance of a field. However, an "@override" directive
+was declared on more than one instance of the following field: " The field "Product.availableQuantity" declares an
+@override directive in the following subgraphs: "pricing", "inventory".".
+\end{minted}
+
+The nested quotes and the stray space are the composer's, not mine: the second
+sentence is interpolated already formatted. The case asserts it as written
+rather than as intended, because a gate that quietly normalises a message is a
+gate that will not notice when the message changes.
+
+\index{override@\code{@override}!a misspelled subgraph name}%
+And then the one that costs an afternoon. Misspell the subgraph you are taking
+the field from, while the field really is in two subgraphs:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The Object "Product" defines the same fields in multiple subgraphs without the "@shareable" directive:
+ The field "availableQuantity" is defined in the following subgraphs: "catalog", "inventory".
+ However, it is not declared "@shareable" in any of them.
+\end{minted}
+
+The override did not apply, so the duplication came back, so the composer
+reports the duplication. The word \code{katalog} appears nowhere. Neither does
+\code{@override}. You have just added a directive, the build has just started
+failing, and the error is about a directive you did not add and a type rather
+than a service. The case asserts both absences, because the absence is the
+finding.
+
+This is chapter~\ref{ch:composition}'s thesis with a new cause: three different
+mistakes there all reported as a shareability error on the key field, and here
+is a fourth mistake reporting as a shareability error on an ordinary one.
+
+\subsection*{The book's first composition warning}
+
+\index{composition!warnings!the first one in this book}%
+Chapter~\ref{ch:composition} had nothing to say about
+\code{--suppress-warnings}, because Mosaic produced no warnings for it to
+suppress. Chapter~\ref{ch:entity-resolution-done-right} could only report that
+the flag does not touch an error. Here is a warning.
+
+\code{@override(from: "legacy-monolith")} where no subgraph by that name exists,
+and where nothing else declares the field, so there is no duplication to report
+instead:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The following warnings were produced while composing:
+The Object type "Product" defines the directive "@override(from: "legacy-monolith")" on the following field:
+"availableQuantity".
+The required "from" argument of type "String!" should be provided with an existing subgraph name.
+However, a subgraph by the name of "legacy-monolith" does not exist.
+If this subgraph has been recently deleted, remember to clean up unused "@override" directives that reference this
+subgraph.
+\end{minted}
+
+Exit code 0. The config is written and the graph is unchanged. Note the last
+sentence, which is the composer telling you what this warning is actually for:
+the ordinary way to reach it is not a typo but a subgraph that was deleted after
+its fields were taken, leaving directives behind that point at nothing.
+
+Compose again with \code{--suppress-warnings} and it prints nothing and writes a
+\emph{byte-identical} config. So the flag does exactly what its name says, which
+is the first time in three chapters that anything has been able to demonstrate
+it. The case asserts the two files match rather than asserting two hashes I
+worked out by hand.
+
+\subsection*{Progressive \code{@override}, and where this stack stops}
+
+\index{override@\code{@override}!progressive}%
+Apollo Federation 2.7 added a second argument. A label lets you move a
+percentage of traffic for one field rather than all of it, and this is Apollo's
+own example of one~\autocite{apollo2026migratefields}:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+description: String @override(from: "BarSubgraph", label: "percent(1)")
+\end{graphqlsdl}
+
+HotChocolate has it. \code{OverrideAttribute} takes
+\code{(string from, string? label = null)}, and the library's own test builds a
+2.7 schema and snapshots the two-argument directive definition. What gates it is
+an internal attribute whose comment is the clearest statement of the rule
+anywhere:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+// prior to version 2.7 @override only specified "from" parameter
+if (descriptor.GetFederationVersion() < FederationVersion.Federation27)
+{
+    var desc = (IDirectiveTypeDescriptor<OverrideDirective>)descriptor;
+    desc.BindArgumentsExplicitly();
+    desc.Argument(t => t.From);
+}
+\end{minted}
+
+\code{FederationVersion.Default} is \code{Federation26}, which is why every
+schema in this book emits the one-argument form and why
+chapter~\ref{ch:how-a-federated-query-actually-runs} measured v2.6 in the
+published SDL.
+
+So opt a subgraph into 2.7 and write a label. The composer has an opinion:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The subgraph "inventory" could not be federated for the following reason:
+The 1st instance of the directive "@override" declared on coordinates "Product.availableQuantity" is invalid for the
+following reason:
+ The definition for "@override" does not define the following argument that is provided: "label".
+\end{minted}
+
+\index{wgc@\code{wgc}!its own @override definition}%
+Exit 1, no config written. The reason is one constant, in
+\code{@wundergraph/composition} 0.63.2:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{javascript}
+// directive @override(from: String!) on FIELD_DEFINITION
+exports.OVERRIDE_DEFINITION = {
+    arguments: [
+        {
+            kind: graphql_1.Kind.INPUT_VALUE_DEFINITION,
+            name: (0, utils_1.stringToNameNode)(string_constants_1.FROM),
+            type: {
+                kind: graphql_1.Kind.NON_NULL_TYPE,
+                type: (0, utils_1.stringToNamedTypeNode)(string_constants_1.STRING_SCALAR),
+            },
+        },
+    ],
+\end{minted}
+
+One argument. \textbf{Progressive \code{@override} is unavailable on this
+stack}, and
+it fails at composition rather than at the router, which is the better of the
+two places for it to fail. Apollo documents the feature as a GraphOS Enterprise
+one and notes that the router's plan cache keys on the set of unique overridden
+labels in an operation~\autocite{apollo2026migratefields}, so a graph with many
+labels is a graph with many plans; that is a cost worth knowing about even where
+the feature is available.
+
+What is left when it is not available is the all-or-nothing form, and the honest
+answer about what that costs is that it moves the risk rather than removing it.
+You cannot ramp traffic, so the ramp has to happen somewhere else: behind a
+feature flag inside the new resolver, or by running the new subgraph against
+production data and comparing before you publish its schema at all. Both are
+work the directive was supposed to save you.
+
+\medskip
+That is the mechanism for moving one field. What the finished graph does with a
+query is a different picture, and the router draws it.
+
+\index{override@\code{@override}|)}%
