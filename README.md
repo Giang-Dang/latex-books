@@ -23,8 +23,11 @@ pwsh scripts/new-book.ps1 my-first-book
 cd books/my-first-book
 latexmk
 
-# rebuild all books from scratch and refresh dist/
+# choose which books to rebuild from scratch and refresh in dist/
 pwsh scripts/release.ps1
+
+# or name them, skipping the prompt
+pwsh scripts/release.ps1 my-first-book
 ```
 
 ## Repository layout
@@ -42,7 +45,7 @@ books/<name>/              one self-contained folder per book
   figures/                 images/ (assets) and tikz/ (drawn figures)
   build/                   latexmk output, gitignored
 dist/                      final PDF per book, committed via Git LFS
-scripts/                   new-book.ps1, release.ps1
+scripts/                   new-book.ps1, release.ps1 (+ tests)
 .githooks/                 pre-commit build gate (see Prerequisites)
 ```
 
