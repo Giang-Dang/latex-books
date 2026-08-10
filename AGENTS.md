@@ -10,7 +10,7 @@ preamble code; repo-wide consistency is structural only.
 - books/<book-name>/ - one folder per book, fully self-contained
 - dist/ - final released PDFs, one per book, tracked with Git LFS
 - scripts/ - setup.ps1, new-book.ps1, release.ps1, check-chapter.ps1 (the
-  prose gate) and its tests (PowerShell 7+)
+  prose gate), and the tests beside the last two (PowerShell 7+)
 - .githooks/ - every hook this repo runs, because setup.ps1 points
   core.hooksPath here and git then reads nothing from .git/hooks. pre-commit is
   the local build gate: it compiles every staged book before a commit. The
@@ -42,7 +42,10 @@ backmatter/, figures/{images,tikz}/, research/ (optional), build/ (generated).
 - One-time per clone, any OS: `pwsh scripts/setup.ps1` (enables the pre-commit
   build gate, and links .agents/skills at .claude/skills)
 - New book: `pwsh scripts/new-book.ps1 <kebab-case-name>`
-- Release all books into dist/: `pwsh scripts/release.ps1`
+- Release into dist/: `pwsh scripts/release.ps1` lists the books, most recently
+  changed first, and asks which to build. `pwsh scripts/release.ps1 <name>...`
+  and `-All` skip the prompt; add `-DryRun` to see the selection without
+  spending the rebuild.
 
 ## Hard rules
 
