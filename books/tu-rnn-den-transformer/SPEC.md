@@ -280,6 +280,34 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   `check-chapter.psd1` and `Exempt` is empty. Vietnamese diacritics are letters
   and are legal everywhere; what is banned is Unicode look-alikes of ASCII
   punctuation, which is `Characters.Mode = 'Punctuation'`, the library default.
+- **How an English quotation attaches to a Vietnamese sentence.** A quotation is
+  either *introduced* - by a colon, or by a verb of saying - or it sits in
+  parentheses after the Vietnamese has already said the thing. It is never a
+  grammatical constituent of the Vietnamese sentence around it. What that rules
+  out is the shape where a Vietnamese subject takes an English finite verb, or a
+  Vietnamese clause runs on into an English prepositional phrase:
+
+  - Wrong: `mang tich chap thi \enquote{lose the ordering of the words}`
+  - Wrong: `no \enquote{enables the model to define a distribution ...}`
+  - Wrong: `tang so tham so \enquote{at negligible computational cost} va ...`
+  - Right: `... lam mat thu tu tu (\enquote{lose the ordering of the words})`
+  - Right: `Bai neu dung ly do: \enquote{enables the model to ...}`
+
+  This book quotes English on nearly every page and translates none of it, so
+  the two grammars meet constantly and the seam has to be a stated rule rather
+  than an ear. Added 2026-08-10 after chapter 05 shipped ten of these into a
+  draft and chapter 04 turned out to have two. An English *noun phrase* as the
+  object of a Vietnamese verb is fine and stays - `bai khong dung chu
+  \enquote{GRU}` reads correctly - so the test is whether the quotation is
+  carrying the sentence's grammar or only its wording.
+
+  **No `check-chapter.psd1` setting stands behind this one, on purpose.** The
+  library principle is that a rule with no setting is a rule nothing enforces,
+  so the exception needs its reason on the record: the only mechanical form of
+  this check is "an English quotation not preceded by a colon or an open
+  parenthesis", and measured against chapters 01 to 04 that flags about thirty
+  sites of which roughly four are real. A check that is wrong six times out of
+  seven trains its reader to skip it, which costs more than the rule it enforces.
 - **Humanizer skill:** `humanizer-vi`. Never the English `humanizer`.
 - **Listings:** `minted` with the `python` lexer for code, `text` for captured
   console and training output, `console` for a shell session. Code comes from
@@ -480,6 +508,17 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   times and `do doc` zero times. It is a passing use in all three (the paper's
   gradient clipping, and two exercises), so nothing here is load-bearing, but
   the split is now wider than the evidence that opened this item.
+- **Chapter 04 has two spliced quotations, left alone.** Found 2026-08-10 while
+  checking whether the new quotation rule above had two chapters of evidence
+  behind it, which it does: `04-lstm/02-hai-xung-dot.tex` line 12 has "cac tin
+  hieu cap nhat" taking the English finite verb "will attempt", and
+  `04-lstm/05-cat-gradient.tex` line 20 has "loi toi net input ... cua cong"
+  taking "do not get propagated". Both read as a Vietnamese subject with an
+  English predicate. Not fixed, because chapter 04 is not this session's
+  chapter and the same restraint was shown for chapter 03's tables; whoever
+  opens chapter 04 next should reword both. Everything else the scan turned up
+  in chapters 01 to 04 is an English noun phrase after a Vietnamese verb, which
+  the rule permits.
 - **Chapter 05's own numbers nearly shipped from the wrong configuration, and
   the gate could not have caught it.** Four decimals about a deliberately broken
   beam-search stopping rule were measured during exploration, before the shared
