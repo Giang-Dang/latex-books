@@ -1,3 +1,40 @@
-% Scope (SPEC table of contents): Sutskever, Vinyals, Le 2014. Vector ngữ cảnh cố định; đảo chuỗi nguồn; beam search; ensembling; cầu nối Cho 2014; gap: BLEU tụt theo độ dài câu.
+% Scope (SPEC table of contents): Sutskever, Vinyals, Le 2014. Vector ngữ cảnh cố định, và chỗ thắt đo bằng cách thu hẹp vector chứ không phải bằng cách kéo dài câu; corpus Anh-Việt sinh từ văn phạm mà chương 05 tới 08 dùng (quyết định 35); đảo câu nguồn, với lập luận khoảng cách của bài biến thành một dự đoán và được kiểm; beam search; ensembling; cầu nối Kalchbrenner-Blunsom 2013, Cho 2014a và Cho 2014b. Cẩn thận: tóm tắt của chính bài này nói LSTM của họ KHÔNG chật vật với câu dài, và kết quả tụt theo độ dài câu là của Cho 2014b, bài SSST-8, không phải bài EMNLP mà chương 04 trích. Xem research note.
 \chapter{Encoder-decoder}
 \label{ch:encoder-decoder}
+
+\tn{Ô nhớ}{memory cell} của chương~\ref{ch:lstm} giải bài toán nhớ trong
+\emph{một} \tn{chuỗi}{sequence}. Câu hỏi tiếp theo không phải nhớ lâu hơn. Nó
+là: đọc một chuỗi rồi sinh ra một chuỗi khác, độ dài khác, thứ tự khác, và
+không biết trước độ dài ấy là bao nhiêu. Dịch máy là dạng thuần tuý nhất của
+bài toán đó.
+
+Sutskever, Vinyals và Le trả lời năm 2014 bằng một kiến trúc mà toàn bộ ý tưởng
+gói trong một câu~\autocite{sutskever2014seq2seq}: cho một mạng Long Short-Term
+Memory, viết tắt là LSTM, đọc hết \tn{câu nguồn}{source sentence}, lấy trạng
+thái cuối cùng của nó, rồi coi trạng thái ấy là toàn bộ nghĩa của câu, và cho
+một LSTM thứ hai bắt đầu từ đó mà viết \tn{câu đích}{target sentence}. Giữa hai
+mạng không có gì khác đi qua.
+
+Bản tôi đọc là arXiv:1409.3215v3, chín trang, đề ngày 14 tháng 12 năm 2014.
+Trang bìa file không ghi hội nghị, và bảng nguồn của sách đã mang món nợ ấy từ
+phiên dựng khung; nay trả xong. Bài in ở Advances in Neural Information
+Processing Systems 27, tức NIPS 2014, trang 3104 tới 3112. Bản arXiv đánh trang
+1 tới 9, nên hai bản không dùng lẫn số trang được.
+
+Bản kể quen thuộc về bài này gồm ba vế: encoder-decoder nhét cả câu vào một
+vector, nên nó hỏng ở câu dài, nên attention ra đời. Vế đầu đúng.
+\textbf{Vế thứ hai thì chính bài này bác bỏ, ở năm chỗ, bắt đầu từ tóm tắt}, và
+vế thứ ba gán công cho sai người. Ba vế nghe liền mạch tới mức tôi đã tin nó
+nhiều năm trước khi mở bài ra đọc.
+
+Chỗ thắt là có thật, tôi sẽ đo nó, và nó không nằm ở chỗ bản kể quen thuộc chỉ
+vào.
+
+\input{chapters/05-encoder-decoder/01-mot-vector-cho-ca-cau}
+\input{chapters/05-encoder-decoder/02-corpus-do-choi}
+\input{chapters/05-encoder-decoder/03-bop-vector-ngu-canh}
+\input{chapters/05-encoder-decoder/04-dao-cau-nguon}
+\input{chapters/05-encoder-decoder/05-giai-ma-va-ensemble}
+\input{chapters/05-encoder-decoder/06-cau-noi}
+\input{chapters/05-encoder-decoder/07-con-lai-gi}
+\input{chapters/05-encoder-decoder/08-bai-tap}

@@ -1,0 +1,62 @@
+% Encoder-decoder của Sutskever 2014, vẽ theo hình 1 của bài.
+% Câu nguồn đã đảo, nên encoder đọc "C B A" và token gần chỗ nối nhất là A,
+% tức từ đầu tiên của câu gốc.
+% Mono-safe: chỉ dùng nét liền, nét đứt, độ dày nét và mức xám.
+\begin{tikzpicture}[
+  >= Stealth,
+  buoc/.style    = {draw, rectangle, minimum width = 8mm, minimum height = 6mm,
+                    inner sep = 0pt},
+  mui/.style     = {->, line width = 0.6pt, black!75},
+  ngucanh/.style = {->, line width = 1.6pt, black},
+  nho/.style     = {font = \scriptsize},
+  ghichu/.style  = {font = \footnotesize, black!60},
+]
+
+  % --- encoder: ba bước, đọc câu nguồn đã đảo
+  \foreach \i/\tok in {0/C, 1/B, 2/A} {
+    \node[buoc] (e\i) at (\i*1.35, 0) {};
+    \draw[mui] (\i*1.35, -1.0) -- (e\i);
+    \node[nho, anchor = north] at (\i*1.35, -1.05) {\tok};
+  }
+  \draw[mui] (e0) -- (e1);
+  \draw[mui] (e1) -- (e2);
+
+  % --- chỗ nối: vector ngữ cảnh
+  \draw[ngucanh] (e2) -- (4.75, 0) node[midway, above, nho] {\(\vect{v}\)};
+
+  % --- decoder: bốn bước, sinh câu đích
+  \foreach \i/\vao/\ra in {0/{\(\langle\)SOS\(\rangle\)}/X, 1/X/Y, 2/Y/Z,
+                           3/Z/{\(\langle\)EOS\(\rangle\)}} {
+    \pgfmathsetmacro\x{4.75 + \i*1.35}
+    \node[buoc] (d\i) at (\x, 0) {};
+    \draw[mui] (\x, -1.0) -- (d\i);
+    \node[nho, anchor = north] at (\x, -1.05) {\vao};
+    \draw[mui] (d\i) -- (\x, 1.0);
+    \node[nho, anchor = south] at (\x, 1.05) {\ra};
+  }
+  \draw[mui] (d0) -- (d1);
+  \draw[mui] (d1) -- (d2);
+  \draw[mui] (d2) -- (d3);
+
+  % --- Không vẽ mũi tên quay lui từ output về input bước sau. Hình 1 của bài
+  % cũng không vẽ, và vì một lý do tốt: hai hàng nhãn đã nói điều đó rồi (ra
+  % X Y Z, vào <sos> X Y Z), còn ba đường quay lui thì chỉ đi lọt được bằng
+  % cách cắt qua chính các node nó nối.
+
+  % --- khung và nhãn hai nửa
+  \begin{scope}[on background layer]
+    \draw[black!45, densely dotted, line width = 0.5pt]
+      (-0.75, -0.75) rectangle (3.45, 0.75);
+    \draw[black!45, densely dotted, line width = 0.5pt]
+      (4.05, -0.75) rectangle (8.65, 0.75);
+  \end{scope}
+  % Cả hai nhãn khung đặt trên hàng token output, không đặt sát khung: ở cao độ
+  % của khung thì chữ "decoder" rơi đúng vào giữa hai token Y và Z.
+  \node[ghichu, anchor = south] at (1.35, 1.6) {encoder};
+  \node[ghichu, anchor = south] at (6.35, 1.6) {decoder};
+
+  \node[nho, anchor = north, black!60, align = center] at (1.35, -1.75)
+    {câu nguồn, đã đảo\\ (gốc là A B C)};
+  \node[nho, anchor = north, black!60] at (6.35, -1.75) {câu đích};
+
+\end{tikzpicture}

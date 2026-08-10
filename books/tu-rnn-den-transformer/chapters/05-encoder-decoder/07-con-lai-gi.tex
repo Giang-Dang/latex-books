@@ -1,0 +1,84 @@
+\section{Bài báo giải được gì, và để lại gì}
+\label{sec:ch05-con-lai-gi}
+
+\index{encoder-decoder!bài giải được gì}%
+Cái bài này giải được, phát biểu cho gọn: một mạng nơ-ron duy nhất, huấn luyện
+đầu cuối và không giả định gì về cấu trúc bài toán, vượt được một hệ dịch thống
+kê trên một tác vụ dịch quy mô lớn. BLEU 34.81 cho ensemble năm LSTM đảo với
+beam 12, so với 33.30 của hệ đối chứng. Bài nói rõ đây là lần đầu một hệ dịch
+thuần nơ-ron vượt một hệ đối chứng cụm từ với khoảng cách đáng kể, và vượt được
+dù không xử lý nổi từ ngoài từ điển; nguyên văn là \enquote{by a sizeable
+margin, despite its inability to handle out-of-vocabulary words}.
+
+Cạnh con số ấy phải đặt thêm một con số nữa, không thì dễ đọc nhầm: 37.0, kết
+quả WMT'14 tốt nhất lúc bấy giờ. Mạng thuần chưa vượt nó. Chỗ mạng chạm tới 36.5
+là khi dùng để chấm điểm lại một nghìn giả thuyết của chính hệ đối chứng, tức
+vẫn dựa lưng vào hệ thống cũ.
+
+\subsection*{Cái bài tự nêu là còn thiếu}
+
+\index{encoder-decoder!giới hạn bài tự nêu}%
+Danh sách này ngắn, và ngắn theo cách đáng chú ý.
+
+Từ ngoài \tn{từ điển}{vocabulary}. Từ điển đích 80 nghìn từ, và mọi từ ngoài đó
+thành \code{UNK}; bài nói thẳng điểm BLEU của nó bị phạt mỗi lần bản dịch tham
+chiếu chứa một từ như thế. Đây là giới hạn duy nhất bài nhắc lại nhiều lần.
+
+Chi phí huấn luyện. Một GPU chạy khoảng 1700 từ mỗi giây, quá chậm để dùng, nên
+họ chia mô hình ra tám GPU và đạt 6300 từ mỗi giây; tổng cộng khoảng mười ngày.
+Bài trình bày đây là chuyện kỹ thuật đã giải xong chứ không phải một giới hạn.
+
+Và hết. Bài \emph{không} nêu \tn{vector ngữ cảnh}{context vector} cố định là
+một giới hạn, vì theo đo đạc của chính họ nó không phải giới hạn ở quy mô họ
+chạy.
+
+\subsection*{Cái chỉ nhìn từ chỗ khác mới thấy}
+
+\index{vector ngữ cảnh!vì sao bài không thấy chỗ thắt}%
+Đây là chỗ chương này phải cẩn thận nhất, vì hai câu đúng nằm cạnh nhau và
+nghe như mâu thuẫn.
+
+Câu thứ nhất: \tn{chỗ thắt}{bottleneck} là có thật.
+Mục~\ref{sec:ch05-bop-vector} đo được nó, và đo được cả hình dạng của nó, tức
+câu ngắn bão hòa trước còn câu dài cần vector rộng hơn hẳn. Ở \(d_h = 64\), câu
+ngắn được 0.9797 còn câu dài được 0.0724.
+
+Câu thứ hai: bài này không chạm vào nó. Mô hình của họ mang 8000 số thực cho một
+câu. Bảng của tôi dừng ở 256, và ngay tại 256 thì câu dài đã lên 0.7105 rồi.
+
+Hai câu ấy không đá nhau, và chỗ chúng khớp vào nhau là chỗ đáng nhớ:
+\textbf{chỗ thắt không phải một tính chất của kiến trúc, nó là một tỷ lệ giữa bề
+rộng vector và lượng thông tin phải đi qua nó.} Cùng một kiến trúc, thu hẹp
+vector lại thì hỏng, nới ra thì không.
+Bài chạy ở phía không hỏng và báo cáo đúng thứ họ thấy. Cho và cộng sự trong bài
+2014b chạy ở phía kia và báo cáo đúng thứ họ thấy. Hai kết quả không đá nhau.
+
+Nên cách nói \enquote{encoder-decoder hỏng ở câu dài} thiếu mất vế quan trọng
+nhất, là vế \enquote{với vector rộng bao nhiêu}. Và cách sửa mà
+chương~\ref{ch:dong-chinh} sẽ đọc không phải là nới vector ra, vì nới ra thì
+lại hỏng ở câu dài hơn nữa. Nó là bỏ hẳn cái ràng buộc bề rộng cố định đi.
+
+\subsection*{Ba thứ chương này để lại cho chương sau}
+
+\index{vector ngữ cảnh!ba câu hỏi để ngỏ}%
+Thứ nhất, và là thứ chính: encoder nén \tn{câu nguồn}{source sentence} thành
+một vector rồi vứt bỏ
+mọi trạng thái trung gian nó đã đi qua. Encoder \emph{đã} tính \(T\) trạng thái,
+mỗi trạng thái một bước, và dùng đúng cái cuối cùng. Câu hỏi tự nhiên là vì sao
+phải vứt \(T - 1\) cái kia, và đó là câu hỏi chương~\ref{ch:dong-chinh} mở ra.
+
+Thứ hai, decoder không có cách nào hỏi lại. Nó viết từ thứ mười lăm dựa trên một
+vector đã cố định từ trước khi nó viết từ nào, cộng với những gì chính nó vừa
+viết. Không có bước nào trong \eqref{eq:ch05-phan-ra} nhìn lại câu nguồn.
+
+Thứ ba, thứ mà chương~\ref{ch:lstm} để lại thì chương này không đụng tới. Cả
+encoder lẫn decoder vẫn chạy từng bước một, và một câu \(T\) token vẫn là \(T\)
+lượt tính nối đuôi nhau. Bài còn làm nó nặng thêm: bốn tầng, nên bốn lượt mỗi
+bước. Mười ngày trên tám GPU là cái giá của chuyện đó ở quy mô sản xuất.
+
+Chương~\ref{ch:dong-chinh} giải quyết hai thứ đầu và không đụng tới thứ ba. Nó
+thêm một đường đi từ mọi bước của encoder tới mọi bước của decoder, đo cái chỗ
+thắt \emph{trước} khi vá nó, rồi cho thấy đường mới ấy làm gì với gradient. Cái
+giá là attention lúc đó vẫn là một thứ lắp thêm vào một mạng hồi quy, nên thứ
+ba trong danh sách trên còn nguyên vẹn suốt cả chương ấy. Trong lịch sử thật nó
+còn nguyên thêm hai năm nữa.

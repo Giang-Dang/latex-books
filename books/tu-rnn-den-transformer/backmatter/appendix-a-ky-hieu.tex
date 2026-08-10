@@ -16,12 +16,17 @@ Chiều hidden & \(d_h\) & \(n\) (số unit) & & & \(n\) & \(d_{\mathrm{model}}\
 Chiều output & \(d_y\) & \(m\) & & & & \(d_{\mathrm{model}}\) \\
 Số bước thời gian & \(T\) & & & & \(T_x, T_y\) & \\
 \midrule
-Input tại \(t\) & \(\vect{x}_t\) & \(\vect{x}(t)\) & \(\vect{u}_t\) & & \(\vect{x}_t\) & \\
-Hidden state tại \(t\) & \(\vect{h}_t\) & \(y^{c_j}(t)\) & & & & \\
+Input tại \(t\) & \(\vect{x}_t\) & \(\vect{x}(t)\) & \(\vect{u}_t\) & \(x_t\) & \(\vect{x}_t\) & \\
+Hidden state tại \(t\) & \(\vect{h}_t\) & \(y^{c_j}(t)\) & & \(h_t\) & & \\
 Tiền kích hoạt tại \(t\) & \(\vect{a}_t\) & & \(\vect{x}_t\) & & & \\
 Cell state tại \(t\) & \(\vect{c}_t\) & \(s_{c_j}(t)\) & & & & \\
-Output tại \(t\) & \(\vect{y}_t\) & \(\vect{y}(t)\) & \(\vect{y}_t\) & & & \\
+Output tại \(t\) & \(\vect{y}_t\) & \(\vect{y}(t)\) & \(\vect{y}_t\) & \(y_t\) & & \\
 Tín hiệu lỗi tại \(t\) & \(\vartheta_j(t)\) & \(\vartheta_j(t)\) & & & & \\
+\midrule
+Vector ngữ cảnh & \(\vect{v}\) & & & \(v\) & \(c\), \(c_i\) & \\
+Độ dài câu nguồn & \(T\) & & & \(T\) & \(T_x\) & \\
+Độ dài câu đích & \(T'\) & & & \(T'\) & \(T_y\) & \\
+Bề rộng beam & \(B\) & & & \(B\) & & \\
 \midrule
 Cổng vào tại \(t\) & \(\vect{i}_t\) & \(y^{in_j}(t)\) & & & & \\
 Cổng ra tại \(t\) & \(\vect{o}_t\) & \(y^{out_j}(t)\) & & & & \\
@@ -79,4 +84,20 @@ Gradient of \(L\) w.r.t.\ \(\mat{W}\) & \(\pd{L}{\mat{W}}\) & & \(\frac{\partial
     Ký hiệu \(c_j\) trong bài là \emph{tên của cell}, không phải giá trị trạng
     thái của nó. Sách viết \(\vect{c}_t\) cho trạng thái vì sách làm việc ở mức
     tầng chứ không mức từng cell.
+\end{itemize}
+
+\section{Hai chỗ dễ đọc nhầm ở Sutskever 2014}
+\label{sec:app-a-sutskever}
+
+\begin{itemize}
+  \item \textbf{Chữ \(c\) đổi vai giữa hai bài đứng cạnh nhau.} Sutskever viết
+    \(v\) cho vector ngữ cảnh, còn Bahdanau viết \(c\), và \(c\) trong sách này
+    là trạng thái ô nhớ của chương~\ref{ch:lstm}. Đặt hai bài cạnh nhau mà giữ
+    nguyên ký hiệu gốc thì \(c\) có ba nghĩa trên cùng một trang. Sách viết
+    \(\vect{v}\) cho vector ngữ cảnh ở cả hai chương.
+  \item \textbf{\enquote{The LSTM formulation from Graves} không phải bản 1997.}
+    Bài chỉ dành một câu cho ô nhớ nó dùng, và câu đó trỏ sang Graves 2013, nơi
+    phương trình (7) tới (11) có cổng quên của Gers 2000, có peephole của Gers
+    2002, và dùng tanh ở cả hai chỗ nén. Đọc bài Sutskever với bản 1997 trong
+    đầu là lệch mất ba thay đổi kiến trúc; xem mục~\ref{sec:ch04-cau-noi}.
 \end{itemize}

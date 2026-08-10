@@ -137,15 +137,93 @@
 @inproceedings{sutskever2014seq2seq,
   author       = {Sutskever, Ilya and Vinyals, Oriol and Le, Quoc V.},
   title        = {Sequence to Sequence Learning with Neural Networks},
+  booktitle    = {Advances in Neural Information Processing Systems 27
+                  (NIPS 2014)},
+  editor       = {Ghahramani, Zoubin and Welling, Max and Cortes, Corinna and
+                  Lawrence, Neil D. and Weinberger, Kilian Q.},
+  pages        = {3104--3112},
+  publisher    = {Curran Associates, Inc.},
   year         = {2014},
   eprint       = {1409.3215},
   eprinttype   = {arXiv},
   eprintclass  = {cs.CL},
-  url          = {https://arxiv.org/abs/1409.3215v3},
-  urldate      = {2026-08-09},
-  note         = {Read as arXiv:1409.3215v3, dated 14 December 2014. The copy on
-                 file carries no venue line; confirm the proceedings during
-                 chapter 05 research.}
+  url          = {https://papers.nips.cc/paper_files/paper/2014/hash/5a18e133cbf9f257297f410bb7eca942-Abstract.html},
+  urldate      = {2026-08-10},
+  note         = {Venue confirmed during chapter 05 research, closing a debt the
+                 source manifest had carried since the skeleton session: the
+                 copy on file states no venue. The proceedings volume is
+                 Advances in Neural Information Processing Systems 27, and the
+                 page range comes from DBLP
+                 (\texttt{conf/nips/SutskeverVL14}), since the publisher's own
+                 BibTeX export leaves the \texttt{pages} field empty. Read as
+                 arXiv:1409.3215v3, dated 14 December 2014, which paginates 1
+                 to 9; a page-anchored citation must follow the proceedings.}
+}
+
+@inproceedings{cho2014properties,
+  author    = {Cho, Kyunghyun and van Merri{\"e}nboer, Bart and Bahdanau,
+               Dzmitry and Bengio, Yoshua},
+  title     = {On the Properties of Neural Machine Translation:
+               {Encoder--Decoder} Approaches},
+  booktitle = {Proceedings of SSST-8, Eighth Workshop on Syntax, Semantics and
+               Structure in Statistical Translation},
+  pages     = {103--111},
+  publisher = {Association for Computational Linguistics},
+  location  = {Doha, Qatar},
+  month     = oct,
+  year      = {2014},
+  doi       = {10.3115/v1/W14-4012},
+  eprint    = {1409.1259},
+  eprinttype = {arXiv},
+  eprintclass = {cs.CL},
+  url       = {https://aclanthology.org/W14-4012/},
+  urldate   = {2026-08-10},
+  note      = {The paper that measured the length degradation, and not the same
+               paper as \autocite{cho2014encdec}: Bahdanau et al. cite this one
+               as \enquote{Cho et al. (2014b)} and the EMNLP encoder-decoder
+               paper as \enquote{Cho et al. (2014a)}. Conflating the two is the
+               specific error chapter 05 exists to avoid, because the
+               length-degradation result belongs here and to neither Sutskever
+               et al. nor the EMNLP paper. Abstract read from arXiv:1409.1259v2,
+               dated 7 October 2014; the body was not consulted, so this book
+               cites it for the claim and not for a number.}
+}
+
+@article{graves2013generating,
+  author      = {Graves, Alex},
+  title       = {Generating Sequences With Recurrent Neural Networks},
+  journal     = {arXiv preprint},
+  year        = {2013},
+  eprint      = {1308.0850},
+  eprinttype  = {arXiv},
+  eprintclass = {cs.NE},
+  url         = {https://arxiv.org/abs/1308.0850},
+  urldate     = {2026-08-10},
+  note        = {The LSTM formulation Sutskever et al. say they use. Section 2.1
+                 read in full from arXiv:1308.0850v5, dated 5 June 2014:
+                 equations (7) to (11) carry a forget gate \emph{and} peephole
+                 connections, and tanh on both the cell input and the cell
+                 output. Never published at a venue; cited as a preprint, which
+                 is how Sutskever et al. cite it.}
+}
+
+@inproceedings{kalchbrenner2013recurrent,
+  author    = {Kalchbrenner, Nal and Blunsom, Phil},
+  title     = {Recurrent Continuous Translation Models},
+  booktitle = {Proceedings of the 2013 Conference on Empirical Methods in
+               Natural Language Processing},
+  pages     = {1700--1709},
+  publisher = {Association for Computational Linguistics},
+  location  = {Seattle, Washington, USA},
+  year      = {2013},
+  url       = {https://aclanthology.org/D13-1176/},
+  urldate   = {2026-08-10},
+  note      = {Cited by chapter 05 only for the priority claim Sutskever et al.
+               themselves make, that this is the work which was \enquote{the
+               first to map the input sentence into a vector and then back to a
+               sentence}. Bibliographic record read from the ACL Anthology; the
+               paper itself was not read, so nothing beyond that attribution is
+               taken from it.}
 }
 
 %--- Chapter 06: alignment --------------------------------------------------

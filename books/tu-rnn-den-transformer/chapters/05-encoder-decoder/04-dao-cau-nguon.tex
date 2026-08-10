@@ -1,0 +1,109 @@
+\section{Đảo câu nguồn}
+\label{sec:ch05-dao-cau-nguon}
+
+\index{đảo câu nguồn!phát biểu}%
+Trong ba chỗ mà mô hình thật của bài khác mô hình trong mục 2, hai chỗ đầu là
+chuyện kích thước. Chỗ thứ ba thì không đụng gì tới kiến trúc:
+\tn{đảo câu nguồn}{source reversal}, tức đảo ngược thứ tự từ của
+\tn{câu nguồn}{source sentence}, và chỉ câu nguồn, trước khi đưa vào mạng. Thay
+vì học ánh xạ \(a, b, c\) sang \(\alpha, \beta, \gamma\), mạng được hỏi ánh xạ
+\(c, b, a\) sang \(\alpha, \beta, \gamma\).
+
+Bài gọi đây là một trong những đóng góp kỹ thuật chính của nó, và con số họ đưa
+ra không nhỏ: perplexity trên tập test giảm từ 5.8 xuống 4.7, BLEU tăng từ 25.9
+lên 30.6.
+
+\index{đảo câu nguồn!lập luận theo khoảng cách}%
+Lập luận thì đáng đọc kỹ hơn con số, vì nó là lập luận về khoảng cách và nó
+kiểm được. Nối câu nguồn với \tn{câu đích}{target sentence} lại thành một
+chuỗi, rồi hỏi mỗi từ nguồn
+cách từ đích tương ứng của nó bao xa. Bài viết rằng đảo câu nguồn để nguyên
+khoảng cách \emph{trung bình} giữa các cặp từ tương ứng, rồi nói tiếp:
+\enquote{however, the first
+few words in the source language are now very close to the first few words in
+the target language, so the problem's minimal time lag is greatly reduced}.
+
+Chữ \enquote{minimal time lag} ấy đã có trong chương~\ref{ch:hien-tuong}, ở hộp
+cầu nối về Hochreiter 1991. Nó là quãng ngắn nhất mà tín hiệu lỗi phải đi được
+để mạng bắt đầu học được cái gì đó. Encoder đọc xong thì dừng ở từ \emph{cuối}
+của câu nguồn, và decoder viết ra từ \emph{đầu} của câu đích ngay sau đó. Không
+đảo thì từ đích đầu tiên và từ nguồn ứng với nó nằm ở hai đầu đối diện của chuỗi
+ghép, tức xa nhau nhất có thể. Đảo thì chúng thành cạnh nhau.
+
+\subsection*{Lập luận ấy dự đoán một thứ sắc hơn \enquote{đảo thì tốt hơn}}
+
+Nếu tác dụng của phép đảo đến từ khoảng cách, thì phần lợi phải rơi vào câu dài.
+Với câu ngắn thì mọi từ đã đủ gần rồi, đảo hay không cũng thế, nên ở đó phép đảo
+phải gần như không làm gì.
+
+Đó là một dự đoán, không phải một cách diễn đạt lại. Nó sai được. Bảng dưới đây
+chạy ba seed mỗi vế, và in ra từng seed chứ không chỉ trung bình.
+
+\begin{measured}{đảo câu nguồn, ba seed mỗi vế}
+\begin{minted}{text}
+source     seed  loss     exact    short    long
+raw        0     0.0644   0.6733   1.0000   0.3553
+raw        1     0.1392   0.5367   1.0000   0.0855
+raw        2     0.0997   0.5933   1.0000   0.1974
+reversed   0     0.0251   0.8533   1.0000   0.7105
+reversed   1     0.0652   0.6433   0.9797   0.3158
+reversed   2     0.0353   0.8433   1.0000   0.6908
+
+mean over seeds:
+source     exact    short    long
+raw        0.6011   1.0000   0.2127
+reversed   0.7800   0.9932   0.5724
+
+reversed minus raw:
+  exact  +0.1789
+  short  -0.0068
+  long   +0.3596
+\end{minted}
+
+Đo bằng \code{experiments/ch05\_reverse.py} tại tag \code{ch05}.
+\end{measured}
+
+\index{đảo câu nguồn!phần lợi rơi vào câu dài}%
+Dự đoán đúng, và đúng gọn hơn tôi tưởng. Câu ngắn đứng yên: 1.0000 thành 0.9932,
+tức lệch đi một câu trong một trăm bốn tám, và lệch theo chiều xấu đi. Câu dài
+đi từ 0.2127 lên 0.5724. Toàn bộ 0.1789 điểm mà phép đảo mang lại đến từ nhóm
+câu dài, đúng nhóm mà lập luận khoảng cách nói nó phải đến.
+
+\subsection*{Đọc bảng này theo cặp, không theo trung bình}
+
+\index{đo lường!so theo cặp cùng seed}%
+Ba dòng \code{reversed} tản từ 0.6433 tới 0.8533. Ba dòng \code{raw} tản từ
+0.5367 tới 0.6733. Hai dải ấy chồng lên nhau: seed 1 có đảo (0.6433) còn thấp
+hơn seed 0 không đảo (0.6733). Nếu tôi chỉ chạy một seed mỗi vế và rút phải hai
+seed đó, tôi đã kết luận phép đảo làm hại.
+
+Cách đọc đúng là so theo cặp cùng seed, vì hai vế cùng seed dùng chung cả khởi
+tạo lẫn thứ tự minibatch: 0.8533 so 0.6733, rồi 0.6433 so 0.5367, rồi 0.8433 so
+0.5933. Ba trên ba, và trên cột \code{long} cũng ba trên ba. Đó là bằng chứng,
+còn trung bình một mình thì không.
+
+Chuyện này không phải mẹo thống kê mà là hệ quả của quy mô. Ở đây một lần huấn
+luyện là một con số, không phải một xu hướng, và chương~\ref{ch:lstm} đã học bài
+ấy một lần rồi ở phép đo cosine của nó.
+
+\subsection*{Chỗ bài tự nhận là bất ngờ}
+
+\index{đảo câu nguồn!điều bài không dự đoán được}%
+Có một đoạn trong mục 3.3 mà tôi thích, vì nó là chỗ hiếm hoi một bài báo ghi
+lại dự đoán sai của chính mình. Các tác giả viết rằng ban đầu họ tin phép đảo
+chỉ làm mạng tự tin hơn ở \emph{đầu} câu đích và kém tự tin hơn ở
+\emph{cuối} câu, tức một phép đổi chỗ chứ không phải một phép cải thiện. Rồi họ
+đo và thấy mạng huấn luyện trên câu đảo làm tốt hơn hẳn trên câu dài, và họ kết
+luận rằng phép đảo cho ra những mạng dùng bộ nhớ tốt hơn
+(\enquote{LSTMs with better memory utilization}).
+
+Bảng trên nói cùng một chuyện bằng một phép đo khác: cột \code{short} không mất
+gì, cột \code{long} được rất nhiều. Không có chỗ nào tệ đi để đổi lấy chỗ tốt
+lên. Nếu đây chỉ là đổi chỗ, phải có một cột đi xuống, và không có.
+
+Còn một câu nữa trong mục 5 đáng ghi, vì nó là một chỗ bài để ngỏ: họ không
+huấn luyện nổi một mạng hồi quy thường trên bài toán không đảo, nhưng tin rằng
+một mạng như thế sẽ huấn luyện được dễ dàng khi câu nguồn đã đảo. Nguyên văn:
+\enquote{we believe that a standard RNN should be easily trainable when the
+source sentences are reversed}. Và họ nói thẳng ra là không kiểm bằng thí
+nghiệm. Bài tập cuối chương có một câu hỏi về chỗ đó.

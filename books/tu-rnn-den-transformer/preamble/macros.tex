@@ -90,6 +90,12 @@
 \theoremstyle{remark}
 \newtheorem{remark}[definition]{Nhận xét}
 
+% The algorithm float is the one caption label in this book that babel does not
+% localize, because `algorithm` sets its own name rather than taking one from
+% the language. Left alone it prints "Algorithm 1" in the middle of a Vietnamese
+% page. Chapter 3 shipped that way; chapter 5 would have been the second.
+\floatname{algorithm}{Thuật toán}
+
 % ---------------------------------------------------------------------------
 % The two recurring boxes
 % ---------------------------------------------------------------------------

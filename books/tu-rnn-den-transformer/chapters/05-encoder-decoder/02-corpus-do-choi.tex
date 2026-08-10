@@ -1,0 +1,134 @@
+\section{Một corpus đủ nhỏ để chạy, đủ lệch để đo}
+\label{sec:ch05-corpus}
+
+\index{corpus đồ chơi!ba ràng buộc}%
+Bốn mục sau đều là số đo, nên trước hết phải nói rõ đo trên cái gì. Bài huấn
+luyện trên mười hai triệu cặp \tn{câu nguồn}{source sentence} và
+\tn{câu đích}{target sentence} của WMT'14 Anh-Pháp, mười ngày trên một máy tám
+GPU.
+Sách này hứa với bạn rằng mọi thí nghiệm chạy xong trên một laptop không có card
+đồ hoạ, nên tôi không đi theo đường đó được, và nói rõ ngay từ đầu rằng cái tôi
+dựng là đồ chơi.
+
+Ba ràng buộc phải thoả cùng lúc, và không tập dữ liệu công khai nào thoả cả ba.
+Nó phải chạy xong trên CPU trong ngân sách của sách. Nó phải tái lập được từ một
+seed, không tải gì, để \code{verify.py} chạy được trên máy người khác. Và hai
+thứ tiếng phải khác thứ tự từ đủ nhiều, vì chương~\ref{ch:dong-chinh} cần một
+\tn{ma trận đồng chỉnh}{alignment matrix} có chỗ bắt chéo chứ không phải một
+đường chéo.
+
+Nên corpus được sinh ra từ một văn phạm nhỏ nằm trong repo. Anh sang Việt, cùng
+chiều với bài, vì tiếng Anh là câu nguồn ở cả hai bên.
+
+\subsection*{Thứ duy nhất nó mô hình hoá thật}
+
+\index{cụm danh từ!đảo vị trí tính từ}%
+Đó là \tn{cụm danh từ}{noun phrase} đảo, và \tn{đảo câu nguồn}{source reversal}
+ở mục~\ref{sec:ch05-dao-cau-nguon} là chuyện khác hẳn, đừng lẫn hai cái. Tiếng
+Anh đặt tính từ trước danh từ, tiếng Việt đặt sau. Tiếng Anh đánh dấu xác định
+bằng mạo từ, tiếng Việt dùng \tn{loại từ}{classifier}, và loại từ không có từ
+tiếng Anh nào tương ứng.
+
+\begin{minted}{text}
+the black cat  ->  con  mèo  đen
+a  new  lamp   ->  một cái  đèn  mới
+\end{minted}
+
+Một mô hình dịch corpus này bằng cách chép vị trí sang vị trí sẽ sai tính từ ở
+mọi cụm có tính từ. Và đó là chỗ đáng giá: một ma trận đồng chỉnh đường chéo
+không giải được corpus này, nên một mô hình đồng chỉnh được nó thì đã học được
+cái gì đó thật.
+
+Văn phạm sinh câu một hoặc hai mệnh đề, mỗi mệnh đề là chủ ngữ, động từ, tân
+ngữ, cộng một cụm chỉ nơi chốn tuỳ chọn. Mỗi động từ tiếng Anh đúng một token,
+còn phía tiếng Việt thì một hoặc hai (\enquote{muốn} một token,
+\enquote{nhìn thấy} hai), nên độ dài câu đích không phải hàm của độ dài câu
+nguồn.
+
+\begin{minted}{text}
+  en  the white bird wants the chair at the window
+  vi  con chim trắng muốn cái ghế cạnh cửa sổ
+  en  the cat wants a dog
+  vi  con mèo muốn một con chó
+\end{minted}
+
+\begin{measured}{corpus sinh từ văn phạm, tag \code{ch05}}
+\begin{minted}{text}
+split  pairs  src min  src max  src mean  tgt min  tgt max  tgt mean
+train  6000   5        21       12.232    5        25       13.716
+test   300    5        21       12.397    6        24       13.877
+
+target longer than source in 0.7800 of training pairs
+source sentences shared between train and test: 0
+\end{minted}
+
+Hai \tn{từ điển}{vocabulary} đều đóng: 34 loại token bên nguồn, 37 bên đích, kể
+cả ba ký hiệu đặc biệt. Cả hai dựng từ chính văn phạm chứ không từ một mẫu, nên
+số hiệu token không đổi khi thí nghiệm rút nhiều câu hay ít câu.
+
+Đo bằng \code{experiments/ch05\_corpus.py} tại tag \code{ch05}.
+\end{measured}
+
+Câu đích dài hơn câu nguồn ở 0.7800 số cặp, và loại từ là lý do chính. Con số
+\enquote{0 câu chung giữa train và test} là đo chứ không phải giả định: tập test
+được rút dư gấp đôi rồi lọc bỏ mọi câu đã có trong train.
+
+\subsection*{Thứ nó không mô hình hoá, và chương sẽ không giả vờ}
+
+\index{corpus đồ chơi!giới hạn}%
+Danh sách này quan trọng ngang danh sách trên, vì mọi con số ở bốn mục sau phải
+đọc trong khung của nó.
+
+Văn phạm hữu hạn và phi ngữ cảnh, nên một mô hình đủ lớn học thuộc được nó. Ở
+đây không có hình thái, không có hợp giống số, không có nhập nhằng, không có từ
+hiếm. Từ điển đóng và mọi token xuất hiện hàng nghìn lần, nên bài toán
+\tn{ngoài từ điển}{out-of-vocabulary} không thể xảy ra ở đây. Chính bài toán ấy
+ăn mất một phần điểm Bilingual Evaluation Understudy, viết tắt là BLEU, của bài
+báo, và bài nhắc tới nó ngay trong tóm tắt. Và câu
+thì vô nghĩa về nội dung: văn phạm ràng buộc cú pháp, không ràng buộc nghĩa, nên
+\enquote{con mèo mang một cái đèn mới} là một câu hợp lệ của nó.
+
+Vậy nên không con số nào trong chương này so được với BLEU của bài. Chúng đo
+những thứ khác nhau trên những tập khác nhau ở những quy mô khác nhau. Cái
+chúng làm được là kiểm các \emph{lập luận} của bài, và lập luận thì không đổi
+theo quy mô: nếu đảo câu nguồn có tác dụng vì nó rút ngắn khoảng cách giữa từ
+tương ứng, thì tác dụng ấy phải thấy được ở mọi quy mô mà khoảng cách còn có
+nghĩa.
+
+\subsection*{Cách chấm điểm}
+
+\index{khớp đúng cả câu!vì sao không dùng BLEU}%
+Mọi bảng dưới đây chấm \tn{khớp đúng cả câu}{exact match}: cả câu đích đúng
+từng token thì được 1, sai một token thì được 0. Không dùng BLEU, có chủ ý. Trên
+một corpus nhỏ và đều thế này, một điểm cho phần đúng đo một thứ không đáng tin;
+còn cái hỏng mà chương này quan tâm là mô hình đặt tính từ sai bên, tức một câu
+sai chứ không phải một câu hơi kém hơn.
+
+Hai cột lặp lại ở mọi bảng. \code{short} là câu nguồn từ 11 token trở xuống,
+\code{long} là dài hơn. Ngưỡng 11 là biên giữa một mệnh đề và hai mệnh đề của
+văn phạm, chọn trước khi nhìn kết quả chứ không phải sau; trong 300 câu test thì
+148 câu ngắn và 152 câu dài. Tách hai cột ấy ra là chuyện đáng làm, và mục sau
+là chỗ cho thấy vì sao.
+
+\subsection*{Thiết lập huấn luyện, và ba chỗ nó lệch khỏi bài}
+
+\index{corpus đồ chơi!thiết lập huấn luyện dùng chung}%
+Bốn bảng của chương này đặt cạnh nhau được thì chúng phải cùng một thiết lập,
+nên thiết lập ấy nằm một chỗ trong \code{seq2seq.py} chứ không chép vào từng
+script: 6000 cặp huấn luyện, 300 cặp test, batch 128, 14 epoch, \(d_h = 128\),
+embedding 32 chiều.
+
+Ba chỗ lệch khỏi bài, và cả ba là chuyện ngân sách chứ không phải bất đồng.
+
+Optimizer là Adam ở learning rate 0.005. Bài dùng SGD thường ở learning rate
+0.7, giảm nửa mỗi nửa epoch sau epoch thứ năm, tổng cộng 7.5 epoch. Bài có mười
+ngày trên tám GPU để chờ lịch ấy hội tụ; tôi có vài chục giây.
+
+Cắt gradient thì \emph{không} lệch: ngưỡng norm 5.0, đúng con số bài đặt ở mục
+3.4, và chương~\ref{ch:phan-tich} đã dẫn ra vì sao phép cắt ấy hoạt động.
+
+Và 14 epoch là ngân sách chứ không phải hội tụ. Cùng mô hình chạy 20 epoch cho
+0.9533 và chạy 40 epoch cho 0.9600, so với 0.8533 ở 14. Tôi in số ở 14 vì mười
+lăm lần huấn luyện phải nằm gọn trong ngân sách cả lần chạy, và vì mọi so sánh
+trong chương chỉ cần hai vế dừng ở cùng một chỗ. Khi đọc một con số tuyệt đối
+trong chương này, nhớ rằng nó còn cách chỗ mô hình đi được khoảng mười điểm.
