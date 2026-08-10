@@ -1,6 +1,8 @@
 #!/usr/bin/env pwsh
 # One-time setup per clone, on Windows, macOS or Linux. Safe to re-run.
-#   - enables the pre-commit build gate
+#   - points git at .githooks, which is the pre-commit build gate and the four
+#     Git LFS hooks
+#   - configures the Git LFS filters, or says loudly that git-lfs is missing
 #   - links .agents/skills at .claude/skills, for agent runtimes that look in
 #     .agents/ rather than .claude/. The link is generated, never committed:
 #     .claude/skills is the only tracked copy.
@@ -20,11 +22,35 @@ if ($PSVersionTable.PSEdition -eq 'Desktop') {
 $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
 try {
-    # --- 1. the build gate -------------------------------------------------
+    # --- 1. the hooks directory --------------------------------------------
+    # Relative on purpose: git resolves it against each worktree, so a branch
+    # runs the hooks it ships rather than main's, and a clone that moves on
+    # disk keeps working. --default keeps an unset key from failing the call.
+    $prior = git config --get --default '' core.hooksPath
+    if ($prior -and $prior -ne '.githooks') {
+        Write-Host "==> core.hooksPath was '$prior'; correcting it"
+    }
     git config core.hooksPath .githooks
     Write-Host '==> core.hooksPath = .githooks'
 
-    # --- 2. the skills mirror ----------------------------------------------
+    # --- 2. Git LFS --------------------------------------------------------
+    # dist/*.pdf lives in LFS and .githooks tracks the four hooks LFS needs, so
+    # all that is left per clone is the filters. This runs after step 1 because
+    # git lfs install writes hooks into whatever core.hooksPath points at - the
+    # tracked ones are byte-identical to what it would write, so it finds its
+    # own work already done and changes nothing.
+    if (-not (Get-Command git-lfs -ErrorAction SilentlyContinue)) {
+        Write-Warning 'git-lfs is not on PATH. Those hooks abort every checkout, commit, merge and push until it is installed, and dist/*.pdf checks out as a pointer file rather than a PDF. Install it from https://git-lfs.com and re-run this script.'
+    }
+    elseif (git config --get --default '' filter.lfs.process) {
+        Write-Host '==> git lfs: filters already configured'
+    }
+    else {
+        git lfs install --local
+        Write-Host '==> git lfs: filters written to .git/config'
+    }
+
+    # --- 3. the skills mirror ----------------------------------------------
     $target = Join-Path $root '.claude/skills'
     $link = Join-Path $root '.agents/skills'
 
@@ -87,7 +113,7 @@ try {
         $made = 'copy'
     }
 
-    # --- 3. prove it resolves ----------------------------------------------
+    # --- 4. prove it resolves ----------------------------------------------
     $probe = Join-Path $link 'draft-chapter/SKILL.md'
     if (-not (Test-Path $probe)) {
         Write-Error "Created .agents/skills as $made, but '$probe' does not resolve."
