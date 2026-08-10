@@ -1,0 +1,98 @@
+\section{Ba thứ được lắp thêm sau 1997}
+\label{sec:ch04-cau-noi}
+
+\index{ô nhớ!ba biến thể sau 1997}%
+Kiến trúc trong \code{torch.nn.LSTM} hôm nay không phải kiến trúc mục trước vừa
+dẫn. Ba bài dưới đây là ba lần \tn{ô nhớ}{memory cell} được sửa lại sau 1997,
+và chúng không cùng một loại. Hai bài đầu đến từ việc dùng bản 1997 rồi va phải
+một chỗ nó không xử lý được; chỉ bài thứ nhất trong hai bài ấy nằm trong
+\code{torch.nn.LSTM}. Bài thứ ba đến từ hướng khác hẳn.
+
+\begin{bridge}{Gers, Schmidhuber và Cummins 2000: cổng quên}
+Bản 1997 giả định chuỗi có điểm kết thúc, và ở đó trạng thái được đặt lại về
+không. Bỏ giả định ấy đi, cho mạng đọc một dòng dữ liệu chảy liên tục không
+được cắt sẵn thành đoạn, thì phương trình~\eqref{eq:ch04-cap-nhat-c} thành một
+phép cộng dồn không bao giờ dừng: \(\vect{c}_t\) lớn dần không giới hạn,
+\(g_{\mathrm{out}}\) bão hoà, đạo hàm của nó về không, và ô nhớ chết theo cách
+mà chính CEC gây ra.
+
+Cách sửa là bỏ hằng số 1.0 và thay bằng một cổng thứ ba,
+\tn{cổng quên}{forget gate} \(\vect{f}_t\), tính giống hai cổng kia:
+
+\[
+  \vect{c}_t = \vect{f}_t \odot \vect{c}_{t-1}
+             + \vect{i}_t \odot g_{\mathrm{in}}(\vect{a}^{c}_t).
+\]
+
+Cái được là ô nhớ tự học lúc nào nên xoá chính nó. Cái mất thì đọc thẳng ra từ
+mục~\ref{sec:ch04-dao-ham}: \(\jac{\vect{c}_t}{\vect{c}_{t-1}}\) không còn là
+\(\mat{I}\) mà là \(\diag(\vect{f}_t)\), nên vòng quay chỉ không đổi khi cổng
+còn mở. Bản 2000 đánh đổi một bảo đảm lấy một khả năng, và đó là bản mà mọi thư
+viện hôm nay cài đặt.
+
+Neural Computation 12(10):2451-2471, năm 2000~\autocite{gers2000forget}.
+\end{bridge}
+
+\begin{bridge}{Gers, Schraudolph và Schmidhuber 2002: peephole}
+Chỗ hở lần này nằm ở chính chỗ mục~\ref{sec:ch04-o-nho} vừa mô tả: cổng nhận
+kết nối từ output của các \tn{ô nhớ}{memory cell}, không từ trạng thái. Mà
+output là
+\(\vect{o}_t \odot g_{\mathrm{out}}(\vect{c}_t)\), nên khi
+\tn{cổng ra}{output gate} đóng thì output gần bằng không và không cổng nào còn
+nhìn thấy gì. Đóng cổng ra là làm mù cả ba cổng cùng lúc.
+
+Peephole là ba nhóm trọng số nối thẳng từ trạng thái sang các cổng. Thứ tự thời
+gian trong đó là chỗ dễ chép sai: \tn{cổng vào}{input gate} và cổng quên nhìn
+\(\vect{c}_{t-1}\), còn cổng ra nhìn \(\vect{c}_t\), tức trạng thái đã cập
+nhật. Vì thế bài phải chia một bước thành hai pha, cập nhật cổng vào, cổng quên
+và trạng thái trước, rồi mới tới cổng ra và output.
+
+Kết quả tiêu đề: mạng phân biệt được chuỗi xung cách nhau 50 bước với chuỗi
+cách nhau 49 bước, không cần một ví dụ huấn luyện ngắn nào. Chi phí là ba trọng
+số mỗi cell.
+
+Journal of Machine Learning Research 3:115-143, năm
+2002~\autocite{gers2002timing}.
+\end{bridge}
+
+\begin{bridge}{Cho và cộng sự 2014: hai cổng thay vì ba}
+Bài này đến từ hướng khác. Nó không sửa lỗi của LSTM; nó hỏi liệu có cần nhiều
+bộ phận đến thế không. Đơn vị họ đề xuất bỏ hẳn trạng thái tách rời và bỏ cổng
+ra, giữ hai cổng: reset gate \(\vect{r}_t\) và update gate \(\vect{z}_t\).
+
+\[
+  \vect{h}_t = \vect{z}_t \odot \vect{h}_{t-1}
+             + (1 - \vect{z}_t) \odot \tilde{\vect{h}}_t,
+  \qquad
+  \tilde{\vect{h}}_t = \phi\!\left(
+    \mat{W}\vect{x}_t + \mat{U}(\vect{r}_t \odot \vect{h}_{t-1})
+  \right).
+\]
+
+Một cổng duy nhất điều khiển cả giữ lẫn ghi, vì hai hệ số cộng lại bằng 1. Đó
+là lý do nó kém linh hoạt hơn: LSTM giữ và ghi độc lập được, đơn vị này thì
+không. Về số tham số thì nó ngang bản 1997 và ít hơn bản 2000 đúng một khối,
+như bảng ở mục~\ref{sec:ch04-con-lai-gi} đếm ra.
+
+Hai chỗ về tên gọi. Bài \emph{không} dùng chữ \enquote{GRU} và cũng không dùng
+\enquote{gated recurrent unit}; nó gọi đây là \enquote{a new type of hidden
+unit}, và cái tên viết tắt đến sau. Còn cước chú của chính bài viết rằng LSTM
+có \enquote{a memory cell and four gating units}, đếm rộng tay hơn cách đếm
+thông thường, vì bản 2000 có ba cổng cộng cell input. Con số bốn hay được lấy
+ra từ chỗ này.
+
+EMNLP 2014, trang 1724-1734~\autocite{cho2014encdec}.
+\end{bridge}
+
+\subsection*{Vậy \code{torch.nn.LSTM} là bản nào}
+
+\index{ô nhớ!bản trong PyTorch}%
+Là bản 2000 có cổng quên, không có peephole, và một chỗ nữa đáng biết: nó giữ
+hàm nén trên trạng thái, tức \(\vect{h}_t = \vect{o}_t \odot \tanh(\vect{c}_t)\),
+với tanh thật chứ không phải \(g_{\mathrm{out}}\) của bài 1997. Riêng bài 2002
+thì bỏ hẳn hàm ấy đi, nói rõ là vì không có bằng chứng thực nghiệm cho thấy nó
+cần thiết. Ba bản, ba lựa chọn khác nhau ở đúng một chỗ trong một phương trình.
+
+Nếu bạn muốn một câu tóm tắt để nhớ: cái người ta gọi là LSTM là kiến trúc
+1997 với cổng quên của năm 2000 lắp vào, chạy trên gradient đầy đủ mà framework
+tính hộ thay vì phép cắt mà bài 1997 đã thiết kế cho nó.

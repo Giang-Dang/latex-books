@@ -1,0 +1,122 @@
+\section{Bài báo giải được gì, và để lại gì}
+\label{sec:ch04-con-lai-gi}
+
+\index{ô nhớ!kết quả trên adding problem}%
+Chương~\ref{ch:hien-tuong} huấn luyện một mạng hồi quy thường trên
+\tn{bài toán cộng}{adding problem} và xem nó hỏng. Ở \(T = 50\) và \(T = 100\)
+thì loss dừng quanh 0.65. Con số ấy không phải một lời giải dở dang: phương sai
+của target là 2/3, vì nó là tổng của hai giá trị rút đều từ \([-1, 1]\), nên
+một mô hình luôn trả lời 0 đạt đúng 0.6667. Mạng của
+chương~\ref{ch:hien-tuong} đạt phương sai. Nó dừng nghe input.
+
+Cần nói ngay một chuyện mà chương~\ref{ch:hien-tuong} đã tự nói và tôi không
+được phép quên: trên bài toán này gradient của nó \emph{không} triệt tiêu. Tỉ
+số chuẩn gradient giữa bước đầu và bước cuối vẫn quanh 1.0 ngay ở \(T = 100\),
+và chương ấy kết luận thẳng rằng bài toán cộng không phải bài kiểm tra tốt cho
+triệt tiêu gradient. Mạng hỏng, nhưng không hỏng vì tín hiệu lỗi không đi xa
+được.
+
+Vậy nên số đo dưới đây không phải bằng chứng cho CEC. Nó là bằng chứng cho
+mục~\ref{sec:ch04-hai-xung-dot}. Bài toán cộng đòi đúng cái mà một trọng số
+hằng theo thời gian không biểu diễn được: ghi ở hai bước được đánh dấu, làm ngơ
+ở chín mươi tám bước còn lại. Một mạng hồi quy thường không có chỗ nào đặt chữ
+\enquote{khi nào}, và \(1/T\) của mục~\ref{sec:ch04-hai-xung-dot} là cái giá
+của việc thiếu chỗ ấy.
+
+Hai mô hình dưới đây chạy trên cùng bộ sinh, cùng optimizer, cùng số batch và
+cùng thứ tự batch với nhau. Chúng không chạy cùng thiết lập với
+chương~\ref{ch:hien-tuong}: chương ấy huấn luyện bằng numpy và SGD, còn đây là
+PyTorch và Adam. Thứ duy nhất khác nhau giữa hai dòng bảng là cái nằm trong
+phép hồi quy.
+
+\begin{measured}{ô nhớ trên bài toán mà chương~\ref{ch:hien-tuong} không giải được}
+\begin{minted}{text}
+model        d_h  params  loss @400    loss @800    final (mean 100)
+LSTM 1997    16   929     0.011706     0.003343     0.001397
+plain RNN    32   1153    0.683808     0.672034     0.675564
+\end{minted}
+
+\(T = 100\), 1200 batch, batch 64, learning rate 0.01, Adam cho cả hai.
+
+RNN thường được cho tầng ẩn \emph{lớn hơn}, 32 so với 16, nên nó mang 1153
+trọng số so với 929 của \tn{ô nhớ}{memory cell}. Kết quả này không đọc được
+thành \enquote{LSTM được phát nhiều tham số hơn}.
+
+Ô nhớ về 0.001397, tức 0.002095 phương sai target. RNN thường dừng ở 0.675564,
+tức 1.013346 lần phương sai, sau 1200 batch với một optimizer mạnh hơn thứ
+chương~\ref{ch:hien-tuong} dùng.
+
+Đo bằng \code{experiments/ch04\_adding.py} tại tag \code{ch04}.
+\end{measured}
+
+Cả hai lần huấn luyện gộp lại chạy dưới một phút trên một laptop không có card
+đồ hoạ, và ngân sách mà repo companion tự áp cho mỗi experiment cũng là một
+phút. Bài đưa số ở quy mô khác hẳn: quãng vượt 1000 bước, và trên bài toán 2c
+của họ thì cả real-time recurrent learning, viết tắt là RTRL, lẫn lan truyền
+ngược qua thời gian, viết tắt là BPTT, đều không giải nổi ngay từ quãng 10
+bước~\autocite{hochreiter1997lstm}.
+
+\subsection*{Tham số: ba, bốn, hay chín}
+
+\index{ô nhớ!đếm tham số}%
+Con số hay được dẫn là bốn: một tầng LSTM có gấp bốn lần trọng số của một tầng
+hồi quy thường cùng bề rộng. Bài 1997 thì dẫn một con số khác, \(3^2\). Cả hai
+đều đúng và chúng không phải hai câu trả lời cho một câu hỏi.
+
+\begin{minted}{text}
+model       blocks  parameters  vs plain RNN
+plain RNN   1       131328      1.00
+LSTM 1997   3       393984      3.00
+LSTM 2000   4       525312      4.00
+GRU 2014    3       393984      3.00
+\end{minted}
+
+Ba, cho bản 1997 ở dạng tầng: cell input, \tn{cổng vào}{input gate},
+\tn{cổng ra}{output gate}. Không có \tn{cổng quên}{forget gate}, nên không có
+khối thứ tư. Bốn là bản 2000. Con số bốn nói về một kiến trúc mà chương này còn
+chưa tới, và gán nó cho bài 1997 là gán sai.
+
+Còn chín là topology của chính bài, nơi tầng ẩn nối đầy đủ và mỗi cổng nhận kết
+nối từ mọi ô nhớ lẫn mọi cổng khác. Thay một hidden unit bằng ba unit thì nhân
+ba cả số nguồn lẫn số đích, nên khối hồi quy nhân \(3^2\). Tôi đếm thử ở 64
+unit và được đúng 9.0000 trên riêng khối hồi quy; cả tầng thì 8.2603, vì trọng
+số input và bias chỉ nhân 3 chứ không nhân 9.
+
+Một chi tiết nhỏ nếu bạn tự đếm bằng PyTorch: \code{torch.nn.LSTM} cho tỷ số
+4.0078 chứ không đúng 4, vì nó mang hai vector bias cho mỗi khối thay vì một.
+
+\subsection*{Cái bài tự nêu, và cái chỉ nhìn từ 2026 mới thấy}
+
+\index{ô nhớ!giới hạn}%
+Mục 6 của bài liệt kê giới hạn, và danh sách ấy đáng đọc vì nó không phải danh
+sách bạn sẽ đoán. Bản cắt cụt không giải được bài không phân rã được, kiểu XOR
+trễ. Mỗi \tn{khối ô nhớ}{memory cell block} cần thêm hai unit. Vì dòng lỗi qua
+CEC không đổi, LSTM gặp đúng loại khó khăn mà một mạng feedforward nhìn cả
+chuỗi một lúc gặp phải, ví dụ bài parity 500 bước. Và mọi phương pháp dựa
+gradient đều không đếm chính xác được số bước rời rạc, nên phân biệt
+\enquote{99 bước trước} với \enquote{100 bước trước} thì cần thêm một cơ chế
+đếm.
+
+Chỗ đáng nói là cái \emph{không} có trong danh sách ấy. Bài không coi tính tuần
+tự là một giới hạn. Năm 1997 không ai coi song song hoá là ràng buộc, vì thứ
+đang thiếu là khả năng học chứ không phải thông lượng. Người ta hay tóm tắt
+khoảng trống mà chương này để lại thành \enquote{vẫn tuần tự, tham số gấp
+bốn}, và tôi phải nói rõ: cả hai vế đều là đánh giá nhìn ngược, không phải lời
+của bài. Vế thứ hai còn sai một đơn vị so với bản 1997, như bảng trên vừa chỉ
+ra.
+
+Nhưng nhìn ngược không có nghĩa là không có thật.
+Phương trình~\eqref{eq:ch04-cap-nhat-c} tính \(\vect{c}_t\) từ
+\(\vect{c}_{t-1}\), nên \(T\) bước là \(T\) lượt tính nối đuôi nhau, và không
+có phần cứng nào rút ngắn được một chuỗi phụ thuộc. Ô nhớ sửa được chuyện
+gradient không đi xa; nó không đụng gì tới chuyện phải đi \emph{từng bước một}.
+Suốt hai mươi năm sau đó, đó không phải điều đáng phàn nàn. Nó thành điều đáng
+phàn nàn đúng lúc kích thước tập dữ liệu và số nhân trên một card vượt qua một
+ngưỡng nào đó, và chương~\ref{ch:transformer} là chỗ ai đó quyết định trả giá
+để bỏ hẳn phép hồi quy đi.
+
+Còn hai chương nữa trước khi tới đó. Ô nhớ giải bài toán nhớ trong \emph{một}
+chuỗi. Câu hỏi tiếp theo không phải nhớ lâu hơn mà là một câu khác hẳn: đọc một
+chuỗi rồi sinh ra một chuỗi khác, độ dài khác, thứ tự khác.
+Chương~\ref{ch:encoder-decoder} lấy ô nhớ này làm linh kiện và dựng thứ đó, rồi
+phát hiện ra chỗ thắt nằm ở một nơi mà chương này không hề nhắc tới.

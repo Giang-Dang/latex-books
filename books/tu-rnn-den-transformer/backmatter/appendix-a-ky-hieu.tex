@@ -17,10 +17,20 @@ Chiều output & \(d_y\) & \(m\) & & & & \(d_{\mathrm{model}}\) \\
 Số bước thời gian & \(T\) & & & & \(T_x, T_y\) & \\
 \midrule
 Input tại \(t\) & \(\vect{x}_t\) & \(\vect{x}(t)\) & \(\vect{u}_t\) & & \(\vect{x}_t\) & \\
-Hidden state tại \(t\) & \(\vect{h}_t\) & & & & & \\
+Hidden state tại \(t\) & \(\vect{h}_t\) & \(y^{c_j}(t)\) & & & & \\
 Tiền kích hoạt tại \(t\) & \(\vect{a}_t\) & & \(\vect{x}_t\) & & & \\
-Cell state tại \(t\) & \(\vect{c}_t\) & \(\vect{c}_t\) & & & & \\
+Cell state tại \(t\) & \(\vect{c}_t\) & \(s_{c_j}(t)\) & & & & \\
 Output tại \(t\) & \(\vect{y}_t\) & \(\vect{y}(t)\) & \(\vect{y}_t\) & & & \\
+Tín hiệu lỗi tại \(t\) & \(\vartheta_j(t)\) & \(\vartheta_j(t)\) & & & & \\
+\midrule
+Cổng vào tại \(t\) & \(\vect{i}_t\) & \(y^{in_j}(t)\) & & & & \\
+Cổng ra tại \(t\) & \(\vect{o}_t\) & \(y^{out_j}(t)\) & & & & \\
+Cổng quên tại \(t\) & \(\vect{f}_t\) & không có & & & & \\
+Tiền kích hoạt cổng vào & \(\vect{a}^{i}_t\) & \(net_{in_j}(t)\) & & & & \\
+Tiền kích hoạt cổng ra & \(\vect{a}^{o}_t\) & \(net_{out_j}(t)\) & & & & \\
+Tiền kích hoạt cell & \(\vect{a}^{c}_t\) & \(net_{c_j}(t)\) & & & & \\
+Hàm nén input & \(g_{\mathrm{in}}\) & \(g\) & & & & \\
+Hàm nén output & \(g_{\mathrm{out}}\) & \(h\) & & & & \\
 \midrule
 Input weights & \(\mat{W}_{xh}\) & \(\mat{W}\) & \(\mat{W}_{in}\) & & & \\
 Recurrent weights & \(\mat{W}_{hh}\) & \(\mat{U}\) & \(\mat{W}_{rec}\) & & & \\
@@ -47,4 +57,26 @@ Gradient of \(L\) w.r.t.\ \(\mat{W}\) & \(\pd{L}{\mat{W}}\) & & \(\frac{\partial
     giá trị kỳ dị lớn nhất, và với ma trận không chuẩn tắc đó là hai số khác
     nhau. Sách tách \(\rho(\mat{W}_{hh})\) khỏi \(\norm{\mat{W}_{hh}}\) và
     không bao giờ dùng lẫn; xem mục~\ref{sec:ch03-khe-ho}.
+\end{itemize}
+
+\section{Ba chỗ dễ đọc nhầm ở LSTM 1997}
+\label{sec:app-a-lstm}
+
+\begin{itemize}
+  \item \textbf{Chữ \(h\) đổi vai.} Bài dùng \(h\) cho hàm nén output của ô
+    nhớ, khoảng giá trị \([-1,1]\); sách dùng \(\vect{h}_t\) cho trạng thái ẩn.
+    Sách viết hai hàm nén là \(g_{\mathrm{in}}\) và \(g_{\mathrm{out}}\), tương
+    ứng với \(g\) và \(h\) của bài. Đọc bài với ký hiệu của sách trong đầu là
+    cách nhanh nhất để lẫn hàm với trạng thái.
+  \item \textbf{Bảng 10 mâu thuẫn với phụ lục A.1 của chính bài.} Phụ lục A.1,
+    phương trình (4) và (5), cho \(h\) khoảng \([-1,1]\) và \(g\) khoảng
+    \([-2,2]\). Chú thích bảng 10 thì ghi ngược lại, gọi \enquote{h1} là
+    sigmoid trong \([-2,2]\) và \enquote{g2} là sigmoid trong \([-1,1]\). Sách
+    theo phụ lục A.1, vì đó là chỗ in công thức chứ không phải chỗ in nhãn viết
+    tắt.
+  \item \textbf{Trạng thái ô nhớ không phải \(\vect{c}_t\) trong bài.} Bài viết
+    \(s_{c_j^v}(t)\), với \(j\) đánh số khối và \(v\) đánh số cell trong khối.
+    Ký hiệu \(c_j\) trong bài là \emph{tên của cell}, không phải giá trị trạng
+    thái của nó. Sách viết \(\vect{c}_t\) cho trạng thái vì sách làm việc ở mức
+    tầng chứ không mức từng cell.
 \end{itemize}

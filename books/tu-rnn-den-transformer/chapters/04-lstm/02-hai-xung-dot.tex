@@ -1,0 +1,110 @@
+\section{Hai xung đột mà một CEC trần tạo ra}
+\label{sec:ch04-hai-xung-dot}
+
+\index{xung đột trọng số vào!phát biểu}%
+Một CEC (\tn{vòng quay lỗi không đổi}{constant error carousel}) đứng một mình
+thì giữ được thông tin, nhưng nó phải nối vào phần còn lại của mạng mới có tác
+dụng. Bài chỉ ra rằng nối vào là hỏng, theo hai đường đối xứng nhau.
+
+Đường thứ nhất là \tn{xung đột trọng số vào}{input weight conflict}. Lấy một
+trọng số vào \(w_{ji}\) duy nhất. Trọng số ấy phải làm hai việc: bật unit
+\(j\) lên khi input đáng lưu, và để yên unit \(j\) khi input không đáng lưu.
+Bài viết thẳng rằng các tín hiệu cập nhật \enquote{will attempt to make
+\(w_{ji}\) participate in (1) storing the input (by switching on \(j\)) and (2)
+protecting the input (by preventing \(j\) from being switched off by irrelevant
+later inputs)}~\autocite{hochreiter1997lstm}. Hai việc, một con số.
+
+\index{xung đột trọng số ra!phát biểu}%
+Đường thứ hai là \tn{xung đột trọng số ra}{output weight conflict}, và nó đối
+xứng: một trọng số ra \(w_{kj}\) phải vừa cho unit \(k\) đọc nội dung của \(j\)
+lúc nội dung ấy có ích, vừa che \(k\) khỏi \(j\) lúc nó chỉ là nhiễu. Bài nói
+thêm rằng hai xung đột này không phải đặc sản của \tn{phụ thuộc dài hạn}{long-term dependencies}:
+chúng có ở mọi độ dài, chỉ nặng dần lên khi độ dài tăng, vì thông tin đã lưu
+phải được bảo vệ lâu hơn và số output đã đúng cần được bảo vệ nhiều hơn.
+
+\subsection*{Xung đột thứ nhất giải được bằng tay, nên tôi giải}
+
+\index{xung đột trọng số vào!dạng đóng}%
+Lập luận trên là lập luận của bài và nó thuyết phục, nhưng nó không cho biết
+cái giá là bao nhiêu. Với một CEC trần thì cái giá viết ra được bằng giấy bút,
+vì unit tuyến tính làm cả bài toán co về một phép bình phương tối thiểu một
+biến.
+
+Dựng như sau. Chuỗi dài \(T\), cell đọc mọi bước qua một trọng số vào duy nhất,
+\(c_t = c_{t-1} + w x_t\), và cuối chuỗi đọc \(c_T\) rồi so với target là
+\(x_1\), tức giá trị ở bước đầu tiên. Đây là bài toán \enquote{nhớ một con số
+qua \(T\) bước} ở dạng trần trụi nhất. Vì cell tuyến tính,
+
+\begin{equation}
+  c_T = w \sum_{t=1}^{T} x_t = w S.
+  \label{eq:ch04-cec-tran}
+\end{equation}
+
+Với \(x_t\) độc lập, kỳ vọng không, phương sai \(v\), nghiệm bình phương tối
+thiểu viết ra ngay được. Sai số bình phương trung bình dưới đây viết tắt là
+MSE:
+
+\begin{equation}
+  w^{*} = \frac{\E[S x_1]}{\E[S^2]} = \frac{v}{T v} = \frac{1}{T},
+  \qquad
+  \mathrm{MSE}(w^{*}) = v\left(1 - \frac{1}{T}\right).
+  \label{eq:ch04-nghiem-toi-uu}
+\end{equation}
+
+Trọng số tốt nhất là \(1/T\), và MSE tại đó là \(v(1 - 1/T)\). Chia cho phương
+sai của chính target thì phần mà cell giải thích được đúng bằng \(1/T\).
+
+\begin{measured}{CEC trần giải thích được \(1/T\) phương sai của target}
+20000 chuỗi mỗi dòng, \(x_t\) chuẩn tắc:
+
+\begin{minted}{text}
+    T  w* measured  w* = 1/T    MSE at w*   var(target)  explained
+   10  0.097555    0.100000    0.888975    0.984882     0.097379
+   50  0.020975    0.020000    0.975298    0.997198     0.021962
+  100  0.009035    0.010000    0.994984    1.003132     0.008123
+\end{minted}
+
+Cột \code{w* measured} bám sát \(1/T\) và cột cuối bám sát \(1/T\), trong sai
+số Monte Carlo ở 20000 mẫu. Ở \(T = 100\), cell giải thích 0.008123 phương sai
+của target, tức dưới một phần trăm.
+
+Đo bằng \code{experiments/ch04\_conflict.py} tại tag \code{ch04}.
+\end{measured}
+
+Con số 0.008123 ấy \emph{là} cực tiểu, và đó là chỗ đáng dừng lại. Không phải
+một điểm mà optimizer kẹt lại, không phải hệ quả của learning rate tồi, không
+phải chuyện huấn luyện chưa đủ lâu. Nghiệm tốt nhất tồn tại, viết ra được, và
+nó vô dụng. Một kiến trúc mà lời giải tối ưu cũng không dùng được thì không sửa
+được bằng thuật toán huấn luyện, và đó chính là lý do chương này tồn tại tách
+khỏi chương~\ref{ch:phan-tich}.
+
+Xung đột thứ hai tôi không đo. Lập luận cho nó là lập luận của bài, đối xứng
+với lập luận vừa rồi, và tôi để nguyên nó ở dạng bài viết thay vì dựng một số
+đo mà thiết kế thí nghiệm sẽ quyết định phần lớn kết quả.
+
+\subsection*{Cái thiếu là một chỗ để đặt chữ \enquote{khi nào}}
+
+Nhìn lại~\eqref{eq:ch04-cec-tran} thì chỗ hỏng lộ ra. Trọng số \(w\) là một
+hằng số theo thời gian, còn câu trả lời đúng thì không: nó phải là 1 tại bước
+1 và 0 ở mọi bước khác. Không có giá trị hằng nào của \(w\) biểu diễn được một
+hàm theo \(t\), nên bình phương tối thiểu trả về trung bình của thứ nó cần, tức
+\(1/T\).
+
+Vậy cái thiếu không phải một trọng số tốt hơn mà là một thừa số \emph{thay đổi
+theo thời gian}, nhân vào input, do chính mạng tính ra từ ngữ cảnh. Đặt một
+thừa số như thế vào và cùng bài toán đó thành tầm thường:
+
+\begin{minted}{text}
+    T  MSE at w=1
+   10  0.000000e+00
+   50  0.000000e+00
+  100  0.000000e+00
+\end{minted}
+
+Sai số bằng không, ở cả ba độ dài, vì \(c_T = w x_1\) và \(w = 1\) là nghiệm
+đúng. Cần nói rõ tôi đã làm gì để có bảng này: tôi \emph{đặt} thừa số ấy bằng
+tay, mở ở bước 1 và đóng sau đó, chứ không huấn luyện ra nó. Bảng này không
+chứng minh mạng học được lời giải; nó chứng minh kiến trúc biểu diễn được lời
+giải, và bảng trước đã chứng minh kiến trúc kia thì không.
+
+Thừa số nhân theo thời gian ấy là cái mà bài gọi là cổng.

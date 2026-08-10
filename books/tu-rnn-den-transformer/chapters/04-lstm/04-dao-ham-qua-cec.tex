@@ -1,0 +1,138 @@
+\section{Đạo hàm đi qua ô nhớ}
+\label{sec:ch04-dao-ham}
+
+\index{vòng quay lỗi không đổi!đạo hàm qua nó}%
+Chương~\ref{ch:phan-tich} đo \(\norm{\jac{\vect{a}_t}{\vect{a}_k}}\) và thấy
+nó tắt theo cấp số nhân. Câu hỏi tương ứng ở đây là
+\(\jac{\vect{c}_t}{\vect{c}_{t-1}}\) bằng bao nhiêu. Lấy đạo hàm
+của~\eqref{eq:ch04-cap-nhat-c}:
+
+\begin{equation}
+  \jac{\vect{c}_t}{\vect{c}_{t-1}}
+    = \mat{I}
+    + \jac{\left(\vect{i}_t \odot g_{\mathrm{in}}(\vect{a}^{c}_t)\right)}{\vect{c}_{t-1}}.
+  \label{eq:ch04-jac-tach}
+\end{equation}
+
+Số hạng thứ nhất là \(\mat{I}\) vì \(\vect{c}_{t-1}\) đứng trong phương trình
+với hệ số 1. Số hạng thứ hai là chỗ cần cẩn thận, vì thoạt nhìn nó bằng không:
+\(\vect{i}_t\) và \(\vect{a}^{c}_t\) là hàm của \(\vect{x}_t\) và
+\(\vect{h}_{t-1}\), không phải của \(\vect{c}_{t-1}\). Nhưng
+\(\vect{h}_{t-1} = \vect{o}_{t-1} \odot g_{\mathrm{out}}(\vect{c}_{t-1})\), nên
+nó \emph{là} hàm của \(\vect{c}_{t-1}\), và số hạng thứ hai không bằng không.
+
+Có một đường vòng: tín hiệu rời khỏi cell qua \(g_{\mathrm{out}}\), bị
+\tn{cổng ra}{output gate} co lại, rồi quay vào cell ở bước sau qua
+\tn{cổng vào}{input gate} và qua cell input. Viết ra đầy đủ, với
+\(\mat{D} = \diag(\vect{o}_{t-1} \odot g_{\mathrm{out}}'(\vect{c}_{t-1}))\):
+
+\begin{equation}
+  \jac{\vect{c}_t}{\vect{c}_{t-1}}
+    = \mat{I}
+    + \Big[
+        \diag\!\left(g_{\mathrm{in}}(\vect{a}^{c}_t)\right)
+        \diag\!\left(\sigma'(\vect{a}^{i}_t)\right) \mat{W}_{hi}
+      + \diag(\vect{i}_t)
+        \diag\!\left(g_{\mathrm{in}}'(\vect{a}^{c}_t)\right) \mat{W}_{hc}
+      \Big] \mat{D}.
+  \label{eq:ch04-jac-day-du}
+\end{equation}
+
+Một chỗ dễ sai khi tự dẫn lại: \(\vect{o}_{t-1}\) trong \(\mat{D}\) là cổng ra
+của bước \emph{trước}, và nó là hàm của \(\vect{h}_{t-2}\) chứ không phải của
+\(\vect{c}_{t-1}\). Coi nó là hàm của \(\vect{c}_{t-1}\) thì
+thêm một số hạng không có thật. Tôi kiểm~\eqref{eq:ch04-jac-day-du} bằng máy,
+so với \code{torch.autograd.functional.jacobian}, và lệch lớn nhất dưới
+\(10^{-12}\); test khoá lại chuyện đó ở tag \code{ch04}.
+
+\subsection*{Phép cắt làm số hạng thứ hai biến mất}
+
+\index{lan truyền ngược cắt cụt!hệ quả cho CEC}%
+Bài không tính~\eqref{eq:ch04-jac-day-du}. Thuật toán của bài dùng
+\tn{lan truyền ngược cắt cụt}{truncated backpropagation}, và phép cắt ấy thay
+đúng ba đạo hàm bằng không. Hai trong ba đạo hàm ấy là hai đường mà số hạng thứ
+hai đi qua, tức \(\mat{W}_{hi}\) và \(\mat{W}_{hc}\)
+trong~\eqref{eq:ch04-jac-day-du}; đường thứ ba đi qua cổng ra và không có mặt ở
+đây, vì \(\vect{o}_t\) không xuất hiện trong \(\vect{c}_t\).
+Mục~\ref{sec:ch04-cat-gradient} liệt kê cả ba; ở đây chỉ cần hệ quả:
+
+\begin{equation}
+  \jac{\vect{c}_t}{\vect{c}_{t-1}} \overset{\text{cắt}}{=} \mat{I}.
+  \label{eq:ch04-jac-cat}
+\end{equation}
+
+Ma trận đơn vị. Không phải một ma trận gần ma trận đơn vị. Và vì tích của các
+ma trận đơn vị vẫn là ma trận đơn vị,
+
+\begin{equation}
+  \jac{\vect{c}_t}{\vect{c}_k} = \mat{I} \quad \text{với mọi } k \le t.
+  \label{eq:ch04-jac-moi-khoang-cach}
+\end{equation}
+
+Đây là câu trả lời cho câu hỏi chương~\ref{ch:phan-tich} để lại. Thừa số không
+những gần 1, nó bằng 1, ở mọi bước, ở mọi khoảng cách, không cần huấn luyện giữ
+nó ở đó.
+
+\subsection*{Ba đường cong, một trục}
+
+Tôi đo cả ba trên cùng một trục khoảng cách. Dòng
+\tn{mạng hồi quy}{recurrent neural network} thường, viết tắt là RNN, dùng đúng
+ma trận, đúng seed và đúng \tn{bán kính phổ}{spectral radius} 0.9 mà
+chương~\ref{ch:phan-tich} dùng, nên nó phải trùng khít số chương đó in ra, và
+có một test khoá lại chuyện đó.
+
+\begin{measured}{đạo hàm qua CEC so với đạo hàm qua một RNN thường}
+64 đơn vị ẩn, 100 bước. Trọng số \tn{ô nhớ}{memory cell} lấy trong
+\([-0.1, 0.1]\), đúng khoảng bài dùng cho các thí nghiệm 3 tới 6:
+
+\begin{minted}{text}
+model            l=1         l=10        l=50        l=100
+plain RNN 0.9    9.0000e-01  3.4200e-01  5.0259e-03  2.5902e-05
+CEC truncated    1.0000e+00  1.0000e+00  1.0000e+00  1.0000e+00
+CEC full w=0.1   1.0000e+00  2.0016e+00  2.9078e+01  1.2834e+02
+\end{minted}
+
+Dòng giữa không phải làm tròn. Sai lệch lớn nhất so với 1.0 trên cả 100 bước,
+trong float64, là 0.0e+00.
+
+Dòng dưới là dòng tôi không đoán trước. Bỏ phép cắt đi thì đạo hàm không tắt,
+nó \emph{tăng}, và tăng ngay ở thang khởi tạo của chính bài báo: 29.078 ở
+khoảng cách 50 và 128.34 ở khoảng cách 100. Chạy lại với trọng số lớn hơn mười
+lần thì con số ở khoảng cách 100 lên 3629.8, nên đây không phải hiệu ứng của
+một lần rút may rủi.
+
+Đo bằng \code{experiments/ch04\_flow.py} tại tag \code{ch04}.
+\end{measured}
+
+Hình~\ref{fig:ch04-dong-loi} vẽ ba đường trên thang log.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch04-dong-loi}
+  \caption{Chuẩn của tích đạo hàm theo khoảng cách \(l = t - k\), thang log.
+    Đường liền nằm ngang là CEC có cắt gradient, bằng 1 ở mọi khoảng cách.
+    Đường chấm đi xuống là RNN thường của chương~\ref{ch:phan-tich} với
+    \(\rho(\mat{W}_{hh}) = 0.9\). Đường đứt đi lên là cùng ô nhớ ấy khi bỏ phép
+    cắt: đường rò rỉ ra khỏi cell rồi quay lại không tắt mà phình theo khoảng
+    cách. Bốn khoảng cách được đo là \(l = 1, 10, 50\) và \(100\); chấm tròn
+    đánh dấu ba cái sau, vì ở \(l = 1\) cả ba đường còn nằm chồng lên nhau.}
+  \label{fig:ch04-dong-loi}
+\end{figure}
+
+\subsection*{Tín hiệu bị co ở hai đầu, không co ở giữa}
+
+\index{vòng quay lỗi không đổi!chỉ co ở hai đầu}%
+Phương trình~\eqref{eq:ch04-jac-moi-khoang-cach} nói về đường bên trong CEC.
+Tín hiệu lỗi thì phải đi vào rồi đi ra, và hai chỗ ấy không miễn phí. Phụ lục
+A.2 của bài viết công thức đầy đủ, và câu kết luận ngay dưới nó đáng nhớ
+nguyên văn: dòng lỗi chỉ bị co tại thời điểm \(t\), lúc nó vào cell, và tại
+\(t - q\), lúc nó ra, \enquote{but not in between}.
+
+Cụ thể, vào thì nhân với \(\vect{o}_t \odot g_{\mathrm{out}}'(\vect{c}_t)\),
+tức qua cổng ra và qua đạo hàm của hàm nén output; ra thì nhân với một thừa số
+có \(\vect{i}_{t-q}\) và \(g_{\mathrm{in}}'\) trong đó. Cả hai thừa số nhỏ hơn
+1, nên tín hiệu \emph{có} yếu đi. Điều nó không làm là yếu đi theo \(q\). Hai
+lần co, bất kể quãng đường dài bao nhiêu, thay cho \(q\) lần co.
+
+Đó là toàn bộ khác biệt giữa một hằng số và một hàm mũ, và nó là lý do bài dám
+nói tới quãng vượt một nghìn bước.

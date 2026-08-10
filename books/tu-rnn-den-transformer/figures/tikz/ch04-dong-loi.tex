@@ -1,0 +1,63 @@
+% Chuẩn của tích đạo hàm theo khoảng cách, ba đường trên cùng một trục.
+% Số liệu: research/2026-08-ch04-lstm.md, mục "Đo 3". Chỉ bốn khoảng cách được
+% đo (l = 1, 10, 50, 100) cộng với l = 0; các đoạn giữa là nội suy thẳng.
+% Toạ độ: x_cm = l * 0.1; y_cm = (log10(norm) + 5) * 0.8.
+% Mono-safe: nét liền, nét đứt và nét chấm phân biệt ba đường.
+\begin{tikzpicture}[
+  >= Stealth,
+  truc/.style   = {->, >={Stealth[length=2mm]}, gray!70, line width = 0.5pt},
+  rnn/.style    = {line width = 0.9pt, black, densely dotted},
+  cec/.style    = {line width = 1.1pt, black},
+  day/.style    = {line width = 0.9pt, black!70, densely dashed},
+  ghichu/.style = {font = \footnotesize},
+  nho/.style    = {font = \scriptsize},
+  diem/.style   = {circle, fill = black, inner sep = 0pt, minimum size = 1.6mm},
+]
+
+  % --- trục
+  \draw[truc] (-0.3, 0) -- (11.0, 0)
+    node[right, ghichu, black] {\(l = t - k\)};
+  \draw[truc] (0, -0.3) -- (0, 6.3)
+    node[above, ghichu, black] {\(\norm{\partial \cdot_t / \partial \cdot_k}\)};
+
+  % --- vạch trục x
+  \foreach \lx/\llab in {0/0, 1/10, 5/50, 10/100} {
+    \draw[gray!70] (\lx, 0) -- (\lx, -0.12);
+    \node[below, nho] at (\lx, -0.12) {\llab};
+  }
+  % --- vạch trục y, thang log
+  \foreach \ly/\llab in {0.8/{\(10^{-4}\)}, 2.4/{\(10^{-2}\)},
+                         4.0/{\(1\)}, 5.6/{\(10^{2}\)}} {
+    \draw[gray!70] (0, \ly) -- (-0.12, \ly);
+    \node[left, nho] at (-0.12, \ly) {\llab};
+  }
+  % --- đường ngang tại 1, để mắt bắt được mức "không đổi"
+  \draw[gray!35, line width = 0.4pt] (0, 4.0) -- (10.6, 4.0);
+
+  % --- CEC có cắt gradient: bằng 1 ở mọi khoảng cách
+  \draw[cec] (0, 4.0) -- (10.0, 4.0);
+  \node[ghichu, anchor = south west] at (6.2, 4.06) {CEC, có cắt gradient};
+
+  % --- CEC không cắt: 1.0, 2.0016, 29.078, 128.34
+  \draw[day] (0, 4.0) -- (1.0, 4.241) -- (5.0, 5.171) -- (10.0, 5.687);
+  \foreach \px/\py in {1.0/4.241, 5.0/5.171, 10.0/5.687} {
+    \node[diem] at (\px, \py) {};
+  }
+  \node[ghichu, anchor = south east, align = right] at (9.9, 5.75)
+    {CEC, không cắt gradient};
+
+  % --- plain RNN, bán kính phổ 0.9: 0.9, 0.342, 5.0259e-3, 2.5902e-5
+  \draw[rnn] (0, 4.0) -- (0.1, 3.963) -- (1.0, 3.627) -- (5.0, 2.161)
+             -- (10.0, 0.331);
+  \foreach \px/\py in {1.0/3.627, 5.0/2.161, 10.0/0.331} {
+    \node[diem] at (\px, \py) {};
+  }
+  \node[ghichu, anchor = north east, align = right] at (9.9, 1.15)
+    {RNN thường, \(\rho(\mat{W}_{hh}) = 0.9\)\\ (số của chương~3)};
+
+  % --- chấm là chỗ đo thật
+  \node[nho, anchor = north west, black!60, align = left] at (0.15, 6.25)
+    {chấm tròn = khoảng cách thật sự được đo;\\
+     đoạn nối giữa hai chấm là nội suy};
+
+\end{tikzpicture}

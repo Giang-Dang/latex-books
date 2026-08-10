@@ -74,7 +74,65 @@
              copy on file.}
 }
 
+@article{gers2000forget,
+  author  = {Gers, Felix A. and Schmidhuber, J{\"u}rgen and Cummins, Fred},
+  title   = {Learning to Forget: Continual Prediction with {LSTM}},
+  journal = {Neural Computation},
+  volume  = {12},
+  number  = {10},
+  pages   = {2451--2471},
+  year    = {2000},
+  doi     = {10.1162/089976600300015015},
+  url     = {https://direct.mit.edu/neco/article/12/10/2451/6415},
+  urldate = {2026-08-10},
+  note    = {The forget gate. Read through the publisher's abstract page and
+             through the restatement of its equations in Gers et al. (2002)
+             section 2, which prints the 2000 architecture under the name
+             \enquote{traditional LSTM}; the full text was not consulted, so
+             this chapter cites it only for the architecture and the problem
+             statement, never for a number.}
+}
+
+@article{gers2002timing,
+  author  = {Gers, Felix A. and Schraudolph, Nicol N. and Schmidhuber,
+             J{\"u}rgen},
+  title   = {Learning Precise Timing with {LSTM} Recurrent Networks},
+  journal = {Journal of Machine Learning Research},
+  volume  = {3},
+  pages   = {115--143},
+  year    = {2002},
+  url     = {https://www.jmlr.org/papers/volume3/gers02a/gers02a.pdf},
+  urldate = {2026-08-10},
+  note    = {Peephole connections. Submitted 5/01, revised 3/02, published
+             8/02; editor Michael I. Jordan. Sections 2 and 3 read in full from
+             the open PDF. Also the source for this book's statement of the
+             2000 forget-gate equations, and the paper that drops the output
+             squashing function h from the cell output.}
+}
+
 %--- Chapter 05: encoder-decoder --------------------------------------------
+
+@inproceedings{cho2014encdec,
+  author    = {Cho, Kyunghyun and van Merri{\"e}nboer, Bart and Gulcehre,
+               Caglar and Bahdanau, Dzmitry and Bougares, Fethi and Schwenk,
+               Holger and Bengio, Yoshua},
+  title     = {Learning Phrase Representations using {RNN} Encoder-Decoder for
+               Statistical Machine Translation},
+  booktitle = {Proceedings of the 2014 Conference on Empirical Methods in
+               Natural Language Processing (EMNLP)},
+  pages     = {1724--1734},
+  year      = {2014},
+  eprint    = {1406.1078},
+  eprinttype = {arXiv},
+  eprintclass = {cs.CL},
+  url       = {https://aclanthology.org/D14-1179/},
+  urldate   = {2026-08-10},
+  note      = {Cited first by chapter 04 for the gated unit of section 2.3,
+               which the paper calls \enquote{a new type of hidden unit} and
+               never calls a GRU; the acronym postdates it. Chapters 05 and 06
+               cite the same entry for the encoder-decoder itself. Read as
+               arXiv:1406.1078v3, dated 3 September 2014.}
+}
 
 @inproceedings{sutskever2014seq2seq,
   author       = {Sutskever, Ilya and Vinyals, Oriol and Le, Quoc V.},

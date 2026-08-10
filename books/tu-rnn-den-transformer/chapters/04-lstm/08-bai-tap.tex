@@ -1,0 +1,120 @@
+\exercises
+
+\tierunderstand
+
+\begin{bt}
+  \item Lấy tích phân~\eqref{eq:ch04-rang-buoc} lại từ đầu và chỉ ra chính xác
+    chỗ nào trong phép tính buộc \(f_j\) phải tuyến tính. Rồi trả lời: nếu bỏ
+    chữ \enquote{với mọi \(t\)} khỏi ràng buộc, kết luận còn đúng không?
+
+  \item Mục~\ref{sec:ch04-dong-loi-khong-doi} đo được \(w = 4\) cho tích nhỏ
+    hơn \(w = 2\) khoảng năm mươi ba bậc độ lớn, dù 4 mới là trọng số nhỏ nhất
+    về lý thuyết đạt được hệ số 1. Giải thích bằng quỹ đạo của \(a_j(t)\), rồi
+    dự đoán chuyện gì xảy ra ở \(w = 3\).
+
+  \item Dẫn lại~\eqref{eq:ch04-nghiem-toi-uu} từ đầu. Rồi sửa bài toán: target
+    là \(x_1 + x_2\) thay vì \(x_1\), với hai vị trí cố định. Trọng số tối ưu
+    bây giờ là bao nhiêu, và phần phương sai giải thích được là bao nhiêu?
+
+  \item Trong~\eqref{eq:ch04-jac-day-du}, ma trận \(\mat{D}\) chứa
+    \(\vect{o}_{t-1}\) chứ không phải \(\vect{o}_t\). Viết ra số hạng thừa mà
+    bạn sẽ thêm vào nếu chép nhầm thành \(\vect{o}_t\), và nói vì sao nó không
+    thuộc về đó.
+
+  \item Mục~\ref{sec:ch04-dao-ham} nói tín hiệu lỗi bị co ở hai đầu chứ không
+    co ở giữa. Viết ra hai thừa số ấy, rồi lập luận xem điều gì xảy ra với
+    chúng khi \tn{cổng ra}{output gate} bị đẩy về không: đường dài có bị ảnh
+    hưởng khác đường ngắn không?
+
+  \item Nhìn hình~\ref{fig:ch04-dong-loi}. Đường đứt đi lên là ô nhớ bỏ phép
+    cắt gradient. Nếu bạn chỉ được xem đường ấy mà không xem hai đường kia, bạn
+    sẽ kết luận gì về kiến trúc này, và kết luận đó sai ở đâu?
+
+  \item Bảng tham số ở mục~\ref{sec:ch04-con-lai-gi} cho ba tỷ số: 3, 4 và 9.
+    Với mỗi con số, nói rõ nó đếm kiến trúc nào và trên topology nào. Rồi trả
+    lời: vì sao GRU cũng là 3 mà lại rẻ hơn LSTM 1997 về mặt tính toán?
+\end{bt}
+
+\tierapply
+
+Trạng thái xuất phát cho cả năm bài: clone repo companion, đứng ở thư mục gốc
+của nó, và checkout đúng tag của chương này.
+
+\begin{minted}{console}
+$ git clone https://github.com/Giang-Dang/rnn-to-transformer-lab.git
+$ cd rnn-to-transformer-lab
+$ git checkout ch04
+$ conda env create -f environment.yml
+$ conda activate rnn-to-transformer-lab
+$ python verify.py --only ch04
+\end{minted}
+
+Dòng cuối phải in ra \code{verify: ok}. Nếu không, đừng làm tiếp: mọi con số
+bạn đo sau đó sẽ không so được với sách.
+
+\begin{bt}
+  \item \code{cec\_jacobian\_truncated} trả về ma trận đơn vị và không nhận
+    tham số trạng thái nào, nên \code{ch04\_flow.py} không dùng autograd ở đâu
+    cả. Hệ quả: detach thêm trạng thái \tn{ô nhớ}{memory cell} trong
+    \code{unroll} không đổi được một chữ số nào của bảng ấy. Hãy kiểm điều đó,
+    rồi dựng phép đo mà nó \emph{có} đổi: chạy
+    \code{ch04\_truncation.py} với \code{states[-1].c} bị detach thêm, và nói
+    xem cosine ở \(T = 100\) đi về đâu và vì sao.
+
+  \item \code{experiments/ch04\_truncation.py} đo cosine ở trọng số khởi tạo
+    trong \([-0.1, 0.1]\). Chạy lại ở \code{SCALE = 0.02} và \code{SCALE = 0.5}
+    rồi vẽ cosine theo \(T\) cho cả ba thang. Cosine tụt nhanh hơn hay chậm hơn
+    khi trọng số nhỏ đi, và điều đó khớp với số đo ở
+    mục~\ref{sec:ch04-dao-ham} thế nào?
+
+  \item \code{LstmForget} trong \code{lstm.py} có \tn{cổng quên}{forget gate}
+    nhưng chưa có
+    experiment nào dùng nó. Viết một script dựng lại đo 3 của
+    mục~\ref{sec:ch04-dao-ham} cho nó: đo
+    \(\norm{\jac{\vect{c}_t}{\vect{c}_k}}\) theo khoảng cách với bias cổng quên
+    đặt lần lượt ở \(-2\), \(0\) và \(+2\). Bias nào cho đường gần nhất với
+    đường liền trong hình~\ref{fig:ch04-dong-loi}, và vì sao?
+
+  \item \code{experiments/ch04\_adding.py} chạy ở \(T = 100\). Đổi
+    \code{T\_LAG} thành 200 và 400, giữ nguyên mọi thứ khác, và xem ô nhớ còn
+    giải được không. Ghi lại thời gian chạy: bạn sẽ chạm ngân sách 60 giây
+    trước khi chạm giới hạn của kiến trúc, nên hãy nói rõ bạn đã đổi gì để đo
+    tiếp.
+
+  \item Bài 1997 dùng \(g_{\mathrm{in}}\) khoảng \([-2,2]\) và
+    \(g_{\mathrm{out}}\) khoảng \([-1,1]\). Thay cả hai bằng \code{torch.tanh}
+    trong \code{lstm.py}, chạy \code{python -m pytest -q tests/test\_ch04.py},
+    và liệt kê test nào hỏng. Rồi chạy lại \code{ch04\_adding.py}: kết luận của
+    chương có đổi không, và nếu không thì test hỏng kia đang bảo vệ cái gì?
+\end{bt}
+
+\tierextend
+
+\begin{bt}
+  \item Mục~\ref{sec:ch04-cat-gradient} lập luận rằng phép cắt gradient vứt đi
+    đúng thành phần phình theo khoảng cách. Lập luận ấy dựa trên hai bảng đo hai
+    đại lượng khác nhau và ghép lại bằng lời. Thiết kế một phép đo duy nhất
+    kiểm trực tiếp được nó, chạy, và nói xem nó ủng hộ hay bác bỏ cách đọc của
+    tôi.
+
+  \item Bài nói bản cắt cụt không giải được bài kiểu XOR trễ, vì bài toán không
+    phân rã được thành mục tiêu con dễ hơn. Dựng bài toán ấy trên bộ sinh của
+    \code{ch04\_adding.py}, huấn luyện, và xem nó hỏng. Rồi tìm một cách sửa
+    \emph{bài toán}, không sửa kiến trúc, làm nó phân rã được. Bạn vừa thêm giả
+    định gì?
+
+  \item Cổng quên năm 2000 đổi \(\jac{\vect{c}_t}{\vect{c}_{t-1}}\) từ
+    \(\mat{I}\) thành \(\diag(\vect{f}_t)\), tức trả lại chính xác cái dạng
+    tích mà chương~\ref{ch:phan-tich} chứng minh là nguy hiểm. Vậy mà nó thắng.
+    Tìm điều kiện lên \(\vect{f}_t\) mà dưới đó tích không tắt, rồi xem một
+    mạng đã huấn luyện xong có thoả điều kiện ấy không. Đây là một chỗ còn mở
+    thật sự: chưa có phát biểu nào được chấp nhận rộng rãi về việc cổng quên
+    học được cần giữ những gì để trí nhớ dài hạn sống sót.
+
+  \item Chương này bỏ qua một câu hỏi: ô nhớ nhớ được bao nhiêu \emph{bit}.
+    CEC là một số thực và float64 có 53 bit mantissa, nhưng
+    \(\vect{c}_t\) còn phải chịu nhiễu từ mọi lần \tn{cổng vào}{input gate} hé
+    mở. Nghĩ ra một
+    cách đo dung lượng nhớ thực tế của một cell theo số bước, đo nó, rồi so với
+    số cell mà bài 1997 dùng cho bài toán 2c ở quãng 1000 bước.
+\end{bt}
