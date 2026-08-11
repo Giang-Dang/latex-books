@@ -107,7 +107,6 @@ Tiếng Việt & Tiếng Anh & Quyết định \\
 \midrule
 vector ngữ cảnh & context vector & Dịch, dùng \texttt{\textbackslash tn} \\
 chỗ thắt & bottleneck & Dịch, dùng \texttt{\textbackslash tn} \\
-ma trận đồng chỉnh & alignment matrix & Dịch, dùng \texttt{\textbackslash tn}; chương~05 mượn trước của chương~06 \\
 câu nguồn & source sentence & Dịch, dùng \texttt{\textbackslash tn} \\
 câu đích & target sentence & Dịch, dùng \texttt{\textbackslash tn} \\
 đảo câu nguồn & source reversal & Dịch, dùng \texttt{\textbackslash tn} \\
@@ -117,6 +116,26 @@ khớp đúng cả câu & exact match & Dịch, dùng \texttt{\textbackslash tn}
 giả thuyết & hypothesis & Dịch, dùng \texttt{\textbackslash tn}; nghĩa trong beam search \\
 cụm danh từ & noun phrase & Dịch, dùng \texttt{\textbackslash tn} \\
 loại từ & classifier & Dịch, dùng \texttt{\textbackslash tn}; thuật ngữ ngữ pháp \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\bigskip
+\textbf{Chương 06}
+
+\footnotesize
+\begin{tabular}{@{}llp{4cm}@{}}
+\toprule
+Tiếng Việt & Tiếng Anh & Quyết định \\
+\midrule
+đồng chỉnh & alignment & Dịch, dùng \texttt{\textbackslash tn} \\
+ma trận đồng chỉnh & alignment matrix & Dịch, dùng \texttt{\textbackslash tn} \\
+điểm đồng chỉnh & alignment score & Dịch, dùng \texttt{\textbackslash tn} \\
+phép cắt bỏ & ablation & Dịch, dùng \texttt{\textbackslash tn} \\
+trọng số đồng chỉnh & alignment weight & Dịch, dùng \texttt{\textbackslash tn} \\
+đồng chỉnh mềm & soft alignment & Dịch, dùng \texttt{\textbackslash tn} \\
+đồng chỉnh cứng & hard alignment & Dịch, dùng \texttt{\textbackslash tn} \\
+encoder hai chiều & bidirectional encoder & Dịch, dùng \texttt{\textbackslash tn}; \emph{encoder} giữ nguyên \\
 \bottomrule
 \end{tabular}
 \normalsize
@@ -146,6 +165,10 @@ ensemble & Giữ nguyên (chương~05) \\
 token & Giữ nguyên (chương~05) \\
 embedding & Giữ nguyên (chương~05) \\
 perplexity & Giữ nguyên (chương~05) \\
+attention & Giữ nguyên (chương~06); không có bản dịch nào thông dụng hơn chính từ này \\
+annotation & Giữ nguyên (chương~06); tên Bahdanau đặt cho \(\vect{h}_j\), và \enquote{chú giải} trong tiếng Việt nghĩa khác hẳn \\
+alignment error rate & Giữ nguyên (chương~06); tên một độ đo, không dịch \\
+mask & Giữ nguyên (chương~06) \\
 BLEU & Giữ nguyên; xem phụ lục~\ref{app:viet-tat} \\
 \bottomrule
 \end{tabular}

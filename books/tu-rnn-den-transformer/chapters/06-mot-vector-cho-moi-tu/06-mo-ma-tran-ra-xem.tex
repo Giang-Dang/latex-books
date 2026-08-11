@@ -1,0 +1,158 @@
+\section{Mở ma trận ra xem}
+\label{sec:ch06-mo-ma-tran}
+
+\index{ma trận đồng chỉnh!vì sao đọc được}%
+Mọi mục trước đo mô hình từ bên ngoài: đưa câu vào, đọc câu ra, đếm câu đúng.
+Cơ chế này cho phép làm một việc mà chương~\ref{ch:encoder-decoder} không làm
+được. Các \(\alpha_{ij}\) là số thật, nằm sẵn trong mô hình, và xếp chúng thành
+bảng thì được một \tn{ma trận đồng chỉnh}{alignment matrix}: hàng \(i\) là câu
+trả lời cho \enquote{lúc viết từ đích thứ \(i\), mô hình đọc những chỗ nào của
+câu nguồn}.
+
+Bài dành mục 5.2.1 cho việc ấy và in bốn ma trận Anh-Pháp. Nhận xét của họ là
+\tn{đồng chỉnh}{alignment} phần lớn đi theo đường chéo, với vài chỗ chệch ra ở
+tính từ và danh
+từ, vì hai thứ tiếng xếp chúng khác nhau.
+
+Corpus của sách này dựng sao cho chỗ chệch ấy không phải ngoại lệ mà là toàn bộ
+bài toán. Tiếng Anh viết \code{black cat}, tiếng Việt viết \code{mèo đen}. Mọi
+tính từ trong corpus đều phải bắt chéo qua danh từ của nó.
+
+\subsection*{Một câu, tám hàng}
+
+\begin{measured}{ma trận đồng chỉnh của câu \code{the black cat wants a new lamp}}
+\begin{minted}{text}
+target        1     2     3     4     5     6     7
+con        0.07  0.15  0.39  0.38  0.01  0.00  0.00
+mèo        0.00  0.04  0.95  0.01  0.00  0.00  0.00
+đen        0.00  0.82  0.15  0.03  0.00  0.00  0.00
+muốn       0.00  0.00  0.00  0.99  0.01  0.00  0.00
+một        0.00  0.00  0.00  0.05  0.95  0.00  0.00
+cái        0.00  0.00  0.00  0.00  0.00  0.05  0.95
+đèn        0.00  0.00  0.00  0.00  0.00  0.18  0.82
+mới        0.00  0.00  0.00  0.00  0.00  0.98  0.02
+\end{minted}
+
+Cột 1 tới 7 là \code{the black cat wants a new lamp}. \(d_h = 32\), 14 epoch,
+câu nguồn \emph{không} đảo, khớp đúng cả câu 0.9967 trên tập test.
+
+Đo bằng \code{experiments/ch06\_alignment.py} tại tag \code{ch06}.
+\end{measured}
+
+Bảng này là mô hình tự khai, nên đọc chậm được.
+
+Hàng \code{mèo} dồn 0.95 vào cột 3, tức \code{cat}. Hàng ngay sau,
+\code{đen}, dồn 0.82 vào cột 2, tức \code{black}. Chỉ số cột \emph{giảm} khi đi
+từ hàng này xuống hàng sau. Một đồng chỉnh đường chéo không làm được chuyện đó,
+vì đường chéo thì chỉ số cột chỉ có tăng.
+
+Cặp thứ hai lặp lại y hệt ở cuối câu: \code{đèn} nhìn cột 7 (\code{lamp}) với
+0.82, rồi \code{mới} nhìn cột 6 (\code{new}) với 0.98.
+
+Ở giữa, \code{muốn} nhìn \code{wants} với 0.99 và \code{một} nhìn \code{a} với
+0.95. Hai hàng ấy đi theo đường chéo, đúng như phải thế.
+
+Hình~\ref{fig:ch06-ma-tran} vẽ lại cùng bảng ấy theo quy ước xám của bài.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch06-ma-tran-dong-chinh}
+  \caption{Cùng ma trận, vẽ theo quy ước hình 3 của bài: trắng là 0, đen là 1.
+    Hai khung nét đứt khoanh hai chỗ bắt chéo. Đọc dọc theo phần đậm thì thấy
+    nó đi xuống theo đường chéo rồi giật ngược lại một cột, đúng hai lần, đúng
+    hai chỗ mà tiếng Việt đặt tính từ sau danh từ. Hàng đầu, \code{con}, là
+    hàng duy nhất không có ô nào thật đậm.}
+  \label{fig:ch06-ma-tran}
+\end{figure}
+
+\subsection*{Hàng đầu tiên là hàng thú vị nhất}
+
+\index{loại từ!attention tản trên nhiều vị trí}%
+\code{con} là \tn{loại từ}{classifier}, và nó không ứng với từ tiếng Anh nào.
+Trong \code{the black cat} không có token nào để nó nhìn.
+
+Nên nó tản: 0.39 vào \code{cat}, 0.38 vào \code{wants}, 0.15 vào \code{black},
+0.07 vào \code{the}. Không có ô nào vượt 0.4.
+
+Đây đúng là tình huống bài mô tả ở mục 5.2.1, và họ nói về nó bằng ví dụ tiếng
+Pháp. \tn{Đồng chỉnh cứng}{hard alignment} buộc mỗi từ đích phải chỉ vào một từ
+nguồn, nên nó phải bịa ra một chỗ để chỉ, hoặc phải chỉ vào một ký hiệu rỗng mà
+bài gọi là \code{[NULL]}. \tn{Đồng chỉnh mềm}{soft alignment} không cần thế: nó
+xử lý được cụm nguồn và cụm đích khác độ dài mà không phải ánh xạ từ nào tới
+hoặc từ hư không. Nguyên văn: \enquote{without requiring a counter-intuitive way
+of mapping some words to or from nowhere}.
+
+Loại từ tiếng Việt là ví dụ sạch nhất cho câu ấy mà tôi biết. Nó là một từ bắt
+buộc phải có ở \tn{câu đích}{target sentence}, tương ứng với không gì cả ở câu
+nguồn, và mô hình xử
+lý nó bằng cách nhìn mờ vào cả cụm.
+
+\index{loại từ!hai loại từ hành xử khác nhau}%
+Rồi so \code{con} với \code{cái}, cũng là loại từ, ở hàng thứ sáu. \code{cái}
+dồn 0.95 vào \code{lamp}. Nó không tản chút nào.
+
+Hai từ cùng loại và hành xử ngược nhau. Cách đọc tôi thấy hợp lý nhất là loại
+từ tiếng Việt phụ thuộc vào danh từ đi sau nó, \code{con} cho vật sống và
+\code{cái} cho đồ vật, nên chỗ đáng nhìn để chọn loại từ chính là danh từ. Vậy
+\code{cái} nhìn \code{lamp} là hành vi đúng, còn \code{con} lẽ ra cũng nên dồn
+vào \code{cat} như thế.
+
+Tôi không có phép đo nào tách được hai khả năng: hoặc hàng \code{con} là chỗ mô
+hình còn chưa học xong, hoặc vị trí đầu câu có gì đó khác. Nó là hàng đầu tiên,
+mà bước đầu tiên là bước duy nhất chấm điểm bằng \(\vect{s}_0\) dựng từ
+encoder chứ không từ một bước decoder nào trước đó. Đó là một
+\tn{giả thuyết}{hypothesis}, tôi chưa kiểm, và bài tập cuối chương giao lại
+việc kiểm.
+
+\subsection*{Một câu không phải bằng chứng}
+
+\index{ma trận đồng chỉnh!đo tỷ lệ bắt chéo}%
+Mọi thứ trên đây đọc từ một ma trận. Bài cũng đọc từ bốn ma trận, và cách đọc
+ấy là cách đọc bằng mắt: nó thuyết phục đúng chừng mực của một ví dụ được chọn.
+
+Corpus này cho phép làm chặt hơn, vì chỗ bắt chéo ở đây định nghĩa được. Duyệt
+toàn bộ 300 câu test. Trong output của \emph{chính mô hình}, tìm mọi chỗ một
+danh từ tiếng Việt đi liền trước một tính từ. Với mỗi cặp ấy, lấy vị trí nguồn
+mà mỗi từ dồn trọng số nhiều nhất, rồi hỏi vị trí của tính từ có nằm bên
+\emph{trái} vị trí của danh từ không.
+
+Một đồng chỉnh đường chéo cho 0 phần trăm ở phép đo này, theo cấu tạo.
+
+\begin{measured}{tỷ lệ bắt chéo trên toàn bộ tập test}
+\begin{minted}{text}
+noun-adjective pairs in the model's own output: 625
+of those, adjective attends left of the noun: 609
+crossing rate: 0.9744
+\end{minted}
+
+Cùng mô hình với ma trận ở trên.
+
+Đo bằng \code{experiments/ch06\_alignment.py} tại tag \code{ch06}.
+\end{measured}
+
+625 cặp, 609 bắt chéo, tỷ lệ 0.9744. Phép đo đi theo output của mô hình chứ
+không theo câu tham chiếu, nên một câu mô hình dịch sai vẫn đóng góp nếu nó
+sinh ra một cặp danh từ và tính từ. Cái được đo là mô hình \emph{nhìn} vào đâu,
+không phải nó có đúng không.
+
+\subsection*{Một ma trận đẹp không chứng minh bản dịch tốt hơn}
+
+\index{ma trận đồng chỉnh!không phải bằng chứng chất lượng}%
+Chỗ này cần nói ra, vì cả mục vừa rồi mời gọi đúng cái kết luận sai ấy.
+
+Luong và cộng sự đo thẳng chuyện đó một năm sau. Họ có dữ liệu đồng chỉnh chuẩn
+do người làm cho 508 câu Anh-Đức, nên họ chấm được alignment error rate của các
+mô hình. Kết quả: ensemble của họ đạt 0.34, bằng đúng mô hình local-m đơn lẻ,
+trong khi ensemble dịch tốt hơn hẳn. Họ rút ra nhận xét thẳng thắn rằng
+\tn{điểm đồng chỉnh}{alignment score} và điểm dịch không tương quan tốt với
+nhau (\enquote{are not well correlated}), và dẫn Fraser và
+Marcu 2007 cho nhận xét ấy~\autocite{luong2015effective}.
+
+Nên bảng 0.9744 ở trên nói rằng mô hình đã học được một quy tắc thật về hai thứ
+tiếng, và \emph{không} nói rằng nó dịch tốt hơn vì thế. Cái nói chuyện thứ hai
+là bảng ở mục~\ref{sec:ch06-be-rong}, và hai bảng ấy độc lập với nhau.
+
+Cách tôi dùng ma trận đồng chỉnh, sau khi đọc nhận xét của Luong, là dùng nó
+như một công cụ chẩn đoán chứ không như một thước đo chất lượng. Nó trả lời
+được câu \enquote{mô hình đang nhìn vào đâu}, và câu đó đắt giá lúc gỡ lỗi.
+Chương~\ref{ch:encoder-decoder} không có cách nào hỏi câu ấy.

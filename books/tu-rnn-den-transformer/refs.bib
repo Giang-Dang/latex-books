@@ -7,12 +7,20 @@
 % refer to that copy rather than to a proceedings reprint with different
 % pagination.
 %
-% Bridge papers (Cho 2014, Luong 2015, Gers 2000, Ba 2016, Xiong 2020, BERT,
-% GPT, Kaplan, Hoffmann, FlashAttention, RoPE, ALiBi, S4, Mamba, Swin, DeiT,
-% ConvNeXt and the rest named in the SPEC's table of contents) are deliberately
-% absent. They land in the chapter that cites them, after that chapter's
-% research step has fetched and read them. An entry added from memory is exactly
-% the failure the research gate exists to prevent.
+% Bridge papers (Ba 2016, Xiong 2020, BERT, GPT, Kaplan, Hoffmann,
+% FlashAttention, RoPE, ALiBi, S4, Mamba, Swin, DeiT, ConvNeXt and the rest
+% named in the SPEC's table of contents) are deliberately absent until needed.
+% Each lands in the chapter that cites it, after that chapter's research step
+% has fetched and read it: an entry added from memory is exactly the failure the
+% research gate exists to prevent. The ones already here arrived that way - Cho
+% 2014a and 2014b, Gers 2000 and 2002, Graves 2013 and Kalchbrenner 2013 in the
+% chapter 04 and 05 sessions, Luong 2015, Schuster 1997 and Pouget-Abadie 2014
+% in the chapter 06 one.
+%
+% An entry's `note` says how much of that paper was actually read. Three were
+% cited from less than a full read and each said so; chapter 06 closed one of
+% them, and Kalchbrenner 2013, Schuster 1997 and Pouget-Abadie 2014 remain
+% record-only citations used for attribution and nothing else.
 
 %--- Chapter 02: the symptoms -----------------------------------------------
 
@@ -184,9 +192,13 @@
                paper as \enquote{Cho et al. (2014a)}. Conflating the two is the
                specific error chapter 05 exists to avoid, because the
                length-degradation result belongs here and to neither Sutskever
-               et al. nor the EMNLP paper. Abstract read from arXiv:1409.1259v2,
-               dated 7 October 2014; the body was not consulted, so this book
-               cites it for the claim and not for a number.}
+               et al. nor the EMNLP paper. Read in full during the chapter 06
+               session, from both arXiv:1409.1259v2 dated 7 October 2014 and
+               the Anthology copy at the URL below; chapter 05's restriction to
+               claims rather than numbers is therefore lifted from chapter 06
+               on. Both copies are nine pages and print the same text. Anything
+               reporting them as six has stopped at a split page tree and is
+               missing figures 4 to 6 and the conclusion.}
 }
 
 @article{graves2013generating,
@@ -242,6 +254,71 @@
   note         = {The title page states \enquote{Published as a conference paper
                  at ICLR 2015}. Read as arXiv:1409.0473v7, dated 19 May 2016, so
                  the copy on file postdates the conference by a year.}
+}
+
+@inproceedings{luong2015effective,
+  author    = {Luong, Thang and Pham, Hieu and Manning, Christopher D.},
+  title     = {Effective Approaches to Attention-based Neural Machine
+               Translation},
+  booktitle = {Proceedings of the 2015 Conference on Empirical Methods in
+               Natural Language Processing},
+  pages     = {1412--1421},
+  publisher = {Association for Computational Linguistics},
+  location  = {Lisbon, Portugal},
+  month     = sep,
+  year      = {2015},
+  doi       = {10.18653/v1/D15-1166},
+  eprint    = {1508.04025},
+  eprinttype = {arXiv},
+  eprintclass = {cs.CL},
+  url       = {https://aclanthology.org/D15-1166/},
+  urldate   = {2026-08-11},
+  note      = {Read from the Anthology copy, pages 1412 to 1419 of 1412--1421;
+               the sample-translation tables on the last two pages were not
+               needed. Its section 3.1 lists the three differences from
+               \autocite{bahdanau2015align} in the authors' own words, which is
+               what chapter 06's bridge box reports rather than a comparison
+               made here.}
+}
+
+@article{schuster1997bidirectional,
+  author  = {Schuster, Mike and Paliwal, Kuldip K.},
+  title   = {Bidirectional Recurrent Neural Networks},
+  journal = {IEEE Transactions on Signal Processing},
+  volume  = {45},
+  number  = {11},
+  pages   = {2673--2681},
+  year    = {1997},
+  doi     = {10.1109/78.650093},
+  note    = {The bidirectional encoder Bahdanau et al. adopt in their section
+             3.2, cited here from the bibliographic record only. This book takes
+             nothing from it beyond the attribution, and the same year as
+             \autocite{hochreiter1997lstm} is a coincidence worth not reading
+             anything into.}
+}
+
+@inproceedings{pougetabadie2014overcoming,
+  author    = {Pouget-Abadie, Jean and Bahdanau, Dzmitry and van
+               Merri{\"e}nboer, Bart and Cho, Kyunghyun and Bengio, Yoshua},
+  title     = {Overcoming the Curse of Sentence Length for Neural Machine
+               Translation using Automatic Segmentation},
+  booktitle = {Proceedings of SSST-8, Eighth Workshop on Syntax, Semantics and
+               Structure in Statistical Translation},
+  pages     = {78--85},
+  publisher = {Association for Computational Linguistics},
+  location  = {Doha, Qatar},
+  month     = oct,
+  year      = {2014},
+  doi       = {10.3115/v1/W14-4009},
+  url       = {https://aclanthology.org/W14-4009/},
+  urldate   = {2026-08-11},
+  note      = {The second of the two empirical studies Bahdanau et al. cite in
+               their conclusion as the evidence for the fixed-length vector
+               being a problem, the other being \autocite{cho2014properties}.
+               Bibliographic record read from the ACL Anthology; the paper
+               itself was not read, so it is cited only for the fact that the
+               conclusion rests on two workshop papers from the same group and
+               not for anything it reports.}
 }
 
 %--- Chapter 07: the Transformer --------------------------------------------

@@ -1,0 +1,144 @@
+\exercises
+
+\tierunderstand
+
+\begin{bt}
+  \item Phương trình~\eqref{eq:ch06-tong-co-trong-so} có chỉ số \(i\) ở vế
+    trái, còn phương trình~\eqref{eq:ch05-phan-ra} của chương trước thì vector
+    ngữ cảnh không có chỉ số nào. Viết ra chính xác chỗ nào trong kiến trúc
+    làm cho chỉ số ấy xuất hiện, rồi trả lời: nếu ép mọi \(\alpha_{ij}\) bằng
+    \(1/T\) và không cho chúng học, mô hình còn lại là mô hình gì, và nó khác
+    mô hình chương~\ref{ch:encoder-decoder} ở chỗ nào?
+
+  \item Bài viết rằng mô hình này rút về đúng RNN Encoder-Decoder của Cho
+    2014a nếu cố định \(\vect{c}_i\) bằng \(\overrightarrow{\vect{h}}_{T}\).
+    Kiểm câu đó bằng cách đặt giá trị ấy vào
+    \eqref{eq:ch06-tong-co-trong-so} và nói bộ \(\alpha_{ij}\) nào cho ra nó.
+    Rồi nói mô hình thu được khác mô hình chương~\ref{ch:encoder-decoder} ở
+    chỗ nào, vì hai cái không giống nhau.
+
+  \item Trong \eqref{eq:ch06-duong-moi} có hai số hạng. Giải thích số hạng thứ
+    hai xuất hiện vì lý do gì, rồi nói vì sao mục~\ref{sec:ch06-duong-gradient}
+    chỉ dùng số hạng thứ nhất để lập luận. Số hạng thứ hai lớn hay nhỏ thì lập
+    luận ấy hỏng?
+
+  \item Mục~\ref{sec:ch06-duong-gradient} đo tại lúc khởi tạo, khi mọi
+    \(\alpha_{ij}\) bằng \(1/T\). Dự đoán cột \code{attention min/max} của
+    bảng ấy sẽ đi về đâu sau khi huấn luyện xong, rồi nói dự đoán của bạn có
+    mâu thuẫn với kết luận của mục đó không, và vì sao.
+
+  \item Bảng ở mục~\ref{sec:ch06-be-rong} có mô hình attention đạt 1.0000 ở
+    \(d_h = 32\) nhưng chỉ 0.0600 ở \(d_h = 16\). Nêu hai cơ chế khác nhau có
+    thể gây ra chỗ đứt gãy sắc như thế, rồi với mỗi cơ chế nói một phép đo
+    phân biệt được nó với cơ chế kia.
+
+  \item Ở mục~\ref{sec:ch06-hai-chieu}, encoder một chiều ở \(d_h = 42\) đạt
+    1.0000 còn \tn{encoder hai chiều}{bidirectional encoder} ở \(d_h = 32\)
+    đạt 0.9967. Viết ra kết luận
+    mà bảng ấy \emph{cho phép} rút ra, rồi viết ra một kết luận nghe rất giống
+    nhưng bảng không cho phép, và nói chỗ khác nhau giữa hai câu.
+
+  \item Hàng \code{con} trong ma trận ở mục~\ref{sec:ch06-mo-ma-tran} tản đều
+    trên bốn cột, còn hàng \code{cái} dồn 0.95 vào một cột. Cả hai đều là
+    \tn{loại từ}{classifier}. Nêu một giả thuyết giải thích chênh lệch ấy mà
+    \emph{không} viện tới vị trí đầu câu, rồi nói phép đo nào tách giả thuyết
+    của bạn khỏi giả thuyết vị trí mà mục ấy nêu.
+
+  \item Bài Cho 2014b kết luận rằng chỗ hỏng có thể nằm ở decoder, còn bài
+    Bahdanau sửa ở phía encoder. Dựng lại lập luận của bài 2014b từ dữ liệu họ
+    có, rồi chỉ ra chính xác giả định nào trong lập luận ấy là giả định mà bài
+    2015 phá vỡ.
+\end{bt}
+
+\tierapply
+
+Trạng thái xuất phát cho cả năm bài: clone repo companion, đứng ở thư mục gốc
+của nó, và checkout đúng tag của chương này.
+
+\begin{minted}{console}
+$ git clone https://github.com/Giang-Dang/rnn-to-transformer-lab.git
+$ cd rnn-to-transformer-lab
+$ git checkout ch06
+$ conda env create -f environment.yml
+$ conda activate rnn-to-transformer-lab
+$ python verify.py --only ch06
+\end{minted}
+
+Dòng cuối phải in ra \code{verify: ok}. Nếu không, đừng làm tiếp: mọi con số
+bạn đo sau đó sẽ không so được với sách. Cả năm bài dưới đây đều huấn luyện lại
+ít nhất một mô hình, nên tính trước vài chục giây cho mỗi lần chạy.
+
+\begin{bt}
+  \item Bỏ mask đi. Trong \code{AdditiveAttention.weights}, xóa dòng
+    \code{masked\_fill} rồi chạy \code{python -m pytest -q tests/test\_ch06.py}
+    và nói test nào hỏng. Sau đó chạy lại \code{ch06\_width.py} ở riêng
+    \(d_h = 32\) và ghi lại độ chính xác. Chỗ mất là bao nhiêu, và nó rơi vào
+    cột \code{short} hay cột \code{long}? Giải thích chiều bạn thấy bằng cấu
+    tạo của batch.
+
+  \item \code{ch06\_gradient.py} lấy mất mát ở bước đích 5.
+    Đổi \code{STEP} thành 0 rồi chạy lại. Cột \code{attention min/max} tụt
+    xuống rõ rệt. Đọc \code{AttentionSeq2Seq.encode} rồi giải thích vì sao
+    riêng bước 0 khác các bước khác, và nói vì sao script chọn 5 chứ không
+    chọn 0.
+
+  \item Dựng lại phép đối chứng tham số ở mục~\ref{sec:ch06-hai-chieu} theo
+    chiều ngược. Thay vì nới encoder một chiều lên cho bằng, hãy bóp encoder
+    hai chiều xuống: tìm \(d_h\) mà mô hình hai chiều có số tham số gần 27365
+    nhất, thêm dòng ấy vào \code{RUNS} của \code{ch06\_encoder.py}, và chạy
+    lại. Kết quả ủng hộ hay bác kết luận của mục đó?
+
+  \item \code{ch06\_alignment.py} huấn luyện trên câu nguồn không đảo. Đổi
+    \code{reverse\_source} thành \code{True}, chạy lại, và đọc ma trận in ra.
+    Tỷ lệ bắt chéo đổi thế nào? Cẩn thận khi đọc: chỉ số cột bây giờ đếm trên
+    câu đã đảo, nên hãy nói rõ \enquote{bắt chéo} còn nghĩa là gì trong hệ tọa
+    độ mới trước khi so con số với 0.9744.
+
+  \item Corpus hiện sinh câu tối đa hai mệnh đề. Cho nó sinh câu ba mệnh đề
+    thay vì hai: tìm chỗ gọi hàm chia tập trong \code{ch06\_width.py} và đặt
+    tham số \code{max\_clauses} của lời gọi ấy bằng 3. Giữ nguyên mọi thứ khác
+    rồi chạy lại cả bảng. Ngưỡng \(d_h\) mà mô hình attention bắt đầu giải được
+    dịch đi đâu, và ngưỡng của mô hình vector cố định dịch đi đâu? Hai ngưỡng
+    ấy dịch cùng một lượng không, và chuyện đó ủng hộ hay bác cách đọc ở
+    mục~\ref{sec:ch06-be-rong}? Ngân sách của script là 360 giây; nói rõ bạn
+    đã bỏ dòng nào nếu phải bỏ.
+\end{bt}
+
+\tierextend
+
+\begin{bt}
+  \item Mục~\ref{sec:ch06-hai-chieu} kết luận rằng corpus này không cho thấy
+    được chiều ngược dùng để làm gì, vì văn phạm của nó không có nhập nhằng.
+    Sửa chuyện đó. Thêm vào \code{toy\_corpus.py} một chỗ nhập nhằng thật, tức
+    một từ tiếng Anh mà bản dịch tiếng Việt của nó phụ thuộc vào từ đứng
+    \emph{sau} nó, rồi chạy lại cả bảng encoder kèm dòng đối chứng tham số.
+    Nếu chiều ngược vẫn không đáng gì, hãy nói xem chỗ nhập nhằng bạn thêm vào
+    đã đủ khó chưa, và đo bằng cách nào.
+
+  \item Mục~\ref{sec:ch06-hai-chieu} để lại một quan sát chưa giải thích được:
+    với encoder một chiều, đảo câu nguồn làm độ chính xác trên câu dài tụt từ
+    0.9079 xuống 0.7434, còn với encoder hai chiều thì phép đảo gần như vô
+    hại. Tìm cơ chế. Gợi ý về chỗ nên nhìn trước: \(\vect{s}_0\) lấy từ đâu
+    trong mỗi cấu hình, và annotation của từ nguồn đầu tiên đã đọc được những
+    gì. Kết luận của bạn phải kèm một phép đo phân biệt nó với ít nhất một
+    cách giải thích khác.
+
+  \item Bài Bahdanau gọi chi phí \(T_x \times T_y\) là một \enquote{drawback}
+    rồi gạt đi vì câu dịch chỉ dài 15 tới 40 từ. Biến câu ấy thành một phép đo
+    trên repo: dựng một thí nghiệm đo thời gian một bước decoder theo \(T_x\),
+    tách phần chi phí của attention khỏi phần chi phí của mạng hồi quy. Ở
+    \(T_x\) bằng bao nhiêu thì phần attention vượt phần hồi quy? Rồi ngoại suy:
+    nếu bỏ hẳn mạng hồi quy đi như chương~\ref{ch:transformer} sẽ làm, con số
+    ấy đổi thế nào?
+
+  \item Đây là chỗ còn mở thật sự. Luong và cộng sự đo được rằng alignment
+    error rate và điểm dịch không đi cùng nhau, và
+    mục~\ref{sec:ch06-mo-ma-tran} lấy đó làm lý do không dùng ma trận đồng
+    chỉnh làm thước đo chất lượng. Nhưng tỷ lệ bắt chéo 0.9744 rõ ràng đang đo
+    một cái gì đó thật. Định nghĩa một đại lượng trên
+    \tn{ma trận đồng chỉnh}{alignment matrix} mà
+    bạn tin là \emph{có} tương quan với chất lượng dịch trên corpus này, kiểm
+    nó bằng cách huấn luyện vài mô hình ở các bề rộng khác nhau, rồi nói nó
+    hỏng ở đâu. Biết trước rằng chưa có đại lượng nào thuộc loại này được chấp
+    nhận rộng rãi, và rằng lý do có thể là không tồn tại đại lượng nào như thế.
+\end{bt}

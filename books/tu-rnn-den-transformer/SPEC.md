@@ -16,8 +16,8 @@ picks a side. Chapter titles are quoted in Vietnamese exactly as they are set.
 
 ## Status
 
-Chapters 01, 02, 03, 04 and 05 drafted. Six appendices now: C was split out of B
-on 2026-08-09 (decision 28) and the old C, D and E became D, E and F.
+Chapters 01, 02, 03, 04, 05 and 06 drafted. Six appendices now: C was split out
+of B on 2026-08-09 (decision 28) and the old C, D and E became D, E and F.
 
 Chapter 03 was drafted out of order, in a session that branched before chapters
 01 and 02 landed on main. Nothing was lost, but the reconciliation cost real
@@ -34,12 +34,27 @@ The gloss cadence is now enforced by a script rather than remembered. Decision
 across the five drafted chapters, all fixed, and the two terminology questions
 that had been open since chapter 01 are settled as decisions 40 and 41.
 
-Next action: chapter 06, "Đồng chỉnh". It inherits the corpus of decision 35 and
-the companion module `seq2seq.py` at tag `ch05`, and it owes one reading: Cho et
-al. 2014b (arXiv:1409.1259) has only been read as far as its abstract, and
-chapter 06 is the chapter that wants its BLEU-against-length curve. Note also
-that the whole-run budget now has about forty seconds of headroom (see open
-items), so chapter 06 cannot simply add four more training scripts.
+Chapter 06's debt is paid too: Cho et al. 2014b is now read in full, from both
+the arXiv and the Anthology copies. Its length curves are plots with no table
+behind them, so the chapter quotes as figures only the two BLEU numbers that
+paper writes out in prose, 27.81 and 33.08, and says on the page that the
+ranges it gives when describing the plots are eyeball readings of shape.
+
+The whole-run budget stopped being a worry and became a decision. `BUDGET_TOTAL`
+is 900 seconds from tag `ch06`, raised from 600 with the measurement rather than
+after a failure; decision 43 has the reasoning and `verify.py` carries it next
+to the number.
+
+Next action: chapter 07, "Kiến trúc Transformer". It inherits the corpus of
+decision 35, the companion module `attention.py` at tag `ch06`, and one question
+chapter 06 hands it directly: equation (5) of Bahdanau has no `t-1` in it, so
+the only thing making it wait is that the annotations are produced by a
+recurrence. Chapter 06 ends on that sentence and chapter 07 opens on it. Two
+warnings from the source manifest apply: the arXiv copy of Vaswani is dated
+2023, six years after the conference, so wording quoted from it is not
+automatically wording from 2017; and chapter 06 has already spent the cheap
+half of the run budget, so a chapter that wants many trainings should read
+decision 43 before adding them.
 
 ## Decision log
 
@@ -91,6 +106,10 @@ is re-opened only by recording what changed and why, in the row.
 | 39 | Decision 16's cadence is one rule with no direction in it, and a script enforces it | A term the chapter **owns** is glossed once per section; a term it does **not** own is glossed once per chapter. Ownership is which block of appendix B the term sits in, and nothing turns on whether the owning chapter comes earlier or later. The old wording said \enquote{a term an earlier chapter introduced}, which left chapter 02 using `trị riêng` and chapter 04 using `chỗ thắt` outside the rule entirely; seven sites were that shape. The `Gloss` family in `scripts/check-chapter.ps1` checks it, and `check-chapter.psd1` names appendix B, the `\tn` macro and the two headings that carve the appendix up. Four finding ids: an owned term unglossed in a section, an unowned term unglossed in a chapter, a `\tn` whose term is in no block of appendix B, and the same term glossed twice in one section. **Measured before the shape was chosen.** An earlier plan proposed shipping the unowned half switched off, on the grounds that 13 of its 20 findings were ordinary Vietnamese words; reading the list showed the number is one, `chuỗi`, which is now the whole of `Gloss.Exempt`. The rest are `hàm mất mát`, `ma trận trọng số`, `lan truyền ngược qua thời gian` and their kind, and honouring them cost one `\tn` each, three to six per chapter, which is not the bilingual dictionary the second amendment to decision 16 was written to prevent: that problem was per *section* and this is per *chapter*. **What the check cannot see**, and it is exactly the defect chapter 05 shipped: a term central to a chapter that was never added to appendix B at all. Decision 16 makes appendix B the source of truth, so a term in neither the appendix nor a `\tn` is indistinguishable from ordinary Vietnamese. `chỗ thắt` was that until an audit read the prose. The orphan check closes only the cheap half; the rest stays a reading job |
 | 40 | \enquote{gradient} stays in English | Appendix B listed `độ dốc` as the translation and four of the five drafted chapters ignored it: chapter 01 wrote the bare English 71 times against 0, chapter 02 79/0, chapter 04 22/1, chapter 05 3/0. Only chapter 03 followed the appendix. The entry and its footnote are gone, `gradient` moves to the keep-in-English table, and the seven `\tn{độ dốc}{gradient}` calls are unwrapped. Three bare uses in chapter 03's wall section meant the gradient norm and now say `chuẩn gradient`, matching the prose two lines away that already did. Settled the way a Vietnamese ML reader would expect rather than the way the appendix promised, because the promise had been broken in four chapters and the cost of keeping it grew by one chapter per session |
 | 41 | The tone mark goes on the first vowel of a vowel cluster | `bão hòa`, not `bão hoà`. Stated for the cluster and not for the one word, so `hóa`, `khóa`, `xóa`, `lũy`, `tùy` and `túy` follow without reopening it; closed syllables like `hoàn` and `thoát` are unaffected, because there the tone already sits on the nucleus under both conventions. Both styles are standard Vietnamese and this is a house choice, not a correctness one; it went the way appendix B and three of the five drafted chapters already wrote it. 26 sites changed. `Spelling.Extra` in `check-chapter.psd1` holds the pairs, so the rule is enforced rather than remembered |
+| 42 | Chapter 06 is titled \enquote{Một vector cho mỗi từ}, and the folder and label followed the title | The TOC line said \enquote{Đồng chỉnh}, which is the book's translation of \enquote{alignment} and is opaque on first meeting: it was the one line in the table of contents a reader had to look up before knowing what the chapter was about. The new title is the problem rather than the mechanism, which is decision 2, and it pairs exactly with chapter 05's own section 5.1, \enquote{Một vector cho cả câu}: the distance between the two headings is the distance between the two architectures. The term `đồng chỉnh` is untouched and still carries `alignment` throughout the prose and appendix B. **The slug moved too**, against the usual rule that a stub's label is fixed because earlier chapters forward-reference it. That rule protects against a broken reference, not against a rename done properly: `chapters/06-dong-chinh/` became `chapters/06-mot-vector-cho-moi-tu/` and `ch:dong-chinh` became `ch:mot-vector-cho-moi-tu` in the same session, all nine sites at once, verified by a grep for the old slug returning nothing. Cost: one `git mv`, one `\include`, one `\label` and seven `\ref` in chapter 05 |
+| 43 | `BUDGET_TOTAL` is 900 seconds, raised from 600 | The open item listed three honest options once chapter 06 needed roughly 240 seconds of new experiments: speed chapter 02 up, let chapter 06 share chapter 05's models, or raise the number with a recorded reason. The first rewrites a drafted chapter's published figures, the second is impossible because each experiment is its own process. So the third. What made the case is not the new total but the spread: three whole runs at tag `ch05` on identical code came in at 557.52, 495.51 and 487.27 seconds, so the seventy-second range is larger than the forty seconds of headroom the old number had, and a budget that clears the measurement by less than its own noise is not a budget. Measured at tag `ch06`: 680.47 seconds. What is deliberately not touched is what the budget is for. Decision 13 promises a reader with no graphics card that a run finishes in minutes, and 900 seconds is still minutes; the question before raising it again is not whether the run fits but whether a reader would sit through one |
+| 44 | An ablation without a parameter-matched control measures the parameter count | Chapter 06 ran chapter 05's reversal question against the bidirectional encoder and, in the same table, dropped the backward pass. Read four rows, the backward pass is worth 0.0467 exact match and the gain sits on long sentences. Add a fifth row where a forward-only encoder is widened to 41495 parameters against the bidirectional model's 40805, and it scores 1.0000: the gain was the parameters. The chapter prints the control and says so. **And the honest reading is about the corpus, not the paper.** Section 3.2 of Bahdanau wants an annotation to summarise the words that follow, and the reason is disambiguation; the grammar of decision 35 has no ambiguity in it at all, as `toy_corpus.py` has said in its docstring since chapter 05. A corpus with nothing to disambiguate cannot show what a disambiguating mechanism is for, so this measures the running example's ceiling rather than the paper's claim. Generalised, because it is not about this one table: a table comparing two architectures states their parameter counts, and an ablation ships a size-matched control or says why it has none |
+| 45 | `ma trận đồng chỉnh` belongs to chapter 06's block of appendix B, not chapter 05's | Appendix B carried it under chapter 05 with the note \enquote{chương 05 mượn trước của chương 06}, which is a note saying the row is in the wrong place. Decision 39 makes ownership mean the section cadence, and chapter 06 names the matrix in four sections while chapter 05 names it in one, so chapter 06 is the owner by the test the rule actually applies. Moved, and the note rewritten to `chương~05 mượn trước`, which is now a fact about chapter 05's usage rather than an apology for the row being in the wrong block. Chapter 05 keeps its single gloss and is now correct as a borrower rather than correct by accident. Two more rows arrived from chapter 06's audit, both of them the defect decision 39 says the check cannot see - a term central to a chapter that is in no block at all: bare `đồng chỉnh`, which was the chapter's own former title, and `phép cắt bỏ`, which is the name of the method behind decision 44. Plus `alignment error rate` to the keep-in-English table. Added in the same pass: `attention` and `annotation` to the keep-in-English table. `annotation` is the interesting one - it is Bahdanau's name for `h_j`, and the obvious Vietnamese word, `chú giải`, means a footnote or a commentary, so translating it would have taught a reader the wrong thing |
 
 ## Version baseline
 
@@ -156,11 +175,18 @@ created. That section is the hinge to the next chapter and is not optional.
    long sentences, and the length-degradation result belongs to Cho **2014b**,
    the SSST-8 paper, not to the EMNLP one chapter 04 cites. See the research
    note
-6. **Đồng chỉnh** (Bahdanau, Cho, Bengio 2015) - the bottleneck measured before
-   it is fixed; additive attention; the derivation showing a direct gradient
-   path from every source step to every target step; the BiRNN encoder; a
-   measured Vietnamese-English alignment matrix; a bridge box for Luong 2015;
-   gap: attention is still an accessory bolted onto an RNN
+6. **Một vector cho mỗi từ** (Bahdanau, Cho, Bengio 2015) - who actually
+   measured the bottleneck, which is Cho 2014b and not this paper, since this
+   one says \enquote{conjecture} and cites two workshop papers; additive
+   attention, scored from the state *before* the step; the derivation showing a
+   direct gradient path from every source step to every target step, and that
+   path measured as a reach that stops shrinking with sentence length; chapter
+   05's width sweep run again with attention on the same recipe; the BiRNN
+   encoder, with a parameter-matched ablation showing this corpus cannot say
+   what the backward pass is for; a measured English-Vietnamese alignment
+   matrix and its crossing rate; a bridge box for Luong 2015; gap: attention is
+   still an accessory bolted onto an RNN, and the paper's own \enquote{drawback}
+   sentence about `T_x` times `T_y` scores is the seed of chapter 12
 
 ### Part IV - Bỏ hẳn recurrence
 
@@ -227,7 +253,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 03 | drafted | Venue confirmed: ICML 2013, PMLR 28(3):1310-1318. Companion tag `ch03`. Corrects the paper's eigenvalue wording against its own singular-value proof |
 | 04 | drafted | Companion tag `ch04`. Reads the 1997 paper rather than the modern cell: no forget gate, squashing functions that are not tanh, truncation as three named substitutions. Input weight conflict solved in closed form (`w* = 1/T`). Two TikZ figures. Corrects appendix A, which had the paper writing `c_t` for the cell state when it writes `s_c` |
 | 05 | drafted | Companion tag `ch05`. Venue confirmed: NIPS 2014, Advances in NIPS 27, pages 3104-3112 (pages from DBLP, since the publisher's own BibTeX export leaves the field empty). Settles the running example as a generated corpus (decision 35). The bottleneck measured by shrinking the context vector rather than by lengthening sentences, which is what lets the chapter say the bottleneck is real *and* that this paper never hit it. Separates Cho 2014a from Cho 2014b, which is who the length-degradation result actually belongs to. One TikZ figure |
-| 06 | not-started | |
+| 06 | drafted | Companion tag `ch06`, module `attention.py`. Retitled from \enquote{Đồng chỉnh} with the folder and label following (decision 42). Pays chapter 05's debt: Cho 2014b read in full, from the arXiv and Anthology copies, both nine pages. The chapter's spine is that the paper this chapter reads *conjectured* the bottleneck and cited two SSST-8 workshop papers for it, while chapter 05 is where this book measured it. Reproduces chapter 05's width table digit for digit on its fixed-vector rows, which is what makes the two chapters' tables comparable. Two TikZ figures. `BUDGET_TOTAL` raised to 900 (decision 43) |
 | 07 | not-started | |
 | 08 | not-started | |
 | 09 | not-started | |
@@ -400,6 +426,14 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   exact command, the versions, the raw output rather than a summary, and the
   date. Record the measurements that turned out to be uninteresting too.
 
+  **A table comparing two architectures prints their parameter counts**, and an
+  ablation ships a size-matched control or says in the prose why it has none
+  (decision 44). Chapter 06 is where this cost something: four rows said the
+  bidirectional encoder was worth five points of exact match, and a fifth row
+  with the parameter counts matched said it was worth nothing. The rule is
+  cheap to follow and the sentence it prevents is one the book cannot take
+  back.
+
   **A number goes in the note with the configuration that produced it**, never
   on its own. The `number` family checks that a decimal appears in a note, and a
   note recording a figure from a configuration nobody can name still satisfies
@@ -443,8 +477,13 @@ that was written down.
   "hypothesis" is the right English either way, but a reader may wonder why a
   beam-search term is being introduced in a chapter about spectral radius.
   Either the appendix drops the scoping note, or the term joins `Gloss.Exempt`
-  and chapter 05 keeps its glosses by hand. Left open because it is one word and
-  the current state is cheap to live with.
+  and chapter 05 keeps its glosses by hand. **Chapter 06 is the third chapter
+  to hit this**, in `06-mo-ma-tran-ra-xem.tex`, again in the ordinary sense: a
+  guess about why one row of an alignment matrix behaves oddly, nothing to do
+  with beam search. Three chapters is enough evidence that the scoping note
+  describes one chapter's usage rather than the book's, so the next session
+  that opens appendix B should just delete the note. Still not urgent: the
+  gloss it produces is correct English every time.
 - **Chapter 03's captured tables sit at `\footnotesize` without needing to.**
   Found by the chapter 04 audit 2026-08-10, in chapter 04's own tables, and
   fixed there: all eight were between 19 and 68 columns, well inside the
@@ -491,22 +530,38 @@ that was written down.
   most of the time trains its reader to skip it. What survives is the manual
   habit, now in the writing rules - a number goes in the note with the
   configuration that produced it.
-- **The whole-run budget has about forty seconds of headroom, and that is the
-  next thing to bite.** Two runs at tag `ch05` on the same machine: 557.52
-  seconds against `BUDGET_TOTAL = 600`, and 495.51 in another. The gap between
-  them is the point, because it means the total is sensitive to load and a
-  passing run is not proof the next one passes. Chapter 05 added 268 seconds,
-  and chapter 06 wants the same corpus and at least one more comparison. The
-  single largest item is not chapter 05: chapter 02's verify took 197.59 seconds
-  in the slower run against 99.66 recorded at tag `ch04`. Chapter 02's own
-  baseline is about ten minutes total - adding problem at 3 x T with 5000
-  samples each, copy task at 3 x T_mem with 2000 epochs each - and decision 37
-  tightened the rule to 60 seconds per model trained from chapter 05 on. The
-  cheapest real saving in chapter 05 would be dropping the reversal experiment
-  from three seeds to two, which is exactly the thing that experiment exists to
-  avoid, because the per-seed spread there is wider than the effect. So the
-  honest options are speeding chapter 02 up, raising `BUDGET_TOTAL` with a
-  recorded reason, or letting chapter 06 share chapter 05's trained models.
+- **The `number` check will accept a decimal that traces to the wrong note,
+  and chapter 06 caught it doing so.** The chapter prints three differences of
+  cited BLEU figures: 19.38, 11.01 and 8.37. Only 19.38 fired. `8.37` passed
+  because `research/2026-08-09-ch02-symptoms.md` records a loss of 8.3705 at
+  `T_mem=20`, which is a chapter 02 measurement of something else entirely. The
+  check asks whether a number appears *somewhere* under `research/`, not
+  whether it appears where it came from, so the more notes the book grows the
+  weaker it gets. All three are now recorded properly in the chapter 06 note
+  with the subtraction behind each. Not proposed as a script change, because
+  the obvious fix - scope each chapter's numbers to its own note - breaks every
+  legitimate case where a chapter quotes an earlier chapter's figure, and this
+  chapter does that four times. Left open as a known hole with a worked example
+  attached, which is more than it had before.
+- **The corpus of decision 35 has no ambiguity in it, and that is now a
+  measured ceiling rather than a docstring note.** Chapter 06's encoder
+  ablation could not show the backward pass earning anything once parameters
+  were matched, and the reason is that a grammar with no ambiguity gives
+  right-hand context nothing to disambiguate (decision 44). The same ceiling
+  will bite any later chapter whose mechanism exists to resolve ambiguity, and
+  chapter 07's masked self-attention is not one but chapter 09's pretraining
+  argument may be. The fix, if a chapter needs it, is a grammar where one
+  English word's Vietnamese translation depends on a word after it; chapter
+  06's tier-three exercise 1 specifies exactly that and nobody has built it.
+- **Chapter 06's forward-only encoder gets *worse* when the source is
+  reversed, and no one knows why.** 0.9500 to 0.8667 exact match, with the loss
+  landing entirely on long sentences (0.9079 to 0.7434) while short sentences
+  do not move. With the bidirectional encoder reversal is worth 0.0033, so the
+  interaction between the two is real rather than noise. The chapter prints it
+  as an observation and does not explain it; tier-three exercise 2 hands it to
+  the reader. Recorded here because an unexplained direction in a table is the
+  kind of thing a later chapter accidentally explains and then does not go back
+  to connect.
 - **`torch.nn.LSTM` is still not used anywhere, and from chapter 05 that costs
   measurable time.** Every recurrent layer in the companion repo is a Python
   loop over time steps, which is the right choice for chapters 01 to 04 because
@@ -528,10 +583,23 @@ that was written down.
   measured the length degradation. Bahdanau distinguishes them as 2014a and
   2014b and the whole received story about chapter 05 turns on which one is
   meant.
-- **Three papers are cited from less than a full read, and each entry says so.**
-  `cho2014properties` from its abstract only; `kalchbrenner2013recurrent` from
-  its ACL Anthology record only, used for nothing beyond the priority claim
-  Sutskever et al. themselves make; `graves2013generating` from section 2.1
-  only, which is the part that matters because it is where the LSTM equations
-  are. Chapter 06 wants a number out of the first of those and will have to read
-  the body before it can print one.
+- **Four papers are cited from less than a full read, and each entry says so.**
+  `kalchbrenner2013recurrent` and, since chapter 06, `schuster1997bidirectional`
+  and `pougetabadie2014overcoming`, all three from their bibliographic records
+  only and all three used for attribution and nothing else;
+  `graves2013generating` from section 2.1 only, which is the part that matters
+  because it is where the LSTM equations are. `cho2014properties` has left this
+  list: chapter 06 read it in full and the entry's note now says so.
+
+  Two things that reading turned up, kept because they will save the next
+  session the same hour. **`file` reports both copies of that paper as six
+  pages and both are nine.** The page tree is split (`/Count 6`, `/Count 3`,
+  `/Count 9`) and a tool reading only the first count stops early; counting
+  `/Type /Page` in the raw bytes gives nine. The three pages a six-page read
+  loses are figures 4 to 6 and the conclusion, which is the entire reason to
+  open that paper. Check the last page ends in a finished sentence. **And its
+  section 5.1 and its conclusion point at different culprits** - the
+  fixed-length vector, then the decoder - while Bahdanau fixes the encoder;
+  three of its four authors wrote Bahdanau. Chapter 06 reads that as a sound
+  argument reaching the wrong part rather than as carelessness, and a later
+  chapter quoting either sentence should quote which one.

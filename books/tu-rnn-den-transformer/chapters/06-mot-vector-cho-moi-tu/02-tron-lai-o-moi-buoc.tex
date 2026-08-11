@@ -1,0 +1,209 @@
+\section{Trộn lại ở mỗi bước}
+\label{sec:ch06-tron-lai}
+
+\index{attention!ba phương trình}%
+Cơ chế gọn hơn tôi tưởng trước khi đọc kỹ. Ba phương trình, và phương trình
+thứ hai làm gần hết việc.
+
+Encoder đọc \tn{câu nguồn}{source sentence} và để lại một vector cho mỗi vị
+trí. Bài gọi chúng là annotation, và tôi giữ nguyên chữ ấy: \(\vect{h}_1\) tới
+\(\vect{h}_{T}\), \(\vect{h}_j\) ứng với từ nguồn thứ \(j\). Chương trước cũng
+tính đúng chừng ấy vector rồi bỏ đi tất cả trừ cái cuối. Ở đây không cái nào bị
+bỏ.
+
+Decoder ở bước \(i\) tự dựng lấy vector ngữ cảnh của riêng nó:
+
+\begin{equation}
+  \vect{c}_i = \sum_{j=1}^{T} \alpha_{ij} \vect{h}_j,
+  \label{eq:ch06-tong-co-trong-so}
+\end{equation}
+
+đúng phương trình (5) của bài. Đây là toàn bộ ý tưởng. Chỉ số \(i\) ở vế trái
+là chỗ đáng nhìn lâu: chương trước có một \(\vect{v}\) duy nhất cho cả câu, ở
+đây mỗi bước đích có một \(\vect{c}_i\) riêng, dựng từ cùng một bộ annotation
+nhưng với bộ trọng số khác.
+
+Các trọng số ấy là một phân phối trên các vị trí nguồn:
+
+\begin{equation}
+  \alpha_{ij} = \frac{\exp(e_{ij})}{\sum_{k=1}^{T} \exp(e_{ik})},
+  \qquad
+  e_{ij} = a(\vect{s}_{i-1}, \vect{h}_j),
+  \label{eq:ch06-trong-so}
+\end{equation}
+
+phương trình (6). \(e_{ij}\) là \tn{điểm đồng chỉnh}{alignment score} giữa bước
+đích \(i\) và vị trí nguồn \(j\); softmax biến các điểm ấy thành
+\tn{trọng số đồng chỉnh}{alignment weight} cộng lại bằng 1. Còn \(a\) là một
+mạng nhỏ, huấn luyện chung với mọi thứ còn lại.
+
+\subsection*{Điểm chấm bằng trạng thái trước bước, không phải sau}
+
+\index{attention!thứ tự trong một bước decoder}%
+Chi tiết dễ đọc lướt nhất trong cả mục này nằm ở chỉ số của \(\vect{s}\) trong
+\eqref{eq:ch06-trong-so}. Không phải \(\vect{s}_i\) mà là \(\vect{s}_{i-1}\).
+Mục 3.1 của bài nói rõ ra bằng chữ: điểm được chấm dựa trên trạng thái
+\(\vect{s}_{i-1}\), tức trạng thái ngay trước lúc sinh ra \(y_i\)
+(\enquote{just before emitting \(y_i\)}).
+
+Nên một bước decoder chạy theo thứ tự này, và thứ tự mới là thứ đáng nhớ chứ
+không phải công thức:
+
+\begin{enumerate}
+  \item lấy trạng thái hiện có \(\vect{s}_{i-1}\), chấm điểm nó với từng
+    annotation, softmax ra \(\alpha_{ij}\);
+  \item trộn annotation theo trọng số ấy thành \(\vect{c}_i\);
+  \item bây giờ mới bước: \(\vect{s}_i = f(\vect{s}_{i-1}, \vect{y}_{i-1},
+    \vect{c}_i)\), tức phương trình (4);
+  \item đọc phân phối từ tiếp theo ra khỏi \(\vect{s}_i\).
+\end{enumerate}
+
+Nghĩa là mô hình quyết định nhìn vào đâu \emph{trước} khi bước, dựa trên chỗ nó
+đang đứng. Luong và cộng sự làm ngược lại một năm sau, bước trước rồi mới chấm
+điểm bằng trạng thái mới, và họ liệt kê chỗ khác nhau ấy như một trong ba khác
+biệt chính. Hộp cầu nối ở mục~\ref{sec:ch06-cau-noi} là chỗ nói chuyện đó.
+
+Trong repo companion, bốn bước trên là bốn dòng:
+
+\begin{minted}{python}
+def step(self, word, state, annotations, mask, projected):
+    alpha = self.attention.weights(state[1], projected, mask)
+    context = self.attention.context(alpha, annotations)
+    merged = torch.cat([word, context], dim=-1)
+    return self.decoder.step(merged, state), alpha
+\end{minted}
+
+\code{state} đi vào \code{weights} trước khi đi vào \code{decoder.step}, và đó
+là toàn bộ chỗ khác nhau giữa bản này với bản của Luong.
+
+\subsection*{Mô hình chấm điểm là một mạng một tầng ẩn}
+
+\index{attention!hàm chấm điểm của Bahdanau}%
+Phụ lục A.1.2 của bài chọn dạng cụ thể cho \(a\):
+
+\begin{equation}
+  a(\vect{s}_{i-1}, \vect{h}_j)
+  = \vect{v}_a\transpose \tanh\!\left(
+      \mat{W}_a \vect{s}_{i-1} + \mat{U}_a \vect{h}_j
+    \right).
+  \label{eq:ch06-ham-cham-diem}
+\end{equation}
+
+Một tầng ẩn, tanh, rồi chiếu xuống một số thực. Bài giải thích lựa chọn bằng
+chi phí: mô hình này phải chạy \(T_x \times T_y\) lần cho một cặp câu, nên nó
+phải rẻ. Con số \(T_x \times T_y\) ấy quay lại ở mục~\ref{sec:ch06-con-lai-gi}
+và nó không nhỏ như bài nghĩ.
+
+\index{attention!tính trước U\_a h\_j}%
+Có đúng một phép tối ưu mà bài viết ra, và nó nằm gọn trong cấu trúc của
+\eqref{eq:ch06-ham-cham-diem}. Số hạng \(\mat{U}_a \vect{h}_j\) không chứa
+\(i\). Nó là cùng một giá trị ở mọi bước đích, nên tính một lần cho cả câu
+thay vì \(T_y\) lần. Nguyên văn: \enquote{Since \(U_a h_j\) does not depend on
+\(i\), we can pre-compute it in advance to minimize the computational cost}.
+
+\begin{minted}{python}
+def precompute(self, annotations: torch.Tensor) -> torch.Tensor:
+    return self.u_a(annotations)
+\end{minted}
+
+\begin{minted}{python}
+def weights(
+    self,
+    state: torch.Tensor,
+    projected: torch.Tensor,
+    mask: torch.Tensor,
+) -> torch.Tensor:
+    hidden = torch.tanh(self.w_a(state) + projected)
+    scores = self.v_a(hidden).squeeze(-1)
+    scores = scores.masked_fill(~mask, float("-inf"))
+    return torch.softmax(scores, dim=0)
+\end{minted}
+
+\code{projected} là kết quả của \code{precompute}, truyền vào từ ngoài. Cấu
+trúc cộng trong \eqref{eq:ch06-ham-cham-diem} là thứ cho phép chuyện đó: nếu
+hàm chấm điểm nhân \(\vect{s}\) với \(\vect{h}\) thay vì cộng hai phép chiếu
+thì không tách ra được.
+
+\index{attention!mask trên vị trí đệm}%
+Dòng \code{masked\_fill} là dòng dễ quên nhất trong cả module, và nó hỏng theo
+đúng kiểu mà chương~\ref{ch:encoder-decoder} đã gặp một lần: im lặng. Một câu
+ngắn nằm chung batch với câu dài thì các cột thừa là token đệm. Không có dòng
+ấy, softmax chạy trên cả các cột đệm, nên câu ngắn tiêu một phần ngân sách chú
+ý vào chỗ trống. \tn{Hàm mất mát}{loss function} không kêu gì cả, và cái duy
+nhất bạn thấy là vài
+điểm chính xác biến mất. Repo có test riêng khẳng định trọng số ở vị trí đệm
+đúng bằng 0.
+
+\subsection*{Trạng thái khởi tạo lấy từ chiều ngược}
+
+\index{attention!trạng thái khởi tạo của decoder}%
+Phụ lục A.2.2 đặt \(\vect{s}_0 = \tanh(\mat{W}_s \overleftarrow{\vect{h}}_1)\).
+Không phải trạng thái cuối của chiều xuôi, mà là trạng thái của chiều ngược tại
+vị trí nguồn \emph{1}. Nghe ngược đời cho tới khi nhớ rằng chiều ngược đọc từ
+phải sang trái: trạng thái của nó ở vị trí 1 chính là trạng thái sau khi nó đã
+đọc hết câu. Chương trước dùng trạng thái cuối của chiều xuôi cho đúng việc ấy,
+và khác biệt chỉ là đọc từ đầu nào.
+
+\begin{minted}{python}
+def encode(self, source: torch.Tensor):
+    embedded = self.source_embedding(source)
+    annotations, mask = self.encoder(source, embedded)
+    projected = self.attention.precompute(annotations)
+    h_0 = torch.tanh(self.bridge(self.encoder.summary(annotations)))
+    state = (torch.zeros_like(h_0), h_0)
+    return annotations, mask, projected, state
+\end{minted}
+
+Hình~\ref{fig:ch06-kien-truc} ghép cả mục này lại thành một bức.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch06-kien-truc-attention}
+  \caption{Kiến trúc của bài, vẽ theo hình 1 của nó. So với
+    hình~\ref{fig:ch05-encoder-decoder} thì chỗ nối giữa hai nửa đã đổi hẳn
+    hình dạng: mũi tên đậm không còn xuất phát từ một ô duy nhất ở cuối
+    encoder, nó xuất phát từ một tổng có trọng số lấy trên \emph{mọi} vị trí
+    nguồn, và tổng ấy được tính lại ở từng bước đích. Mũi tên đứt là chi tiết
+    dễ mất nhất: điểm đồng chỉnh chấm bằng \(\vect{s}_{i-1}\), tức trạng thái
+    trước bước, nên vector ngữ cảnh của bước \(i\) đã được chọn xong trước khi
+    bước \(i\) chạy.}
+  \label{fig:ch06-kien-truc}
+\end{figure}
+
+\subsection*{Hai chỗ repo lệch khỏi bài, và một chỗ bài cho phép lệch}
+
+\index{attention!chỗ repo lệch khỏi bài}%
+Bài dùng đơn vị có cổng của Cho, tức gated recurrent unit, viết tắt là GRU, ở
+cả encoder lẫn decoder. Repo dùng ô nhớ LSTM có \tn{cổng quên}{forget gate} của
+chương~\ref{ch:encoder-decoder}. Đây không phải chỗ tôi tự tiện: phụ lục A.1.1
+của chính bài viết rằng \enquote{it is therefore possible to use LSTM units
+instead of the gated hidden unit described here, as was done in a similar
+context by Sutskever et al. (2014)}. Và lý do tôi chọn thế mạnh hơn là chuyện
+được phép: chương này sẽ đặt bảng của nó cạnh bảng chương trước, nên hai bên
+phải khác nhau đúng một thứ. Đổi cả ô nhớ thì không còn quy được chênh lệch cho
+attention nữa.
+
+Chỗ lệch thứ hai: bài đưa trạng thái qua một tầng maxout rồi mới tới softmax,
+repo đọc thẳng softmax từ \(\vect{s}_i\). Cùng lý do, cộng thêm chuyện
+chương~\ref{ch:encoder-decoder} cũng đọc thẳng.
+
+Còn một chỗ lệch mà tôi \emph{không} cho phép mình: kích thước. Bài chạy
+\(n = 1000\) đơn vị ẩn, embedding 620 chiều, tầng maxout 500, mô hình chấm điểm
+1000 đơn vị, huấn luyện năm ngày. Repo chạy vài chục đơn vị trong vài chục
+giây. Mọi con số ở các mục sau phải đọc trong khung ấy, và
+mục~\ref{sec:ch05-corpus} đã liệt kê corpus này không mô hình hóa những gì.
+
+\subsection*{Một tính chất của lúc khởi tạo, để dành cho mục sau}
+
+\index{attention!v\_a khởi tạo bằng 0}%
+Phụ lục B.1 khởi tạo \(\mat{W}_a\) và \(\mat{U}_a\) từ phân phối chuẩn với độ
+lệch chuẩn 0.001, và khởi tạo \(\vect{v}_a\) \emph{đúng bằng 0}.
+
+Đặt vào \eqref{eq:ch06-ham-cham-diem} thì mọi \(e_{ij}\) bằng 0 ở batch đầu
+tiên, nên softmax trả về phân phối đều: \(\alpha_{ij} = 1/T\) với mọi \(j\).
+Mô hình khởi động bằng cách lấy trung bình cộng tất cả annotation, và phải học
+lấy mới biết ưu tiên cái nào.
+
+Tôi ghi chi tiết này ra thay vì dọn nó đi vì mục sau đo gradient tại đúng thời
+điểm ấy, và một phân phối đều là điểm xuất phát sạch nhất có thể có cho phép đo
+đó.
