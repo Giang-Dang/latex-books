@@ -1,0 +1,162 @@
+\section{What the Composer Checks, and What It Does Not}
+\label{sec:ch15-what-the-composer-checks}
+\index{composition!authorization directives|(}%
+
+Everything so far has been one scope on one field, working. This section is the
+other half of the job, which is finding out what the composer will let past
+when the rule is wrong. Ten cases, in \code{scripts/auth-cases.mjs}: four read
+the committed schemas as they stand, and six edit them the way
+chapter~\ref{ch:composition} and chapter~\ref{ch:hard-modeling-problems} did
+before this. Three of the six compose cleanly and should not.
+
+\subsection*{The import list is decoration}
+
+\index{link@\code{@link}!import list ignored for authorization directives}%
+Mosaic's schemas each carry an \code{@link} naming the federation version and
+importing the directives they use. Take \code{"@requiresScopes"} out of
+Accounts' import list, leave the directive on the field, and the graph composes
+with the same authorization configuration as before.
+
+That is not the composer being relaxed about unknown directives. The control
+case is one line away:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The subgraph "accounts" could not be federated for the following reason:
+The directive "@totallyMadeUpDirective" declared on coordinates
+"Customer.displayName" is not defined in the schema.
+\end{minted}
+
+The two authorization directives are registered unconditionally. The composer
+at 0.63.2 has a set with exactly two members in it, and the import list is
+never consulted about either. That is harmless in itself, and worth knowing
+because it means a subgraph's \code{@link} is not a reliable inventory of what
+that subgraph is doing.
+
+\subsection*{An empty list is not an empty rule}
+
+\index{requiresScopes@\code{@requiresScopes}!empty scopes composes silently}%
+Change the argument to \code{scopes: []}. It composes with no error and no
+warning, and the directive is gone: not weakened, not defaulted, absent from
+the composed client schema and absent from \code{fieldConfigurations}. The
+field is public again and the graph is happy.
+
+This is the one that would actually happen. Somebody writes a list, a
+refactoring empties it, a template renders nothing into it, and the protection
+evaporates with every check in the toolchain green. There is no diff in the
+router's behaviour to notice, because the router was never told.
+
+\subsection*{One nesting level short crashes it}
+
+\index{composition!TypeError on a flat scopes list}%
+The nesting is the part everybody gets wrong, so it is worth knowing what
+getting it wrong looks like. \code{scopes: ["read:pii"]}, one level short of
+the \code{[[Scope!]!]!} the directive declares, does not produce a validation
+message. It throws:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+TypeError: scopes.values is not iterable
+    at NormalizationFactory.extractRequiredScopes
+\end{minted}
+
+wrapped in the composer's generic \enquote{upgrade to the latest version, and
+if it persists please open an issue} box. Chapter~\ref{ch:hard-modeling-problems}
+met the same class of failure with an entity interface missing a key, and the
+same thing is true here: a stack trace is not a diagnosis, and the box asks you
+to report a bug in your own schema.
+
+Omit the argument entirely and the composer behaves properly, which shows the
+validation exists and only that one shape misses it:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+The definition for "@requiresScopes" defines the following 1 required argument:
+"scopes". However, no arguments are defined on this instance.
+\end{minted}
+
+\subsection*{\code{@policy} is not available here}
+
+\index{policy@\code{@policy}!not implemented by this composer}%
+HotChocolate ships \code{[Policy]} and emits \code{@policy}, against the
+federation version its own source marks the directive as belonging to. This
+stack cannot compose it:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The subgraph "accounts" could not be federated for the following reason:
+The directive "@policy" declared on coordinates "Customer.displayName"
+is not defined in the schema.
+\end{minted}
+
+with or without an \code{@link} import naming it, because the composer's
+registry of authorization directives has two entries and consults no import
+list to learn a third. The router agrees: there is no policy evaluation
+anywhere in its authorizer.
+
+So a HotChocolate subgraph author reading their own attribute list will find
+three federation authorization attributes, of which two work here and the third
+stops the graph from composing at all. That is worth stating plainly because
+the failure names the directive and not the reason, and a reasonable person
+would conclude they had spelled something wrong.
+
+\subsection*{Two subgraphs, two scopes, and a field that reads the other way}
+
+\index{requiresScopes@\code{@requiresScopes}!merging across subgraphs}%
+\code{Money.amount} is \code{@shareable} and declared in both Pricing and
+Ordering. Give it one scope in the first and a different one in the second,
+and the graph composes with no error and no warning. What comes out is this:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+"requiredOrScopes":     [ { "requiredAndScopes": ["read:orders", "read:price"] } ]
+"requiredOrScopesByOr": [ { "requiredAndScopes": ["read:price"] },
+                          { "requiredAndScopes": ["read:orders"] } ]
+\end{minted}
+
+Read those carefully, because they disagree. The first says a caller needs both
+scopes. The second says either one will do. They sit next to each other in one
+JSON object, written by one composer, from one pair of schemas, and nothing
+anywhere flags that the graph has two answers.
+
+Which one is real? The router reads the first of the two and nothing else. The
+second appears in the router's Go source only as a generated protobuf
+accessor, and is never called. So the enforced rule is the strict one, and the
+field whose name reads like the obvious home for an \enquote{OR of ANDs}
+scheme is dead weight in the file.
+
+Be careful with what that means, because \enquote{it merges to AND} sounds
+like a design choice and I am not sure it is one. What I measured is that the two subgraphs' requirements combine into a
+single AND-group, and that a caller therefore needs a scope neither service
+asked for on its own. If your mental model was that each service guards its own
+contribution, that model is wrong here, and the composer will not tell you.
+
+\subsection*{And the field this chapter did not fix}
+
+\index{node@\code{Query.node}!authorising it}%
+Chapter~\ref{ch:hard-modeling-problems} handed this chapter \code{Query.node}
+as a named risk and I am handing it on, so it is worth saying exactly why
+rather than leaving it in a list.
+
+\code{node} takes one identifier and returns anything in the graph. Its type is
+known only after the identifier has been decoded, which happens inside the
+service that owns the type, which is after any rule the router could apply.
+So the two available rules are both wrong. A scope on \code{node} itself
+governs every type at once, which either blocks identifiers a caller is
+entitled to or admits ones they are not. A scope on each concrete type governs
+the type wherever it appears, including on the paths where it is reached
+normally and was fine.
+
+The shape of an answer is probably that the node service refuses types rather
+than the router refusing the field, since it is the only process that knows
+which type an identifier named, and it owns nothing else. That is a resolver
+making an authorisation decision with a claim it was handed by the header rule
+of section~\ref{sec:ch15-the-header-nobody-forwards}, and it is invisible to
+the composer, which is exactly the arrangement this chapter has spent six
+sections warning about. I do not have a version of it I would defend, so
+\code{node} is unprotected at tag \code{ch15} and
+chapter~\ref{ch:inside-the-router-and-the-composer} inherits the question with
+the composer's own rules in front of it.
+
+\medskip
+
+What this chapter did close is the gap it opened with: Mosaic has a rule the
+router enforces, a rule a service enforces, and a written argument for which
+kind of rule belongs where. The lab is where you take each of them apart.
+
+\index{composition!authorization directives|)}%

@@ -1,0 +1,155 @@
+\section{Two Authorizations That Do Not Know About Each Other}
+\label{sec:ch15-two-authorizations}
+\index{HotChocolate!two authorization mechanisms|(}%
+
+HotChocolate 16.6.0 gives you two ways to say that a field is protected. They
+come from different packages, they are enforced in different processes, and
+nothing in the product connects them. I knew both existed. What I did not know,
+until I put one on each of two fields in the same service and looked at what
+came out, is that neither one leaves any trace of the other.
+
+\subsection*{The one the service enforces}
+
+\index{Authorize@\code{[Authorize]}!enforced in process}%
+\code{[Authorize]} comes from \code{HotChocolate.Authorization}, and once
+ASP.NET Core is in the picture the builder call comes from
+\code{HotChocolate.AspNetCore.Authorization}. Accounts puts it on the one root
+field it has:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+[Authorize]
+public static Task<Customer?> GetCustomerByIdAsync(
+    [ID] Guid id,
+    AccountsService accounts,
+    CancellationToken cancellationToken)
+    => accounts.GetCustomerByIdAsync(id, cancellationToken);
+\end{minted}
+
+The attribute takes a policy name, a role list and an \code{ApplyPolicy} that
+decides whether the rule runs before the resolver, after it, or during
+validation. Accounts uses none of those and gets the bare meaning: there has to
+be somebody logged in.
+
+That rule is evaluated by this process, against the principal this process
+built out of the token this process validated. The router is not involved and
+does not know it exists.
+
+\subsection*{The one the router enforces}
+
+\index{RequiresScopes@\code{[RequiresScopes]}!published to the router}%
+\code{[RequiresScopes]} comes from the federation package, along with
+\code{[Authenticated]} and \code{[Policy]}. It goes on the field it protects,
+which for a positional record means the property:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+[property: RequiresScopes(["read:pii"])]
+string Email)
+\end{minted}
+
+Its entire effect is on the schema the service publishes. Accounts does not
+check scopes, cannot check scopes, and answers this field to an anonymous
+caller that asks it directly.
+
+One detail here is worth carrying, because it is in no documentation I could
+find and it reads backwards. The attribute takes a flat \code{string[]}; the
+directive it produces takes \code{[[Scope!]!]!}. The attribute is declared
+\code{AllowMultiple = true}. So one attribute is one AND-group, every scope in
+it required together, and a second attribute stacked beside it is the OR. Write
+\code{[RequiresScopes(["a", "b"])]} expecting \enquote{either} and you have
+written \enquote{both}.
+
+\subsection*{What each one publishes}
+
+\index{schema export@\code{schema export}!what the attributes emit}%
+Both attributes are on fields of one service, so one \code{schema export} shows
+what each contributes. Against the committed schema from
+chapter~\ref{ch:real-time-in-a-federated-world}, four things changed:
+
+\begin{graphqlsdl}
+import: ["@key", "@requiresScopes", "@tag", "FieldSet"]
+
+customerById(id: ID!): Customer @authorize
+
+email: String! @requiresScopes(scopes: [["read:pii"]])
+
+enum ApplyPolicy {
+  BEFORE_RESOLVER
+  AFTER_RESOLVER
+  VALIDATION
+}
+\end{graphqlsdl}
+
+The doc comments the exporter writes above each of those enum members are cut
+here for room; nothing else in the four is abridged.
+
+The first is HotChocolate adding \code{@requiresScopes} to the \code{@link}
+import list on its own, which is tidy of it. The third is the directive doing
+exactly what it is for, and it is the only one of the four that was intended.
+
+The second is the surprise, and I had believed the opposite on good grounds.
+The type behind the attribute calls \code{.Internal()} on the directive, and
+an internal directive is one that stays out of introspection. I read that and
+concluded that \code{[Authorize]} publishes nothing. It publishes
+\code{@authorize} on the field and a full declaration of the directive
+underneath, and what a composer reads is the SDL a subgraph serves from
+\code{\_service}, not its introspection result. The lesson
+is one this book has learned before in a different costume: what a service
+publishes is a thing to look at, not a thing to reason about.
+
+The fourth is the one I would not have predicted at all. \code{enum
+ApplyPolicy} appeared in all seven schemas, including the six services that use
+no authorization attribute anywhere. It is the argument type of
+\code{@authorize}, and it arrives with the \code{.AddAuthorization()} call that
+\code{AddMosaicSubgraph} makes for every subgraph. Six services gained a public
+type because a shared method gained a line.
+
+\subsection*{And what survives composition}
+
+\index{ApplyPolicy@\code{ApplyPolicy}!reaches the client schema}%
+Composing those seven schemas sorts the four into two piles.
+\code{@requiresScopes} survives, which
+section~\ref{sec:ch15-what-the-composer-checks} takes apart properly.
+\code{@authorize} is dropped: it appears nowhere in the composed client schema,
+and the composer says nothing about having dropped it.
+
+\code{ApplyPolicy} is not dropped. It is a type of Mosaic's graph now,
+introspectable by every client, describing when a policy runs inside a
+HotChocolate service. Chapter~\ref{ch:composition} found the same shape in
+\code{scalar FieldSet}, which reaches the client schema because the composer
+keeps imported named types, and which chapter~\ref{ch:security-hardening}
+inherited as a question about what a production graph does with it. This is a
+second instance and it is worse, because \code{FieldSet} at least belongs to
+federation. \code{ApplyPolicy} is an implementation detail of one server
+library, in the public schema of a graph, and no part of the toolchain thinks
+that is worth a word.
+
+Figure~\ref{fig:ch15-two-authorizations} is the whole arrangement on one page:
+two attributes on two fields of one service, two paths that never meet, and a
+composer in the middle that keeps one of them and drops the other without
+comment.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch15-two-authorizations}
+  \caption{Two authorization mechanisms in one subgraph, and the gap between
+  them. \code{[Authorize]} is enforced by Accounts and publishes an
+  \code{@authorize} directive the composer discards, so nothing about it
+  reaches the router. \code{[RequiresScopes]} is never read by Accounts and
+  survives composition into the router's execution config, where it is
+  enforced. Nothing in the product generates either one from the other, and
+  nothing warns when only one of them is present.}
+  \label{fig:ch15-two-authorizations}
+\end{figure}
+
+So the state of things after one attribute each: the service enforces a rule
+the router cannot see, the router will enforce a rule the service does not
+check, and the only thing both of them agree to publish is an enum neither of
+them meant.
+
+\medskip
+
+None of that matters yet, because nothing in this graph has ever accepted a
+token. Getting one accepted is the next section, and it is harder than it
+looks.
+
+\index{HotChocolate!two authorization mechanisms|)}%

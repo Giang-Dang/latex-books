@@ -1,7 +1,45 @@
 \chapter{Identity and Authorization Across the Graph}
 \label{ch:identity-and-authorization}
 
-\emph{Not yet drafted.} Planned scope: JWT validation at router versus subgraph, claim forwarding, HotChocolate authorization, \code{@authenticated} and \code{@requiresScopes}, and public versus internal graphs.
+Fourteen chapters of this book have built a graph that answers every question
+to everybody. Chapter~\ref{ch:hotchocolate-quickly} shipped a customer's email
+address on a public field and said nothing about it, and nothing since has
+changed that. The storefront is fine. The email address is not, and it has been
+sitting there ever since.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/15-identity-and-authorization/01-section-name}
+So this chapter puts one rule on one field and follows what happens, which
+turns out to be a long way. HotChocolate has two ways to protect a field and
+they are unrelated to each other. One of them is enforced by the service and is
+invisible to the router. The other is published to the router and is not
+enforced by the service. A field carrying only the first is unreachable through
+the router by anybody, including the person it was meant for, and the error the
+client gets names neither authentication nor the reason.
+
+That is the chapter. Underneath it are the two smaller questions any graph with
+a token has to answer. Where the token is checked, given that there are now
+eight processes that could check it and only one of them faces the client. And
+what a refusal looks like, which turns out to have two shapes with two HTTP
+statuses and two spellings of the same word, and a client that treats them as
+one condition will get it wrong.
+
+By the end Mosaic has a signing key, seven services that validate the same
+tokens, one field that requires a scope, one field that requires a login, and a
+script that mints a token so that a reader can see all of it move. It also has
+a defect report it did not go looking for: the router's own explanation of why
+it refused a field names the field correctly and the type as eight zero bytes.
+
+The router is Cosmo 0.337.1, and its version has not moved since
+chapter~\ref{ch:enter-the-router}; what this chapter adds to it is three blocks
+of configuration. Its source is read at tag \code{router@0.337.1}, commit
+\code{2f50ab8}.
+The composer is wgc 0.129.7 over \code{@wundergraph/composition} 0.63.2. Every
+line of library source is HotChocolate at tag \code{16.6.0}, commit
+\code{8fea46e}.
+
+\input{chapters/15-identity-and-authorization/01-nothing-here-is-authorised}
+\input{chapters/15-identity-and-authorization/02-two-authorizations}
+\input{chapters/15-identity-and-authorization/03-a-token-the-router-accepts}
+\input{chapters/15-identity-and-authorization/04-four-callers-one-query}
+\input{chapters/15-identity-and-authorization/05-the-header-nobody-forwards}
+\input{chapters/15-identity-and-authorization/06-what-the-composer-checks}
+\input{chapters/15-identity-and-authorization/07-your-turn}

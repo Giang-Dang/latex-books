@@ -1,0 +1,187 @@
+\section{Four Callers, One Query}
+\label{sec:ch15-four-callers-one-query}
+\index{authorization!what a refusal looks like|(}%
+
+With a scope on \code{Customer.email} and a router that will accept a token,
+one query is enough to see the whole behaviour. It is the catalogue page from
+chapter~\ref{ch:hotchocolate-quickly}, extended one field:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{graphql}
+{ products { title reviews { edges { node { author { displayName email } } } } } }
+\end{minted}
+
+Four callers ask it. Nothing changes between them except the
+\code{Authorization} header.
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+no token             200   one error per protected field instance; author null
+token, read:pii      200   nothing refused, email present
+token, no scope      200   one error per protected field instance; author null
+token, expired       401   one error, no data at all
+\end{minted}
+
+\subsection*{The two that look alike and are not}
+
+\index{UNAUTHORIZED\_FIELD\_OR\_TYPE@\code{UNAUTHORIZED\_FIELD\_OR\_TYPE}}%
+The anonymous caller and the scopeless caller get the same shape and the same
+error code, \code{UNAUTHORIZED\_FIELD\_OR\_TYPE}, and differ in one word:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+Unauthorized to load field 'Query.products.reviews.edges.node.author.email', Reason: not authenticated.
+
+Unauthorized to load field 'Query.products.reviews.edges.node.author.email', Reason: missing required scopes.
+\end{minted}
+
+That is a good error message. It names the full path rather than the field, so
+a client developer can find it in their own document, and the reason
+distinguishes \enquote{log in} from \enquote{you are logged in and this is not
+yours}, which are different things to show a user.
+
+\index{authorization!a null that is not a refusal}%
+The second row of that table says \enquote{nothing refused} rather than
+\enquote{no errors}, and the difference cost me a gate run. Asked with the
+right scope on a freshly seeded database, the query answers with no errors at
+all. Asked at the end of a full verification pass it answers with one, because
+that pass submits a review against a customer key that was never seeded, and a
+query that walks every author in the catalogue eventually walks that one. The
+author comes back null and the response carries an error, and neither has
+anything to do with a token.
+
+So the gate asserts that no error carries
+\code{UNAUTHORIZED\_FIELD\_OR\_TYPE}, rather than that there are no errors.
+Chapter~\ref{ch:strangling-the-monolith} met this same trap from the other
+side and stopped a resolver count short of \code{Product.reviews} for exactly
+this reason: a number, or an assertion, that holds only on a database nothing
+has written to is true once. It is also the practical shape of the distinction
+this section is about, because from the client's side an authorisation null and
+a resolution null look identical until you read the error beside them.
+
+\subsection*{A denied field takes its parent with it}
+
+\index{nullability!and a denied field}%
+The line in that table I did not expect is \enquote{author null}. I removed one
+field and lost the object it was on.
+
+The reason is nullability and it has been sitting in this book since
+chapter~\ref{ch:entity-resolution-done-right}. \code{email} is \code{String!}.
+The router cannot put null in a non-null field, so the null propagates to the
+nearest nullable ancestor. \code{Review.author} is nullable, and that is where
+it stops.
+
+It is nullable because of an argument
+chapter~\ref{ch:strangling-the-monolith} made, and that argument had nothing to
+do with authorisation: a reference to an entity another subgraph owns must be
+nullable, because the router may fail to find the thing. Had that argument gone
+the other way, one denied \code{email} would have taken the entire response to
+\code{data: null}, and a catalogue page would have gone blank because one
+reviewer's address was private.
+
+So boundary nullability turns out to decide the blast radius of an
+authorisation rule as well as the blast radius of a failed fetch. Nobody aimed
+it there. If you are putting \code{@requiresScopes} on a field today, look up
+the chain from it and find where the first nullable ancestor is, because that
+is what your users lose.
+
+\subsection*{Two doors, two spellings}
+
+\index{Cosmo Router!401 versus a field error}%
+The expired token is refused somewhere else entirely. It never reaches
+planning: the router's access controller rejects it, the response is HTTP 401,
+and the body is:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+{"errors":[{"message":"unauthorized"}]}
+\end{minted}
+
+with no \code{data} key at all. A bad token is a fact about the request. A
+missing scope is a fact about one field of one response. They deserve different
+answers and they get them, but a client that branches on
+\enquote{unauthorised} as a single condition will handle one of these two
+correctly and the other one wrongly, and which one depends on whether the
+author was thinking about logging in or about permissions that day.
+
+\subsection*{The two switches Mosaic leaves alone}
+
+\index{authorization!require\_authentication}%
+The \code{authorization} block has three keys and all three default to false.
+Mosaic ships the first two false and I turned each on once to see what the
+graph becomes.
+
+\code{require\_authentication: true} makes the router answer 401 to any request
+with no token, before planning, whatever it asked for. Asking only for product
+titles, anonymously:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+HTTP 401
+{"errors":[{"message":"unauthorized"}]}
+\end{minted}
+
+That is the switch that turns a public graph into an internal one, and it is a
+single line. It is also why Mosaic leaves it off: this is a storefront, and a
+storefront that demands a token before it will list a product does not sell
+anything.
+
+\index{authorization!reject\_operation\_if\_unauthorized}%
+\code{reject\_operation\_if\_unauthorized: true} changes the field decision
+into an operation decision. With a scopeless token the whole query now fails,
+and something new appears in the response:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+{"errors":[{"message":"Unauthorized"}],"data":null,"extensions":{"authorization":
+{"missingScopes":[{"coordinate":{"typeName":"\0\0\0\0\0\0\0\0","fieldName":"email"},
+"required":[["read:pii"]]}],"actualScopes":[]}}}
+\end{minted}
+
+HTTP 200, not 401, which is the third status this one condition has now
+produced. Note also \code{Unauthorized} with a capital here against the
+lowercase \code{unauthorized} of the 401 path: two code paths, two spellings,
+one word.
+
+The \code{extensions.authorization} block is genuinely useful and I would want
+it in development. It says which coordinate was refused, what that coordinate
+required, and what the caller actually had, which is the three facts you need
+to work out whose fault it is.
+
+Choosing between the two is a product decision rather than a security one.
+Neither leaks the value. One gives a client a partial answer it has to be
+written to handle; the other gives it a clean failure and nothing to render.
+Mosaic keeps the partial answer, because a catalogue page missing one address
+is still a catalogue page.
+
+\subsection*{The eight zero bytes}
+
+\index{Cosmo Router!zeroed typeName in missingScopes}%
+The \code{typeName} in that listing should say \code{Customer}. On the wire it
+is eight NUL bytes. The listing above writes them as \code{\textbackslash 0}
+eight times because this book will not print a control character. The
+substitution is mine; the bytes are real.
+
+It reproduced three times out of three, identically. \code{Customer} is eight
+characters long, so the length is right and the content is not, which is what a
+string built at the correct size and never filled looks like. The
+\code{fieldName} beside it is correct.
+
+The router does not build that value. Its authorizer is handed a graph
+coordinate by the execution engine, which is \code{graphql-go-tools} v2.14.2,
+and records what it was given. I did not read the engine, so I am not going to tell you where the
+zeroing happens. What I can tell you is that it reaches a client, and one
+consequence that is not obvious from looking at it: \code{addMissingScopes}
+deduplicates by comparing type name and field name, so with every type name
+zeroed, two protected fields called the same thing on two different types would
+be reported once.
+
+This is the second defect this book has found in a released version of one of
+these tools, after the composer crash chapter~\ref{ch:hard-modeling-problems}
+left in the open items, and it goes to the same place: worth reporting
+upstream, and nobody has. It is not in a gate, and I want to be straight about
+why. The setting that produces it is off in the shipped configuration, so
+asserting the bytes would mean a verification run that turns a switch on to
+catch a defect in somebody else's release. It is recorded in the open items
+instead, with the exact edit that reproduces it.
+
+\medskip
+
+Every refusal so far has come from the router. The other field, the one the
+service was supposed to protect, has not been asked for yet.
+
+\index{authorization!what a refusal looks like|)}%

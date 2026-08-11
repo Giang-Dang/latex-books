@@ -1,0 +1,118 @@
+\section*{Your turn}
+
+Check out tag \code{ch15} of the companion repository and run \code{npm ci}
+once. Exercises 1 to 7 need the database, the seven services and the router.
+Exercises 8 and 9 need node and nothing started at all.
+
+Everything in this chapter is signed with one key, and nothing will accept a
+token until that key is in your environment:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+export MOSAIC_JWT_SECRET=dev-secret-not-for-anything-real-0123456789
+docker compose up -d --build mosaic-db mosaic-nats mosaic-catalog \
+    mosaic-pricing mosaic-inventory mosaic-accounts mosaic-reviews \
+    mosaic-ordering mosaic-nodes mosaic-router
+docker compose ps
+\end{minted}
+
+If the seven services will not start at all, that variable is missing from
+their environment: each of them says so by name and then stops. If they start
+and every token you mint is refused with HTTP 401, the variable is set in both
+places and the two values differ.
+
+\begin{enumerate}
+  \item \textbf{Get all four answers.} Send the catalogue query from
+  section~\ref{sec:ch15-four-callers-one-query} four times: with no header,
+  with \code{--scope "read:pii"}, with no scope, and with
+  \code{--expires-in -60}. Before you look at the bodies, write down which HTTP
+  status you expect for each. Two of the four surprise most people.
+
+  \item \textbf{Find your own blast radius.} The anonymous run loses
+  \code{author}, not just \code{email}, because the null had nowhere to stop
+  until it reached a nullable field. Make \code{Review.author} non-null in
+  \code{schema/reviews.graphql}, recompose, restart the router, and run the
+  anonymous query again. Then put it back. What you have just done is decision
+  70's argument in reverse, and the result is why that decision matters more
+  than it looked at the time.
+
+  \item \textbf{Break the signing key on purpose.} In
+  \code{router/config.yaml}, change the jwks entry's \code{secret} from the
+  shell form to the Go template form that
+  section~\ref{sec:ch15-a-token-the-router-accepts} shows, restart the router,
+  and try
+  a token that worked a minute ago. Now go looking for the cause using only the
+  router's logs at \code{debug}. Give up when you want to. This is the failure
+  from section~\ref{sec:ch15-a-token-the-router-accepts} and the point of the
+  exercise is how little there is to find.
+
+  \item \textbf{Take the header rule away.} Comment out the \code{headers}
+  block, restart the router, and ask for \code{customerById} with a good token.
+  Read the error a client would get and decide how long it would take you to
+  reach \enquote{the router is not forwarding a header} from those words alone.
+
+  \item \textbf{Move the rule to the other side.} Take \code{[Authorize]} off
+  \code{Query.customerById} and put \code{[Authenticated]} from
+  \code{HotChocolate.ApolloFederation} on it instead. Export the schema,
+  recompose, and diff the composed client schema. The field is now protected by
+  the router rather than by Accounts. Ask Accounts directly on 5104 with no
+  token and see what you can still read.
+
+  \item \textbf{Turn the graph internal.} Set
+  \code{authorization.require\_authentication: true} and restart. Every
+  anonymous request now fails, including the storefront query the whole book
+  has been running. Decide, in writing, which of Mosaic's fields you would
+  actually want behind that switch, and whether the answer is a switch at all.
+
+  \item \textbf{Empty the scopes list.} Run one case and read what it asserts:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/auth-cases.mjs --print empty-scopes-composes-and-vanishes
+  \end{minted}
+
+  Then do it by hand: put \code{scopes: []} on \code{Customer.email},
+  compose, and search the output for the directive's name. Nothing in the
+  toolchain will tell you the field is public again.
+
+  \item \textbf{Verify it in Postman.} The collection for this chapter is
+  \code{postman/mosaic-auth}, six requests against the router. Three of them
+  need a token, and the collection cannot mint one, because signing needs the
+  key and a collection is not where a key belongs:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+npx newman run postman/mosaic-auth.postman_collection.json \
+    -e postman/mosaic-auth.local.postman_environment.json \
+    --env-var "scopedToken=$(node scripts/mint-token.mjs --scope 'read:pii')" \
+    --env-var "plainToken=$(node scripts/mint-token.mjs)" \
+    --env-var "expiredToken=$(node scripts/mint-token.mjs --expires-in -60)"
+  \end{minted}
+
+  All green at \code{ch15}. Now comment out the \code{headers} block, restart
+  the router, and run it again: exactly one request fails, and its assertions
+  say more about why than the error a client would see.
+
+  \item \textbf{Guess the merge, then check.} Two subgraphs guard one shared
+  field with one scope each. Write down whether a caller should need both or
+  either. Then run the same script again and read the two arrays it asserts:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/auth-cases.mjs --print partial-requires-scopes-merges-to-and
+  \end{minted}
+
+  If you guessed the one named \code{...ByOr}, you guessed the field the router
+  never reads.
+\end{enumerate}
+
+If exercise 1 gives you four identical answers, no token is reaching the
+router: the header value has to begin with the word \code{Bearer}, which is
+what \code{header\_value\_prefix} expects, and a bare token is discarded
+without a word. If exercise 5 composes but Accounts still refuses the field,
+\code{[Authorize]} is still on it: the two attributes are independent and
+removing one does not disturb the other, which is this chapter's whole argument
+arriving as a thing you have to check twice.
+
+The thread this chapter does not close is \code{Query.node}, and the reason is
+in section~\ref{sec:ch15-what-the-composer-checks}. The other one is a
+subscription: chapter~\ref{ch:real-time-in-a-federated-world} left a connection
+that outlives the token that opened it, and nothing here provoked it.
+Chapter~\ref{ch:resilience-and-performance} owns what happens when a token
+expires with a socket still open.

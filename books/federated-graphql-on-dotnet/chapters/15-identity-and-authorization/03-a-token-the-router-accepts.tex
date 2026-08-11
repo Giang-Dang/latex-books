@@ -1,0 +1,155 @@
+\section{A Token the Router Will Accept}
+\label{sec:ch15-a-token-the-router-accepts}
+\index{Cosmo Router!authentication block|(}%
+
+Mosaic signs its own tokens with a shared secret. That is not what a deployment
+does, and the reason it is what this repository does is that the alternative
+needs an identity provider running before anything can be tested, and this
+repository is meant to start with \code{docker compose up}. Cosmo takes the
+same shortcut: a JWKS entry can name a \code{url} the router fetches keys from,
+or carry a \code{secret} directly, and everything downstream of that choice is
+identical. Swapping to a real provider is one key in one file.
+
+Getting the secret form to work cost me most of an afternoon, in two pieces,
+and both are the kind of failure that leaves nothing useful behind.
+
+\subsection*{The schema wants three keys, not two}
+
+\index{Cosmo Router!jwks oneOf}%
+The obvious configuration is a secret and the algorithm it is used with. The
+router refuses to start:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+- at '/authentication/jwt/jwks/0': oneOf failed, none matched
+  - at '/authentication/jwt/jwks/0': validation failed
+    - at '/authentication/jwt/jwks/0': missing property 'url'
+    - at '/authentication/jwt/jwks/0': not failed
+  - at '/authentication/jwt/jwks/0': missing property 'header_key_id'
+\end{minted}
+
+This is a good error once you know how to read it, and it is worth reading,
+because the \code{oneOf} it is complaining about is a genuine fork rather than
+a list of optional keys. The \code{url} branch requires \code{url} and forbids
+all three of \code{secret}, \code{symmetric\_algorithm} and
+\code{header\_key\_id}. The secret branch requires all three of those and
+forbids \code{url}, \code{algorithms}, \code{refresh\_interval} and
+\code{refresh\_unknown\_kid}. There is no middle position, and half the keys
+that look general are only available on one side.
+
+\code{header\_key\_id} is the interesting one. It is the \code{kid} the router
+expects to find in the token's own header, so choosing the secret form is also
+choosing to mint tokens that carry a key id. Nothing says so.
+
+\subsection*{The template that is not a template}
+
+\index{Cosmo Router!os.ExpandEnv in config.yaml}%
+With the third key added the router starts, reports itself healthy, logs
+nothing alarming, and rejects every token I minted with \code{unauthorized} and
+HTTP 401. No reason, at \code{info} or at \code{debug}.
+
+The signing key in \code{router/config.yaml} was written like this:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{yaml}
+      - secret: "{{.Env.MOSAIC_JWT_SECRET}}"
+\end{minted}
+
+which is the templating form Cosmo's documentation uses elsewhere, and which I
+had copied without checking whether this file supports it. It does not. The
+router expands its configuration with Go's \code{os.ExpandEnv}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{go}
+// Expand environment variables in the config file
+// and unmarshal it into the config struct
+configYamlData := os.ExpandEnv(string(configFileBytes))
+\end{minted}
+
+\code{os.ExpandEnv} knows \code{\$VAR} and \code{\$\{VAR\}} and nothing else.
+So the router took the twenty-six literal characters of that template as its
+HMAC key, and every real token failed its signature check. The correct form is
+\code{"\$\{MOSAIC\_JWT\_SECRET\}"} and it is a one-character-class difference
+from a graph that refuses everybody.
+
+What makes this expensive is that nothing in the failure points at it. The
+config schema is satisfied, because a signing secret is a string and that is a
+string. The router starts. The 401 says \code{unauthorized}, which is what a
+401 says when the token is genuinely bad. There is exactly one line anywhere in
+the system that is a symptom, and it is this, at startup:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Using a short secret for JWKs may lead to weak security. Consider using a longer secret.
+\end{minted}
+
+which is advice about key strength. It fires because that particular literal is
+under the thirty-two characters the check uses. Write a longer variable name
+and the warning goes away and the graph still refuses everybody.
+
+I confirmed the diagnosis rather than guessing it, and the confirmation is the
+kind I would want to see in somebody else's book. I signed a token using that
+template's own twenty-six characters as the key, sent it, and the graph
+answered.
+
+Chapter~\ref{ch:real-time-in-a-federated-world} found the same shape one
+chapter ago, where wgc's documented spelling of a subscription key composes
+perfectly and does nothing. Different tool, different file, and the same
+failure: a configuration value that is syntactically fine, semantically wrong,
+and reported by nobody.
+
+\subsection*{The minting script}
+
+\index{mint-token.mjs@\code{mint-token.mjs}}%
+A reader cannot exercise any of this without a token, so the repository ships
+one script that makes them, with no dependency:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/mint-token.mjs
+node scripts/mint-token.mjs --scope "read:pii"
+node scripts/mint-token.mjs --scope "read:pii" --subject alice
+node scripts/mint-token.mjs --expires-in -60
+\end{minted}
+
+An HS256 token is two base64url segments and an HMAC over them, so the file is
+short enough to read in one sitting, which matters more here than reaching for
+a library would. It writes the \code{kid} the previous subsection made
+mandatory, and it writes \code{scope} as a space-separated string, which is
+what the router's \code{scope\_claim} reads by default.
+The last of those four commands mints a token that expired a minute ago, and
+section~\ref{sec:ch15-four-callers-one-query} needs it.
+
+Three properties of that script are deliberate and are the difference between a
+fixture and a hazard. It signs with the same variable everything else reads, so
+a mismatch is impossible to arrange by accident. It refuses to run when that
+variable is unset, rather than defaulting to something. And it is not an
+identity provider: it signs whatever it is asked to sign, including a token
+claiming scopes nobody granted, which is exactly what you want when the thing
+under test is the refusal.
+
+\subsection*{The service half}
+
+\index{JwtBearer@\code{JwtBearer}!MapInboundClaims}%
+All seven services validate the same tokens, and the wiring is one call in the
+shared library. Two settings in it are worth naming.
+
+\code{MapInboundClaims = false}. Left at its default, the handler rewrites
+short JWT claim names into the long WS-Federation URIs, so \code{sub} arrives
+under a \code{schemas.xmlsoap.org} name ending in \code{nameidentifier},
+and a rule written against the name in the token does not match anything. The
+token is the contract. The names in it are the names a resolver should see.
+
+\code{ClockSkew = TimeSpan.Zero}. The default is five minutes, which is
+generous enough to hide an expiry bug in any test that runs in seconds, and
+this chapter has a test that runs in seconds.
+
+Whether that call belongs in a shared library at all is the question
+chapter~\ref{ch:strangling-the-monolith} settled the line with: do two services
+have to agree about this? For the wiring, no. Every service does it identically and none of
+them cares what the others do, which makes it platform. For the key, the issuer
+and the audience, yes, which is why those are configuration and a constant in
+one script rather than a class six projects reference.
+
+\medskip
+
+With all of that in place a token now reaches the router and is believed. What
+happens next depends entirely on who is holding it, and there turn out to be
+four interesting answers.
+
+\index{Cosmo Router!authentication block|)}%

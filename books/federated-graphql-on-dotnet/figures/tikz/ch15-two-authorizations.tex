@@ -1,0 +1,85 @@
+% Two authorization mechanisms on one service, and nothing between them.
+% Referenced from chapter 15. Bare tikzpicture; the figure environment,
+% caption and label live at the call site.
+%
+% The point of the picture is the vertical divider. It runs the whole height
+% of the figure and breaks only once, exactly at the composer, which is the
+% only place the two attributes ever appear together. Nothing crosses from
+% one side to the other anywhere else: the left lane is checked and consumed
+% entirely inside Accounts, the right lane is never read by Accounts at all,
+% and the composer is what decides which of the two the router ever hears
+% about.
+\begin{tikzpicture}[
+    font=\small,
+    tp/.style={draw, rounded corners=2pt, minimum width=42mm,
+               minimum height=15mm, align=center, font=\scriptsize},
+    dirbox/.style={draw, rounded corners=2pt, minimum width=40mm,
+                   minimum height=13mm, align=center, font=\scriptsize},
+    composer/.style={draw, rounded corners=2pt, minimum width=46mm,
+                     minimum height=13mm, align=center, font=\scriptsize,
+                     fill=black!8},
+    dropped/.style={draw, dashed, rounded corners=2pt, minimum width=40mm,
+                    minimum height=20mm, align=center, font=\scriptsize,
+                    gray},
+    kept/.style={draw, rounded corners=2pt, minimum width=46mm,
+                minimum height=24mm, align=center, font=\scriptsize,
+                fill=black!8},
+    flow/.style={-{Stealth[length=2mm]}},
+    divider/.style={gray, dashed},
+    note/.style={font=\scriptsize, gray, align=center, inner sep=1pt},
+    closing/.style={font=\scriptsize\itshape, align=center}
+  ]
+
+  % -- one subgraph, two fields -----------------------------------------------
+  \node[note, gray, anchor=south, font=\small] at (6.5,1.65) {\code{accounts}};
+  \draw[rounded corners=2pt] (0.3,-2.4) rectangle (12.7,1.5);
+
+  \node[tp] (f1) at (3.2,0.5)
+    {\code{Query.customerById}\\\code{[Authorize]}\\\code{HotChocolate.Authorization}};
+  \node[tp] (f2) at (9.8,0.5)
+    {\code{Customer.email}\\\code{[RequiresScopes]}\\\code{HotChocolate.ApolloFederation}};
+
+  \node[note, anchor=north] at (3.2,-0.85)
+    {evaluated here,\\against the principal\\built from the token};
+  \node[note, anchor=north] at (9.8,-0.85) {Accounts never reads it};
+
+  % -- both compile to SDL, published either way -------------------------------
+  \node[dirbox] (d1) at (3.2,-3.5) {\code{@authorize}\\on \code{customerById}};
+  \node[dirbox] (d2) at (9.8,-3.5)
+    {\code{@requiresScopes}\\\code{(scopes: [["read:pii"]])}};
+
+  \draw[flow] (f1.south) -- (d1.north);
+  \draw[flow] (f2.south) -- (d2.north);
+
+  \node[note, anchor=east] at (2.6,-2.6) {compiles to;\\published in\\the SDL};
+  \node[note, anchor=west] at (10.4,-2.6) {compiles to;\\published in\\the SDL};
+
+  % -- the only place the two lanes meet ---------------------------------------
+  \node[composer] (comp) at (6.5,-5.6)
+    {\code{wgc router compose}\\the composer};
+
+  \draw[flow] (d1) -- (comp);
+  \draw[flow] (d2) -- (comp);
+
+  \draw[divider] (6.5,1.75) -- (6.5,-5.0);
+  \draw[divider] (6.5,-6.2) -- (6.5,-9.0);
+
+  % -- and the two fates ------------------------------------------------------
+  \node[dropped] (drop) at (3.2,-8.0)
+    {\textbf{silently dropped}\\by the composer\\reaches the router\\as nothing};
+  \node[kept] (keep) at (9.8,-8.0)
+    {\textbf{survives composition}\\\code{fieldConfigurations}\\entry in the
+     router's\\execution config;\\the router refuses};
+
+  \draw[flow] (6.5,-6.2) -- (6.5,-6.6) -- (3.2,-6.6) -- (drop.north);
+  \draw[flow] (6.5,-6.2) -- (6.5,-6.6) -- (9.8,-6.6) -- (keep.north);
+
+  \draw[gray, thick] (1.8,-9.1) -- (4.6,-9.1);
+
+  \node[closing, text width=124mm] at (6.5,-10.0)
+    {Nothing on the left produces the directive on the right, and nothing on
+     the right knows the left exists. The two attributes share one service and
+     meet, once, inside the composer, which keeps one and throws the other
+     away.};
+
+\end{tikzpicture}

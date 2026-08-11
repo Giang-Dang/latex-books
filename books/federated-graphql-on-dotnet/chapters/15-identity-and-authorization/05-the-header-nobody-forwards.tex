@@ -1,0 +1,142 @@
+\section{The Header Nobody Forwards}
+\label{sec:ch15-the-header-nobody-forwards}
+\index{Cosmo Router!header propagation|(}%
+
+\code{Customer.email} works. The other field, the one carrying
+\code{[Authorize]}, does not, and finding out why is what this chapter is for.
+
+Ask for a customer through the router, holding a token that the router itself
+has just accepted:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+{"errors":[{"message":"Failed to fetch from Subgraph 'accounts'.","extensions":
+{"errors":[{"message":"The current user is not authorized to access this resource.",
+"path":["customerById"],"extensions":{"code":"AUTH_NOT_AUTHENTICATED"}}],
+"serviceName":"accounts","statusCode":200}}],"data":{"customerById":null}}
+\end{minted}
+
+Now ask for it with no token at all. The answer is identical, byte for byte.
+Whether the caller was authenticated made no difference whatsoever, which is
+the clue.
+
+\subsection*{Accounts never saw the token}
+
+\index{Cosmo Router!forwards no client headers by default}%
+Chapter~\ref{ch:how-a-federated-query-actually-runs} established this and read
+it as a fact about tracing headers: the router forwards no client headers to a
+subgraph unless told to. It is the same rule here and it costs considerably
+more.
+
+The router validated the token, built its own view of the caller, planned the
+query, and then opened a fresh HTTP request to Accounts carrying none of it.
+Accounts got an anonymous request, ran \code{[Authorize]} against an anonymous
+principal, and refused. Correctly.
+
+The proof is one command away. Ask Accounts directly on 5104, no router, no
+token, and it gives the same error with the same code. The router's caller was
+never a variable.
+
+Two things about that first response are worth pointing at, because they are
+what makes this expensive to debug. The outer message says
+\code{Failed to fetch from Subgraph 'accounts'}, which names a transport
+problem that did not happen. The inner one says the user is not authorised,
+which is true and reads like a bug in your own rule. Neither mentions a token,
+a header, or the router's configuration, and the \code{statusCode} is 200,
+because as far as HTTP is concerned everything went fine.
+
+\subsection*{One rule, and it works}
+
+\index{headers!op: propagate}%
+The fix is five lines in \code{router/config.yaml}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{yaml}
+headers:
+  all:
+    request:
+      - op: propagate
+        named: Authorization
+\end{minted}
+
+Restart the router and the same request answers with the customer's display
+name, while an anonymous one still fails exactly as before:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+{"data":{"customerById":{"displayName":"Lars Andersen"}}}
+\end{minted}
+
+That is the whole repair.
+
+With it in place the graph has three places a request can be refused, and
+figure~\ref{fig:ch15-where-a-refusal-happens} puts them in the order they
+happen.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch15-where-a-refusal-happens}
+  \caption{Three refusals, in the order a request meets them. A token that does
+  not validate is rejected before planning, with an HTTP 401 and no data. A
+  field whose scopes are not satisfied is refused during resolution, with an
+  HTTP 200 and the field nulled out. A rule inside a subgraph refuses after the
+  fetch, and the client is told that a fetch failed. The second hop carries the
+  caller's token only because of the propagation rule above; without it the
+  third refusal fires for everybody.}
+  \label{fig:ch15-where-a-refusal-happens}
+\end{figure}
+
+\subsection*{What that rule costs}
+
+\index{claim forwarding!what it hands every subgraph}%
+It is worth stopping on it, because the shape of that fix is easy to
+mis-generalise into \enquote{turn on header propagation and move on}.
+
+What just happened is that every subgraph in the graph now receives the
+caller's identity. Any of the seven can read any claim in that token, act on
+it, and answer differently because of it, and none of that is declared in a
+schema, checked by a composer, or visible in a query plan. The graph gained a
+channel that carries authority and that no tool in this stack models.
+
+The narrower alternative is to propagate to the subgraphs that need it, with a
+\code{subgraphs:} block instead of \code{all:}, which is one word of
+configuration and considerably more honest: it makes \enquote{Accounts is
+trusted with the caller's identity} a written-down fact rather than a
+side-effect. Mosaic uses \code{all:} because seven services with two rules
+between them would be seven copies of the same block, and because the moment a
+second service wants a subgraph-side rule the narrow version has to be edited
+by somebody who will not know why it was narrow. I am not confident that is the
+right call. It is the one I would defend in a code review and the one I would
+reverse the first time a subgraph did something clever with a claim.
+
+The general point survives either choice. A rule enforced inside a subgraph
+needs the caller to reach the subgraph, and in a federated graph the caller
+does not reach anything by default. That is a good default. It also means that
+half of HotChocolate's authorization support is inert in a federated
+deployment until somebody notices, and what they notice first is a field that
+refuses everybody with an error naming a fetch.
+
+\subsection*{Which of the two should own a rule}
+
+\index{authorization!where a rule belongs}%
+Now that both halves work, the question the chapter opened with can be
+answered, and my answer has a shape rather than a side.
+
+Put it in the router when the rule is about the caller and not about the data:
+this field is for logged-in people, this field needs the \code{read:pii} scope.
+The router can then enforce it before it fetches, the rule is in the composed
+schema where every team can see it, and no subgraph needs the signing key.
+
+Put it in the subgraph when the rule needs a fact only that service has: this
+customer may read their own address and not somebody else's. No directive
+expresses that, because the thing being compared is in the row.
+
+What you should not do is put a rule in the subgraph, leave it out of the
+schema, and assume the router will keep the traffic away. It will not. It does
+not know the rule exists, it will plan straight through it, and what your users
+get is a failed fetch.
+
+\medskip
+
+Both halves work now, on one field each. What the composer will let past when
+the rule is wrong is a different question, and it has four answers nobody
+would choose.
+
+\index{Cosmo Router!header propagation|)}%

@@ -1,0 +1,82 @@
+\section{Nothing Here Is Authorised}
+\label{sec:ch15-nothing-here-is-authorised}
+\index{authorization!Mosaic has none|(}%
+
+Ask the graph for a page of products and the reviews on them, and every review
+comes back with its author, and every author comes back with their email
+address. No token, no header, no account. That query has worked since
+chapter~\ref{ch:strangling-the-monolith} split Accounts out, and it worked
+before that inside the monolith.
+
+It is worth being precise about what is wrong there, because \enquote{the graph has
+no security} is too broad to act on. The product catalogue should answer
+anybody: a storefront that demands a login before it will show a price does not
+sell anything. The rating and the body of a review should answer anybody too,
+because that is what a review is for. One field on that path is different, and
+it is the one nobody chose to publish. \code{Customer.email} exists because
+Accounts needs it, and it reached the graph because it was a property on a
+record that became a type.
+
+\subsection*{Two questions, and the router keeps them apart}
+
+\index{authentication!versus authorization}%
+There are two questions and it is worth being pedantic about which is which,
+because Cosmo's configuration has a block for each and they behave differently
+enough that mixing them up wastes a morning.
+
+Authentication asks who the caller is. It reads a token, checks the signature
+and the claims, and produces either a principal or nothing. It refuses nobody.
+
+Authorisation asks what that caller may have. It runs against a principal that
+authentication already established, and it is the half that says no.
+
+Keeping them apart is what lets a graph be partly public. Mosaic wants a
+request with no token to succeed, and to succeed with fewer fields in the
+answer than a request that has one. A single \enquote{require a login} switch
+cannot express that, and the router has such a switch, which
+section~\ref{sec:ch15-four-callers-one-query} turns on once to see what a graph
+looks like from the other side of it.
+
+\subsection*{Where the check goes}
+
+\index{JWT!at the router versus at the subgraph}%
+The graph is eight processes now. The router faces the client; seven services
+sit behind it and face only the router, and the composer reads an eighth
+subgraph that is a schema file with nothing behind it. So the token could be checked in the
+router, in each subgraph, or in both, and the three arrangements are genuinely
+different rather than a matter of taste.
+
+Checking only at the router is the arrangement people describe when they draw
+the diagram. One process holds the signing keys, one process talks to the
+identity provider, and the subgraphs stay simple. The problem is what
+\enquote{behind the router} means on a real network. Every one of Mosaic's
+seven services answers on a port anybody inside the network can reach, and
+chapter~\ref{ch:the-first-cut-extracting-catalog} spent a section testing a
+subgraph directly with Postman because that is a normal thing to do. A rule
+that lives only in the router is a rule that a single \code{curl} skips.
+
+Checking only in the subgraphs puts the rule next to the data, which is where
+it can be most precise: Accounts is the only process that knows what
+\code{Customer.email} means. The cost is that the router now plans a query
+without knowing which parts of it will be refused, so it fetches and then finds
+out, and every service needs the signing key.
+
+Mosaic ends this chapter doing both, which is the honest answer and is also the
+one that exposes the thing this chapter is really about. The two mechanisms
+HotChocolate gives you for these two positions do not know about each other,
+and the seam between them is where the next section starts.
+
+I should say plainly what this chapter does not do. It puts one scope on one
+field and one login requirement on one root field. It does not write a policy,
+it does not use roles, and it does not authorise \code{Query.node}, which
+chapter~\ref{ch:hard-modeling-problems} handed here as a named risk and which
+section~\ref{sec:ch15-what-the-composer-checks} explains rather than solves.
+What I wanted from Mosaic here was the smallest change that makes the seam
+visible, because the seam is the part that is not in anybody's documentation.
+
+\medskip
+
+That seam is two attributes, and they look interchangeable until you export the
+schema.
+
+\index{authorization!Mosaic has none|)}%

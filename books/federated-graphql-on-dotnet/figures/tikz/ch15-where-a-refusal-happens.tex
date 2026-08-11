@@ -1,0 +1,86 @@
+% One query, and the three places along its path that can say no.
+% Referenced from chapter 15. Bare tikzpicture; the figure environment,
+% caption and label live at the call site.
+%
+% Four boxes carry the query in turn: the client that sends it, and the three
+% callers that can refuse it before an answer comes back. Three of those four
+% are marked. The fourth, the client, only ever receives.
+\begin{tikzpicture}[
+    % 13.9cm of hand-placed coordinates against a 15.5cm measure, and the widest
+    % node text pushes past it. Scaled once here rather than by moving every
+    % coordinate, and transform shape keeps the node borders in proportion.
+    scale=0.88, transform shape,
+    font=\small,
+    party/.style={draw, rounded corners=2pt, minimum width=22mm,
+                 minimum height=9mm, align=center, font=\scriptsize},
+    checkpoint/.style={draw, rounded corners=2pt, minimum width=30mm,
+                       minimum height=13mm, align=center, font=\scriptsize},
+    boundary/.style={gray, dashed, rounded corners=2pt},
+    % text width is set by the two longest unbreakable strings a result box
+    % has to hold, not by the prose in it: an error code and a JSON fragment
+    % have no break points and a narrower box simply overflows.
+    result/.style={draw, rounded corners=2pt, minimum width=40mm,
+                  text width=39mm, minimum height=26mm, align=center,
+                  font=\tiny, fill=black!8},
+    flow/.style={-{Stealth[length=2mm]}},
+    lbl/.style={font=\scriptsize, align=center, inner sep=1pt},
+    note/.style={font=\scriptsize, gray, align=center, inner sep=1pt},
+    closing/.style={font=\scriptsize\itshape, align=center}
+  ]
+
+  % -- the four boxes the query passes through --------------------------------
+  \node[party] (client) at (0,0.6) {client};
+
+  \node[checkpoint] (door) at (3.6,0.6)
+    {access\\controller\\(before planning)};
+  \node[checkpoint] (field) at (8.0,0.6)
+    {field\\authorizer\\(\code{fieldConfigurations},\\during resolution)};
+
+  \draw[boundary] (1.7,-0.35) rectangle (9.9,1.65);
+  \node[lbl, anchor=south] at (5.8,1.65) {\code{Cosmo Router}};
+
+  \node[checkpoint] (auth) at (12.0,0.6) {\code{[Authorize]}\\resolver for\\\code{customerById}};
+
+  \draw[boundary] (10.1,-0.35) rectangle (13.9,1.65);
+  \node[lbl, anchor=south] at (12.0,1.65) {\code{accounts}};
+
+  % -- the two hops -------------------------------------------------------
+  \draw[flow] (client.east) -- (door.west);
+  \node[lbl, above] at (1.8,0.75) {\code{Authorization}\\header: present};
+
+  \draw[flow] (door.east) -- (field.west);
+
+  \draw[flow] (field.east) -- (auth.west);
+  \node[lbl, above] at (10.0,0.75) {\code{Authorization} header: present};
+  \node[note, below, text width=32mm] at (10.0,-0.3)
+    {only because of \code{headers: op: propagate}; without that rule,
+     nothing on this hop, and refusal 3 fires for every caller};
+
+  % -- the three refusal points ------------------------------------------------
+  \node[result] (r1) at (3.6,-4.2)
+    {\textbf{1. at the door}\\expired or invalid token\\HTTP 401\\
+     \code{\{"errors":[\{}\\
+     \code{"message":"unauthorized"\}]\}}\\
+     no \code{data} at all};
+
+  \node[result] (r2) at (8.0,-4.2)
+    {\textbf{2. per field}\\\code{@requiresScopes} not satisfied\\HTTP 200\\
+     error per field instance,\\\code{UNAUTHORIZED\_FIELD\_OR\_TYPE}\\
+     denied field nulled out};
+
+  \node[result] (r3) at (12.0,-4.2)
+    {\textbf{3. inside the subgraph}\\\code{[Authorize]} refuses\\
+     HTTP 200 at both hops\\client sees\\
+     \code{Failed to fetch from}\\\code{Subgraph 'accounts'}};
+
+  \draw[flow] (door.south) -- (r1.north);
+  \draw[flow] (field.south) -- (r2.north);
+  \draw[flow] (auth.south) -- (r3.north);
+
+  \node[closing, text width=132mm] at (6.5,-7.1)
+    {Three shapes of refusal for one query: a request rejected before it is
+     planned, a single field nulled out during resolution, and a fetch that
+     fails once it reaches the subgraph. Only the last one depends on whether
+     the token ever leaves the router.};
+
+\end{tikzpicture}
