@@ -7,15 +7,18 @@ tiếng Anh thì không.
 
 \textbf{Chương 01}
 
+% 3.8cm, not the 4cm the other blocks use: "độc lập và phân phối giống hệt
+% nhau" is the longest term in the book and its two auto-sized columns leave
+% this one 2pt less room.
 \footnotesize
-\begin{tabular}{@{}llp{4cm}@{}}
+\begin{tabular}{@{}llp{3.8cm}@{}}
 \toprule
 Tiếng Việt & Tiếng Anh & Quyết định \\
 \midrule
 bùng nổ gradient & exploding gradient & Dịch, dùng \texttt{\textbackslash tn} \\
 bước thời gian & timestep & Dịch, dùng \texttt{\textbackslash tn} \\
 chuỗi & sequence & Dịch, dùng \texttt{\textbackslash tn} \\
-độ dốc\textsuperscript{*} & gradient & Dịch, dùng \texttt{\textbackslash tn}; xem ghi chú \\
+độc lập và phân phối giống hệt nhau & independent and identically distributed & Dịch, dùng \texttt{\textbackslash tn}; sau đó dùng viết tắt i.i.d. \\
 hàm kích hoạt & activation function & Dịch, dùng \texttt{\textbackslash tn} \\
 hàm mất mát & loss function & Dịch, dùng \texttt{\textbackslash tn} \\
 lan truyền ngược & backpropagation & Dịch, dùng \texttt{\textbackslash tn} \\
@@ -127,6 +130,7 @@ loại từ & classifier & Dịch, dùng \texttt{\textbackslash tn}; thuật ng�
 Thuật ngữ & Quyết định \\
 \midrule
 bias & Giữ nguyên \\
+gradient & Giữ nguyên ở mọi vị trí, kể cả khi đứng làm danh từ (quyết định~40) \\
 Jacobian & Giữ nguyên (tính từ); \emph{ma trận Jacobi} khi là danh từ \\
 sigmoid & Giữ nguyên \\
 clipping & Giữ nguyên (chương~03) \\
@@ -146,9 +150,3 @@ BLEU & Giữ nguyên; xem phụ lục~\ref{app:viet-tat} \\
 \bottomrule
 \end{tabular}
 \normalsize
-
-\vspace{0.5em}
-\textsuperscript{*}``độ dốc'' là bản dịch đã quen trong giáo trình Giải tích
-nhiều biến và được dùng khi ``gradient'' là danh từ. Sách giữ nguyên
-``gradient'' trong các tên riêng: ``gradient checking'', ``gradient
-descent'', ``vanishing gradient''.

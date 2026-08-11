@@ -13,8 +13,8 @@ Cần nói ngay một chuyện mà chương~\ref{ch:hien-tuong} đã tự nói v
 được phép quên: trên bài toán này gradient của nó \emph{không} triệt tiêu. Tỉ
 số chuẩn gradient giữa bước đầu và bước cuối vẫn quanh 1.0 ngay ở \(T = 100\),
 và chương ấy kết luận thẳng rằng bài toán cộng không phải bài kiểm tra tốt cho
-triệt tiêu gradient. Mạng hỏng, nhưng không hỏng vì tín hiệu lỗi không đi xa
-được.
+\tn{triệt tiêu gradient}{vanishing gradient}. Mạng hỏng, nhưng không hỏng vì
+tín hiệu lỗi không đi xa được.
 
 Vậy nên số đo dưới đây không phải bằng chứng cho CEC. Nó là bằng chứng cho
 mục~\ref{sec:ch04-hai-xung-dot}. Bài toán cộng đòi đúng cái mà một trọng số
@@ -52,8 +52,9 @@ chương~\ref{ch:hien-tuong} dùng.
 Cả hai lần huấn luyện gộp lại chạy dưới một phút trên một laptop không có card
 đồ hoạ, và ngân sách mà repo companion tự áp cho mỗi experiment cũng là một
 phút. Bài đưa số ở quy mô khác hẳn: quãng vượt 1000 bước, và trên bài toán 2c
-của họ thì cả real-time recurrent learning, viết tắt là RTRL, lẫn lan truyền
-ngược qua thời gian, viết tắt là BPTT, đều không giải nổi ngay từ quãng 10
+của họ thì cả real-time recurrent learning, viết tắt là RTRL, lẫn
+\tn{lan truyền ngược qua thời gian}{backpropagation through time}, viết tắt là
+BPTT, đều không giải nổi ngay từ quãng 10
 bước~\autocite{hochreiter1997lstm}.
 
 \subsection*{Tham số: ba, bốn, hay chín}
@@ -98,7 +99,7 @@ gradient đều không đếm chính xác được số bước rời rạc, nê
 đếm.
 
 Chỗ đáng nói là cái \emph{không} có trong danh sách ấy. Bài không coi tính tuần
-tự là một giới hạn. Năm 1997 không ai coi song song hoá là ràng buộc, vì thứ
+tự là một giới hạn. Năm 1997 không ai coi song song hóa là ràng buộc, vì thứ
 đang thiếu là khả năng học chứ không phải thông lượng. Người ta hay tóm tắt
 khoảng trống mà chương này để lại thành \enquote{vẫn tuần tự, tham số gấp
 bốn}, và tôi phải nói rõ: cả hai vế đều là đánh giá nhìn ngược, không phải lời
@@ -119,4 +120,5 @@ Còn hai chương nữa trước khi tới đó. Ô nhớ giải bài toán nh�
 chuỗi. Câu hỏi tiếp theo không phải nhớ lâu hơn mà là một câu khác hẳn: đọc một
 chuỗi rồi sinh ra một chuỗi khác, độ dài khác, thứ tự khác.
 Chương~\ref{ch:encoder-decoder} lấy ô nhớ này làm linh kiện và dựng thứ đó, rồi
-phát hiện ra chỗ thắt nằm ở một nơi mà chương này không hề nhắc tới.
+phát hiện ra \tn{chỗ thắt}{bottleneck} nằm ở một nơi mà chương này không hề
+nhắc tới.

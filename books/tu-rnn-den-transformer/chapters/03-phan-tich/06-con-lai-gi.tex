@@ -3,7 +3,7 @@
 
 \index{vanishing gradient!chưa giải được}%
 Bài này lấy một quan sát đã có từ 1994 và biến nó thành hai điều kiện kiểm được
-cùng hai biện pháp chạy được. Sau nó, câu hỏi \enquote{khi nào \tn{độ dốc}{gradient} tắt}
+cùng hai biện pháp chạy được. Sau nó, câu hỏi \enquote{khi nào gradient tắt}
 không còn là chuyện cảm tính. Đó là một bước tiến thật, và biện pháp thứ nhất
 của bài vẫn còn nguyên trong PyTorch hôm nay dưới tên
 \code{torch.nn.utils.clip\_grad\_norm\_}.
@@ -28,7 +28,8 @@ test của cả ba bộ dữ liệu nhạc lẫn Penn Treebank, nó là cấu h�
 nhất~\autocite{pascanu2013difficulty}. Trên tập train thì không phải lúc nào cũng
 vậy: ở ba trong bốn dòng, clipping một mình còn thấp hơn.
 
-Đó là chỗ đứng mà bài để lại. Một mạng hồi quy thường, để nhớ được xa, phải
+Đó là chỗ đứng mà bài để lại. Một \tn{mạng hồi quy}{recurrent neural network}
+thường, để nhớ được xa, phải
 được giữ ở một chế độ mà động lực học của nó không tự đi tới, bằng một số hạng
 phạt kéo nó ra và một ngưỡng cắt chặn độ dài bước đi. Cân bằng ấy giữ được, và
 bài chứng minh là giữ được. Chỉ là nó phải được giữ, liên tục, bằng thuật toán

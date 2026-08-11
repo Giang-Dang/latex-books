@@ -29,6 +29,11 @@ NIPS 2014, Advances in Neural Information Processing Systems 27, pages
 3104-3112; and the running example is settled by decision 35 as a corpus
 generated from a grammar rather than a real one.
 
+The gloss cadence is now enforced by a script rather than remembered. Decision
+39 built the `Gloss` family in `scripts/check-chapter.ps1`; it found 32 defects
+across the five drafted chapters, all fixed, and the two terminology questions
+that had been open since chapter 01 are settled as decisions 40 and 41.
+
 Next action: chapter 06, "Đồng chỉnh". It inherits the corpus of decision 35 and
 the companion module `seq2seq.py` at tag `ch05`, and it owes one reading: Cho et
 al. 2014b (arXiv:1409.1259) has only been read as far as its abstract, and
@@ -58,7 +63,7 @@ is re-opened only by recording what changed and why, in the row.
 | 13 | Hardware | Every experiment finishes on a CPU-only laptop in minutes. The GPU path is an optional override, never the default. Reason: the reader is a Vietnamese undergraduate, and an experiment that needs a card the reader does not have is a figure, not an experiment |
 | 14 | Where the work happens | Companion code is a second git repo, public on GitHub. The book's own work started in a dedicated worktree of `latex-books` on a long-lived branch `book/tu-rnn-den-transformer`, at `F:/repo/latex-books-transformers`. **Amended 2026-08-09:** AGENTS.md now requires a per-session branch cut from `origin/main`, in a worktree under `.claude/worktrees/`, ending in a pull request. The library rule wins over this row. The chapter 03 session followed AGENTS.md and reused only the directory; the long-lived branch is dead and has diverged from main, which is the failure mode decision 30 exists to prevent |
 | 15 | Title | "Từ RNN đến Transformer", folder `tu-rnn-den-transformer`. The subtitle offered during the interview said "Mười ba năm kiến trúc chuỗi", which was written before decision 5 extended the book to 2026; corrected to "Sáu bài báo gốc từ 1997 đến 2021, và những gì đến sau" in the same session |
-| 16 | Glossed terms | A term this book translates carries its English original in parentheses, so that a reader opening at chapter 9 gets the same help as one who started at page 1. A term the book keeps in English takes no parentheses: "attention (attention)" helps nobody. Which terms fall on which side is settled once in appendix B. **Amended 2026-08-09:** this row originally set the cadence at every occurrence, not just the first. Chapter 03 showed what that costs: it names the spectral radius sixteen times, and a parenthesis on each turns the page into a bilingual dictionary. The cadence is now once per section, which still serves the reason this row gave, because a reader opening the book anywhere lands inside a section. The writing-rules section carries the rule. **Amended again 2026-08-09:** the cadence covers the terms a chapter introduces, which are the terms in that chapter's own block of appendix B; a term an earlier chapter owns is glossed once at its first use in the chapter and not again. Measuring every appendix B term against every section is what forced this: chapter 03 was 36 sites of 48, chapter 01 was 9 of 38, chapter 02 was 0 of 22, and the terms making up most of the shortfall were ordinary Vietnamese words like "chuoi" that appear in nearly every section of every chapter. Glossing those once per section sets "chuoi (sequence)" about fifteen times, which is the same bilingual dictionary this row already ruled out, one level down. Chapter 03's practice is the definition rather than an approximation of it |
+| 16 | Glossed terms | A term this book translates carries its English original in parentheses, so that a reader opening at chapter 9 gets the same help as one who started at page 1. A term the book keeps in English takes no parentheses: "attention (attention)" helps nobody. Which terms fall on which side is settled once in appendix B. **Amended 2026-08-09:** this row originally set the cadence at every occurrence, not just the first. Chapter 03 showed what that costs: it names the spectral radius sixteen times, and a parenthesis on each turns the page into a bilingual dictionary. The cadence is now once per section, which still serves the reason this row gave, because a reader opening the book anywhere lands inside a section. The writing-rules section carries the rule. **Amended again 2026-08-09:** the cadence covers the terms a chapter introduces, which are the terms in that chapter's own block of appendix B; a term an earlier chapter owns is glossed once at its first use in the chapter and not again. Measuring every appendix B term against every section is what forced this: chapter 03 was 36 sites of 48, chapter 01 was 9 of 38, chapter 02 was 0 of 22, and the terms making up most of the shortfall were ordinary Vietnamese words like "chuoi" that appear in nearly every section of every chapter. Glossing those once per section sets "chuoi (sequence)" about fifteen times, which is the same bilingual dictionary this row already ruled out, one level down. Chapter 03's practice is the definition rather than an approximation of it. **Amended a third time 2026-08-11, see decision 39:** the second amendment said \enquote{a term an earlier chapter owns}, which left a forward reference outside the rule entirely, and the cadence now turns only on whether the chapter owns the term. The two counts above were measured against the appendix B of that day and are not a statement about the tree now; a row added to the appendix later creates obligations retroactively, which is what chapter 05 then demonstrated |
 | 17 | Spelling of the English glosses | en-US, matching how all six papers spell. `Spelling = @{ Enabled = $true; Preset = 'en-US' }` in `check-chapter.psd1`, so "(initialisation)" is a finding. A gloss in the wrong variety sends a student searching for a string that is not in the paper |
 | 18 | Language of SPEC.md and check-chapter.psd1 | English. `draft-chapter` reads the slot labels, and the library's other SPEC is English |
 | 19 | Companion repo environment | Conda, not venv and not bare pip. The repo ships `environment.yml` pinning the env name, the Python version and the PyTorch build; the verify script activates that env before it runs anything, so a clean run does not depend on whose machine it is. Appendix D teaches the conda path. Default install is CPU-only PyTorch per decision 13; the GPU path is a separate override file, never an edit to the main one |
@@ -83,6 +88,9 @@ is re-opened only by recording what changed and why, in the row.
 | 36 | From chapter 05 the book's own cell is the 2000 forget-gate LSTM with tanh, not chapter 04's 1997 cell | Chapter 04 derives the 1997 cell, whose self-connection is a fixed 1.0 and whose squashing functions are scaled logistics. Chapter 05 needs a cell that trains on a real task, and Sutskever et al. name theirs in one sentence: \enquote{the LSTM formulation from Graves}. Graves (2013) section 2.1, equations (7) to (11), read in full: forget gate *and* peephole connections, tanh on both the cell input and the cell output. So the honest reading is that this paper's LSTM is chapter 04's cell plus both of chapter 04's bridge boxes. `seq2seq.py` implements the forget gate and tanh, and not the peepholes, and uses one layer where the paper uses four; both are size decisions forced by the CPU budget, and chapter 05 states them in the prose rather than letting the listing imply the paper was simpler than it is. This also settles the open item saying `LstmForget` was left at bridge-box quality: chapter 05 does not extend it, it writes a separate trainable layer, and the chapter 04 module is untouched because its tag is published |
 | 37 | The per-experiment budget is 60 seconds **per model trained**, from chapter 05 on | Amends decision 27, which set 60 seconds per experiment. That figure was measured against chapters 1 to 4, where each script probes a computation that is fixed before the script starts. From chapter 05 a script trains several models in order to compare them: the reversal table is six trainings, and no amount of care makes six trainings fit one training's budget. The rule is now one training's budget per model, with a floor of 30 seconds for a script that trains none, and `verify.py` carries the reasoning next to the table it applies to. What is deliberately **not** amended is `BUDGET_TOTAL`, because that is the number standing behind the promise decision 13 makes to the reader. Measured at tag `ch05`: 557.52 seconds against a 600 second budget |
 | 38 | The `algorithm` float is named in Vietnamese | `\floatname{algorithm}{Thuật toán}` in `preamble/macros.tex`. babel localizes every caption label this book uses except this one, because the `algorithm` package sets its own name rather than taking one from the language, so a Vietnamese page was printing \enquote{Algorithm 1}. Chapter 03 shipped that way and chapter 05 would have been the second; recorded as a decision rather than fixed silently because it changes how an already-drafted chapter sets |
+| 39 | Decision 16's cadence is one rule with no direction in it, and a script enforces it | A term the chapter **owns** is glossed once per section; a term it does **not** own is glossed once per chapter. Ownership is which block of appendix B the term sits in, and nothing turns on whether the owning chapter comes earlier or later. The old wording said \enquote{a term an earlier chapter introduced}, which left chapter 02 using `trị riêng` and chapter 04 using `chỗ thắt` outside the rule entirely; seven sites were that shape. The `Gloss` family in `scripts/check-chapter.ps1` checks it, and `check-chapter.psd1` names appendix B, the `\tn` macro and the two headings that carve the appendix up. Four finding ids: an owned term unglossed in a section, an unowned term unglossed in a chapter, a `\tn` whose term is in no block of appendix B, and the same term glossed twice in one section. **Measured before the shape was chosen.** An earlier plan proposed shipping the unowned half switched off, on the grounds that 13 of its 20 findings were ordinary Vietnamese words; reading the list showed the number is one, `chuỗi`, which is now the whole of `Gloss.Exempt`. The rest are `hàm mất mát`, `ma trận trọng số`, `lan truyền ngược qua thời gian` and their kind, and honouring them cost one `\tn` each, three to six per chapter, which is not the bilingual dictionary the second amendment to decision 16 was written to prevent: that problem was per *section* and this is per *chapter*. **What the check cannot see**, and it is exactly the defect chapter 05 shipped: a term central to a chapter that was never added to appendix B at all. Decision 16 makes appendix B the source of truth, so a term in neither the appendix nor a `\tn` is indistinguishable from ordinary Vietnamese. `chỗ thắt` was that until an audit read the prose. The orphan check closes only the cheap half; the rest stays a reading job |
+| 40 | \enquote{gradient} stays in English | Appendix B listed `độ dốc` as the translation and four of the five drafted chapters ignored it: chapter 01 wrote the bare English 71 times against 0, chapter 02 79/0, chapter 04 22/1, chapter 05 3/0. Only chapter 03 followed the appendix. The entry and its footnote are gone, `gradient` moves to the keep-in-English table, and the seven `\tn{độ dốc}{gradient}` calls are unwrapped. Three bare uses in chapter 03's wall section meant the gradient norm and now say `chuẩn gradient`, matching the prose two lines away that already did. Settled the way a Vietnamese ML reader would expect rather than the way the appendix promised, because the promise had been broken in four chapters and the cost of keeping it grew by one chapter per session |
+| 41 | The tone mark goes on the first vowel of a vowel cluster | `bão hòa`, not `bão hoà`. Stated for the cluster and not for the one word, so `hóa`, `khóa`, `xóa`, `lũy`, `tùy` and `túy` follow without reopening it; closed syllables like `hoàn` and `thoát` are unaffected, because there the tone already sits on the nucleus under both conventions. Both styles are standard Vietnamese and this is a house choice, not a correctness one; it went the way appendix B and three of the five drafted chapters already wrote it. 26 sites changed. `Spelling.Extra` in `check-chapter.psd1` holds the pairs, so the rule is enforced rather than remembered |
 
 ## Version baseline
 
@@ -160,7 +168,7 @@ created. That section is the hinge to the next chapter and is not optional.
    variance argument behind 1/sqrt(d_k); multi-head attention; sinusoidal
    positional encoding and its linear-shift property; residuals, layer norm, the
    position-wise FFN; masked decoder self-attention
-8. **Chi phí, song song hoá, và cái giá phải trả** - the paper's complexity
+8. **Chi phí, song song hóa, và cái giá phải trả** - the paper's complexity
    table, re-measured as FLOPs, memory and wall clock against `n` on a CPU;
    warmup, label smoothing and dropout as load-bearing rather than tricks;
    post-LN versus pre-LN; gap: quadratic, no inductive bias, data-hungry
@@ -260,15 +268,36 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   notation where there is one: `\rho(W_hh)` reads better than the words fifteen
   times over, and it is more precise.
 - **Which terms that cadence covers:** the ones in the chapter's own block of
-  appendix B. A term an earlier chapter introduced is glossed once at its first
-  use in this chapter and then left alone, because the reader who opened here
-  has already had it, and because the alternative was measured: most of the
-  shortfall against a literal reading was ordinary Vietnamese words, and
-  glossing `chuoi` once per section sets "chuoi (sequence)" about fifteen times
-  across the book. A chapter that borrows a term and then leans on it - makes it
-  load-bearing rather than passing - treats it as its own and follows the
-  section cadence; that judgement is the author's and the reason goes in the
-  decision log, not here.
+  appendix B. A term the chapter does **not** own - whichever chapter owns it,
+  earlier or later - is glossed once per chapter instead, at its first use.
+  That is the whole rule and it has no direction in it (decision 39). It used to
+  say "an earlier chapter", which left a forward reference like chapter 02 using
+  `tri rieng` outside the rule; seven sites were that shape. A chapter that
+  borrows a term and then leans on it - makes it load-bearing rather than
+  passing - treats it as its own and follows the section cadence; that judgement
+  is the author's and the reason goes in the decision log, not here.
+  `Gloss.Exempt` in `check-chapter.psd1` holds the one term too ordinary to
+  gloss, `chuoi`; keep that list short, because an exception list carrying most
+  of a check's signal is a list rather than a check.
+- **A gloss never goes in a heading.** No `\section` or `\subsection` in the
+  book carries one, and a parenthetical there would follow into the table of
+  contents and the running head. So a term whose only appearance in a section is
+  its heading gets no gloss. Observed rather than argued, but it is now what the
+  check assumes, so it is written down.
+- **A `\tn` on a term appendix B does not list is a miss in the other
+  direction** from decision 21. Either the term belongs in the appendix and goes
+  in, or the gloss comes out. Glossing a term the appendix keeps in English is
+  the same defect one step worse: `\tn{bias}{bias}` sets "bias (bias)", which
+  decision 16 names as the thing not to do.
+- **Adding a row to appendix B is retroactive, and the chapter is re-swept in
+  the same session.** The appendix is the source of truth, so a new row creates
+  a gloss obligation in every section where the term already appears, including
+  sections written months earlier. All eight of chapter 05's cadence misses were
+  this: its audit added `cho that`, `tu dien`, `ngoai tu dien` and `gia thuyet`
+  to the appendix and did not go back through the prose. Adding a row can also
+  cost typesetting - the longest term in the book made appendix B's first table
+  overfull by 30pt - so build after editing the appendix, not only after editing
+  prose.
 - **Voice:** First-person practitioner, the AGENTS.md default, which takes the
   chapter role. In Vietnamese that is "tôi" for the author and "bạn" for the
   reader, one pair for the whole book (decision 10). The book teaches other
@@ -280,6 +309,15 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   `check-chapter.psd1` and `Exempt` is empty. Vietnamese diacritics are letters
   and are legal everywhere; what is banned is Unicode look-alikes of ASCII
   punctuation, which is `Characters.Mode = 'Punctuation'`, the library default.
+
+  **The tone mark goes on the first vowel of a vowel cluster** (decision 41):
+  `bao hoa`, `hoa`, `khoa`, `xoa`, `luy`, `tuy` written with the mark on the o
+  or the u, never on the following a or y. Closed syllables such as `hoan` and
+  `thoat` are unaffected. Both styles are standard and this is a house choice;
+  `Spelling.Extra` in `check-chapter.psd1` holds the pairs, so it is enforced
+  rather than remembered. Do not fix this class with a blanket search and
+  replace: `hoa` with the mark is a substring of `thoat`, and one pass turned
+  `thoat` into a non-word that only a rebuild caught.
 - **How an English quotation attaches to a Vietnamese sentence.** A quotation is
   either *introduced* - by a colon, or by a verb of saying - or it sits in
   parentheses after the Vietnamese has already said the thing. It is never a
@@ -361,6 +399,16 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   decimal printed anywhere in the book must appear in a note. A note records the
   exact command, the versions, the raw output rather than a summary, and the
   date. Record the measurements that turned out to be uninteresting too.
+
+  **A number goes in the note with the configuration that produced it**, never
+  on its own. The `number` family checks that a decimal appears in a note, and a
+  note recording a figure from a configuration nobody can name still satisfies
+  it: that is how six wrong decimals from a discarded probe run got past a green
+  gate in chapter 05. A measurement taken before the recipe was pinned is
+  retaken afterwards or dropped, and there is no third option. And when an audit
+  reports a wrong number, the question to ask it is **what else came from
+  here**, not whether that one is fixed now; the first audit of chapter 05 found
+  four and the second found two more with the same origin.
 - **Sources:** citations are `~\autocite{...}`, always with the tilde. A number
   from a paper is cited and, where the claim is load-bearing, page-anchored
   against the exact PDF named in the source manifest. A number I measured goes
@@ -373,58 +421,30 @@ machine-checkable half is `check-chapter.psd1` in this folder.
 
 ## Open items
 
-- **Chapters 01 and 02 gloss below the cadence: swept 2026-08-09.** Closed. What
-  the sweep found was more than a shortfall, so it is worth keeping the numbers.
-  Measured against every appendix B term, chapter 01 was 9 term-section sites of
-  38, chapter 02 was 0 of 22, and chapter 03 - the one this item called
-  compliant - was 36 of 48. That reading also meant glossing ordinary Vietnamese
-  words like `chuoi` in nearly every section of every chapter, about fifteen
-  times across the book, which is the bilingual dictionary decision 16 had
-  already ruled out. Hence the second amendment to decision 16 and the new
-  writing rule scoping the cadence to a chapter's own terms. Under that rule all
-  three chapters are now complete: 83 term-section sites, 0 unglossed, counted
-  on prose with comments and headings excluded. **Chapter 05 then missed fifteen
-  or more sites anyway**, in a session that had read this item before drafting:
-  its own `cau nguon`, `cau dich` and `dao cau nguon` were never wrapped in
-  `\tn` anywhere in the chapter, `vector ngu canh` missed three sections, and
-  `tu dien` was glossed twice inside one. All fixed by that chapter's audit. The
-  lesson is not that the rule is unclear. It is that a rule this mechanical does
-  not survive being carried in a human head while prose is being written, which
-  is exactly what the deferred `gloss` check below exists to fix.
-- **Three defects the sweep turned up that were not about cadence.** All fixed
-  2026-08-09. `02-ky-hieu.tex` carried `\tn{bias}{bias}`, which set as "bias
-  (bias)" - the exact shape decision 16 names as the thing not to do, on a term
-  appendix B lists under keep-in-English. Four terms were glossed in prose while
-  absent from appendix B, which decision 16 makes the source of truth: `bai toan
-  cong`, `bai toan sao chep`, `triet tieu gradient` and `bung no gradient`. And
-  appendix B had a block for chapter 01 and one for chapter 03 and none for
-  chapter 02, so chapter 02 had no settled term list to be swept against; it has
-  one now, and it is where `phu thuoc dai han` and `bao hoa` were settled.
-- **Glosses never go in a heading.** Observed rather than decided: no `\section`
-  or `\subsection` in the book carries one, and a parenthetical in a heading
-  would follow into the table of contents and the running head. So a term whose
-  only appearance in a section is its heading gets no gloss there. Recorded here
-  because the sweep had to decide it and silence would have made it an accident.
-- **The gloss density in chapter 01 is the rule's cost, and it should be looked
-  at once on paper.** Chapter 01 introduces the foundational vocabulary, so its
-  own terms are the ones that appear in every section: printed page 3 carries
-  five glosses and pages 4 and 5 carry four each. Nothing is wrong and every one
-  is a term being introduced, but `chuoi (sequence)` lands twice on printed page
-  5, in sections 1.2 and 1.3, twelve lines apart, because the two sections are
+Closed items are deleted rather than kept with a note, and whatever they were
+carrying moves to the decision log, the writing rules, or a comment in the file
+that enforces it. A list where half the entries say "resolved" stops being read,
+which is how the four consecutive gloss regressions kept getting past a rule
+that was written down.
+
+- **Chapter 01's gloss density is the rule's cost, and it should be looked at
+  once on paper.** Chapter 01 introduces the foundational vocabulary, so its own
+  terms are the ones that appear in every section: printed page 3 carries five
+  glosses and pages 4 and 5 carry four each. Nothing is wrong and every one is a
+  term being introduced, but `chuoi (sequence)` lands twice on printed page 5,
+  in sections 1.2 and 1.3, twelve lines apart, because the two sections are
   short and the cadence is per section. Leaving it: consistency with a written
   rule beats a judgement call made once. Worth a look next time chapter 01 is
-  open.
-- **The second data point for the deferred `gloss` check now exists.** The
-  unblocking condition this item used to carry has been met, and by a wider
-  margin than expected: the misses were in all three drafted chapters, not two,
-  and they were mechanical enough that a script would have found every one of
-  them. See the `gloss` check item below, which is still deferred - having the
-  evidence and building the family are two decisions, and only the first is
-  taken.
-- **A listing wider than the measure is now a check.** Was an open item; closed
-  2026-08-09 by decision 31 and the `Listings` family in
-  `scripts/check-chapter.ps1`. Two of the five listings it was written for were
-  still wrapping in the merged chapter when the family first ran.
+  open, and decision 39 has since added a few more.
+- **`gia thuyet` carries two senses and appendix B only scopes one.** The row
+  says "nghia trong beam search", but chapter 03 uses the word in its ordinary
+  sense - the paper's hypothesis - and no check can read a scoping note in a
+  table cell, so chapter 03 now glosses it too. The gloss is not wrong,
+  "hypothesis" is the right English either way, but a reader may wonder why a
+  beam-search term is being introduced in a chapter about spectral radius.
+  Either the appendix drops the scoping note, or the term joins `Gloss.Exempt`
+  and chapter 05 keeps its glosses by hand. Left open because it is one word and
+  the current state is cheap to live with.
 - **Chapter 03's captured tables sit at `\footnotesize` without needing to.**
   Found by the chapter 04 audit 2026-08-10, in chapter 04's own tables, and
   fixed there: all eight were between 19 and 68 columns, well inside the
@@ -435,184 +455,68 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   them. Chapter 03 has the same pattern and was left alone, because it is not
   this session's chapter. Whoever opens chapter 03 next should widen them and
   let the check see them.
-- **Chapter 04 leans on chapter 02's adding problem, which chapter 02 says is
-  the wrong test.** Chapter 02 measured a gradient ratio near 1.0 out to
-  `T = 100` and concluded in bold that the adding problem is not a good test
-  for vanishing gradients. Chapter 04 uses the same task to show the memory
-  cell succeeding where the plain RNN does not, which is true and reproducible,
-  but it is not evidence about the carousel. The chapter now says so and points
-  the result at the input weight conflict instead, which is what the task
-  actually probes. Recorded because the first draft did not say so, and the
-  audit is what caught it. If a later chapter wants a task that does isolate
-  the carousel, chapter 02's copy task is the one with the measured decay.
-- **The `hòa` / `hoà` split.** Appendix B spells it `bão hòa`; chapters 01 and
-  02 follow, chapters 03 and 04 wrote `bão hoà`. Chapter 04 was changed to
-  match appendix B. Chapter 03 still differs, and the same split will bite any
-  Vietnamese word with this diphthong, so the book should state which
-  orthography it uses rather than settling it one word at a time. Both spellings
-  are standard; this is a house-style choice, not a correctness one.
-
-
-- **The companion repo now exists.** Named `rnn-to-transformer-lab`, public
-  at `github.com/Giang-Dang/rnn-to-transformer-lab`. Conda env name matches.
-  Tag `ch01` created and pushed. Resolved 2026-08-09.
-- **Appendix A's notation is settled.** The table now maps the book's notation
-  to LSTM 1997, Pascanu 2013, Sutskever 2014, Bahdanau 2015, and Vaswani 2017.
-  Resolved 2026-08-09.
-- **A `gloss` check for decision 16, deliberately deferred.** The rule is
-  machine-checkable: read appendix B's glossary, and flag every occurrence of a
-  translated term that is not inside `\tn`. It cannot live in
-  `check-chapter.psd1`, whose schema rejects unknown keys, so it would be a new
-  family in `scripts/check-chapter.ps1`. `draft-chapter`'s retro rules forbid
-  editing that script in a drafting session and forbid proposing a cross-book
-  check until the same mistake has bitten in two different chapters. Unblocking
-  condition: after chapters 01 and 02 are drafted, if the audit finds missed
-  glosses in both, propose the family with fixtures in
-  `scripts/check-chapter.tests.ps1`. Until then decision 21's macro is the only
-  thing holding the rule, and it holds it by making the right thing easy rather
-  than by making the wrong thing fail. **Unblocked 2026-08-09** by the cadence
-  sweep, which found misses in all three drafted chapters and found them by
-  script rather than by reading. Still not built: the evidence and the family
-  are two decisions and only the first is taken. Whoever builds it should know
-  the sweep's own tooling had to flatten whitespace before matching, because a
-  term broken across two source lines hides from a line-at-a-time scan, and had
-  to drop `%` comments and heading lines or it reported both as prose.
-  **Chapter 05 is the fourth consecutive chapter whose audit found misses a
-  script would have caught mechanically**, and the first where the drafting
-  session had read this rule the same morning it broke it. Evidence is no longer
-  what is missing. `draft-chapter` forbids editing `scripts/check-chapter.ps1`
-  during a drafting session, so this wants its own session, and it is worth
-  having one before chapter 06 rather than after.
-
-  **Planned in detail 2026-08-10, and the plan measured the thing that decides
-  its shape.** Two halves of decision 16 behave completely differently against
-  the four drafted chapters, and the numbers below are the plan's own prototype
-  run, to be confirmed by fixtures when the family is actually built:
-
-  - The **once-per-section** half reports **0** findings on the current tree,
-    which matches the sweep's "83 term-section sites, 0 unglossed" exactly. Its
-    whole value is regression prevention: against the pre-sweep tree it would
-    have reported dozens. That half is worth building.
-  - The **once-per-chapter** half, for terms an earlier chapter owns, reports
-    **20**, of which 13 are ordinary Vietnamese words like `chuoi`, `buoc thoi
-    gian` and `trang thai an`. Every one is defensible against the letter of the
-    rule and none was treated as a defect by the sweep that wrote the rule. So
-    that half is not worth checking mechanically and ships switched off, behind
-    a documented `Gloss.Borrowed` setting, rather than being omitted or forced
-    on.
-
-  The plan also surfaced a **forward reference** the writing rule does not cover
-  at all: chapter 02 uses `tri rieng` and `dieu kien du`, which chapter 03 owns.
-  Five of the twenty are that shape. Whoever settles `Gloss.Borrowed` has to
-  settle this too.
-- **The gloss check's largest hole is the defect chapter 05 actually had.** A
-  term that is central to a chapter but was never added to appendix B is
-  invisible to any version of this check, because decision 16 makes appendix B
-  the source of truth and a term in neither the glossary nor a `\tn` call cannot
-  be told from ordinary Vietnamese. `cho that` / bottleneck was exactly that:
-  the chapter's headline term, ten occurrences including the bolded conclusion,
-  in neither place until an audit read the prose. The cheap partial inverse is
-  worth taking in the same session, because it needs no new setting: flag a
-  `\tn{term}{...}` whose term is absent from the glossary. That catches the four
-  terms the 2026-08-09 sweep found by hand, and it catches `\tn{bias}{bias}`.
-  It does not catch the unglossed-and-unlisted case, which stays a reading job.
-- **The book disagrees with itself about `do doc`, and it is the central term.**
-  Found by the cadence sweep 2026-08-09 and deliberately not fixed by it,
-  because this is a decision and not a gloss. Appendix B lists `do doc` /
-  gradient as translated, with a footnote keeping "gradient" only inside proper
-  names such as "gradient descent" and "vanishing gradient". Counted across the
-  drafted chapters: chapter 01 writes the bare English "gradient" 71 times and
-  `do doc` 0 times, chapter 02 writes it 79 times and `do doc` 0 times, and
-  chapter 03 writes it 39 times and `do doc` 9 times, glossed. Only the third of
-  those three follows appendix B, and chapters 01 and 02 are not near-misses,
-  they never use the Vietnamese at all. So one of two things is true and the
-  book has not said which: either the entry is right and roughly 150 occurrences
-  across two chapters need changing, or chapters 01 and 02 are right, gradient
-  belongs on the keep-in-English list, and chapter 03's nine glosses come out
-  along with the appendix B row and its footnote. Both are defensible; the
-  second is what a Vietnamese ML reader would probably expect, and the first is
-  what the book currently promises. Whichever wins gets a decision row, because
-  this is the term the first three chapters are about. **Now four chapters:**
-  chapter 04 writes the bare English "gradient" on 22 lines and `do doc` once,
-  at its first use in the chapter, which is what the borrowed-term rule asks
-  for and still leaves the appendix B entry unhonoured. The split widens by one
-  chapter per session, and the cost of choosing the first option grows with it.
-  **Now five chapters:** chapter 05 writes the bare English "gradient" three
-  times and `do doc` zero times. It is a passing use in all three (the paper's
-  gradient clipping, and two exercises), so nothing here is load-bearing, but
-  the split is now wider than the evidence that opened this item.
 - **Chapter 04 has two spliced quotations, left alone.** Found 2026-08-10 while
-  checking whether the new quotation rule above had two chapters of evidence
-  behind it, which it does: `04-lstm/02-hai-xung-dot.tex` line 12 has "cac tin
-  hieu cap nhat" taking the English finite verb "will attempt", and
+  checking whether the quotation rule had two chapters of evidence behind it,
+  which it does: `04-lstm/02-hai-xung-dot.tex` line 12 has "cac tin hieu cap
+  nhat" taking the English finite verb "will attempt", and
   `04-lstm/05-cat-gradient.tex` line 20 has "loi toi net input ... cua cong"
   taking "do not get propagated". Both read as a Vietnamese subject with an
-  English predicate. Not fixed, because chapter 04 is not this session's
-  chapter and the same restraint was shown for chapter 03's tables; whoever
-  opens chapter 04 next should reword both. Everything else the scan turned up
-  in chapters 01 to 04 is an English noun phrase after a Vietnamese verb, which
-  the rule permits.
-- **Chapter 05's own numbers nearly shipped from the wrong configuration, and
-  the gate could not have caught it.** Four decimals about a deliberately broken
-  beam-search stopping rule were measured during exploration, before the shared
-  training recipe was pinned, at `N_TEST = 400` and a different batch-order
-  seed. Every one of them appeared in the research note, so the `number` family
-  passed: the note is what that check compares against, and a note recording a
-  number from a configuration nobody can name is still a note. The audit caught
-  it by re-running. Two things follow. A number belongs in the note **with the
-  configuration that produced it**, not on its own, and chapter 05's note now
-  carries the reverted function verbatim for exactly that reason. And a
-  measurement taken before the recipe is pinned has to be retaken after, or
-  dropped; there is no third option, and "it was close enough" is how the first
-  draft of this chapter got four wrong decimals past a green gate.
-  **A second audit then found two more from the same probe run**, 0.9200 and
-  0.9425 for the 20-epoch and 40-epoch comparison, true values 0.9533 and
-  0.9600. That is the part worth keeping: when the first audit reported four
-  wrong numbers I fixed those four and did not sweep the chapter for anything
-  else sharing their origin. A finding is a symptom, and the question to ask it
-  is always "what else came from here", not "is this one fixed now".
-- **The cheapest check on a measured number in this book is divisibility, and
-  nothing was using it.** Every exact-match figure is a count over a test split,
-  so it has to be a multiple of 1/N for that split. Chapter 05 prints against
-  N = 300, and `0.9425 * 300 = 282.75` is not an integer, while
-  `0.9425 * 400 = 377` is - which identifies both that the number is wrong and
-  which discarded run it came from, without rerunning anything. This is worth
-  more than it looks: the `number` family checks that a decimal appears in a
-  note, which a number from a dead configuration does. Whoever builds the next
-  check family should consider this one first; it is a few lines and it catches
-  the failure the existing gate is structurally blind to.
-- **The running example is now settled.** Closed 2026-08-10 by decision 35: a
-  corpus generated from a grammar inside the companion repo, English to
-  Vietnamese, carried from chapter 05 to chapter 08. License is a non-question
-  because nothing is redistributed. Chapters 02 to 04 keep the adding and copy
-  tasks; chapter 11 still uses CIFAR-10.
+  English predicate. Not fixed, because chapter 04 is not this session's chapter
+  and the same restraint was shown for chapter 03's tables; whoever opens
+  chapter 04 next should reword both. Everything else the scan turned up in
+  chapters 01 to 04 is an English noun phrase after a Vietnamese verb, which the
+  rule permits.
+- **If a later chapter wants a task that isolates the constant error carousel,
+  chapter 02's copy task is the one with the measured decay.** Chapter 04 leans
+  on chapter 02's adding problem, which chapter 02 concluded in bold is not a
+  good test for vanishing gradients; chapter 04 now says so and points the
+  result at the input weight conflict, which is what the task actually probes.
+  Recorded because the first draft did not say so and the audit is what caught
+  it.
+- **The divisibility check on measured numbers: declined 2026-08-11, with the
+  measurement.** The idea looked sound and cheap. Every exact-match figure is a
+  count over a test split, so it must be a multiple of 1/N, and
+  `0.9425 * 300 = 282.75` identifies both that the number is wrong and which
+  discarded run it came from without rerunning anything. Prototyped over the
+  drafted chapters, it does not survive contact. Rounding kills the naive form
+  outright: 256 of 300 prints as 0.8533 and `0.8533 * 300` is 255.99, so an
+  exact-integer test flags every correct figure too, 401 of 701 decimals. A
+  rounding-aware version allowing half a unit in the last place, restricted to
+  values in [0, 1] printed to at least three decimals, still flags 210 of 344.
+  The reason is structural rather than fixable: this book counts exact matches
+  over several different denominators - the full test split, the short-sentence
+  subset, the long-sentence subset - so no single N is right, and most decimals
+  in that range are gradient norms and probabilities rather than counts at all.
+  Same verdict and the same reason as the quotation rule: a check that is wrong
+  most of the time trains its reader to skip it. What survives is the manual
+  habit, now in the writing rules - a number goes in the note with the
+  configuration that produced it.
 - **The whole-run budget has about forty seconds of headroom, and that is the
-  next thing to bite.** Measured at tag `ch05`: 557.52 seconds against
-  `BUDGET_TOTAL = 600`. Chapter 05 added 268 seconds of it, and chapter 06 wants
-  the same corpus and at least one more comparison. Two things are worth knowing
-  before anyone tries to buy room back. The single largest item is not chapter
-  05: chapter 02's verify took 197.59 seconds in that run against the 99.66
-  seconds recorded at tag `ch04`, on the same machine, which means the total is
-  also sensitive to load and a passing run is not proof the next one passes. And
-  the cheapest real saving in chapter 05 would be dropping the reversal
-  experiment from three seeds to two, which is exactly the thing that experiment
-  exists to avoid; the per-seed spread there is wider than the effect. So the
+  next thing to bite.** Two runs at tag `ch05` on the same machine: 557.52
+  seconds against `BUDGET_TOTAL = 600`, and 495.51 in another. The gap between
+  them is the point, because it means the total is sensitive to load and a
+  passing run is not proof the next one passes. Chapter 05 added 268 seconds,
+  and chapter 06 wants the same corpus and at least one more comparison. The
+  single largest item is not chapter 05: chapter 02's verify took 197.59 seconds
+  in the slower run against 99.66 recorded at tag `ch04`. Chapter 02's own
+  baseline is about ten minutes total - adding problem at 3 x T with 5000
+  samples each, copy task at 3 x T_mem with 2000 epochs each - and decision 37
+  tightened the rule to 60 seconds per model trained from chapter 05 on. The
+  cheapest real saving in chapter 05 would be dropping the reversal experiment
+  from three seeds to two, which is exactly the thing that experiment exists to
+  avoid, because the per-seed spread there is wider than the effect. So the
   honest options are speeding chapter 02 up, raising `BUDGET_TOTAL` with a
   recorded reason, or letting chapter 06 share chapter 05's trained models.
 - **`torch.nn.LSTM` is still not used anywhere, and from chapter 05 that costs
-  measurable time.** Every recurrent layer in this repo is a Python loop over
-  time steps, which is the right choice for chapters 01 to 04 because those
-  chapters reach inside the loop. Chapter 05 does not: it trains and measures.
-  Fifteen trainings at roughly nineteen seconds each is most of what chapter 05
-  spends, and the fused-kernel version would be a large multiple faster. Not
-  changed, because a book that builds from scratch and then quietly swaps in the
-  library for the chapter where it matters has stopped building from scratch.
-  Recorded so that whoever hits the budget wall knows this lever exists and what
-  it costs to pull.
-- **Per-experiment CPU time budgets are now set.** Chapter 02 uses ~10 min
-  total for adding problem (3×T, 5000 samples each) and copy task (3×T_mem,
-  2000 epochs each). Later chapters inherit this baseline: each experiment
-  should finish on CPU in single-digit minutes. Settled 2026-08-09.
+  measurable time.** Every recurrent layer in the companion repo is a Python
+  loop over time steps, which is the right choice for chapters 01 to 04 because
+  those chapters reach inside the loop. Chapter 05 does not: it trains and
+  measures. Fifteen trainings at roughly nineteen seconds each is most of what
+  chapter 05 spends, and the fused-kernel version would be a large multiple
+  faster. Not changed, because a book that builds from scratch and then quietly
+  swaps in the library for the chapter where it matters has stopped building
+  from scratch. Recorded so that whoever hits the budget wall knows this lever
+  exists and what it costs to pull.
 - **The final list of bridge papers is not closed.** The TOC names Cho 2014,
   Luong 2015, Gers 2000, Hochreiter 1991, Bengio 1994, layer norm, residuals,
   BERT, GPT, Kaplan and Hoffmann. Hochreiter 1991 and Bengio 1994 are now
@@ -631,6 +535,3 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   only, which is the part that matters because it is where the LSTM equations
   are. Chapter 06 wants a number out of the first of those and will have to read
   the body before it can print one.
-- **The `Empty bibliography` warning is now cleared.** Chapter 02 added the
-  first `refs.bib` entry (Bengio 1994) and cites Pascanu 2013. The warning
-  should no longer appear in the build log.

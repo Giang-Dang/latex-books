@@ -74,12 +74,13 @@ chính xác, và tiêu nó đi để đổi lấy một tham số nữa là mộ
 
 \subsection*{Vì sao một unit sigmoid không làm được}
 
-\index{bão hoà!chặn 1/4 của sigmoid}%
+\index{bão hòa!chặn 1/4 của sigmoid}%
 Ràng buộc~\eqref{eq:ch04-rang-buoc} cũng loại luôn khả năng dùng một unit phi
 tuyến thông thường, và đáng bỏ ra hai phút để thấy nó loại theo kiểu nào.
 
 Với sigmoid, \(f'\) không bao giờ vượt \(1/4\). Vậy để tích \(f'(a) w\) chạm
-tới 1 thì cần \(w \ge 4\), đó là điều kiện cần và nó đến từ số học chứ không từ
+tới 1 thì cần \(w \ge 4\), đó là \tn{điều kiện cần}{necessary condition} và nó
+đến từ số học chứ không từ
 huấn luyện. Nhưng đúng tại \(w = 4\) thì \(f'(a) \cdot 4 = 1\) chỉ đúng khi
 \(f'(a) = 1/4\), tức chỉ tại đúng một điểm \(a = 0\). Trạng thái rời khỏi điểm
 đó là ràng buộc gãy. Tôi cho chạy thử một unit sigmoid tự nối, không input,

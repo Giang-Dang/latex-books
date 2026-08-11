@@ -18,7 +18,7 @@ hiện, biến mất hoặc đổi hình. Những chỗ ấy là
 
 Bài dựa cách nhìn này trên công trình của Doya từ 1993, và mở rộng nó theo hai
 hướng. Thứ nhất, họ phân biệt hai sự kiện: vượt qua ranh giới giữa hai miền hút,
-và vượt qua một điểm rẽ nhánh. Chỉ sự kiện thứ nhất là \tn{điều kiện đủ}{sufficient condition} để \tn{độ dốc}{gradient}
+và vượt qua một điểm rẽ nhánh. Chỉ sự kiện thứ nhất là \tn{điều kiện đủ}{sufficient condition} để gradient
 nổ. Bài nói thẳng rằng vượt điểm rẽ nhánh \emph{không} phải \tn{điều kiện cần}{necessary condition} cũng
 không phải điều kiện đủ, vì điểm rẽ nhánh là sự kiện toàn cục và có thể chẳng
 ảnh hưởng gì tại chỗ mô hình đang đứng. Thứ hai, họ xử lý được cả mô hình có
@@ -60,8 +60,8 @@ vẽ lát cắt đó.
   \centering
   \input{figures/tikz/ch03-vach-mat-loi}
   \caption{Lát cắt mặt lỗi dọc theo \(b\) tại \(w = 5.0\). Hai nhánh gần như
-    phẳng, nối nhau bằng một vách rộng chưa tới một phần nghìn của \(b\). Độ dốc
-    tại đỉnh vách lớn hơn độ dốc vùng phẳng năm bậc độ lớn, nên một bước
+    phẳng, nối nhau bằng một vách rộng chưa tới một phần nghìn của \(b\). Chuẩn
+    gradient tại đỉnh vách lớn hơn ở vùng phẳng năm bậc độ lớn, nên một bước
     gradient descent dùng chung một learning rate cho cả hai vùng không thể vừa
     an toàn ở đây vừa tiến được ở kia.}
   \label{fig:ch03-vach-mat-loi}
@@ -70,7 +70,7 @@ vẽ lát cắt đó.
 Lưới 0.001 vẫn còn quá thô. Tìm bằng lưới lồng nhau bốn vòng thì đỉnh thật nằm
 ở \(b = -2.6123413600\), và ở đó chuẩn gradient là 6.773125 nhân mười mũ ba.
 
-\begin{measured}{độ dốc tại vách so với vùng phẳng}
+\begin{measured}{chuẩn gradient tại vách so với vùng phẳng}
 \begin{minted}[fontsize=\footnotesize]{text}
     w          b at peak    max ||grad||    cost there
   4.6      -2.3642758000    3.157208e+02    0.13157964
@@ -85,7 +85,7 @@ Tại \(w = 5.0\), chuẩn gradient ở vùng phẳng \(b = -2.0\) là
 1.2205 nhân mười mũ năm, tức 5.0865 bậc độ lớn.
 
 Đỉnh vách di chuyển gần như tuyến tính theo \(w\), khoảng \(-0.62\) đơn vị
-\(b\) trên mỗi đơn vị \(w\), và độ dốc tại đỉnh tăng khoảng năm lần sau mỗi
+\(b\) trên mỗi đơn vị \(w\), và chuẩn gradient tại đỉnh tăng khoảng năm lần sau mỗi
 0.2 của \(w\).
 
 Đo bằng \code{experiments/ch03\_surface.py} tại tag \code{ch03}.
@@ -105,7 +105,8 @@ trả về 0.1355472 tại \(b = -2.80816320\), sát mép trái, và con số đ
 \subsection*{Vì sao vách làm hỏng một bước gradient descent}
 
 \index{độ cong!tại vách}%
-Giả thuyết của bài là chỗ này: khi gradient nổ thì \tn{độ cong}{curvature} cũng
+\tn{Giả thuyết}{hypothesis} của bài là chỗ này: khi gradient nổ thì
+\tn{độ cong}{curvature} cũng
 nổ theo, nên hình dạng cục bộ ở đó là một thung lũng có một bức tường dựng, chứ
 chưa bao giờ là một cái dốc đều. Nếu hướng gradient và hướng cong lớn nhất trùng nhau thì mặt lỗi
 dốc đứng theo phương vuông góc với tường, và một bước gradient descent chạm

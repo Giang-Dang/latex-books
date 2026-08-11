@@ -145,7 +145,7 @@ $\vect{a}_t$.
 \subsection{ gradient cho tham số}
 
 Từ $\pd{L}{\vect{a}_t}$ và $\pd{L}{\vect{y}_t}$, gradient cho năm tham số
-được tích luỹ qua toàn bộ \tn{chuỗi}{sequence}:
+được tích lũy qua toàn bộ \tn{chuỗi}{sequence}:
 
 \begin{align}
   \pd{L}{\mat{W}_{xh}} &= \sum_{t=1}^{T}
@@ -176,8 +176,8 @@ một hạng tử vào tổng.
 Nhìn vào \eqref{eq:bptt-dh-recurrence}: $\mat{W}_{hh}\transpose$ xuất hiện ở
 mọi bước lùi. Nếu bạn tháo cuộn công thức này từ $t = T$ về $t = 1$, bạn sẽ
 thấy $\pd{L}{\vect{h}_1}$ chứa $\mat{W}_{hh}\transpose$ nhân với chính nó $T$
-lần. Khi $T$ lớn, tích này hoặc co về không hoặc bùng nổ, tùy vào giá trị
-riêng lớn nhất của $\mat{W}_{hh}$. Đó chính là vấn đề
+lần. Khi $T$ lớn, tích này hoặc co về không hoặc bùng nổ, tùy vào
+\tn{trị riêng}{eigenvalue} lớn nhất của $\mat{W}_{hh}$. Đó chính là vấn đề
 \tn{triệt tiêu gradient}{vanishing gradient} và
 \tn{bùng nổ gradient}{exploding gradient}; chủ đề của chương~2 và~3.
 
@@ -199,7 +199,7 @@ Toàn bộ BPTT gói gọn trong năm bước:
       \item $\pd{L}{\vect{y}_t} = \vect{y}_t - \widehat{\vect{y}}_t$
       \item $\pd{L}{\vect{h}_t}$ từ \eqref{eq:bptt-dh-recurrence}
       \item $\pd{L}{\vect{a}_t}$ từ \eqref{eq:bptt-da}
-      \item Tích luỹ gradient tham số từ
+      \item Tích lũy gradient tham số từ
         \eqref{eq:bptt-dWxh} đến \eqref{eq:bptt-dby}.
     \end{itemize}
   \item \textbf{Kết thúc}: tổng gradient cho năm tham số đã sẵn sàng cho

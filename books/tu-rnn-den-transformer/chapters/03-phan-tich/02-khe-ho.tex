@@ -43,9 +43,9 @@ def jordan_block(
 Ma trận tam giác trên với \(0.9\) trên đường chéo và \(3.0\) ngay phía trên nó.
 Mọi trị riêng đều bằng \(0.9\), nên bán kính phổ là \(0.9\) bất kể phần tử ngoài
 đường chéo lớn đến đâu. Chuẩn phổ thì lớn theo. Để tách phần đại số tuyến tính
-khỏi bão hoà, tôi chạy nó ở trường hợp tuyến tính, tức \(\sigma\) là ánh xạ đồng
+khỏi bão hòa, tôi chạy nó ở trường hợp tuyến tính, tức \(\sigma\) là ánh xạ đồng
 nhất, đúng bối cảnh phần phụ lục của bài: khi đó tích
-trong~\eqref{eq:ch03-tich-jacobian} thu về đúng luỹ thừa ma trận
+trong~\eqref{eq:ch03-tich-jacobian} thu về đúng lũy thừa ma trận
 \(\mat{W}_{hh}^{\,l}\) với \(l = t-k\).
 
 \begin{measured}{tích Jacobian tăng dưới một bán kính phổ nhỏ hơn 1}
@@ -88,14 +88,14 @@ Không nên đọc chỗ này thành \enquote{bài báo sai}. Trong trường h�
 đúng trường hợp vừa đo, phát biểu của họ đúng ở nghĩa tiệm cận: công thức
 Gelfand cho \(\norm{\mat{W}^{\,l}}^{1/l} \to \rho(\mat{W})\), nên
 \(\rho(\mat{W}_{hh}) < 1\) vẫn kéo theo \(\norm{\mat{W}_{hh}^{\,l}} \to 0\) và
-\tn{độ dốc}{gradient} rồi sẽ tắt. Cái không đúng là chặn đơn điệu \(\eta^{\,t-k}\)
+gradient rồi sẽ tắt. Cái không đúng là chặn đơn điệu \(\eta^{\,t-k}\)
 trong~\eqref{eq:ch03-chan-mu}. Chặn đó cần giá trị kỳ dị, và chỉ có nó mới cho
 phép nói gradient tắt \emph{ngay từ bước đầu}.
 
 Với \(\sigma\) phi tuyến thì ngay cả phần tiệm cận cũng không suy ra được theo
 kiểu ấy, vì tích trong~\eqref{eq:ch03-tich-jacobian} là tích của những ma trận
 \emph{khác nhau}, mỗi bước một \(\diag(\sigma'(\vect{a}_{i-1}))\) riêng, chứ
-không phải luỹ thừa của một ma trận. Công thức Gelfand không nói gì về tích như
+không phải lũy thừa của một ma trận. Công thức Gelfand không nói gì về tích như
 thế.
 
 Khoảng cách giữa hai phát biểu là khoảng cách giữa \enquote{tắt} và

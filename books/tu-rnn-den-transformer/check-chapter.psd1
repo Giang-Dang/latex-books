@@ -195,9 +195,25 @@
     # No Vietnamese word collides with the eighteen pairs in the table, so
     # turning this on costs nothing on the Vietnamese side. Exempt stays empty
     # until a real product name needs it.
+    # Extra also carries the Vietnamese half of decision 41: the tone mark goes
+    # on the first vowel of a vowel cluster. The keys are whole words, matched
+    # on word boundaries, which is what keeps 'hoa' with a mark from firing
+    # inside 'hoan' and 'thoat' - a blanket search and replace does not have
+    # that property, and one pass of it turned 'thoat' into a non-word that only
+    # the rebuild caught. Closed syllables are absent on purpose: there the mark
+    # already sits on the nucleus under both conventions.
     Spelling = @{
         Enabled = $true
         Preset  = 'en-US'
+        Extra   = @{
+            'hoà'  = 'hòa'
+            'hoá'  = 'hóa'
+            'khoá' = 'khóa'
+            'xoá'  = 'xóa'
+            'luỹ'  = 'lũy'
+            'tuỳ'  = 'tùy'
+            'tuý'  = 'túy'
+        }
     }
 
     # -- 9. Numbers -----------------------------------------------------------
@@ -319,7 +335,56 @@
     #     Identifiers = @('begin', 'end', 'label', 'ref', 'pageref', 'input', 'include', 'autocite')
     # }
 
-    # -- 13. Figures ----------------------------------------------------------
+    # -- 13. Gloss ------------------------------------------------------------
+    # Decision 16's cadence, which four consecutive chapter audits caught a
+    # drafting session breaking. One rule with no direction in it: a term this
+    # chapter owns is glossed once per section, a term another chapter owns is
+    # glossed once per chapter. Ownership is which block of appendix B the term
+    # sits in.
+    # Enabled      - the master switch. Emptying Glossary is the other way off.
+    # Glossary     - the appendix, relative to the book root. It is the source
+    #                of truth for what is translated, per decision 16.
+    # Macro        - the gloss macro from decision 21. \tn{vi}{en}.
+    # BlockPattern - the heading that opens a chapter's block; capture group 1
+    #                is that chapter's number. Vietnamese, so it cannot be a
+    #                library default.
+    # KeepPattern  - the heading that opens the keep-in-English block. Only
+    #                sharpens a message: a gloss on a keep-in-English term sets
+    #                "bias (bias)", which is a different mistake from glossing a
+    #                term nobody put in the appendix.
+    # Exempt       - terms that are also ordinary Vietnamese, where a gloss
+    #                helps nobody. Keep it short: an exception list carrying
+    #                most of a check's signal is a list, not a check.
+    # Schema, kept for reference now that this key is live below:
+    # Gloss = @{
+    #     Enabled      = $true
+    #     Glossary     = ''
+    #     Macro        = 'tn'
+    #     BlockPattern = ''
+    #     KeepPattern  = ''
+    #     Exempt       = @()
+    # }
+    #
+    # THIS BOOK: on, against appendix B, which decision 16 already makes the
+    # source of truth for what is translated.
+    #
+    # Exempt was measured before it was set. Of the borrowed-term findings on
+    # the five drafted chapters, exactly one term is a word a Vietnamese reader
+    # needs no help with: "chuoi", sequence. The rest are technical and are
+    # glossed. An earlier plan for this family proposed shipping the whole
+    # borrowed half switched off on the grounds that thirteen of twenty
+    # findings were ordinary words; reading the list is what showed that was
+    # one, not thirteen.
+    Gloss = @{
+        Enabled      = $true
+        Glossary     = 'backmatter/appendix-b-thuat-ngu.tex'
+        Macro        = 'tn'
+        BlockPattern = '\\textbf\{Chương\s+(\d+)\}'
+        KeepPattern  = '\\textbf\{Giữ nguyên'
+        Exempt       = @('chuỗi')
+    }
+
+    # -- 14. Figures ----------------------------------------------------------
     # TikZ style names pgfkeys has already taken. `step/.style={...}` shadows
     # nothing: it fails the build with an error naming the key rather than the
     # style, which reads as a missing \usetikzlibrary and sends you looking in
@@ -338,7 +403,7 @@
     #     ReservedKeys = @('in', 'out', 'step', 'shift', 'scale', 'text', 'style')
     # }
 
-    # -- 14. Log --------------------------------------------------------------
+    # -- 15. Log --------------------------------------------------------------
     # Reads the build log that latexmk already wrote. The check never runs
     # latexmk itself, so a missing log is a warning and a log older than the
     # sources is a warning; build first if you want these numbers to mean
