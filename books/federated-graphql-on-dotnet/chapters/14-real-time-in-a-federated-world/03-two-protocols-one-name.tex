@@ -1,0 +1,175 @@
+\section{Two Protocols, One Name}
+\label{sec:ch14-two-protocols-one-name}
+\index{WebSocket!subprotocol negotiation|(}%
+
+The composed config says \code{GRAPHQL\_WEBSOCKET\_SUBPROTOCOL\_AUTO} and
+chapter~\ref{ch:composition} could not ask what that meant. Answering it needs
+two facts, and the first one is a piece of GraphQL history that catches
+everybody once.
+
+\index{graphql-transport-ws@\code{graphql-transport-ws}!versus \code{graphql-ws}}%
+There are two WebSocket protocols for GraphQL. The old one came from Apollo's
+library, \code{subscriptions-transport-ws}, and has been unmaintained for
+years. The new one came from the \code{graphql-ws} library and is what
+everything current implements. Their subprotocol names, the strings that go in
+a \code{Sec-WebSocket-Protocol} header, are:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+graphql-ws            the old one, from subscriptions-transport-ws
+graphql-transport-ws  the new one, from the graphql-ws library
+\end{minted}
+
+The library called \code{graphql-ws} speaks the protocol called
+\code{graphql-transport-ws}, and the protocol called \code{graphql-ws} comes
+from a library called something else. HotChocolate's constants file says so
+plainly, and it is the only place in this stack that does:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{csharp}
+/// The sub-protocol name for the GraphQL over WebSocket Protocol
+/// https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md
+public const string GraphQL_Transport_WS = "graphql-transport-ws";
+
+/// The sub-protocol name for the GraphQL over WebSocket Protocol from Apollo
+/// https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
+public const string GraphQL_WS = "graphql-ws";
+\end{minted}
+
+Carry that, because everything else in this section depends on it.
+
+\subsection*{Offer both, and the two ends disagree}
+
+\index{WebSocket!which end chooses}%
+A WebSocket client lists the subprotocols it can speak and the server picks
+one. So: open a connection offering both, in the order the router offers them,
+and see what comes back. Against the Reviews subgraph, and against the router:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+offered:  graphql-transport-ws, graphql-ws
+
+HotChocolate 16.6.0 on 5105  chose  graphql-ws
+Cosmo Router 0.337.1 on 3002 chose  graphql-transport-ws
+\end{minted}
+
+The same list, in the same order, and the opposite answer. One of these two
+processes is picking the older of the two protocols, and it is the one in front
+of your domain code.
+
+\index{WebSocket!registration order decides}%
+The reason is not a preference anybody expressed. It is a loop:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{csharp}
+foreach (var protocolHandler in _protocolHandlers)
+{
+    if (webSocketManager.WebSocketRequestedProtocols.Contains(protocolHandler.Name))
+    {
+        _webSocket = await webSocketManager.AcceptWebSocketAsync(protocolHandler.Name);
+        return protocolHandler;
+    }
+}
+\end{minted}
+
+The iteration is over the server's handlers and the client's list is only
+tested for membership, so the client's ordering carries no weight at all. What
+decides is the order the handlers were registered in, and that is:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+.AddApolloProtocol()                // graphql-ws, the old one
+.AddGraphQLOverWebSocketProtocol(); // graphql-transport-ws, the new one
+\end{minted}
+
+Apollo first. A client offering both gets the old protocol, and a client
+offering both is what the Cosmo Router is by default.
+
+\subsection*{On the wire}
+
+\index{WebSocket!the handshake, captured}%
+None of that is visible from either end: the router logs nothing about a
+successful upgrade and HotChocolate's Kestrel logs sit at \code{Warning}. So
+the capture below came from putting a recording proxy in the middle, which is
+\code{scripts/subscription-wire.mjs} in the companion repository, with Reviews
+moved to another port so the proxy can take 5105.
+
+One recording holds both cases, because the harness probes the subgraph before
+the router subscribes to it. The probe, offering both:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+GET /graphql HTTP/1.1
+sec-websocket-protocol: graphql-transport-ws, graphql-ws
+user-agent: node
+
+HTTP/1.1 101 Switching Protocols
+Sec-WebSocket-Protocol: graphql-ws
+\end{minted}
+
+Then the router, on the configuration this chapter ends with:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+GET /graphql HTTP/1.1
+Host: host.docker.internal:5105
+User-Agent: Go-http-client/1.1
+Connection: Upgrade
+Sec-Websocket-Protocol: graphql-transport-ws
+Sec-Websocket-Version: 13
+Upgrade: websocket
+
+HTTP/1.1 101 Switching Protocols
+Sec-WebSocket-Accept: 0+wyIeBPin4+OloVC9wc4/bHeys=
+Sec-WebSocket-Protocol: graphql-transport-ws
+\end{minted}
+
+and the frames that follow it:
+
+\begin{minted}[fontsize=\tiny,breaklines]{text}
+router ->   {"type":"connection_init","payload":{}}
+subgraph -> {"type":"connection_ack"}
+router ->   {"id":"d9t72ovgpr8s73bm6qs0","type":"subscribe","payload":{"query":
+             "subscription($a: ID!){onReviewAdded(productId: $a){id rating author
+             {__typename id}}}","variables":{"a":"UHJvZHVjdDoAAACgAAAAQIAAAAAAAAAW"},
+             "extensions":{"initialPayload":{}}}}
+subgraph -> {"id":"d9t72ovgpr8s73bm6qs0","type":"next","payload":{"data":
+             {"onReviewAdded":{"id":"UmV2aWV3OkrunwGI8rlynU+zZQ2jRtY=","rating":4,
+             "author":{"__typename":"Customer","id":"Q3VzdG9tZXI6AAAAwAAAAECAAAAAAAAABA=="}}}}}
+router ->   {"id":"d9t72ovgpr8s73bm6qs0","type":"complete"}
+\end{minted}
+
+\index{WebSocket!the legacy message names}%
+Two things to take from the frames. The subgraph's \code{next} payload contains
+the customer's key and no name, which is
+section~\ref{sec:ch14-what-an-event-costs}'s cost visible as bytes. And the
+message names are \code{subscribe} and \code{complete}, which belong to the new
+protocol. Take the pin off, leave the setting at auto, and the same capture
+comes back with \code{start} and \code{stop} instead, which are the old
+protocol's names for the same two messages. That is the whole visible
+difference, and it is visible only here.
+
+\subsection*{Which is why Mosaic names it}
+
+\index{websocketSubprotocol@\code{websocketSubprotocol}!pinned in the composer input}%
+The reviews entry in \code{federation/mosaic.yaml} gains three lines:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{yaml}
+    subscription:
+      url: http://localhost:5105/graphql
+      protocol: ws
+      websocketSubprotocol: graphql-transport-ws
+\end{minted}
+
+The first two are defaults written out. The third is the one that changes
+anything, and after it the composed config says
+\code{GRAPHQL\_WEBSOCKET\_SUBPROTOCOL\_TRANSPORT\_WS} and the handshake offers
+one subprotocol rather than two.
+
+Both arrangements deliver events, so nothing was broken before this and nothing
+is fixed by it. What was wrong was that the choice was being made by
+registration order in somebody else's container, could not be seen from either
+log, appears in no schema, and landed on the protocol its own ecosystem has
+moved off. A default nobody chose and nobody can observe is worth one line of
+configuration even when it works.
+
+\index{spelling!of \code{websocketSubprotocol}}%
+And now the part that cost me twenty minutes. That key is camelCase, in a file
+where every other key uses an underscore, and wgc's own documentation for the
+file spells it with one too. The documented spelling composes perfectly and
+does nothing at all, which is the subject of the next section.
+
+\index{WebSocket!subprotocol negotiation|)}%

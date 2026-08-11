@@ -1,0 +1,121 @@
+\section{\code{@defer}, \code{@stream}, and What the Schema Promises}
+\label{sec:ch14-defer-and-stream}
+\index{defer@\code{@defer}!in a federated graph|(}%
+
+A subscription is not the only way a GraphQL response can arrive in pieces.
+\code{@defer} lets a client mark part of a query as lower priority and receive
+it in a later chunk; \code{@stream} does the same for the elements of a list.
+Both have been in the specification's incremental delivery proposal for years,
+and the question a chapter on real time has to answer is whether this stack
+does either.
+
+Start with what HotChocolate ships. Both directives exist at 16.6.0, behind two
+options:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+public bool EnableDefer { get; set; }
+public bool EnableStream { get; set; }
+\end{minted}
+
+\index{EnableDefer@\code{EnableDefer}!off by default}%
+Auto-properties with no initialiser, so both are false. That is worth reading
+against \code{public bool EnableTag \{ get; set; \} = true;}, six lines further
+down the same file, which is what an option that is meant to be on looks like
+there. The interface documents both as preview features. Mosaic leaves
+them off, and introspecting any subgraph confirms it: the directive list is
+\code{skip}, \code{include}, \code{deprecated}, \code{shareable}, \code{key},
+\code{specifiedBy}, \code{link}, and sending \code{@defer} to a subgraph
+directly gets a flat refusal.
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+The specified directive `defer` is not supported by the current schema.
+\end{minted}
+
+\subsection*{The router says otherwise}
+
+\index{defer@\code{@defer}!added by the router}%
+Now introspect the router. Its client-facing schema advertises six directives,
+and two of them appear in no subgraph:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+include  skip  deprecated  specifiedBy  oneOf  defer
+\end{minted}
+
+\code{oneOf} is uninteresting: it describes input objects and the router adds
+it because the specification has it. \code{defer} is the one to look at. Its
+locations are \code{FRAGMENT\_SPREAD} and \code{INLINE\_FRAGMENT}, and it is in
+the client schema of a graph composed entirely from subgraphs that have never
+heard of it. The router puts it there. So a client generator pointed at this
+graph, or a developer reading the schema in a playground, is told the feature
+is available.
+
+Use it, on a fragment whose fields live in a different subgraph from the rest
+of the query, and ask for the multipart response an incremental delivery would
+need:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+POST /graphql   Accept: multipart/mixed
+
+{ browseProducts(first: 1) { nodes { title ... @defer { price { amount } } } } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{"data":{"browseProducts":{"nodes":[{"title":"Beech Cutting Board",
+  "price":{"amount":69.00}}]}}}
+\end{minted}
+
+\index{defer@\code{@defer}!accepted and ignored}%
+One response, \code{application/json} rather than multipart, and the deferred
+field sitting in it as though the directive were not there. The directive is
+accepted by validation and then has no effect. \code{@stream} at least says so:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+{"errors":[{"message":"directive: stream undefined","path":["query","products"]}]}
+\end{minted}
+
+Which of those two is the better failure is not a close call. \code{@stream} is
+rejected in a way a client sees during development, once. \code{@defer} is
+advertised, accepted, silently flattened, and will look like it works right up
+until somebody measures a page that was supposed to paint in two stages and
+finds it painting in one.
+
+\subsection*{Why nobody is in a hurry to fix this}
+
+\index{incremental delivery!vendor positions}%
+It would be easy to file this as a gap and move on, and I do not think that is
+what it is. Jens Neuse, WunderGraph's chief executive and co-founder, published
+a post in 2023 arguing that \enquote{the @defer and @stream directives are
+complete overkill and the whole idea of incrementally loading data can be done
+in a much simpler way}~\autocite{neuse2023defer}. The company that writes this
+router does not think the feature is worth its complexity, and has said so
+under a name. HotChocolate's position is quieter and points the same way: both
+options exist, both are off, and its own documentation comment calls them
+preview features.
+
+You can disagree with that. What you cannot do is read the router's schema and
+conclude anything about it, which is the part I would push back on. A directive
+in a published schema is a promise, and this is a graph making one it does not
+keep. If the answer is that incremental delivery is not worth doing, the
+consistent version of that answer is not to advertise the directive.
+
+\index{incremental delivery!what to do instead}%
+The practical advice is short. If you want part of a page later, ask for it
+later: a second query is a thing every layer in this stack understands, every
+gate in this book can assert, and no client library has to negotiate a
+multipart parser for. If you want data pushed as it changes, the previous five
+sections are the mechanism this stack actually implements, and one of them does
+not even need the service to be running.
+
+\medskip
+Chapter~\ref{ch:hard-modeling-problems} ended by saying a federated graph can
+make the shapes agree and cannot make the meanings agree. This chapter adds a
+smaller one to that: it cannot make a schema honest either, and both of the
+things it got wrong here were invisible from every schema, every log and every
+composition check. Which is a good place to stop, because the next chapter is
+about who is allowed to ask, and a connection that stays open for an hour is
+the hardest case that question has.
+
+\index{defer@\code{@defer}!in a federated graph|)}%

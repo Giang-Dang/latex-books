@@ -1,0 +1,156 @@
+\section{The Subscription That Already Worked}
+\label{sec:ch14-the-subscription-that-already-worked}
+\index{subscriptions!through a router|(}%
+
+Before changing anything, check out tag \code{ch13}, start the seven services
+and the router, and post a subscription to the router rather than to Reviews:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{graphql}
+subscription { onReviewAdded(productId: "UHJvZHVjdDoAAACgAAAAQIAAAAAAAAAW") {
+  id rating body author { displayName } } }
+\end{minted}
+
+The router answers \code{200} with a content type of
+\code{text/event-stream}, sends a heartbeat, and then goes quiet, which is what
+a subscription with nothing to say looks like. Submit a review and a frame
+arrives:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+event: next
+data: {"data":{"onReviewAdded":{"id":"UmV2aWV3OjHunwGkClh8nA5sKCe2ci8=",
+       "rating":1,"body":"Event 1.",
+       "author":{"displayName":"Mateusz Kowalczyk"}}}}
+\end{minted}
+
+\index{subscriptions!a field the subgraph cannot fully answer}%
+Read the last line twice. \code{author.displayName} is a field of
+\code{Customer}, and \code{Customer} in the Reviews subgraph has been a
+two-line stub since chapter~\ref{ch:strangling-the-monolith}: an identifier and
+nothing else. Reviews does not know that customer's name and never did. So the
+router did not simply forward what the subgraph pushed at it. It took the
+subgraph's message apart, went to Accounts for the missing field, and put the
+answer back together before the client saw a byte.
+
+That is the shape of the whole chapter and it is worth being clear that nobody
+built it. This is tag \code{ch13}, untouched.
+
+\subsection*{What the composed config had been carrying}
+
+\index{supergraph.json@\code{supergraph.json}!the subscription block}%
+Chapter~\ref{ch:composition} pulled a router execution config apart field by
+field and found a block it could not ask a question of. Every one of the seven
+datasources carries this, with its own url:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{json}
+"subscription": {
+  "enabled": true,
+  "url": {"staticVariableContent": "http://localhost:5105/graphql"},
+  "protocol": "GRAPHQL_SUBSCRIPTION_PROTOCOL_WS",
+  "websocketSubprotocol": "GRAPHQL_WEBSOCKET_SUBPROTOCOL_AUTO"
+}
+\end{minted}
+
+Including the six subgraphs that have no \code{Subscription} type at all.
+Catalog will never be asked to hold a connection open and the composer wrote it
+a subscription block anyway, because the block describes how the router would
+reach that subgraph rather than whether it will ever need to.
+Section~\ref{sec:ch14-two-protocols-one-name} is about the last line of it and
+section~\ref{sec:ch14-five-transports} about the two before.
+
+\subsection*{A plan with a node kind we have not seen}
+
+\index{query plan!the \code{Trigger} node}%
+Ask the router for the plan the way chapter~\ref{ch:enter-the-router} does,
+with \code{X-WG-Include-Query-Plan} and \code{X-WG-Skip-Loader}, and the shape
+is new:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+Sequence
+  Trigger  reviews   fetchId 0
+           subscription($a: ID!){ onReviewAdded(productId: $a){ id rating body
+                                    author { __typename id } } }
+  Single
+    Entity accounts  fetchId 1  dependsOnFetchIds [0]
+           query($representations: [_Any!]!){ _entities(representations: $representations){
+                   ... on Customer { __typename displayName } } }
+\end{minted}
+
+Every plan in chapters~\ref{ch:how-a-federated-query-actually-runs}
+and~\ref{ch:enter-the-router} through~\ref{ch:hard-modeling-problems} was built
+from \code{Sequence}, \code{Parallel}, \code{Single} and \code{Entity}.
+\code{Trigger} is a fifth kind and it exists because a subscription is the one
+operation whose first step does not finish. The children hang off it in the
+ordinary way, with the ordinary \code{dependsOnFetchIds}, and the ordinary
+representation built from a key.
+
+\index{query plan!what the trigger asks for}%
+Notice what the trigger asks the subgraph for: \code{author \{ \_\_typename id
+\}}. Not the display name. The planner knows Reviews cannot answer that, so it
+does not ask, exactly as it would not ask in a query. What the subscription
+field returns is a \code{Review}, and a \code{Review} is an entity that four
+services contribute to; being pushed rather than pulled changes nothing about
+how it gets assembled.
+
+\subsection*{One write, and where it had never been sent}
+
+\index{mutations!through the router}%
+You cannot watch any of this without writing something, and
+\code{submitReview} has been exercised against the Reviews subgraph directly
+since chapter~\ref{ch:schema-design-that-survives-change}.
+Chapter~\ref{ch:enter-the-router} recorded that as unfinished business and
+chapter~\ref{ch:strangling-the-monolith} recorded it again. Sending it to the
+router now:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+Sequence
+  Single  reviews   mutation($a: SubmitReviewInput!){ submitReview(input: $a){
+                      review { id rating author { __typename id } } } }
+  Entity  accounts  dependsOnFetchIds [0]
+                    ... on Customer { __typename displayName email }
+\end{minted}
+
+Two things fall out of that. The first is that a mutation's payload is resolved
+across a boundary exactly like a query's, so \code{review.author.displayName}
+comes back filled in, where the same mutation sent to Reviews directly answers
+null for it. That null has been in the tests since
+chapter~\ref{ch:strangling-the-monolith} made \code{Customer} a stub in this
+service, and it was never a fact about the mutation. It was a fact about where
+the request was sent.
+
+The second is a difference between the two plans that I noticed and did not
+chase: the mutation's plan carries a \code{normalizedQuery} member and the
+subscription's does not. The research note records it as unmeasured with
+chapter~\ref{ch:inside-the-router-and-the-composer} as its owner, because the
+plan cache is that chapter's and four chapters have now asked it a different
+question.
+
+\index{errors!a typed error through the router}%
+The typed errors survive the trip. Submit a review a customer has already
+written and the payload comes back the way
+chapter~\ref{ch:schema-design-that-survives-change} designed it:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{json}
+{"data":{"submitReview":{"review":null,"errors":[
+  {"__typename":"DuplicateReviewError","message":"You have already reviewed this product."}]}}}
+\end{minted}
+
+One thing I got wrong on the way there is worth a sentence, because it looked
+like a router defect for about ten minutes. Selecting \code{errors \{ message
+\}} on that payload produces this:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+cannot select field: message on union: SubmitReviewError
+\end{minted}
+
+which reads like a planner limitation and is not one. \code{SubmitReviewError}
+is a union, selecting a field on a union without a fragment is invalid GraphQL,
+and the router is right. The correct selection is \code{errors \{ \_\_typename
+... on Error \{ message \} \}}. A tool that disagrees with you is worth checking
+against the specification before it is worth writing up.
+
+\medskip
+So the feature works and the write path works, and neither needed anything
+built. The next question is what a message costs, which is where the interest
+actually is.
+
+\index{subscriptions!through a router|)}%

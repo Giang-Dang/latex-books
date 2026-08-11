@@ -1,0 +1,144 @@
+\section{Five Transports, and the One That Fails in Silence}
+\label{sec:ch14-five-transports}
+\index{subscriptions!the transport between router and subgraph|(}%
+
+A subgraph entry in the composer's input can carry a \code{subscription:} block
+with three keys, and between them they select how the router will reach that
+service when a subscription needs it. Three transports, one of which has two
+sub-flavours, so five arrangements in all: a WebSocket on either subprotocol,
+server-sent events over a GET, and server-sent events over a POST. The
+documentation for the file gives the keys as
+follows~\autocite{cosmodocs2026compose}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{yaml}
+    subscription:
+      url: http://localhost:4001/sse #Optional, defaults to routing_url
+      protocol: sse # Optional, defaults to ws (websockets)
+      websocket_subprotocol: graphql-ws # Optional, defaults to auto.
+      # Available options are auto, graphql-ws, graphql-transport-ws
+\end{minted}
+
+Since the last section ended on that third key being spelled differently in the
+code, the honest way to find out what any of this does is to compose the real
+eight subgraphs with the reviews entry varied, and read the block wgc wrote.
+All seven variations below compose. None of them produces a message of any
+kind.
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+reviews subscription block                                 protocol      subprotocol
+absent                                                     ..._WS        ..._AUTO
+protocol: ws, websocketSubprotocol: graphql-transport-ws   ..._WS        ..._TRANSPORT_WS
+protocol: ws, websocket_subprotocol: graphql-transport-ws  ..._WS        ..._AUTO
+protocol: ws, websocketSubprotocol: totally-not-a-protocol ..._WS        (absent)
+protocol: sse                                              ..._SSE       ..._AUTO
+protocol: sse_post                                         ..._SSE_POST  ..._AUTO
+protocol: carrier-pigeon                                   (absent)      ..._AUTO
+\end{minted}
+
+\index{wgc@\code{wgc}!what \code{router compose} does not validate}%
+Row three is the documented spelling, and it leaves the setting at its default.
+Row four is the right key with a value nothing implements, and it is worse:
+rather than falling back, the composer drops the member from the config
+entirely, so the result is not a default but an absence. Row seven does the same
+thing to the protocol itself, and a subscription block with no protocol in it is
+not a state any documentation describes.
+
+None of this is a mystery once you read the code. The compose command reads the
+camelCase key off the subscription block and nothing else, and wgc ships a
+validator that rejects exactly the values in rows four and seven, by name, with
+a good message. Every \code{subgraph} and \code{monograph} command calls it.
+\code{router compose} does not.
+
+That is the shape of the thing worth remembering rather than the specific
+spelling, which some release will fix. The router-only path through this
+toolchain, the one chapters~\ref{ch:composition} and~\ref{ch:enter-the-router}
+chose deliberately because it needs no account and no control plane, is a
+second-class path in the CLI, and it skips checks the registry path performs.
+All seven rows are cases in \code{scripts/realtime-cases.mjs}, so a release that
+fixes any of them fails the gate and gets read rather than passing quietly.
+
+\subsection*{What each transport does to a HotChocolate subgraph}
+
+\index{sse@\code{sse}!versus \code{sse\_post}}%
+The two spellings in rows five and six look like the same thing and are not,
+and this is where a wrong guess costs a working feature.
+
+\code{ws} works, on either subprotocol, and the last section showed the
+handshake for both.
+
+\code{sse} does not work, at all, against HotChocolate 16.6.0. The router sends
+this:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+GET /graphql HTTP/1.1
+Host: host.docker.internal:5105
+Accept: text/event-stream
+Cache-Control: no-cache
+\end{minted}
+
+and gets this:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+HTTP/1.1 301 Moved Permanently
+Location: http://host.docker.internal:5105/graphql/
+\end{minted}
+
+\index{MapGraphQL@\code{MapGraphQL}!the redirect to the IDE}%
+A GET with no query on \code{MapGraphQL}'s route is a request for the GraphQL
+IDE, which lives one slash further along, so HotChocolate redirects. The router
+does not follow redirects. What reaches the client is:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+event: next
+data: {"errors":[{"message":"Internal server error"}],"data":null}
+\end{minted}
+
+and then the stream closes. At the router's committed \code{log\_level: info}
+nothing is logged about any of it, and the subgraph logs nothing at any level.
+Turn the router up to \code{debug} and there is exactly one line:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+DEBUG abstractlogger@v0.0.4/zap.go:61 sseTransport.Subscribe
+  {"endpoint": "http://localhost:5105/graphql", "method": "GET"}
+\end{minted}
+
+which says nothing about the redirect or the failure and does name the one
+thing that matters, \code{"method": "GET"}. That is the whole diagnostic trail:
+a one-word change in a configuration file, a composition that succeeds, an
+error message naming nothing, and one debug line whose significance you have to
+already know. I found the cause with a proxy in the middle and only then went
+back and recognised the line.
+
+\code{sse\_post} works:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+POST /graphql HTTP/1.1
+Accept: text/event-stream
+Cache-Control: no-cache
+Content-Type: application/json
+
+HTTP/1.1 200 OK
+Content-Type: text/event-stream; charset=utf-8
+Cache-Control: no-cache
+\end{minted}
+
+which is the request chapter~\ref{ch:schema-design-that-survives-change} made
+by hand when it first exercised the subscription against one service. So that
+transport is available, and of the two names, the one that sounds like it is
+the one that is not.
+
+\index{transports!choosing between them}%
+Given that, why would anyone leave \code{ws}? Because a WebSocket is a
+stateful connection to a subgraph, and a subgraph that holds thousands of them
+is one you cannot scale to zero, cannot run on a request-scoped platform, and
+have to drain carefully on deploy. \code{sse\_post} makes the router-to-subgraph
+hop an ordinary HTTP request with a long response, which most infrastructure
+already understands. Mosaic stays on \code{ws} because seven services on one
+machine gain nothing from the swap, and because leaving it there is what makes
+the next section's alternative worth comparing against.
+
+\medskip
+That alternative is the interesting one, and it takes the connection away from
+the subgraph entirely.
+
+\index{subscriptions!the transport between router and subgraph|)}%

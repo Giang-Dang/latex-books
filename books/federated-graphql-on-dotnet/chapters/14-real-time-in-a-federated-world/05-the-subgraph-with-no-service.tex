@@ -1,0 +1,248 @@
+\section{The Subgraph With No Service}
+\label{sec:ch14-the-subgraph-with-no-service}
+\index{event-driven federated subscriptions|(}%
+
+Everything so far has taken one arrangement for granted: a subscription is a
+field of a service, and the router holds a connection to that service for as
+long as a client is listening. Cosmo offers a second arrangement in which none
+of that is true, and the fastest way to say what it is is to show what Mosaic
+had to add.
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+directive @edfs__natsSubscribe(
+  subjects: [String!]!
+  providerId: String! = "default"
+  streamConfiguration: edfs__NatsStreamConfiguration
+) on FIELD_DEFINITION
+
+type Subscription {
+  reviewPublished(productId: ID!): Review!
+    @edfs__natsSubscribe(subjects: ["mosaic.reviewAdded.{{ args.productId }}"])
+}
+
+type Review @key(fields: "id", resolvable: false) {
+  id: ID! @external
+}
+\end{graphqlsdl}
+
+That is most of \code{schema/streams.graphql}. What the listing leaves out is
+the \code{@link} block every subgraph in this book carries and the
+\code{edfs\_\_NatsStreamConfiguration} input the directive's third argument
+refers to, which brings the file to twenty-eight lines. There is no project
+beside it, no port, no process. The documentation is direct about this: an
+event-driven subgraph \enquote{does not need to be implemented. It is simply a
+Subgraph Schema that instructs the Router on how to connect specific root
+fields to the Event Source}~\autocite{cosmodocs2026streams}.
+
+Note that the directive is declared here rather than assumed. The composer has
+a built-in definition for it, as it does for \code{@key}, but a subgraph schema
+is published SDL and has to stand on its own, so the file spells out the
+directive it uses.
+
+Chapter~\ref{ch:hard-modeling-problems} gave Mosaic a service that owns no
+domain. This is one better: a subgraph that owns no process.
+
+\subsection*{What the composer makes of it}
+
+\index{composition!a datasource that is not GraphQL}%
+Add it to \code{federation/mosaic.yaml} as an eighth entry and compose. The
+routing table gains a datasource, and it is not the kind every other entry in
+this book has been:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{json}
+{
+  "kind": "PUBSUB",
+  "customEvents": {"nats": [{
+    "engineEventConfiguration": {"providerId": "default", "type": "SUBSCRIBE",
+                                 "typeName": "Subscription", "fieldName": "reviewPublished"},
+    "subjects": ["mosaic.reviewAdded.{{ args.productId }}"]}]}
+}
+\end{minted}
+
+Seven \code{GRAPHQL} sources with a fetch url each, and one \code{PUBSUB}
+source with a broker subject and no url anywhere in it. The entry in the input
+file was still obliged to give a \code{routing\_url}, because the schema
+requires one, and the composer does copy it into the config's subgraph list
+beside the other seven. What it does not do is give this datasource anything to
+fetch with, so nothing ever calls it. Mosaic points it at 5108, where nothing
+listens, so that a reader who suspects something is quietly serving this can
+check.
+
+The template in the subject is the other half. \code{\{\{ args.productId \}\}}
+is interpolated from the subscription document, so a client subscribing to one
+product makes the router listen on one subject.
+
+\subsection*{Where the broker lives}
+
+\index{router!the \code{events} block}%
+The schema says which subject; it does not say where the broker is. That is a
+separate block in \code{router/config.yaml}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{yaml}
+events:
+  providers:
+    nats:
+      - id: default
+        url: "nats://host.docker.internal:4222"
+\end{minted}
+
+and the split is deliberate on Cosmo's part rather than an accident of
+layout. A subject name is part of a contract between two teams and belongs
+where a composer can read it. A broker url and its credentials are a property
+of one deployment and belong with the rest of that deployment's addresses.
+\code{default} is the provider id because \code{providerId} on the directive
+defaults to that string and nothing overrides it; a second broker would be a
+second entry here and an argument on the directive.
+
+On startup the router says so:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+INFO core/router.go:546 Nats Event source enabled {"provider_id": "default"}
+INFO nats/provider_builder.go:87 NATS connection established
+     {"provider_id": "default", "url": "nats://host.docker.internal:4222"}
+\end{minted}
+
+\subsection*{What goes on the wire is almost nothing}
+
+\index{event-driven federated subscriptions!the message is a representation}%
+Here is the part that makes the feature worth the trouble. Publish this to
+NATS, by hand, with any client:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+subject  mosaic.reviewAdded.UHJvZHVjdDoAAACgAAAAQIAAAAAAAAAW
+body     {"__typename":"Review","id":"UmV2aWV3OgAAAOAAAABAgAAAAAAAAIc="}
+\end{minted}
+
+and this arrives at a client subscribed through the router:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+event: next
+data: {"data":{"reviewPublished":{"id":"UmV2aWV3OgAAAOAAAABAgAAAAAAAAIc=",
+       "rating":5,"body":"End grain, so it is kind to the knife edge.",
+       "author":{"displayName":"Katharina Brandt"}}}}
+\end{minted}
+
+A type name and a key went in. Fields from two services came out, neither of
+them the one that declared the field. The router treats the message body as a
+federation representation, exactly like the ones
+chapter~\ref{ch:entity-resolution-done-right} watched being built from a query
+plan, and resolves the rest of the payload the ordinary way. The plan for that
+document says as much:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+Sequence
+  Trigger  7-nats-0  fetchId 0
+  Entity   reviews   fetchId 1  dependsOnFetchIds [0]
+           ... on Review { __typename rating body author { __typename id } }
+  Entity   accounts  fetchId 2  dependsOnFetchIds [1]
+           ... on Customer { __typename displayName }
+\end{minted}
+
+Two entity fetches where the held subscription had one, because the message
+carries no data at all: even \code{rating}, which Reviews owns and which the
+publisher had in its hand, has to be fetched back. And the trigger names
+\code{7-nats-0}, which is a datasource position and a provider rather than a
+subgraph, because there is no service to name. That string is a positional
+artefact rather than a stable identifier, which is why the Postman assertion in
+this chapter's collection checks only that the trigger's source mentions the
+broker.
+
+\index{event-driven federated subscriptions!why the payload is not published}%
+The obvious objection is that publishing the whole review would save a hop, and
+the obvious answer is that it would publish a second copy of a schema Reviews
+owns. Every field added to \code{Review} would then have to be added to the
+message, every consumer would be reading a shape nothing validates, and the
+first field somebody forgot would go stale silently. What is on the wire is a
+pointer, and a pointer cannot drift.
+
+Figure~\ref{fig:ch14-two-arrangements} puts the two arrangements beside each
+other, which is the comparison the whole chapter has been building towards.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch14-two-arrangements}
+  \caption{One write, announced twice, and the halves that differ are all below
+  the router. On the left the router holds a connection to a service for as
+  long as a client is listening; on the right it holds a subscription to a
+  broker and the service that published is not involved in delivery at all. A
+  client sees the same shape either way, which is what makes this a deployment
+  decision rather than an API one.}
+  \label{fig:ch14-two-arrangements}
+\end{figure}
+
+\subsection*{One word, and what its absence costs}
+
+\index{event-driven federated subscriptions!the missing type name}%
+Publish the same message without \code{\_\_typename}, so the body is only the
+identifier, and the client gets this:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+{"errors":[{"message":"Cannot return null for non-nullable field
+ 'Subscription.reviewPublished.rating'."}],"data":null}
+\end{minted}
+
+The router received the message. Its debug log shows it arriving on the right
+subject with the right body. It then makes no entity fetch and says nothing
+about why, and the error names a field the publisher never mentioned and has no
+opinion about. Nothing in the router, the subgraph, the schema or the composer
+connects that error to the two missing tokens that caused it.
+
+So the publisher carries a comment saying so, because nothing else would. That
+is the same rule chapter~\ref{ch:hard-modeling-problems} reached about shared
+scalars, applied one level down: the further a contract is from anything a tool
+can check, the more of it has to be written in prose that people read.
+
+\subsection*{What Mosaic had to build, which is one class}
+
+\index{Mosaic.Reviews@\code{Mosaic.Reviews}!the publisher}%
+Reviews gains a publisher and nothing else. The interesting line is the
+subject:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+var subject = SubjectPrefix + accessor.Serializer.Format(nameof(Product), productId);
+\end{minted}
+
+\index{global object identifier!encoded rather than decoded}%
+because the template interpolates the argument as the client wrote it, and a
+client writes a global object identifier rather than a \code{Guid}. So this is
+the one file in the repository that has to \emph{encode} a product identifier,
+where the four copies of \code{ProductKey} that
+chapter~\ref{ch:the-first-cut-extracting-catalog} argued about all decode one.
+It reaches the serialiser the same way they do, through
+\code{IResolverContext.Schema.Services}.
+
+The mutation now announces the same fact twice. Both calls sit at the end of
+the resolver, with a paragraph of comment between them, and stripped of that
+they are:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+await sender.SendAsync(
+    ReviewTopics.ReviewAdded(productId),
+    review,
+    cancellationToken);
+
+await stream.PublishAsync(review, productId, context, cancellationToken);
+\end{minted}
+
+I left both, not because a real service would, but because the two
+arrangements are this chapter's argument and a reader needs to watch them
+answer the same write.
+
+\index{contracts!a string two files have to agree about}%
+One last thing to be nervous about. The publisher builds
+\code{mosaic.reviewAdded.} and a template in a schema file says
+\code{mosaic.reviewAdded.\{\{ args.productId \}\}}, and no compiler, composer or
+type checker relates those two strings. It is a contract between a C\# constant
+and a directive argument, and the only thing holding it together is that
+\code{scripts/subscription-run.mjs} publishes through the mutation and asserts
+that a frame comes out the other end. Chapter~\ref{ch:hard-modeling-problems}
+said every shared type in a federated graph needs an owner and a written
+definition outside both schemas. A shared subject name needs the same, and it
+has less structure than a scalar.
+
+\medskip
+Two subscriptions then, built opposite ways, and a client cannot tell which is
+which. What a client can see is a directive the graph advertises and does not
+honour, which is the last thing in this chapter.
+
+\index{event-driven federated subscriptions|)}%

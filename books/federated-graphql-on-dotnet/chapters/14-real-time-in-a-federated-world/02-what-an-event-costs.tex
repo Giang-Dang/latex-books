@@ -1,0 +1,110 @@
+\section{What an Event Costs}
+\label{sec:ch14-what-an-event-costs}
+\index{subscriptions!what a message costs|(}%
+
+The plan in the last section says the router fetches a customer. It does not
+say how often, and there are two plausible answers. The router could resolve
+the author once, when the subscription opens, and reuse it; or it could resolve
+it again for every message. The difference matters more than it sounds, because
+a subscription is the one thing in a graph that can run for hours.
+
+Counting is easy, because chapter~\ref{ch:strangling-the-monolith} moved the
+request timeline into the shared library and all seven services now report one
+line per request they serve. So: count the lines in every console,
+open one subscription, count again, submit five reviews through the router,
+count once more.
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+                       catalog pricing inventory accounts reviews ordering nodes
+opening the subscription     0       0         0        0       1        0     0
+five events                  0       0         0        5       5        0     0
+\end{minted}
+
+The Accounts column is a step of both verification scripts, which count the
+same log lines either side of their own run rather than trusting this table.
+They open both of this chapter's subscriptions at once and write three reviews,
+so the number they assert is six rather than five, and it is asserted exactly
+rather than as a bound: a graph that started answering with fewer would be a
+better graph and a wrong chapter.
+
+\index{subscriptions!what opening one costs}%
+The first row is the cheap surprise. Opening a subscription costs one request,
+to one service, and touches nothing else in the graph. No entity fetch happens
+at subscribe time, and it could not: there is no entity yet. The router has a
+plan and a WebSocket and nothing to resolve.
+
+\index{subscriptions!one entity fetch per message}%
+The second row is the answer. Five messages, five requests to Accounts. The
+five to Reviews are the five mutations rather than the events, because the
+events come back down a connection that was already open. So the router
+re-resolves the non-trigger half of the payload every single time, and
+figure~\ref{fig:ch14-what-repeats} is the shape of that.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch14-what-repeats}
+  \caption{The two rows are paid on different schedules. Opening the
+  subscription is one request and never recurs; the entity fetch under it is
+  paid again for every message that arrives. So the running cost of a
+  subscription is decided not by how expensive it was to open but by how much
+  of the payload the service holding the connection cannot answer on its own.}
+  \label{fig:ch14-what-repeats}
+\end{figure}
+
+None of that makes subscriptions expensive, and reading it that way would be a
+mistake. It is the ordinary cost of a field from another service, which
+chapters~\ref{ch:enter-the-router} and~\ref{ch:entity-resolution-done-right}
+both measured, attached to something that repeats. What is genuinely new is who
+decides how often it is paid. A query is billed once to whoever sent it. A
+subscription is billed per message, the client decides how many messages there
+are by choosing what to subscribe to, and the schema decides what each one
+costs. Those two decisions are made by different people, usually in different
+teams, and neither of them sees the multiplication.
+
+\subsection*{Which makes the selection set an operational decision}
+
+\index{subscriptions!the selection set as a running cost}%
+Drop \code{author} from the subscription document and the plan has no children
+at all. Every message is then a single frame from Reviews and nothing else in
+the graph is touched, forever. Add it back and the graph is doing an
+\code{\_entities} call against Accounts on a schedule a client chose.
+
+That is not an argument for narrow subscriptions. It is an argument for knowing
+which fields on a subscription payload cross a boundary, because in a query
+that knowledge buys you a paragraph in a design document and here it buys you a
+throughput figure. A client that subscribes to a busy product and asks for one
+field from a second service has quietly made that service's load proportional
+to somebody else's write rate.
+
+\index{subscriptions!what the subgraph is asked for}%
+There is a version of this that is worse and Mosaic happens not to have. The
+trigger returns one \code{Review} per message, so the entity fetch is one
+representation. A subscription returning a list would batch, in the sense
+chapter~\ref{ch:entity-resolution-done-right} measured, and the batch would be
+rebuilt per message. Nothing here tested that, and the research note says so.
+
+\subsection*{A word about the numbers I am not printing}
+
+\index{measurement!what a heartbeat looks like}%
+While measuring the above I nearly published a latency. The first bytes a
+client receives from the router are usually a \code{:heartbeat} comment, and
+across the runs recorded in the research note that first byte arrived anywhere
+between one second and nearly five after the request. It is tempting to read
+that as how long a subscription takes to become live. It is not. It is the
+router's heartbeat schedule, and the subscription was live long before it.
+
+The real gap is between a publish and the frame reaching the client, and this
+chapter does not print it. Decision 62 in this book's spec says a timing gets a
+committed script a reader can run twice rather than a number in a table, and
+nothing here has one; the research note hands subscription timings to
+chapter~\ref{ch:resilience-and-performance} with the rest of the load
+questions. What is worth recording now is the mistake, because a plausible
+number that measures the wrong thing is exactly the failure
+chapter~\ref{ch:composition} caught three of.
+
+\medskip
+So the mechanism is understood and the cost is understood. What I had not
+looked at yet was the connection itself, and that turned out to be where the
+chapter's real finding was hiding.
+
+\index{subscriptions!what a message costs|)}%

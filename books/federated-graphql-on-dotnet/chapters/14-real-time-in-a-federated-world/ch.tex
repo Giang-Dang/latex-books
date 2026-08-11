@@ -1,7 +1,42 @@
 \chapter{Real-Time in a Federated World}
 \label{ch:real-time-in-a-federated-world}
 
-\emph{Not yet drafted.} Planned scope: Subscriptions through the router; Cosmo Event-Driven Federated Subscriptions with NATS or Kafka; \code{@defer} and \code{@stream} reality check and wire framing.
+Mosaic has had a subscription since
+chapter~\ref{ch:schema-design-that-survives-change}. Nothing has sent one
+through a router, and the reason is written into that chapter's own prose:
+newman speaks request and response, a subscription is a connection that stays
+open, and rather than build a second harness for one field I said plainly that
+the two transcripts it printed were the only evidence nothing re-checked. Nine
+chapters later the field is still there, still working, and still outside every
+gate in this book.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/14-real-time-in-a-federated-world/01-section-name}
+So this chapter starts by finding out whether it works at all through the seven
+subgraphs and the router in front of them. It does, immediately, with nothing
+changed. That answer took about a minute and it is the least interesting thing
+here.
+
+What the rest of the chapter is about is the three questions underneath it.
+What does a message cost, given that the service holding the connection cannot
+answer half of what the client asked for. Which of the two WebSocket protocols
+that share a name is this stack actually speaking, and who chose. And whether
+the subgraph on the other end of that connection needs to exist, which turns
+out to be a real question with a surprising answer.
+
+By the end Mosaic has a second subscription that answers the same question as
+the first and shares no machinery with it, and an eighth subgraph that is a
+file. The write path is here too, because you cannot watch a subscription
+without one and \code{submitReview} had never been through the router either.
+
+Everything the composer says was said by wgc 0.129.7, which bundles version
+0.63.2 of \code{@wundergraph/composition}. The router is Cosmo 0.337.1,
+unchanged since chapter~\ref{ch:enter-the-router} except for one new block in
+its configuration. Every line of library source is HotChocolate at tag
+\code{16.6.0}, commit \code{8fea46e}. The broker is NATS 2.12.
+
+\input{chapters/14-real-time-in-a-federated-world/01-the-subscription-that-already-worked}
+\input{chapters/14-real-time-in-a-federated-world/02-what-an-event-costs}
+\input{chapters/14-real-time-in-a-federated-world/03-two-protocols-one-name}
+\input{chapters/14-real-time-in-a-federated-world/04-five-transports}
+\input{chapters/14-real-time-in-a-federated-world/05-the-subgraph-with-no-service}
+\input{chapters/14-real-time-in-a-federated-world/06-defer-and-stream}
+\input{chapters/14-real-time-in-a-federated-world/07-your-turn}
