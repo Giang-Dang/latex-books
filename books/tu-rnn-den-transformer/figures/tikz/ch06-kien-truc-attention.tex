@@ -1,0 +1,65 @@
+% Kiến trúc của Bahdanau 2015, vẽ theo hình 1 của bài.
+% Encoder hai chiều cho mỗi vị trí nguồn một annotation; decoder ở bước i chấm
+% điểm mọi annotation bằng s_{i-1}, rồi lấy tổng có trọng số làm c_i.
+% Mono-safe: chỉ nét liền, nét đứt, độ dày nét và mức xám.
+\begin{tikzpicture}[
+  >= Stealth,
+  buoc/.style   = {draw, rectangle, minimum width = 7mm, minimum height = 5mm,
+                   inner sep = 0pt},
+  gop/.style    = {draw, rectangle, minimum width = 9mm, minimum height = 15mm,
+                   inner sep = 0pt, black!55, densely dashed},
+  mui/.style    = {->, line width = 0.6pt, black!75},
+  trongso/.style = {->, line width = 0.5pt, black!55},
+  ngucanh/.style = {->, line width = 1.6pt, black},
+  nho/.style    = {font = \scriptsize},
+  ghichu/.style = {font = \footnotesize, black!60},
+]
+
+  % --- bốn vị trí nguồn, mỗi vị trí một cột
+  \foreach \j/\lab in {0/1, 1/2, 2/3, 3/{T_x}} {
+    \pgfmathsetmacro\x{\j*1.6}
+    \node[buoc] (f\j) at (\x, 0.45) {};
+    \node[buoc] (b\j) at (\x, -0.45) {};
+    \node[gop]  (h\j) at (\x, 0) {};
+    \draw[mui] (\x, -1.5) -- (\x, -0.8);
+    \node[nho, anchor = north] at (\x, -1.55) {\(\vect{x}_{\lab}\)};
+  }
+
+  % --- chiều xuôi đọc trái sang phải, chiều ngược đọc phải sang trái
+  \foreach \j [evaluate = \j as \k using int(\j+1)] in {0, 1, 2} {
+    \draw[mui] (f\j) -- (f\k);
+    \draw[mui] (b\k) -- (b\j);
+  }
+
+  \node[ghichu, anchor = west] at (5.45, 0.45) {chiều xuôi};
+  \node[ghichu, anchor = west] at (5.45, -0.45) {chiều ngược};
+  \node[nho, anchor = north] at (2.4, -2.15)
+    {\(\vect{h}_j = [\overrightarrow{\vect{h}}_j ; \overleftarrow{\vect{h}}_j]\)};
+
+  % --- trọng số đồng chỉnh, hội tụ về một nút tổng
+  \node[draw, circle, inner sep = 1pt] (tong) at (2.4, 1.9) {\(\Sigma\)};
+  \foreach \j in {0, 1, 2, 3} {
+    \draw[trongso] (h\j) -- (tong);
+  }
+  \node[nho, anchor = east] at (0.55, 1.35) {\(\alpha_{i1}\)};
+  \node[nho, anchor = west] at (4.3, 1.35) {\(\alpha_{iT_x}\)};
+
+  % --- vector ngữ cảnh của riêng bước i
+  \draw[ngucanh] (tong) -- (5.4, 1.9) node[midway, above, nho] {\(\vect{c}_i\)};
+
+  % --- hai bước decoder
+  \node[buoc, minimum width = 9mm] (truoc) at (6.05, 2.75) {\(\vect{s}_{i-1}\)};
+  \node[buoc, minimum width = 9mm] (sau)   at (7.85, 2.75) {\(\vect{s}_i\)};
+  \draw[mui] (truoc) -- (sau);
+  \draw[mui] (5.4, 1.9) -- (7.85, 1.9) -- (sau);
+  \draw[mui] (sau) -- (7.85, 3.6);
+  \node[nho, anchor = south] at (7.85, 3.65) {\(\vect{y}_i\)};
+
+  % --- điểm chấm bằng trạng thái TRƯỚC bước, không phải sau.
+  % Không gắn nhãn chữ cho mũi tên này: khoảng giữa nút tổng và hộp
+  % \(\vect{s}_{i-1}\) đã có mũi tên \(\vect{c}_i\) chạy qua, và mọi chỗ đặt
+  % chữ thử qua đều đè lên một trong hai. Chú thích hình nói thay.
+  \draw[->, line width = 0.5pt, black!75, densely dashed]
+    (truoc.north west) to[out = 150, in = 55] (tong);
+
+\end{tikzpicture}

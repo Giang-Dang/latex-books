@@ -1,0 +1,75 @@
+\section{Bài dọn dẹp lại cơ chế này}
+\label{sec:ch06-cau-noi}
+
+\index{Luong 2015!ba chỗ khác Bahdanau}%
+Cơ chế ở mục~\ref{sec:ch06-tron-lai} có vài lựa chọn mà bài đưa ra rồi đi tiếp,
+không giải thích và không thử cách khác: chấm điểm bằng \(\vect{s}_{i-1}\) chứ
+không phải \(\vect{s}_i\), chấm bằng một mạng một tầng ẩn chứ không phải bằng
+tích vô hướng, và chấm trên mọi vị trí nguồn chứ không phải một cửa sổ. Một năm
+sau, Luong, Pham và Manning thử hết~\autocite{luong2015effective}.
+
+\begin{bridge}{Luong và cộng sự 2015: cùng cơ chế, dọn lại và đo từng lựa chọn}
+Bài này đặt tên cho hai họ. \emph{Global} là chấm điểm trên mọi vị trí nguồn,
+tức đúng cách bài Bahdanau làm. \emph{Local} là chọn trước một vị trí rồi chỉ
+chấm trong một cửa sổ quanh nó, để khỏi trả chi phí trên cả câu.
+
+Mục 3.1 của họ liệt kê ba chỗ khác bài Bahdanau, và tôi chép lại theo lời họ
+chứ không tự so:
+
+Thứ nhất, họ dùng trạng thái của tầng LSTM trên cùng ở cả hai phía. Bài
+Bahdanau nối trạng thái xuôi và ngược của
+\tn{encoder hai chiều}{bidirectional encoder}, còn decoder thì một chiều và
+không xếp tầng.
+
+Thứ hai, đường tính khác nhau. Của họ là
+\(\vect{h}_t \to \vect{a}_t \to \vect{c}_t \to \tilde{\vect{h}}_t\), tức bước
+trước rồi mới chấm điểm bằng trạng thái \emph{mới}. Của Bahdanau là
+\(\vect{s}_{i-1} \to \vect{a}_i \to \vect{c}_i \to \vect{s}_i\), rồi còn qua
+một tầng deep output và một tầng maxout nữa. Đây đúng là chi tiết mà
+mục~\ref{sec:ch06-tron-lai} bảo bạn đọc chậm.
+
+Thứ ba, Bahdanau chỉ thử một hàm chấm điểm, hàm nối hai vector rồi cho qua một
+tầng ẩn. Luong thử bốn và đo từng cái. Ba hàm dựa trên nội dung, viết theo ký
+hiệu của họ, trong đó \code{h\_t} là trạng thái đích và \code{h\textasciitilde\_s}
+là trạng thái nguồn (bài đặt dấu ngang trên chữ cái sau để phân biệt hai bên):
+
+\begin{minted}{text}
+dot      h_t^T h~_s
+general  h_t^T W_a h~_s
+concat   W_a [h_t ; h~_s]
+\end{minted}
+
+cộng một hàm chỉ nhìn vị trí. Kết quả ở bảng 4 của họ, trên WMT'14 Anh-Đức:
+\code{dot} hợp với global, \code{general} hợp với local. Còn \code{concat}, tức
+họ hàng gần nhất của hàm Bahdanau dùng, là hàm họ không làm cho chạy tốt được.
+Nguyên văn: \enquote{our implementation of concat does not yield good
+performances and more analysis should be done to understand the reason}.
+
+Đó là một câu nên đọc theo cả hai chiều. Nó không nói hàm của Bahdanau tệ, vì
+Bahdanau dùng nó và đạt kết quả tốt. Nó nói rằng lựa chọn hàm chấm điểm là một
+lựa chọn thật, đủ sức làm hỏng một mô hình, và tới 2015 vẫn chưa ai hiểu vì
+sao. Bài kế tiếp trong sách này chọn tích vô hướng, và
+chương~\ref{ch:transformer} có nguyên một dẫn xuất về chỗ tại sao tích vô hướng
+cần chia cho \(\sqrt{\dk}\) mới dùng được.
+
+Bài cũng đo \tn{đồng chỉnh}{alignment} bằng alignment error rate trên dữ liệu
+người làm, và
+đó là nguồn của nhận xét ở mục~\ref{sec:ch06-mo-ma-tran}:
+\tn{điểm đồng chỉnh}{alignment score} và điểm dịch không đi cùng nhau. Kết quả
+tổng: attention đem lại tới 5.0 BLEU so
+với hệ không attention đã có sẵn dropout và phép đảo câu nguồn.
+
+EMNLP 2015, trang 1412-1421~\autocite{luong2015effective}. Tôi đọc trang 1412
+tới 1419; hai trang cuối là bảng câu dịch mẫu và chương này không dùng tới.
+\end{bridge}
+
+\index{Luong 2015!local attention và chi phí}%
+Nửa \emph{local} của bài Luong đáng chú ý vì một lý do không liên quan gì tới
+chất lượng dịch. Nó là phản ứng đầu tiên tôi biết trước cái giá mà bài Bahdanau
+đã tự ghi nhận: chấm điểm mọi vị trí nguồn cho mọi từ đích. Luong giải bằng
+cách không chấm hết, chỉ chấm trong một cửa sổ.
+
+Cách ấy không phải cách còn được dùng hôm nay. Cái còn lại, mười năm sau, là
+giữ nguyên phép chấm điểm đầy đủ và viết lại nó cho hợp với bộ nhớ của phần
+cứng, và chương~\ref{ch:chi-phi-bac-hai} là chương kể chuyện đó. Nhưng năm 2015 thì câu
+hỏi đã được đặt ra rồi, và mục sau là chỗ bài Bahdanau tự đặt nó.

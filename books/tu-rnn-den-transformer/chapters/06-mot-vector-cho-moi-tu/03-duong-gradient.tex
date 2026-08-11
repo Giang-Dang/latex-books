@@ -1,0 +1,198 @@
+\section{Đường gradient ngắn lại bao nhiêu}
+\label{sec:ch06-duong-gradient}
+
+\index{attention!đường gradient thẳng}%
+Phương trình~\eqref{eq:ch06-tong-co-trong-so} nhìn như một mẹo kỹ thuật. Nó
+không phải. Nó đổi hình dạng đồ thị tính toán, và chỗ đổi hiện ra rõ nhất khi
+lấy đạo hàm. Mục này dẫn ra chỗ ấy rồi đo nó.
+
+Câu hỏi cụ thể: mất mát ở một bước đích \(i\) gửi được bao nhiêu tín hiệu về
+tới annotation của vị trí nguồn \(j\)? Viết \(L_i\) cho mất mát ở riêng bước
+\(i\).
+
+\subsection*{Trong mô hình chương trước}
+
+\index{attention!đường gradient của vector cố định}%
+Ở chương~\ref{ch:encoder-decoder}, decoder chỉ nhìn thấy câu nguồn qua đúng một
+vật, là trạng thái cuối cùng của encoder. Trong ký hiệu của chương này,
+\(\vect{v} = \vect{h}_{T}\). Nên mọi đường từ \(L_i\) về \(\vect{h}_j\) đều
+phải đi qua \(\vect{h}_{T}\):
+
+\begin{equation}
+  \pd{L_i}{\vect{h}_j}
+  = \pd{L_i}{\vect{h}_{T}} \prod_{t = j+1}^{T} \jac{\vect{h}_t}{\vect{h}_{t-1}}.
+  \label{eq:ch06-duong-cu}
+\end{equation}
+
+Cái tích ở vế phải là đúng vật mà chương~\ref{ch:phan-tich} đã dành cả chương
+để phân tích. Nó có \(T - j\) thừa số. Nếu \tn{giá trị kỳ dị}{singular value}
+lớn nhất của Jacobi hồi quy nhỏ hơn 1 thì chuẩn của tích giảm theo cấp số nhân
+theo \(T - j\), và đó là \tn{điều kiện đủ}{sufficient condition} cho
+\tn{triệt tiêu gradient}{vanishing gradient} mà
+mục~\ref{sec:ch03-tich-jacobian} chứng minh.
+
+Đọc \eqref{eq:ch06-duong-cu} theo nghĩa thường: từ nguồn càng nằm xa cuối câu
+thì tín hiệu học của nó càng phải đi qua nhiều thừa số. Từ đầu câu chịu nhiều
+nhất.
+
+\subsection*{Trong mô hình chương này}
+
+\index{attention!đạo hàm qua tổng có trọng số}%
+Bây giờ \(\vect{h}_j\) vào thẳng \(\vect{c}_i\) qua
+\eqref{eq:ch06-tong-co-trong-so}. Lấy đạo hàm tổng ấy theo một số hạng của nó:
+
+\begin{equation}
+  \jac{\vect{c}_i}{\vect{h}_j}
+  = \alpha_{ij} \mat{I}
+  + \sum_{k=1}^{T} \vect{h}_k \, \pd{\alpha_{ik}}{\vect{h}_j}\transpose .
+  \label{eq:ch06-duong-moi}
+\end{equation}
+
+Số hạng thứ hai có mặt vì \(\vect{h}_j\) cũng tham gia chấm điểm, nên nó tác
+động lên cả các trọng số. Số hạng \emph{thứ nhất} mới là chỗ cần nhìn:
+\(\alpha_{ij} \mat{I}\). Một số vô hướng nhân ma trận đơn vị. Không có tích
+Jacobi nào, không có thừa số nào phụ thuộc \(T - j\), không có gì để nhân dồn.
+
+Đặt hai vế cạnh nhau thì phát biểu được gọn:
+
+\begin{quote}
+Ở chương trước, đường ngắn nhất từ bước đích \(i\) về annotation \(j\) dài
+\(T - j\) bước. Ở đây nó dài đúng một bước, với mọi \(j\).
+\end{quote}
+
+\index{attention!chỗ dẫn xuất này không nói}%
+Ba chỗ dẫn xuất này \emph{không} nói, và bỏ qua chúng là cách đọc quá tay.
+
+Thứ nhất, đường dài cũ vẫn còn nguyên. Attention không cắt đường nào cả, nó
+\emph{thêm} một đường ngắn vào bên cạnh. Gradient vẫn chảy dọc encoder như cũ;
+chỉ là bây giờ nó có thêm lối khác để đi.
+
+Thứ hai, đường ngắn ấy dẫn tới \emph{annotation}, không dẫn tới từ. Bản thân
+\(\vect{h}_j\) do một mạng hồi quy tính ra, nên nó vẫn phụ thuộc vào cả đoạn
+câu trước nó. Cái đường một bước rút ngắn là đoạn từ bước đích tới annotation,
+không phải toàn bộ đoạn từ bước đích tới từ.
+
+Thứ ba, hệ số \(\alpha_{ij}\) nằm ngay trước \(\mat{I}\). Nếu mô hình đặt
+\(\alpha_{ij}\) gần 0 thì tín hiệu về \(\vect{h}_j\) qua đường ngắn cũng gần 0.
+Khác biệt với chương trước là ở chỗ con số ấy do mô hình chọn theo từng bước,
+chứ không do khoảng cách quyết định.
+
+\subsection*{Đo}
+
+\index{attention!đo tầm với của gradient}%
+Dẫn xuất nói đường ngắn tồn tại. Nó không nói tín hiệu thật sự đi tới được bao
+nhiêu, vì trong \eqref{eq:ch06-duong-cu} còn có hằng số, có phương của vector,
+có đủ thứ mà giấy không nói nổi. Nên đo.
+
+Cách đo: dựng một mô hình mỗi loại, cùng seed nên embedding xuất phát giống hệt
+nhau, lấy mất mát ở riêng một bước đích, \tn{lan truyền ngược}{backpropagation},
+rồi đọc chuẩn của
+gradient tới embedding của từng từ nguồn. Chia mỗi cột cho phần tử lớn nhất của
+chính nó, vì hai kiến trúc có thang khác nhau và cái tôi hỏi là \emph{hình
+dạng}. Một cột phẳng nghĩa là mọi từ nguồn nhận được cùng cỡ tín hiệu; một cột
+dốc nghĩa là đầu câu bị bỏ lại.
+
+\index{attention!đo tại lúc khởi tạo}%
+Đo \textbf{tại lúc khởi tạo, chưa huấn luyện gì cả}. Đây là lựa chọn có chủ ý
+và nó là lựa chọn chương~\ref{ch:lstm} đã làm một lần rồi cho đạo hàm qua
+vòng quay lỗi. Thứ đang kiểm là một tính chất của đồ thị tính toán, tức đường
+nào tồn tại và chúng làm gì với gradient; còn huấn luyện là thứ xảy ra
+\emph{nhờ} các đường ấy. Đo sau khi huấn luyện thì con số trả lời một câu hỏi
+khác, là corpus này đã dạy được mô hình này cái gì.
+
+Và nhờ chi tiết \(\vect{v}_a = 0\) ở cuối mục trước, điểm xuất phát sạch: mọi
+\(\alpha_{ij}\) bằng \(1/T\). Mô hình attention chưa hề ưu tiên vị trí nào.
+
+\begin{measured}{tầm với của gradient theo độ dài câu, chưa huấn luyện}
+\begin{minted}{text}
+source_len  fixed min/max  attention min/max  ratio
+5           0.237278       0.853556           3.6x
+9           0.113478       0.626161           5.5x
+14          0.028660       0.554965           19.4x
+18          0.012126       0.604488           49.9x
+21          0.005483       0.586938           107.0x
+\end{minted}
+
+\(d_h = 32\), mất mát lấy ở bước đích 5, mỗi dòng một câu trong tập test.
+\code{min/max} là chuẩn gradient nhỏ nhất chia cho lớn nhất trên các vị trí
+nguồn: 1.0 là phẳng tuyệt đối.
+
+Đo bằng \code{experiments/ch06\_gradient.py} tại tag \code{ch06}.
+\end{measured}
+
+Cột \code{fixed} là hình dạng của \eqref{eq:ch06-duong-cu} khi vẽ ra. Câu 5
+token còn giữ được 0.237278, câu 21 token còn 0.005483. Hơn bốn mươi ba lần
+suy giảm, và thứ duy nhất thay đổi giữa hai dòng là câu dài thêm mười sáu
+token.
+
+Cột \code{attention} không có xu hướng nào. Nó đi 0.853556, 0.626161, 0.554965,
+0.604488, 0.586938 và cứ đứng quanh đó. Bốn dòng cuối nằm gọn giữa 0.554965 và
+0.626161, và chúng lên xuống không theo chiều nào của độ dài câu.
+
+\index{attention!vì sao tỷ số mới là số đáng đọc}%
+Cột \code{ratio} là chỗ tôi muốn bạn dừng lại. Không phải vì attention phẳng
+hơn, chuyện đó thì \eqref{eq:ch06-duong-moi} đã nói trước rồi. Mà vì khoảng
+cách giữa hai kiến trúc \emph{lớn dần theo độ dài câu}: 3.6 lần ở câu ngắn,
+107.0 lần ở câu dài nhất trong tập test.
+
+Đó là phát biểu sắc hơn \enquote{attention giúp gradient đi xa hơn}. Nó nói
+rằng cái giá của vector cố định không phải một hằng số phải trả, nó là một hàm
+tăng theo độ dài câu. Đặt cạnh hình 4 của bài Cho 2014b ở mục~\ref{sec:ch06-ai-do},
+hai thứ khớp nhau: một đường BLEU tụt theo độ dài câu, và một cơ chế mà tầm với
+của nó co lại theo đúng độ dài ấy.
+
+\subsection*{Nhìn từng từ một}
+
+\index{attention!hình dạng theo vị trí từ nguồn}%
+Bảng trên nén mỗi câu thành một số. Mở một câu ra thì thấy hình dạng.
+
+\begin{measured}{gradient tới từng từ nguồn, câu test dài nhất}
+\begin{minted}{text}
+j   source word   fixed     attention
+1   a             0.0055    0.6493
+2   big           0.0069    0.6951
+3   cat           0.0069    0.7488
+4   carries       0.0130    0.9483
+5   a             0.0134    0.6718
+6   white         0.0162    0.7804
+7   book          0.0229    0.7809
+8   in            0.0336    0.7891
+9   the           0.0481    0.7796
+10  garden        0.0471    0.7056
+11  and           0.0734    0.8282
+12  a             0.0803    0.7465
+13  small         0.1111    0.7344
+14  dog           0.1781    0.8336
+15  carries       0.2186    1.0000
+16  a             0.2391    0.6914
+17  big           0.3990    0.7692
+18  cat           0.3895    0.8106
+19  at            0.6097    0.7753
+20  the           0.7639    0.6209
+21  window        1.0000    0.5869
+\end{minted}
+
+Mỗi cột chia cho phần tử lớn nhất của chính nó. Cùng lần chạy với bảng trên.
+
+Đo bằng \code{experiments/ch06\_gradient.py} tại tag \code{ch06}.
+\end{measured}
+
+Cột \code{fixed} tăng gần như đơn điệu từ trên xuống dưới và chỉ đạt 1.0000 ở
+token cuối cùng, đúng chỗ encoder dừng lại. Từ \code{window} ở vị trí 21 nhận
+được nhiều hơn từ \code{a} ở vị trí 1 khoảng một trăm tám mươi lần. Cả hai đều
+là từ của cùng một câu, và câu ấy chỉ có hai mệnh đề.
+
+Cột \code{attention} không xếp theo vị trí. Giá trị lớn nhất rơi vào vị trí 15,
+tức \code{carries}, nằm giữa câu. Không có lý do sâu xa nào ở đó: mô hình chưa
+huấn luyện, các trọng số bằng nhau hết, và cái còn lại là nhiễu của khởi tạo.
+Điều đáng nói chính là chuyện ấy. Ở cột bên trái, thứ tự các con số do
+\emph{vị trí} quyết định. Ở cột bên phải, vị trí không quyết định gì.
+
+\index{attention!sau khi huấn luyện thì khác}%
+Một chú ý cuối cùng, để không ai mang bảng này đi quá xa. Sau khi huấn luyện,
+cột \code{attention} sẽ \emph{không} còn phẳng. Mô hình học được cách dồn
+\(\alpha_{ij}\) vào một hai vị trí, nên gradient cũng dồn theo, và
+mục~\ref{sec:ch06-mo-ma-tran} in ra đúng những trọng số dồn ấy. Chỗ khác nhau
+nằm ở nguyên nhân: ở đây một cột dốc là mô hình đang chọn, còn ở cột
+\code{fixed} một cột dốc là khoảng cách đang áp đặt. Hai thứ trông giống nhau
+trên biểu đồ và không giống nhau chút nào.

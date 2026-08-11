@@ -1,0 +1,172 @@
+\section{Ai đo được chỗ thắt}
+\label{sec:ch06-ai-do}
+
+\index{chỗ thắt!ai đo được}%
+Chương~\ref{ch:encoder-decoder} kết thúc bằng một chuyện chưa xong. Bản kể quen
+thuộc nói encoder-decoder hỏng ở câu dài, và chương ấy chỉ ra rằng bài của
+Sutskever và cộng sự nói ngược lại ở năm chỗ khác nhau. Nhưng \tn{chỗ
+thắt}{bottleneck} thì có thật, chương ấy đo được nó, nên câu hỏi còn lại là ai
+đo được nó \emph{trước}, trên một mô hình thật, ở quy mô thật.
+
+Câu trả lời là Cho và cộng sự, trong bài SSST-8 năm 2014 mà
+mục~\ref{sec:ch05-cau-noi} gọi là bài 2014b~\autocite{cho2014properties}. Chương
+trước mới đọc tóm tắt của nó và nói thẳng ra là chỉ đọc tóm tắt. Phiên này đọc
+hết, và phần thân bài đắt hơn tóm tắt nhiều.
+
+\subsection*{Một cái bẫy công cụ, kể ra vì suýt hỏng cả mục này}
+
+\index{đọc bài báo!số trang công cụ báo sai}%
+Tôi tải hai bản, bản arXiv:1409.1259v2 và bản của ACL Anthology. Lệnh
+\code{file} báo cả hai đều \emph{sáu} trang, và lần trích đầu tiên của tôi cũng
+ra sáu trang, đứt giữa câu ở \enquote{In fact, if we limit the lengths of both
+the source}. Tôi suýt viết mục này với sáu trang ấy.
+
+Cây trang của hai file bị chẻ làm hai nhánh, và đếm số \code{/Type /Page} trong
+byte thô thì ra chín. Ba trang bị bỏ sót chứa hình 4, hình 5, hình 6, toàn bộ
+mục 5.2 và phần kết luận. Nói cách khác, đúng phần mà chương này đi tìm.
+
+Bài học không phải về định dạng PDF. Nó là: một công cụ báo cho bạn kích thước
+của thứ bạn đang đọc thì con số ấy cũng là một phép đo, và phép đo nào cũng có
+thể sai. Cách kiểm rẻ nhất là kiểm bằng nội dung, tức đọc câu cuối cùng của
+trang cuối cùng và hỏi nó có phải một câu kết thúc không.
+
+\subsection*{Hai bảng và hai hình}
+
+\index{Cho 2014b!số đo theo độ dài câu}%
+Bài huấn luyện hai mô hình trên WMT'14 Anh-Pháp, chỉ lấy cặp câu mà cả hai phía
+dài tối đa 30 từ, \tn{từ điển}{vocabulary} 30 nghìn từ thường gặp nhất mỗi phía.
+Một mô hình là RNN Encoder-Decoder của Cho 2014a, tức một
+\tn{mạng hồi quy}{recurrent neural network}, viết tắt là RNN, ở cả hai đầu; một
+là kiến trúc tích chập đệ quy có cổng của chính bài. Đối chứng là Moses, một hệ
+dịch thống kê theo cụm từ.
+
+Bảng 1 của bài, điểm Bilingual Evaluation Understudy, viết tắt là BLEU, trên
+tập test, cắt lấy phần chương này dùng:
+
+\begin{minted}{text}
+                  moi do dai      cau 10-20 tu
+RNNenc  toan bo     13.92            20.99
+Moses   toan bo     33.30            32.00
+RNNenc  khong UNK   23.45            27.03
+Moses   khong UNK   35.63            35.40
+\end{minted}
+
+Đọc theo hàng thì thấy khoảng cách giữa hai hệ co lại rất mạnh khi giới hạn độ
+dài câu: trên toàn bộ tập test, Moses hơn RNNenc 19.38 điểm; trên riêng câu 10
+tới 20 từ, còn 11.01. Bỏ luôn các câu chứa từ \tn{ngoài từ điển}{out-of-vocabulary}
+thì còn 8.37. Và bài siết thêm một nấc nữa trong phần chữ, ở câu mà tôi cho là
+câu đắt nhất của cả bài: giới hạn cả câu nguồn lẫn bản dịch tham chiếu trong
+khoảng 10 tới 20 từ \emph{và} bỏ mọi câu có từ ngoài từ điển, thì hai hệ được
+27.81 và 33.08.
+
+Hình 4(a) vẽ BLEU của RNNenc theo độ dài câu, làm trơn bằng cửa sổ 10. Đường
+lên tới đỉnh khoảng 20 điểm ở quãng câu 10 tới 15 từ, rồi đi xuống, và tới câu
+70 tới 80 từ thì gần chạm 0. Hình 5 vẽ đúng phép đo ấy cho Moses. Đường của
+Moses đi ngang, hơi lên, nằm trong dải 30 tới 35 suốt mọi độ dài.
+
+\index{Cho 2014b!vì sao hai hình phải đọc cùng nhau}%
+Hai hình ấy phải đọc cùng nhau, và đây là chỗ bài này mạnh hơn hẳn một bài chỉ
+báo cáo hình 4. Một mình hình 4 chứng minh được rất ít: câu dài thì khó dịch
+hơn, chuyện đó ai cũng đoán được, và một đường đi xuống có thể chỉ đang đo độ
+khó của bài toán. Hình 5 chặn đường đọc đó lại. Cùng dữ liệu, cùng tập test,
+cùng cách chấm điểm, một hệ không dùng mạng nơ-ron: đường của nó không đi xuống.
+Vậy cái đi xuống trong hình 4 là tính chất của \emph{kiến trúc}, không phải của
+bài toán.
+
+Cả ba hình đều là hình vẽ và không có bảng số nào đứng sau. Nên những con số
+tôi vừa đưa ra khi mô tả chúng, đỉnh khoảng 20 và dải 30 tới 35, là số đọc bằng
+mắt trên trục và chỉ dùng để nói hình dạng; đừng trích lại chúng như số của bài.
+Số của bài trong phần độ dài câu chỉ có hai, 27.81 và 33.08, và chúng là hai
+con số duy nhất ở đó được viết thành chữ.
+
+\subsection*{Phản biện hiển nhiên, và câu bài dùng để chặn nó}
+
+\index{Cho 2014b!chặn phản biện về độ dài huấn luyện}%
+Mô hình huấn luyện trên câu tối đa 30 từ, rồi bị đem đo trên câu 70 từ. Phản
+biện tự đến: nó có bao giờ thấy câu dài thế đâu mà đòi nó dịch được. Nếu đúng
+vậy thì hình 4 đo trí nhớ của tập huấn luyện chứ không đo chỗ thắt.
+
+Bài viết một câu ngắn ngay sau đó: \enquote{Note that we observed a similar
+trend even when we used sentences of up to 50 words to train these models}.
+Huấn luyện lại với câu tới 50 từ, xu hướng vẫn thế. Một câu, không có bảng đi
+kèm, và nó đóng lại đúng lối thoát dễ chịu nhất.
+
+Tôi để ý câu này vì đó là kiểu câu chỉ có ở người đã tự đặt câu hỏi ấy cho
+mình. Nó không làm bài đẹp hơn và không ai bắt họ chạy thêm lần ấy.
+
+\subsection*{Hai cách đo cùng một thứ}
+
+\index{chỗ thắt!hai cách đo}%
+Đặt cạnh nhau thì chương~\ref{ch:encoder-decoder} và bài 2014b đo cùng một
+chuyện bằng hai cái núm ngược nhau. Bài 2014b giữ nguyên mô hình và kéo dài câu.
+Chương trước giữ nguyên câu và bóp hẹp \tn{vector ngữ cảnh}{context vector}. Cả
+hai cách đều là cách thay đổi tỷ lệ giữa lượng thông tin phải đi qua và bề rộng
+chỗ nó đi qua, và mục~\ref{sec:ch05-con-lai-gi} đã phát biểu chỗ thắt đúng như
+một tỷ lệ chứ không như một tính chất của kiến trúc.
+
+Điều đó cũng nói vì sao hai bài báo không đá nhau. Sutskever và cộng sự chạy
+với 8000 số thực cho một câu và không chạm vào chỗ thắt: bốn tầng, mỗi tầng một
+nghìn cell, và \tn{ô nhớ}{memory cell} Long Short-Term Memory, viết tắt là
+LSTM, mang hai trạng thái. Bài 2014b chạy RNNenc một tầng
+một nghìn đơn vị có cổng, mà đơn vị có cổng chỉ mang một trạng thái, nên vector
+của nó là một nghìn số. Ít hơn tám lần, và chạm.
+
+\subsection*{Bài Bahdanau phỏng đoán chứ không đo}
+
+\index{Bahdanau 2015!phỏng đoán chứ không đo}%
+Chỗ này đáng cẩn thận, vì rất dễ gán cho bài chính của chương một việc mà nó
+không làm. Tóm tắt của nó viết:
+
+\begin{quote}
+\enquote{we conjecture that the use of a fixed-length vector is a bottleneck in
+improving the performance of this basic encoder-decoder architecture}
+\end{quote}
+
+\enquote{Conjecture} là chữ của bài. Bài này không thu hẹp vector để xem chuyện
+gì xảy ra, cũng không vẽ đường BLEU theo độ dài cho một mô hình vector cố định
+của riêng nó ở phần nêu vấn đề. Nó dẫn bằng chứng của người khác. Phần kết
+luận, mục 7, ghi rõ hai nguồn: bài 2014b và Pouget-Abadie và cộng
+sự~\autocite{pougetabadie2014overcoming}.
+
+Cả hai đều là bài workshop ở SSST-8, cùng nhóm, cùng năm. Nghĩa là toàn bộ nền
+thực nghiệm cho câu \enquote{vector cố định là một chỗ thắt}, tại thời điểm bài
+2015 được viết, gồm hai bài workshop. Tôi nói ra không phải để hạ chúng xuống,
+mà vì cách kể thông thường làm ngược lại: nó gán phép đo cho bài nổi tiếng và
+để hai bài workshop chìm đi.
+
+\subsection*{Chỗ bài 2014b tự chỉ sai người}
+
+\index{Cho 2014b!hai câu chỉ vào hai chỗ khác nhau}%
+Còn một chuyện nữa trong bài 2014b, và nó chỉ hiện ra khi đọc cả ba trang cuối.
+
+Mục 5.1 chỉ vào vector:
+
+\begin{quote}
+\enquote{The most obvious explanatory hypothesis is that the fixed-length
+vector representation does not have enough capacity to encode a long sentence
+with complicated structure and meaning.}
+\end{quote}
+
+Còn kết luận, mục 6, chỉ vào chỗ khác:
+
+\begin{quote}
+\enquote{Despite the radical difference in the architecture between RNN and
+grConv which were used as an encoder, both models suffer from the curse of
+sentence length. This suggests that it may be due to the lack of
+representational power in the decoder.}
+\end{quote}
+
+Hai encoder rất khác nhau mà hỏng như nhau, nên phần đáng ngờ là phần dùng
+chung, tức decoder. Lập luận ấy chặt chẽ và nó chỉ nhầm người. Bài 2015 vá ở
+phía encoder: giữ lại mọi trạng thái encoder và cho decoder chọn giữa chúng.
+Decoder không hề được nới rộng thêm chút nào.
+
+Chỗ này đáng đọc kỹ hơn là đáng cười. Ba trong bốn tác giả của bài 2014b, Cho,
+Bahdanau và Bengio, là tác giả của bài 2015, và khoảng cách giữa hai bài là vài
+tháng. Nghĩa là cùng một nhóm người, trong cùng một mùa, viết ra một suy đoán
+rồi tìm ra lời giải nằm ở chỗ khác. Suy đoán ấy không phải suy đoán cẩu thả:
+nó đúng theo dữ liệu họ có, và cái nó thiếu là một khả năng thứ ba mà chưa ai
+nghĩ tới lúc ấy, rằng có thể bỏ hẳn ràng buộc bề rộng cố định đi thay vì chọn
+xem nới bên nào.
+
+Mục sau là cách bỏ.

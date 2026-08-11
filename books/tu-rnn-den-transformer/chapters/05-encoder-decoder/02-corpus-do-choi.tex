@@ -7,13 +7,14 @@ luyện trên mười hai triệu cặp \tn{câu nguồn}{source sentence} và
 \tn{câu đích}{target sentence} của WMT'14 Anh-Pháp, mười ngày trên một máy tám
 GPU.
 Sách này hứa với bạn rằng mọi thí nghiệm chạy xong trên một laptop không có card
-đồ hoạ, nên tôi không đi theo đường đó được, và nói rõ ngay từ đầu rằng cái tôi
+đồ họa, nên tôi không đi theo đường đó được, và nói rõ ngay từ đầu rằng cái tôi
 dựng là đồ chơi.
 
 Ba ràng buộc phải thoả cùng lúc, và không tập dữ liệu công khai nào thoả cả ba.
 Nó phải chạy xong trên CPU trong ngân sách của sách. Nó phải tái lập được từ một
 seed, không tải gì, để \code{verify.py} chạy được trên máy người khác. Và hai
-thứ tiếng phải khác thứ tự từ đủ nhiều, vì chương~\ref{ch:dong-chinh} cần một
+thứ tiếng phải khác thứ tự từ đủ nhiều, vì
+chương~\ref{ch:mot-vector-cho-moi-tu} cần một
 \tn{ma trận đồng chỉnh}{alignment matrix} có chỗ bắt chéo chứ không phải một
 đường chéo.
 
@@ -36,8 +37,8 @@ a  new  lamp   ->  một cái  đèn  mới
 
 Một mô hình dịch corpus này bằng cách chép vị trí sang vị trí sẽ sai tính từ ở
 mọi cụm có tính từ. Và đó là chỗ đáng giá: một ma trận đồng chỉnh đường chéo
-không giải được corpus này, nên một mô hình đồng chỉnh được nó thì đã học được
-cái gì đó thật.
+không giải được corpus này, nên một mô hình học được phép
+\tn{đồng chỉnh}{alignment} của nó thì đã học được cái gì đó thật.
 
 Văn phạm sinh câu một hoặc hai mệnh đề, mỗi mệnh đề là chủ ngữ, động từ, tân
 ngữ, cộng một cụm chỉ nơi chốn tùy chọn. Mỗi động từ tiếng Anh đúng một token,

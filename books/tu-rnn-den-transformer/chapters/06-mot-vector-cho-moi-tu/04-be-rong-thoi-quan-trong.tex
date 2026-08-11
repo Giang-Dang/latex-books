@@ -1,0 +1,125 @@
+\section{Chạy lại bảng bề rộng}
+\label{sec:ch06-be-rong}
+
+\index{chỗ thắt!đo lại với attention}%
+Mục~\ref{sec:ch05-bop-vector} bóp \tn{vector ngữ cảnh}{context vector} lại và
+xem mô hình hỏng ở đâu. Bảng ấy là phép đo trung tâm của chương trước, nên phép
+kiểm thẳng thắn nhất cho chương này là chạy lại đúng nó với cơ chế mới lắp vào.
+
+Mọi thứ giữ nguyên: cùng corpus, cùng cách chia tập, cùng seed, cùng batch,
+cùng 14 epoch, cùng learning rate, cùng \tn{đảo câu nguồn}{source reversal},
+cùng giải mã tham lam, cùng cách chấm \tn{khớp đúng cả câu}{exact match}. Chỉ
+đổi kiến trúc.
+
+\begin{measured}{bảng bề rộng của chương trước, có và không có attention}
+\begin{minted}{text}
+d_hidden  model      params   loss     exact    short    long
+16        fixed      9173     0.8733   0.0033   0.0068   0.0000
+16        attention  15413    0.5933   0.0600   0.1216   0.0000
+32        fixed      20133    0.5584   0.1433   0.2905   0.0000
+32        attention  40805    0.0088   1.0000   1.0000   1.0000
+64        fixed      54341    0.1429   0.5200   0.9797   0.0724
+64        attention  128453   0.0019   0.9967   1.0000   0.9934
+
+short = source of at most 11 tokens (148 of 300), long = the rest
+\end{minted}
+
+6000 cặp huấn luyện, 300 cặp test, một seed mỗi dòng.
+
+Đo bằng \code{experiments/ch06\_width.py} tại tag \code{ch06}.
+\end{measured}
+
+\index{đo lường!tái lập số của chương trước}%
+Trước khi đọc kết quả, hãy đọc phần không phải kết quả. Ba dòng \code{fixed}
+trùng khớp từng chữ số với bảng chương~\ref{ch:encoder-decoder}, kể cả cột
+\code{loss}: 0.8733 và 0.0033 ở bề rộng 16, 0.5584 và 0.1433 ở 32, 0.1429 và
+0.5200 ở 64. Đó không phải trùng hợp và cũng không phải mục tiêu tự thân. Nó là
+điều kiện để hai bảng đặt cạnh nhau được. Nếu ba dòng ấy lệch đi, dù chỉ ở chữ
+số thứ tư, thì mọi chênh lệch trong bảng này còn có thể là chênh lệch của môi
+trường chạy.
+
+\subsection*{Chỗ nhảy nằm giữa 16 và 32}
+
+\index{attention!ngưỡng bề rộng}%
+Ở bề rộng 32, mô hình vector cố định được 0.1433 và mô hình attention được
+1.0000. Không phải cao hơn: đúng. Ba trăm câu test, không sai câu nào. Cùng
+corpus, cùng số bước cập nhật, cùng seed.
+
+Cột \code{long} nói cùng chuyện gắt hơn. Ở bề rộng 32, mô hình vector cố định
+được \emph{tròn không} trên câu dài, không sót câu nào, trong khi câu ngắn của
+nó đã lên 0.2905. Đó là hình dạng mà mục~\ref{sec:ch05-bop-vector} đã mô tả:
+vector hẹp chứa được câu ngắn trước. Mô hình attention ở cùng bề rộng ấy được
+1.0000 trên cả hai cột.
+
+\subsection*{Nhưng bề rộng vẫn quan trọng, chỉ là quan trọng theo kiểu khác}
+
+\index{attention!chỗ attention không cứu được}%
+Đọc bảng từ dưới lên thì dễ kết luận quá tay, nên tôi đọc từ trên xuống.
+
+Ở bề rộng 16, mô hình attention được 0.0600. Cao hơn 0.0033 của mô hình vector
+cố định gần hai mươi lần, và vẫn là một mô hình không dịch được. Cột
+\code{long} của nó tròn 0. Tôi đo thêm hai bề rộng nữa ngoài bảng, 4 và 8, và
+cả hai đều cho 0.0000.
+
+Nghĩa là attention \emph{không} làm bề rộng hết quan trọng. Nó làm bề rộng hết
+quan trọng \emph{đối với việc chứa câu nguồn}. Trạng thái decoder vẫn phải đủ
+rộng để làm việc của nó, tức nhớ mình đang viết dở cái gì và sinh ra từ tiếp
+theo, và dưới một ngưỡng nào đó thì nó không đủ rộng cho việc ấy dù có nhìn
+thấy cả câu nguồn.
+
+Chỗ đứt gãy giữa 16 và 32 sắc một cách khó chịu: 0.0600 rồi 1.0000, không có gì
+ở giữa. Bảng này không nói được vì sao nó sắc đến thế, vì nó chỉ có hai điểm ở
+hai bên. Bài tập cuối chương có một câu hỏi về chỗ đó.
+
+\subsection*{Đếm tham số trước khi mừng}
+
+\index{đo lường!so hai kiến trúc phải đếm tham số}%
+Ở cùng \(d_h\), mô hình attention lớn hơn. Ở bề rộng 32 nó có 40805 tham số so
+với 20133, tức gấp đôi. Nên dòng 32 so với dòng 32 không phải một phép so công
+bằng, và nếu chương dừng ở đó thì nó đang trình bày \enquote{to hơn thì tốt
+hơn} dưới cái tên attention.
+
+Phép so sống sót được phản biện ấy nằm ở hai dòng \emph{không} cùng bề rộng.
+Mô hình attention ở \(d_h = 32\) mang 40805 tham số và được 1.0000. Mô hình
+vector cố định ở \(d_h = 128\), mà chương trước đo được, mang 171909 tham số và
+được 0.8533 với câu dài ở 0.7105. Ít hơn bốn phẩy hai lần tham số, cao hơn ở
+cột \code{exact} và cột \code{long}, và bằng nhau ở cột \code{short} vì cả hai
+đều đã kịch trần 1.0000 ở đó.
+
+Đó là phát biểu tôi thấy đứng vững: trên corpus này, một mô hình attention nhỏ
+dịch đúng nhiều hơn một mô hình vector cố định lớn gấp bốn lần nó. Không phải
+nhờ nó lớn, vì nó nhỏ hơn.
+
+\subsection*{Một dòng đi xuống, và nó không phải bug}
+
+\index{đo lường!chênh lệch nhỏ hơn độ tản seed}%
+Ở bề rộng 64, mô hình attention được 0.9967 trong khi ở bề rộng 32 nó được
+1.0000. Rộng hơn mà thấp hơn.
+
+Chênh lệch ấy là \emph{một câu} trong ba trăm. Và mục~\ref{sec:ch05-giai-ma} đã
+đo được rằng ba mô hình chỉ khác nhau ở seed cho 0.8733, 0.6767 và 0.8700, tức
+tản gần hai mươi điểm. Một câu trên ba trăm nằm sâu dưới mức ấy. Bảng này không
+phân biệt được 0.9967 với 1.0000 và không nên cố.
+
+Cái nó phân biệt được là 0.1433 với 1.0000, và 0.0724 với 0.9934. Chọn số lần
+lặp theo cỡ hiệu ứng, như chương trước đã nói: hiệu ứng ở đây là cả quãng từ
+gần không tới tròn một, nên một seed mỗi dòng là đủ, đúng lý do một seed mỗi
+dòng đủ cho bảng chương trước.
+
+\subsection*{Bảng này chưa nói gì về bài báo}
+
+\index{corpus đồ chơi!giới hạn của bảng bề rộng}%
+Văn phạm sinh ra corpus này hữu hạn, \tn{từ điển}{vocabulary} đóng, không có từ
+\tn{ngoài từ điển}{out-of-vocabulary}, không có nhập nhằng, câu dài nhất 23
+token. Bài báo chạy WMT'14 Anh-Pháp với 348 triệu từ và câu tới 50 từ. Một mô
+hình đạt 1.0000 ở đây nghĩa là nó học thuộc được một văn phạm nhỏ, không nghĩa
+là nó dịch được.
+
+Cái bảng này kiểm là \emph{lập luận}: nếu chỗ thắt là tỷ lệ giữa lượng thông
+tin và bề rộng chỗ nó đi qua, thì bỏ ràng buộc bề rộng đi phải làm mô hình hết
+hỏng theo độ dài câu. Lập luận ấy kiểm được ở mọi quy mô mà chỗ thắt còn có
+nghĩa, và ở quy mô này nó đúng.
+
+Ở quy mô của bài, cùng phép so cho cùng chiều: RNNsearch-50 được BLEU 26.75 so
+với 17.82 của RNNencdec-50, trên cùng dữ liệu và cùng quy trình huấn luyện.
+Mục~\ref{sec:ch06-con-lai-gi} đọc kỹ bảng ấy.

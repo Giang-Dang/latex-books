@@ -1,0 +1,164 @@
+\section{Encoder đọc cả hai chiều}
+\label{sec:ch06-hai-chieu}
+
+\index{encoder hai chiều!lý do bài đưa ra}%
+Còn một nửa của kiến trúc tôi chưa đụng tới. Mục 3.2 của bài thay encoder một
+chiều bằng \tn{encoder hai chiều}{bidirectional encoder}: hai mạng hồi quy,
+một đọc câu từ trái sang phải, một đọc từ phải sang trái, và annotation của vị
+trí \(j\) là hai trạng thái nối lại,
+\(\vect{h}_j = [\overrightarrow{\vect{h}}_j ; \overleftarrow{\vect{h}}_j]\),
+tức phương trình (7). Ý tưởng gốc là của Schuster và
+Paliwal~\autocite{schuster1997bidirectional}.
+
+Lý do bài đưa ra là ngữ nghĩa: họ muốn annotation tóm tắt \enquote{not only the
+preceding words, but also the following words}. Với encoder một chiều,
+\(\vect{h}_j\) chỉ biết đoạn câu từ đầu tới \(j\), nên nó không thể biết từ
+\(j\) sắp được dùng làm gì.
+
+Mục này hỏi hai chuyện, và cả hai đều là chuyện đo được.
+
+\subsection*{Câu hỏi thứ nhất: phép đảo câu nguồn còn tác dụng không}
+
+\index{đảo câu nguồn!sau khi có attention}%
+Mục~\ref{sec:ch05-dao-cau-nguon} đo được rằng đảo câu nguồn đem lại 0.1789 điểm
+khớp đúng cả câu, và toàn bộ phần lợi ấy rơi vào câu dài. Lập luận của
+Sutskever và cộng sự là lập luận về khoảng cách: đảo câu làm những từ nguồn đầu
+tiên nằm sát những từ đích đầu tiên, nên rút ngắn quãng ngắn nhất mà tín hiệu
+lỗi phải đi.
+
+Lập luận ấy đưa ra một dự đoán về chương này, và dự đoán ấy sai được. Nếu phép
+đảo có tác dụng vì nó rút ngắn một đường dài, thì trong một mô hình mà đường
+dài đã được thay bằng đường một bước, nó phải hết tác dụng.
+
+\subsection*{Câu hỏi thứ hai: chiều ngược đáng giá bao nhiêu}
+
+\index{encoder hai chiều!phép cắt bỏ chiều ngược}%
+Bỏ mạng đọc ngược đi, giữ nguyên mọi thứ khác. Vẫn một annotation cho mỗi vị
+trí, vẫn tổng có trọng số, vẫn phương trình~\eqref{eq:ch06-tong-co-trong-so}.
+Chỉ là annotation không còn biết gì về đoạn câu phía sau nó. Đây không phải
+quay lại mô hình chương trước; nó là mô hình chương này với đúng một bộ phận bị
+tháo.
+
+\begin{measured}{encoder hai chiều, \tn{phép cắt bỏ}{ablation}, và một dòng đối chứng}
+\begin{minted}{text}
+encoder        d_h  source    params  exact   short   long
+bidirectional  32   raw       40805   0.9967  1.0000  0.9934
+bidirectional  32   reversed  40805   1.0000  1.0000  1.0000
+forward only   32   raw       27365   0.9500  0.9932  0.9079
+forward only   32   reversed  27365   0.8667  0.9932  0.7434
+forward only   42   raw       41495   1.0000  1.0000  1.0000
+\end{minted}
+
+Cùng thiết lập với các bảng trước, giải mã tham lam, một seed mỗi dòng.
+
+Đo bằng \code{experiments/ch06\_encoder.py} tại tag \code{ch06}.
+\end{measured}
+
+\index{đảo câu nguồn!hết tác dụng}%
+Câu hỏi thứ nhất trả lời xong ở hai dòng đầu. Với encoder hai chiều, đảo câu
+nguồn đem lại 0.0033, tức một câu trong ba trăm. Chương trước đo được 0.1789
+trung bình trên ba seed cho cùng phép biến đổi ấy trên cùng corpus ấy.
+
+Dự đoán đúng, và nó đúng theo cách đáng tin nhất: nó là dự đoán rút ra từ lời
+giải thích của \emph{bài trước}, kiểm bằng mô hình của \emph{bài này}. Nếu phép
+đảo vẫn đem lại mười mấy điểm ở đây thì lời giải thích theo khoảng cách của
+Sutskever và cộng sự đã sai, dù con số của họ vẫn đúng.
+
+\subsection*{Dòng cuối là dòng đổi câu trả lời}
+
+\index{encoder hai chiều!chỗ tôi suýt kết luận sai}%
+Câu hỏi thứ hai thì tôi suýt trả lời sai, và tôi kể lại vì cái sai ấy rẻ tiền
+và ai cũng mắc được.
+
+Đọc bốn dòng đầu thì rõ ràng: hai chiều được 0.9967, một chiều được 0.9500, và
+chỗ mất nằm ở câu dài, 0.9934 xuống 0.9079. Kết luận có sẵn: chiều ngược đáng
+giá gần năm điểm. Tôi đã viết câu đó ra rồi.
+
+Rồi tôi đếm tham số. Mô hình hai chiều có 40805, mô hình một chiều có 27365.
+Bỏ một mạng hồi quy đi thì mất một phần ba số tham số, nên phép so ấy trộn lẫn
+\enquote{đọc được cả hai phía} với \enquote{to hơn}. Đúng cái bẫy mà
+mục~\ref{sec:ch06-be-rong} vừa phải tránh một lần.
+
+Dòng cuối là phép đối chứng. Encoder một chiều ở \(d_h = 42\) mang 41495 tham
+số, hơn mô hình hai chiều 1.7 phần trăm, và nó được \textbf{1.0000}. Trên cả ba
+cột.
+
+Vậy trên corpus này, chiều ngược không đáng đồng nào. Phần hơn trong bốn dòng
+đầu là phần tham số.
+
+\subsection*{Chuyện này bác corpus, không bác bài báo}
+
+\index{corpus đồ chơi!không có chỗ cho ngữ cảnh phải}%
+Đây là chỗ dễ đọc sai nhất trong cả chương, nên tôi nói thẳng: dòng cuối
+\emph{không} phải bằng chứng rằng mục 3.2 của bài sai.
+
+Lý do bài đưa ra cho chiều ngược là ngữ nghĩa: cần biết các từ đứng sau để hiểu
+từ đang xét. Mà văn phạm sinh ra corpus này không có một chỗ nhập nhằng nào.
+Mục~\ref{sec:ch05-corpus} đã liệt kê điều đó ngay từ chương trước, trong danh
+sách những thứ corpus không mô hình hóa: không hình thái, không hợp giống số,
+không nhập nhằng, không từ hiếm. Mỗi từ tiếng Anh ở đây ánh xạ sang đúng một
+thứ bất kể ngữ cảnh phải là gì.
+
+Một corpus không có nhập nhằng thì không thể cho thấy công dụng của một cơ chế
+sinh ra để gỡ nhập nhằng. Phép đo này đo corpus chứ không đo bài báo, và cách
+duy nhất để nó nói được điều gì về bài báo là chạy trên dữ liệu có tính chất mà
+cơ chế nhắm tới. Bài tập tier ba có một câu hỏi dựng đúng thí nghiệm ấy.
+
+Cái tôi rút ra được, và nó vẫn đáng giá, là một chuyện về phương pháp: một phép
+cắt bỏ không kèm dòng đối chứng về tham số thì đo được rất ít. Bốn dòng đầu tự
+chúng trông thuyết phục.
+
+\subsection*{Một chỗ tôi chưa giải thích được}
+
+\index{encoder hai chiều!đảo câu làm hại encoder một chiều}%
+Dòng thứ tư của bảng làm tôi khó chịu và tôi để nó lại như một quan sát.
+
+Với encoder một chiều, đảo câu nguồn \emph{làm hại}: 0.9500 xuống 0.8667. Chỗ
+mất nằm gọn ở câu dài, 0.9079 xuống 0.7434, còn câu ngắn đứng nguyên 0.9932 ở
+cả hai dòng.
+
+Tôi có vài cách giải thích nghe hợp lý và không kiểm được cái nào trong ngân
+sách chương này, nên tôi không in cái nào ra. Điều đáng nói là chiều của nó:
+với encoder hai chiều phép đảo gần như vô hại, với encoder một chiều nó có hại,
+nên tương tác giữa hai thứ ấy là thật chứ không phải nhiễu. Bài tập cuối chương
+hỏi lại câu này.
+
+\subsection*{Cả hai chiều dừng ở đâu, và vì sao chuyện đó dễ sai}
+
+\index{encoder hai chiều!chỗ dừng ở token đệm}%
+Một chi tiết cài đặt, vì nó thuộc loại hỏng mà không có gì báo.
+
+Trong một batch, câu ngắn được đệm cho bằng câu dài nhất. Chiều xuôi thì
+chương~\ref{ch:encoder-decoder} đã xử lý: đóng băng trạng thái ở mọi vị trí
+đệm, nên câu ngắn kết thúc ở trạng thái tại từ cuối của chính nó. Chiều ngược
+gặp đúng bài toán ấy ở đầu kia. Chạy nó từ cột cuối cùng của batch thì mọi câu
+ngắn bắt đầu bằng một loạt bước trên token đệm.
+
+\begin{minted}{python}
+ahead = self._scan(self.ahead, embedded, live, range(steps))
+if self.back is None:
+    return torch.stack(ahead), mask
+
+backwards = reversed(range(steps))
+back = self._scan(self.back, embedded, live, backwards)
+stacked = [torch.stack(ahead), torch.stack(back)]
+return torch.cat(stacked, dim=-1), mask
+\end{minted}
+
+Cùng một hàm \code{\_scan} chạy cho cả hai chiều, khác nhau đúng thứ tự duyệt,
+và phép đóng băng nằm bên trong nó:
+
+\begin{minted}{python}
+for t in order:
+    c_next, h_next = layer.step_projected(projected[t], state)
+    state = (
+        live[t] * c_next + (1.0 - live[t]) * state[0],
+        live[t] * h_next + (1.0 - live[t]) * state[1],
+    )
+    out[t] = state[1]
+\end{minted}
+
+Nhờ phép đóng băng ấy mà chiều ngược tự bắt đầu ở từ cuối của mỗi câu: ở các
+vị trí đệm nó giữ nguyên trạng thái khởi tạo, nên bước cập nhật thật đầu tiên
+của nó rơi đúng vào token thật cuối cùng. Repo có test khẳng định annotation
+của một câu không đổi khi đem câu ấy xếp chung batch với câu dài hơn.

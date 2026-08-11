@@ -1,0 +1,42 @@
+% Scope (SPEC table of contents): Bahdanau, Cho, Bengio 2015. Chỗ thắt được đo trước khi vá; additive attention; dẫn xuất đường gradient thẳng từ mọi bước nguồn tới mọi bước đích; encoder hai chiều; ma trận đồng chỉnh Anh-Việt tự đo; cầu nối Luong 2015; gap: attention vẫn là phụ kiện gắn lên một mạng hồi quy.
+\chapter{Một vector cho mỗi từ}
+\label{ch:mot-vector-cho-moi-tu}
+
+Chương~\ref{ch:encoder-decoder} dừng ở một câu hỏi mà tôi thấy càng nghĩ càng
+kỳ. Encoder đọc \tn{câu nguồn}{source sentence} dài \(T\) token và tính ra \(T\)
+\tn{trạng thái ẩn}{hidden state}, mỗi token một cái. Rồi nó giữ đúng cái cuối
+cùng và vứt \(T - 1\) cái còn lại. Không phải vì chúng sai, cũng không phải vì
+chúng đắt: chúng đã được tính rồi, đã nằm sẵn trong bộ nhớ rồi, và kiến trúc
+đơn giản là không có chỗ nào để cắm chúng vào.
+
+Bahdanau, Cho và Bengio cắm chúng vào~\autocite{bahdanau2015align}. Giữ cả
+\(T\) cái, và ở mỗi bước sinh từ, cho decoder tự trộn chúng lại thành một vector
+riêng cho bước ấy. Bước thứ nhất trộn một kiểu, bước thứ mười lăm trộn kiểu
+khác. Tên chương là phát biểu gọn nhất của chuyện đó:
+mục~\ref{sec:ch05-mot-vector} của chương trước tên là \enquote{Một vector cho cả
+câu}, và cái thay đổi ở đây đúng bằng khoảng cách giữa hai nhan đề.
+
+Bản tôi đọc là arXiv:1409.0473v7, mười lăm trang, đề ngày 19 tháng 5 năm 2016.
+Trang bìa ghi thẳng \enquote{Published as a conference paper at ICLR 2015}, nên
+chương này không mang món nợ venue mà chương~\ref{ch:phan-tich} và
+chương~\ref{ch:encoder-decoder} đều phải trả. Nhưng con số 2016 trên trang bìa
+là một cái bẫy cùng loại với bài Vaswani: câu chữ trong file này không tự động
+là câu chữ của năm 2015.
+
+Trước khi đọc cơ chế thì phải trả lời một câu mà tôi tưởng đã biết: \emph{ai}
+đo được cái \tn{chỗ thắt}{bottleneck} mà bài này đề nghị vá? Không phải bài
+này, vì tóm tắt của nó dùng chữ \enquote{conjecture}. Cũng không phải bài
+trước, vì chương~\ref{ch:encoder-decoder} đã dành cả một mục để chỉ ra rằng
+Sutskever và cộng sự nói ngược lại ở năm chỗ.
+
+Mục sau là chỗ tìm ra người ấy.
+
+\input{chapters/06-mot-vector-cho-moi-tu/01-ai-do-cho-that}
+\input{chapters/06-mot-vector-cho-moi-tu/02-tron-lai-o-moi-buoc}
+\input{chapters/06-mot-vector-cho-moi-tu/03-duong-gradient}
+\input{chapters/06-mot-vector-cho-moi-tu/04-be-rong-thoi-quan-trong}
+\input{chapters/06-mot-vector-cho-moi-tu/05-encoder-hai-chieu}
+\input{chapters/06-mot-vector-cho-moi-tu/06-mo-ma-tran-ra-xem}
+\input{chapters/06-mot-vector-cho-moi-tu/07-cau-noi}
+\input{chapters/06-mot-vector-cho-moi-tu/08-con-lai-gi}
+\input{chapters/06-mot-vector-cho-moi-tu/09-bai-tap}

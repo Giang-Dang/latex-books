@@ -201,13 +201,26 @@
     # inside 'hoan' and 'thoat' - a blanket search and replace does not have
     # that property, and one pass of it turned 'thoat' into a non-word that only
     # the rebuild caught. Closed syllables are absent on purpose: there the mark
-    # already sits on the nucleus under both conventions.
+    # already sits on the nucleus under both conventions, so 'hoat' and 'thoat'
+    # are correct as they stand. Listing the open syllable 'hoa' catches what
+    # is wrong without touching them, which is the whole reason these are
+    # whole-word keys.
+    #
+    # 'hoa' and 'toa' with the mark on the second vowel were added in the
+    # chapter 06 session, after an audit found the first in two already
+    # drafted chapters and the second in the new one. Decision 41 is stated
+    # for the vowel cluster rather than as a list of words, so those three
+    # sites were wrong before anyone typed them; nothing except this table was
+    # ever going to find them. That is the argument for adding a pair here
+    # whenever one turns up, instead of fixing the site and moving on.
     Spelling = @{
         Enabled = $true
         Preset  = 'en-US'
         Extra   = @{
             'hoà'  = 'hòa'
             'hoá'  = 'hóa'
+            'hoạ'  = 'họa'
+            'toạ'  = 'tọa'
             'khoá' = 'khóa'
             'xoá'  = 'xóa'
             'luỹ'  = 'lũy'

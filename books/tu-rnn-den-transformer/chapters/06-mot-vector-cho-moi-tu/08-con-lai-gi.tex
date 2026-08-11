@@ -1,0 +1,107 @@
+\section{Bài báo giải được gì, và để lại gì}
+\label{sec:ch06-con-lai-gi}
+
+\index{Bahdanau 2015!bài giải được gì}%
+Phát biểu cho gọn: bài bỏ được ràng buộc rằng cả câu nguồn phải đi lọt qua một
+vector bề rộng cố định, và bỏ bằng cách để encoder trả về một vector cho mỗi vị
+trí rồi để decoder tự chọn trộn.
+
+Con số của bài: RNNsearch-50 đạt BLEU 26.75 so với 17.82 của RNNencdec-50 trên
+cùng dữ liệu và cùng quy trình huấn luyện. Trên riêng các câu không chứa từ
+\tn{ngoài từ điển}{out-of-vocabulary}, 34.16 so với 26.71. Bản huấn luyện lâu
+hơn, RNNsearch-50 có dấu sao, đạt 28.45 và 36.15, tức ngang ngửa hệ đối chứng
+Moses ở 33.30 và 35.63 trên cột thứ hai.
+
+Chi tiết tôi thích nhất trong bảng 1 của họ không phải dòng cao nhất.
+RNNsearch-30, tức mô hình attention chỉ huấn luyện trên câu tối đa 30 từ, đạt
+21.50 và vượt RNNencdec-50 ở 17.82, là mô hình vector cố định được huấn luyện
+trên câu dài tới 50 từ. Kiến trúc mới với dữ liệu ngắn hơn vẫn hơn kiến trúc cũ
+với dữ liệu dài hơn.
+
+\subsection*{Cái bài tự nêu là còn thiếu}
+
+\index{Bahdanau 2015!giới hạn bài tự nêu}%
+Phần kết luận nêu đúng một chuyện: xử lý từ hiếm và từ chưa gặp. Cùng món nợ mà
+chương~\ref{ch:encoder-decoder} ghi lại từ bài Sutskever, và nó còn nguyên.
+
+Nhưng chỗ đáng đọc hơn nằm ở mục 6.1, trong phần so sánh với một bài khác, và
+tôi chưa thấy ai trích nó:
+
+\begin{quote}
+\enquote{Our approach, on the other hand, requires computing the annotation
+weight of every word in the source sentence for each word in the translation.
+This drawback is not severe with the task of translation in which most of input
+and output sentences are only 15-40 words. However, this may limit the
+applicability of the proposed scheme to other tasks.}
+\end{quote}
+
+Đọc kỹ ba câu ấy. Câu thứ nhất: cơ chế cần \(T_x \times T_y\) phép chấm điểm
+cho một cặp câu. Câu thứ hai: chuyện đó không nghiêm trọng, vì câu dịch chỉ dài
+15 tới 40 từ. Câu thứ ba: nhưng nó có thể hạn chế việc dùng cơ chế này cho tác
+vụ khác.
+
+Bài \emph{biết} về chi phí bậc hai. Bài gọi nó là một nhược điểm, bằng chữ
+\enquote{drawback} của chính họ. Rồi bài gạt nó đi bằng một lý do hoàn toàn hợp
+lý vào năm 2015: ở quy mô một câu, tích ấy nhỏ.
+
+\index{Bahdanau 2015!lý do gạt bỏ chi phí bậc hai hết đúng}%
+Lý do ấy đúng cho tới khi nó hết đúng, và nó hết đúng vì hai chuyện xảy ra sau
+đó. Chuyện thứ nhất là chương~\ref{ch:transformer}: Vaswani và cộng sự bỏ hẳn
+mạng hồi quy và dùng attention cho \emph{mọi} chỗ, kể cả nối câu nguồn với
+chính nó, nên tích \(T_x \times T_y\) thành \(n^2\) và nó xuất hiện ở mọi tầng
+thay vì một lần. Chuyện thứ hai là ngữ cảnh dài ra: không còn 15 tới 40 từ mà
+là hàng nghìn, rồi hàng trăm nghìn.
+
+Chương~\ref{ch:chi-phi-bac-hai} là chương dành cho đúng câu \enquote{this may
+limit the applicability of the proposed scheme to other tasks} ấy.
+
+Tôi ghi lại chỗ này vì nó là một mẫu đáng nhớ hơn bản thân sự kiện. Bài không
+bỏ sót chi phí; bài cân nhắc và kết luận đúng theo bối cảnh của nó. Cái làm
+kết luận ấy hết đúng không phải một lập luận hay hơn, mà là bối cảnh đổi.
+
+\subsection*{Cái bài không nêu, và chương này đo được}
+
+\index{attention!chỗ attention không cứu được, nhắc lại}%
+Hai chuyện, cả hai đều từ số đo của chương này chứ không từ bài.
+
+Thứ nhất, cơ chế không làm bề rộng trạng thái hết quan trọng.
+Mục~\ref{sec:ch06-be-rong} đo được rằng ở \(d_h = 16\) mô hình attention chỉ
+đạt 0.0600 và ở \(d_h = 8\) thì tròn không. Cái nó gỡ bỏ là yêu cầu rằng
+\emph{câu nguồn} phải vừa trong trạng thái. Trạng thái decoder vẫn phải đủ rộng
+để làm việc của nó.
+
+Thứ hai, phần đóng góp của \tn{encoder hai chiều}{bidirectional encoder} không
+tách được khỏi phần đóng góp của số tham số, ít nhất là không trên corpus này.
+Mục~\ref{sec:ch06-hai-chieu} đo được rằng một encoder một chiều với số tham số
+tương đương cũng đạt 1.0000. Đó là phát biểu về corpus chứ không về bài, vì văn
+phạm ở đây không có nhập nhằng nào để ngữ cảnh phải gỡ.
+
+\subsection*{Cái chương~\ref{ch:lstm} để lại thì chương này vẫn không đụng tới}
+
+\index{attention!vẫn là phụ kiện gắn lên mạng hồi quy}%
+Đây là chỗ chương này giao lại cho phần sau của sách, và nó là chỗ lớn nhất.
+
+Encoder vẫn là mạng hồi quy. Decoder vẫn là mạng hồi quy. Một câu \(T\) token vẫn là \(T\) lượt tính nối đuôi nhau, không lượt
+nào bắt đầu được trước khi lượt trước xong. Encoder hai chiều còn làm nó nặng
+gấp đôi ở phía nguồn.
+
+Attention, ở bài này, là một thứ lắp thêm. Nó nằm giữa hai mạng hồi quy và làm
+cho chỗ nối giữa chúng rộng ra. Nó không thay thế mạng nào cả.
+
+Nói cách khác: chương~\ref{ch:encoder-decoder} để lại ba món nợ, chương này trả
+hai. Encoder không còn vứt bỏ \(T - 1\) trạng thái, và decoder đã có cách hỏi
+lại câu nguồn. Món thứ ba, tính tuần tự, còn nguyên vẹn.
+
+\index{attention!hai năm giữa hai bài}%
+Trong lịch sử thật, nó còn nguyên thêm hai năm nữa. Và cách nó được trả thì
+ngược với mọi thứ chương này vừa xây: không phải bằng cách lắp thêm gì nữa, mà
+bằng cách tháo mạng hồi quy ra và giữ lại đúng cái phụ kiện.
+
+Bởi vì cái phụ kiện ấy, nhìn kỹ, không cần mạng hồi quy để chạy.
+Phương trình~\eqref{eq:ch06-tong-co-trong-so} là một tổng có trọng số trên các
+vị trí. Nó không có \(t-1\) ở đâu cả. Thứ duy nhất bắt nó phải chờ là các
+\(\vect{h}_j\) được sinh ra tuần tự, và các \(\vect{s}_{i-1}\) cũng thế. Nếu
+sinh được \(\vect{h}_j\) mà không cần đợi \(\vect{h}_{j-1}\), thì cả nửa
+encoder chạy song song được ngay.
+
+Đó là câu chương~\ref{ch:transformer} mở đầu bằng.

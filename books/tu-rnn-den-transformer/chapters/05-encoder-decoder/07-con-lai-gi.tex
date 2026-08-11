@@ -58,8 +58,9 @@ Bài chạy ở phía không hỏng và báo cáo đúng thứ họ thấy. Cho 
 
 Nên cách nói \enquote{encoder-decoder hỏng ở câu dài} thiếu mất vế quan trọng
 nhất, là vế \enquote{với vector rộng bao nhiêu}. Và cách sửa mà
-chương~\ref{ch:dong-chinh} sẽ đọc không phải là nới vector ra, vì nới ra thì
-lại hỏng ở câu dài hơn nữa. Nó là bỏ hẳn cái ràng buộc bề rộng cố định đi.
+chương~\ref{ch:mot-vector-cho-moi-tu} sẽ đọc không phải là nới vector ra, vì
+nới ra thì lại hỏng ở câu dài hơn nữa. Nó là bỏ hẳn cái ràng buộc bề rộng cố
+định đi.
 
 \subsection*{Ba thứ chương này để lại cho chương sau}
 
@@ -68,7 +69,8 @@ Thứ nhất, và là thứ chính: encoder nén \tn{câu nguồn}{source senten
 một vector rồi vứt bỏ
 mọi trạng thái trung gian nó đã đi qua. Encoder \emph{đã} tính \(T\) trạng thái,
 mỗi trạng thái một bước, và dùng đúng cái cuối cùng. Câu hỏi tự nhiên là vì sao
-phải vứt \(T - 1\) cái kia, và đó là câu hỏi chương~\ref{ch:dong-chinh} mở ra.
+phải vứt \(T - 1\) cái kia, và đó là câu hỏi
+chương~\ref{ch:mot-vector-cho-moi-tu} mở ra.
 
 Thứ hai, decoder không có cách nào hỏi lại. Nó viết từ thứ mười lăm dựa trên một
 vector đã cố định từ trước khi nó viết từ nào, cộng với những gì chính nó vừa
@@ -79,8 +81,9 @@ encoder lẫn decoder vẫn chạy từng bước một, và một câu \(T\) to
 lượt tính nối đuôi nhau. Bài còn làm nó nặng thêm: bốn tầng, nên bốn lượt mỗi
 bước. Mười ngày trên tám GPU là cái giá của chuyện đó ở quy mô sản xuất.
 
-Chương~\ref{ch:dong-chinh} giải quyết hai thứ đầu và không đụng tới thứ ba. Nó
-thêm một đường đi từ mọi bước của encoder tới mọi bước của decoder, đo cái chỗ
+Chương~\ref{ch:mot-vector-cho-moi-tu} giải quyết hai thứ đầu và không đụng tới
+thứ ba. Nó thêm một đường đi từ mọi bước của encoder tới mọi bước của decoder,
+đo cái chỗ
 thắt \emph{trước} khi vá nó, rồi cho thấy đường mới ấy làm gì với gradient. Cái
 giá là attention lúc đó vẫn là một thứ lắp thêm vào một mạng hồi quy, nên thứ
 ba trong danh sách trên còn nguyên vẹn suốt cả chương ấy. Trong lịch sử thật nó

@@ -1,0 +1,45 @@
+% Ma trận đồng chỉnh đo được, tag ch06, experiments/ch06_alignment.py.
+% Hàng là từ tiếng Việt mô hình sinh ra, cột là từ tiếng Anh của câu nguồn.
+% Mức xám là trọng số alpha_ij: trắng là 0, đen là 1. Vẽ theo hình 3 của
+% Bahdanau 2015, cùng quy ước xám.
+% Mono-safe theo cấu tạo: thông tin nằm hoàn toàn ở mức xám, không ở màu.
+\begin{tikzpicture}[
+  o/.style     = {draw = black!30, line width = 0.2pt, minimum size = 6.2mm,
+                  inner sep = 0pt},
+  nhan/.style  = {font = \scriptsize},
+  cot/.style   = {font = \scriptsize, rotate = 55, anchor = west},
+]
+
+  % Cột: câu nguồn tiếng Anh.
+  \foreach \j/\lab in {0/the, 1/black, 2/cat, 3/wants, 4/a, 5/new, 6/lamp} {
+    \node[cot] at (\j*0.62, 0.42) {\lab};
+  }
+
+  % Mỗi hàng: nhãn tiếng Việt rồi bảy trọng số, đọc thẳng từ output của script.
+  \foreach \r/\lab/\va/\vb/\vc/\vd/\ve/\vf/\vg in {%
+    0/con/7/15/39/38/1/0/0,
+    1/mèo/0/4/95/1/0/0/0,
+    2/đen/0/82/15/3/0/0/0,
+    3/muốn/0/0/0/99/1/0/0,
+    4/một/0/0/0/5/95/0/0,
+    5/cái/0/0/0/0/0/5/95,
+    6/đèn/0/0/0/0/0/18/82,
+    7/mới/0/0/0/0/0/98/2%
+  } {
+    \node[nhan, anchor = east] at (-0.42, -\r*0.62) {\lab};
+    \foreach \j/\v in {0/\va, 1/\vb, 2/\vc, 3/\vd, 4/\ve, 5/\vf, 6/\vg} {
+      \node[o, fill = black!\v] at (\j*0.62, -\r*0.62) {};
+    }
+  }
+
+  % Hai chỗ bắt chéo, khoanh bằng nét đứt chứ không bằng màu.
+  % Ô (cột j, hàng r) tâm ở (0.62j, -0.62r) và cạnh 0.62, nên một khung ôm
+  % các cột j1..j2 và các hàng r1..r2 chạy từ (0.62*j1 - 0.31, -0.62*r1 + 0.31)
+  % tới (0.62*j2 + 0.31, -0.62*r2 - 0.31). Khung thứ nhất ôm mèo-đen với
+  % black-cat, khung thứ hai ôm đèn-mới với new-lamp.
+  \draw[black!70, densely dashed, line width = 0.6pt, rounded corners = 1pt]
+    (0.31, -0.31) rectangle (1.55, -1.55);
+  \draw[black!70, densely dashed, line width = 0.6pt, rounded corners = 1pt]
+    (2.79, -3.41) rectangle (4.03, -4.65);
+
+\end{tikzpicture}
