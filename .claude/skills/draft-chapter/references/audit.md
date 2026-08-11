@@ -8,6 +8,7 @@ How to run step 5 so it tests the draft instead of confirming it.
 - Run the machine gate first
 - What not to send
 - The brief
+- One auditor or a panel
 - Triage
 - Red flags
 
@@ -144,6 +145,36 @@ yours to judge like any other prose question.
 No praise, no summary, no restating what the chapter does well. If a category
 turns up nothing, say so in one line. Do not manufacture findings to fill it.
 ```
+
+In Claude Code, spawn the auditor as the `chapter-auditor` agent type: its
+definition under `.claude/agents/` enforces read-only tools and carries the
+standing rules, so the brief above is all it needs.
+
+## One auditor or a panel
+
+One auditor is the default, and the record above is a single-agent record:
+every catch it lists came from one fresh context reading everything. Stay with
+one.
+
+The exception is a chapter too big for one careful pass - many sections, many
+listings, many measured numbers - where the three report items start competing
+for the same attention. There the audit splits by lens into three fresh
+read-only subagents under the same brief discipline:
+
+- **A fact tracer**: the chapter plus the research note and the companion repo
+  at the tag. Report item 1 only.
+- **A rules auditor**: the chapter plus AGENTS.md, the SPEC,
+  check-chapter.psd1 and house-style. Report item 2 only.
+- **A voice auditor**: the chapter plus the previous drafted chapter and the
+  humanizer file its roles resolve to. Report item 3 only.
+
+Each lens gets the template above minus the other lenses' reading list and
+report items, so the chapter under audit is the only reading all three share
+and the panel's total is close to one auditor's - the extra cost is two more
+reads of the chapter itself, which is what the length that triggered the
+split pays for. Panel members are never continued and never told of each
+other's findings; triage below is unchanged and works the union of the three
+reports.
 
 ## Triage
 

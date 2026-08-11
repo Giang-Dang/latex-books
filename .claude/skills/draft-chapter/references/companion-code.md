@@ -73,29 +73,12 @@ A pattern that worked for a multi-domain service:
   Sequence any domain that others depend on into an earlier wave, or hand the
   dependents its exact contract so they can be written against it.
 - **Wave B** - samples, container files, verification scripts, in parallel.
-- **Wave C** - research file, bibliography block, figures, in parallel.
+- **Wave C** - bibliography block and figures, in parallel; their briefs are in
+  `references/delegation.md`. The research file stays with the orchestrator.
 - **Final** - one read-only audit by an agent with no drafting context; see
   `references/audit.md`.
 
 ## Briefing a subagent
 
-Every brief needs all of these, or the agent invents something plausible:
-
-- **Verified API facts pasted in**, not referenced. An agent that has to go
-  looking will find an old version.
-- **An explicit "do not write this API from memory"**, with the reason: the
-  library shipped after the training cutoff.
-- **The reference implementation to copy**, by path, plus the build settings it
-  must satisfy.
-- **A file-ownership boundary**: exactly which directory it may write to, and
-  which paths are off limits.
-- **A build instruction**: either "you may build only your own project" or "do
-  not build at all, the orchestrator compiles centrally". Two agents running a
-  build against the same project will collide on intermediate output.
-- **A demand to report uncertainty** rather than guessing silently. This is the
-  line that surfaces the best findings; agents that were told to flag doubt
-  reported real API corrections, and one caught an error in the orchestrator's
-  own code.
-
-Treat what comes back as a lead, not a verdict. Verify any factual claim from a
-subagent the same way you would verify your own.
+The briefing checklist lives in `references/delegation.md`, with the rest of
+the delegation guidance. It applies to every spawn, the code waves included.
