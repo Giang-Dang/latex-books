@@ -45,3 +45,16 @@ rather than a summary of it, and the date. Numbers are recorded as measured, to
 whatever precision they came out at; the book may round when it prints them.
 Record what was measured and turned out to be uninteresting as well, because the
 alternative is measuring it again.
+
+## Counting the pages of a PDF before you read it
+
+`file`, and anything else that reads only the first `/Count` in the page tree,
+reports a split tree short. Both copies of `he2016deep` report as six pages and
+both are nine: the tree is `/Count 6`, `/Count 3`, `/Count 9`, and a tool that
+stops at the first number loses the last three pages. Those three were figures 4
+to 6 and the conclusion, which is the entire reason to open that paper.
+
+So count `/Type /Page` in the raw bytes rather than trusting the header, and
+check that the last page you read ends in a finished sentence. A note claiming a
+paper was read in full is a claim like any other, and this is the cheapest way
+it goes wrong.
