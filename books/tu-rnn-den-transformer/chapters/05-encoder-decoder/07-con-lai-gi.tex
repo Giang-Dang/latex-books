@@ -7,12 +7,14 @@ Cái bài này giải được, phát biểu cho gọn: một mạng nơ-ron duy
 kê trên một tác vụ dịch quy mô lớn. BLEU 34.81 cho ensemble năm LSTM đảo với
 beam 12, so với 33.30 của hệ đối chứng. Bài nói rõ đây là lần đầu một hệ dịch
 thuần nơ-ron vượt một hệ đối chứng cụm từ với khoảng cách đáng kể, và vượt được
-dù không xử lý nổi từ ngoài từ điển; nguyên văn là \enquote{by a sizeable
+dù không xử lý nổi từ \tn{ngoài từ điển}{out-of-vocabulary}; nguyên văn là
+\enquote{by a sizeable
 margin, despite its inability to handle out-of-vocabulary words}.
 
 Cạnh con số ấy phải đặt thêm một con số nữa, không thì dễ đọc nhầm: 37.0, kết
 quả WMT'14 tốt nhất lúc bấy giờ. Mạng thuần chưa vượt nó. Chỗ mạng chạm tới 36.5
-là khi dùng để chấm điểm lại một nghìn giả thuyết của chính hệ đối chứng, tức
+là khi dùng để chấm điểm lại một nghìn \tn{giả thuyết}{hypothesis} của chính
+hệ đối chứng, tức
 vẫn dựa lưng vào hệ thống cũ.
 
 \subsection*{Cái bài tự nêu là còn thiếu}
@@ -40,7 +42,8 @@ nghe như mâu thuẫn.
 
 Câu thứ nhất: \tn{chỗ thắt}{bottleneck} là có thật.
 Mục~\ref{sec:ch05-bop-vector} đo được nó, và đo được cả hình dạng của nó, tức
-câu ngắn bão hòa trước còn câu dài cần vector rộng hơn hẳn. Ở \(d_h = 64\), câu
+câu ngắn \tn{bão hòa}{saturation} trước còn câu dài cần vector rộng hơn hẳn. Ở
+\(d_h = 64\), câu
 ngắn được 0.9797 còn câu dài được 0.0724.
 
 Câu thứ hai: bài này không chạm vào nó. Mô hình của họ mang 8000 số thực cho một

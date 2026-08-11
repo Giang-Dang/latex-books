@@ -2,9 +2,11 @@
 \label{sec:ch03-tich-jacobian}
 
 \index{BPTT!dạng tổng tích}%
-Chương~\ref{ch:ky-hieu-va-bptt} dẫn ra lan truyền ngược qua thời gian, viết
-tắt là BPTT, theo cách quen thuộc: đẩy ngược
-từng bước một, cộng dồn vào các ma trận trọng số. Bài báo viết lại cùng công
+Chương~\ref{ch:ky-hieu-va-bptt} dẫn ra
+\tn{lan truyền ngược qua thời gian}{backpropagation through time}, viết tắt là
+BPTT, theo cách quen thuộc: đẩy ngược
+từng bước một, cộng dồn vào các \tn{ma trận trọng số}{weight matrix}. Bài báo
+viết lại cùng công
 thức đó dưới dạng tổng tích, và chính cách viết lại này làm vấn đề lộ ra. Chi
 phí toàn chuỗi tách theo từng bước,
 
@@ -47,7 +49,7 @@ nào đó}. Mệnh đề trong ngoặc là chỗ trực giác vô hướng đán
 mục~\ref{sec:ch03-khe-ho} dựa hoàn toàn vào chỗ đó.
 
 Một lưu ý về quy ước trước khi đi tiếp. Bài in thừa số trong~\eqref{eq:ch03-tich-jacobian}
-là \(\mat{W}_{hh}\transpose \diag(\sigma'(\vect{a}_{i-1}))\), vì họ đẩy \tn{độ dốc}{gradient}
+là \(\mat{W}_{hh}\transpose \diag(\sigma'(\vect{a}_{i-1}))\), vì họ đẩy gradient
 ngược dưới dạng vector hàng. Chuyển vị đúng của Jacobian cột phải là
 \(\diag(\sigma'(\vect{a}_{i-1})) \mat{W}_{hh}\transpose\), nên hai biểu thức
 không phải chuyển vị của nhau theo nghĩa đen. Không có hệ quả nào: mọi chặn
@@ -123,12 +125,13 @@ thái vừa rời khỏi gốc là \(\gamma = 1\) trở thành một chặn khô
 
 Ở bán kính phổ 1.2, tích tăng, nhưng tốc độ là 1.0244 chứ không phải 1.2. Sau
 100 bước nó đạt 82.505, trong khi \(1.2^{100}\) vào khoảng 8.2818 nhân mười mũ
-bảy, tức lớn hơn số đo được chừng một triệu lần. Trạng thái lớn dần, tanh bão hoà, \(\sigma'\) sụt về gần không, và
+bảy, tức lớn hơn số đo được chừng một triệu lần. Trạng thái lớn dần, tanh
+\tn{bão hòa}{saturation}, \(\sigma'\) sụt về gần không, và
 mức tăng tự chặn lại. Đây chính là lý do điều kiện nổ chỉ là \tn{điều kiện cần}{necessary condition}.
 
 Đo bằng \code{experiments/ch03\_decay.py} tại tag \code{ch03}.
 \end{measured}
 
-Bão hoà tự chặn là một tin tốt và một tin xấu. Tin tốt: gradient nổ hiếm khi
-nổ mãi. Tin xấu: cơ chế chặn nó cũng là cơ chế xoá trí nhớ, vì
+Bão hòa tự chặn là một tin tốt và một tin xấu. Tin tốt: gradient nổ hiếm khi
+nổ mãi. Tin xấu: cơ chế chặn nó cũng là cơ chế xóa trí nhớ, vì
 \(\sigma'\) nhỏ ở mọi bước sau đó. Chương~\ref{ch:lstm} sẽ sửa đúng chỗ này.

@@ -11,7 +11,8 @@
 
 \subsection{Định nghĩa}
 
-Cho một chuỗi $T$ bước thời gian. Tại mỗi bước $t$, mạng nhận hai số:
+Cho một chuỗi $T$ \tn{bước thời gian}{timestep}. Tại mỗi bước $t$, mạng nhận
+hai số:
 \begin{itemize}
   \item Một giá trị ngẫu nhiên $v_t \sim \mathrm{Uniform}(-1, 1)$.
   \item Một cờ đánh dấu $m_t \in \{0, 1\}$. Cờ bằng $1$ tại \textbf{đúng hai}
@@ -37,7 +38,8 @@ Target: $0.8 + 0.2 = 1.0$.
 \subsection{Kết quả}
 
 Tôi huấn luyện RNN với $d_h = 24$, learning rate $0.01$, khởi tạo trọng số
-$\mathcal{N}(0, 0.1)$, hàm mất mát MSE trên output cuối cùng.
+$\mathcal{N}(0, 0.1)$, \tn{hàm mất mát}{loss function} MSE trên output cuối
+cùng.
 
 \begin{measured}{Adding problem, $d_h = 24$}
 \small

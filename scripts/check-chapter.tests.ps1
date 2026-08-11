@@ -119,6 +119,11 @@ $BaseSections = [ordered]@{
     # measure. It only has to be a budget the trigger clears and the listing in
     # 08-verbatim.tex, whose widest body line is 37, does not.
     Listings     = "@{ Enabled = `$true; MaxLineLength = 60 }"
+    # The glossary and the two headings that carve it up. Both patterns are
+    # book facts in a real book, written in the book's own language, which is
+    # why the library cannot default them.
+    Gloss        = "@{ Enabled = `$true; Glossary = 'backmatter/appendix-b.tex'; " +
+                   "BlockPattern = '\\textbf\{Chapter\s+(\d+)\}'; KeepPattern = '\\textbf\{Keep' }"
 }
 
 $bookPolicy = Join-Path $bookFix 'check-chapter.psd1'
@@ -182,6 +187,21 @@ $Expected = @(
     # path always did; -Chapter did not, and -Chapter is the mode a drafting
     # session iterates with. The group below runs that mode and looks for this.
     "chapters/01-triggers/nested/01-nested.tex:4: [dash] en/em dash ligature in prose; reword or use ASCII punctuation"
+    # The gloss family runs as its own pass after the line-at-a-time loop, so
+    # its findings arrive together and sorted by file and line rather than
+    # interleaved with the ones above.
+    #
+    # 13-gloss.tex's first section is the negative case and is absent on
+    # purpose: it names 'gear box' only inside an \index entry, and an index
+    # entry is markup rather than running text. A regression there adds a line.
+    "chapters/01-triggers/13-gloss.tex:17: [gloss-repeat] 'widget' is glossed 2 times in one section; the cadence is once"
+    "chapters/01-triggers/13-gloss.tex:20: [gloss-orphan] 'cog' is in no glossary block; add it, or drop the gloss"
+    "chapters/01-triggers/13-gloss.tex:21: [gloss-orphan] 'flange' is on the keep-as-is list, so the gloss sets it beside itself"
+    "chapters/01-triggers/13-gloss.tex:23: [gloss-borrowed] 'sprocket' belongs to chapter 2 and this chapter never glosses it; a term this chapter does not own is glossed once"
+    # Line 27, not 26: the term is split as 'gear' / 'box' across two source
+    # lines and only shows up once the section is flattened. The finding is
+    # anchored where the match lands, which is the second half.
+    "chapters/01-triggers/13-gloss.tex:27: [gloss-missing] 'gear box' is this chapter's own term and this section never glosses it"
     # One line out of a picture that also grids on step=0.5cm, scales a node,
     # sets text=gray and names a style with a space in it. Exactly one of those
     # is a style declaration using a reserved name.
@@ -245,6 +265,17 @@ $WiringCases = @(
     # reason and pass even if Enabled were wired to nothing.
     @{ Name = 'Listings';     Override = @{ Listings = '@{ Enabled = $false; MaxLineLength = 60 }' }; Silences = @('listing') }
     @{ Name = 'Listings.Max'; Override = @{ Listings = '@{ Enabled = $true; MaxLineLength = 0 }' };   Silences = @('listing') }
+    # Two ways off again, and for the same reason as Listings: the glossary path
+    # defaults to empty, so a row naming only Enabled would silence the family
+    # whether or not Enabled is wired to anything.
+    @{ Name = 'Gloss';        Override = @{ Gloss = '@{ Enabled = $false; Glossary = ''backmatter/appendix-b.tex'' }' }
+       Silences = @('gloss-borrowed', 'gloss-missing', 'gloss-orphan', 'gloss-repeat') }
+    @{ Name = 'Gloss.File';   Override = @{ Gloss = '@{ Enabled = $true; Glossary = '''' }' }
+       Silences = @('gloss-borrowed', 'gloss-missing', 'gloss-orphan', 'gloss-repeat') }
+    # Exempt is the escape hatch for a term that is also an ordinary word, so it
+    # has to reach the check. 'gear box' is the fixture's only gloss-missing.
+    @{ Name = 'Gloss.Exempt'; Override = @{ Gloss = '@{ Glossary = ''backmatter/appendix-b.tex''; BlockPattern = ''\\textbf\{Chapter\s+(\d+)\}''; KeepPattern = ''\\textbf\{Keep''; Exempt = @(''gear box'') }' }
+       Silences = @('gloss-missing') }
     @{ Name = 'Figures';      Override = @{ Figures = '@{ Enabled = $false }' };           Silences = @('tikz') }
     # Emptying the reserved list is the other way to turn it off, and it has to
     # work: a book that disagrees with one name should not have to disable the
@@ -253,9 +284,14 @@ $WiringCases = @(
     @{ Name = 'Log';          Override = @{ Log = '@{ Enabled = $false }' };               Silences = @('log') }
     # Paths.Prose empties the prose pass. The character scan reads its own list
     # and must survive, which is what keeps the two lists genuinely separate.
+    # The gloss family reads the same file list, so emptying Prose empties it
+    # too. Worth asserting rather than assuming: the glossary itself is found
+    # by its own path, and a family that kept reading files nobody asked it to
+    # read would look like it still worked.
     @{ Name = 'Paths.Prose';  Override = @{ Paths = '@{ Prose = @() }' }
        Silences = @('tilde-cite', 'cite-key', 'quote', 'index-pct', 'contraction',
-                    'spelling', 'dash', 'number', 'verbatim', 'listing') }
+                    'spelling', 'dash', 'number', 'verbatim', 'listing',
+                    'gloss-borrowed', 'gloss-missing', 'gloss-orphan', 'gloss-repeat') }
 )
 
 $baselineIds = Get-FindingIds $actual

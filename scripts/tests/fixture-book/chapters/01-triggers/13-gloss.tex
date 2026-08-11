@@ -1,0 +1,28 @@
+% Triggers for the Gloss family, against backmatter/appendix-b.tex. The first
+% section is a negative case and must stay silent.
+
+\section{An index entry is not prose}
+
+This section names a glossary term only inside an index entry, which is markup
+rather than running text, so nothing here may be reported.
+
+\index{gear box!an index entry carries the term verbatim}%
+
+\section{Orphans, a repeat, and a term this chapter does not own}
+
+The \tn{\textbf{widget}}{widget-thing} is glossed through a macro wrapped in
+another macro, which brace counting has to survive; a lazy pattern ends the
+term at the inner brace and then reports it unglossed a line later.
+
+Glossing the \tn{widget}{widget-thing} again in the same section is one time
+too many.
+
+A \tn{cog}{cog-thing} sits in no block of the glossary at all, and a
+\tn{flange}{flange} sets beside itself a term the book keeps as is.
+
+Chapter 02 owns the sprocket, and this chapter never glosses it.
+
+\section{A term split across two source lines}
+
+The reader meets a gear
+box here, and a scan that reads one line at a time cannot see it.

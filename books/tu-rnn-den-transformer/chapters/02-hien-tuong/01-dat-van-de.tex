@@ -6,7 +6,8 @@
 \section{Câu hỏi}
 \label{sec:ch02-dat-van-de}
 
-Trong BPTT, gradient của loss theo trạng thái ẩn tại bước $t$ được tính lùi
+Trong BPTT, gradient của loss theo \tn{trạng thái ẩn}{hidden state} tại bước
+$t$ được tính lùi
 từ $T$ về $1$ bằng công thức truy hồi từ chương~01,
 phương trình~\eqref{eq:bptt-dh-recurrence}:
 
@@ -28,7 +29,8 @@ suy giảm theo hàm mũ của $T$.
 
 Đó là lý thuyết. Nhưng lý thuyết không nói liệu điều này có thực sự xảy
 ra trong một bài toán cụ thể hay không. Một RNN với $\mat{W}_{hh}$ được
-khởi tạo ngẫu nhiên có thể có trị riêng lớn nhất vượt quá 1; một bài toán
+khởi tạo ngẫu nhiên có thể có \tn{trị riêng}{eigenvalue} lớn nhất vượt quá 1;
+một bài toán
 có thể không cần gradient truyền xa đến vậy; và trong thực tế, mạng học
 được những biểu diễn làm chậm quá trình suy giảm.
 

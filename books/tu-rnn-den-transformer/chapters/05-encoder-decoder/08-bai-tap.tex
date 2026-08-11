@@ -23,9 +23,10 @@
     đồng chỉnh một-một theo thứ tự. Rồi chỉ ra đại lượng nào thật sự đổi, và
     vì sao đại lượng đó mới là đại lượng chương~\ref{ch:lstm} quan tâm.
 
-  \item Mục~\ref{sec:ch05-giai-ma} nói beam rộng hơn không bảo đảm trả về giả
-    thuyết có log xác suất cao hơn. Dựng một phản ví dụ nhỏ nhất bạn nghĩ ra
-    được: một từ điển ba token, một cây xác suất bạn tự đặt, và hai bề rộng
+  \item Mục~\ref{sec:ch05-giai-ma} nói beam rộng hơn không bảo đảm trả về
+    \tn{giả thuyết}{hypothesis} có log xác suất cao hơn. Dựng một phản ví dụ nhỏ nhất bạn nghĩ ra
+    được: một \tn{từ điển}{vocabulary} ba token, một cây xác suất bạn tự đặt,
+    và hai bề rộng
     beam cho hai kết quả khác nhau theo chiều đó.
 
   \item Ensemble lấy trung bình log xác suất của các mô hình ở mỗi bước, chứ
@@ -117,7 +118,7 @@ hỏng.
     trước có tỷ lệ với đại lượng ấy không. Nói rõ định nghĩa của bạn hỏng ở đâu.
 
   \item Đây là chỗ còn mở thật sự. \(\vect{v}\) là \(2 d_h\) số dấu phẩy động,
-    nên về lý thuyết nó chứa được rất nhiều bit, thừa sức mã hoá mọi câu của
+    nên về lý thuyết nó chứa được rất nhiều bit, thừa sức mã hóa mọi câu của
     corpus này ngay ở \(d_h = 8\). Vậy mà \(d_h = 8\) cho 0.0000. Nghĩa là giới
     hạn không nằm ở dung lượng biểu diễn mà ở chỗ khác: ở cái mà huấn luyện
     bằng gradient tìm được, hoặc ở chỗ decoder giải mã được. Tách hai khả năng

@@ -13,7 +13,7 @@ Bản 1997 giả định chuỗi có điểm kết thúc, và ở đó trạng t
 không. Bỏ giả định ấy đi, cho mạng đọc một dòng dữ liệu chảy liên tục không
 được cắt sẵn thành đoạn, thì phương trình~\eqref{eq:ch04-cap-nhat-c} thành một
 phép cộng dồn không bao giờ dừng: \(\vect{c}_t\) lớn dần không giới hạn,
-\(g_{\mathrm{out}}\) bão hoà, đạo hàm của nó về không, và ô nhớ chết theo cách
+\(g_{\mathrm{out}}\) bão hòa, đạo hàm của nó về không, và ô nhớ chết theo cách
 mà chính CEC gây ra.
 
 Cách sửa là bỏ hằng số 1.0 và thay bằng một cổng thứ ba,
@@ -24,7 +24,7 @@ Cách sửa là bỏ hằng số 1.0 và thay bằng một cổng thứ ba,
              + \vect{i}_t \odot g_{\mathrm{in}}(\vect{a}^{c}_t).
 \]
 
-Cái được là ô nhớ tự học lúc nào nên xoá chính nó. Cái mất thì đọc thẳng ra từ
+Cái được là ô nhớ tự học lúc nào nên xóa chính nó. Cái mất thì đọc thẳng ra từ
 mục~\ref{sec:ch04-dao-ham}: \(\jac{\vect{c}_t}{\vect{c}_{t-1}}\) không còn là
 \(\mat{I}\) mà là \(\diag(\vect{f}_t)\), nên vòng quay chỉ không đổi khi cổng
 còn mở. Bản 2000 đánh đổi một bảo đảm lấy một khả năng, và đó là bản mà mọi thư
@@ -35,7 +35,7 @@ Neural Computation 12(10):2451-2471, năm 2000~\autocite{gers2000forget}.
 
 \begin{bridge}{Gers, Schraudolph và Schmidhuber 2002: peephole}
 Chỗ hở lần này nằm ở chính chỗ mục~\ref{sec:ch04-o-nho} vừa mô tả: cổng nhận
-kết nối từ output của các \tn{ô nhớ}{memory cell}, không từ trạng thái. Mà
+kết nối từ output của các ô nhớ, không từ trạng thái. Mà
 output là
 \(\vect{o}_t \odot g_{\mathrm{out}}(\vect{c}_t)\), nên khi
 \tn{cổng ra}{output gate} đóng thì output gần bằng không và không cổng nào còn
