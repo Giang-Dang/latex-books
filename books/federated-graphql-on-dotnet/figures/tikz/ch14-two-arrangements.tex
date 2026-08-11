@@ -1,0 +1,54 @@
+% The two subscriptions, from one write. Referenced from chapter 14. Bare
+% tikzpicture; the figure environment, caption and label live at the call site.
+%
+% The point of the picture is that the left path and the right path leave the
+% same service and arrive at the same router, and only one of them involves the
+% router talking to a subgraph at all. Everything below the router is what the
+% two arrangements disagree about; everything above it is identical, which is
+% why a client cannot tell them apart.
+\begin{tikzpicture}[
+    font=\small,
+    box/.style={draw, rounded corners=2pt, minimum width=20mm,
+                minimum height=7mm, align=center, font=\scriptsize},
+    flow/.style={-{Stealth[length=2mm]}},
+    held/.style={-{Stealth[length=2mm]}, thick},
+    note/.style={font=\scriptsize, gray, align=center, inner sep=1pt}
+  ]
+
+  \node[box] (client)   at (0.4,0)    {client};
+  \node[box] (router)   at (5.0,0)    {router};
+  \node[box, minimum width=16mm] (accounts) at (9.8,0) {\code{accounts}};
+
+  \node[box, fill=black!8] (reviews) at (1.9,-3.4) {\code{reviews}};
+  \node[box, fill=black!8] (nats)    at (8.1,-3.4) {NATS};
+
+  % -- the half a client can see ---------------------------------------------
+  \draw[flow] (client) -- (router);
+  \node[note, anchor=south, align=center] at (2.7,0.15)
+    {two subscriptions,\\one write};
+
+  \draw[flow] (router) -- (accounts);
+  \node[note, anchor=south, align=center] at (7.4,0.15)
+    {\code{\_entities},\\once per event};
+
+  % -- left: the subscription the subgraph holds ------------------------------
+  \draw[held] (router) -- (reviews);
+  \node[note, anchor=east, align=right] at (2.55,-1.5)
+    {one WebSocket,\\open as long as\\the client is};
+
+  % -- right: the subscription the broker holds -------------------------------
+  \draw[flow] (reviews) -- (nats);
+  \node[note, anchor=south, align=center, fill=white, inner sep=2pt] at (5.0,-3.42)
+    {\code{\_\_typename} and \code{id},\\published on a subject};
+
+  \draw[flow] (nats) -- (router);
+  \node[note, anchor=west, align=left] at (7.45,-1.5)
+    {one subject,\\no service\\in between};
+
+  \node[note, anchor=north, align=center] at (1.9,-3.85)
+    {the write lands here,\\and announces itself twice};
+
+  \node[note, anchor=north, align=center] at (8.1,-3.85)
+    {\code{schema/streams.graphql}\\has no process behind it};
+
+\end{tikzpicture}

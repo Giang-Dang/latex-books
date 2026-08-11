@@ -1,0 +1,46 @@
+% What happens once and what happens again. Referenced from chapter 14. Bare
+% tikzpicture; the figure environment, caption and label live at the call site.
+%
+% The point of the picture is the asymmetry between the two rows. The trigger is
+% a single request at the left edge and never recurs; every fetch under it is
+% paid again for each message, so the cost of a subscription is set by how much
+% of the payload the trigger's own subgraph cannot answer.
+\begin{tikzpicture}[
+    font=\small,
+    dot/.style={circle, draw, fill=black, inner sep=1.1pt},
+    hollow/.style={circle, draw, fill=white, inner sep=1.1pt},
+    flow/.style={-{Stealth[length=2mm]}},
+    note/.style={font=\scriptsize, gray, align=center, inner sep=1pt},
+    lbl/.style={font=\scriptsize, align=right, inner sep=2pt}
+  ]
+
+  \draw[flow] (1.4,0) -- (10.4,0);
+  \node[note, anchor=west] at (10.5,0) {time};
+
+  % -- the trigger, once ------------------------------------------------------
+  \node[lbl, anchor=east] at (1.3,0.9) {trigger};
+  \node[dot] (trig) at (2.0,0.9) {};
+  \node[note, anchor=south west, align=left] at (2.1,1.05)
+    {one \code{subscribe} to \code{reviews},\\then nothing};
+
+  % -- the events -------------------------------------------------------------
+  \node[lbl, anchor=east] at (1.3,0) {events};
+  \foreach \x in {3.4,4.8,6.2,7.6,9.0}{
+    \node[hollow] at (\x,0) {};
+  }
+
+  % -- the fetch each one pays for --------------------------------------------
+  \node[lbl, anchor=east] at (1.3,-1.1) {\code{accounts}};
+  \foreach \x in {3.4,4.8,6.2,7.6,9.0}{
+    \node[dot] (f\x) at (\x,-1.1) {};
+    \draw[flow] (\x,-0.15) -- (\x,-0.95);
+  }
+
+  \node[note, anchor=north, align=center] at (6.2,-1.4)
+    {one \code{\_entities} call per message, for the one field\\the subgraph
+     holding the connection cannot answer};
+
+  \draw[dashed, gray] (2.0,0.7) -- (2.0,-1.6);
+  \node[note, anchor=north east, align=right] at (1.95,-1.6) {measured once};
+
+\end{tikzpicture}

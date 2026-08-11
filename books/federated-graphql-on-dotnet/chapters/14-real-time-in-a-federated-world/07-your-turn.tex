@@ -1,0 +1,141 @@
+\section*{Your turn}
+
+Check out tag \code{ch14} of the companion repository and run \code{npm ci}
+once. Exercises 1 to 4 and 8 to 10 need the database, the broker, the seven
+services and the router. Exercise 5 needs all of that too, plus a second
+terminal and Reviews restarted on a different port. Exercises 6 and 7 need node
+and nothing started at all.
+
+There is a broker in the compose file now, so the line from
+chapter~\ref{ch:hard-modeling-problems} grows one service:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+docker compose up -d --build mosaic-db mosaic-nats mosaic-catalog \
+    mosaic-pricing mosaic-inventory mosaic-accounts mosaic-reviews \
+    mosaic-ordering mosaic-nodes mosaic-router
+docker compose ps
+\end{minted}
+
+Ten containers, all healthy. If \code{mosaic-nats} is the only one that will not
+start, something else has 4222 or 8222.
+
+\begin{enumerate}
+  \item \textbf{Watch both subscriptions answer one write.} Run the harness
+  the gate runs, with a product identifier and a customer who has not reviewed
+  that product:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/subscription-run.mjs --product "..." --customer "..."
+  \end{minted}
+
+  Seven checks, all green at \code{ch14}. Read the two subprotocol lines first:
+  the same offer, made to two servers, answered differently. Then stop
+  \code{mosaic-nats} and run it again, and note which checks fail and which do
+  not.
+
+  \item \textbf{Make the graph pay for a field.} Open a subscription to
+  \code{onReviewAdded} selecting \code{id} and \code{rating} only, submit three
+  reviews, and count \code{Mosaic.RequestTimeline} lines in the Accounts
+  console. Then do it again with \code{author \{ displayName \}} in the
+  selection set. The difference is the running cost of one field, and the
+  client chose it.
+
+  \item \textbf{Read the plan for both subscriptions.} Send each of the two
+  subscription fields to port 3002 with the query-plan headers
+  chapter~\ref{ch:enter-the-router} used, and compare the trigger nodes. One
+  names a subgraph and one does not. Then count the entity fetches under each
+  and work out, before reading
+  section~\ref{sec:ch14-the-subgraph-with-no-service} again, why the
+  event-driven one needs an extra hop to fetch a field its own publisher
+  already had in memory.
+
+  \item \textbf{Publish an event nobody wrote.} With any NATS client, publish
+  a message naming a review that exists:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+subject  mosaic.reviewAdded.<the product's global identifier>
+body     {"__typename":"Review","id":"<the review's global identifier>"}
+  \end{minted}
+
+  A client subscribed to \code{reviewPublished} on that product gets a full
+  review that no mutation produced. Then send the same body with the type name
+  removed. Note what the client is told, which service it appears to be about,
+  and how long it takes you to connect that message to the edit you made.
+
+  \item \textbf{Watch the handshake, then break it.} Start Reviews on another
+  port and put the recorder in front of its usual one:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+ASPNETCORE_URLS=http://localhost:5115 dotnet run --project src/Mosaic.Reviews -c Release
+node scripts/subscription-wire.mjs 5105 5115
+  \end{minted}
+
+  Open a subscription through the router and read the \code{101}. Now delete
+  the pinned subprotocol line from the reviews entry in
+  \code{federation/mosaic.yaml}, recompose with \code{npm run compose}, and do
+  it again. The subprotocol changes, and so do the names of two of the messages
+  in the frames that follow.
+
+  \item \textbf{Find out what the composer will let you say.} Print these in
+  turn:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/realtime-cases.mjs --print documented-spelling-does-nothing
+node scripts/realtime-cases.mjs --print unknown-subprotocol-is-ignored
+node scripts/realtime-cases.mjs --print unknown-protocol-drops-the-key
+  \end{minted}
+
+  Three inputs a reviewer would pass and a composer accepts. Two of them end in
+  a default and one ends in a missing key, which is a different thing. Decide
+  which of the three you would rather find in production, and what would have
+  had to run for you to find any of them.
+
+  \item \textbf{Read a subgraph that is a file.} Open
+  \code{schema/streams.graphql} beside the entry for it in
+  \code{federation/mosaic.yaml}, then compose and find both halves of that
+  entry in the execution config: the routing URL, which is in the subgraph list
+  beside the other seven, and the eighth datasource, which has no url of any
+  kind. Then satisfy yourself that nothing is listening on the port the routing
+  URL names, and work out what that says about which of the two the router
+  reads.
+
+  \item \textbf{Break the transport on purpose.} Change the reviews
+  \code{protocol} to \code{sse}, recompose, restart the router, and open a
+  subscription. Now go looking for the cause: first in the subgraph console,
+  then in the router log as it ships, then with \code{log\_level} in
+  \code{router/config.yaml} turned up from \code{info} to \code{debug}. There
+  is one line in the whole trail that names the problem, and it names it in a
+  field rather than a message. Write down how long you would have spent on this
+  without the recorder from exercise 5, then set the protocol to
+  \code{sse\_post} and watch it work.
+
+  \item \textbf{Ask for something in two parts.} Send the router a query with
+  \code{@defer} on a fragment whose fields come from another subgraph, with
+  \code{Accept: multipart/mixed}, and look at the response's content type. Then
+  introspect the router for its directive list and introspect any subgraph for
+  the same thing. Decide what you would tell a front-end team that had built a
+  loading state around the directive the schema offers them.
+
+  \item \textbf{Verify it in Postman.} The collection for this chapter is
+  \code{postman/mosaic-realtime}, seven requests: six against the router and
+  one against Reviews.
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+npx newman run postman/mosaic-realtime.postman_collection.json \
+    -e postman/mosaic-realtime.local.postman_environment.json
+  \end{minted}
+
+  Twenty-three assertions, all green at \code{ch14}. The one request that does
+  not go to the router is the one that shows the two subscription fields are
+  not the same kind of thing. Note also what the collection does not test, and
+  why decision 43 in this book's spec says a node script had to exist for that
+  half.
+\end{enumerate}
+
+Exercise 4 is the one to do properly. Everything else in this chapter is a
+property of a transport or a directive; that one is a property of trusting a
+message. A subject on a broker is an interface with no schema behind it, and
+the only thing standing between a typo and a graph that answers confidently
+with the wrong thing is a convention two files agree about by hand.
+Chapter~\ref{ch:automated-tests} is where a test suite gets told about
+contracts nothing can compile.
