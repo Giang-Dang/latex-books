@@ -10,6 +10,11 @@ nothing needs mirroring afterwards.
 - **draft-chapter** - the writing workflow for books under `books/`. Branch,
   research, companion code, prose, build, SPEC update, commit, PR. Start here.
 
+The agent definitions in `../agents/` (chapter-auditor, book-researcher,
+figure-drafter) belong to draft-chapter too: they carry the standing briefs its
+delegation reference spawns, and travel with the repo for the same reason the
+skills do. Edit them together.
+
 ## Vendored copies
 
 `humanizer`, `humanizer-vi` and `skill-conventions` are copies of skills that

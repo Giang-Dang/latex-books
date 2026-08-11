@@ -104,8 +104,10 @@ The sequence matters more than any individual step.
 1. **Research**, in both directions. Web-verify against primary sources, and
    verify empirically by building and running. Where docs and the compiler
    disagree, the compiler wins and the research file records the disagreement.
-   Write the findings to `books/<name>/research/` following the shape of the
-   existing files there.
+   The two directions can run as a pair of background subagents - see The
+   research pair in `references/delegation.md`. Either way the orchestrator
+   writes the findings to `books/<name>/research/` itself, following the shape
+   of the existing files there.
 2. **Companion code**, if the chapter ships any. See
    `references/companion-code.md`. The repo has to exist, pass its own
    verification, and be tagged **before** prose is written.
@@ -138,9 +140,16 @@ The sequence matters more than any individual step.
    Scaffold to convention: `chapters/NN-slug/ch.tex` holds `\chapter`, `\label`
    and a short opener, then `\input`s one file per section, with every path
    written from the book root.
+
+   The drafting itself is never split across agents, but the chapter's figures
+   and its bibliography block can be built alongside the prose by the figure
+   and bibliography agents in `references/delegation.md`, within the session
+   budget that file sets.
 5. **Audit, from outside.** Build and run the check script first so the machine
    layer is already clean, then spawn one read-only subagent with **no drafting
-   context** and brief it per `references/audit.md`. Reviewing your own draft in
+   context** and brief it per `references/audit.md` - one auditor is the
+   default, and that file names the one case where the audit becomes a small
+   panel. Reviewing your own draft in
    the context that wrote it is not this step: that reviewer accepted every
    claim once already and fills the gaps from memory. Verify each factual
    finding yourself before acting on it, and report the ones you reject along
@@ -265,7 +274,10 @@ Load these when the task reaches them, not before.
 - `references/house-style.md` - LaTeX and prose conventions shared by books in
   this repo: citations, quoting, index entries, listings, figures, labels.
 - `references/companion-code.md` - the code-before-prose workflow, and the
-  subagent delegation pattern that keeps parallel work from colliding.
+  wave pattern that keeps parallel code work from colliding.
+- `references/delegation.md` - when to hand work to a subagent, the session
+  budget, model tiers, and the briefs. Read before spawning anything beyond
+  the audit.
 - `references/audit.md` - the independent audit: why a fresh agent, what to
   withhold from the brief, the brief itself, and how to triage what comes back.
 - `references/environment.md` - build and tooling traps specific to this
