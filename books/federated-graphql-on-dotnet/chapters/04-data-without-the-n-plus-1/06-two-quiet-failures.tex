@@ -86,8 +86,12 @@ public static Guid GetId([Parent] Product product) => product.Id;
 \end{minted}
 
 \code{Product.id} is produced by a resolver rather than read straight off the
-property, because \code{[ID]} has to encode the raw \code{Guid} into an opaque
-identifier. A projection builds its \code{SELECT} list out of the properties
+property. I wrote it that way because \code{[ID]} is supposed to encode the raw
+\code{Guid} into an opaque identifier, and
+chapter~\ref{ch:schema-design-that-survives-change} discovers that at this tag
+the attribute encodes nothing at all. What follows does not depend on that.
+A field backed by a resolver breaks the projection whatever the resolver
+does with the value. A projection builds its \code{SELECT} list out of the properties
 named in the selection set. The selection set names \code{id}, which is a field
 backed by a resolver, so the projection has nothing to select on its account,
 so \code{products.id} is not in the statement, so the resolver is handed a
@@ -147,6 +151,18 @@ It decodes the opaque identifier and looks for the empty \code{Guid} inside it.
 That is an ugly assertion and I would rather it did not have to exist, but a
 correct-looking response is exactly what this failure produces, so the test has
 to know what the wrong answer looks like.
+
+One caveat, which belongs here rather than three chapters later. At this tag
+\code{Product.id} answers with a raw \code{Guid}, because the attribute that
+turns it into a base64 identifier is inert until
+chapter~\ref{ch:schema-design-that-survives-change} switches on the machinery
+behind it. The decode in that assertion is therefore handed text that was never
+base64, and what comes back is binary noise that will not contain the printed
+zero \code{Guid} whichever value the server sent. The assertion passes either
+way. It could not have caught the bug it was written for, and it starts working
+at the tag where identifiers really are base64 and the check reads the prefix
+and the key bytes instead. The defect above is real and so is the fix. The
+guard against it was not.
 
 That request also stores its \code{endCursor} in a collection variable, and the
 second reads it back and pages from it, asserting that the second page starts

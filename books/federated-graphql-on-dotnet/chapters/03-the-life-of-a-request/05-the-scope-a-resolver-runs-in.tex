@@ -133,6 +133,8 @@ pattern comes back with 4, 5 and 6.
 
 The ordering is a small bonus: 1 before 2 before 3 says the first resolver's
 private scope was created before anything asked the request for its copy.
+Figure~\ref{fig:ch03-scopes} is the arrangement those numbers describe: which
+provider each field is drawing from, and which one lives as long as the request.
 
 \begin{figure}[htbp]
   \centering

@@ -142,6 +142,10 @@ the design in the whole file: a middleware with no work to do removes itself
 when the pipeline is composed rather than checking on every request. That option
 only exists because composition is separate from execution.
 
+Figure~\ref{fig:ch03-pipeline} lays the thirteen out in order, with the places a
+request can leave early marked on it. Three of the exits matter more than the
+rest, and the sections that follow take them one at a time.
+
 \begin{figure}[htbp]
   \centering
   \input{figures/tikz/ch03-pipeline}

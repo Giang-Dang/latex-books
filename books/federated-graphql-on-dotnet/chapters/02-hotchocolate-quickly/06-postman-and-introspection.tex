@@ -87,6 +87,14 @@ with \code{extensions.code} set to \code{HC0011}. That division is a useful
 thing to have internalised before chapter~\ref{ch:composition}, where reading
 error payloads carefully stops being optional.
 
+The two 400s look alike from Postman and they are produced in different places.
+An unknown field is a validation rule running inside the request pipeline,
+against the schema, on a document that parsed. A syntax error never gets that
+far: the transport parses the document before a request exists at all, and what
+comes back is the parser refusing to build one.
+Chapter~\ref{ch:the-life-of-a-request} takes the pipeline apart and shows where
+each of the two happens.
+
 \subsection*{Introspection is off in production, and it will catch you}
 
 \index{introspection!disabled by default}%

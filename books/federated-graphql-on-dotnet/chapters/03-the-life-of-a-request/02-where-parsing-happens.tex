@@ -111,12 +111,12 @@ showed, the field that does not exist:
 Both are 400. Both have no \code{data} key. One carries a HotChocolate error
 code and no \code{specifiedBy}; the other carries \code{specifiedBy} and no
 code. Chapter~\ref{ch:hotchocolate-quickly} read that difference as the language
-rules against the server's own, which is right, and I described both as
-validation running before any resolver, which is not quite. The unknown field is
-validation, at position six, inside the pipeline. The syntax error is the
-transport refusing to build a request at all.
+rules against the server's own, and said that the two rejections happen in
+different places. Now the pipeline is on the table I can say where. The unknown
+field is validation, at position six, inside the pipeline. The syntax error is
+the transport refusing to build a request at all.
 
-The correction is small and the reason to make it is not. From
+The distinction is small and the reason to draw it is not. From
 chapter~\ref{ch:enter-the-router} onward there is a router in front of these
 services, and \enquote{which component produced this error} becomes a question
 you ask several times a week. A server that answers 400 without ever creating a
