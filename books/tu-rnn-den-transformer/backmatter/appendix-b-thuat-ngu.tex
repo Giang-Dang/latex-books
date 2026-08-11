@@ -113,7 +113,7 @@ câu đích & target sentence & Dịch, dùng \texttt{\textbackslash tn} \\
 từ điển & vocabulary & Dịch, dùng \texttt{\textbackslash tn} \\
 ngoài từ điển & out-of-vocabulary & Dịch, dùng \texttt{\textbackslash tn} \\
 khớp đúng cả câu & exact match & Dịch, dùng \texttt{\textbackslash tn} \\
-giả thuyết & hypothesis & Dịch, dùng \texttt{\textbackslash tn}; nghĩa trong beam search \\
+giả thuyết & hypothesis & Dịch, dùng \texttt{\textbackslash tn} \\
 cụm danh từ & noun phrase & Dịch, dùng \texttt{\textbackslash tn} \\
 loại từ & classifier & Dịch, dùng \texttt{\textbackslash tn}; thuật ngữ ngữ pháp \\
 \bottomrule
@@ -136,6 +136,22 @@ trọng số đồng chỉnh & alignment weight & Dịch, dùng \texttt{\textbac
 đồng chỉnh mềm & soft alignment & Dịch, dùng \texttt{\textbackslash tn} \\
 đồng chỉnh cứng & hard alignment & Dịch, dùng \texttt{\textbackslash tn} \\
 encoder hai chiều & bidirectional encoder & Dịch, dùng \texttt{\textbackslash tn}; \emph{encoder} giữ nguyên \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\bigskip
+\textbf{Chương 07}
+
+\footnotesize
+\begin{tabular}{@{}llp{4cm}@{}}
+\toprule
+Tiếng Việt & Tiếng Anh & Quyết định \\
+\midrule
+tích vô hướng & dot product & Dịch, dùng \texttt{\textbackslash tn} \\
+mã hóa vị trí & positional encoding & Dịch, dùng \texttt{\textbackslash tn} \\
+kết nối tắt & residual connection & Dịch, dùng \texttt{\textbackslash tn} \\
+chuẩn hóa theo tầng & layer normalization & Dịch, dùng \texttt{\textbackslash tn} \\
 \bottomrule
 \end{tabular}
 \normalsize
@@ -169,7 +185,20 @@ attention & Giữ nguyên (chương~06); không có bản dịch nào thông d�
 annotation & Giữ nguyên (chương~06); tên Bahdanau đặt cho \(\vect{h}_j\), và \enquote{chú giải} trong tiếng Việt nghĩa khác hẳn \\
 alignment error rate & Giữ nguyên (chương~06); tên một độ đo, không dịch \\
 mask & Giữ nguyên (chương~06) \\
+epoch & Giữ nguyên (chương~05) \\
 BLEU & Giữ nguyên; xem phụ lục~\ref{app:viet-tat} \\
+Transformer & Giữ nguyên (chương~07); tên kiến trúc, và nhan đề sách cũng để nguyên \\
+recurrence & Giữ nguyên (chương~07); \enquote{tính hồi quy} đã dùng cho \emph{mạng hồi quy}, và ở đây cần chính cái cơ chế chứ không phải loại mạng \\
+prefix & Giữ nguyên (chương~07) \\
+self-attention & Giữ nguyên (chương~07); \emph{attention} đã giữ nguyên nên nửa còn lại theo cùng \\
+query & Giữ nguyên (chương~07); \enquote{truy vấn} đọc được, nhưng bộ ba phải đi cùng nhau \\
+key & Giữ nguyên (chương~07); \enquote{khóa} là từ tiếng Việt thường ngày, dịch ở đây gây nhầm \\
+value & Giữ nguyên (chương~07); \enquote{giá trị} cùng lý do với \emph{key} \\
+head & Giữ nguyên (chương~07); \enquote{đầu} va vào \emph{đầu ra}, \emph{bắt đầu}, \emph{đầu tiên} \\
+warmup & Giữ nguyên (chương~07); đo ở chương~\ref{ch:chi-phi-va-song-song} \\
+label smoothing & Giữ nguyên (chương~07) \\
+batch normalization & Giữ nguyên (chương~07); đặt cạnh \emph{layer normalization} nên để nguyên cả hai vế \\
+overfit & Giữ nguyên (chương~07) \\
 \bottomrule
 \end{tabular}
 \normalsize

@@ -1,0 +1,135 @@
+% Kiến trúc Transformer, vẽ theo hình 1 của Vaswani và cộng sự 2017.
+% Không vẽ đủ N tầng: mỗi ngăn xếp chỉ mở một tầng ra, phần còn lại đánh dấu
+% bằng "N x", giống cách hình gốc dùng một khung lặp.
+% Trọng tâm của hình không phải liệt kê mọi khối, mà là tách rõ BA chỗ khác
+% nhau attention xuất hiện: tự chú ý ở encoder (nhãn 1), tự chú ý có che ở
+% decoder (nhãn 2), và attention nối hai phía encoder-decoder (nhãn 3).
+% Mono-safe: ba chỗ ấy phân biệt bằng số hiệu, nét đứt/nét chấm và mức xám
+% của nền hộp, không dùng màu.
+\begin{tikzpicture}[
+  >= Stealth,
+  hop/.style     = {draw, rectangle, inner sep = 2pt, font = \scriptsize,
+                     align = center},
+  cong/.style    = {draw, circle, minimum size = 4mm, inner sep = 0pt,
+                     font = \scriptsize},
+  so/.style      = {draw, circle, fill = white, minimum size = 3.2mm,
+                     inner sep = 0pt, font = \tiny},
+  diem1/.style   = {fill = black!10},
+  diem2/.style   = {densely dashed, line width = 0.8pt},
+  diem3/.style   = {densely dotted, line width = 0.8pt, fill = black!22},
+  mui/.style     = {->, line width = 0.6pt, black!75},
+  phu/.style     = {->, line width = 0.5pt, black!75, densely dashed},
+  ngucanh/.style = {->, line width = 1.6pt, black},
+  khung/.style   = {black!45, densely dotted, line width = 0.5pt},
+  nho/.style     = {font = \scriptsize},
+  ghichu/.style  = {font = \footnotesize, black!60},
+]
+
+  % ================= ENCODER (cột trái, x = 0) =================
+  \draw[mui] (0, -0.7) -- (0, -0.4);
+  \node[hop, minimum width = 3.2cm, minimum height = 0.8cm]
+    (emb_e) at (0, 0) {Embedding nguồn};
+
+  \draw[mui] (0, 0.4) -- (0, 0.8);
+  \node[cong] (pe_e) at (0, 1.0) {\(+\)};
+  \node[hop, minimum width = 1.8cm, minimum height = 0.85cm]
+    (pos_e) at (-2.0, 1.0) {Mã hóa\\vị trí};
+  \draw[mui] (pos_e) -- (pe_e);
+
+  \draw[mui] (0, 1.2) -- (0, 1.7);
+  \node[hop, diem1, minimum width = 2.8cm, minimum height = 0.7cm]
+    (attn_e) at (0, 2.05) {Self-attention};
+  \node[so] at (attn_e.north east) {1};
+
+  \draw[mui] (attn_e) -- (0, 2.8);
+  \node[cong] (add1_e) at (0, 3.0) {\(+\)};
+  \draw[phu] (attn_e.south) to[out = 160, in = 200] (add1_e.west);
+  \node[nho, anchor = west] at (0.35, 3.0) {Cộng và chuẩn hóa};
+
+  \draw[mui] (0, 3.2) -- (0, 3.6);
+  \node[hop, minimum width = 2.8cm, minimum height = 0.7cm]
+    (ffn_e) at (0, 3.95) {FFN theo vị trí};
+
+  \draw[mui] (ffn_e) -- (0, 4.7);
+  \node[cong] (add2_e) at (0, 4.9) {\(+\)};
+  \draw[phu] (ffn_e.south) to[out = 160, in = 200] (add2_e.west);
+
+  \draw[mui] (0, 5.1) -- (0, 5.5);
+
+  \begin{scope}[on background layer]
+    \draw[khung, rounded corners = 2pt] (-2.3, 1.55) rectangle (2.3, 5.25);
+  \end{scope}
+  \node[ghichu, anchor = west] at (2.45, 3.4) {N x};
+
+  % ================= DECODER (cột phải, x = 8) =================
+  \draw[mui] (8, -0.7) -- (8, -0.4);
+  \node[nho, anchor = north] at (8, -0.75) {đầu ra dịch sang phải một bước};
+  \node[hop, minimum width = 3.2cm, minimum height = 0.8cm]
+    (emb_d) at (8, 0) {Embedding đích};
+
+  \draw[mui] (8, 0.4) -- (8, 0.8);
+  \node[cong] (pe_d) at (8, 1.0) {\(+\)};
+  \node[hop, minimum width = 1.8cm, minimum height = 0.85cm]
+    (pos_d) at (10.0, 1.0) {Mã hóa\\vị trí};
+  \draw[mui] (pos_d) -- (pe_d);
+
+  \draw[mui] (8, 1.2) -- (8, 1.7);
+  \node[hop, diem2, minimum width = 2.8cm, minimum height = 1.0cm]
+    (mattn_d) at (8, 2.2) {Self-attention\\có che};
+  \node[so] at (mattn_d.north east) {2};
+
+  \draw[mui] (mattn_d) -- (8, 3.1);
+  \node[cong] (add1_d) at (8, 3.3) {\(+\)};
+  \draw[phu] (mattn_d.south) to[out = 20, in = 340] (add1_d.east);
+
+  \draw[mui] (8, 3.5) -- (8, 3.9);
+  \node[hop, diem3, minimum width = 2.8cm, minimum height = 1.0cm]
+    (cattn_d) at (8, 4.4) {Attention\\encoder-decoder};
+  \node[so] at (cattn_d.north east) {3};
+
+  \draw[mui] (8, 4.9) -- (8, 5.3);
+  \node[cong] (add2_d) at (8, 5.5) {\(+\)};
+  \draw[phu] (cattn_d.south) to[out = 20, in = 340] (add2_d.east);
+
+  \draw[mui] (8, 5.7) -- (8, 6.1);
+  \node[hop, minimum width = 2.8cm, minimum height = 0.7cm]
+    (ffn_d) at (8, 6.45) {FFN theo vị trí};
+
+  \draw[mui] (ffn_d) -- (8, 7.2);
+  \node[cong] (add3_d) at (8, 7.4) {\(+\)};
+  \draw[phu] (ffn_d.south) to[out = 20, in = 340] (add3_d.east);
+
+  \draw[mui] (8, 7.6) -- (8, 8.0);
+
+  \begin{scope}[on background layer]
+    \draw[khung, rounded corners = 2pt] (5.7, 1.55) rectangle (10.3, 7.75);
+  \end{scope}
+  \node[ghichu, anchor = west] at (10.45, 4.65) {N x};
+
+  % --- Linear và softmax phía trên ngăn xếp decoder
+  \draw[mui] (8, 8.0) -- (8, 8.4);
+  \node[hop, minimum width = 2.0cm, minimum height = 0.6cm]
+    (lin_d) at (8, 8.7) {Linear};
+  \draw[mui] (lin_d) -- (8, 9.3);
+  \node[hop, minimum width = 2.0cm, minimum height = 0.6cm]
+    (sm_d) at (8, 9.6) {softmax};
+  \draw[mui] (sm_d) -- (8, 10.3);
+  \node[nho, anchor = south] at (8, 10.35) {phân phối xác suất};
+
+  % ================= mũi tên nặng: đầu ra encoder sang attention thứ ba
+  % Đây là chỗ duy nhất câu nguồn đi vào decoder, và đúng là cơ chế cả
+  % chương 6 đã xây: encoder cấp key và value, decoder chỉ cấp query.
+  % Đoạn cuối phải đi ngang vào cạnh tây của ô, không cắt chéo qua nó: một
+  % mũi tên 1.6pt đâm vào giữa ô sẽ gạch ngang chính cái nhãn của ô.
+  \draw[ngucanh, shorten >= 1pt] (0, 5.5) -- (0, 5.7) -- (5.8, 5.7)
+    -- (5.8, 4.4) -- (cattn_d.west);
+  \node[nho, anchor = south] at (2.9, 5.78) {đầu ra encoder};
+
+  % ================= chú giải ba điểm attention, đặt dưới cả hai cột để
+  % không đè lên hình chính
+  \node[nho, anchor = north, align = left, black!70] at (4, -1.9)
+    {1: query, key, value đều từ câu nguồn \\
+     2: đều từ câu đích, và chỉ được nhìn về sau \\
+     3: query từ decoder, key và value từ encoder};
+
+\end{tikzpicture}

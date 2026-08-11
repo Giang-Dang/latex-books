@@ -1,0 +1,119 @@
+\section{Bài báo giải được gì, và để lại gì}
+\label{sec:ch07-con-lai-gi}
+
+\index{Vaswani 2017!bài giải được gì}%
+Phát biểu cho gọn: bài bỏ được ràng buộc rằng một câu \(n\) token phải là \(n\)
+lượt tính nối đuôi nhau, và bỏ bằng cách thay recurrence bằng attention của câu
+với chính nó. Cột \code{Sequential} của bảng 1 đi từ \(O(n)\) xuống \(O(1)\), và
+đó là toàn bộ chuyện.
+
+Ba món nợ mà chương~\ref{ch:encoder-decoder} để lại thì nay trả xong cả ba.
+Chương~\ref{ch:mot-vector-cho-moi-tu} trả hai món đầu, encoder không còn vứt bỏ
+trạng thái và decoder hỏi lại được câu nguồn. Món thứ ba, tính tuần tự, là món
+chương này trả.
+
+\subsection*{Con số của bài, và một chỗ phải nói rõ}
+
+\index{Vaswani 2017!41.0 hay 41.8}%
+Bảng 2 báo BLEU 27.3 cho model base và 28.4 cho model big trên WMT 2014
+Anh-Đức, và 38.1 cho base trên Anh-Pháp. Model big huấn luyện 3.5 ngày trên tám
+GPU P100.
+
+Còn con số Anh-Pháp của model big thì tùy bạn cầm bản nào.
+
+\begin{itemize}
+  \item Bản kỷ yếu NIPS 2017 ghi \textbf{41.0} ở tóm tắt, ở bảng 2, và ở thân
+    bài mục 6.1. Ba chỗ khớp nhau.
+  \item Bản arXiv v7, đề tháng 8 năm 2023, ghi \textbf{41.8} ở tóm tắt và ở
+    bảng 2, nhưng thân bài mục 6.1 của chính nó vẫn ghi \enquote{our big model
+    achieves a BLEU score of 41.0}.
+\end{itemize}
+
+Tôi mở cả hai file ở trang 8 để chắc, vì đây đúng là loại chuyện mà đọc lướt sẽ
+bỏ qua. Con số 41.8 mà phần lớn chỗ trích lại dùng chỉ có trong bảng và tóm tắt
+của một bản sửa sáu năm sau hội nghị, và bản ấy tự mâu thuẫn với chính nó cách
+đó hai đoạn.
+
+Tôi không biết vì sao, và tôi không đoán. Cái rút ra được thì không cần biết vì
+sao: một bài báo không phải một vật cố định, và \enquote{Vaswani và cộng sự báo
+41.8} là một câu chưa đủ. Câu đủ phải nói bản nào. Cùng bài học mà
+mục~\ref{sec:ch06-ai-do} rút ra từ chuyện đếm trang PDF, một tầng cao hơn: thứ
+bạn đang đọc cũng là một phép đo, và nó cũng sai được.
+
+\subsection*{Cái bài tự nêu là còn thiếu}
+
+\index{Vaswani 2017!phần kết luận nêu gì}%
+Phần kết luận nêu ba hướng, và câu cuối là câu đáng đọc nhất:
+
+\begin{quote}
+\enquote{We plan to extend the Transformer to problems involving input and
+output modalities other than text and to investigate local, restricted
+attention mechanisms to efficiently handle large inputs and outputs such as
+images, audio and video. Making generation less sequential is another research
+goals of ours.}
+\end{quote}
+
+Câu thứ nhất trỏ thẳng vào chương~\ref{ch:vit}: đưa kiến trúc này sang ảnh. Vế
+sau của cùng câu ấy, \enquote{local, restricted attention}, là dòng nghiên cứu
+mà chương~\ref{ch:chi-phi-bac-hai} kể lại, kể cả chỗ nó không sống sót.
+
+Câu thứ hai là câu tôi muốn bạn dừng lại, và nó cũng là câu sai ngữ pháp trong
+chính bài, ở cả ba bản tôi xem. \enquote{Making generation less sequential}.
+Bài vừa bỏ tính tuần tự đi xong, và ở dòng cuối bài tự nói rằng nó vẫn còn.
+
+Vì nó còn thật, và đây là chỗ dễ nhầm nhất về kiến trúc này. Cái được song song
+hóa là \emph{huấn luyện}, nơi cả câu đích có sẵn nên mọi vị trí chạy một lượt.
+Lúc sinh câu thì token \(i+1\) chưa tồn tại trước khi token \(i\) sinh ra, nên
+decoder vẫn đi từng bước. Tệ hơn: không còn trạng thái để mang theo, nên mỗi
+bước phải chạy lại decoder trên toàn bộ prefix. Hàm giải mã trong repo làm đúng
+thế, và tôi để nguyên chứ không tối ưu, vì cái làm nó hết lãng phí là bộ nhớ
+đệm khóa và giá trị, tức chuyện của chương~\ref{ch:thuc-te-trien-khai}.
+
+\subsection*{Cái bài không nêu, và chương này đo được}
+
+\index{Vaswani 2017!hai chỗ chương này đo được}%
+Hai chuyện, cả hai từ số đo của chương chứ không từ bài.
+
+\textbf{Thứ nhất, thiên kiến quy nạp.} Mục~\ref{sec:ch07-corpus} đo được rằng ở
+đúng recipe chương trước, kiến trúc này được 0.4700 so với 1.0000, và cần ba
+lần số epoch mới tới cùng chỗ dù mang ít tham số hơn. Kiểu lỗi còn lại thì đều
+một cách đáng chú ý: đúng từ, sai cụm. Quan hệ \enquote{đứng ngay trước} là thứ
+mạng hồi quy có sẵn và self-attention phải học. Bảng 1 tính chi phí mỗi tầng và
+độ dài đường đi; nó không có cột nào cho chuyện phải học bao nhiêu mới biết hai
+vị trí cạnh nhau. Chương~\ref{ch:bias-quy-nap} là chương ấy, và
+chương~\ref{ch:vit} là chỗ cùng câu hỏi quay lại ở quy mô lớn, nơi câu trả lời
+là dữ liệu đủ nhiều thì mua được thiên kiến.
+
+\textbf{Thứ hai, cái giá bậc hai giờ nằm ở mọi chỗ.} Bahdanau tự gọi tích
+\(T_x \times T_y\) là một \enquote{drawback} rồi gạt đi vì câu dịch chỉ dài 15
+tới 40 từ, và mục~\ref{sec:ch06-con-lai-gi} đã đọc kỹ ba câu ấy. Lý do gạt bỏ
+ấy hết đúng ở đây, theo hai hướng cùng lúc. Cơ chế không còn chạy một lần giữa
+hai câu, nó chạy trong mỗi tầng và ở cả ba chỗ của
+mục~\ref{sec:ch07-tu-nhin}, kể cả nối câu nguồn với chính nó, nên tích thành
+\(n^2\) nhân với số tầng. Và \(n\) thôi không còn là 15 tới 40.
+
+Ô \(O(n^2 \cdot d)\) ở góc bảng 1 là ô bài in ra mà không coi là vấn đề, vì ở
+\(n\) nhỏ hơn \(d\) thì nó nhỏ hơn \(O(n \cdot d^2)\) của mạng hồi quy, và bài
+nói đúng chuyện đó. Chương~\ref{ch:chi-phi-va-song-song} đo lại ô ấy bằng FLOP,
+bằng bộ nhớ và bằng đồng hồ; chương~\ref{ch:chi-phi-bac-hai} là chương của mười
+năm sau, khi \(n\) đã vượt \(d\) từ lâu.
+
+\subsection*{Chỗ chương sau bắt đầu}
+
+Kiến trúc thì xong ở đây. Cái chưa xong là ba lựa chọn bài đưa ra mà không giải
+thích: \eqref{eq:ch07-post-ln} viết layer norm sau phép cộng chứ không phải
+trước, mục 5.3 có một lịch warmup 4000 bước, và mục 5.4 có label smoothing mà
+bài thừa nhận là \enquote{hurts perplexity}. Đọc lướt thì cả ba là mẹo chỉnh
+tay.
+
+Chương này không có tư cách nói chúng là mẹo hay không, và chỗ ấy đáng nói
+thẳng. Mọi mô hình trong mục~\ref{sec:ch07-corpus} chạy \emph{không} warmup,
+\emph{không} label smoothing và dropout bằng 0, và chúng vẫn đạt 0.9967. Nên ở
+quy mô này, ba thứ ấy không cần thiết, và một chương kết luận ngược lại từ đây
+là một chương đọc quá tay bảng của chính nó.
+
+Cái làm chúng đáng đo nằm ở chỗ khác: bài chạy \(\dmodel = 512\), sáu tầng mỗi
+phía, 300000 bước, và ở quy mô ấy thứ tự của layer norm đổi hẳn hình dạng
+gradient lúc khởi động. Chương~\ref{ch:chi-phi-va-song-song} là chỗ đo cả ba ở
+quy mô mà chúng bắt đầu có nghĩa, và câu hỏi nó phải trả lời là một câu hỏi về
+quy mô chứ không phải một câu hỏi về ba mẹo.

@@ -1,0 +1,71 @@
+% Mask nhân quả của decoder, mục 3.2.3 của Vaswani và cộng sự 2017.
+% Hàng i = vị trí query (bước decoder đang đoán), cột j = vị trí key (token
+% decoder có thể đọc). Ô j <= i được phép, tô xám nhạt; ô j > i bị chặn, tô
+% trắng và gạch chéo, với "-inf" viết ra ở hai ô để cho thấy con số thật sự
+% đưa vào scores trước softmax.
+% Vẽ theo đúng quy ước lưới của ch06-ma-tran-dong-chinh.tex: cỡ ô 6.2mm, viền
+% xám nhạt, thông tin nằm ở mức xám chứ không phải màu.
+\begin{tikzpicture}[
+  o/.style   = {draw = black!30, line width = 0.2pt, minimum size = 6.2mm,
+                inner sep = 0pt},
+  nho/.style = {font = \scriptsize},
+  be/.style  = {font = \tiny},
+]
+
+  % --- lưới 6 x 6. j <= i: cho phép, tô xám, để trơn. j > i: bị chặn, tô
+  % trắng và gạch chéo nhạt.
+  \foreach \i in {0, 1, 2, 3, 4, 5} {
+    \foreach \j in {0, 1, 2, 3, 4, 5} {
+      \ifnum\j>\i
+        \node[o, fill = white] at (\j*0.62, -\i*0.62) {};
+        \draw[black!35, line width = 0.3pt]
+          (\j*0.62-0.2, -\i*0.62-0.2) -- (\j*0.62+0.2, -\i*0.62+0.2);
+      \else
+        \node[o, fill = black!12] at (\j*0.62, -\i*0.62) {};
+      \fi
+    }
+  }
+
+  % --- hai ô cho thấy con số thật đưa vào scores trước softmax
+  \node[be] at (4*0.62, -1*0.62) {\(-\infty\)};
+  \node[be] at (5*0.62, -3*0.62) {\(-\infty\)};
+
+  % --- nhãn cột: chỉ số j phía trên lưới, token đầu vào decoder phía dưới
+  \foreach \j/\lab in {0/0, 1/1, 2/2, 3/3, 4/4, 5/5} {
+    \node[nho, black!60] at (\j*0.62, 0.42) {\lab};
+  }
+  % So le hai mức: ô rộng 6.2mm còn nhãn thì không, và "<sos>" một mình đã
+  % rộng hơn một ô. Xếp thẳng hàng thì "<sos>" dính vào "con".
+  \foreach \j/\tok in {0/{<sos>}, 2/{mèo}, 4/{ngủ}} {
+    \node[nho, anchor = north] at (\j*0.62, -3.50) {\tok};
+  }
+  \foreach \j/\tok in {1/con, 3/{đen}, 5/.} {
+    \node[nho, anchor = north] at (\j*0.62, -3.88) {\tok};
+    \draw[black!35, line width = 0.2pt] (\j*0.62, -3.32) -- (\j*0.62, -3.86);
+  }
+
+  % --- nhãn hàng: chỉ số i bên trái, token hàng đó phải đoán bên phải
+  \foreach \i/\lab in {0/0, 1/1, 2/2, 3/3, 4/4, 5/5} {
+    \node[nho, black!60, anchor = east] at (-0.42, -\i*0.62) {\lab};
+  }
+  \foreach \i/\tok in {0/con, 1/{mèo}, 2/{đen}, 3/{ngủ}, 4/., 5/{<eos>}} {
+    \node[nho, anchor = west] at (3.52, -\i*0.62) {\tok};
+  }
+
+  % --- tiêu đề hai trục
+  \node[nho] at (1.55, 0.95) {key \(j\)};
+  \node[nho, rotate = 90] at (-1.1, -1.55) {query \(i\)};
+
+  % --- lệch một bước: token "đen" là đầu vào ở cột j = 3 và cũng là thứ hàng
+  % i = 2 phải sinh ra. Đường nối chạy vòng ngoài lưới, không cắt qua ô nào,
+  % vì một đường chéo qua lưới đọc thành một quan hệ giữa các ô.
+  \draw[->, densely dashed, black!55, line width = 0.5pt, rounded corners = 3pt]
+    (1.86, -4.28) -- (1.86, -4.62) -- (5.25, -4.62) -- (5.25, -1.24)
+    -- (4.16, -1.24);
+  \node[nho, black!70, anchor = west] at (5.35, -3.1) {lệch một bước};
+
+  % --- chú thích mức xám, không dựa vào màu
+  \node[nho, anchor = north, black!60, align = left] at (1.55, -5.15)
+    {ô xám: cho phép (\(j \le i\)) \\ ô trắng có gạch: bị chặn (\(j > i\))};
+
+\end{tikzpicture}

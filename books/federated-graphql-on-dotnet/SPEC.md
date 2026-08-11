@@ -64,6 +64,36 @@ unverified items, and chapter 15 adds one: `AddAuthorization()` inserts two
 middleware into the pipeline chapter 3 walked, `PrepareAuthorization` before
 validation and `AuthorizeRequest` after it, and neither was read out of the
 source.
+**Length, measured 2026-08-11 at the halfway mark rather than estimated.** Half
+the chapters are drafted, so the comparison decision 10 asked for is now
+possible: 234 pages of chapter content for 14 of 28 chapters, which is 16.7 a
+chapter, and steady across the parts - Part I is 86 pages over five chapters,
+Part II is 80 over five, and the four drafted chapters of Part III are 68. The
+remaining fourteen at the same rate put chapter content alone at about 468 pages
+before the seven part dividers, five appendices, bibliography and index. So
+decision 10's 450-550 holds and needs no revision; if anything the pressure is
+at the top of the range rather than the bottom, and the worry that the book was
+running short is answered. The whole document currently builds to 309 pages with
+fourteen chapters and five appendices still stubs.
+
+**Chapter 15 is already partly built in the companion repo, uncommitted.**
+`F:/repo/mosaic-graph` sits at tag `ch14`, commit `aafc894`, with 25 modified
+files and 9 untracked paths in the working tree, and all of it is identity work:
+`scripts/mint-token.mjs`, `scripts/auth-cases.mjs`, `scripts/auth-run.mjs`, a
+`postman/mosaic-auth` collection and environment, `Security/` folders in
+`Mosaic.ServiceDefaults` and `Mosaic.Ordering`, and `CustomerKey.cs` duplicated
+into Reviews and Ordering. Nothing is committed and no `ch15` tag exists, so a
+session that starts chapter 15 from the SPEC alone would write it twice. Read
+that tree before drafting. Recorded here rather than as an open item because
+nothing about it is unresolved: it is work in progress that the SPEC did not
+know about.
+
+Next action: chapter 15, identity and authorization across the graph. It
+inherits everything its Progress row names, and chapter 14 adds two things to
+that row: a subscription is the case where a connection outlives the token that
+opened it, and the router already sends `extensions.initialPayload` in its
+`subscribe` frame, which is the obvious route for a claim and is empty because
+nothing authenticates.
 
 ## Decision log
 
@@ -168,6 +198,9 @@ is re-opened only by recording what changed and why, in the row.
 | 94 | Cosmo's WebSocket initial-payload authentication closes the public graph, so Mosaic does not ship it | A WebSocket client cannot set a header, so Cosmo reads a token out of `connection_init` when `websocket.authentication.from_initial_payload` is on. Turning it on answers `401 unauthorized` to every anonymous HTTP request, on a router whose `require_authentication` is false. Isolated by adding and removing that block and nothing else, and committed as a fourth case in `scripts/router-cases.mjs`. Mosaic keeps the block in `router/config.yaml` as a comment with the measurement beside it, and every subscription this graph serves is anonymous. Consequence worth keeping: an `@authenticated` field inside a subscription payload is refused by the *subgraph* rather than by the router, so a graph relying on the federation directives alone would have served it. Settled 2026-08-11. |
 | 95 | Chapter 3's thirteen middleware are fifteen where authorization is on, and the gate holds both exactly | `AddAuthorization()` inserts `PrepareAuthorization` before `DocumentValidationMiddleware` and `AuthorizeRequest` after it, which is what lets `[Authorize(apply: Validation)]` refuse a whole request before any resolver runs. Four subgraphs still assemble exactly thirteen and three assemble exactly fifteen. Both verification scripts now hold two exact lists selected per subgraph and assert the order of each, rather than the one loose assertion "thirteen or fifteen" that would have been quicker. Chapter 3's number is still correct for the service that chapter measured. This also closed a pre-existing drift: the per-subgraph loop existed only in `verify.ps1` and now exists in both. Settled 2026-08-11. |
 | 96 | The subgraphs collection signs its own tokens, which is a duplication with a reason | `postman/mosaic-subgraphs` has five requests that reach a guarded field, and four of them choose the customer they act as inside a pre-request script, so there is no identifier for the verification script to mint against before newman starts. A collection-level pre-request script therefore implements HS256 signing against a `jwtSecret` the gate passes in. It is a second implementation of `scripts/mint-token.mjs` and the two agree about the issuer, the audience, the key id and the scope claim with nothing checking that they still do; both files say so. `postman/mosaic-auth` does the opposite, because its subjects are known in advance, and takes finished tokens. Settled 2026-08-11. |
+| 97 | The composer's entity-interface crash is committed as a case, and the report is drafted rather than posted | `@wundergraph/composition` 0.63.2 throws `Fatal: Expected key "Film" to exist in the map "entityDataByTypeName"` out of `handleEntityInterfaces`, with a stack trace and wgc's "please open an issue" box, when an entity interface carries `@key` and one of its implementations does not. Re-measured 2026-08-11 against composition 0.63.2, still the newest published, and through wgc 0.129.8: unchanged, and all sixteen `modeling-cases.mjs` cases pass. The book's stake in it is already discharged, which is what took a chapter and a half to notice: `interface-object-implementation-without-a-key` asserts the crash by name, so a release that turns it into a proper error fails the gate rather than quietly making chapter 13 wrong. What was genuinely outstanding was an upstream report, and that is now drafted in `research/2026-08-upstream-reports.md`, citing issue #1669 as the sibling crash in the same function - different map, different trigger, closed 2025-03-19 as a confirmed bug. Posting it is the author's; nothing in the book waits on it. Settled 2026-08-11. |
+| 98 | wgc's subscription key gap is unchanged at 0.129.8, and its report is drafted too | Decision 83 measured both halves at wgc 0.129.7. Re-measured 2026-08-11 at 0.129.8, the newest published, and both stand: all eight `realtime-cases.mjs` cases pass unchanged, and the installed tree says the same thing directly rather than by inference - `dist/src/commands/router/commands/compose.js:306` reads the camelCase `websocketSubprotocol` and falls back to `auto`, so the documented `websocket_subprotocol` never reaches it; and `validateSubscriptionProtocols` is imported by `subgraph create/publish/update`, `feature-subgraph create/publish` and `monograph create/update`, and by nothing at all under `commands/router/`. The companion repo's pin stays at 0.129.7, because bumping it is a companion-repo change and belongs to whoever finishes chapter 15. Report drafted beside the other one. Same shape as 89: the cases are the tripwire and the book waits on nothing. Settled 2026-08-11. |
+| 99 | `samples/federated-wire` composes from committed schema files on purpose | Its `graph.yaml` names `schema: file:` rather than `introspection:`, so changing a subgraph's C# and recomposing changes nothing, and chapter 07's lab has to tell the reader to switch to `introspection:` before two of its exercises. That was carried as a limitation waiting for the sample to grow. It should not grow. A reader can compose the sample on a cold checkout without starting either subgraph, which is what makes chapter 07's opening reproducible; composition from committed files is deterministic, which is the property decision 56 leans on for chapter 09's committed config; and drift between a subgraph's C# and its committed schema is chapter 09's subject rather than this sample's, which exists to be watched rather than to be maintained. So the file input is the arrangement, the lab's `introspection:` instruction is the documented path rather than a workaround, and a later chapter that wants live drift introspects rather than growing this one. Settled 2026-08-11. |
 
 ## Version baseline
 
@@ -490,5 +523,6 @@ history and the decision log holds the reason.
 - **The book may come in short of decision 10's 450-550 pages.** Chapter 01 was
   11 pages against a 12-18 estimate, and nothing since has been padded to reach
   a number. Unblocked at the end of a part: compare the running count against
-  the estimate, and revise the estimate rather than inflating chapters.
+  the estimate, and revise the estimate rather than inflating chapters. => decision: 
+  Remove pages length limit
 

@@ -1,0 +1,153 @@
+\section{Chạy thử trên corpus của sách}
+\label{sec:ch07-corpus}
+
+\index{Transformer!đặt cạnh mô hình chương 6}%
+Sáu mục trước dựng kiến trúc và đo từng mảnh. Phép kiểm thẳng thắn nhất còn lại
+là đặt cả cái vào đúng chỗ mô hình chương~\ref{ch:mot-vector-cho-moi-tu} đã
+đứng, giữ nguyên mọi thứ khác, và xem con số đi đâu.
+
+Mọi thứ giữ nguyên nghĩa là mọi thứ: cùng corpus, cùng cách chia tập, cùng 6000
+cặp huấn luyện và 300 cặp test, cùng batch 128, cùng Adam ở learning rate 0.005,
+cùng clip 5.0, cùng phép \tn{đảo câu nguồn}{source reversal}, cùng giải mã tham
+lam, cùng cách chấm \tn{khớp đúng cả câu}{exact match}. Đổi hai thứ, và bảng có
+một cột cho mỗi thứ: kiến trúc, và số
+epoch.
+
+\begin{measured}{mô hình chương trước và Transformer, cùng recipe}
+\begin{minted}{text}
+model        d     epochs  params   loss     exact    short    long
+attention    32    14      40805    0.0088   1.0000   1.0000   1.0000
+transformer  24    14      35845    0.1159   0.4700   0.8581   0.0921
+transformer  24    28      35845    0.0148   0.8967   1.0000   0.7961
+transformer  24    42      35845    0.0008   0.9967   1.0000   0.9934
+transformer  24    56      35845    0.0001   0.9967   1.0000   0.9934
+
+short = source of at most 11 tokens (148 of 300), long = the rest
+\end{minted}
+
+Transformer 2 tầng mỗi phía, 4 head, \(\dff = 4\dmodel\). Một seed mỗi bảng.
+
+Đo bằng \code{experiments/ch07\_corpus.py} tại tag \code{ch07}.
+\end{measured}
+
+\index{đo lường!hàng đối chứng tái lập chương trước}%
+Đọc phần không phải kết quả trước. Hàng đầu là mô hình
+chương~\ref{ch:mot-vector-cho-moi-tu} huấn luyện lại ở đây chứ không phải chép
+sang, và
+nó trùng bảng mục~\ref{sec:ch06-be-rong} ở cả năm số: 40805 tham số, mất mát
+0.0088, rồi 1.0000 ba lần. Nếu hàng ấy lệch, mọi chênh lệch phía dưới còn có thể
+là chênh lệch của môi trường chạy chứ không phải của kiến trúc.
+
+Bốn hàng Transformer cũng không phải bốn lần huấn luyện. Chúng là \emph{một}
+lần, chấm ở bốn thời điểm trên đường đi của chính nó. Cùng trọng số, cùng thứ tự
+batch, cùng trạng thái optimizer, nên hàng 14 epoch đúng bằng mô hình mà một
+lần chạy 14 epoch cho ra.
+
+\subsection*{Ở recipe của chương trước, kiến trúc mới thua}
+
+\index{Transformer!thua ở 14 epoch}%
+Hàng thứ hai là câu trả lời cho câu hỏi tôi bắt đầu mục này với, và nó không
+phải câu tôi chờ đợi. Ở đúng 14 epoch mà chương~\ref{ch:mot-vector-cho-moi-tu}
+chạy, Transformer được 0.4700 so với 1.0000. Trên câu dài nó được 0.0921.
+
+Đó là một khoảng cách không có cách nào đọc thành thắng lợi, và cũng không phải
+chuyện làm tròn. Nên phải hỏi tại sao, và có ba cách giải thích cần tách khỏi
+nhau trước khi nói bất cứ điều gì.
+
+Ba phép chẩn đoán dưới đây chạy ở \(\dmodel = 32\) chứ không phải ở
+\(\dmodel = 24\) của bảng, vì chúng làm xong trước khi bề rộng của bảng được
+chốt. Nên đọc chúng như số của một mô hình rộng hơn ở cùng 14 epoch, mô hình
+được 0.6533 chứ không phải 0.4700, và cùng kiểu hỏng. Chúng trả lời câu
+\enquote{vì sao thấp}, không trả lời câu \enquote{thấp bao nhiêu}.
+
+\textbf{Không phải overfit.} Chấm mô hình \(\dmodel = 32\) ấy trên 300 cặp lấy
+từ chính tập huấn luyện thì được 0.5967, không cao hơn 0.6533 nó được trên tập
+test. Mô hình chưa khớp nổi cả dữ liệu nó đã thấy, nên chỗ thiếu không phải chỗ
+nó học thuộc quá tay.
+
+\textbf{Không phải mã hỏng.} Đưa cho nó prefix đúng rồi đo độ chính xác từng
+token thì được 0.9657 trên toàn tập và 0.9499 trên riêng câu dài. Mô hình gần
+đúng ở mức token; cái phạt nó là phép chấm. Khớp đúng cả câu đòi mọi token đều
+đúng, và \(0.9499^{19} = 0.3765\) cho câu đích 19 token, so với 0.3421 mà chính
+mô hình ấy được ở cột \code{long}. Phần lớn khoảng cách giữa hai cột của nó giải
+thích được chỉ bằng phép nhân dồn, không cần giả định gì thêm.
+
+\textbf{Không phải optimizer.} Đây là cách giải thích tôi tin nhất lúc đầu, vì
+mục 5.3 của bài có hẳn một lịch warmup và recipe dùng chung thì không. Tôi thử
+sáu công thức learning rate ở \(\dmodel = 32\), gồm cả lịch warmup của chính
+bài thu nhỏ cho vừa 658 bước huấn luyện. Recipe dùng chung, learning rate 0.005
+cố định, cho kết quả \emph{tốt nhất} trong cả sáu. Lịch warmup ở warmup 100 và
+400 cho 0.4267 và 0.5000, đều thấp hơn 0.6533. Chạy gấp đôi số epoch ở cùng
+recipe ấy cho 0.6033, tức cũng không đưa nó đi đâu. Nên chương này không được
+đổ cho optimizer, và chương~\ref{ch:chi-phi-va-song-song} vẫn là chỗ đo warmup
+cho tử tế ở quy mô nó có nghĩa.
+
+\subsection*{Nó không chạm trần, nó thiếu bước}
+
+\index{Transformer!ba lần số epoch thì tới nơi}%
+Ba hàng còn lại là chỗ bảng này đổi nghĩa. Ở 28 epoch, 0.8967. Ở 42 epoch,
+0.9967. Ở 56 epoch, vẫn 0.9967, tức nó đã dừng.
+
+Với 35845 tham số, ít hơn 40805 của mô hình attention.
+
+Phát biểu tôi thấy đứng vững: trên corpus này, hai kiến trúc đi tới cùng một
+chỗ, Transformer bằng ít tham số hơn và bằng ba lần số epoch. Cái nó cần không
+phải sức chứa, mà là số bước cập nhật.
+
+Một chú ý để không ai đọc bảng thành đường thẳng. Cột \code{loss} giảm đơn điệu
+qua bốn mốc, 0.1159 rồi 0.0148 rồi 0.0008 rồi 0.0001, còn cột khớp đúng cả câu
+thì không phải lúc nào cũng thế: một lần chạy riêng ở \(\dmodel = 32\) cho
+0.6533 ở 14 epoch và 0.6033 ở 28 epoch. Khớp đúng cả câu là tích của xác suất
+từng token trên cả câu, nên nó nhảy chứ không đi mượt, và một cột như thế cần
+nhiều mốc mới đọc được.
+
+\subsection*{Mô hình sai ở đâu, và câu trả lời không phải \enquote{sai ngẫu nhiên}}
+
+\index{Transformer!lỗi gắn nhầm cụm}%
+Con số 0.4700 nói mô hình sai nhiều. Nó không nói sai thế nào, và đọc output ra
+thì kiểu lỗi rất đều.
+
+\begin{minted}{text}
+src  ... and the big bird wants a black horse
+want ... và con chim lớn muốn một con ngựa đen
+got  ... và con ngựa lớn muốn một con chim đen
+
+src  a dog carries a small horse and a bird carries the white
+     horse in the garden
+want một con chó mang một con ngựa nhỏ và một con chim mang
+     con ngựa trắng trong vườn
+got  một con chó nhỏ mang một con ngựa và một con chim trắng
+     mang con ngựa trong vườn
+\end{minted}
+
+Ở ví dụ thứ nhất, hai danh từ của hai mệnh đề đổi chỗ cho nhau. Ở ví dụ thứ
+hai, hai tính từ gắn vào nhầm \tn{cụm danh từ}{noun phrase}. Từ vựng đúng hết,
+số lượng token
+đúng hết, cấu trúc câu đúng hết. Cái sai là \emph{cái nào thuộc về cái nào}.
+
+Đó là kiểu lỗi rất riêng, và nó là bản xem trước của một chuyện lớn hơn nhiều.
+Mạng hồi quy đọc câu theo thứ tự, nên \enquote{tính từ đứng ngay trước danh từ
+này} là chuyện nó có sẵn, không phải học. Với self-attention thì không có gì có
+sẵn: mọi vị trí nhìn mọi vị trí như nhau, và quan hệ \enquote{ngay trước} phải
+được dựng lại từ \tn{mã hóa vị trí}{positional encoding}, bằng dữ liệu. Sáu
+nghìn câu của một văn phạm
+hữu hạn gần đủ để dựng, và \enquote{gần đủ} là 0.4700.
+
+Cái phải trả để bỏ recurrence không phải sức chứa và không phải thời gian mỗi
+bước. Nó là thiên kiến quy nạp, và chương~\ref{ch:bias-quy-nap} là chương dành
+riêng cho chuyện đó.
+
+\subsection*{Bảng này nói được gì về bài báo}
+
+\index{corpus đồ chơi!giới hạn của bảng chương 7}%
+Không nhiều, và giới hạn thì vẫn đúng giới hạn mục~\ref{sec:ch06-be-rong} đã
+nêu. Văn phạm hữu hạn, \tn{từ điển}{vocabulary} đóng, không có từ
+\tn{ngoài từ điển}{out-of-vocabulary}, không nhập
+nhằng, câu dài nhất 23 token, và 6000 cặp. Bài chạy WMT'14 với 4.5 triệu cặp
+câu. Một mô hình đạt 0.9967 ở đây nghĩa là nó học thuộc được một văn phạm nhỏ.
+
+Cái bảng này kiểm được là một câu điều kiện: nếu bỏ recurrence mà giữ attention
+thì mô hình còn dịch được không, và trả bằng cái gì. Câu trả lời trên corpus
+này là còn, và trả bằng số bước. Chiều ấy khớp với chính bài ở chỗ bài nói rất
+ít: bài không so số bước với một mô hình hồi quy cùng dữ liệu, bài so thời gian
+tường và số FLOP, mà hai thứ đó thắng vì lý do khác hẳn.

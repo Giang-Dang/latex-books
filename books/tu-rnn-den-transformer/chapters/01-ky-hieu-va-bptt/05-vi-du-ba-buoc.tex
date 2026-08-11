@@ -29,7 +29,7 @@ và tôi không sửa một chữ số nào.
 Đầu vào và target được chọn nhỏ và tròn để bạn có thể đọc. Trọng số được khởi
 tạo từ \mintinline{python}{np.random.seed(42)} rồi lưu cứng trong code.
 
-\begin{minted}[fontsize=\footnotesize]{text}
+\begin{minted}{text}
 x_1 = [ 0.50, -0.30]    target_1 = [1.0, 0.0]
 x_2 = [ 0.80,  0.10]    target_2 = [0.5, 0.5]
 x_3 = [-0.40,  0.60]    target_3 = [0.0, 1.0]
@@ -37,7 +37,7 @@ x_3 = [-0.40,  0.60]    target_3 = [0.0, 1.0]
 
 \subsection{Trọng số khởi tạo}
 
-\begin{minted}[fontsize=\footnotesize]{text}
+\begin{minted}{text}
 W_xh = [[0.374540, 0.950714],
         [0.731994, 0.598658],
         [0.156019, 0.155995]]
@@ -103,7 +103,7 @@ L = \frac{1}{2}\bigl(
 
 Tôi chạy BPTT lùi từ $t = 3$ về $t = 1$. Kết quả gradient cho năm tham số:
 
-\begin{minted}[fontsize=\footnotesize]{text}
+\begin{minted}{text}
 ∂L/∂W_xh = [[1.099039,  0.130346],
             [0.707644,  0.099482],
             [0.406837,  0.088858]]
