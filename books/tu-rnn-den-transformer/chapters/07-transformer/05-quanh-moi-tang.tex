@@ -1,0 +1,125 @@
+\section{Cái bọc quanh mỗi tầng}
+\label{sec:ch07-quanh-tang}
+
+\index{residual!bọc quanh mỗi tầng con}%
+Ba mục trước dựng xong phần attention. Phần còn lại của kiến trúc là những thứ
+không ai đặt tên bài báo theo: một phép cộng, một phép chuẩn hóa, và một mạng
+hai tầng. Chúng đến từ ba dòng nghiên cứu khác nhau và bài lắp cả ba vào mà
+không tranh luận gì.
+
+Mỗi tầng con, dù là attention hay không, nằm trong cùng một cái bọc. Mục 3.1
+viết ra bằng một dòng:
+
+\begin{equation}
+  \mathrm{output} = \layernorm(\vect{x} + \mathrm{Sublayer}(\vect{x})).
+  \label{eq:ch07-post-ln}
+\end{equation}
+
+Cộng đầu vào vào đầu ra, rồi chuẩn hóa. Hai phép, và mỗi phép có một bài báo
+riêng đứng sau.
+
+\begin{bridge}{He và cộng sự 2015: cộng thẳng đầu vào vào đầu ra}
+\index{residual!He 2015}%
+Bài này ra đời cho mạng tích chập rất sâu, không liên quan gì tới
+chuỗi~\autocite{he2016deep}. Vấn đề họ gặp nằm gọn trong hình 1 của bài: trên
+CIFAR-10, mạng 56 tầng có lỗi \emph{huấn luyện} cao hơn mạng 20 tầng.
+
+Chỗ đáng dừng là chữ huấn luyện. Overfit không giải thích được kết quả ấy, vì
+overfit đẩy lỗi kiểm tra lên trong khi lỗi huấn luyện đi xuống, còn ở đây cả
+hai cùng lên. Mục 1 của bài nói thẳng ra:
+\enquote{such degradation is not caused by overfitting, and adding more layers
+to a suitably deep model leads to higher training error}. Nói cách khác đây
+không phải chuyện mô hình học thuộc, mà là chuyện mô hình khó tối ưu.
+
+Cách chữa là đổi cái mỗi khối phải học. Thay vì bắt khối học ánh xạ
+\(H(\vect{x})\), cho nó học \(F(\vect{x}) = H(\vect{x}) - \vect{x}\) rồi cộng
+\(\vect{x}\) lại ở cuối, tức \tn{kết nối tắt}{residual connection}. Nếu ánh xạ
+tốt nhất cho khối ấy là không làm gì cả, khối chỉ cần đẩy \(F\) về 0, và đẩy về
+0 là chuyện dễ.
+
+Chỗ liên quan tới sách này là đạo hàm. Đạo hàm của \(\vect{x} + F(\vect{x})\)
+theo \(\vect{x}\) là \(\mat{I} + \jac{F}{\vect{x}}\), nên gradient có một đường
+đi thẳng qua ma trận đơn vị, không nhân với gì cả. Đó đúng là hình dạng
+mục~\ref{sec:ch06-duong-gradient} tìm thấy ở \eqref{eq:ch06-duong-moi}, và đúng
+hình dạng của vòng quay lỗi ở chương~\ref{ch:lstm}. Ba kiến trúc khác hẳn nhau,
+cùng một mẹo: cho gradient một lối đi mà không có tích Jacobi nào trên đó.
+\end{bridge}
+
+\begin{bridge}{Ba, Kiros và Hinton 2016: chuẩn hóa theo từng mẫu}
+\index{layer normalization!Ba 2016}%
+\tn{Chuẩn hóa theo tầng}{layer normalization} lấy trung bình và phương sai trên
+\emph{các đơn vị của một tầng, trong một mẫu huấn luyện}, rồi đưa về trung bình
+0 phương sai 1 và nhân lại bằng hai tham số học được~\autocite{ba2016layer}.
+Tóm tắt của bài phát biểu nó như một phép chuyển vị:
+\enquote{we transpose batch normalization into layer normalization by computing
+the mean and variance used for normalization from all of the summed inputs to
+the neurons in a layer on a single training case}.
+
+Chỗ khác với batch normalization nằm ở chỗ lấy thống kê, và tóm tắt nêu ba hệ
+quả. Thứ nhất, batch norm lấy trên cả một mini-batch nên tác dụng của nó phụ
+thuộc vào kích thước batch (\enquote{the effect of batch normalization is
+dependent on the mini-batch size}). Thứ hai, layer norm tính y hệt nhau ở lúc
+huấn luyện và lúc chạy thật, còn batch norm thì không:
+\enquote{Unlike batch normalization, layer normalization performs exactly the
+same computation at training and test times}. Thứ ba, với mạng hồi quy thì bài
+nói về batch norm rằng \enquote{it is not obvious how to apply it}, còn layer
+norm áp vào thẳng được bằng cách tính thống kê riêng ở từng
+\tn{bước thời gian}{timestep}.
+
+Hệ quả thứ ba là hệ quả đáng nhớ ở đây, dù bài viết nó cho mạng hồi quy chứ
+không cho kiến trúc này: layer norm không nhìn sang mẫu khác, nên độ dài câu và
+cách xếp batch không đi vào phép chuẩn hóa được.
+
+Tôi chỉ đọc bài này ở mức tóm tắt. Một chi tiết thư mục đáng ghi: nó có đúng
+một bản arXiv, ngày 21 tháng 7 năm 2016, không số DOI và không dòng nào ghi hội
+nghị hay tạp chí. Một bài chưa từng qua bình duyệt chính thức, nằm trong gần
+như mọi Transformer từng chạy.
+\end{bridge}
+
+\subsection*{Thứ tự của hai phép, và vì sao nó thành một chương khác}
+
+\index{layer normalization!post-LN là thứ tự của bài}%
+\eqref{eq:ch07-post-ln} chuẩn hóa \emph{sau} khi cộng. Cách gọi bây giờ là
+post-LN, và cách gọi ấy tồn tại vì có một cách khác.
+
+Đặt layer norm vào trong, tức \(\vect{x} + \mathrm{Sublayer}(\layernorm(\vect{x}))\),
+thì đường tắt của He đi thẳng từ đầu vào tới đầu ra của cả chồng tầng mà không
+gặp phép chuẩn hóa nào. Bài viết post-LN, và mọi thứ trong sách này viết theo
+bài. Nhưng thứ tự ấy là lý do mục 5.3 của bài phải có một lịch warmup, và
+chương~\ref{ch:chi-phi-va-song-song} là chỗ đo hai thứ tự cạnh nhau thay vì
+tuyên bố cái nào đúng.
+
+Tôi nói trước ở đây vì \eqref{eq:ch07-post-ln} là loại phương trình dễ chép lại
+mà không để ý thứ tự, và thứ tự là toàn bộ nội dung của nó.
+
+\subsection*{Mạng truyền thẳng, và chữ \enquote{theo vị trí}}
+
+\index{FFN!chạy riêng ở từng vị trí}%
+Tầng con thứ hai của mỗi tầng encoder là phương trình (2):
+
+\begin{equation}
+  \ffn(\vect{x}) = \max(0, \vect{x}\mat{W}_1 + \vect{b}_1)\mat{W}_2 + \vect{b}_2.
+  \label{eq:ch07-ffn}
+\end{equation}
+
+Một mạng hai tầng với hàm rectified linear unit, viết tắt là ReLU, ở giữa. Bài
+đặt \(\dff = 2048\) so với
+\(\dmodel = 512\), tức rộng gấp bốn ở giữa rồi thu về.
+
+Chữ đáng đọc là \enquote{position-wise}. Cùng một bộ trọng số chạy ở từng vị
+trí, riêng rẽ, không có gì đi ngang. Bài mô tả nó theo cách khác cho cùng một
+ý: hai phép tích chập kernel bằng 1.
+
+Đó không phải một chi tiết cài đặt. Nó là chỗ khóa lại một phát biểu về cả kiến
+trúc: \emph{trong Transformer, attention là thứ duy nhất chuyển thông tin giữa
+các vị trí.} Mọi thứ khác chạy tại chỗ. Tôi viết một test khẳng định đúng câu
+ấy, đổi đầu vào ở một vị trí rồi đòi đúng vị trí ấy đổi và bốn vị trí kia đứng
+im, vì nếu \eqref{eq:ch07-ffn} lỡ trộn được các vị trí thì mọi thứ
+mục~\ref{sec:ch07-vi-tri} nói về vị trí đều mất chỗ dựa.
+
+\index{residual!vì sao mọi tầng con cùng bề rộng}%
+Một hệ quả nhỏ nhưng ràng buộc mọi thứ: vì \eqref{eq:ch07-post-ln} cộng
+\(\vect{x}\) vào đầu ra của tầng con, hai vế phải cùng bề rộng. Nên mọi tầng
+con và cả embedding đều rộng \(\dmodel\), và bài nói thẳng ra thế. \(\dff\)
+được phép khác vì nó nằm gọn bên trong \eqref{eq:ch07-ffn} và không chạm vào
+phép cộng.

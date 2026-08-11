@@ -1,0 +1,114 @@
+\section{Cho câu tự nhìn chính nó}
+\label{sec:ch07-tu-nhin}
+
+\index{self-attention!ý tưởng}%
+Cơ chế của chương~\ref{ch:mot-vector-cho-moi-tu} nối hai câu với nhau: decoder
+hỏi, encoder trả lời. Bước đổi ở đây gọn tới mức dễ đọc lướt qua. Cho một câu
+hỏi \emph{chính nó}.
+
+Mỗi vị trí trong \tn{câu nguồn}{source sentence} dựng một câu hỏi về các vị trí
+còn lại của cùng câu
+ấy, rồi lấy về một tổng có trọng số của chúng. Từ \code{it} hỏi \enquote{tôi
+đang thay cho danh từ nào}, và câu trả lời nằm ở một vị trí khác trong cùng
+câu. Bài gọi đây là self-attention, và tôi giữ nguyên chữ ấy.
+
+Chỗ được của nó không nằm ở chất lượng dịch. Nó nằm ở đồ thị tính toán. Trong
+một \tn{mạng hồi quy}{recurrent neural network}, \(\vect{h}_j\) cần
+\(\vect{h}_{j-1}\), nên một câu \(n\) token
+là \(n\) lượt nối đuôi nhau. Trong self-attention, mọi vị trí đọc mọi vị trí
+cùng một lúc, từ cùng một đầu vào, nên không vị trí nào phải chờ vị trí nào.
+Bảng 1 của bài đo ba đại lượng cho bốn loại tầng. Chép lại đủ cả bốn hàng, chỉ
+rút gọn tên cột cho vừa khổ trang:
+
+\begin{minted}{text}
+Layer Type              Complexity/Layer  Sequential  Max Path Length
+Self-Attention          O(n^2 . d)        O(1)        O(1)
+Recurrent               O(n . d^2)        O(n)        O(n)
+Convolutional           O(k . n . d^2)    O(1)        O(log_k(n))
+Self-Attention (restr.) O(r . n . d)      O(1)        O(n/r)
+\end{minted}
+
+Cột \code{Sequential} là cột chương này nói về: \(O(n)\) thành \(O(1)\). Cột
+\code{Max Path Length} là chuyện chương~\ref{ch:mot-vector-cho-moi-tu} đã dẫn
+xuất một lần rồi, ở dạng \enquote{đường ngắn nhất từ bước đích tới annotation
+dài đúng một bước}; ở đây tính chất ấy mở rộng ra cho cả câu nguồn với chính nó.
+Còn cột đầu tiên là cái giá, \(n^2\), và chương~\ref{ch:chi-phi-va-song-song}
+đo nó.
+
+\subsection*{Ba chỗ dùng, và chúng không giống nhau}
+
+\index{self-attention!ba chỗ dùng trong kiến trúc}%
+Bài dùng attention ở ba chỗ với ba cấu hình khác nhau, và trộn ba chỗ ấy làm
+một là cách hiểu sai kiến trúc phổ biến nhất mà tôi gặp. Khác biệt nằm ở query,
+key và value lấy từ đâu.
+
+Ba chữ ấy sách này giữ nguyên tiếng Anh, cùng lý do với chữ attention. Bản dịch
+sát nhất của chúng là \enquote{truy vấn}, \enquote{khóa} và \enquote{giá trị},
+mà \enquote{khóa} và \enquote{giá trị} là hai từ tiếng Việt thường ngày xuất
+hiện ở khắp chương này theo nghĩa khác hẳn. Dịch chúng ở đây tốn nhiều hơn được.
+
+\begin{enumerate}
+  \item \textbf{Self-attention ở encoder.} Cả ba lấy từ câu nguồn. Mỗi vị trí
+    nguồn đọc mọi vị trí nguồn.
+  \item \textbf{Self-attention có che ở decoder.} Cả ba lấy từ
+    \tn{câu đích}{target sentence}, nhưng
+    vị trí \(i\) chỉ được đọc các vị trí từ \(i\) trở về trước.
+    Mục~\ref{sec:ch07-che} là chỗ nói vì sao.
+  \item \textbf{Attention encoder-decoder.} Query lấy từ decoder, key và value
+    lấy từ encoder. \emph{Đây đúng là cơ chế của
+    chương~\ref{ch:mot-vector-cho-moi-tu}}, và bài nói thẳng ra thế ở mục 3.2.3:
+    nó \enquote{mimics the typical encoder-decoder attention mechanisms in
+    sequence-to-sequence models}. Cái mới không phải chỗ này, cái mới là hai
+    chỗ kia.
+\end{enumerate}
+
+Hình~\ref{fig:ch07-kien-truc} vẽ cả ba.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch07-kien-truc-transformer}
+  \caption{Kiến trúc, vẽ theo hình 1 của bài, với ba chỗ dùng attention đánh
+    dấu riêng. So với hình~\ref{fig:ch06-kien-truc} thì mũi tên đậm vẫn còn và
+    vẫn làm đúng việc cũ: nó mang câu nguồn sang cho decoder. Cái mất đi là các
+    mũi tên ngang nối bước \(t-1\) với bước \(t\) trong hai nửa. Cái thêm vào là
+    ô \tn{mã hóa vị trí}{positional encoding} ở chân mỗi cột, và
+    mục~\ref{sec:ch07-vi-tri} nói vì sao bỏ
+    recurrence thì bắt buộc phải thêm nó.}
+  \label{fig:ch07-kien-truc}
+\end{figure}
+
+\subsection*{Cái giá đến ngay lập tức}
+
+\index{self-attention!không phân biệt được thứ tự}%
+Bỏ recurrence đi thì mất một thứ mà mạng hồi quy cho không: thứ tự.
+
+Một tổng có trọng số trên một tập hợp không biết tập hợp ấy xếp thế nào. Đảo
+thứ tự đầu vào thì đầu ra đảo theo y hệt và không có gì khác đổi. Với
+self-attention, một câu và một túi từ là cùng một vật.
+
+Đây là loại phát biểu dễ gật đầu rồi đi tiếp, nên tôi đo. Lấy một tầng
+attention, cho một dãy vào, hoán vị dãy ấy, chạy lại, rồi hoán vị ngược kết quả
+về và so với lần chạy đầu.
+
+\begin{measured}{sai khác giữa chạy thẳng và chạy trên dãy đã hoán vị}
+\begin{minted}{text}
+d_model  heads  steps  max|difference|
+16       4      6      4.470e-08
+32       4      12     4.098e-08
+64       8      20     7.451e-08
+\end{minted}
+
+Tầng attention một mình, chưa có mã hóa vị trí, trọng số lúc khởi tạo.
+
+Đo bằng \code{experiments/ch07\_position.py} tại tag \code{ch07}.
+\end{measured}
+
+Ba con số ấy là nhiễu của số thực dấu chấm động 32 bit, không phải một sai khác
+nhỏ. Nghĩa là đẳng thức đúng theo nghĩa đen: tầng này không phân biệt được hai
+thứ tự, và không phải nó phân biệt kém.
+
+Bài nói lý do ấy bằng một câu ở đầu mục 3.5, rằng vì mô hình không có
+recurrence và không có tích chập nên \enquote{we must inject some information
+about the relative or absolute position of the tokens in the sequence}. Bài
+không đo. Mục~\ref{sec:ch07-vi-tri} là chỗ trả cái giá này, và nó là mục dài
+nhất chương, vì cách trả không hiển nhiên như nó trông.

@@ -1,0 +1,161 @@
+\exercises
+
+\tierunderstand
+
+\begin{bt}
+  \item Dẫn xuất ở \eqref{eq:ch07-phuong-sai} dùng giả thiết độc lập đúng hai
+    lần, ở hai chỗ khác nhau. Chỉ ra cả hai. Rồi giả sử \(q_i\) và \(k_i\)
+    tương quan với nhau, hệ số \(\rho\) như nhau ở mọi chiều: viết lại kỳ vọng
+    và phương sai của \(\vect{q} \cdot \vect{k}\), và nói \(\sqrt{\dk}\) còn là
+    hệ số chuẩn hóa đúng nữa không.
+
+  \item Mục~\ref{sec:ch07-chia-can} đo được rằng ở lúc khởi tạo, phép chia cho
+    \(\sqrt{\dk}\) chia quá tay khoảng ba lần, và kết luận rằng chuyện đó không
+    làm hỏng lập luận. Viết ra lý do bằng lời của bạn. Rồi làm phần ngược lại,
+    khó hơn: dựng một tình huống trong đó một hệ số hằng \emph{sai ba lần} thật
+    sự làm hỏng mô hình, và nói tình huống ấy khác tình huống ở đây chỗ nào.
+
+  \item Chứng minh trực tiếp từ \eqref{eq:ch07-attention} rằng attention giao
+    hoán với phép hoán vị: nếu \(\mat{P}\) là ma trận hoán vị thì
+    \(\attention(\mat{P}\mat{Q}, \mat{P}\mat{K}, \mat{P}\mat{V}) = \mat{P}\,
+    \attention(\mat{Q}, \mat{K}, \mat{V})\). Chỉ rõ bước nào trong chứng minh
+    dùng tới việc softmax lấy trên chiều key. Rồi nói vì sao cộng
+    \eqref{eq:ch07-pe} vào phá được đẳng thức ấy.
+
+  \item \eqref{eq:ch07-tich-vo-huong-pe} cho dạng đóng
+    \(\sum_i \cos(k\omega_i)\), và mục~\ref{sec:ch07-vi-tri} đo được chỗ tổng ấy
+    quay đầu: \(k = 5\) ở \(\dmodel = 32\), \(k = 6\) ở 64, \(k = 44\) ở 512.
+    Từ dạng đóng, giải thích vì sao chỗ quay đầu dịch sang phải khi \(\dmodel\)
+    lớn lên. Rồi dự đoán nó dịch đi đâu nếu giữ \(\dmodel = 64\) mà đổi hằng số
+    10000 thành 100.
+
+  \item Số tham số của một tầng multi-head không đổi theo \(h\). Viết ra lý do
+    bằng một câu. Rồi nói ba thứ \emph{có} đổi theo \(h\), và với mỗi thứ nói
+    nó đổi theo chiều nào.
+
+  \item Mục~\ref{sec:ch07-che} đo được mô hình bỏ mask có mất mát huấn luyện
+    0.0434, thấp hơn 0.0639 của mô hình đúng, và khớp đúng cả câu 0.0000. Giải
+    thích cả hai con số. Rồi trả lời câu đắt hơn: nếu bạn chỉ được nhìn các đại
+    lượng tính trong lúc huấn luyện, không được giải mã câu nào, bạn theo dõi
+    cái gì để phát hiện lỗi này?
+
+  \item Ở 3 epoch, mô hình bỏ mask có mất mát 0.6731 còn mô hình có mask được
+    0.5443, tức ngược dấu so với ở 14 epoch. Giải thích chỗ đổi dấu. Rồi nói
+    quan sát ấy nói gì về việc chọn thời điểm dừng cho một phép đo so sánh
+    hai cấu hình.
+
+  \item \eqref{eq:ch07-post-ln} đặt layer norm sau phép cộng. Viết đường đi của
+    gradient qua một chồng \(N\) tầng con dưới thứ tự ấy, rồi viết lại dưới thứ
+    tự ngược, \(\vect{x} + \mathrm{Sublayer}(\layernorm(\vect{x}))\). Chỉ ra
+    chỗ khác nhau, và nói nó liên quan thế nào tới đường đi ở
+    \eqref{eq:ch06-duong-moi} và tới vòng quay lỗi của
+    chương~\ref{ch:lstm}.
+
+  \item Mục~\ref{sec:ch07-corpus} đọc kiểu lỗi còn lại là \enquote{đúng từ, sai
+    cụm} và quy nó cho thiếu thiên kiến quy nạp. Nêu một cách giải thích khác
+    cho cùng kiểu lỗi ấy, rồi nói một phép đo tách được hai cách giải thích.
+\end{bt}
+
+\tierapply
+
+Trạng thái xuất phát cho cả năm bài: clone repo companion, đứng ở thư mục gốc
+của nó, và checkout đúng tag của chương này.
+
+\begin{minted}{console}
+$ git clone https://github.com/Giang-Dang/rnn-to-transformer-lab.git
+$ cd rnn-to-transformer-lab
+$ git checkout ch07
+$ conda env create -f environment.yml
+$ conda activate rnn-to-transformer-lab
+$ python verify.py --only ch07
+\end{minted}
+
+Dòng cuối phải in ra \code{verify: ok}. Nếu không, đừng làm tiếp: mọi con số bạn
+đo sau đó sẽ không so được với sách.
+
+Một cảnh báo về cách chạy. Đừng gọi các script này
+qua \code{conda run}: lệnh ấy gom stdout của tiến trình con rồi in lại bằng
+encoding của hệ thống, nên output tiếng Việt làm nó ném
+\code{UnicodeEncodeError} từ bên trong chính conda, và traceback không nhắc tới
+file nào của repo. Gọi thẳng interpreter của env, hoặc activate env rồi chạy
+\code{python}.
+
+\begin{bt}
+  \item Bỏ phép chia đi. Mở hàm \code{scaled\_dot\_product} trong
+    \code{transformer.py} và xóa phép chia cho \code{math.sqrt(d\_k)}, rồi
+    chạy \code{python -m pytest -q tests/test\_ch07.py} và nói test nào hỏng.
+    Sau đó chạy lại \code{ch07\_corpus.py} và ghi lại cột \code{exact} ở cả bốn
+    mốc epoch. \(\dmodel = 24\) và 4 head cho \(\dk = 6\); dựa vào bảng ở
+    mục~\ref{sec:ch07-chia-can}, dự đoán trước khi chạy xem chỗ mất sẽ lớn hay
+    nhỏ, rồi đối chiếu. Kết quả có mâu thuẫn với lập luận của mục đó không?
+
+  \item Đổi hằng số \code{PE\_BASE} trong \code{transformer.py} từ 10000 thành
+    100, rồi chạy lại script \code{ch07\_position.py}. Năm bảng của nó đổi thế
+    nào? Với mỗi bảng, nói trước khi nhìn output xem nó \emph{phải} đổi hay
+    \emph{phải} đứng yên, rồi kiểm. Sau đó chạy \code{ch07\_corpus.py} ở riêng
+    mốc 14 epoch và nói con số ấy có đổi không.
+
+  \item Cài lỗi thứ ba mà mục~\ref{sec:ch07-che} nêu: nhân mask vào sau softmax
+    rồi \emph{quên} chuẩn hóa lại. Sửa \code{scaled\_dot\_product} cho đúng
+    hình dạng ấy, chạy lại \code{ch07\_mask.py}, và trả lời hai câu. Phép can
+    thiệp ở bảng đầu còn phát hiện được lỗi không? Mất mát huấn luyện đi theo
+    chiều nào so với hai dòng đã có? Nói vì sao đây là lỗi khó thấy hơn cả lỗi
+    bỏ mask.
+
+  \item Lịch warmup của bài, làm cho tử tế. Mục~\ref{sec:ch07-corpus} thử nó ở
+    \code{warmup} 100 và 400 với 658 bước huấn luyện và thua recipe dùng chung.
+    Bây giờ cho nó đủ chỗ: chạy 56 epoch, tức khoảng 2632 bước, với công thức
+    \(\dmodel^{-0.5}\min(s^{-0.5}, s \cdot w^{-1.5})\) ở vài giá trị \(w\). Có
+    \(w\) nào đạt 0.9967 sớm hơn 42 epoch không? Nếu có, nói phát biểu nào của
+    mục~\ref{sec:ch07-corpus} phải sửa lại.
+
+  \item Quét số head. \code{ch07\_corpus.py} dựng đúng một Transformer ở hằng
+    số \code{D\_MODEL} rồi chấm nó ở bốn mốc epoch, nên bài này phải bọc phần
+    dựng và huấn luyện ấy trong một vòng lặp của riêng bạn: chạy \(h\) bằng 1,
+    2, 4, 8 ở \(\dmodel = 24\), mỗi lần 42 epoch, và in số tham số cùng thời
+    gian chạy cho từng \(h\). Kết quả có hình dạng giống hàng (A) của bảng 3
+    không, và nếu khác thì corpus này thiếu cái gì mà WMT'14 có? Bốn lần huấn
+    luyện vượt xa ngân sách 180 giây của script; chạy ngoài \code{verify.py} và
+    nói rõ tổng thời gian bạn đã tiêu.
+\end{bt}
+
+\tierextend
+
+\begin{bt}
+  \item Mục~\ref{sec:ch07-chia-can} nói thẳng rằng nó chỉ đo lúc khởi tạo, và
+    để ngỏ câu hỏi thật. Đo thống kê của \(\vect{q} \cdot \vect{k}\) trên một mô
+    hình \emph{đã huấn luyện xong}: lấy điểm số thật ở từng tầng và từng head,
+    rồi hỏi phương sai của chúng có còn tỷ lệ với \(\dk\) không, và tỷ số so với
+    \(\dk\) là bao nhiêu. Nếu mô hình đã học ra một thang khác hẳn thang lúc
+    khởi tạo, thì phép chia đang làm gì ở cuối quá trình huấn luyện? Kết luận
+    của bạn phải kèm số ở ít nhất hai giá trị \(\dk\).
+
+  \item Tách \enquote{thiếu bước} khỏi \enquote{thiếu dữ liệu}.
+    Mục~\ref{sec:ch07-corpus} đo được rằng ba lần số epoch đưa Transformer tới
+    chỗ mô hình attention tới ở 14 epoch, và đọc đó là chuyện thiên kiến quy
+    nạp. Nhưng số epoch và số câu nhìn thấy dính vào nhau: 56 epoch trên 6000
+    cặp là 336000 lượt nhìn. Thiết kế và chạy một thí nghiệm tách hai thứ, ví
+    dụ giữ nguyên tổng số bước cập nhật mà đổi số cặp huấn luyện. Nếu 24000 cặp
+    trong 14 epoch cho kết quả khác 6000 cặp trong 56 epoch, thì cái thiếu là
+    dữ liệu; nếu giống, cái thiếu là bước.
+
+  \item Đây là chỗ còn mở thật sự. \eqref{eq:ch07-tich-vo-huong-pe} cho một tích
+    vô hướng chỉ phụ thuộc khoảng cách, và mục~\ref{sec:ch07-vi-tri} đo được nó
+    không đơn điệu, nên khoảng cách không đọc ngược ra được. Câu hỏi: có bộ mã
+    hóa vị trí nào mà \tn{tích vô hướng}{dot product} vừa chỉ phụ thuộc khoảng
+    cách, vừa đơn điệu
+    giảm trên toàn dải độ dài mà mô hình gặp không? Dựng một bộ như thế, chứng
+    minh hai tính chất, rồi cắm vào repo và đo. Biết trước hai chuyện: bài đã đo
+    ở hàng (E) rằng embedding học được cũng tốt ngang sinusoid, nên thanh chắn
+    để vượt qua không phải sinusoid mà là \enquote{bất cứ thứ gì}; và
+    chương~\ref{ch:vi-tri-va-ngu-canh} đọc dòng công trình đã đi theo hướng
+    này, ở đó câu trả lời hay nhất tới nay không phải là cộng một bảng vào
+    embedding.
+
+  \item Bảng 1 của bài có ba cột và không có cột nào cho thứ
+    mục~\ref{sec:ch07-corpus} đo được. Đề xuất một cột thứ tư đo \enquote{phải
+    học bao nhiêu mới biết hai vị trí cạnh nhau}, định nghĩa nó đủ chặt để tính
+    được cho cả ba hàng của bảng, rồi tính. Nếu bạn không định nghĩa được nó
+    thành một đại lượng phụ thuộc riêng vào kiến trúc, hãy nói rõ nó phụ thuộc
+    thêm vào cái gì, vì câu trả lời ấy chính là lý do bảng 1 không có cột đó.
+\end{bt}

@@ -1,0 +1,145 @@
+\section{Che phần chưa được nhìn}
+\label{sec:ch07-che}
+
+\index{mask!vì sao decoder cần}%
+Ở mọi mô hình trước trong sách này, decoder không thể gian lận được kể cả khi
+muốn. Nó chạy tuần tự, bước \(i\) chỉ có trong tay trạng thái tới bước \(i-1\),
+và tương lai chưa tồn tại.
+
+Bỏ recurrence đi thì cái không thể ấy biến mất. Lúc huấn luyện, cả câu đích đưa
+vào một lượt, và self-attention cho mọi vị trí đọc mọi vị trí. Vị trí \(i\) đang
+phải đoán token \(i+1\), mà token \(i+1\) đang nằm ngay đó trong đầu vào.
+
+Bài chặn bằng một dòng, mục 3.2.3:
+
+\begin{quote}
+\enquote{We implement this inside of scaled dot-product attention by masking
+out (setting to \(-\infty\)) all values in the input of the softmax which
+correspond to illegal connections.}
+\end{quote}
+
+Cộng với một chuyện thứ hai, và bài nêu nó ở chỗ khác, tận mục 3.1, đoạn tả
+chồng tầng decoder: đầu ra được dịch sang phải một vị trí. Nguyên văn ở đó,
+\enquote{This masking, combined with fact that the output embeddings are offset
+by one position, ensures that the predictions for position \(i\) can depend only
+on the known outputs at positions less than \(i\)}. Câu ấy thiếu chữ
+\enquote{the} sau \enquote{with}, và thiếu y như thế ở cả ba bản tôi mở, nên đó
+là lỗi của bài chứ không phải lỗi chép.
+
+Hai thứ ấy đi cùng nhau và hình~\ref{fig:ch07-mask} vẽ cả hai, vì mỗi thứ một
+mình không đủ.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch07-mask-nhan-qua}
+  \caption{Mask của decoder, với hàng là query và cột là key. Ô xám là ô được
+    đọc, ô trắng có gạch chéo bị đặt về \(-\infty\) trước softmax. Đọc theo một
+    hàng thì
+    thấy query \(i\) đọc được các key 0 tới \(i\), kể cả chính nó; đọc theo
+    hai lề thì thấy hàng \(i\) đang phải sinh ra token nằm lệch sang phải một
+    ô so với đầu vào của chính nó. Chính chỗ lệch một bước ấy làm cho việc
+    \emph{được} đọc vị trí \(i\) không phải là gian lận.}
+  \label{fig:ch07-mask}
+\end{figure}
+
+\subsection*{Kiểm bằng can thiệp, không phải bằng đọc mã}
+
+\index{mask!phép can thiệp}%
+Nhìn vào tensor mask rồi gật đầu chỉ khẳng định được cái tensor. Cái cần khẳng
+định là nó có nối đúng vào softmax đang dùng nó không. Nên đo kiểu khác: đổi
+token đích ở vị trí 5, chạy lại, rồi hỏi vị trí nào của đầu ra động đậy.
+
+\begin{measured}{đổi token đích ở vị trí 5, độ dịch của logits ở từng vị trí}
+\begin{minted}{text}
+position  with mask       without mask
+0         0.00000000      0.35483998
+1         0.00000000      0.08340538
+2         0.00000000      0.06716216
+3         0.00000000      0.06518483
+4         0.00000000      0.09080952
+5         1.69477415      1.61637926
+6         0.14780316      0.07304358
+\end{minted}
+
+Câu đích 10 vị trí, \(\dmodel = 32\), trọng số lúc khởi tạo.
+
+Đo bằng \code{experiments/ch07\_mask.py} tại tag \code{ch07}.
+\end{measured}
+
+Cột bên trái là năm số 0, và chúng là 0 đúng nghĩa chứ không phải xấp xỉ. Cột
+bên phải cho thấy chuyện gì xảy ra khi bỏ mask: cả năm vị trí trước đó đều
+động, nhiều nhất 0.35483998 ở vị trí 0, tức vị trí đầu tiên đọc được một token
+nằm sau nó năm chỗ.
+
+Vị trí 5 và 6 động ở cả hai cột, và chúng phải động. Nếu không thì phép đo này
+sẽ pass cả trên một mô hình bỏ qua đầu vào.
+
+\subsection*{Cái rò rỉ đáng giá bao nhiêu}
+
+\index{mask!bỏ mask thì mất mát tốt hơn}%
+Phép can thiệp nói mask chặn được. Nó không nói bỏ mask đi thì hỏng thế nào, và
+đây là chỗ tôi thấy bất ngờ.
+
+Huấn luyện hai mô hình, cùng seed, cùng batch, cùng recipe, khác nhau đúng một
+chuyện là decoder có che hay không.
+
+\begin{measured}{cùng recipe, có mask và không có mask}
+\begin{minted}{text}
+decoder self-attention  train loss  exact match (300 test)
+masked (the paper)      0.0639      0.6533
+unmasked                0.0434      0.0000
+\end{minted}
+
+\(\dmodel = 32\), 14 epoch, 6000 cặp huấn luyện, 300 cặp test.
+
+Đo bằng \code{experiments/ch07\_mask.py} tại tag \code{ch07}.
+\end{measured}
+
+Mô hình bỏ mask có mất mát huấn luyện \emph{thấp hơn}: 0.0434 so với 0.0639. Và
+nó dịch đúng \emph{không câu nào} trong ba trăm.
+
+Đó là hình dạng hỏng tệ nhất mà một lỗi có thể có. Không exception, không cảnh
+báo, không NaN. Đường cong mất mát đẹp hơn đường cong của mô hình đúng, nên mọi
+tín hiệu bạn nhìn trong lúc huấn luyện đều nói bạn đang làm tốt hơn. Lý do thì
+hiển nhiên khi đã biết: mô hình học được cách đọc thẳng đáp án, và ở lúc sinh
+câu thì đáp án không có ở đó. Nó đúng cùng họ với dòng \code{masked\_fill} mà
+mục~\ref{sec:ch06-tron-lai} đã gặp một lần, chỉ khác là ở đó cái giá là vài
+điểm chính xác còn ở đây là toàn bộ.
+
+Một chi tiết về cách đo, vì nó suýt làm tôi kết luận ngược. Chạy thử ở 3 epoch
+thì mô hình bỏ mask có mất mát 0.6731, \emph{cao hơn} 0.5443 của mô hình có
+mask. Chỗ rò rỉ không tự khai thác được: mô hình phải học lấy mới biết dồn
+attention vào vị trí ngay sau nó, và ba epoch chưa đủ. Một phép đo dừng sớm ở
+đây trả lời ngược hẳn dấu.
+
+\subsection*{Che trong softmax hay che sau softmax}
+
+\index{mask!trong softmax hay sau softmax}%
+Bài nói rõ \enquote{in the input of the softmax}. Câu ấy hay được trích kèm lời
+cảnh báo rằng che sau softmax là sai. Tôi đi kiểm và lời cảnh báo ấy không đúng
+như nó được kể.
+
+Che sau softmax rồi chuẩn hóa lại cho ra \emph{đúng cùng một kết quả}, lệch
+\(5.960 \times 10^{-8}\), tức nhiễu float32. Và đó không phải may: hạn chế một
+softmax xuống một tập con rồi chia cho tổng phần còn lại chính là softmax trên
+tập con ấy, vì mẫu số chung triệt tiêu. Hai thứ tự là cùng một hàm.
+
+Nên lý do phải che bên trong không nằm ở đại số. Nó nằm ở số học:
+
+\begin{measured}{một hàng điểm mà hai thứ tự không còn giống nhau}
+\begin{minted}{text}
+scores [900, -900], keep the second only
+  inside the softmax: [0.0, 1.0]
+  after it:           [nan, nan]
+\end{minted}
+
+Đo bằng \code{experiments/ch07\_mask.py} tại tag \code{ch07}.
+\end{measured}
+
+Khi phần được giữ nằm quá thấp so với phần bị che, softmax đầy đủ đã đẩy nó
+xuống 0 trước khi có ai kịp chuẩn hóa lại, và phép chia thành \(0/0\). Che bên
+trong không bao giờ dựng ra tỷ số ấy.
+
+Lỗi thật hay gặp thì lại là một lỗi thứ ba, không phải hai lỗi trên: nhân mask
+vào rồi \emph{quên} chuẩn hóa. Khi đó tổng một hàng không còn bằng 1, và cái đi
+ra khỏi tầng attention không còn là một trung bình có trọng số của gì cả.
