@@ -2,7 +2,8 @@
 # Deterministic lint gate for one book's prose: the machine half of the
 # draft-chapter build gate. Checks characters, citation ties and keys, quoting,
 # index termination, contractions, spellings, dashes, measured-number
-# provenance, verbatim-capture claims, listing width, and the build log.
+# provenance, verbatim-capture claims, listing width, glossary cadence, and the
+# build log.
 #
 # The checks are general; the policy is the book's. Everything a book can
 # decide - which spelling variety, whether contractions are allowed, which
@@ -154,6 +155,34 @@ function Get-DefaultPolicy {
             Code        = @('code')
             Quoted      = @('enquote')
             Identifiers = @('begin', 'end', 'label', 'ref', 'pageref', 'input', 'include', 'autocite')
+        }
+
+        # A book that translates its vocabulary and prints the original
+        # alongside has a cadence for how often that repeats, and the cadence is
+        # the kind of rule that does not survive being carried in a human head
+        # while prose is being written. One book's audits caught the same class
+        # of miss in four consecutive chapters.
+        #
+        # Off until a book names its glossary, because everything the check
+        # needs to read one is a book fact: where the file is, what heading
+        # opens a chapter's block inside it, what heading opens the
+        # keep-in-the-original block, and which macro writes a gloss. Those
+        # headings are written in the book's own language, so they cannot be
+        # library defaults - the same shape as Spelling.Preset = '' and
+        # Listings.MaxLineLength = 0.
+        #
+        # BlockPattern's first capture group is the owning chapter's number.
+        # Exempt names terms that are also ordinary words in the language the
+        # book is written in, where the cadence would set a parenthesis after a
+        # word nobody needs translated. It is a list rather than a switch so
+        # that using it costs a line naming the term.
+        Gloss        = [ordered]@{
+            Enabled      = $true
+            Glossary     = ''
+            Macro        = 'tn'
+            BlockPattern = ''
+            KeepPattern  = ''
+            Exempt       = @()
         }
 
         # TikZ style names that pgfkeys has already taken. house-style.md has
@@ -669,6 +698,202 @@ function Remove-MacroSpanList {
     return $result
 }
 
+# ---------------------------------------------------------------------------
+# Gloss helpers
+# ---------------------------------------------------------------------------
+
+# Every \<Name> in $Text followed by $Count brace-balanced groups, with the
+# offset and length of the whole call so a caller can blank it out in place.
+#
+# Brace counting rather than [^}]*, because the first argument of a gloss can
+# hold a macro: \tn{\textbf{ma tran Jacobi}}{Jacobian matrix} is ordinary prose
+# in at least one book, and a lazy pattern ends the term at the inner brace,
+# fails to match it against the glossary, and then reports the same term as
+# unglossed a line later. That was two false findings out of the first twelve.
+function Get-BalancedCalls {
+    param([string]$Text, [string]$Name, [int]$Count)
+
+    $out = @()
+    $needle = '\' + $Name
+    $i = 0
+    while ($true) {
+        $start = $Text.IndexOf($needle, $i)
+        if ($start -lt 0) { break }
+        $after = $start + $needle.Length
+        # \tnfoo is a different macro
+        if ($after -lt $Text.Length -and [char]::IsLetter($Text[$after])) { $i = $after; continue }
+
+        $p = $after
+        $groups = @()
+        $ok = $true
+        for ($g = 0; $g -lt $Count; $g++) {
+            while ($p -lt $Text.Length -and [char]::IsWhiteSpace($Text[$p])) { $p++ }
+            if ($p -ge $Text.Length -or $Text[$p] -ne '{') { $ok = $false; break }
+            $depth = 0
+            $open = $p
+            while ($p -lt $Text.Length) {
+                if ($Text[$p] -eq '{') { $depth++ }
+                elseif ($Text[$p] -eq '}') { $depth--; if ($depth -eq 0) { break } }
+                $p++
+            }
+            if ($depth -ne 0) { $ok = $false; break }
+            $groups += $Text.Substring($open + 1, $p - $open - 1)
+            $p++
+        }
+        if ($ok) {
+            $out += [pscustomobject]@{ Index = $start; Length = $p - $start; Args = $groups }
+            $i = $p
+        } else {
+            $i = $after
+        }
+    }
+    return , $out
+}
+
+# Blank a range to spaces rather than deleting it, so every offset after it
+# still maps to the source line it came from.
+function Clear-Span {
+    param([string]$Text, [int]$Index, [int]$Length)
+    if ($Index -lt 0 -or $Index -ge $Text.Length) { return $Text }
+    $len = [Math]::Min($Length, $Text.Length - $Index)
+    return $Text.Substring(0, $Index) + (' ' * $len) + $Text.Substring($Index + $len)
+}
+
+# Strip the markup a glossary cell or a gloss call may carry around the term,
+# and keep the term. The macro name goes and its braces go, but what was inside
+# them stays, because \textbf{ma tran Jacobi} is the term set in bold rather
+# than a marker beside it. What is then left over from something like
+# \textsuperscript{*} is punctuation, and punctuation is dropped: a term is
+# letters, digits, spaces and hyphens.
+function ConvertTo-GlossTerm {
+    param([string]$Cell)
+    $t = [regex]::Replace($Cell, '\\[A-Za-z]+\s*', ' ')
+    $t = $t -replace '[{}]', ' '
+    $t = $t -replace '[^\p{L}\p{Nd}\s-]', ' '
+    return ([regex]::Replace($t, '\s+', ' ')).Trim()
+}
+
+# The book's glossary, as two lookups: term -> owning chapter number, and the
+# set of terms it keeps in the source language.
+#
+# Nothing about the file's shape is a library fact. Which heading opens a
+# chapter's block, and which opens the keep-as-is block, are regexes the book
+# supplies, because those headings are written in the book's own language. What
+# is assumed is booktabs: rows are read between \midrule and \bottomrule, which
+# is what skips the header row without having to know what it says.
+function Get-GlossaryTerms {
+    param([string]$Path, [string]$BlockPattern, [string]$KeepPattern)
+
+    $owner = @{}                                    # case-insensitive by default
+    $keep = [System.Collections.Generic.HashSet[string]]::new(
+        [StringComparer]::InvariantCultureIgnoreCase)
+
+    $chapter = $null
+    $isKeep = $false
+    $inRows = $false
+
+    foreach ($raw in [System.IO.File]::ReadAllLines($Path)) {
+        $line = ($raw -replace '(?<!\\)%.*$', '').Trim()
+        if (-not $line) { continue }
+
+        if ($BlockPattern) {
+            $m = [regex]::Match($line, $BlockPattern)
+            if ($m.Success) { $chapter = [int]$m.Groups[1].Value; $isKeep = $false; continue }
+        }
+        if ($KeepPattern -and $line -match $KeepPattern) { $chapter = $null; $isKeep = $true; continue }
+
+        if ($line -match '^\\midrule') { $inRows = $true; continue }
+        if ($line -match '^\\(bottomrule|end\{tabular\})') { $inRows = $false; continue }
+        if (-not $inRows) { continue }
+        if ($line -notmatch '\\\\\s*$') { continue }
+
+        $term = ConvertTo-GlossTerm (($line -split '&')[0])
+        if (-not $term) { continue }
+        if ($isKeep) { [void]$keep.Add($term) }
+        elseif ($null -ne $chapter) { $owner[$term] = $chapter }
+    }
+
+    return [pscustomobject]@{ Owner = $owner; Keep = $keep }
+}
+
+# One file to a list of sections. A section is what the cadence counts, so the
+# split is on \section and nothing else: a \subsection does not start a new one,
+# but its heading is still a heading and a gloss never goes in one. Text before
+# the first \section is its own unit, which is what makes a chapter opener and
+# an exercises file behave.
+#
+# Each section carries its prose flattened to one line, because a term broken
+# across two source lines hides from a line-at-a-time scan and real books break
+# them. Offsets survive the flattening: spans that are not prose - the gloss
+# calls themselves, inline code, index entries, verbatim bodies - are blanked to
+# spaces rather than removed, so a match still maps back to its source line.
+function ConvertTo-GlossSections {
+    param([string[]]$Lines, [string]$Macro, [string[]]$CodeMacros, [string[]]$VerbatimEnvs)
+
+    $sections = @()
+
+    function New-Unit { param([int]$line) return [pscustomobject]@{
+        Builder = [System.Text.StringBuilder]::new()
+        Map     = [System.Collections.Generic.List[int]]::new()
+        Line    = $line } }
+
+    $unit = New-Unit 1
+    $inVerb = $null
+
+    for ($i = 0; $i -lt $Lines.Count; $i++) {
+        $lineNo = $i + 1
+        $text = $Lines[$i]
+
+        if ($inVerb) {
+            if ($text -match ('\\end\{' + [regex]::Escape($inVerb) + '\}')) { $inVerb = $null }
+            $text = ''
+        } else {
+            $text = $text -replace '(?<!\\)%.*$', ''
+            $bm = [regex]::Match($text, '\\begin\{([A-Za-z]+\*?)\}')
+            if ($bm.Success -and $VerbatimEnvs -contains $bm.Groups[1].Value) {
+                if ($text -notmatch ('\\end\{' + [regex]::Escape($bm.Groups[1].Value) + '\}')) {
+                    $inVerb = $bm.Groups[1].Value
+                }
+                $text = ''
+            }
+        }
+
+        if ($text -match '\\section\*?\{') {
+            if ($unit.Builder.Length -gt 0) { $sections += $unit }
+            $unit = New-Unit $lineNo
+        }
+        # headings of every level come out; the cadence is about running prose
+        $text = [regex]::Replace($text, '\\(?:(?:sub){0,2}section|chapter|caption|title)\*?\{[^{}]*\}', ' ')
+
+        [void]$unit.Builder.Append($text).Append(' ')
+        for ($k = 0; $k -le $text.Length; $k++) { $unit.Map.Add($lineNo) }
+    }
+    if ($unit.Builder.Length -gt 0) { $sections += $unit }
+
+    $out = @()
+    foreach ($u in $sections) {
+        $body = $u.Builder.ToString()
+        $glossed = @()
+        foreach ($call in (Get-BalancedCalls $body $Macro 2)) {
+            $glossed += [pscustomobject]@{
+                Term = ConvertTo-GlossTerm $call.Args[0]
+                Line = $u.Map[[Math]::Min($call.Index, $u.Map.Count - 1)]
+            }
+            $body = Clear-Span $body $call.Index $call.Length
+        }
+        # \index{...} carries the term verbatim and is not prose; inline code is
+        # an identifier. Both blanked after the gloss calls are read, so a term
+        # inside one of them cannot be mistaken for a bare use.
+        foreach ($name in (@('index') + $CodeMacros)) {
+            foreach ($call in (Get-BalancedCalls $body $name 1)) {
+                $body = Clear-Span $body $call.Index $call.Length
+            }
+        }
+        $out += [pscustomobject]@{ Body = $body; Glossed = $glossed; Map = $u.Map; Line = $u.Line }
+    }
+    return , $out
+}
+
 # Every line of a listing the prose called a capture has to appear in this
 # book's research notes, matched against the whitespace-collapsed blob so that
 # a capture re-wrapped to fit the measure still traces.
@@ -709,6 +934,21 @@ function Test-VerbatimClaim {
     }
     if ($missed.Count -gt $shown.Count) {
         Add-Finding $file $listingLine 'verbatim' "...and $($missed.Count - $shown.Count) more untraced line(s) in the same listing"
+    }
+}
+
+# --- glossary. Read here rather than with the other inputs because parsing it
+# needs the helpers above, and $null when the family is off for either of its
+# two reasons: the book disabled it, or the book never named a glossary. The
+# policy line reads that same variable, so a book whose path is wrong is told
+# so instead of getting a silent pass.
+$glossary = $null
+if ($policy.Gloss.Enabled -and $policy.Gloss.Glossary) {
+    $glossPath = Join-Path $bookPath $policy.Gloss.Glossary
+    if (Test-Path $glossPath) {
+        $glossary = Get-GlossaryTerms $glossPath $policy.Gloss.BlockPattern $policy.Gloss.KeepPattern
+    } else {
+        Write-Host "==> WARNING: $(Get-RelPath $glossPath) not found; gloss checks skipped."
     }
 }
 
@@ -755,6 +995,13 @@ function Format-Policy {
     # $listingMax is already 0 when the family is disabled, so one expression
     # covers both ways of switching it off.
     $bits += "listings=$(if ($listingMax -gt 0) { $listingMax } else { 'off' })"
+
+    # $glossary is already $null when the family is off for either reason, so
+    # one expression covers "Enabled = $false" and "no Glossary named".
+    if ($glossary) {
+        $ex = $policy.Gloss.Exempt.Count
+        $bits += "gloss=$($glossary.Owner.Count) terms$(if ($ex) { "($ex exempt)" })"
+    } else { $bits += 'gloss=off' }
 
     if ($policy.Figures.Enabled) {
         $bits += "figures=$($policy.Figures.ReservedKeys.Count) reserved keys"
@@ -1142,7 +1389,156 @@ foreach ($f in $charFiles) {
 }
 
 # ---------------------------------------------------------------------------
-# 12. figures: TikZ style names pgfkeys has already taken
+# 12. gloss: a translated term carries its original, on the book's own cadence
+# ---------------------------------------------------------------------------
+#
+# Its own pass rather than a step in the loop above, for two reasons. A term
+# broken across two source lines is invisible to a line-at-a-time scan and real
+# books break them. And the borrowed cadence is per chapter, so no single line
+# holds enough to decide it.
+#
+# One rule, stated without a direction in it: a term the chapter owns is
+# glossed once per section, and a term it does not own is glossed once per
+# chapter. Ownership comes from which block of the glossary the term sits in,
+# and the chapter a file belongs to comes from its path, chapters/NN-, which is
+# a repo-wide convention rather than one book's.
+#
+# What this cannot see: a term that is central to a chapter but was never added
+# to the glossary at all. The glossary is the source of truth, so a term in
+# neither it nor a gloss call is indistinguishable from ordinary prose. That
+# stays a reading job, and gloss-orphan below closes only the cheap half of it.
+
+if ($glossary -and $glossary.Owner.Count -gt 0) {
+    $glossMacro = $policy.Gloss.Macro
+    $exempt = [System.Collections.Generic.HashSet[string]]::new(
+        [string[]]$policy.Gloss.Exempt, [StringComparer]::InvariantCultureIgnoreCase)
+
+    # A term matches on a boundary of letters, not on \b: \b is defined against
+    # ASCII word characters in some engines and the terms here are words in
+    # whatever language the book is written in.
+    $termPattern = @{}
+    foreach ($t in $glossary.Owner.Keys) {
+        $termPattern[$t] = '(?i)(?<!\p{L})' + [regex]::Escape($t) + '(?!\p{L})'
+    }
+
+    # chapter number -> the sections of every file in it, in book order.
+    # A plain hashtable, not [ordered]: an ordered dictionary indexed by an int
+    # resolves to the positional overload rather than the key one, so
+    # $byChapter[5] would mean the sixth entry. Order is restored by sorting the
+    # keys below.
+    $byChapter = @{}
+    foreach ($f in $texFiles) {
+        $rel = Get-RelPath $f.FullName
+        $cm = [regex]::Match($rel, '/chapters/(\d+)-')
+        if (-not $cm.Success) { continue }
+        $n = [int]$cm.Groups[1].Value
+        if (-not $byChapter.ContainsKey($n)) { $byChapter[$n] = @() }
+        foreach ($s in (ConvertTo-GlossSections `
+                (@(Get-Content $f.FullName)) $glossMacro $policy.Macros.Code $verbatimEnvs)) {
+            $byChapter[$n] += [pscustomobject]@{ File = $f.FullName; Section = $s }
+        }
+    }
+
+    # Findings are collected per chapter and emitted sorted, because the term
+    # loop runs in glossary order and a reader wants a file read downwards.
+    # $found belongs to the chapter loop below; PowerShell resolves it through
+    # the caller's scope.
+    function Add-Gloss {
+        param([string]$file, [int]$line, [string]$id, [string]$msg)
+        $found.Add([pscustomobject]@{ File = $file; Line = $line; Id = $id; Msg = $msg })
+    }
+
+    foreach ($n in ($byChapter.Keys | Sort-Object)) {
+        $units = $byChapter[$n]
+
+        # every term this chapter glosses anywhere, for the once-per-chapter half
+        $glossedInChapter = [System.Collections.Generic.HashSet[string]]::new(
+            [StringComparer]::InvariantCultureIgnoreCase)
+        foreach ($u in $units) {
+            foreach ($g in $u.Section.Glossed) { [void]$glossedInChapter.Add($g.Term) }
+        }
+        $borrowedReported = [System.Collections.Generic.HashSet[string]]::new(
+            [StringComparer]::InvariantCultureIgnoreCase)
+
+        $found = [System.Collections.Generic.List[pscustomobject]]::new()
+
+        foreach ($u in $units) {
+            $s = $u.Section
+
+            # gloss-orphan: a gloss call whose term is in no translated block.
+            # The keep-as-is list gets its own message because "bias (bias)" is
+            # a different mistake from a term nobody added to the glossary.
+            foreach ($g in $s.Glossed) {
+                if ($glossary.Owner.ContainsKey($g.Term)) { continue }
+                $why = if ($glossary.Keep.Contains($g.Term)) {
+                    "'$($g.Term)' is on the keep-as-is list, so the gloss sets it beside itself"
+                } else {
+                    "'$($g.Term)' is in no glossary block; add it, or drop the gloss"
+                }
+                Add-Gloss $u.File $g.Line 'gloss-orphan' $why
+            }
+
+            # gloss-repeat: once per section means once
+            foreach ($grp in ($s.Glossed | Group-Object Term | Where-Object { $_.Count -gt 1 })) {
+                if (-not $glossary.Owner.ContainsKey($grp.Name)) { continue }
+                Add-Gloss $u.File ($grp.Group[1].Line) 'gloss-repeat' `
+                    "'$($grp.Name)' is glossed $($grp.Count) times in one section; the cadence is once"
+            }
+
+            # Where every term occurs in this section. Collected for all terms
+            # first because terms nest: 'lan truyen nguoc' sits inside 'lan
+            # truyen nguoc qua thoi gian', and one occurrence of the longer term
+            # is not an occurrence of the shorter one. A term counts only where
+            # it appears outside every longer term's match.
+            $hits = [System.Collections.Generic.List[pscustomobject]]::new()
+            foreach ($term in $glossary.Owner.Keys) {
+                foreach ($m in [regex]::Matches($s.Body, $termPattern[$term])) {
+                    $hits.Add([pscustomobject]@{
+                        Term = $term; Index = $m.Index; End = $m.Index + $m.Length; Len = $term.Length })
+                }
+            }
+
+            foreach ($term in $glossary.Owner.Keys) {
+                if ($exempt.Contains($term)) { continue }
+
+                $own = @($hits | Where-Object { $_.Term -eq $term })
+                $hit = $null
+                foreach ($h in $own) {
+                    $covered = $false
+                    foreach ($o in $hits) {
+                        if ($o.Len -le $h.Len) { continue }
+                        if ($o.Index -le $h.Index -and $o.End -ge $h.End) { $covered = $true; break }
+                    }
+                    if (-not $covered) { $hit = $h; break }
+                }
+                if (-not $hit) { continue }
+                $line = $s.Map[[Math]::Min($hit.Index, $s.Map.Count - 1)]
+
+                if ($glossary.Owner[$term] -eq $n) {
+                    # owned: once per section
+                    if (@($s.Glossed | Where-Object { $_.Term -eq $term }).Count -eq 0) {
+                        Add-Gloss $u.File $line 'gloss-missing' `
+                            "'$term' is this chapter's own term and this section never glosses it"
+                    }
+                } elseif (-not $glossedInChapter.Contains($term)) {
+                    # unowned: once per chapter, and reported at its first use
+                    if ($borrowedReported.Add($term)) {
+                        Add-Gloss $u.File $line 'gloss-borrowed' `
+                            ("'$term' belongs to chapter $($glossary.Owner[$term]) and this " +
+                             'chapter never glosses it; a term this chapter does not own is glossed once')
+                    }
+                }
+            }
+        }
+
+        foreach ($x in ($found | Sort-Object File, Line)) {
+            Add-Finding $x.File $x.Line $x.Id $x.Msg
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 13. figures: TikZ style names pgfkeys has already taken
 # ---------------------------------------------------------------------------
 
 # `step/.style={...}` does not shadow anything. It fails the build, and the
@@ -1189,7 +1585,7 @@ if ($policy.Figures.Enabled -and $policy.Figures.ReservedKeys.Count -gt 0) {
 }
 
 # ---------------------------------------------------------------------------
-# 13. log: parse an existing build log; never invoke latexmk (perl is not on
+# 14. log: parse an existing build log; never invoke latexmk (perl is not on
 # PowerShell's PATH on this machine).
 # ---------------------------------------------------------------------------
 

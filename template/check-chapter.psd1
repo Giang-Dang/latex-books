@@ -291,7 +291,45 @@
     #     Identifiers = @('begin', 'end', 'label', 'ref', 'pageref', 'input', 'include', 'autocite')
     # }
 
-    # -- 13. Figures ----------------------------------------------------------
+    # -- 13. Gloss ------------------------------------------------------------
+    # For a book that translates its vocabulary and prints the original
+    # alongside. One rule with no direction in it: a term the chapter owns is
+    # glossed once per section, a term another chapter owns is glossed once per
+    # chapter. Ownership is which block of the glossary the term sits in, and
+    # which chapter a file belongs to comes from its path, chapters/NN-.
+    #
+    # Off until Glossary names a file, because everything the check needs is a
+    # book fact and most of it is written in the book's own language. A book
+    # that ships one language, or glosses nothing, leaves this alone.
+    #
+    # What it cannot see: a term central to a chapter that was never added to
+    # the glossary at all. The glossary is the source of truth, so a term in
+    # neither it nor a gloss call reads as ordinary prose. That stays a reading
+    # job.
+    # Enabled      - the master switch. Emptying Glossary is the other way off.
+    # Glossary     - the glossary source, relative to the book root.
+    # Macro        - the gloss macro, \tn{original}{translation} or whichever
+    #                way round the book writes it; the first argument is the
+    #                term the glossary lists.
+    # BlockPattern - the heading that opens one chapter's block of the glossary.
+    #                Capture group 1 must be that chapter's number.
+    # KeepPattern  - the heading that opens the block of terms the book does not
+    #                translate. Optional; it only sharpens a message, because
+    #                glossing a term the book keeps as is sets it beside itself.
+    # Exempt       - terms that are also ordinary words in the book's language,
+    #                where a gloss helps nobody. Keep it short: an exception
+    #                list carrying most of a check's signal is a list, not a
+    #                check. Measure before adding to it.
+    # Gloss = @{
+    #     Enabled      = $true
+    #     Glossary     = ''
+    #     Macro        = 'tn'
+    #     BlockPattern = ''
+    #     KeepPattern  = ''
+    #     Exempt       = @()
+    # }
+
+    # -- 14. Figures ----------------------------------------------------------
     # TikZ style names pgfkeys has already taken. `step/.style={...}` shadows
     # nothing: it fails the build with an error naming the key rather than the
     # style, which reads as a missing \usetikzlibrary and sends you looking in
@@ -310,7 +348,7 @@
     #     ReservedKeys = @('in', 'out', 'step', 'shift', 'scale', 'text', 'style')
     # }
 
-    # -- 14. Log --------------------------------------------------------------
+    # -- 15. Log --------------------------------------------------------------
     # Reads the build log that latexmk already wrote. The check never runs
     # latexmk itself, so a missing log is a warning and a log older than the
     # sources is a warning; build first if you want these numbers to mean
