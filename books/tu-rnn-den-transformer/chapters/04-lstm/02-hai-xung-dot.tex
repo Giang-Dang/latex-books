@@ -9,10 +9,11 @@ dụng. Bài chỉ ra rằng nối vào là hỏng, theo hai đường đối x�
 Đường thứ nhất là \tn{xung đột trọng số vào}{input weight conflict}. Lấy một
 trọng số vào \(w_{ji}\) duy nhất. Trọng số ấy phải làm hai việc: bật unit
 \(j\) lên khi input đáng lưu, và để yên unit \(j\) khi input không đáng lưu.
-Bài viết thẳng rằng các tín hiệu cập nhật \enquote{will attempt to make
-\(w_{ji}\) participate in (1) storing the input (by switching on \(j\)) and (2)
-protecting the input (by preventing \(j\) from being switched off by irrelevant
-later inputs)}~\autocite{hochreiter1997lstm}. Hai việc, một con số.
+Bài viết thẳng rằng các tín hiệu cập nhật sẽ đẩy \(w_{ji}\) vào cả hai việc
+cùng lúc (\enquote{will attempt to make \(w_{ji}\) participate in (1) storing
+the input (by switching on \(j\)) and (2) protecting the input (by preventing
+\(j\) from being switched off by irrelevant later
+inputs)})~\autocite{hochreiter1997lstm}. Hai việc, một con số.
 
 \index{xung đột trọng số ra!phát biểu}%
 Đường thứ hai là \tn{xung đột trọng số ra}{output weight conflict}, và nó đối

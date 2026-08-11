@@ -16,10 +16,11 @@ gradient; nó tính gradient với ba đạo hàm bị thay bằng không, và b
 \end{equation}
 
 Đọc kỹ ba dòng này thì thấy chúng cắt đúng một thứ: đường đi ngược \emph{qua}
-\(\vect{h}_{t-1}\) về quá khứ. Bài nói rõ phần còn lại được giữ, rằng lỗi tới
-net input của \tn{ô nhớ}{memory cell} và của cổng \enquote{do not get
-propagated back further in time (although they \emph{do} serve to change the
-incoming weights)}~\autocite{hochreiter1997lstm}.
+\(\vect{h}_{t-1}\) về quá khứ. Bài nói rõ phần còn lại được giữ: lỗi tới
+net input của \tn{ô nhớ}{memory cell} và của cổng không lan ngược xa hơn trong
+thời gian, dù vẫn đổi được các trọng số vào (\enquote{do not get propagated
+back further in time (although they \emph{do} serve to change the incoming
+weights)})~\autocite{hochreiter1997lstm}.
 
 Khác biệt ấy quan trọng, và trong code nó là một chữ:
 

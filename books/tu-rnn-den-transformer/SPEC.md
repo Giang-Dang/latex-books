@@ -53,6 +53,17 @@ because three of chapter 07's five verification items train nothing at all and
 the two that do are cheap; the whole repo runs in 663.51s against the 900s of
 decision 43, so that number is untouched.
 
+The open items list is empty for the first time since the skeleton session. It
+had reached fourteen entries, of which nine were settled calls with their
+reasons attached - a decision filed where nobody looks for one - and only three
+named work anyone still had to do. Those three are done: chapter 03's six
+captured tables and chapter 01's three came out of `\footnotesize` and are now
+measured by the gate (decision 52), chapter 04's two spliced quotations were
+reworded, and appendix B's `giả thuyết` row lost the scoping note three chapters
+had already ignored (decision 53). The other eleven became rows 49 to 58, two
+amendments, four writing rules, a section of `research/README.md` and a comment
+in `scripts/check-chapter.ps1`. Nothing was dropped.
+
 Next action: chapter 08, "Chi phí, song song hóa, và cái giá phải trả". It
 inherits `transformer.py` at tag `ch07` and three debts chapter 07 names on the
 page and does not pay. Post-LN against pre-LN: chapter 07 sets equation (5) of
@@ -61,7 +72,13 @@ Warmup: chapter 07 tried the paper's schedule at 658 training steps, found it
 worse than the shared recipe, and said so, which is a result about 658 steps
 rather than about warmup. And the wall-clock half of the multi-head cost claim,
 which chapter 07 states in FLOPs only. Chapter 08 also owns the re-measurement
-of table 1, which chapter 07 quotes and does not check.
+of table 1, which chapter 07 quotes and does not check. Three of the new
+decision rows are aimed at it: 57 names the `torch.nn.LSTM` lever and what
+pulling it would cost, which is the one thing to reach for if the wall clock
+this chapter measures runs into decision 43's budget; 54 says the `q . k`
+statistics after training are still unmeasured and that chapter 07's exercise
+does not count as having measured them; and 56 leaves chapter 06's reversal
+result on the table for whoever explains it.
 
 ## Decision log
 
@@ -100,13 +117,13 @@ is re-opened only by recording what changed and why, in the row.
 | 28 | Abbreviations are their own appendix | The abbreviation table arrived as a section inside appendix B during chapter 01. Split out into appendix C on 2026-08-09 at the author's request, so that notation, glossary and abbreviations are three lookups rather than two; the old C, D and E shifted to D, E and F. Nothing referenced an appendix by letter, so the shift cost only file renames |
 | 29 | Appendices are lookup only | Settled 2026-08-09 after the author cut three openers as redundant. An appendix carries entries, not argument: no scene-setting paragraph, no rationale section, no closing note about how the table is maintained, no transition between entries. Why a term was translated, why a symbol was chosen, and how a table grows all belong in this SPEC. A reader reaches an appendix from the index, reads one row, and leaves |
 | 30 | Check `origin/main` before drafting, not after | Chapter 03 was drafted in a worktree branched before chapters 01 and 02 landed, so it rebuilt appendix A and appendix B from scratch, duplicated the abbreviation table, and used a loss symbol the book had already chosen. None of it was lost, but the merge cost more than the drafting. The rule: `git fetch origin && git log --oneline origin/main -- books/<name>` before the first file is written, and read the SPEC from `origin/main` rather than from the working tree. This book's SPEC and its appendices are shared state, and two sessions can be editing them at once |
-| 31 | Listings are 73 columns wide | Measured 2026-08-09, not derived: `\the\textwidth` is 441.01773pt under this book's geometry, one character of texgyrecursor at `\small` in an 11pt class advances exactly 6.0pt, and a built page confirms that a 73-column line carrying a break point sets flush to the margin while the same line at 74 gains a continuation arrow. Enforced by `Listings.MaxLineLength` in `check-chapter.psd1`. The reason it needed a rule at all: `\setminted` loads `breaklines`, which breaks an over-wide line silently, so no Overfull box is raised and `MaxOverfull = 0` never fires. An Overfull box comes back only for a line with no break point anywhere, which real code never is. Chapter 03 shipped three tables at 82 to 101 columns and two code listings at 80 and 81 through that blind spot; all five were found by reading the PDF. A block that needs more width says so in its own option list and is not measured, which is how chapter 01's `\footnotesize` listings pass |
+| 31 | Listings are 73 columns wide | Measured 2026-08-09, not derived: `\the\textwidth` is 441.01773pt under this book's geometry, one character of texgyrecursor at `\small` in an 11pt class advances exactly 6.0pt, and a built page confirms that a 73-column line carrying a break point sets flush to the margin while the same line at 74 gains a continuation arrow. Enforced by `Listings.MaxLineLength` in `check-chapter.psd1`. The reason it needed a rule at all: `\setminted` loads `breaklines`, which breaks an over-wide line silently, so no Overfull box is raised and `MaxOverfull = 0` never fires. An Overfull box comes back only for a line with no break point anywhere, which real code never is. Chapter 03 shipped three tables at 82 to 101 columns and two code listings at 80 and 81 through that blind spot; all five were found by reading the PDF. A block that needs more width says so in its own option list and is not measured. **Amended 2026-08-11, see decision 52:** this row used to name chapter 01's three `\footnotesize` listings as the example of that hatch. They did not need the width either, and neither did chapter 03's six; all nine were swept, so the hatch is now a rule with no user in the book rather than a rule with an example. It stays for the block that genuinely needs it |
 
 | 32 | The two squashing functions of LSTM 1997 are `g_in` and `g_out` | The paper writes them `g` (range [-2,2]) and `h` (range [-1,1]), and `h` collides with the book's hidden state `h_t` head-on: the cell output equation sets `y^c = y^out h(s_c)`, which in the book's notation would be `h_t` on both sides meaning two different things. Renamed rather than worked around, and appendix A carries the mapping plus two further reading traps: the paper's table 10 contradicts its own appendix A.1 about which range belongs to which function, and `c_j` in the paper is the *name* of a cell rather than its state, which is `s_{c_j}`. That last one had already gone wrong: appendix A shipped with LSTM 1997 writing `c_t` for the cell state. Fixed in the chapter 04 session |
 | 33 | The book sets the memory cell in layer form, and the parameter count follows from that | The 1997 paper's hidden layer is fully connected: a gate receives connections from every memory cell *and* every other gate unit. What the field converged on, and what `torch.nn.LSTM` implements, is a layer form where all blocks read the same `h_{t-1}`. The book teaches the layer form, because it is what a reader will meet, and says so in the chapter rather than letting the difference pass silently. The difference is not cosmetic: it is exactly why the paper quotes a factor of `3^2` while everyone else quotes 4. Measured at tag `ch04`: layer form gives 3 for LSTM 1997, 4 for LSTM 2000, 3 for Cho's unit; the paper's own topology gives exactly 9.0000 on the recurrent block and 8.2603 over a whole layer once input weights and biases are counted. **This also corrects the chapter's own TOC line**, which said "four times the parameters" and was describing the 2000 architecture, not the one chapter 04 reads. Every derivative argument in the chapter holds under both topologies, because neither has a path into `c_{t-1}` other than the first term of the state update |
 | 34 | Truncation is load-bearing, not a shortcut, and the chapter says so | The paper presents the gradient truncation as an efficiency measure that does no harm. Measured at tag `ch04`, the untruncated derivative through the cell *grows* with distance, reaching 128.34 at distance 100 even at the paper's own initialization scale, while the truncated one is bit-exactly 1 at every distance. So the truncation is also what makes the constant error carousel constant rather than approximately constant. The chapter states this as a reading of the paper's own equations, explicitly not as a correction: the paper's "no harm" claim is about training outcomes, and the chapter's cosine measurement is about gradient direction at initialization, which are two different quantities. Keeping those apart is the whole point of the passage |
 
-| 35 | The running example is generated from a grammar, not taken from a real corpus | Settled 2026-08-10, closing the open item that had carried it as a proposal since the skeleton session. Three constraints have to hold at once and no public parallel corpus holds all three: the experiments finish on a CPU inside decision 27's budget, the data is reproducible from a seed with no download so `verify.py` runs on someone else's machine, and the two languages differ in word order enough that chapter 06's alignment matrix shows a crossing rather than a diagonal. So `toy_corpus.py` generates English-to-Vietnamese pairs from a small context-free grammar. The one thing it models for real is the noun phrase reversing: English sets determiner, adjective, noun and Vietnamese sets classifier, noun, adjective, with the classifier answering to no English word at all. What it does not model is written into the module docstring and into the chapter, because it is load-bearing: the grammar is finite so a model can learn it exactly, the vocabulary is closed so the out-of-vocabulary problem that penalised Sutskever et al.'s BLEU cannot arise, and the sentences are semantically silly. The consequence the chapters must hold to: no number measured on this corpus is ever compared with a BLEU score from a paper. What these experiments test is the papers' *arguments*, which do not change with scale |
+| 35 | The running example is generated from a grammar, not taken from a real corpus | Settled 2026-08-10, closing the open item that had carried it as a proposal since the skeleton session. Three constraints have to hold at once and no public parallel corpus holds all three: the experiments finish on a CPU inside decision 27's budget, the data is reproducible from a seed with no download so `verify.py` runs on someone else's machine, and the two languages differ in word order enough that chapter 06's alignment matrix shows a crossing rather than a diagonal. So `toy_corpus.py` generates English-to-Vietnamese pairs from a small context-free grammar. The one thing it models for real is the noun phrase reversing: English sets determiner, adjective, noun and Vietnamese sets classifier, noun, adjective, with the classifier answering to no English word at all. What it does not model is written into the module docstring and into the chapter, because it is load-bearing: the grammar is finite so a model can learn it exactly, the vocabulary is closed so the out-of-vocabulary problem that penalised Sutskever et al.'s BLEU cannot arise, and the sentences are semantically silly. The consequence the chapters must hold to: no number measured on this corpus is ever compared with a BLEU score from a paper. What these experiments test is the papers' *arguments*, which do not change with scale. **Amended 2026-08-11 with two measured ceilings**, because what the grammar does not model has now cost two chapters something. The grammar has no ambiguity in it, so a mechanism that exists to resolve ambiguity cannot show what it is for: that is why chapter 06's parameter-matched ablation could not make the backward pass earn anything (decision 44), and it will bite any later chapter with the same shape - chapter 07's masked self-attention is not one, chapter 09's pretraining argument may be. The grammar does have binding, two clauses of the same shape each with its own adjective and noun, and that is what the Transformer gets wrong at 14 epochs (decision 48); it is a harder thing for the corpus to run out of than ambiguity was. The fix, when a chapter needs it, is a grammar where one English word's Vietnamese translation depends on a word after it. Chapter 06's tier-three exercise 1 specifies exactly that and nobody has built it |
 | 36 | From chapter 05 the book's own cell is the 2000 forget-gate LSTM with tanh, not chapter 04's 1997 cell | Chapter 04 derives the 1997 cell, whose self-connection is a fixed 1.0 and whose squashing functions are scaled logistics. Chapter 05 needs a cell that trains on a real task, and Sutskever et al. name theirs in one sentence: \enquote{the LSTM formulation from Graves}. Graves (2013) section 2.1, equations (7) to (11), read in full: forget gate *and* peephole connections, tanh on both the cell input and the cell output. So the honest reading is that this paper's LSTM is chapter 04's cell plus both of chapter 04's bridge boxes. `seq2seq.py` implements the forget gate and tanh, and not the peepholes, and uses one layer where the paper uses four; both are size decisions forced by the CPU budget, and chapter 05 states them in the prose rather than letting the listing imply the paper was simpler than it is. This also settles the open item saying `LstmForget` was left at bridge-box quality: chapter 05 does not extend it, it writes a separate trainable layer, and the chapter 04 module is untouched because its tag is published |
 | 37 | The per-experiment budget is 60 seconds **per model trained**, from chapter 05 on | Amends decision 27, which set 60 seconds per experiment. That figure was measured against chapters 1 to 4, where each script probes a computation that is fixed before the script starts. From chapter 05 a script trains several models in order to compare them: the reversal table is six trainings, and no amount of care makes six trainings fit one training's budget. The rule is now one training's budget per model, with a floor of 30 seconds for a script that trains none, and `verify.py` carries the reasoning next to the table it applies to. What is deliberately **not** amended is `BUDGET_TOTAL`, because that is the number standing behind the promise decision 13 makes to the reader. Measured at tag `ch05`: 557.52 seconds against a 600 second budget |
 | 38 | The `algorithm` float is named in Vietnamese | `\floatname{algorithm}{Thuật toán}` in `preamble/macros.tex`. babel localizes every caption label this book uses except this one, because the `algorithm` package sets its own name rather than taking one from the language, so a Vietnamese page was printing \enquote{Algorithm 1}. Chapter 03 shipped that way and chapter 05 would have been the second; recorded as a decision rather than fixed silently because it changes how an already-drafted chapter sets |
@@ -121,6 +138,26 @@ is re-opened only by recording what changed and why, in the row.
 | 46 | Query, key, value and head stay in English | Decision 16 says a term the book translates carries its English original, and a term it keeps takes no parentheses. These four sit on the keep side, and the reason is the one decision 39 already found for `chuỗi`: the obvious Vietnamese renderings are ordinary Vietnamese words. `khóa` is a lock and a key, `giá trị` is worth and value, `đầu` is a head and also the start of everything - chapter 07 alone writes `cái giá`, `giá trị của tích`, `chỗ khóa lại`, `đầu ra`, `bắt đầu` and `đầu tiên` in their everyday senses. Glossing the technical sense would set `giá trị (value)` beside `giá trị` meaning worth on the same page, which is worse than not translating. Chapter 07's own block of appendix B therefore holds four rows and not eight: `tích vô hướng`, `mã hóa vị trí`, `kết nối tắt`, `chuẩn hóa theo tầng`, all four of which are unambiguous. The chapter says on the page why the other four are in English rather than leaving a reader to wonder. Generalised, because the next chapter will hit it too: a candidate row whose Vietnamese side is a word the book already uses in a different sense does not go in the appendix, it goes in the keep-in-English table |
 | 47 | The two copies of \enquote{Attention Is All You Need} are different documents, and the book says which one it read | The source manifest warned that the arXiv copy is dated 2023 and that wording from it is not automatically wording from 2017. Reading both copies through showed the gap is not about wording. The NIPS 2017 proceedings PDF is 11 pages; arXiv:1706.03762v7 is 15. The proceedings has no section 6.3 and no table 4 on constituency parsing, no appendix of attention visualisations, no parsing sentence in its abstract, and a reference list ending at [32] against v7's [40]. **And they disagree on a number.** The proceedings gives BLEU 41.0 for Transformer (big) on English-French in its abstract, its table 2 and its body alike; v7 gives 41.8 in the abstract and table 2 while its own section 6.1 still reads \enquote{a BLEU score of 41.0}. Both were checked at full page resolution, in both files, because 41.8 is the figure nearly every secondary source repeats. The `refs.bib` note records all of it and chapter 07 prints both numbers with the version each belongs to. What this generalises to is a rule the book already half had: a citation names a version, and for a paper with more than one live copy \enquote{the authors report X} is an incomplete sentence |
 | 48 | Chapter 07's table sweeps epochs, and that is the finding rather than the axis | Chapters 05 and 06 both swept width, so the obvious chapter 07 table was width again. It says the wrong thing. Held at the shared recipe's 14 epochs the Transformer scores 0.4700 against the attention model's 1.0000, and three separate explanations had to be killed before that number meant anything: it is not overfitting (training-split accuracy is no higher than test), not broken plumbing (teacher-forced token accuracy is 0.9657, and 0.9499 to the 19th power is 0.3765 against a measured 0.3421 on long sentences), and not the optimizer (seven learning-rate recipes were tried, including the paper's own warmup shrunk to fit 658 steps, and the shared recipe beat all of them). What is left is steps: the same run at 42 epochs reaches 0.9967 and holds there at 56, carrying 35845 parameters against the attention model's 40805. So the table sweeps epochs at one width, and it is one training scored at four checkpoints rather than four trainings, which costs one run instead of four and makes the rows exactly comparable. The residual errors at 14 epochs are all one kind - right words, wrong noun phrase - which is the inductive-bias gap chapters 08 and 10 own, showing up early. **Consequence for decision 37**, whose per-model budget was written for models trained at the shared epoch count: a script that deliberately trains past it scales with the epochs, and `verify.py` carries that reasoning next to `ch07_corpus.py`'s 180-second budget |
+
+Rows 49 to 58 were written 2026-08-11 in one pass, when the open items list was
+emptied. Every one of them had been sitting in that list as a settled call with
+its reason attached, which is a decision filed in the wrong place: an open item
+is a thing nobody has done, and a call already taken is a thing nobody should
+take again. Nothing here is new reasoning. What changed is that a session
+looking for the reason will now find it where it looks.
+
+| # | Question | Decision |
+|---|----------|----------|
+| 49 | The divisibility check on measured numbers is declined, and the measurement is why | Every exact-match figure is a count over a test split, so it must be a multiple of `1/N`, and `0.9425 * 300 = 282.75` would identify both that a number is wrong and which discarded run it came from without rerunning anything. Prototyped over the drafted chapters, it does not survive contact. Rounding kills the naive form outright: 256 of 300 prints as 0.8533 and `0.8533 * 300` is 255.99, so an exact-integer test flags every correct figure too, 401 of 701 decimals. A rounding-aware version allowing half a unit in the last place, restricted to values in [0, 1] printed to at least three decimals, still flags 210 of 344. The reason is structural rather than fixable: this book counts exact matches over the full test split, the short-sentence subset and the long-sentence subset, so no single `N` is right, and most decimals in that range are gradient norms and probabilities rather than counts at all. Same verdict and the same reason as the quotation rule in the writing rules: a check that is wrong most of the time trains its reader to skip it, which costs more than the rule it enforces. What survives is the manual habit - a number goes in the note with the configuration that produced it |
+| 50 | The `number` check accepts a decimal that traces to the wrong note, and that hole is accepted rather than closed | Chapter 06 caught it. The chapter prints three differences of cited BLEU figures - 19.38, 11.01 and 8.37 - and only 19.38 fired. `8.37` passed because `research/2026-08-09-ch02-symptoms.md` records a loss of 8.3705 at `T_mem=20`, which is a chapter 02 measurement of something else entirely. The check asks whether a number appears *somewhere* under `research/`, not whether it appears where it came from, so it gets weaker every time the book grows a note. Not fixed, because the obvious fix - scope each chapter's numbers to its own note - breaks every legitimate case where a chapter quotes an earlier chapter's figure, and chapter 06 alone does that four times. All three differences are now recorded in the chapter 06 note with the subtraction behind each. `scripts/check-chapter.ps1` carries this next to the Numbers family, so the hole is documented where someone would go to close it |
+| 51 | Chapter 01's gloss density is the cadence's cost, and the cost is accepted | Chapter 01 introduces the foundational vocabulary, so its own terms are the ones that appear in every section: printed page 3 carries five glosses and pages 4 and 5 carry four each, and decision 39 has since added more. `chuỗi (sequence)` lands twice on printed page 5, in sections 1.2 and 1.3, twelve lines apart, because the two sections are short and the cadence is per section. Nothing is wrong - every one is a term being introduced. Left as it is, because consistency with a written rule beats a judgement call made once, and a chapter that quietly drops a gloss the rule asks for is how the four consecutive cadence regressions started |
+| 52 | The `\footnotesize` hatch is for a block that needs the width, and chapters 01 and 03 were not using it that way | Decision 31 waives `Listings.MaxLineLength` for any block carrying its own option list, on the grounds that whoever set a fontsize for one block owns its width. Chapter 04's audit found the first misuse and fixed it there: eight tables between 19 and 68 columns, all well inside the 73-column budget at `\small`, so the smaller size bought nothing and cost the page a third type size. Chapters 03 and 01 had the same pattern and were left alone at the time because neither was that session's chapter. Swept 2026-08-11: chapter 03's six captured tables measure 40, 51, 54, 54, 64 and 68 columns and chapter 01's three measure 39, 45 and 45, so all nine came out of `\footnotesize` and are now visible to the gate that exists to measure them. This retires the example decision 31 and `check-chapter.psd1` section 11 both used for the hatch; the hatch itself stays, for a block that genuinely needs the width |
+| 53 | Appendix B's `giả thuyết` row loses its scoping note | The row read \enquote{nghĩa trong beam search}, and three chapters then used the word in its ordinary sense: chapter 03 for the paper's hypothesis, chapter 05 in the beam-search sense the note describes, and chapter 06 for a guess about why one row of an alignment matrix behaves oddly. No check can read a scoping note in a table cell, so all three glossed it and all three were right - \enquote{hypothesis} is the correct English every time. Three chapters is enough evidence that the note described one chapter's usage rather than the book's, so it is gone rather than being carried as an apology. Recorded because appendix B is shared state and decision 30 says two sessions can be editing it at once |
+| 54 | The statistics of `q . k` after training stay unmeasured, and an exercise is not a measurement | Everything in chapter 07's scaling section is at initialization, where the measurement is that PyTorch's default `nn.Linear` gives component variance 1/3 rather than the footnote's 1, so `var(q.k)` is about `d_k/9` and the `1/sqrt(d_k)` divisor over-corrects roughly threefold. The chapter argues this does not matter, because the divisor's job is to remove the dependence on `d_k` rather than to set an absolute scale, and the measured flatness of the scaled columns across `d_k` from 8 to 1024 supports that. What nobody has checked is whether a trained model's scores still sit at that scale, and the chapter says so on the page. Chapter 07's tier-three exercise 1 hands it to the reader, and that is where it stays. **Generalised**: an exercise handed to the reader is not a measurement. A later chapter that needs the answer measures it and puts the number in a note, rather than citing the exercise as though the question had been settled |
+| 55 | Experiment scripts are not run through `conda run` | It captures the child's stdout and re-encodes it with the system code page, so `utf8_stdout()` inside the child cannot help and a Vietnamese line surfaces as a `UnicodeEncodeError` raised inside conda's own `main_run` - a traceback that names conda rather than the repo, and cost two failed runs before the real error was visible at the top of the output rather than the tail. `verify.py` is immune because it invokes `sys.executable` through `subprocess` with an explicit encoding. So: run the environment's interpreter directly, or activate the environment first. Chapter 07's tier-two preamble warns the reader, and appendix E teaches the conda path, so both halves of the audience are covered |
+| 56 | Chapter 06's forward-only encoder gets worse under source reversal, and the chapter prints that without explaining it | Exact match falls 0.9500 to 0.8667, and the loss lands entirely on long sentences, 0.9079 to 0.7434, while short sentences do not move at all. With the bidirectional encoder reversal is worth 0.0033, so the interaction between the two is real rather than noise. Nobody knows why. The chapter prints it as an observation and tier-three exercise 2 hands it to the reader, which is the honest shape: decision 7 says a number I measured goes in a `measured` box and traces to a note, and it says nothing about having to explain one. All five figures are in `research/2026-08-ch06-dong-chinh.md`. **Generalised**: an unexplained direction in a table is recorded with the chapter that owns it, because a later chapter can accidentally explain it and then never go back to connect the two |
+| 57 | The companion repo keeps hand-written recurrent loops, and `torch.nn.LSTM` is a named lever rather than an option | Every recurrent layer in the repo is a Python loop over time steps. That is the right choice for chapters 01 to 04, which reach inside the loop and could not use a fused kernel if they wanted to. Chapter 05 does not reach inside it - it trains and measures - and there the loop costs measurable time: fifteen trainings at roughly nineteen seconds each is most of what chapter 05 spends, and the fused version would be a large multiple faster. Not changed, because a book that builds from scratch and then quietly swaps in the library for the chapter where it matters has stopped building from scratch, and decision 4 is what the reader was promised. Recorded so that whoever hits the budget wall of decision 43 knows this lever exists and knows what pulling it costs |
+| 58 | `refs.bib`'s `note` field is the only ledger of how much of a paper was read | The SPEC carried a second list of partially-read papers, which duplicated what every one of those entries already says in its own `note`, and drifted: `cho2014properties` left the list a session after chapter 06 read it in full. So the entry is the ledger. A paper cited from less than a full read says so there and names which sections were read, and that field is a claim with the same standard as a number - `he2016deep`'s note was first written claiming a read of section 3.2 from a subagent's summary rather than from the paper, and the chapter's sentence about the degradation result was circular on top of that; fetching the PDF and reading page 1 fixed both. The same applies to the bridge-paper list, which closes one paper at a time as each lands in the chapter that cites it, and where the TOC's \enquote{Cho 2014} is two entries: `cho2014encdec`, the EMNLP encoder-decoder paper, and `cho2014properties`, the SSST-8 paper that measured the length degradation. Bahdanau distinguishes them as 2014a and 2014b and the whole received story about chapter 05 turns on which one is meant |
 
 ## Version baseline
 
@@ -442,6 +479,12 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   passes at the chapter's tag and the tag is pushed. If a chapter legitimately
   changes a number the script asserts, change the script and say so in the
   commit; never loosen an assertion to make a run pass.
+
+  **Not `conda run`** (decision 55). Run the environment's interpreter directly,
+  or activate the environment first. `conda run` re-encodes the child's stdout
+  with the system code page, so a Vietnamese line dies as a `UnicodeEncodeError`
+  raised inside conda rather than inside the script, and the traceback sends you
+  looking in the wrong repo.
 - **Research:** yes, one note per chapter under `research/`, plus the source
   manifest already there. The cliff is already crossed (decision 20), so every
   decimal printed anywhere in the book must appear in a note. A note records the
@@ -465,6 +508,18 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   reports a wrong number, the question to ask it is **what else came from
   here**, not whether that one is fixed now; the first audit of chapter 05 found
   four and the second found two more with the same origin.
+
+  **An exercise handed to the reader is not a measurement** (decision 54). A
+  chapter may leave a question open and hand it to a tier-three exercise; what
+  it may not do is let a later chapter cite that exercise as though the question
+  had been answered. The later chapter measures it and puts the number in a
+  note. The statistics of `q . k` after training are the open case.
+
+  **An unexplained direction in a table is recorded with the chapter that owns
+  it** (decision 56). A number that moves the wrong way and is printed anyway is
+  fine, and honest; what goes wrong is that a later chapter accidentally
+  explains it and never goes back to connect the two. Chapter 06's reversal
+  result is the open case.
 - **Sources:** citations are `~\autocite{...}`, always with the tilde. A number
   from a paper is cited and, where the claim is load-bearing, page-anchored
   against the exact PDF named in the source manifest. A number I measured goes
@@ -489,6 +544,13 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   had been read; one of them argued in a circle. The `note` field saying which
   sections were read is itself a claim and has to be true.
 
+  **`refs.bib`'s `note` field is the ledger** (decision 58), and the SPEC does
+  not keep a second copy. A paper cited from less than a full read says so in
+  its entry, naming which sections were read; a paper later read in full has its
+  note rewritten in the same session. The bridge papers the TOC names close one
+  at a time, in the chapter that cites them, and \enquote{Cho 2014} is two
+  entries. To see where the book stands, read the notes.
+
 ## Open items
 
 Closed items are deleted rather than kept with a note, and whatever they were
@@ -497,185 +559,6 @@ that enforces it. A list where half the entries say "resolved" stops being read,
 which is how the four consecutive gloss regressions kept getting past a rule
 that was written down.
 
-- **Chapter 01's gloss density is the rule's cost, and it should be looked at
-  once on paper.** Chapter 01 introduces the foundational vocabulary, so its own
-  terms are the ones that appear in every section: printed page 3 carries five
-  glosses and pages 4 and 5 carry four each. Nothing is wrong and every one is a
-  term being introduced, but `chuoi (sequence)` lands twice on printed page 5,
-  in sections 1.2 and 1.3, twelve lines apart, because the two sections are
-  short and the cadence is per section. Leaving it: consistency with a written
-  rule beats a judgement call made once. Worth a look next time chapter 01 is
-  open, and decision 39 has since added a few more.
-- **`gia thuyet` carries two senses and appendix B only scopes one.** The row
-  says "nghia trong beam search", but chapter 03 uses the word in its ordinary
-  sense - the paper's hypothesis - and no check can read a scoping note in a
-  table cell, so chapter 03 now glosses it too. The gloss is not wrong,
-  "hypothesis" is the right English either way, but a reader may wonder why a
-  beam-search term is being introduced in a chapter about spectral radius.
-  Either the appendix drops the scoping note, or the term joins `Gloss.Exempt`
-  and chapter 05 keeps its glosses by hand. **Chapter 06 is the third chapter
-  to hit this**, in `06-mo-ma-tran-ra-xem.tex`, again in the ordinary sense: a
-  guess about why one row of an alignment matrix behaves oddly, nothing to do
-  with beam search. Three chapters is enough evidence that the scoping note
-  describes one chapter's usage rather than the book's, so the next session
-  that opens appendix B should just delete the note. Still not urgent: the
-  gloss it produces is correct English every time.
-- **Chapter 03's captured tables sit at `\footnotesize` without needing to.**
-  Found by the chapter 04 audit 2026-08-10, in chapter 04's own tables, and
-  fixed there: all eight were between 19 and 68 columns, well inside the
-  73-column budget at `\small`, so the smaller size bought nothing and cost the
-  page a third type size. Decision 31 says the option list is for a block that
-  genuinely needs the width, and it also waives `Listings.MaxLineLength`, so
-  every one of those blocks was invisible to the gate that exists to measure
-  them. Chapter 03 has the same pattern and was left alone, because it is not
-  this session's chapter. Whoever opens chapter 03 next should widen them and
-  let the check see them.
-- **Chapter 04 has two spliced quotations, left alone.** Found 2026-08-10 while
-  checking whether the quotation rule had two chapters of evidence behind it,
-  which it does: `04-lstm/02-hai-xung-dot.tex` line 12 has "cac tin hieu cap
-  nhat" taking the English finite verb "will attempt", and
-  `04-lstm/05-cat-gradient.tex` line 20 has "loi toi net input ... cua cong"
-  taking "do not get propagated". Both read as a Vietnamese subject with an
-  English predicate. Not fixed, because chapter 04 is not this session's chapter
-  and the same restraint was shown for chapter 03's tables; whoever opens
-  chapter 04 next should reword both. Everything else the scan turned up in
-  chapters 01 to 04 is an English noun phrase after a Vietnamese verb, which the
-  rule permits.
-- **If a later chapter wants a task that isolates the constant error carousel,
-  chapter 02's copy task is the one with the measured decay.** Chapter 04 leans
-  on chapter 02's adding problem, which chapter 02 concluded in bold is not a
-  good test for vanishing gradients; chapter 04 now says so and points the
-  result at the input weight conflict, which is what the task actually probes.
-  Recorded because the first draft did not say so and the audit is what caught
-  it.
-- **The divisibility check on measured numbers: declined 2026-08-11, with the
-  measurement.** The idea looked sound and cheap. Every exact-match figure is a
-  count over a test split, so it must be a multiple of 1/N, and
-  `0.9425 * 300 = 282.75` identifies both that the number is wrong and which
-  discarded run it came from without rerunning anything. Prototyped over the
-  drafted chapters, it does not survive contact. Rounding kills the naive form
-  outright: 256 of 300 prints as 0.8533 and `0.8533 * 300` is 255.99, so an
-  exact-integer test flags every correct figure too, 401 of 701 decimals. A
-  rounding-aware version allowing half a unit in the last place, restricted to
-  values in [0, 1] printed to at least three decimals, still flags 210 of 344.
-  The reason is structural rather than fixable: this book counts exact matches
-  over several different denominators - the full test split, the short-sentence
-  subset, the long-sentence subset - so no single N is right, and most decimals
-  in that range are gradient norms and probabilities rather than counts at all.
-  Same verdict and the same reason as the quotation rule: a check that is wrong
-  most of the time trains its reader to skip it. What survives is the manual
-  habit, now in the writing rules - a number goes in the note with the
-  configuration that produced it.
-- **The `number` check will accept a decimal that traces to the wrong note,
-  and chapter 06 caught it doing so.** The chapter prints three differences of
-  cited BLEU figures: 19.38, 11.01 and 8.37. Only 19.38 fired. `8.37` passed
-  because `research/2026-08-09-ch02-symptoms.md` records a loss of 8.3705 at
-  `T_mem=20`, which is a chapter 02 measurement of something else entirely. The
-  check asks whether a number appears *somewhere* under `research/`, not
-  whether it appears where it came from, so the more notes the book grows the
-  weaker it gets. All three are now recorded properly in the chapter 06 note
-  with the subtraction behind each. Not proposed as a script change, because
-  the obvious fix - scope each chapter's numbers to its own note - breaks every
-  legitimate case where a chapter quotes an earlier chapter's figure, and this
-  chapter does that four times. Left open as a known hole with a worked example
-  attached, which is more than it had before.
-- **The corpus of decision 35 has no ambiguity in it, and that is now a
-  measured ceiling rather than a docstring note.** Chapter 06's encoder
-  ablation could not show the backward pass earning anything once parameters
-  were matched, and the reason is that a grammar with no ambiguity gives
-  right-hand context nothing to disambiguate (decision 44). The same ceiling
-  will bite any later chapter whose mechanism exists to resolve ambiguity, and
-  chapter 07's masked self-attention is not one but chapter 09's pretraining
-  argument may be. The fix, if a chapter needs it, is a grammar where one
-  English word's Vietnamese translation depends on a word after it; chapter
-  06's tier-three exercise 1 specifies exactly that and nobody has built it.
-  **Chapter 07 hit a different edge of the same corpus and it is worth naming
-  separately.** The grammar has no ambiguity, but it does have binding: two
-  clauses of the same shape, each with its own adjective and noun. That is what
-  the Transformer gets wrong at 14 epochs, and it is a harder thing for the
-  corpus to run out of than ambiguity was.
-
-- **The statistics of `q . k` after training are not measured, and chapter 07
-  says so on the page.** Everything in its scaling section is at initialization,
-  where the measurement is that PyTorch's default `nn.Linear` gives component
-  variance 1/3 rather than the footnote's 1, so `var(q.k)` is about `d_k/9` and
-  the 1/sqrt(d_k) divisor over-corrects roughly threefold. The chapter argues
-  that this does not matter, because the divisor's job is to remove the
-  dependence on `d_k` rather than to set an absolute scale, and the measured
-  flatness of the scaled columns across `d_k` from 8 to 1024 supports that. What
-  nobody has checked is whether a trained model's scores still sit at that
-  scale. Chapter 07's tier-three exercise 1 hands it to the reader; if a later
-  chapter needs the answer it should measure rather than cite the exercise.
-
-- **`conda run` mangles Vietnamese output, and the traceback names conda rather
-  than the repo.** It captures the child's stdout and re-encodes it with the
-  system code page, so `utf8_stdout()` inside the child cannot help and the
-  failure surfaces as a `UnicodeEncodeError` raised inside conda's own
-  `main_run`. `verify.py` is immune because it invokes `sys.executable` through
-  `subprocess` with an explicit encoding. Run experiment scripts through the
-  environment's interpreter directly, or activate the environment first. Cost
-  this session: two failed runs before the real error was visible at the top of
-  the output rather than the tail. Chapter 07's tier-two preamble warns the
-  reader, which is the only reason this is an open item rather than a decision.
-- **Chapter 06's forward-only encoder gets *worse* when the source is
-  reversed, and no one knows why.** 0.9500 to 0.8667 exact match, with the loss
-  landing entirely on long sentences (0.9079 to 0.7434) while short sentences
-  do not move. With the bidirectional encoder reversal is worth 0.0033, so the
-  interaction between the two is real rather than noise. The chapter prints it
-  as an observation and does not explain it; tier-three exercise 2 hands it to
-  the reader. Recorded here because an unexplained direction in a table is the
-  kind of thing a later chapter accidentally explains and then does not go back
-  to connect.
-- **`torch.nn.LSTM` is still not used anywhere, and from chapter 05 that costs
-  measurable time.** Every recurrent layer in the companion repo is a Python
-  loop over time steps, which is the right choice for chapters 01 to 04 because
-  those chapters reach inside the loop. Chapter 05 does not: it trains and
-  measures. Fifteen trainings at roughly nineteen seconds each is most of what
-  chapter 05 spends, and the fused-kernel version would be a large multiple
-  faster. Not changed, because a book that builds from scratch and then quietly
-  swaps in the library for the chapter where it matters has stopped building
-  from scratch. Recorded so that whoever hits the budget wall knows this lever
-  exists and what it costs to pull.
-- **The final list of bridge papers is not closed.** The TOC names Cho 2014,
-  Luong 2015, Gers 2000, Hochreiter 1991, Bengio 1994, layer norm, residuals,
-  BERT, GPT, Kaplan and Hoffmann. Hochreiter 1991 and Bengio 1994 are now
-  summarised in chapter 02 bridge boxes; Bengio 1994 has a `refs.bib` entry.
-  The remaining bridge papers land in the chapter that cites them. **The TOC's
-  \enquote{Cho 2014} is two papers, not one**, and chapter 05 had to split them:
-  `cho2014encdec` is the EMNLP encoder-decoder paper that chapter 04 already
-  cited for the gated unit, and `cho2014properties` is the SSST-8 paper that
-  measured the length degradation. Bahdanau distinguishes them as 2014a and
-  2014b and the whole received story about chapter 05 turns on which one is
-  meant.
-- **Six papers are cited from less than a full read, and each entry says so.**
-  `kalchbrenner2013recurrent` and, since chapter 06, `schuster1997bidirectional`
-  and `pougetabadie2014overcoming`, all three from their bibliographic records
-  only and all three used for attribution and nothing else;
-  `graves2013generating` from section 2.1 only, which is the part that matters
-  because it is where the LSTM equations are. Chapter 07 adds two, both of them
-  bridge boxes: `he2016deep` from its abstract, section 1 and figure 1, and
-  `ba2016layer` from its abstract alone. `cho2014properties` has left
-  this list: chapter 06 read it in full and the entry's note now says so.
-  `vaswani2017attention` never joined it, because chapter 07 read both copies
-  through, which is how decision 47 exists.
-
-  The `he2016deep` note was wrong before it was right, and the way it went
-  wrong is worth keeping. It was first written claiming a read of section 3.2,
-  from a subagent's summary rather than from the paper, and the chapter's
-  sentence about the degradation result was circular on top of that. Fetching
-  the PDF and reading page 1 fixed both. The rule this restates: a bridge box is
-  prose about a paper, so it needs the same first-hand check as a number does,
-  and a `note` field claiming which section was read is itself a claim.
-
-  Two things that reading turned up, kept because they will save the next
-  session the same hour. **`file` reports both copies of that paper as six
-  pages and both are nine.** The page tree is split (`/Count 6`, `/Count 3`,
-  `/Count 9`) and a tool reading only the first count stops early; counting
-  `/Type /Page` in the raw bytes gives nine. The three pages a six-page read
-  loses are figures 4 to 6 and the conclusion, which is the entire reason to
-  open that paper. Check the last page ends in a finished sentence. **And its
-  section 5.1 and its conclusion point at different culprits** - the
-  fixed-length vector, then the decoder - while Bahdanau fixes the encoder;
-  three of its four authors wrote Bahdanau. Chapter 06 reads that as a sound
-  argument reaching the wrong part rather than as carelessness, and a later
-  chapter quoting either sentence should quote which one.
+(None. Emptied 2026-08-11: every entry became a decision-log row, a
+writing rule, or a comment in the file that enforces it. Rows 49 to 58 are
+where most of them landed.)

@@ -1346,6 +1346,18 @@ foreach ($f in $texFiles) {
         # slips through. Catching invented numbers is worth more than catching
         # rounded ones, and demanding exact equality would flag every rounded
         # figure in a book and get this check deleted within a week.
+        #
+        # KNOWN HOLE, with a worked example, left open deliberately. This asks
+        # whether a decimal appears *somewhere* under the notes folder, never
+        # whether it appears in the note it came from, so the check gets weaker
+        # every time a book grows a note. A chapter printing a difference of two
+        # cited BLEU figures, 8.37, passed against an unrelated chapter's
+        # recorded loss of 8.3705. The obvious fix is to scope each chapter's
+        # numbers to its own note, and it is wrong: a chapter legitimately
+        # quotes an earlier chapter's figures, and the one that found this does
+        # it four times. So the hole stays, and the rule that actually closes it
+        # is a habit rather than a check - a number goes in the note with the
+        # configuration that produced it.
         if ($policy.Numbers.Enabled -and $researchText) {
             $numberLine = if ($verbLine) { $raw } else { $stripped }
             $numberLine = Remove-MacroSpanList $numberLine $policy.Macros.Code $maskState 'number'
