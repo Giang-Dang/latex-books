@@ -1,0 +1,143 @@
+\section{Authorizing the Field That Returns Anything}
+\label{sec:ch15-the-field-that-returns-anything}
+\index{node@\code{Query.node}!authorizing it|(}%
+
+\code{Query.ordersByCustomer} is guarded now. It carries a scope the router
+checks, a policy the subgraph checks, and an ownership test in the resolver,
+because a scope can say that you may read orders and cannot say whose. Ask for
+somebody else's history with a perfectly good token and the graph says no:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'ordering'.","extensions":
+  {"errors":[{"message":"You may only read your own orders.","path":["ordersByCustomer"],
+   "extensions":{"code":"AUTH_NOT_AUTHORIZED"}}],"serviceName":"ordering",
+   "statusCode":200}}],"data":null}
+\end{minted}
+
+Here is that same graph, one second later, with the same token, before the fix
+this section is about. Nothing below reproduces at tag \code{ch15}, and that is
+the point of printing it:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{json}
+{"data":{"node":{"__typename":"Order","id":"T3JkZXI6AAAA0AAAAECAAAAAAAAAAw==",
+  "total":{"amount":356.00,"currency":"EUR"},"placedAt":"2026-02-18T11:05:00Z"}}}
+\end{minted}
+
+\index{node@\code{Query.node}!the second door}%
+Chapter~\ref{ch:hard-modeling-problems} gave this graph its \code{node} field
+back. What it also did, and nobody noticed for two chapters, was open a second
+door to every addressable row in the graph, and that door does not pass the room
+the first one is guarded in. Figure~\ref{fig:ch15-two-doors} is the two paths.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch15-two-doors}
+  \caption{Two routes to one order. On the left a root field on the service that
+  owns it, where a scope and an ownership check both apply. On the right
+  \code{Query.node}, which is answered by a service with no database: it decodes
+  the identifier, hands back a stub, and the router fetches the rest through
+  \code{\_entities}, a path that has never heard of \code{ordersByCustomer} or
+  its rules. Guarding one door does nothing for the other.}
+  \label{fig:ch15-two-doors}
+\end{figure}
+
+\subsection*{The service that owns nothing cannot check very much}
+
+\index{Mosaic.Nodes@\code{Mosaic.Nodes}!what it can and cannot decide}%
+The first place to look for a fix is where the field lives, so look at what is
+there. Three of the four node resolvers in \code{Mosaic.Nodes} are two lines,
+and the one for orders was too, until this chapter. It was this:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+[NodeResolver]
+public static Order ResolveOrder(Guid id) => new() { Id = id };
+\end{minted}
+
+No database, no domain, no \code{\_entities}. Decision 75 in this book's spec
+made that a feature: a service that owns nothing is the honest home for a field
+that has to be able to return anything. It is also a service that cannot answer
+\enquote{is this order yours}, and never will, because it has never seen an
+order.
+
+What it can answer is what \emph{kind} of thing an identifier names, because
+decoding that is the entirety of its job and the type name is inside the
+identifier. So it gets the only rule it is capable of holding:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+[NodeResolver]
+public static Order? ResolveOrder(Guid id, ClaimsPrincipal? user)
+    => user?.Identity?.IsAuthenticated == true
+        ? new Order { Id = id }
+        : null;
+\end{minted}
+
+\index{ClaimsPrincipal@\code{ClaimsPrincipal}!nullable or throwing}%
+That is coarse and it is deliberate. Orders are not public, and this is the last
+point at which anybody can say so cheaply. Note the question mark on the
+parameter, which is not decoration: HotChocolate's parameter binder hands a
+nullable \code{ClaimsPrincipal} null for an anonymous caller and throws an
+\code{ArgumentException} out of a non-nullable one, so the difference between
+the two spellings is the difference between \enquote{nobody is signed in} and an
+execution error.
+
+\index{node@\code{Query.node}!what the identifier alone answers}%
+It matters more than it looks, and the measurement that convinced me is this
+one. Before that check existed, an \emph{anonymous} request could ask
+\code{node(id:)} for somebody's order and get an answer, as long as it selected
+only \code{id} and \code{\_\_typename}. No subgraph was called at all. Both of
+those fields are carried by the argument itself, so the stub was the whole
+answer, and every guard in Ordering was irrelevant because Ordering was never
+asked. A graph can leak the existence and type of a row without any service
+touching a database.
+
+\subsection*{Where the instance check has to go}
+
+\index{reference resolvers!an ownership check inside one}%
+Whose order it is stays with Ordering, in the reference resolver the router
+reaches through \code{\_entities}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+var order = await orderById.LoadAsync(orderId, cancellationToken);
+
+if (order is null || !OrderAccess.IsSelf(user, context, order.CustomerId))
+{
+    return null;
+}
+
+return order;
+\end{minted}
+
+Null rather than an error, and unlike the query field beside it that is the
+right answer. An order you may not have and an order that does not exist should
+be indistinguishable, or a client with a list of guessed identifiers learns
+which of its guesses were real from the difference in the replies. The
+specification's \code{[\_Entity]} is nullable for the not-found case and this
+borrows it.
+
+Whether that actually holds is a measurement rather than a hope, because
+non-null propagation has undone more careful decisions than this one. It holds:
+asking for an order that belongs to somebody else and asking for an order that
+was never created produce byte-identical responses, and both verification
+scripts assert it by comparing the two.
+
+\index{authorization!type against instance}%
+So the two checks are not redundant and neither can be moved. The node service
+refuses a \emph{type} to a stranger and could not refuse an instance if it
+wanted to. Ordering refuses an \emph{instance} and never sees the request that
+the node service turned away. Each rule ended up in the only service that holds
+what it needs to ask about.
+
+\index{header forwarding!what the reference resolver depends on}%
+And the reference resolver's check depends on something invisible from the file
+it is written in. It can only work if the caller's token reached that process,
+which is a router configuration two directories away. Take the \code{headers}
+block out and every line of it still runs, sees nobody, and refuses the owner
+their own order. That is a failure mode with no error message anywhere in it,
+and the only reason I know what it looks like is that I built the check before I
+built the configuration.
+
+\medskip
+Three layers, four fields, and two doors closed. What is left is the case where
+none of it works, and it is the one the previous chapter handed over.
+
+\index{node@\code{Query.node}!authorizing it|)}%

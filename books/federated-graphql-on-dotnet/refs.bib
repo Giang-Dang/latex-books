@@ -979,6 +979,51 @@
               Cosmo Router 0.337.1 rather than taken from this page}
 }
 
+@online{cosmodocs2026auth,
+  author   = {{WunderGraph}},
+  title    = {Authentication and Authorization},
+  organization = {WunderGraph Cosmo documentation},
+  year     = {2026},
+  url      = {https://cosmo-docs.wundergraph.com/router/authentication-and-authorization},
+  urldate  = {2026-08-11},
+  addendum = {Source for the router's authentication and authorization
+              configuration surface, and for the documented default that the
+              router does not forward authentication headers to subgraphs,
+              which chapter 7 had already measured. Everything chapter 15 says
+              about what those settings do was measured against Cosmo Router
+              0.337.1: the page does not describe the startup silence, the
+              key-id asymmetry, or what the websocket block does to anonymous
+              HTTP requests}
+}
+
+@online{cosmodocs2026headers,
+  author   = {{WunderGraph}},
+  title    = {Subgraph Request Headers Operations},
+  organization = {WunderGraph Cosmo documentation},
+  year     = {2026},
+  url      = {https://cosmo-docs.wundergraph.com/router/proxy-capabilities/subgraph-request-header-operations},
+  urldate  = {2026-08-11},
+  addendum = {Source for the two header operations, and for the recommended
+              claim-derived alternative to forwarding a bearer token, whose
+              expression chapter 15 quotes and Mosaic deliberately does not
+              use}
+}
+
+@online{apollo2026authdirectives,
+  author   = {{Apollo GraphQL}},
+  title    = {Apollo Federation Directives},
+  organization = {Apollo GraphQL documentation},
+  year     = {2026},
+  url      = {https://www.apollographql.com/docs/graphos/reference/federation/directives},
+  urldate  = {2026-08-11},
+  addendum = {Cited for the existence and signatures of the three
+              authorization directives and for the federation\_\_Scope
+              spelling of the scopes argument. The page does not state which
+              federation version introduced each, so chapter 15 gives
+              HotChocolate's own version gates instead and says that is what
+              they are}
+}
+
 @online{neuse2023defer,
   author   = {Neuse, Jens},
   title    = {GraphQL's @defer and @stream Directives are overkill},

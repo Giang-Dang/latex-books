@@ -1,0 +1,54 @@
+% One row, reached two ways. Referenced from chapter 15. Bare tikzpicture;
+% the figure environment, caption and label live at the call site.
+%
+% The point of the picture is that guarding the left door does nothing for the
+% right one. The right door goes through a service that owns no data, which can
+% refuse a type and can never refuse a row, and the router then fetches the row
+% itself through _entities - a path that never goes near ordersByCustomer or
+% its checks. The dashed box is the checkpoint that did not exist until the gap
+% was measured: before it, the right door handed over what the left door had
+% refused the same caller a second earlier.
+\begin{tikzpicture}[
+    font=\small,
+    box/.style={draw, rounded corners=2pt, minimum width=22mm,
+                minimum height=7mm, align=center, font=\scriptsize},
+    gate/.style={draw, rounded corners=2pt, fill=black!8, minimum width=24mm,
+                 minimum height=8mm, align=center, font=\scriptsize},
+    fixed/.style={gate, dashed},
+    flow/.style={-{Stealth[length=2mm]}},
+    note/.style={font=\scriptsize, gray, align=center, inner sep=1pt}
+  ]
+
+  \node[box] (client) at (0.8,0) {client};
+  \node[box] (router) at (5.4,0) {router};
+  \draw[flow] (client) -- (router);
+
+  % -- left door: a root field on the service that owns the data -------------
+  \node[box] (fieldL) at (2.2,-1.8) {\code{ordering}\\\code{ordersByCustomer}};
+  \node[gate] (gateL) at (2.2,-3.7) {a scope,\\then \code{CustomerId}\\\code{== the subject}};
+
+  \draw[flow] (router) -- (fieldL);
+  \draw[flow] (fieldL) -- (gateL);
+
+  % -- right door: a stub from a service with no data ------------------------
+  \node[box] (fieldR) at (8.8,-1.8) {\code{nodes}\\\code{node(id:)}};
+  \node[gate] (gateR) at (8.8,-3.7) {the type only,\\decoded from\\the identifier};
+  \node[fixed] (gateE) at (8.8,-5.6) {\code{\_entities}, then\\\code{CustomerId}\\\code{== the subject}};
+
+  \draw[flow] (router) -- (fieldR);
+  \draw[flow] (fieldR) -- (gateR);
+  \draw[flow] (gateR) -- (gateE);
+
+  \node[note, anchor=west] at (10.4,-3.7) {no data here,\\so no row\\to check};
+  \node[note, anchor=west] at (10.4,-5.6) {\code{ordering} again,\\reached by\\the router};
+
+  % -- one row ---------------------------------------------------------------
+  \node[box] (row) at (5.4,-7.3) {the \code{Order} row};
+  \draw[flow] (gateL) -- (row);
+  \draw[flow] (gateE) -- (row);
+
+  \node[note, anchor=north, align=center] at (5.4,-7.9)
+    {the dashed check was added last, and until it existed this door\\
+     handed over what the other one had just refused};
+
+\end{tikzpicture}
