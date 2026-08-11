@@ -50,6 +50,30 @@ the composer input is obliged to give it is copied into the config's subgraph
 list and nothing ever calls it, which is why it points at 5108 where nothing
 listens.
 
+**Length, measured 2026-08-11 at the halfway mark rather than estimated.** Half
+the chapters are drafted, so the comparison decision 10 asked for is now
+possible: 234 pages of chapter content for 14 of 28 chapters, which is 16.7 a
+chapter, and steady across the parts - Part I is 86 pages over five chapters,
+Part II is 80 over five, and the four drafted chapters of Part III are 68. The
+remaining fourteen at the same rate put chapter content alone at about 468 pages
+before the seven part dividers, five appendices, bibliography and index. So
+decision 10's 450-550 holds and needs no revision; if anything the pressure is
+at the top of the range rather than the bottom, and the worry that the book was
+running short is answered. The whole document currently builds to 309 pages with
+fourteen chapters and five appendices still stubs.
+
+**Chapter 15 is already partly built in the companion repo, uncommitted.**
+`F:/repo/mosaic-graph` sits at tag `ch14`, commit `aafc894`, with 25 modified
+files and 9 untracked paths in the working tree, and all of it is identity work:
+`scripts/mint-token.mjs`, `scripts/auth-cases.mjs`, `scripts/auth-run.mjs`, a
+`postman/mosaic-auth` collection and environment, `Security/` folders in
+`Mosaic.ServiceDefaults` and `Mosaic.Ordering`, and `CustomerKey.cs` duplicated
+into Reviews and Ordering. Nothing is committed and no `ch15` tag exists, so a
+session that starts chapter 15 from the SPEC alone would write it twice. Read
+that tree before drafting. Recorded here rather than as an open item because
+nothing about it is unresolved: it is work in progress that the SPEC did not
+know about.
+
 Next action: chapter 15, identity and authorization across the graph. It
 inherits everything its Progress row names, and chapter 14 adds two things to
 that row: a subscription is the case where a connection outlives the token that
@@ -152,6 +176,9 @@ is re-opened only by recording what changed and why, in the row.
 | 86 | Decision 43 is closed for the two fields Mosaic has | Chapter 5 admitted in its own prose that its subscription sat outside the gate, on the grounds that newman speaks request and response. That is still true of newman, so the fix is `scripts/subscription-run.mjs` rather than a tenth collection: it opens both subscriptions through the router, submits one review per named customer, and asserts that both deliver, that each end picks the subprotocol this chapter says it does, and that the held subscription delivers one event per write. `postman/mosaic-realtime` carries the half a request and a response can carry, including the mutation, which had never been through the router. Chapter 19 still owns consolidating the collections; it no longer owns getting a subscription into a gate. Settled 2026-08-11. |
 | 87 | A count of requests per event is a gate step, not a printed table | Chapter 14's first draft printed a seven-column table of per-event request counts with nothing committed behind it, and the independent audit caught it. This is decision 66's split arriving for the third time: a count is the same on every machine, so both verification scripts now count `Mosaic.RequestTimeline` lines in the Accounts console either side of a three-write run with both subscriptions open, and assert six exactly rather than as a bound. Asserting exactly is the point: a smaller number would mean the router had begun caching the resolved author across events, which would be a better graph and a wrong chapter. Settled 2026-08-11. |
 | 88 | `@defer` is in the router's schema and is not honoured, and the chapter says so | HotChocolate 16.6.0 ships `EnableDefer` and `EnableStream` as auto-properties with no initialiser, so both default off, and its own interface calls them preview features. No Mosaic subgraph declares either. The router's client-facing schema nevertheless advertises `@defer` on `FRAGMENT_SPREAD` and `INLINE_FRAGMENT`, accepts it, and returns a single `application/json` body with the deferred field inlined even against `Accept: multipart/mixed`; `@stream` is rejected outright. WunderGraph's position is published under a named byline and is cited rather than paraphrased. The book's line: a directive in a published schema is a promise, and advertising one the graph does not keep is worse than not having the feature. Settled 2026-08-11. |
+| 89 | The composer's entity-interface crash is committed as a case, and the report is drafted rather than posted | `@wundergraph/composition` 0.63.2 throws `Fatal: Expected key "Film" to exist in the map "entityDataByTypeName"` out of `handleEntityInterfaces`, with a stack trace and wgc's "please open an issue" box, when an entity interface carries `@key` and one of its implementations does not. Re-measured 2026-08-11 against composition 0.63.2, still the newest published, and through wgc 0.129.8: unchanged, and all sixteen `modeling-cases.mjs` cases pass. The book's stake in it is already discharged, which is what took a chapter and a half to notice: `interface-object-implementation-without-a-key` asserts the crash by name, so a release that turns it into a proper error fails the gate rather than quietly making chapter 13 wrong. What was genuinely outstanding was an upstream report, and that is now drafted in `research/2026-08-upstream-reports.md`, citing issue #1669 as the sibling crash in the same function - different map, different trigger, closed 2025-03-19 as a confirmed bug. Posting it is the author's; nothing in the book waits on it. Settled 2026-08-11. |
+| 90 | wgc's subscription key gap is unchanged at 0.129.8, and its report is drafted too | Decision 83 measured both halves at wgc 0.129.7. Re-measured 2026-08-11 at 0.129.8, the newest published, and both stand: all eight `realtime-cases.mjs` cases pass unchanged, and the installed tree says the same thing directly rather than by inference - `dist/src/commands/router/commands/compose.js:306` reads the camelCase `websocketSubprotocol` and falls back to `auto`, so the documented `websocket_subprotocol` never reaches it; and `validateSubscriptionProtocols` is imported by `subgraph create/publish/update`, `feature-subgraph create/publish` and `monograph create/update`, and by nothing at all under `commands/router/`. The companion repo's pin stays at 0.129.7, because bumping it is a companion-repo change and belongs to whoever finishes chapter 15. Report drafted beside the other one. Same shape as 89: the cases are the tripwire and the book waits on nothing. Settled 2026-08-11. |
+| 91 | `samples/federated-wire` composes from committed schema files on purpose | Its `graph.yaml` names `schema: file:` rather than `introspection:`, so changing a subgraph's C# and recomposing changes nothing, and chapter 07's lab has to tell the reader to switch to `introspection:` before two of its exercises. That was carried as a limitation waiting for the sample to grow. It should not grow. A reader can compose the sample on a cold checkout without starting either subgraph, which is what makes chapter 07's opening reproducible; composition from committed files is deterministic, which is the property decision 56 leans on for chapter 09's committed config; and drift between a subgraph's C# and its committed schema is chapter 09's subject rather than this sample's, which exists to be watched rather than to be maintained. So the file input is the arrangement, the lab's `introspection:` instruction is the documented path rather than a workaround, and a later chapter that wants live drift introspects rather than growing this one. Settled 2026-08-11. |
 
 ## Version baseline
 
@@ -413,32 +440,6 @@ not written yet sits in that chapter's Progress row, a lesson sits in the
 writing rules above, and an answered question is deleted, because git holds the
 history and the decision log holds the reason.
 
-- **The composer crashes rather than erroring on one modelling mistake.** An
-  entity interface whose interface carries `@key` and one of whose
-  implementations does not makes `@wundergraph/composition` 0.63.2 throw out of
-  `handleEntityInterfaces`, with a stack trace and a "please open an issue" box.
-  It is committed as a case in `scripts/modeling-cases.mjs`, asserted by the
-  crash message. Unblocked by reporting it upstream, which nobody has done, or
-  by a release that turns it into a proper error, which fails the gate rather
-  than making chapter 13 quietly wrong.
-- **The composer input's subscription block is documented under a key the code
-  does not read.** wgc 0.129.7 documents `websocket_subprotocol` and reads
-  `websocketSubprotocol`, and `router compose` calls neither of the validators
-  every other wgc command calls, so a wrong key and a wrong value are both
-  silent. Committed as four cases in `scripts/realtime-cases.mjs`, asserted on
-  the composed config. Unblocked by a wgc release that fixes either half, which
-  fails the gate rather than making chapter 14 quietly wrong.
-- **`--split-configs-enabled` is the one wgc flag nothing has exercised.**
-  Chapters 09 to 12 answered the rest between them. Unblocked by a chapter with
-  a reason to split a config, most likely 21 or 22.
-- **`samples/federated-wire` composes from committed schema files**, so changing
-  a subgraph's C# and recomposing changes nothing, and the chapter 07 lab has to
-  tell the reader to switch `graph.yaml` to `introspection:` before two of its
-  exercises. Unblocked by that sample growing: at that point introspection
-  becomes the committed default and the schema files stay only for the drift
-  check.
-- **The book may come in short of decision 10's 450-550 pages.** Chapter 01 was
-  11 pages against a 12-18 estimate, and nothing since has been padded to reach
-  a number. Unblocked at the end of a part: compare the running count against
-  the estimate, and revise the estimate rather than inflating chapters.
-
+(None. Emptied 2026-08-11: three became decisions 89 to 91, one was a
+duplicate of chapter 21's Progress row, and one was answered by measuring
+the book against decision 10 and recorded in Status.)
