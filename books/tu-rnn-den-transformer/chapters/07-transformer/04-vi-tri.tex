@@ -1,0 +1,218 @@
+\section{Trả lại thứ tự cho câu}
+\label{sec:ch07-vi-tri}
+
+\index{mã hóa vị trí!bài toán}%
+Mục~\ref{sec:ch07-tu-nhin} đo được rằng tầng attention không phân biệt nổi hai
+thứ tự, sai khác cỡ \(4 \times 10^{-8}\). Mục này là chỗ vá.
+
+Cách vá của bài rẻ tới mức đáng ngờ: cộng thêm vào embedding một vector phụ
+thuộc vị trí. Không phải nối vào, mà cộng vào, nên nó không tốn thêm chiều nào.
+Bài gọi là \tn{mã hóa vị trí}{positional encoding} và chọn dạng sin cos:
+
+\begin{equation}
+  PE_{(pos, 2i)} = \sin\!\left( \frac{pos}{10000^{2i/\dmodel}} \right),
+  \qquad
+  PE_{(pos, 2i+1)} = \cos\!\left( \frac{pos}{10000^{2i/\dmodel}} \right).
+  \label{eq:ch07-pe}
+\end{equation}
+
+Chỉ số \(i\) chạy trên các \emph{cặp} cột, không phải trên từng cột. Cột \(2i\)
+và cột \(2i+1\) dùng chung một tần số, sin ở cột chẵn và cos ở cột lẻ. Nên bảng
+này không phải \(\dmodel\) đường cong độc lập, nó là \(\dmodel/2\) cặp quay, và
+toàn bộ mục này chạy trên chuyện đó.
+
+\begin{minted}{python}
+position = torch.arange(n_positions, dtype=torch.float32).unsqueeze(1)
+pair = torch.arange(0, d_model, 2, dtype=torch.float32)
+angle = position / torch.pow(PE_BASE, pair / d_model)
+table = torch.zeros(n_positions, d_model)
+table[:, 0::2] = torch.sin(angle)
+table[:, 1::2] = torch.cos(angle)
+\end{minted}
+
+\subsection*{Lý do bài đưa ra, và chữ bài dùng}
+
+\index{mã hóa vị trí!bài nói phỏng đoán}%
+Mục 3.5 giải thích lựa chọn bằng một câu:
+
+\begin{quote}
+\enquote{We chose this function because we hypothesized it would allow the
+model to easily learn to attend by relative positions, since for any fixed
+offset \(k\), \(PE_{pos+k}\) can be represented as a linear function of
+\(PE_{pos}\).}
+\end{quote}
+
+Chữ \enquote{hypothesized} là chữ của bài, và nó đáng để ý theo cùng cách chữ
+\enquote{conjecture} của Bahdanau đáng để ý ở
+mục~\ref{sec:ch06-ai-do}. Bài không chứng minh tính chất ấy, không đo nó, và
+không có thí nghiệm nào trong bài tách được nó ra khỏi phần còn lại.
+
+Nên tôi đo. Phần toán thì ngắn: với một cặp cột ở tần số
+\(\omega_i = 1/10000^{2i/\dmodel}\), dịch vị trí đi \(k\) là quay cặp ấy một góc
+\(k\omega_i\), vì
+
+\begin{equation}
+  \begin{bmatrix} \sin((pos+k)\omega_i) \\ \cos((pos+k)\omega_i) \end{bmatrix}
+  =
+  \begin{bmatrix} \cos(k\omega_i) & \sin(k\omega_i) \\
+                 -\sin(k\omega_i) & \cos(k\omega_i) \end{bmatrix}
+  \begin{bmatrix} \sin(pos\,\omega_i) \\ \cos(pos\,\omega_i) \end{bmatrix},
+  \label{eq:ch07-quay}
+\end{equation}
+
+đúng bằng công thức cộng góc. Ghép \(\dmodel/2\) khối ấy lại theo đường chéo thì
+được \(\mat{M}_k\). Nội dung thật của phát biểu nằm ở chỗ \(pos\) không xuất
+hiện ở vế phải của ma trận: cùng một \(\mat{M}_k\) dùng được ở mọi vị trí.
+
+\begin{measured}{\(\mat{M}_k \, PE_{pos}\) so với \(PE_{pos+k}\), \(\dmodel = 64\)}
+\begin{minted}{text}
+offset k  max|M_k PE(pos) - PE(pos+k)|  over positions
+1         1.341e-06                    5 tested
+2         1.609e-06                    5 tested
+5         1.222e-06                    5 tested
+13        1.840e-06                    5 tested
+40        2.623e-06                    5 tested
+\end{minted}
+
+\(\mat{M}_k\) dựng bằng giải tích theo \eqref{eq:ch07-quay}, không khớp số.
+Các vị trí thử là 0, 1, 7, 30, 54.
+
+Đo bằng \code{experiments/ch07\_position.py} tại tag \code{ch07}.
+\end{measured}
+
+Sai khác cỡ \(10^{-6}\) trên mọi cặp \((k, pos)\). Phỏng đoán của bài đúng.
+
+\index{mã hóa vị trí!khớp M\_k bằng bình phương tối thiểu thì hỏng}%
+Một chỗ bẫy, ghi ra vì nó chờ sẵn đúng người đọc chịu tự kiểm. Cách tự nhiên
+nhất để kiểm \enquote{tồn tại một ánh xạ tuyến tính} là đi \emph{khớp} nó: lấy
+bình phương tối thiểu trên một cửa sổ vị trí rồi xem \(\mat{M}_k\) thu được có
+đổi theo \(pos\) không. Làm thế thì kết quả trông như thể nó có đổi. Không phải
+vậy. Các chiều bước sóng dài gần như không quay trên một trăm vị trí, nên ma
+trận thiết kế suy biến nặng và bài toán khớp không xác định được ở những chiều
+ấy. Dựng \(\mat{M}_k\) bằng giải tích thì không có vấn đề đó, và bảng trên là
+cách dựng ấy.
+
+\subsection*{Một tính chất mạnh hơn cái bài phát biểu}
+
+\index{mã hóa vị trí!tích vô hướng chỉ phụ thuộc khoảng cách}%
+Trong lúc đo, tôi thử một đại lượng khác và nó cho một phát biểu sạch hơn.
+
+Lấy \tn{tích vô hướng}{dot product} của hai hàng cách nhau \(k\). Mỗi cặp cột
+đóng góp
+\(\sin(a)\sin(b) + \cos(a)\cos(b) = \cos(a - b)\), và hiệu \(a - b\) đúng bằng
+\(k\omega_i\) bất kể \(pos\). Cộng lại:
+
+\begin{equation}
+  PE_{pos} \cdot PE_{pos+k} = \sum_{i=0}^{\dmodel/2 - 1} \cos(k \omega_i).
+  \label{eq:ch07-tich-vo-huong-pe}
+\end{equation}
+
+Vế phải không có \(pos\).
+
+\begin{measured}{\(PE_{pos} \cdot PE_{pos+k}\) tại các vị trí khác nhau, \(\dmodel = 64\)}
+\begin{minted}{text}
+offset k  pos=0     pos=1     pos=7     pos=30    spread
+1         30.91683  30.91683  30.91683  30.91683  0.00e+00
+2         28.30386  28.30386  28.30386  28.30386  1.91e-06
+5         23.50397  23.50397  23.50397  23.50397  0.00e+00
+13        21.00672  21.00672  21.00672  21.00672  3.81e-06
+40        15.39746  15.39746  15.39746  15.39746  3.81e-06
+\end{minted}
+
+Đo bằng \code{experiments/ch07\_position.py} tại tag \code{ch07}.
+\end{measured}
+
+Cột \code{spread} bằng 0 hoặc bằng nhiễu float. Bài chỉ nói tồn tại một ánh xạ
+tuyến tính; đây nói tích vô hướng của hai vị trí là một hàm của riêng khoảng
+cách giữa chúng. Vì attention chấm điểm \emph{bằng} tích vô hướng, đó đúng là
+đại lượng cơ chế nhìn thấy.
+
+\subsection*{Nhưng đừng đi xa hơn thế, và đây là chỗ cách kể thông thường sai}
+
+\index{mã hóa vị trí!tích vô hướng không đơn điệu theo k}%
+Từ bảng trên, bước tiếp theo nghe rất xuôi tai: tích giảm khi khoảng cách tăng,
+30.91683 rồi 28.30386 rồi 23.50397 rồi 21.00672 rồi 15.39746, nên mô hình đọc
+ngược ra được khoảng cách. Tôi đã định viết đúng câu ấy.
+
+Nó sai, và sai ở chỗ đo được.
+
+\begin{measured}{chỗ \(PE_{pos} \cdot PE_{pos+k}\) quay đầu}
+\begin{minted}{text}
+d_model  k where it first rises again  value at k=1  min over k<200
+32       5                             15.3136       2.2507 at k=161
+64       6                             30.9168       7.0883 at k=172
+512      44                            249.1021      86.3717 at k=199
+\end{minted}
+
+Đo bằng \code{experiments/ch07\_position.py} tại tag \code{ch07}.
+\end{measured}
+
+Tổng các cosin ở \eqref{eq:ch07-tich-vo-huong-pe} không đơn điệu. Ở
+\(\dmodel = 64\) nó giảm tới \(k = 5\) rồi tăng lại ở \(k = 6\); ở
+\(\dmodel = 32\) chỗ quay đầu là \(k = 5\); ở \(\dmodel = 512\) là \(k = 44\).
+Sau chỗ ấy, một giá trị của tích ứng với nhiều khoảng cách, nên không có phép
+đọc ngược nào cả.
+
+Chỗ này đáng đọc cẩn thận, vì tôi \emph{không} đang bắt lỗi bài. Bài phát biểu
+đúng một chuyện, là tính chất tuyến tính, và chuyện ấy đúng. Cái sai nằm ở bước
+suy diễn thêm mà cách kể lại hay gắn vào. Cùng loại với chuyện
+chương~\ref{ch:encoder-decoder} và chương~\ref{ch:mot-vector-cho-moi-tu} phải gỡ
+về \enquote{encoder-decoder hỏng ở câu dài}: bài không nói thế, người kể lại nói
+thế.
+
+Và nó không phải chuyện xa xôi. Sách này chạy \(\dmodel\) 24 tới 32 với câu dài
+nhất 23 token, tức nằm hẳn bên phải chỗ quay đầu. Ở quy mô của bài,
+\(\dmodel = 512\) và câu 15 tới 40 từ, phần lớn khoảng cách nằm bên trái
+\(k = 44\), nên ở đó cách đọc kia gần đúng. Một tính chất phụ thuộc quy mô mà
+người ta trích như một tính chất tuyệt đối.
+
+\subsection*{Dải bước sóng, và một câu của bài không đúng theo nghĩa đen}
+
+\index{mã hóa vị trí!dải bước sóng thật}%
+Bài mô tả tập tần số bằng một câu: \enquote{The wavelengths form a geometric
+progression from \(2\pi\) to \(10000 \cdot 2\pi\)}.
+
+Cấp số nhân thì đúng. Hai đầu mút thì không hẳn. Bước sóng của cặp \(i\) là
+\(2\pi \cdot 10000^{2i/\dmodel}\), và \(2i\) lớn nhất là \(\dmodel - 2\), nên
+bước sóng dài nhất công thức đạt tới là \(2\pi \cdot 10000^{(\dmodel-2)/\dmodel}\),
+luôn ngắn hơn \(10000 \cdot 2\pi\).
+
+\begin{measured}{bước sóng dài nhất thật sự đạt tới, tính theo đơn vị \(2\pi\)}
+\begin{minted}{text}
+d_model  shortest/2pi  longest/2pi  paper says  shortfall
+64       1.0000        7498.94      10000.0     1.3335x
+128      1.0000        8659.64      10000.0     1.1548x
+512      1.0000        9646.62      10000.0     1.0366x
+\end{minted}
+
+Đo bằng \code{experiments/ch07\_position.py} tại tag \code{ch07}.
+\end{measured}
+
+Ở \(\dmodel = 512\), tức cấu hình của bài, chênh 1.0366 lần và câu của bài coi
+như đúng. Ở \(\dmodel = 64\) chênh 1.3335 lần. Câu ấy đúng theo nghĩa tiệm cận
+khi \(\dmodel\) lớn, không đúng theo nghĩa đen, và khoảng cách giữa hai nghĩa
+lớn dần khi mô hình nhỏ đi.
+
+\subsection*{Bài tự thử cách khác, và cách khác cũng tốt bằng}
+
+\index{mã hóa vị trí!hàng (E) của bảng 3}%
+Chỗ trung thực nhất của mục 3.5 là câu cuối:
+
+\begin{quote}
+\enquote{We also experimented with using learned positional embeddings instead,
+and found that the two versions produced nearly identical results (see Table 3
+row (E)). We chose the sinusoidal version because it may allow the model to
+extrapolate to sequence lengths longer than the ones encountered during
+training.}
+\end{quote}
+
+Hàng (E) cho BLEU 25.7 so với 25.8 của base. Nghĩa là toàn bộ cấu trúc đẹp đẽ ở
+trên, cấp số nhân bước sóng, phép quay, tính chất khoảng cách, đổi lấy đúng 0.1
+BLEU so với một bảng tham số học được từ đầu.
+
+Lý do bài giữ sin cos không phải kết quả đo được. Nó là một phỏng đoán khác,
+rằng dạng này ngoại suy được ra câu dài hơn lúc huấn luyện, và câu ấy dùng chữ
+\enquote{may}. Chương~\ref{ch:vi-tri-va-ngu-canh} là chương đo phỏng đoán ấy, và
+tôi nói trước kết quả vì nó đổi cách đọc mục này: sinusoid không ngoại suy tốt,
+và cái thay thế nó bốn năm sau lấy đúng ý tưởng phép quay ở
+\eqref{eq:ch07-quay} rồi đặt phép quay ấy vào chỗ khác.

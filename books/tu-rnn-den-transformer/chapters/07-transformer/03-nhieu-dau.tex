@@ -1,0 +1,101 @@
+\section{Một trung bình là một trung bình}
+\label{sec:ch07-nhieu-dau}
+
+\index{multi-head!vì sao một head là không đủ}%
+\eqref{eq:ch07-attention} trả về một tổng có trọng số. Một cái.
+
+Đó là hạn chế đọc ra được từ chính công thức chứ không cần thí nghiệm nào. Khi
+từ \code{mèo} trong một câu muốn hỏi hai chuyện khác nhau, tính từ nào thuộc về
+tôi và động từ nào lấy tôi làm chủ ngữ, nó chỉ có một phân phối \(\alpha\) để
+diễn đạt cả hai. Trộn hai câu hỏi vào một phân phối thì được một câu trả lời
+trung bình cho một câu hỏi không ai đặt.
+
+Bài giải bằng cách chạy song song \(h\) bản, mỗi bản hẹp hơn:
+
+\begin{equation}
+  \multihead(\mat{Q}, \mat{K}, \mat{V})
+  = \left[\headop_1; \dots; \headop_h\right] \mat{W}^O,
+  \qquad
+  \headop_i = \attention(\mat{Q}\mat{W}^Q_i, \mat{K}\mat{W}^K_i,
+                         \mat{V}\mat{W}^V_i).
+  \label{eq:ch07-multihead}
+\end{equation}
+
+Mỗi head chiếu query, key và value xuống một không gian con riêng, chấm điểm ở
+đó, rồi cả \(h\) kết quả nối lại và đi qua một phép chiếu cuối. Bài chạy
+\(h = 8\) với \(\dk = \dv = \dmodel/h = 64\).
+
+Chữ head cũng giữ nguyên tiếng Anh, và vì đúng lý do đã giữ nguyên query, key và
+value ở mục~\ref{sec:ch07-tu-nhin}: bản dịch sát là \enquote{đầu}, mà \emph{đầu}
+tiếng Việt còn nghĩa là chỗ bắt đầu, nên \enquote{tám đầu} với \enquote{đầu
+tiên} đứng gần nhau đọc thành hai thứ khác hẳn.
+
+\subsection*{Chỗ dễ đọc sai: nhiều head không tốn thêm}
+
+\index{multi-head!số tham số không đổi theo h}%
+Hình vẽ trong bài xếp \(h\) khối cạnh nhau, nên phản xạ đầu tiên là tám head
+tốn gấp tám lần. Không phải. Câu của bài:
+
+\begin{quote}
+\enquote{Due to the reduced dimension of each head, the total computational
+cost is similar to that of single-head attention with full dimensionality.}
+\end{quote}
+
+Lý do nằm gọn trong \(\dk = \dmodel/h\). Tăng \(h\) lên gấp đôi thì mỗi head hẹp
+đi một nửa, nên tổng bề rộng của \(h\) phép chiếu vẫn đúng bằng \(\dmodel\).
+Bốn ma trận \(\mat{W}^Q\), \(\mat{W}^K\), \(\mat{W}^V\), \(\mat{W}^O\) giữ
+nguyên hình dạng \(\dmodel \times \dmodel\) với mọi \(h\), và số tham số không
+đổi. Repo lưu chúng ở dạng gộp và tách ra từng head bằng một phép \code{view}, vì đó
+đúng là \(h\) ma trận của bài xếp cạnh nhau:
+
+\begin{minted}{python}
+def _split(self, x: torch.Tensor) -> torch.Tensor:
+    batch, steps, _ = x.shape
+    return x.view(batch, steps, self.n_heads, self.d_k).transpose(1, 2)
+\end{minted}
+
+\code{tests/test\_ch07.py} khẳng định chuyện ấy bằng một test dựng cùng một tầng
+ở \(h\) bằng 1, 2, 4, 8, 16 rồi đếm tham số, và đòi năm con số bằng nhau. Tôi
+viết test ấy không phải vì nghi mã, mà vì đây là chỗ một lần sửa \enquote{cho
+gọn} sẽ phá lặng lẽ: đổi \(\dk\) thành một hằng số thay vì \(\dmodel/h\) thì mọi
+thứ vẫn chạy, vẫn học được, và hàng (A) của bảng 3 dưới đây mất nghĩa.
+
+\index{multi-head!FLOP và đồng hồ không cùng nói một chuyện}%
+Một cảnh báo về chữ \enquote{cost} trong câu trích. Nó đúng theo phép đếm số
+phép tính dấu chấm động, floating point operations, viết tắt là FLOP,
+và đó là thứ bài đang nói. Theo đồng hồ thì không hẳn: một phiên đo riêng ở
+\(\dmodel = 512\) trên CPU thấy \(h = 16\) chậm hơn \(h = 1\) khoảng hai mươi
+phần trăm, vì chia thành nhiều phép nhân ma trận nhỏ hơn thì phần chi phí không
+phải số học lớn lên. Con số ấy phụ thuộc cài đặt và phần cứng đủ nhiều để tôi
+không in nó thành một phát biểu chung, và
+chương~\ref{ch:chi-phi-va-song-song} là chỗ đo thời gian chạy cho tử tế.
+
+\subsection*{Bài tự đo số head, và kết quả không đơn điệu}
+
+\index{multi-head!hàng (A) của bảng 3}%
+Hàng (A) của bảng 3 đổi \(h\) và giữ nguyên tổng chi phí tính, đúng theo cách
+vừa nói. Cột \code{PPL} là perplexity và cột \code{BLEU} là điểm Bilingual
+Evaluation Understudy, viết tắt là BLEU, cả hai đo trên tập phát triển
+Anh-Đức:
+
+\begin{minted}{text}
+h    d_k   d_v   PPL    BLEU
+1    512   512   5.29   24.9
+4    128   128   5.00   25.5
+16   32    32    4.91   25.8
+32   16    16    5.01   25.4
+\end{minted}
+
+Nhận xét của bài, nguyên văn: \enquote{While single-head attention is 0.9 BLEU
+worse than the best setting, quality also drops off with too many heads}. Hiệu
+25.8 trừ 24.9 đúng bằng 0.9.
+
+Bảng ấy nói hai chuyện và chỉ chuyện thứ nhất hay được trích. Chuyện thứ nhất:
+một head là kém, đúng như lập luận ở đầu mục. Chuyện thứ hai: 32 head cũng kém,
+và kém hơn cả 4 head. Ở \(h = 32\) thì \(\dk = 16\), tức mỗi head chỉ còn mười sáu
+chiều để dựng câu hỏi và câu trả lời trong đó. Cơ chế đổi từ một trung bình quá
+thô sang nhiều trung bình quá hẹp, và đâu đó ở giữa là chỗ tốt nhất, mà bài tìm
+bằng cách thử chứ không bằng cách dẫn xuất.
+
+Tôi thích hàng này vì nó là một bảng bốn dòng bác bỏ được cách kể \enquote{càng
+nhiều head càng tốt}, và bài in nó ra ngay cạnh con số họ chọn.

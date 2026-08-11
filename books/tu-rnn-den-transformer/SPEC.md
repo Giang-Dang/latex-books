@@ -16,7 +16,7 @@ picks a side. Chapter titles are quoted in Vietnamese exactly as they are set.
 
 ## Status
 
-Chapters 01, 02, 03, 04, 05 and 06 drafted. Six appendices now: C was split out
+Chapters 01 through 07 drafted. Six appendices now: C was split out
 of B on 2026-08-09 (decision 28) and the old C, D and E became D, E and F.
 
 Chapter 03 was drafted out of order, in a session that branched before chapters
@@ -45,16 +45,23 @@ is 900 seconds from tag `ch06`, raised from 600 with the measurement rather than
 after a failure; decision 43 has the reasoning and `verify.py` carries it next
 to the number.
 
-Next action: chapter 07, "Kiến trúc Transformer". It inherits the corpus of
-decision 35, the companion module `attention.py` at tag `ch06`, and one question
-chapter 06 hands it directly: equation (5) of Bahdanau has no `t-1` in it, so
-the only thing making it wait is that the annotations are produced by a
-recurrence. Chapter 06 ends on that sentence and chapter 07 opens on it. Two
-warnings from the source manifest apply: the arXiv copy of Vaswani is dated
-2023, six years after the conference, so wording quoted from it is not
-automatically wording from 2017; and chapter 06 has already spent the cheap
-half of the run budget, so a chapter that wants many trainings should read
-decision 43 before adding them.
+Both warnings the SPEC handed chapter 07 turned out to matter, and neither in
+the shape expected. The arXiv-date warning was much bigger than a wording
+question: the two copies of Vaswani are not the same document and they disagree
+on a BLEU score (decision 47). The budget warning turned out not to bind at all,
+because three of chapter 07's five verification items train nothing at all and
+the two that do are cheap; the whole repo runs in 663.51s against the 900s of
+decision 43, so that number is untouched.
+
+Next action: chapter 08, "Chi phí, song song hóa, và cái giá phải trả". It
+inherits `transformer.py` at tag `ch07` and three debts chapter 07 names on the
+page and does not pay. Post-LN against pre-LN: chapter 07 sets equation (5) of
+the paper in the paper's own order and says chapter 08 measures the other one.
+Warmup: chapter 07 tried the paper's schedule at 658 training steps, found it
+worse than the shared recipe, and said so, which is a result about 658 steps
+rather than about warmup. And the wall-clock half of the multi-head cost claim,
+which chapter 07 states in FLOPs only. Chapter 08 also owns the re-measurement
+of table 1, which chapter 07 quotes and does not check.
 
 ## Decision log
 
@@ -110,6 +117,10 @@ is re-opened only by recording what changed and why, in the row.
 | 43 | `BUDGET_TOTAL` is 900 seconds, raised from 600 | The open item listed three honest options once chapter 06 needed roughly 240 seconds of new experiments: speed chapter 02 up, let chapter 06 share chapter 05's models, or raise the number with a recorded reason. The first rewrites a drafted chapter's published figures, the second is impossible because each experiment is its own process. So the third. What made the case is not the new total but the spread: three whole runs at tag `ch05` on identical code came in at 557.52, 495.51 and 487.27 seconds, so the seventy-second range is larger than the forty seconds of headroom the old number had, and a budget that clears the measurement by less than its own noise is not a budget. Measured at tag `ch06`: 680.47 seconds. What is deliberately not touched is what the budget is for. Decision 13 promises a reader with no graphics card that a run finishes in minutes, and 900 seconds is still minutes; the question before raising it again is not whether the run fits but whether a reader would sit through one |
 | 44 | An ablation without a parameter-matched control measures the parameter count | Chapter 06 ran chapter 05's reversal question against the bidirectional encoder and, in the same table, dropped the backward pass. Read four rows, the backward pass is worth 0.0467 exact match and the gain sits on long sentences. Add a fifth row where a forward-only encoder is widened to 41495 parameters against the bidirectional model's 40805, and it scores 1.0000: the gain was the parameters. The chapter prints the control and says so. **And the honest reading is about the corpus, not the paper.** Section 3.2 of Bahdanau wants an annotation to summarise the words that follow, and the reason is disambiguation; the grammar of decision 35 has no ambiguity in it at all, as `toy_corpus.py` has said in its docstring since chapter 05. A corpus with nothing to disambiguate cannot show what a disambiguating mechanism is for, so this measures the running example's ceiling rather than the paper's claim. Generalised, because it is not about this one table: a table comparing two architectures states their parameter counts, and an ablation ships a size-matched control or says why it has none |
 | 45 | `ma trận đồng chỉnh` belongs to chapter 06's block of appendix B, not chapter 05's | Appendix B carried it under chapter 05 with the note \enquote{chương 05 mượn trước của chương 06}, which is a note saying the row is in the wrong place. Decision 39 makes ownership mean the section cadence, and chapter 06 names the matrix in four sections while chapter 05 names it in one, so chapter 06 is the owner by the test the rule actually applies. Moved, and the note rewritten to `chương~05 mượn trước`, which is now a fact about chapter 05's usage rather than an apology for the row being in the wrong block. Chapter 05 keeps its single gloss and is now correct as a borrower rather than correct by accident. Two more rows arrived from chapter 06's audit, both of them the defect decision 39 says the check cannot see - a term central to a chapter that is in no block at all: bare `đồng chỉnh`, which was the chapter's own former title, and `phép cắt bỏ`, which is the name of the method behind decision 44. Plus `alignment error rate` to the keep-in-English table. Added in the same pass: `attention` and `annotation` to the keep-in-English table. `annotation` is the interesting one - it is Bahdanau's name for `h_j`, and the obvious Vietnamese word, `chú giải`, means a footnote or a commentary, so translating it would have taught a reader the wrong thing |
+
+| 46 | Query, key, value and head stay in English | Decision 16 says a term the book translates carries its English original, and a term it keeps takes no parentheses. These four sit on the keep side, and the reason is the one decision 39 already found for `chuỗi`: the obvious Vietnamese renderings are ordinary Vietnamese words. `khóa` is a lock and a key, `giá trị` is worth and value, `đầu` is a head and also the start of everything - chapter 07 alone writes `cái giá`, `giá trị của tích`, `chỗ khóa lại`, `đầu ra`, `bắt đầu` and `đầu tiên` in their everyday senses. Glossing the technical sense would set `giá trị (value)` beside `giá trị` meaning worth on the same page, which is worse than not translating. Chapter 07's own block of appendix B therefore holds four rows and not eight: `tích vô hướng`, `mã hóa vị trí`, `kết nối tắt`, `chuẩn hóa theo tầng`, all four of which are unambiguous. The chapter says on the page why the other four are in English rather than leaving a reader to wonder. Generalised, because the next chapter will hit it too: a candidate row whose Vietnamese side is a word the book already uses in a different sense does not go in the appendix, it goes in the keep-in-English table |
+| 47 | The two copies of \enquote{Attention Is All You Need} are different documents, and the book says which one it read | The source manifest warned that the arXiv copy is dated 2023 and that wording from it is not automatically wording from 2017. Reading both copies through showed the gap is not about wording. The NIPS 2017 proceedings PDF is 11 pages; arXiv:1706.03762v7 is 15. The proceedings has no section 6.3 and no table 4 on constituency parsing, no appendix of attention visualisations, no parsing sentence in its abstract, and a reference list ending at [32] against v7's [40]. **And they disagree on a number.** The proceedings gives BLEU 41.0 for Transformer (big) on English-French in its abstract, its table 2 and its body alike; v7 gives 41.8 in the abstract and table 2 while its own section 6.1 still reads \enquote{a BLEU score of 41.0}. Both were checked at full page resolution, in both files, because 41.8 is the figure nearly every secondary source repeats. The `refs.bib` note records all of it and chapter 07 prints both numbers with the version each belongs to. What this generalises to is a rule the book already half had: a citation names a version, and for a paper with more than one live copy \enquote{the authors report X} is an incomplete sentence |
+| 48 | Chapter 07's table sweeps epochs, and that is the finding rather than the axis | Chapters 05 and 06 both swept width, so the obvious chapter 07 table was width again. It says the wrong thing. Held at the shared recipe's 14 epochs the Transformer scores 0.4700 against the attention model's 1.0000, and three separate explanations had to be killed before that number meant anything: it is not overfitting (training-split accuracy is no higher than test), not broken plumbing (teacher-forced token accuracy is 0.9657, and 0.9499 to the 19th power is 0.3765 against a measured 0.3421 on long sentences), and not the optimizer (seven learning-rate recipes were tried, including the paper's own warmup shrunk to fit 658 steps, and the shared recipe beat all of them). What is left is steps: the same run at 42 epochs reaches 0.9967 and holds there at 56, carrying 35845 parameters against the attention model's 40805. So the table sweeps epochs at one width, and it is one training scored at four checkpoints rather than four trainings, which costs one run instead of four and makes the rows exactly comparable. The residual errors at 14 epochs are all one kind - right words, wrong noun phrase - which is the inductive-bias gap chapters 08 and 10 own, showing up early. **Consequence for decision 37**, whose per-model budget was written for models trained at the shared epoch count: a script that deliberately trains past it scales with the epochs, and `verify.py` carries that reasoning next to `ch07_corpus.py`'s 180-second budget |
 
 ## Version baseline
 
@@ -190,10 +201,21 @@ created. That section is the hinge to the next chapter and is not optional.
 
 ### Part IV - Bỏ hẳn recurrence
 
-7. **Kiến trúc Transformer** (Vaswani et al. 2017) - scaled dot-product with the
-   variance argument behind 1/sqrt(d_k); multi-head attention; sinusoidal
-   positional encoding and its linear-shift property; residuals, layer norm, the
-   position-wise FFN; masked decoder self-attention
+7. **Kiến trúc Transformer** (Vaswani et al. 2017) - self-attention, with
+   permutation equivariance measured rather than asserted, which is what makes
+   positional encoding compulsory; the three places the model uses attention and
+   how they differ; scaled dot-product with the variance argument behind
+   1/sqrt(d_k) derived, measured, and then measured against the initialization
+   the code actually uses; multi-head attention and why the head count does not
+   move the parameter count; sinusoidal positional encoding, its linear-shift
+   property checked analytically, the stronger offset-only property of its inner
+   product, and the point where that inner product stops being monotone so it
+   does *not* encode distance; residuals, layer norm and the position-wise FFN,
+   with bridge boxes for He 2015 and Ba 2016; masked decoder self-attention
+   tested by intervention, where the unmasked model reaches a *lower* training
+   loss and scores zero; and the chapter's own table, which sweeps epochs rather
+   than width (decision 48). Two copies of this paper exist and disagree on a
+   BLEU score (decision 47)
 8. **Chi phí, song song hóa, và cái giá phải trả** - the paper's complexity
    table, re-measured as FLOPs, memory and wall clock against `n` on a CPU;
    warmup, label smoothing and dropout as load-bearing rather than tricks;
@@ -254,7 +276,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 04 | drafted | Companion tag `ch04`. Reads the 1997 paper rather than the modern cell: no forget gate, squashing functions that are not tanh, truncation as three named substitutions. Input weight conflict solved in closed form (`w* = 1/T`). Two TikZ figures. Corrects appendix A, which had the paper writing `c_t` for the cell state when it writes `s_c` |
 | 05 | drafted | Companion tag `ch05`. Venue confirmed: NIPS 2014, Advances in NIPS 27, pages 3104-3112 (pages from DBLP, since the publisher's own BibTeX export leaves the field empty). Settles the running example as a generated corpus (decision 35). The bottleneck measured by shrinking the context vector rather than by lengthening sentences, which is what lets the chapter say the bottleneck is real *and* that this paper never hit it. Separates Cho 2014a from Cho 2014b, which is who the length-degradation result actually belongs to. One TikZ figure |
 | 06 | drafted | Companion tag `ch06`, module `attention.py`. Retitled from \enquote{Đồng chỉnh} with the folder and label following (decision 42). Pays chapter 05's debt: Cho 2014b read in full, from the arXiv and Anthology copies, both nine pages. The chapter's spine is that the paper this chapter reads *conjectured* the bottleneck and cited two SSST-8 workshop papers for it, while chapter 05 is where this book measured it. Reproduces chapter 05's width table digit for digit on its fixed-vector rows, which is what makes the two chapters' tables comparable. Two TikZ figures. `BUDGET_TOTAL` raised to 900 (decision 43) |
-| 07 | not-started | |
+| 07 | drafted | Companion tag `ch07`, module `transformer.py`. Four experiments, two of which train nothing, so the whole repo verifies in 663.51s against the 900s budget and decision 43 is untouched. Reads both copies of the paper and finds they are different documents that disagree on a BLEU score (decision 47). The chapter's table sweeps epochs rather than width, after three other explanations for the 14-epoch result were killed (decision 48). Two TikZ figures. Four appendix B rows, and four terms deliberately kept in English (decision 46) |
 | 08 | not-started | |
 | 09 | not-started | |
 | 10 | not-started | |
@@ -448,10 +470,24 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   against the exact PDF named in the source manifest. A number I measured goes
   in a `measured` box, says in the prose that I measured it, and traces to a
   research note. Quoted material uses `\enquote{}`, never a literal quote
-  character. The arXiv copies of Vaswani and Bahdanau postdate their
-  conferences by six years and one year, so wording quoted from them is not
-  automatically wording from 2017 or 2015; check the proceedings before
-  attributing a sentence to a year.
+  character.
+
+  **A paper with more than one live copy is cited by version, and the
+  differences are checked rather than assumed** (decision 47). The arXiv copies
+  of Vaswani and Bahdanau postdate their conferences by six years and one year,
+  so wording quoted from them is not automatically wording from 2017 or 2015.
+  Chapter 07 is where the cost of not checking became concrete: the two copies
+  of Vaswani differ by four pages of content and by a BLEU score, and the widely
+  quoted 41.8 appears in the abstract and table of the 2023 arXiv copy while
+  that same copy's body says 41.0. Read both, diff the passages the chapter
+  leans on, and put what you found in the `refs.bib` note.
+
+  **A bridge box needs the same first-hand check as a number.** It is prose
+  about a paper, and prose about a paper is where a summary from memory or from
+  a subagent slips through unchallenged, because nothing in the gate reads it.
+  Both of chapter 07's bridge boxes shipped a first draft that overstated what
+  had been read; one of them argued in a circle. The `note` field saying which
+  sections were read is itself a claim and has to be true.
 
 ## Open items
 
@@ -553,6 +589,34 @@ that was written down.
   argument may be. The fix, if a chapter needs it, is a grammar where one
   English word's Vietnamese translation depends on a word after it; chapter
   06's tier-three exercise 1 specifies exactly that and nobody has built it.
+  **Chapter 07 hit a different edge of the same corpus and it is worth naming
+  separately.** The grammar has no ambiguity, but it does have binding: two
+  clauses of the same shape, each with its own adjective and noun. That is what
+  the Transformer gets wrong at 14 epochs, and it is a harder thing for the
+  corpus to run out of than ambiguity was.
+
+- **The statistics of `q . k` after training are not measured, and chapter 07
+  says so on the page.** Everything in its scaling section is at initialization,
+  where the measurement is that PyTorch's default `nn.Linear` gives component
+  variance 1/3 rather than the footnote's 1, so `var(q.k)` is about `d_k/9` and
+  the 1/sqrt(d_k) divisor over-corrects roughly threefold. The chapter argues
+  that this does not matter, because the divisor's job is to remove the
+  dependence on `d_k` rather than to set an absolute scale, and the measured
+  flatness of the scaled columns across `d_k` from 8 to 1024 supports that. What
+  nobody has checked is whether a trained model's scores still sit at that
+  scale. Chapter 07's tier-three exercise 1 hands it to the reader; if a later
+  chapter needs the answer it should measure rather than cite the exercise.
+
+- **`conda run` mangles Vietnamese output, and the traceback names conda rather
+  than the repo.** It captures the child's stdout and re-encodes it with the
+  system code page, so `utf8_stdout()` inside the child cannot help and the
+  failure surfaces as a `UnicodeEncodeError` raised inside conda's own
+  `main_run`. `verify.py` is immune because it invokes `sys.executable` through
+  `subprocess` with an explicit encoding. Run experiment scripts through the
+  environment's interpreter directly, or activate the environment first. Cost
+  this session: two failed runs before the real error was visible at the top of
+  the output rather than the tail. Chapter 07's tier-two preamble warns the
+  reader, which is the only reason this is an open item rather than a decision.
 - **Chapter 06's forward-only encoder gets *worse* when the source is
   reversed, and no one knows why.** 0.9500 to 0.8667 exact match, with the loss
   landing entirely on long sentences (0.9079 to 0.7434) while short sentences
@@ -583,13 +647,25 @@ that was written down.
   measured the length degradation. Bahdanau distinguishes them as 2014a and
   2014b and the whole received story about chapter 05 turns on which one is
   meant.
-- **Four papers are cited from less than a full read, and each entry says so.**
+- **Six papers are cited from less than a full read, and each entry says so.**
   `kalchbrenner2013recurrent` and, since chapter 06, `schuster1997bidirectional`
   and `pougetabadie2014overcoming`, all three from their bibliographic records
   only and all three used for attribution and nothing else;
   `graves2013generating` from section 2.1 only, which is the part that matters
-  because it is where the LSTM equations are. `cho2014properties` has left this
-  list: chapter 06 read it in full and the entry's note now says so.
+  because it is where the LSTM equations are. Chapter 07 adds two, both of them
+  bridge boxes: `he2016deep` from its abstract, section 1 and figure 1, and
+  `ba2016layer` from its abstract alone. `cho2014properties` has left
+  this list: chapter 06 read it in full and the entry's note now says so.
+  `vaswani2017attention` never joined it, because chapter 07 read both copies
+  through, which is how decision 47 exists.
+
+  The `he2016deep` note was wrong before it was right, and the way it went
+  wrong is worth keeping. It was first written claiming a read of section 3.2,
+  from a subagent's summary rather than from the paper, and the chapter's
+  sentence about the degradation result was circular on top of that. Fetching
+  the PDF and reading page 1 fixed both. The rule this restates: a bridge box is
+  prose about a paper, so it needs the same first-hand check as a number does,
+  and a `note` field claiming which section was read is itself a claim.
 
   Two things that reading turned up, kept because they will save the next
   session the same hour. **`file` reports both copies of that paper as six

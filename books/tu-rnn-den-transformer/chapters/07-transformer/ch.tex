@@ -1,3 +1,42 @@
-% Scope (SPEC table of contents): Vaswani và cộng sự 2017. Scaled dot-product và dẫn xuất phương sai giải thích 1/sqrt(d_k); multi-head; positional encoding sin/cos và tính chất dịch chuyển tuyến tính; residual, layer norm, FFN theo vị trí; masked decoder self-attention.
+% Scope (SPEC table of contents): Vaswani và cộng sự 2017. Self-attention, với tính tương đương hoán vị đo được chứ không chỉ phát biểu, và đó là thứ bắt buộc phải có positional encoding; ba chỗ dùng attention và chúng khác nhau ra sao; scaled dot-product với dẫn xuất phương sai giải thích 1/sqrt(d_k), đo lại, rồi đo tiếp với chính cách khởi tạo mà mã dùng; multi-head và vì sao số head không đổi số tham số; positional encoding sin/cos, tính chất dịch chuyển tuyến tính kiểm bằng giải tích, tính chất tích vô hướng chỉ phụ thuộc khoảng cách, và chỗ tích ấy hết đơn điệu nên nó KHÔNG mã hóa khoảng cách; residual, layer norm, FFN theo vị trí, kèm hộp cầu nối He 2015 và Ba 2016; masked decoder self-attention kiểm bằng can thiệp, ở đó mô hình bỏ mask có mất mát huấn luyện THẤP hơn và khớp đúng 0.0000; và bảng của chương quét số epoch chứ không quét bề rộng (quyết định 48). Hai bản của bài này khác nhau và lệch nhau một điểm BLEU (quyết định 47).
 \chapter{Kiến trúc Transformer}
 \label{ch:transformer}
+
+Chương~\ref{ch:mot-vector-cho-moi-tu} kết thúc bằng một nhận xét về chính
+phương trình của nó. \tn{Vector ngữ cảnh}{context vector}
+\(\vect{c}_i = \sum_j \alpha_{ij} \vect{h}_j\) là một tổng có trọng số trên các
+vị trí nguồn, và trong tổng ấy không có \(t-1\) ở đâu cả. Nó không phải một
+phép tính tuần tự. Thứ duy nhất bắt nó phải chờ là các \(\vect{h}_j\) được một
+\tn{mạng hồi quy}{recurrent neural network} sinh ra lần lượt.
+
+Vaswani và cộng sự bỏ chỗ chờ ấy~\autocite{vaswani2017attention}. Cách bỏ thì
+ngược với mọi thứ chương trước vừa dựng: không lắp thêm gì nữa, mà tháo mạng
+hồi quy ra và giữ lại đúng cái phụ kiện. Nhan đề bài nói thẳng ra thế.
+
+Chương này dẫn lại từng mảnh của kiến trúc ấy theo thứ tự chúng cần đến nhau, và
+đo bốn chỗ mà bài chỉ phát biểu chứ không đo: phép chia cho \(\sqrt{\dk}\), tính
+chất dịch chuyển của \tn{mã hóa vị trí}{positional encoding}, chỗ mask thật sự
+chặn được cái gì, và cái
+giá phải trả khi bỏ hẳn recurrence trên corpus của sách này.
+
+\index{Vaswani 2017!hai bản khác nhau}%
+Trước hết một chuyện về nguồn, vì nó lớn hơn tôi tưởng khi mở hai file ra cạnh
+nhau. Bản tôi có trong tay là arXiv:1706.03762v7, mười lăm trang, đề ngày 2
+tháng 8 năm 2023. Bản kỷ yếu NIPS 2017 tôi tải từ trang hội nghị dài mười một
+trang. \emph{Hai file không phải một tài liệu.} Bản kỷ yếu không có mục 6.3 và
+bảng 4 về phân tích cú pháp, không có phụ lục hình vẽ attention, và danh mục
+tài liệu của nó dừng ở [32] trong khi bản arXiv đi tới [40].
+
+Chỗ lệch đắt nhất là một con số, và mục~\ref{sec:ch07-con-lai-gi} in cả hai.
+Sách này trích bản arXiv vì đó là bản tôi đọc hết, và ghi rõ ở mỗi chỗ trích
+rằng câu chữ năm 2023 không tự động là câu chữ năm 2017.
+
+\input{chapters/07-transformer/01-bo-cho-phai-cho}
+\input{chapters/07-transformer/02-chia-cho-can-dk}
+\input{chapters/07-transformer/03-nhieu-dau}
+\input{chapters/07-transformer/04-vi-tri}
+\input{chapters/07-transformer/05-quanh-moi-tang}
+\input{chapters/07-transformer/06-che-tuong-lai}
+\input{chapters/07-transformer/07-chay-tren-corpus}
+\input{chapters/07-transformer/08-con-lai-gi}
+\input{chapters/07-transformer/09-bai-tap}
