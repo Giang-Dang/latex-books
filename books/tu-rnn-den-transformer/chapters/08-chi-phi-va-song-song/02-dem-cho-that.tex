@@ -1,0 +1,178 @@
+\section{Đếm cho thật, có hằng số}
+\label{sec:ch08-dem}
+
+\index{FLOP!công thức một tầng encoder}%
+Một tầng encoder có bốn phép chiếu, hai phép nhân của cơ chế attention, và một
+mạng hai tầng. Đếm từng cái, quy ước một phép nhân-cộng là hai FLOP, nên một
+tích ma trận \((m \times k)(k \times p)\) tốn \(2mkp\):
+
+\begin{equation}
+  \underbrace{8 n d^2}_{\text{bốn phép chiếu}}
+  \;+\;
+  \underbrace{4 n^2 d}_{\text{chấm điểm và tổng có trọng số}}
+  \;+\;
+  \underbrace{4 n d \dff}_{\text{FFN}} .
+  \label{eq:ch08-flop-tang}
+\end{equation}
+
+Ba chỗ đáng nói trong lúc dẫn ra.
+
+Bốn phép chiếu \(\mat{W}^Q\), \(\mat{W}^K\), \(\mat{W}^V\), \(\mat{W}^O\) đều
+là \(d \times d\) và không có bias, nên mỗi cái \(2nd^2\) và bốn cái \(8nd^2\).
+
+\index{FLOP!số head triệt tiêu}%
+Phép chấm điểm là chỗ số head biến mất. Mỗi head nhân \((n \times \dk)\) với
+\((\dk \times n)\), tốn \(2n^2\dk\); cộng qua \(h\) head thì được \(2n^2 h \dk\),
+và \(h\dk = \dmodel\) đúng theo mục 3.2.2 của bài. Nên \(h\) triệt tiêu, không
+xấp xỉ, không gần đúng. Phép nhân với \(\mat{V}\) cũng thế, nên hai phép cộng
+lại thành \(4n^2d\). Đó là nửa FLOP của câu bài viết ở mục 3.2.2, nơi bài nói
+chi phí của nhiều head xấp xỉ chi phí của một head dùng hết số chiều
+(\enquote{is similar to that of single-head attention with full
+dimensionality}); mục~\ref{sec:ch08-dong-ho} là nửa còn lại và nó không tử tế
+như thế.
+
+Mạng hai tầng nhân \(d \times \dff\) rồi \(\dff \times d\), nên \(4nd\dff\).
+
+\index{FLOP!cái không đếm}%
+Cái \eqref{eq:ch08-flop-tang} \emph{không} đếm: softmax, layer norm, phép cộng
+của \tn{kết nối tắt}{residual connection}, hàm rectified linear unit, viết tắt
+là ReLU, và các bias. Chúng là phép theo từng phần tử, cỡ
+\(O(n^2 h)\) và \(O(nd)\), nên đứng cạnh một tích ma trận thì chúng biến mất.
+Tôi ghi ra vì chúng biến mất khỏi \emph{phép đếm} chứ không biến mất khỏi
+\emph{đồng hồ}, và khoảng cách giữa hai chuyện đó là mục~\ref{sec:ch08-cho-vo}.
+
+\subsection*{Kiểm công thức bằng máy đếm của torch}
+
+\index{FLOP!đối chiếu với FlopCounterMode}%
+Một công thức trên giấy mà không ai đối chiếu là một phỏng đoán có phần thập
+phân. \code{torch.utils.flop\_counter.FlopCounterMode} đếm các toán tử thật sự
+chạy, nên đem \eqref{eq:ch08-flop-tang} ra hỏi nó là phép kiểm thẳng nhất có
+được.
+
+\begin{measured}{\eqref{eq:ch08-flop-tang} so với máy đếm của torch, một tầng encoder}
+\begin{minted}{text}
+n      analytic        counted         difference
+8      50,462,720      50,462,720      0
+32     203,423,744     203,423,744     0
+128    838,860,800     838,860,800     0
+512    3,758,096,384   3,758,096,384   0
+1024   8,589,934,592   8,589,934,592   0
+\end{minted}
+
+\(\dmodel = 512\), \(\dff = 2048\), 8 head, batch 1.
+
+Đo bằng \code{experiments/ch08\_flops.py} tại tag \code{ch08}.
+\end{measured}
+
+Lệch 0 ở cả năm dòng, không phải xấp xỉ. Từ đây mọi con số FLOP của chương dựa
+vào công thức ấy chứ không phải vào một lần chạy.
+
+\subsection*{Phần bậc hai vượt lên khi nào}
+
+\index{FLOP!giao điểm n bằng 2d cộng dff}%
+Cho phần bậc hai của \eqref{eq:ch08-flop-tang} bằng phần còn lại:
+
+\begin{equation}
+  4n^2 d = 8nd^2 + 4nd\dff
+  \quad\Longleftrightarrow\quad
+  n = 2d + \dff .
+  \label{eq:ch08-giao-diem}
+\end{equation}
+
+\(d\) triệt tiêu khỏi cả hai vế, nên giao điểm không phụ thuộc bề rộng theo cách
+người ta hay đoán. Ở cấu hình base của bài, \(\dmodel = 512\) và
+\(\dff = 2048\), nó là \(n = 3072\).
+
+\begin{measured}{phần bậc hai chiếm bao nhiêu của một tầng, cấu hình base}
+\begin{minted}{text}
+n      projections     scores+values   ffn             n^2 share
+16     33,554,432      524,288         67,108,864      0.0052
+64     134,217,728     8,388,608       268,435,456     0.0204
+256    536,870,912     134,217,728     1,073,741,824   0.0769
+512    1,073,741,824   536,870,912     2,147,483,648   0.1429
+1024   2,147,483,648   2,147,483,648   4,294,967,296   0.2500
+2048   4,294,967,296   8,589,934,592   8,589,934,592   0.4000
+3072   6,442,450,944   19,327,352,832  12,884,901,888  0.5000
+4096   8,589,934,592   34,359,738,368  17,179,869,184  0.5714
+8192   17,179,869,184  137,438,953,472 34,359,738,368  0.7273
+\end{minted}
+
+Đo bằng \code{experiments/ch08\_flops.py} tại tag \code{ch08}.
+\end{measured}
+
+Hàng \(n = 3072\) là chỗ kiểm \eqref{eq:ch08-giao-diem}: cột giữa 19{,}327{,}352{,}832
+đúng bằng tổng hai cột kia, \(6{,}442{,}450{,}944 + 12{,}884{,}901{,}888\).
+
+Viết tỷ lệ ấy ra thì gọn hơn nữa. Chia \eqref{eq:ch08-flop-tang} cho chính nó:
+
+\begin{equation}
+  \frac{4n^2 d}{8nd^2 + 4n^2 d + 4nd\dff}
+  = \frac{n}{2d + \dff + n} .
+  \label{eq:ch08-ty-le}
+\end{equation}
+
+Chỉ phụ thuộc \(n\) so với bề rộng, không phụ thuộc \(n\) một mình. Ở
+\(n = \dmodel\), tức đúng ngưỡng bài lấy làm chuẩn, nó cho \(1/7\), và
+0.1429 ở hàng \(n = 512\) của bảng là con số ấy.
+
+\index{FLOP!vì sao FFN đẩy giao điểm ra xa}%
+Chỗ này ngược với trực giác của tôi lúc bắt đầu, nên nói rõ vì sao. Giao điểm
+nằm ở \(n = 3072\) chứ không quanh \(\dmodel = 512\) là vì cái mà phần bậc hai
+phải vượt không chỉ có attention. Ở \(\dff = 4d\), mạng hai tầng đóng góp
+\(16nd^2\) so với \(8nd^2\) của bốn phép chiếu, tức hai phần ba khối lượng tuyến
+tính của một tầng nằm ở phần \emph{không phải} attention. Bảng 1 của bài viết
+một hàng cho \enquote{Self-Attention} và một hàng cho \enquote{Convolutional} và
+không có hàng nào cho cái tầng thật sự chạy, vốn là attention cộng FFN.
+
+Hình~\ref{fig:ch08-chi-phi} vẽ hai đường ấy.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch08-chi-phi-theo-n}
+  \caption{Hai phần của \eqref{eq:ch08-flop-tang} theo \(n\), ở cấu hình base
+    của bài. Đường thẳng là phần tuyến tính, đường cong là phần bậc hai, và
+    chúng cắt nhau ở \eqref{eq:ch08-giao-diem}, tức \(n = 3072\). Hai mốc trên
+    trục hoành là chỗ đáng nhìn hơn cả chỗ cắt: \(\dmodel = 512\), ngưỡng bài
+    lấy làm chuẩn, nơi phần bậc hai mới chiếm một phần bảy; và dải độ dài câu
+    bài thật sự huấn luyện, nằm sát gốc tọa độ tới mức phải kéo một đường dẫn ra
+    mới chỉ được.}
+  \label{fig:ch08-chi-phi}
+\end{figure}
+
+\subsection*{Ba cách đọc chữ \enquote{recurrent}}
+
+\index{FLOP!attention so với LSTM và RNN trơn}%
+Bây giờ so được với cột \code{Recurrent}. Một tầng con self-attention, không kể
+FFN, tốn \(8nd^2 + 4n^2d\). Một tầng LSTM tốn \(16nd^2\): bốn cổng, mỗi cổng một
+phép cho đầu vào và một phép cho trạng thái trước. Cho hai cái bằng nhau thì
+\(4n^2d = 8nd^2\), tức
+
+\begin{equation}
+  n = 2d .
+  \label{eq:ch08-attention-vs-lstm}
+\end{equation}
+
+Bài nói \(n < d\). Với hằng số thật, ngưỡng là \(n < 2d\), nên phát biểu của bài
+\emph{thận trọng hơn} thực tế đúng hai lần. Đó là chiều lệch dễ chịu, và tôi ghi
+lại vì chiều ngược lại mới là chiều đáng lo.
+
+Chiều ngược lại có thật, và nó nằm ở thành viên kia của họ. Một tầng hồi quy
+trơn tốn \(4nd^2\), bốn lần rẻ hơn LSTM. Đặt ba cái cạnh nhau ở \(n = d = 512\):
+
+\begin{measured}{ba tầng, cùng \(n = d = 512\), FLOP một lượt forward}
+\begin{minted}{text}
+self-attention sub-layer  1,610,612,736
+LSTM layer (4 gates)      2,147,483,648
+plain recurrent layer     536,870,912
+\end{minted}
+
+Đo bằng \code{experiments/ch08\_flops.py} tại tag \code{ch08}.
+\end{measured}
+
+Ở đúng điểm bài nói attention thắng, nó thắng LSTM và thua tầng hồi quy trơn ba
+lần. Cả ba đều nằm trong hai ô của bảng 1, và bảng viết \(O(n \cdot d^2)\) cho
+một hàng chứa hai thứ cách nhau hệ số 4.
+
+Không có gì sai trong bảng. \(O\) lớn làm đúng việc của \(O\) lớn. Cái sai là
+đọc một bảng \(O\) lớn như một bảng chi phí, và mục sau cho thấy kể cả một bảng
+chi phí đếm đúng từng FLOP cũng chưa nói được máy sẽ chạy bao lâu.

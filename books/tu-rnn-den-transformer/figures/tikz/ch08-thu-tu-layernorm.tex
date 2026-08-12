@@ -1,0 +1,103 @@
+% Thứ tự cộng và LayerNorm trong một tầng con: post-LN so với pre-LN.
+% Vẽ đúng theo Xiong và cộng sự 2020, bảng 1:
+%   post-LN (Vaswani và cộng sự dùng): x_{l+1} = LayerNorm(x_l + Sublayer(x_l))
+%   pre-LN:                             x_{l+1} = x_l + Sublayer(LayerNorm(x_l))
+% Trọng tâm của hình là đường tắt residual từ x_l tới x_{l+1}: vẽ đậm ở cả hai
+% khối để mắt bắt vào nó trước, rồi để người đọc tự thấy nó đi qua LayerNorm ở
+% post-LN (trái) nhưng không bao giờ chạm LayerNorm ở pre-LN (phải). Pre-LN
+% còn cần một LayerNorm thêm, nằm ngoài khối lặp N tầng, sau tầng cuối cùng
+% x_L - vẽ tách hẳn phía trên khung chấm chấm và tô nền xám nhạt để đánh dấu
+% nó không phải một bước lặp lại như phần còn lại.
+\begin{tikzpicture}[
+  >= Stealth,
+  hop/.style      = {draw, rectangle, inner sep = 2pt, font = \scriptsize,
+                      align = center},
+  cong/.style     = {draw, circle, minimum size = 4mm, inner sep = 0pt,
+                      font = \scriptsize},
+  ngoai/.style    = {fill = black!10},
+  tinh/.style     = {->, line width = 0.6pt, black!75},
+  duongtat/.style = {->, line width = 1.6pt, black},
+  khung/.style    = {black!45, densely dotted, line width = 0.5pt},
+  nho/.style      = {font = \scriptsize},
+  ghichu/.style   = {font = \footnotesize, black!60},
+]
+
+  % ================= POST-LN (trái, x = 0) =================
+  \node[nho, anchor = east] at (-0.15, 0) {\(\vect{x}_l\)};
+  \draw[tinh] (0, 0.15) -- (0, 0.6);
+  \node[hop, minimum width = 2.6cm, minimum height = 0.8cm]
+    (sub_a) at (0, 1.0) {Sublayer};
+  \draw[tinh] (0, 1.4) -- (0, 1.85);
+  \node[cong] (add_a) at (0, 2.05) {\(+\)};
+  \draw[duongtat] (0, 2.25) -- (0, 2.7);
+  \node[hop, minimum width = 2.6cm, minimum height = 0.8cm]
+    (ln_a) at (0, 3.1) {LayerNorm};
+  \draw[duongtat] (0, 3.5) -- (0, 3.95);
+  \node[nho, anchor = south] at (0, 3.95) {\(\vect{x}_{l+1}\)};
+
+  % đường tắt: từ x_l, vòng qua bên trái hộp Sublayer, vào cạnh tây của phép
+  % cộng, rồi đi tiếp - vẫn đậm - xuyên qua LayerNorm lên tới x_{l+1}. Đoạn
+  % "đi tiếp" đã được vẽ ở trên (hai mũi tên duongtat quanh add_a và ln_a);
+  % đoạn vòng bên trái là phần còn thiếu.
+  \draw[duongtat] (0, 0.15) -- (-1.5, 0.15) -- (-1.5, 2.05) -- (add_a.west);
+
+  \begin{scope}[on background layer]
+    \draw[khung, rounded corners = 2pt] (-1.9, -0.4) rectangle (1.9, 4.3);
+  \end{scope}
+  \node[ghichu, anchor = west] at (2.05, 1.95) {N x};
+
+  \node[nho, align = center, text width = 3.0cm] at (0, 5.5)
+    {không cần LayerNorm thêm: mỗi tầng đã kết thúc bằng LayerNorm};
+
+  \node[font = \bfseries\scriptsize] at (0, -0.85) {post-LN};
+  \node[nho, black!70] at (0, -1.35)
+    {\(\vect{x}_{l+1} = \layernorm(\vect{x}_l + \mathrm{Sublayer}(\vect{x}_l))\)};
+
+  % ================= PRE-LN (phải, x = 6.2) =================
+  \node[nho, anchor = east] at (6.05, 0) {\(\vect{x}_l\)};
+  \draw[tinh] (6.2, 0.15) -- (6.2, 0.6);
+  \node[hop, minimum width = 2.6cm, minimum height = 0.8cm]
+    (ln_b) at (6.2, 1.0) {LayerNorm};
+  \draw[tinh] (6.2, 1.4) -- (6.2, 1.85);
+  \node[hop, minimum width = 2.6cm, minimum height = 0.8cm]
+    (sub_b) at (6.2, 2.25) {Sublayer};
+  \draw[tinh] (6.2, 2.65) -- (6.2, 3.1);
+  \node[cong] (add_b) at (6.2, 3.3) {\(+\)};
+  \draw[duongtat] (6.2, 3.5) -- (6.2, 3.95);
+  \node[nho, anchor = south] at (6.2, 3.95) {\(\vect{x}_{l+1}\)};
+
+  % đường tắt: từ x_l, vòng qua bên phải cả LayerNorm lẫn Sublayer, vào cạnh
+  % đông của phép cộng - không chạm hộp nào, đúng chỗ khác với post-LN
+  \draw[duongtat] (6.2, 0.15) -- (7.7, 0.15) -- (7.7, 3.3) -- (add_b.east);
+
+  \begin{scope}[on background layer]
+    \draw[khung, rounded corners = 2pt] (4.3, -0.4) rectangle (8.1, 4.3);
+  \end{scope}
+  \node[ghichu, anchor = west] at (8.25, 1.95) {N x};
+
+  % --- LayerNorm thêm, ngoài khối lặp: một lần duy nhất sau tầng cuối x_L,
+  % trước khi sang bộ dự đoán. Đây là chỗ cài đặt dễ quên nhất của pre-LN.
+  \draw[tinh] (6.2, 4.3) -- (6.2, 4.75);
+  \node[nho, anchor = west] at (6.35, 4.75) {\(\vect{x}_L\)};
+  \draw[tinh] (6.2, 4.75) -- (6.2, 5.15);
+  \node[hop, ngoai, minimum width = 2.6cm, minimum height = 0.8cm]
+    (lnfinal) at (6.2, 5.55) {LayerNorm};
+  \draw[tinh] (6.2, 5.95) -- (6.2, 6.4);
+  \node[nho, anchor = south] at (6.2, 6.4) {tới Linear và softmax};
+
+  \node[ghichu, anchor = west, align = left, text width = 3.2cm]
+    at (8.25, 5.55)
+    {ngoài khối N tầng: một lần, sau tầng thứ L, thêm \(4\dmodel\) tham số};
+
+  \node[font = \bfseries\scriptsize] at (6.2, -0.85) {pre-LN};
+  \node[nho, black!70] at (6.2, -1.35)
+    {\(\vect{x}_{l+1} = \vect{x}_l + \mathrm{Sublayer}(\layernorm(\vect{x}_l))\)};
+
+  % ================= chú giải đường đậm, đặt dưới cả hai khối =================
+  \node[nho, anchor = north, align = left, black!70, text width = 11cm]
+    at (3.1, -2.0)
+    {đường đậm: đường tắt residual từ \(\vect{x}_l\) tới \(\vect{x}_{l+1}\). Ở
+     post-LN nó buộc phải đi qua LayerNorm; ở pre-LN thì không bao giờ chạm
+     LayerNorm.};
+
+\end{tikzpicture}

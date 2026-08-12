@@ -61,8 +61,9 @@ Câu thứ hai là câu tôi muốn bạn dừng lại, và nó cũng là câu s
 chính bài, ở cả ba bản tôi xem. \enquote{Making generation less sequential}.
 Bài vừa bỏ tính tuần tự đi xong, và ở dòng cuối bài tự nói rằng nó vẫn còn.
 
-Vì nó còn thật, và đây là chỗ dễ nhầm nhất về kiến trúc này. Cái được song song
-hóa là \emph{huấn luyện}, nơi cả câu đích có sẵn nên mọi vị trí chạy một lượt.
+Vì nó còn thật, và đây là chỗ dễ nhầm nhất về kiến trúc này. Cái được
+\tn{song song hóa}{parallelization} là \emph{huấn luyện}, nơi cả câu đích có sẵn
+nên mọi vị trí chạy một lượt.
 Lúc sinh câu thì token \(i+1\) chưa tồn tại trước khi token \(i\) sinh ra, nên
 decoder vẫn đi từng bước. Tệ hơn: không còn trạng thái để mang theo, nên mỗi
 bước phải chạy lại decoder trên toàn bộ prefix. Hàm giải mã trong repo làm đúng

@@ -1,3 +1,59 @@
 % Scope (SPEC table of contents): Bảng độ phức tạp của paper, đo lại FLOPs, bộ nhớ và thời gian theo n trên CPU; warmup, label smoothing, dropout là chi tiết bắt buộc chứ không phải mẹo; post-LN so với pre-LN; gap: bậc hai, không có bias quy nạp, đói dữ liệu.
 \chapter{Chi phí, song song hóa, và cái giá phải trả}
 \label{ch:chi-phi-va-song-song}
+
+Bảng 2 của Vaswani và cộng sự có một cột tên \code{Training Cost (FLOPs)}, và
+model base đứng ở đó với \(3.3 \times 10^{18}\)~\autocite{vaswani2017attention}.
+Con số ấy trông như một phép đếm. Tôi thử dựng lại nó.
+
+Mục 6.1 nói cách họ lấy nó, và câu ấy nằm ngay dưới bảng: họ ước lượng số phép
+tính dấu chấm động, floating point operations, viết tắt là FLOP, bằng cách nhân
+thời gian huấn luyện với số GPU với
+\enquote{an estimate of the sustained single-precision floating-point capacity
+of each GPU}. Chú thích số 5 cho con số cuối: 9.5 TFLOPS cho một P100. Mục 5.2
+cho hai con số còn lại: tám GPU, mười hai giờ.
+
+\begin{measured}{cột chi phí của bảng 2, dựng lại từ đồng hồ}
+\begin{minted}{text}
+model  seconds     reproduced    paper prints  ratio
+base   43,200      3.2832e+18    3.3e+18       0.9949
+big    302,400     2.2982e+19    2.3e+19       0.9992
+\end{minted}
+
+\(43200 \times 8 \times 9.5 \times 10^{12}\), và tương tự cho 3.5 ngày.
+
+Đo bằng \code{experiments/ch08\_flops.py} tại tag \code{ch08}.
+\end{measured}
+
+Khớp tới hai chữ số có nghĩa ở cả hai hàng, nên phép dựng lại là đúng phép tính
+họ làm. Và một khi đã biết nó là phép tính nào thì cột ấy đổi nghĩa: nó là thời
+gian tường nhân phần cứng, không phải số phép tính của kiến trúc. Một mô hình
+bất kỳ chạy mười hai giờ trên tám P100 đều nhận đúng \(3.3 \times 10^{18}\), kể
+cả một mô hình không nhân một ma trận nào.
+
+Tôi không coi đây là lỗi của bài. Bài nói thẳng công thức ra, ở ngay trang có
+bảng, và cột ấy làm đúng việc nó được giao: so ngân sách huấn luyện của mình với
+ngân sách của người khác. Chuyện đáng nói là chỗ khác. Bài in một bảng
+\tn{độ phức tạp}{complexity} theo \(O\) lớn, một bảng chi phí theo giờ máy, và
+không có chỗ nào nối hai
+thứ ấy lại. Khoảng trống giữa chúng là chương này.
+
+Chương~\ref{ch:transformer} dựng kiến trúc và để lại bốn món nợ. Ô \(O(n^2 \cdot d)\)
+ở góc bảng 1, được trích mà chưa kiểm. Thứ tự của layer norm ở
+\eqref{eq:ch07-post-ln}, viết theo bài và hẹn đo cái còn lại ở đây. Lịch warmup,
+mà chương trước thử ở 658 bước rồi tự nói đó là kết quả về 658 bước chứ không
+phải về warmup. Và nửa đồng hồ của phát biểu về số head, mà chương trước chỉ nói
+được bằng FLOP.
+
+Bốn món nợ ấy là bốn mục đầu. Cách trả chung một kiểu: lấy phát biểu của bài,
+viết nó ra thành một công thức có hằng số, rồi đem cả hai đi hỏi máy.
+
+\input{chapters/08-chi-phi-va-song-song/01-bang-mot-noi-gi}
+\input{chapters/08-chi-phi-va-song-song/02-dem-cho-that}
+\input{chapters/08-chi-phi-va-song-song/03-dong-ho-noi-khac}
+\input{chapters/08-chi-phi-va-song-song/04-cho-vo-truoc}
+\input{chapters/08-chi-phi-va-song-song/05-thu-tu-layer-norm}
+\input{chapters/08-chi-phi-va-song-song/06-warmup}
+\input{chapters/08-chi-phi-va-song-song/07-hai-phep-dieu-chuan}
+\input{chapters/08-chi-phi-va-song-song/08-con-lai-gi}
+\input{chapters/08-chi-phi-va-song-song/09-bai-tap}

@@ -1,0 +1,162 @@
+\section{Chỗ vỡ trước không phải phép tính}
+\label{sec:ch08-cho-vo}
+
+\index{bộ nhớ!ma trận điểm số}%
+Mục trước để lại một câu hỏi: chỗ attention hết rẻ nằm trong cùng một khoảng
+\(n\) ở hai bề rộng cách nhau bốn lần, nên nó không phải hàm của \(d\). Mục này
+đi tìm nó là hàm của cái gì, và câu trả lời không nằm trong bảng 1.
+
+Bắt đầu từ một đại lượng mà bảng 1 không có cột nào cho: chỗ chứa. Một tầng hồi
+quy giữ các kích hoạt hình \((\text{batch}, n, d)\), tăng tuyến tính theo \(n\).
+Một tầng attention còn phải dựng \tn{ma trận điểm số}{score matrix}, hình
+\((\text{batch}, h, n, n)\):
+
+\begin{equation}
+  \text{byte} = \text{batch} \times h \times n^2 \times 4 .
+  \label{eq:ch08-byte}
+\end{equation}
+
+\index{bộ nhớ!công thức không có d trong đó}%
+\textbf{Không có \(d\) trong \eqref{eq:ch08-byte}.} Đó là chỗ đáng dừng lại lâu
+hơn một dòng. Mọi số hạng của \eqref{eq:ch08-flop-tang} đều mang \(d\), và ma
+trận điểm số thì không: nó vuông theo \(n\), nhân với số head và số câu trong
+batch, và bề rộng mô hình biến mất vì \(h \dk = d\) đã bị cộng dồn hết vào rồi.
+
+\begin{measured}{ma trận điểm số của một tầng, batch 8, 8 head, float32}
+\begin{minted}{text}
+n      bytes               GiB        x a recurrent layer's (b,n,d)
+128    4,194,304           0.0039     2.0
+512    67,108,864          0.0625     8.0
+1024   268,435,456         0.2500     16.0
+2048   1,073,741,824       1.0000     32.0
+4096   4,294,967,296       4.0000     64.0
+8192   17,179,869,184      16.0000    128.0
+\end{minted}
+
+Đo bằng \code{experiments/ch08\_flops.py} tại tag \code{ch08}.
+\end{measured}
+
+Ở \(n = 2048\) thì đúng một GiB, cho \emph{một} tầng và \emph{một} batch tám
+câu, và huấn luyện giữ tất cả chúng sống tới lượt backward. Cột cuối là tỷ số so
+với chỗ chứa của một tầng hồi quy cùng cấu hình, và nó nhân đôi mỗi lần \(n\)
+nhân đôi.
+
+\subsection*{Một giả thuyết, và cách bác nó}
+
+\index{bộ nhớ!giả thuyết cache}%
+Đặt \eqref{eq:ch08-byte} cạnh bảng thời gian ở mục trước thì có một
+\tn{giả thuyết}{hypothesis}.
+Máy này có 33 MiB cache mức ba. Ở batch 8 và 8 head, \(n = 256\) cho 16 MiB và
+\(n = 512\) cho 64 MiB. Chỗ đổi dấu của cột \code{attn/lstm} nằm giữa hai giá
+trị ấy, ở \emph{cả hai} bề rộng, và \eqref{eq:ch08-byte} không chứa \(d\) nên nó
+cũng không đổi khi \(d\) đổi.
+
+Giả thuyết: cái dốc là chỗ ma trận điểm số thôi không nằm vừa trong cache, và
+ngưỡng đo bằng byte chứ không đo bằng \(n\).
+
+Cách kiểm thẳng nhất là bỏ hẳn số tuyệt đối đi và chia thời gian cho số FLOP của
+chính phép tính ấy. Một mô hình chi phí chỉ nói về số phép tính thì cột ấy phải
+phẳng.
+
+\begin{measured}{giây trên mỗi gigaFLOP, một tầng con attention, \(d = 128\)}
+\begin{minted}{text}
+n     score MiB   gigaFLOP   seconds     s/GFLOP     vs n=64
+64    1.0         0.084      0.000496    0.005912    1.00
+128   4.0         0.201      0.000732    0.003638    0.62
+192   9.0         0.352      0.001151    0.003267    0.55
+256   16.0        0.537      0.002100    0.003912    0.66
+320   25.0        0.755      0.004291    0.005684    0.96
+384   36.0        1.007      0.009874    0.009809    1.66
+448   49.0        1.292      0.015379    0.011905    2.01
+512   64.0        1.611      0.022444    0.013935    2.36
+640   100.0       2.349      0.035426    0.015082    2.55
+\end{minted}
+
+batch 8, 8 head. Cache mức ba của máy là 33 MiB.
+
+Đo bằng \code{experiments/ch08\_clock.py} tại tag \code{ch08}.
+\end{measured}
+
+Nó không phẳng. Hàng \(n = 64\) nằm cao vì ở đó phần chi phí cố định vẫn lấn át,
+đúng như mọi bảng đồng hồ khác của chương. Từ \(n = 128\) tới \(n = 256\) nó đi
+ngang, quanh 0.0033 tới 0.0039 giây mỗi gigaFLOP. Rồi từ \(n = 320\) nó leo, và
+leo mạnh: 0.005684, rồi 0.009809, rồi 0.011905, tới 0.015082 ở \(n = 640\). Cùng
+một phép tính, cùng một tầng, và mỗi phép tính đắt lên hơn bốn lần so với chỗ
+phẳng.
+
+Chỗ gãy nằm giữa 16 MiB và 25 MiB, tức quanh chỗ ma trận điểm số cộng với phần
+còn lại của tầng vượt quá 33 MiB.
+
+\subsection*{Phép đối chứng: giữ nguyên \texorpdfstring{\(n\)}{n}, chỉ đổi batch}
+
+\index{bộ nhớ!đối chứng bằng batch}%
+Bảng trên một mình chưa kết luận được, và tôi muốn nói rõ vì sao trước khi đi
+tiếp. Khi \(n\) tăng thì số byte tăng, nhưng \emph{mọi thứ khác} cũng tăng: số
+FLOP, số hàng của softmax, độ dài của mỗi phép quy giản. Một cột leo lên theo
+\(n\) có thể là chuyện cache và cũng có thể là năm chuyện khác.
+
+Nên tách hai thứ ra. \eqref{eq:ch08-byte} có ba thừa số, và batch là một trong
+ba. Giữ \(n = 256\) cố định, chỉ tăng batch, thì số byte đi qua đúng dải cũ mà
+\(n\) không nhúc nhích. Nếu cái dốc đi theo \(n\), nó phải biến mất. Nếu nó đi
+theo byte, nó phải xuất hiện lại ở đúng chỗ cũ.
+
+\begin{measured}{cùng số byte, đạt tới bằng batch thay vì bằng \(n\)}
+\begin{minted}{text}
+batch  score MiB   gigaFLOP   seconds     s/GFLOP
+2      4.0         0.134      0.000625    0.004657
+4      8.0         0.268      0.001011    0.003766
+8      16.0        0.537      0.002777    0.005172
+16     32.0        1.074      0.009348    0.008706
+32     64.0        2.147      0.023538    0.010961
+\end{minted}
+
+\(d = 128\), 8 head, \(n = 256\) ở mọi hàng.
+
+Đo bằng \code{experiments/ch08\_clock.py} tại tag \code{ch08}.
+\end{measured}
+
+Nó xuất hiện lại. Từ 4 tới 16 MiB thì cột cuối đi ngang, ba giá trị 0.004657,
+0.003766 và 0.005172;
+ở 32 MiB nó lên 0.008706; ở 64 MiB lên 0.010961. Cùng một bậc thang, ở cùng một
+dải byte, với \(n\) đứng yên suốt cả bảng.
+
+Đặt hai bảng cạnh nhau ở chỗ chúng gặp nhau thì càng rõ. 32 MiB đạt bằng batch
+cho 0.008706; 36 MiB đạt bằng \(n\) cho 0.009809. Cùng số byte, cùng bậc tốc độ
+mỗi phép tính, mà một bên \(n = 256\) và bên kia \(n = 384\). Còn 64 MiB đạt
+bằng batch cho 0.010961 và đúng 64 MiB đạt bằng \(n\) cho 0.013935.
+
+Giả thuyết \enquote{cái dốc đi theo \(n\)} không sống sót. Cái dốc đi theo byte.
+
+\subsection*{Cái này đổi cách đọc bảng 1}
+
+\index{bộ nhớ!bảng 1 không có cột cho chuyện này}%
+Ba cột của bảng 1 đều là hàm của \(n\), \(d\), \(k\) và \(r\). Không cột nào là
+hàm của kích thước cache, và không cột nào có batch trong đó. Nên bảng ấy không
+dự đoán được chỗ máy này chậm lại, không phải vì nó sai mà vì nó không nói về
+đại lượng ấy.
+
+Nói cho gọn: \(O(n^2 \cdot d)\) đếm phép tính, và trên phần cứng thật, cái đắt ở
+attention không phải phép tính mà là chỗ chứa và việc đi lại giữa các mức bộ
+nhớ. Một phép nhân ma trận lớn có nhiều số học trên mỗi byte nó đọc; một lượt
+softmax trên ma trận \(n \times n\) thì đọc và ghi đúng chừng ấy byte mà gần như
+không có số học nào để bù. Khi ma trận ấy còn nằm trong cache thì chuyện đó
+không thấy được. Khi nó không nằm vừa nữa thì mỗi phép tính phải chờ bộ nhớ.
+
+\index{bộ nhớ!hạt giống của FlashAttention}%
+Đó cũng là lý do tôi để mục này ở đây thay vì để chương~\ref{ch:chi-phi-bac-hai}
+mở đầu bằng nó. FlashAttention không xấp xỉ attention và không giảm số FLOP:
+kết quả của nó bằng đúng kết quả của \eqref{eq:ch07-attention}. Cái nó đổi là
+không bao giờ dựng ma trận \(n \times n\) ra bộ nhớ, mà chia thành từng khối vừa
+cache rồi cộng dồn. Đọc một mình thì đó là một thủ thuật cài đặt. Đọc cạnh hai
+bảng trên thì nó là cách sửa đúng vào đại lượng đắt nhất, và bảng 1 không có cột
+nào để thấy nó.
+
+Một chú ý cuối về cách tôi đo chỗ chứa, để nếu bạn đo lại thì không mất thời
+gian như tôi đã mất: hai cách hiển nhiên đều sai. \code{tracemalloc} báo tám trăm byte ở mọi \(n\) từ
+128 tới 4096, phẳng và sai hẳn, vì nó chỉ theo dõi heap của Python còn tensor
+của thư viện nằm ngoài đó. Đo bằng chỗ chứa mà tiến trình đang giữ thì đúng bậc
+độ lớn nhưng không sạch: mức nền tăng dần qua từng vòng lặp dù đã dọn, vì bộ cấp
+phát giữ lại khối đã trả thay vì đưa về hệ điều hành. Nên bảng đầu mục in
+\eqref{eq:ch08-byte} chứ không in một phép đo, và bảng thứ hai với thứ ba đo
+\emph{thời gian} chứ không đo byte. Số byte thì tính, thời gian thì đo, và
+chuyện chúng khớp nhau là kết quả.

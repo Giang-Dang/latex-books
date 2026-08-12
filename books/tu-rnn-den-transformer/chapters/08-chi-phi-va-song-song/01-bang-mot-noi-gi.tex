@@ -1,0 +1,85 @@
+\section{Bảng 1 nói ba chuyện, và người ta chỉ trích một}
+\label{sec:ch08-bang-mot}
+
+\index{bảng 1!ba cột đo ba thứ khác nhau}%
+Mục~\ref{sec:ch07-tu-nhin} chép bảng 1 ra và dùng cột giữa. Mục này đọc cả ba
+cột, vì chúng đo ba đại lượng khác nhau và chỉ một trong ba là chuyện của phần
+cứng.
+
+Chú thích bảng nói rõ ký hiệu: \(n\) là độ dài chuỗi, \(d\) là số chiều biểu
+diễn, \(k\) là kernel của tích chập, \(r\) là bán kính của self-attention bị hạn
+chế. Mục 4 của bài đặt tên cho ba tiêu chí trước khi lập bảng:
+
+\begin{quote}
+\enquote{One is the total computational complexity per layer. Another is the
+amount of computation that can be parallelized, as measured by the minimum
+number of sequential operations required.}
+\end{quote}
+
+Rồi tiêu chí thứ ba, ở đoạn sau: \enquote{The third is the path length between
+long-range dependencies in the network.}
+
+Ba tiêu chí ấy không quy về nhau được, và đó là chỗ đáng dừng. Cột
+\code{Sequential Operations} là cột chương trước nói về, và nó đi từ \(O(n)\)
+xuống \(O(1)\): một đại lượng về \emph{thứ tự phụ thuộc}, tức về việc cái gì
+buộc phải chờ cái gì. Cột \code{Maximum Path Length} là đại lượng về gradient,
+và chương~\ref{ch:mot-vector-cho-moi-tu} đã dẫn xuất một lần rồi. Chỉ cột
+\code{Complexity per Layer} là về khối lượng tính toán, và nó là cột duy nhất
+trong ba cột mà một cái đồng hồ có thể phản bác.
+
+\subsection*{Câu bào chữa cho \texorpdfstring{\(n^2\)}{n2}}
+
+\index{bảng 1!câu điều kiện n nhỏ hơn d}%
+Bài không giấu ô \(O(n^2 \cdot d)\). Bài đặt cạnh nó một câu điều kiện, và cả
+chương này chạy trên câu ấy:
+
+\begin{quote}
+\enquote{In terms of computational complexity, self-attention layers are faster
+than recurrent layers when the sequence length \(n\) is smaller than the
+representation dimensionality \(d\), which is most often the case with sentence
+representations used by state-of-the-art models in machine translations, such as
+word-piece and byte-pair representations.}
+\end{quote}
+
+Câu ấy có hai vế và chúng chịu trách nhiệm khác nhau. Vế đầu là toán:
+\(n^2 d < n d^2\) khi và chỉ khi \(n < d\). Vế sau là một phát biểu về thực tế
+năm 2017, rằng câu dịch máy thường ngắn hơn bề rộng mô hình, và ở
+\(\dmodel = 512\) với câu vài chục token thì đúng là như vậy.
+
+Nhưng vế đầu bỏ hết hằng số, và \(O\) lớn được phép bỏ. Một tầng con
+self-attention có bốn phép chiếu trước khi chấm điểm; một tầng Long Short-Term
+Memory, viết tắt là LSTM, có bốn cổng.
+Bốn với bốn ấy không triệt tiêu nhau, và mục~\ref{sec:ch08-dem} là chỗ viết
+chúng ra.
+
+\index{bảng 1!chữ recurrent chỉ hai thứ}%
+Chỗ mơ hồ thứ hai nằm ở chính chữ \code{Recurrent}. Bảng viết một hàng cho cả
+họ. Trong họ ấy, một tầng hồi quy trơn làm hai phép nhân ma trận mỗi bước, còn
+một tầng LSTM làm tám, vì bốn cổng và mỗi cổng hai phép. Cùng một ô \(O(n
+\cdot d^2)\), và hệ số 4 nằm giữa hai thành viên. Sách này dùng LSTM từ
+chương~\ref{ch:encoder-decoder}, nên khi chương này so, nó phải nói đang so với
+cái nào.
+
+\subsection*{Một câu của bài mà tôi chưa thấy ai trích}
+
+\index{bảng 1!tích chập tách được}%
+Cùng trang, hai đoạn dưới bảng, bài tự xếp kiến trúc của mình ngang một phép
+tích chập:
+
+\begin{quote}
+\enquote{Even with \(k = n\), however, the complexity of a separable convolution
+is equal to the combination of a self-attention layer and a point-wise
+feed-forward layer, the approach we take in our model.}
+\end{quote}
+
+Đọc chậm câu ấy thì nó nói: về \tn{độ phức tạp}{complexity}, cái bài dựng không
+rẻ hơn một tích
+chập tách được với kernel phủ cả câu. Bài in nó ra và không khai thác, vì luận
+điểm của bài không phải chuyện rẻ. Luận điểm là cột giữa, tức chuyện không phải
+chờ.
+
+Tôi để câu ấy ở đây vì nó chỉnh lại kỳ vọng cho cả chương. Cái Transformer mua
+được không phải ít phép tính hơn. Nó là cùng chừng ấy phép tính, xếp lại thành
+hình dạng chạy được cùng lúc. Mục~\ref{sec:ch08-dong-ho} là chỗ hỏi cái hình
+dạng ấy trên một CPU đáng bao nhiêu, và câu trả lời phụ thuộc vào một thứ không
+có trong bảng 1 lẫn trong ba tiêu chí của mục 4.

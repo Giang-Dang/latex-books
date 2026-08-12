@@ -1,0 +1,181 @@
+\section{Thứ tự của hai phép, đo ở lúc khởi tạo}
+\label{sec:ch08-thu-tu-ln}
+
+\index{layer normalization!post-LN và pre-LN}%
+Mục~\ref{sec:ch07-quanh-tang} đặt \eqref{eq:ch07-post-ln} xuống và hẹn chương
+này. Bài chuẩn hóa \emph{sau} phép cộng:
+
+\begin{equation}
+  \vect{x}_{l+1} = \layernorm(\vect{x}_l + \mathrm{Sublayer}(\vect{x}_l)),
+  \qquad
+  \vect{x}_{l+1} = \vect{x}_l + \mathrm{Sublayer}(\layernorm(\vect{x}_l)).
+  \label{eq:ch08-hai-thu-tu}
+\end{equation}
+
+Vế trái là post-LN, cách bài viết. Vế phải là pre-LN, và hai chữ ấy là tên gọi
+về sau chứ không phải chữ của bài. Cùng ba phép, cùng số tầng, khác chỗ đặt một
+dấu ngoặc.
+
+\index{kết nối tắt!đường tắt đi qua hay không đi qua chuẩn hóa}%
+Chỗ khác nhau nằm ở đường tắt. Trong vế phải, \(\vect{x}_l\) đi thẳng sang
+\(\vect{x}_{l+1}\) bằng một phép cộng và không gặp phép chuẩn hóa nào; xếp
+\(L\) tầng như thế thì có một đường từ đầu vào tới đầu ra chỉ gồm các phép cộng.
+Trong vế trái thì không: mỗi tầng, đường tắt chui qua một layer norm.
+
+Đó đúng là hình dạng mục~\ref{sec:ch07-quanh-tang} đã dẫn ra cho hộp cầu nối He
+2015, và đúng hình dạng của vòng quay lỗi ở chương~\ref{ch:lstm}. Hai chương
+trước đã dựng sẵn công cụ để đọc nó. Hình~\ref{fig:ch08-thu-tu-ln} vẽ cả hai.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch08-thu-tu-layernorm}
+  \caption{Hai thứ tự của \eqref{eq:ch08-hai-thu-tu}. Đường đậm là đường tắt:
+    bên post-LN nó chui qua ô chuẩn hóa ở mỗi tầng, bên pre-LN nó đi thẳng từ
+    đầu vào tới đầu ra của cả chồng tầng. Ô rời phía dưới bên phải là cái layer
+    norm cuối cùng mà pre-LN bắt buộc phải có và rất dễ quên, vì nó nằm ngoài
+    khối lặp lại chứ không nằm trong.}
+  \label{fig:ch08-thu-tu-ln}
+\end{figure}
+
+\begin{bridge}{Xiong và cộng sự 2020: vì sao mục 5.3 của bài phải tồn tại}
+\index{layer normalization!Xiong 2020}%
+Bài này chứng minh rằng thứ tự ở \eqref{eq:ch08-hai-thu-tu} là lý do lịch warmup
+của mục 5.3 phải có~\autocite{xiong2020layernorm}. Định lý 1 chặn chuẩn
+Frobenius của gradient trên ma trận thứ hai của mạng truyền thẳng ở tầng cuối:
+
+\begin{quote}
+\enquote{for the Post-LN Transformer with \(L\) layers, the gradient of the
+parameters of the last layer satisfies
+\(\norm{\partial \tilde{\mathcal{L}} / \partial W^{2,L}}_F \leq
+\mathcal{O}(d\sqrt{\ln d})\) and for the Pre-LN Transformer with \(L\) layers,
+\(\norm{\partial \tilde{\mathcal{L}} / \partial W^{2,L}}_F \leq
+\mathcal{O}(d\sqrt{\ln d / L})\).}
+\end{quote}
+
+Upper bound của post-LN không chứa \(L\); của pre-LN thì nhỏ đi theo
+\(1/\sqrt{L}\).
+Từ đó bài rút ra kết luận nêu ngay trong tóm tắt:
+\enquote{This motivates us to remove the warm-up stage for the training of
+Pre-LN Transformers.}
+
+\textbf{Định lý ấy chứng minh trong một cấu hình rút gọn, và ba phép rút gọn ấy
+đáng đọc trước khi trích nó.} Mục 3.3 liệt kê: một head thay vì nhiều head; khởi
+tạo \(\mat{W}^Q\) và \(\mat{W}^K\) bằng \emph{ma trận không}, nên ở lúc khởi tạo
+attention là một trung bình cộng đều; và đầu vào lấy từ cùng một phân phối
+Gauss. Phép thứ hai là phép nặng nhất: định lý nói về một mô hình mà cơ chế
+attention đã tắt. Khởi tạo dùng trong chứng minh là Xavier, không phải mặc định
+của \code{nn.Linear} mà mục~\ref{sec:ch07-chia-can} đo được là phương sai 1/3.
+
+Số đo của chính bài, trên IWSLT14 Đức-Anh với post-LN và Adam: bỏ warmup thì
+Bilingual Evaluation Understudy, viết tắt là BLEU, chỉ đạt 8.45, còn có warmup
+thì \enquote{around 34}. Đặt
+\(T_{\mathrm{warmup}} = 500\) cho 31.16 và 2.77 ở hai learning rate khác nhau.
+Bốn con số ấy là của bài, không phải của tôi.
+
+Một chi tiết thư mục: bản arXiv của bài ghi sai venue của chính nó. Chân trang
+1 in \enquote{PMLR 108, 2020} cho ICML lần thứ 37, mà ICML 37 là PMLR tập 119.
+Mục lục của PMLR mới là nguồn đúng, và \code{refs.bib} lấy số tập từ đó.
+\end{bridge}
+
+\subsection*{Cái layer norm cuối cùng, và vì sao nó dễ mất}
+
+\index{layer normalization!pre-LN cần một chuẩn hóa cuối}%
+Bảng 1 của Xiong dành hẳn một dòng riêng cho một chi tiết mà tôi suýt bỏ qua khi
+cài: pre-LN cần thêm một layer norm sau cả chồng tầng, trước phép dự đoán.
+
+Lý do thì hiển nhiên khi đã viết \eqref{eq:ch08-hai-thu-tu} ra. Mỗi tầng pre-LN
+chuẩn hóa \emph{đầu vào} của chính nó, nên đầu ra của tầng cuối chưa được chuẩn
+hóa lần nào. Bỏ dòng ấy đi thì mô hình vẫn chạy, vẫn học, mất mát vẫn giảm, và
+cái đi vào softmax là một vector không ai chuẩn hóa. Đây đúng họ với những lỗi
+mục~\ref{sec:ch07-che} đã gặp: không exception, không cảnh báo.
+
+Nó cũng là thứ duy nhất phân biệt được hai thứ tự từ bên ngoài.
+
+\begin{measured}{số tham số của hai thứ tự, cùng một cấu hình}
+\begin{minted}{text}
+d_model  post-LN params  pre-LN params  difference  4*d_model
+24       35,845          35,941         96          96
+64       238,885         239,141        256         256
+512      14,755,877      14,757,925     2048        2048
+\end{minted}
+
+2 tầng mỗi phía. Đo bằng \code{experiments/ch08\_norm.py} tại tag \code{ch08}.
+\end{measured}
+
+Đúng \(4\dmodel\): một weight và một bias, trên mỗi trong hai chồng tầng. Cột
+post-LN ở hàng đầu là 35845, đúng con số mục~\ref{sec:ch07-corpus} in ra.
+
+\subsection*{Đo định lý trên mô hình thật}
+
+\index{layer normalization!gradient lúc khởi tạo theo độ sâu}%
+Định lý là một phát biểu về lúc khởi tạo, nên kiểm nó không cần huấn luyện gì
+cả: dựng mô hình, đẩy một batch qua, gọi \code{backward}, đọc chuẩn của gradient.
+Rẻ, và tất định.
+
+Một chỗ phải cẩn thận về \emph{tầng cuối} nghĩa là tầng nào. Định lý nói về tầng
+mà softmax đọc đầu ra. Trong một kiến trúc encoder-decoder thì đó là tầng cuối
+của \emph{decoder}, không phải của encoder: gradient tới tầng cuối encoder phải
+đi ngược qua toàn bộ chồng decoder trước, nên nó không phải đại lượng định lý
+chặn. Bảng dưới in cả hai để thấy chúng khác nhau.
+
+\begin{measured}{chuẩn Frobenius của gradient ở lúc khởi tạo, theo độ sâu}
+\begin{minted}[fontsize=\footnotesize]{text}
+L    post-LN       pre-LN        post/pre   post enc last  pre enc last
+1    0.349135      0.077308      4.52       0.103942       0.004518
+2    0.268458      0.056034      4.79       0.075832       0.003047
+4    0.272682      0.059755      4.56       0.140697       0.006837
+8    0.291909      0.057998      5.03       0.160825       0.007671
+16   0.353580      0.060844      5.81       0.530925       0.011664
+\end{minted}
+
+\(\dmodel = 24\), 4 head, một batch 128, không huấn luyện.
+
+Đo bằng \code{experiments/ch08\_norm.py} tại tag \code{ch08}.
+\end{measured}
+
+Chia mỗi cột cho chính hàng \(L = 1\) của nó thì đọc được hình dạng:
+
+\begin{measured}{cùng số liệu, chuẩn hóa theo hàng \(L = 1\)}
+\begin{minted}{text}
+L    post/post(L=1)  pre/pre(L=1)  1/sqrt(L)
+1    1.0000          1.0000        1.0000
+2    0.7689          0.7248        0.7071
+4    0.7810          0.7729        0.5000
+8    0.8361          0.7502        0.3536
+16   1.0127          0.7870        0.2500
+\end{minted}
+
+Đo bằng \code{experiments/ch08\_norm.py} tại tag \code{ch08}.
+\end{measured}
+
+\index{layer normalization!nửa nào của định lý tái lập được}%
+Bảng này nói ba chuyện và tôi tách chúng ra, vì gộp lại là đọc quá tay.
+
+\textbf{Nửa thứ nhất của định lý tái lập được.} Cột post-LN không đổi theo độ
+sâu: 0.349135 ở \(L = 1\) và 0.353580 ở \(L = 16\), tỷ lệ 1.0127 sau khi đi qua
+mười sáu tầng. Định lý nói upper bound của post-LN không chứa \(L\), và số đo đứng yên
+đúng như thế.
+
+\textbf{Nửa thứ hai thì không.} Cột pre-LN đáng lẽ theo \(1/\sqrt{L}\), tức còn
+0.2500 ở \(L = 16\). Đo được 0.7870. Nó cũng gần như đứng yên.
+
+Tôi không kết luận định lý sai, và có ba lý do khác nhau mà tôi không tách được
+bằng số đo này. Định lý là một \emph{upper bound}, không phải một đẳng thức, nên
+một phép đo nằm yên dưới một cái trần đang tụt không mâu thuẫn với nó, chỉ nói
+rằng cái trần chưa chạm tới. Cấu hình rút gọn ở hộp cầu nối không phải mô hình
+này, và phép đặt \(\mat{W}^Q = \mat{W}^K = 0\) đổi hẳn thứ đang được lấy đạo
+hàm. Và \(\dmodel = 24\) với \(L\) tới 16 là một mô hình rất hẹp và rất sâu, tức
+xa cấu hình mà cả bài lẫn thực tế quan tâm.
+
+\textbf{Cái đứng vững nhất là tỷ số.} Cột \code{post/pre} nằm giữa 4.52 và 5.81
+ở mọi độ sâu: gradient của post-LN ở đúng chỗ ấy lớn hơn của pre-LN khoảng năm
+lần. Đó là nội dung thực dụng của định lý, và nó không phụ thuộc vào việc nửa
+thứ hai có tái lập hay không. Một gradient lớn gấp năm ở ngay lúc bắt đầu là thứ
+mà một learning rate cố định phải sống chung, và mục~\ref{sec:ch08-warmup} là
+chỗ nói cách bài sống chung với nó.
+
+Hai cột encoder thì kể chuyện ngược lại và đáng một câu: chúng \emph{tăng} theo
+độ sâu, post-LN từ 0.103942 lên 0.530925, gấp 5.1 lần. Không mâu thuẫn với gì
+cả, vì đó không phải đại lượng định lý chặn; nó là gradient đã đi ngược qua cả
+chồng decoder rồi mới tới nơi. Tôi in ra vì một bảng chỉ có cột decoder sẽ để
+người đọc tưởng chuyện độ sâu là chuyện đã xong.

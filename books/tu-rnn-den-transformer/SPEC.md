@@ -64,21 +64,43 @@ had already ignored (decision 53). The other eleven became rows 49 to 58, two
 amendments, four writing rules, a section of `research/README.md` and a comment
 in `scripts/check-chapter.ps1`. Nothing was dropped.
 
-Next action: chapter 08, "Chi phí, song song hóa, và cái giá phải trả". It
-inherits `transformer.py` at tag `ch07` and three debts chapter 07 names on the
-page and does not pay. Post-LN against pre-LN: chapter 07 sets equation (5) of
-the paper in the paper's own order and says chapter 08 measures the other one.
-Warmup: chapter 07 tried the paper's schedule at 658 training steps, found it
-worse than the shared recipe, and said so, which is a result about 658 steps
-rather than about warmup. And the wall-clock half of the multi-head cost claim,
-which chapter 07 states in FLOPs only. Chapter 08 also owns the re-measurement
-of table 1, which chapter 07 quotes and does not check. Three of the new
-decision rows are aimed at it: 57 names the `torch.nn.LSTM` lever and what
-pulling it would cost, which is the one thing to reach for if the wall clock
-this chapter measures runs into decision 43's budget; 54 says the `q . k`
-statistics after training are still unmeasured and that chapter 07's exercise
-does not count as having measured them; and 56 leaves chapter 06's reversal
-result on the table for whoever explains it.
+Chapter 08 is drafted. It paid three of chapter 07's four debts and half of the
+fourth, corrected a chapter 07 sentence that put the head-count slowdown at
+twenty percent (decision 61), and found something nobody was looking for: the
+quadratic cost bites where the score matrix leaves cache, and that threshold is
+measured in bytes rather than in `n`, confirmed by a control that holds `n` fixed
+and raises the batch instead.
+
+Three things that session left on the table for the author rather than settling
+them. `BUDGET_TOTAL` is at 1300 with 36 seconds of headroom against a measured
+run-to-run spread of 132 seconds, so by decision 43's own test it is already not
+a budget (decision 62). The 73-column listing budget does not hold inside a
+`measured` box, where it is 69, and the gate cannot tell the two apart
+(decision 63). And this chapter was drafted twice: a first session left it
+uncommitted in a stale worktree branched before rows 49 to 58 landed, so its own
+new decision row was numbered 49 and collided; the second session rebased,
+renumbered it to 59, and re-measured every clock table because the file the note
+named as canonical had been written to a session temp directory and was gone
+(decision 60).
+
+What chapter 08 did **not** close, and hands on. Decision 54's `q . k` statistics
+after training are still unmeasured, and chapter 08 did not measure them either;
+decision 56's chapter 06 reversal result is still unexplained. Decision 57's
+`torch.nn.LSTM` lever is still unpulled, and chapter 08 is the chapter that put a
+number on what pulling it would buy: 25.2 times on the forward-plus-backward
+path. The chapter's own tier-three exercises hand the reader three more, of which
+the layer-norm one is genuinely open.
+
+Next action: chapter 09, "Tiền huấn luyện: BERT, GPT, và quy luật scaling", the
+bridge chapter ViT cannot be understood without. It inherits `transformer.py` at
+tag `ch08`. Two warnings from this session carry into it. It cites Kaplan 2020
+and Hoffmann 2022, neither of which this book has read yet, so decision 58's
+ledger rule applies from the first sentence: the `note` field says which sections
+were read and that field is a claim held to the same standard as a number. And it
+is the first chapter whose subject the running example cannot reach at all -
+decision 35's grammar has no pretraining story in it - so the honest shape is
+probably a chapter that cites rather than measures, and it should say so on the
+page rather than reaching for a toy experiment that measures nothing.
 
 ## Decision log
 
@@ -158,6 +180,16 @@ looking for the reason will now find it where it looks.
 | 56 | Chapter 06's forward-only encoder gets worse under source reversal, and the chapter prints that without explaining it | Exact match falls 0.9500 to 0.8667, and the loss lands entirely on long sentences, 0.9079 to 0.7434, while short sentences do not move at all. With the bidirectional encoder reversal is worth 0.0033, so the interaction between the two is real rather than noise. Nobody knows why. The chapter prints it as an observation and tier-three exercise 2 hands it to the reader, which is the honest shape: decision 7 says a number I measured goes in a `measured` box and traces to a note, and it says nothing about having to explain one. All five figures are in `research/2026-08-ch06-dong-chinh.md`. **Generalised**: an unexplained direction in a table is recorded with the chapter that owns it, because a later chapter can accidentally explain it and then never go back to connect the two |
 | 57 | The companion repo keeps hand-written recurrent loops, and `torch.nn.LSTM` is a named lever rather than an option | Every recurrent layer in the repo is a Python loop over time steps. That is the right choice for chapters 01 to 04, which reach inside the loop and could not use a fused kernel if they wanted to. Chapter 05 does not reach inside it - it trains and measures - and there the loop costs measurable time: fifteen trainings at roughly nineteen seconds each is most of what chapter 05 spends, and the fused version would be a large multiple faster. Not changed, because a book that builds from scratch and then quietly swaps in the library for the chapter where it matters has stopped building from scratch, and decision 4 is what the reader was promised. Recorded so that whoever hits the budget wall of decision 43 knows this lever exists and knows what pulling it costs |
 | 58 | `refs.bib`'s `note` field is the only ledger of how much of a paper was read | The SPEC carried a second list of partially-read papers, which duplicated what every one of those entries already says in its own `note`, and drifted: `cho2014properties` left the list a session after chapter 06 read it in full. So the entry is the ledger. A paper cited from less than a full read says so there and names which sections were read, and that field is a claim with the same standard as a number - `he2016deep`'s note was first written claiming a read of section 3.2 from a subagent's summary rather than from the paper, and the chapter's sentence about the degradation result was circular on top of that; fetching the PDF and reading page 1 fixed both. The same applies to the bridge-paper list, which closes one paper at a time as each lands in the chapter that cites it, and where the TOC's \enquote{Cho 2014} is two entries: `cho2014encdec`, the EMNLP encoder-decoder paper, and `cho2014properties`, the SSST-8 paper that measured the length degradation. Bahdanau distinguishes them as 2014a and 2014b and the whole received story about chapter 05 turns on which one is meant |
+
+Rows 59 onward were written in the chapter 08 session, 2026-08-12.
+
+| # | Question | Decision |
+|---|----------|----------|
+| 59 | \enquote{upper bound} and \enquote{lower bound} stay in English | Settled by the author mid-session, after the same defect surfaced three times in one chapter and two repairs failed to remove it. The Vietnamese is `chặn trên` and `chặn dưới`, and the head noun `chặn` is an ordinary verb the book uses in its ordinary sense - chapter 08 alone writes `định lý 1 chặn chuẩn Frobenius`, `đại lượng định lý chặn` twice, and `chỉ chặn mô hình đừng đẩy xác suất`. That is exactly the test decision 46 already set: a candidate whose Vietnamese side is a word the book uses in another sense goes to the keep-in-English table rather than the appendix. Each repair moved the collision instead of removing it: bare `chặn ấy` reads as no noun at all, because in Vietnamese the noun only exists as the compound; `chặn ấy dưới giả thiết mới` re-parses as the compound because `dưới` is also the preposition \enquote{under}; and `chặn dưới của mất mát dưới label smoothing` carries `dưới` twice in one phrase in two roles. Retroactive per the writing rules, and cheap: chapter 03 held the only other site in the book, one line, now `upper bound của`. **What generalises past this row:** two failed repairs on one phrase is the signal to change the term rather than the sentence. The first fix reworded, the second reworded again, and only the third asked whether the word should be there. **This row was numbered 49 when it was drafted**, in a worktree cut before the open-items list was emptied; rows 49 to 58 landed on main in the meantime and it was renumbered on rebase. That collision is decision 30's failure mode showing up in the decision log itself rather than in an appendix |
+| 60 | A clock table's canonical run is committed to the companion repo, not left in a scratch directory | Chapter 08 is the book's first chapter whose tables are wall-clock measurements, and the research note recorded that every clock table came from one canonical run saved at `scratchpad/ch08_clock_canonical.txt`. That path was a session temp directory. It did not survive the session, and the note's own inline copies of four of those tables had been left at an earlier run's values, so the chapter printed one set of numbers, the note recorded another, and the file that would have settled which was correct no longer existed. 78 of the `number` family's findings on this chapter were that one cause. The measurement was retaken on an idle machine and both the chapter and the note were rewritten from it, per the writing rule that a measurement from a configuration nobody can name is retaken or dropped. **The rule this adds:** a table whose numbers depend on the machine ships its raw run output as a committed file in the companion repo at the chapter's tag, and the research note points at that path. A number that only a script can regenerate is reproducible; a number whose only copy was in a scratch directory is remembered |
+| 61 | Chapter 07's twenty-percent figure for the head-count slowdown is wrong, and chapter 08 prints the correction on the page | Chapter 07's multi-head section wrote that a separate timing session found `h = 16` about twenty percent slower than `h = 1` at `d_model = 512` on CPU. Measured properly at tag `ch08`, on an idle machine and as the median of nine runs, it is a multiple rather than a percentage, and it depends on sequence length: the ratio at `n = 128` is near one because fixed overhead dominates there, and at `n = 512` it is several times. Chapter 07 had already said it would not turn that number into a general claim because it depends on implementation and hardware, and that caution was right; printing the number anyway is what was wrong. Chapter 08 states the correction rather than letting a reader who compares the two chapters find it. **Why the gate did not catch it:** chapter 07 wrote the figure in words, and the `number` family only reads decimals. That hole is not worth closing - a check that reads number words would fire on every ordinary sentence in a Vietnamese book - so the defense is the one this row demonstrates, which is that a later chapter measuring the same quantity says so |
+| 62 | `BUDGET_TOTAL` is 1300 seconds, and the next chapter that needs it raised should not raise it | Chapter 08 adds five verification items, two of which are twelve trainings each - four configurations at three seeds - and the run no longer fits 900. Raised to 1300 and measured at `verify: ok`, 1263.74s. **The third seed is not padding and cannot be traded back for budget**: the finding of the layer-norm table is precisely that the spread within one configuration is wider than the gap between configurations, so a one-seed table asserts an effect three seeds show is noise. Decision 44 is the same lesson one level down; buying the budget back there would buy back a wrong chapter. **What this row does not do is declare the number healthy.** 1263.74s against 1300 is 36 seconds of headroom, and two runs of identical code in this one session came in 132 seconds apart - so by decision 43's own test, a budget whose margin is narrower than its noise, 1300 is already not a budget. It is left at 1300 anyway rather than raised a third time, because decision 13 promises a reader with no graphics card that experiments finish in minutes and 1300s is nearly twenty-two of them. The two honest moves left are to make an experiment cheaper - decision 57's `torch.nn.LSTM` lever is the largest, and chapter 08's own clock table now measures it at 25.2 times on the forward-plus-backward path - or to teach `verify.py --only chNN` in the README so a reader can check one chapter without running all of them. **Whichever it is, it is the author's call and not a drafting session's**, which is why this row states the problem rather than settling it |
+| 63 | Decision 31's 73 columns is the budget on the page; inside a `measured` or `bridge` box it is 69, and `Listings.MaxLineLength` cannot tell the two apart | Chapter 08 puts almost every table inside a `measured` box, and three of them shipped a first draft that wrapped on the page while the gate reported clean. The reason is that decision 31 measured 73 against `\the\textwidth`, and a tcolorbox is narrower than the text block by its rule and padding. **Measured on a built page, not derived:** 68 columns sets flush inside a box, 69 sets flush, 70 gains a continuation arrow, and 71 gains one. Chapter 07's boxed table at exactly 69 is the witness for the upper end and it is correct as it stands; chapter 05's 72 and 73 column listings are not in boxes and are correct too. So the book now has two numbers, 73 on the page and 69 in a box, and only the first is enforced. The three chapter 08 blocks took `[fontsize=\footnotesize]`, which decision 31 already provides for a block that genuinely needs the width, and these do: the widest carries nine columns of real data and dropping one would cost the reader a comparison. **This is not decision 52's misuse coming back** - those nine listings were at `\footnotesize` while fitting comfortably at `\small`, and these three do not fit. `check-chapter.ps1` cannot currently see the difference between a boxed and an unboxed listing, so the gate under-reports for every book that puts listings in tcolorboxes; that is a library problem and the fix is proposed as a script change rather than made here. Until it lands, the rule below carries the number |
 
 ## Version baseline
 
@@ -254,9 +286,16 @@ created. That section is the hinge to the next chapter and is not optional.
    than width (decision 48). Two copies of this paper exist and disagree on a
    BLEU score (decision 47)
 8. **Chi phí, song song hóa, và cái giá phải trả** - the paper's complexity
-   table, re-measured as FLOPs, memory and wall clock against `n` on a CPU;
-   warmup, label smoothing and dropout as load-bearing rather than tricks;
-   post-LN versus pre-LN; gap: quadratic, no inductive bias, data-hungry
+   table, re-measured as FLOPs, memory and wall clock against `n` on a CPU, with
+   the analytic FLOP count checked against torch's own operator counter; the
+   chapter's own finding, that on real hardware the quadratic term bites where
+   the score matrix leaves cache and that threshold is measured in bytes rather
+   than in `n`, established with a control that holds `n` fixed and raises the
+   batch; the wall-clock half of the multi-head claim, which corrects a figure
+   chapter 07 printed (decision 61); warmup, label smoothing and dropout as
+   load-bearing rather than tricks, with the warmup table kept as an explicit
+   negative result; post-LN versus pre-LN measured at initialization; gap:
+   quadratic, no inductive bias, data-hungry
 9. **Tiền huấn luyện: BERT, GPT, và quy luật scaling** - the bridge chapter ViT
    cannot be understood without; encoder-only versus decoder-only; pretraining
    as the invention rather than the architecture; Kaplan 2020 and Hoffmann 2022
@@ -314,7 +353,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 05 | drafted | Companion tag `ch05`. Venue confirmed: NIPS 2014, Advances in NIPS 27, pages 3104-3112 (pages from DBLP, since the publisher's own BibTeX export leaves the field empty). Settles the running example as a generated corpus (decision 35). The bottleneck measured by shrinking the context vector rather than by lengthening sentences, which is what lets the chapter say the bottleneck is real *and* that this paper never hit it. Separates Cho 2014a from Cho 2014b, which is who the length-degradation result actually belongs to. One TikZ figure |
 | 06 | drafted | Companion tag `ch06`, module `attention.py`. Retitled from \enquote{Đồng chỉnh} with the folder and label following (decision 42). Pays chapter 05's debt: Cho 2014b read in full, from the arXiv and Anthology copies, both nine pages. The chapter's spine is that the paper this chapter reads *conjectured* the bottleneck and cited two SSST-8 workshop papers for it, while chapter 05 is where this book measured it. Reproduces chapter 05's width table digit for digit on its fixed-vector rows, which is what makes the two chapters' tables comparable. Two TikZ figures. `BUDGET_TOTAL` raised to 900 (decision 43) |
 | 07 | drafted | Companion tag `ch07`, module `transformer.py`. Four experiments, two of which train nothing, so the whole repo verifies in 663.51s against the 900s budget and decision 43 is untouched. Reads both copies of the paper and finds they are different documents that disagree on a BLEU score (decision 47). The chapter's table sweeps epochs rather than width, after three other explanations for the 14-epoch result were killed (decision 48). Two TikZ figures. Four appendix B rows, and four terms deliberately kept in English (decision 46) |
-| 08 | not-started | |
+| 08 | drafted | Companion tag `ch08`, module `cost.py` plus four experiment scripts. Pays three of chapter 07's four debts and half of the fourth: table 1 re-measured with constants, the head-count claim measured on the clock as well as in FLOPs, and the layer-norm order measured at initialization. Corrects a chapter 07 sentence that put the head-count slowdown at twenty percent (decision 61). Its own finding is that the quadratic cost bites where the score matrix leaves cache, measured by byte rather than by `n` and confirmed with a batch-held control. The warmup table is a deliberate negative result: three seeds show the within-configuration spread is wider than the between-configuration gap. Two TikZ figures. `BUDGET_TOTAL` raised to 1300 (decision 62) |
 | 09 | not-started | |
 | 10 | not-started | |
 | 11 | not-started | |
@@ -446,6 +485,17 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   list, `[fontsize=\footnotesize]`, where the same measure holds 81, and the
   check stands down for it. Do not reach for the smaller size to avoid an edit:
   a page with three type sizes in its listings reads as a page nobody set.
+
+  **Inside a `measured` or `bridge` box the budget is 69, not 73** (decision 63),
+  because a tcolorbox is narrower than the text block by its rule and padding.
+  The gate enforces 73 for every listing and therefore cannot see a boxed line of
+  70 to 73, which wraps silently in exactly the way decision 31 describes. Most
+  of this book's tables sit in boxes, so the number that applies to most of them
+  is the one nothing checks. Until `check-chapter.ps1` can tell a boxed listing
+  from an unboxed one, measure a boxed block by eye on the built page: 69 sets
+  flush, 70 gains a continuation arrow. Both numbers were measured on a built
+  page rather than derived, and chapter 07's boxed table at exactly 69 is the
+  witness.
 - **Figures:** TikZ, sources in `figures/tikz/chNN-<slug>.tex` as a bare
   `tikzpicture`; the `figure` environment, caption and label stay at the call
   site. Beyond the template's `arrows.meta` and `positioning`, this book loads

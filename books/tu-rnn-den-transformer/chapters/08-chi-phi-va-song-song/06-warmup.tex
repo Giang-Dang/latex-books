@@ -1,0 +1,185 @@
+\section{Warmup: cái vá cho chuyện vừa đo được}
+\label{sec:ch08-warmup}
+
+\index{warmup!công thức của mục 5.3}%
+Mục 5.3 của bài dài đúng bốn câu và một phương trình. Adam với
+\(\beta_1 = 0.9\), \(\beta_2 = 0.98\), \(\epsilon = 10^{-9}\), rồi:
+
+\begin{equation}
+  \mathit{lrate} = \dmodel^{-0.5} \cdot
+  \min\!\left( s^{-0.5},\; s \cdot w^{-1.5} \right),
+  \label{eq:ch08-warmup}
+\end{equation}
+
+với \(s\) là số thứ tự bước và \(w\) là \code{warmup\_steps}, mà bài đặt bằng
+4000. Bài giải thích bằng một câu: \enquote{This corresponds to increasing the
+learning rate linearly for the first \(warmup\_steps\) training steps, and
+decreasing it thereafter proportionally to the inverse square root of the step
+number.}
+
+Đọc lướt thì đây là ba hằng số gõ tay. Viết ra thì nó có ba tính chất, và cả ba
+đều dẫn được ra từ chính \eqref{eq:ch08-warmup} chứ không cần thí nghiệm nào.
+
+\index{warmup!ba tính chất dẫn ra được}%
+\textbf{Hai nhánh gặp nhau đúng ở đỉnh.} Ở \(s = w\), nhánh trái cho
+\(w^{-0.5}\) và nhánh phải cho \(w \cdot w^{-1.5} = w^{-0.5}\). Bằng nhau, nên
+\(\min\) không tạo ra một bước nhảy: lịch này là một đoạn thẳng nối liền vào một
+đường cong, và \(w\) là hoành độ đỉnh chứ không phải một chỗ chuyển chế độ.
+
+\textbf{Đỉnh cao bao nhiêu thì đọc ra ngay.} Thay vào:
+\(\dmodel^{-0.5} w^{-0.5} = (\dmodel \, w)^{-1/2}\). Nên learning rate lớn nhất
+mà lịch này từng đạt tới do \emph{tích} của bề rộng và số bước warmup quyết
+định, và hai tham số ấy đổi nhau được.
+
+\textbf{Mô hình rộng hơn nhận learning rate nhỏ hơn.} Thừa số
+\(\dmodel^{-0.5}\) nằm ngoài cả \(\min\), nên đi từ \(\dmodel = 64\) lên 512 là
+chia learning rate cho \(\sqrt{8}\). Đó là lý do một con số warmup chép từ bài
+này sang mô hình khác bề rộng thì không còn nghĩa gì, và
+\code{tests/test\_ch08.py} khẳng định đúng tỷ số ấy.
+
+Trong repo, phần tính của \eqref{eq:ch08-warmup} là bảy dòng, chép ở đây không
+kèm docstring và không kèm dòng kiểm \code{warmup\_steps} phải dương:
+
+\begin{minted}{python}
+def warmup_lambda(d_model: int, warmup_steps: int):
+    def scale(step: int) -> float:
+        step_num = step + 1
+        return d_model ** -0.5 * min(
+            step_num ** -0.5, step_num * warmup_steps ** -1.5
+        )
+
+    return scale
+\end{minted}
+
+Cái \code{step + 1} không phải trang trí. \code{LambdaLR} đếm từ 0 và
+\eqref{eq:ch08-warmup} chia cho \(s\), nên để nguyên thì bước đầu tiên chia cho
+không.
+
+\subsection*{Vì sao nó là một cái vá, chứ không phải một mẹo}
+
+\index{warmup!nối với gradient lúc khởi tạo}%
+Đặt \eqref{eq:ch08-warmup} cạnh bảng ở mục~\ref{sec:ch08-thu-tu-ln} thì hai thứ
+khớp vào nhau.
+
+Ở lúc khởi tạo, gradient của post-LN tại tầng cuối lớn gấp khoảng năm lần của
+pre-LN, và không nhỏ đi khi chồng tầng dày lên. Một learning rate cố định nhân
+với một gradient lớn ở bước đầu tiên là một bước cập nhật lớn ở đúng lúc mô hình
+chưa biết gì. \eqref{eq:ch08-warmup} làm learning rate nhỏ gần bằng không ở
+những bước ấy rồi mới cho lớn dần.
+
+Nói cách khác, warmup không phải một cách để huấn luyện nhanh hơn. Nó là cách để
+sống sót qua vài trăm bước đầu của một kiến trúc mà thứ tự layer norm đã làm cho
+gradient ban đầu lớn. Ai đổi thứ tự thì bớt cần nó, và đó đúng là câu Xiong và
+cộng sự rút ra.
+
+\index{warmup!ba bài không nói cùng một câu}%
+Chỗ này có một chuyện về nguồn đáng nói riêng, vì cách kể lại thường gộp ba bài
+làm một. \enquote{Các bài pre-norm} không cùng nói rằng bỏ được warmup.
+
+\begin{itemize}
+  \item Wang và cộng sự, ACL 2019, \emph{không} nói thế~\autocite{wang2019deep}.
+    Bài ấy dùng warmup và còn nâng lên 16000 bước cho mô hình sâu; luận điểm của
+    nó là pre-norm làm encoder hai mươi tới ba mươi tầng huấn luyện được, tức
+    chuyện độ sâu.
+  \item Nguyen và Salazar, IWSLT 2019, là chỗ nói sớm
+    nhất~\autocite{nguyen2019tears}. Tóm tắt viết \enquote{pre-norm residual
+    connections (PRENORM) and smaller initializations enable warmup-free,
+    validation-based training with large learning rates}.
+  \item Xiong và cộng sự 2020 là chỗ chứng minh, và tự gọi Nguyen và Salazar là
+    công trình song song độc lập.
+\end{itemize}
+
+Nguyen và Salazar kèm một điều kiện mà chỗ trích lại hay bỏ, và nó nằm ngay
+trang đầu: \enquote{we find it degrades base Transformer performance on WMT'14
+English-German}. Nên phát biểu đủ là pre-norm bỏ được warmup, và trên một tập dữ
+liệu lớn nó làm mô hình base kém đi.
+
+\begin{bridge}{Popel và Bojar 2018: đặt warmup thấp quá thì không phải chậm, mà là hỏng}
+\index{warmup!Popel 2018}%
+Bài này là một tập ghi chép vận hành về Tensor2Tensor, không phải một bài lý
+thuyết~\autocite{popel2018tips}. Mục 4.6 quét \code{warmup\_steps} quanh mặc
+định 16000 ở learning rate cố định, và kết quả đáng nhớ nhất là một chỗ hỏng
+chứ không phải một đường cong: đặt 12000 thì huấn luyện \emph{phân kỳ}
+(\enquote{Setting warmup steps too low (12k) results in diverged training}),
+còn 48000 chỉ hội tụ chậm hơn lúc đầu rồi bắt kịp.
+
+Kết luận của bài thì rộng rãi: \enquote{there is a relatively large range of
+learning rate and warmup steps values that achieve the optimal results}. Hai vế
+ấy đi cùng nhau mới đủ. Có một dải rộng chấp nhận được, và ngay dưới dải ấy
+không phải là kém đi một chút mà là không huấn luyện được.
+
+Đây là bằng chứng độc lập cho chuyện mục này nói, ở quy mô mà sách này không
+chạm tới được. Tôi đọc bài ở mục 4.5 và 4.6.
+\end{bridge}
+
+\subsection*{Đo ở quy mô của sách, và nó không trả lời được}
+
+\index{warmup!bảng bốn ô ở quy mô sách}%
+Bây giờ đến phần tôi phải cẩn thận. Câu hỏi tự nhiên là chạy bốn cấu hình, hai
+thứ tự nhân hai lịch, trên corpus của sách rồi đọc ô nào cao nhất.
+
+Chương~\ref{ch:transformer} đã cảnh báo một nửa chuyện: nó thử lịch của bài ở
+658 bước và thấy thua recipe dùng chung, rồi tự nói đó là kết quả về 658 bước.
+Nửa còn lại là chuyện \tn{khớp đúng cả câu}{exact match} trên 300 câu là một
+thống kê nhảy, và
+mục~\ref{sec:ch07-corpus} đã in một trường hợp nó đi xuống khi số epoch đi lên.
+Nên bảng này chạy ba seed cho mỗi ô, và cột \code{min} với \code{max} là hai cột
+đáng đọc trước.
+
+\begin{measured}{hai thứ tự nhân hai lịch, ba seed mỗi hàng}
+\begin{minted}[fontsize=\footnotesize]{text}
+order    schedule  loss      exact     min      max      short   long
+post-LN  flat      0.1449    0.5333    0.4700   0.5667   0.8964  0.1798
+post-LN  warmup    0.1484    0.4967    0.3800   0.6500   0.8581  0.1447
+pre-LN   flat      0.1039    0.5989    0.5067   0.6733   0.9640  0.2434
+pre-LN   warmup    0.0855    0.6611    0.5667   0.7800   0.9685  0.3618
+\end{minted}
+
+2 tầng, 14 epoch, \(\dmodel = 24\), \(w = 200\), seed 0, 1, 2.
+
+Đo bằng \code{experiments/ch08\_norm.py} tại tag \code{ch08}.
+\end{measured}
+
+\index{warmup!khoảng trong một ô rộng hơn khoảng giữa các ô}%
+Đọc cột \code{min} và \code{max} trước, và bảng đổi nghĩa. Hàng
+\code{post-LN warmup} đi từ 0.3800 tới 0.6500 chỉ vì đổi seed, rộng 0.27. Khoảng
+cách giữa trung bình cao nhất và thấp nhất trong cả bốn hàng là 0.6611 trừ
+0.4967, rộng 0.16.
+
+\emph{Khoảng biến động bên trong một cấu hình rộng hơn khoảng cách giữa các cấu
+hình.} Nên bảng này không tách được tác dụng của lịch warmup ở quy mô này, và
+tôi nói thẳng ra thay vì chọn ô cao nhất rồi kể một câu chuyện quanh nó.
+
+Tôi biết chính xác cái bảng ấy sẽ nói gì nếu chạy một seed, vì tôi đã chạy một
+seed trước. Nó cho 0.4700, 0.4600, 0.5067 và 0.6367, và từ bốn số đó tôi đã suýt
+viết rằng warmup không giúp gì cho post-LN mà giúp nhiều cho pre-LN. Ba seed cho
+thấy đó là seed chứ không phải lịch. Chương~\ref{ch:mot-vector-cho-moi-tu} gặp
+đúng bài học này ở một tầng khác, khi một \tn{phép cắt bỏ}{ablation} không có
+đối chứng cùng số tham số đo ra một hiệu ứng không có thật.
+
+\index{warmup!cái vượt được nhiễu}%
+Cái \emph{có} vượt được nhiễu thì cũng đáng ghi, và nó không phải chuyện lịch.
+Hai hàng pre-LN có mất mát thấp hơn hai hàng post-LN, 0.1039 và 0.0855 so với
+0.1449 và 0.1484, và cột câu dài của chúng cao hơn hẳn, 0.2434 và 0.3618 so với
+0.1798 và 0.1447. Chiều thì nhất quán qua cả bốn ô. Độ lớn thì bảng này không
+nói được.
+
+Một kiểm chứng cuối, và nó là lý do hàng đầu tiên tồn tại. Hàng
+\code{post-LN flat} ở riêng seed 0 cho \code{0.1159 / 0.4700 / 0.8581 / 0.0921},
+trùng từng chữ số với bảng ở mục~\ref{sec:ch07-corpus}. Chương này thêm hai tùy
+chọn vào lớp Transformer của repo, và nếu chúng lỡ đụng vào đường mặc định thì
+hàng ấy đã lệch.
+
+\index{warmup!vì sao quy mô này không đủ}%
+Còn vì sao quy mô này không trả lời được thì nằm ngay trong định lý. Chặn của
+pre-LN nhỏ đi theo \(1/\sqrt{L}\), nên chuyện hai thứ tự khác nhau là chuyện của
+\(L\) lớn. Ở đây \(L = 2\), và \(\sqrt{2}\) không phải một hệ số đáng đi tìm
+trong một cột nhảy 0.27 vì seed. Bài chạy sáu tầng mỗi phía và 100000 bước cho
+model base; Wang
+và cộng sự phải lên hai mươi tầng mới thấy pre-norm đáng giá. Sách này chạy hai
+tầng và 658 bước vì sách này hứa với bạn rằng mọi thí nghiệm chạy xong trên một
+máy không có card đồ họa trong vài phút, và đây là chỗ lời hứa ấy phải trả giá.
+
+Nên câu trung thực là: mục này dựng được nửa lý thuyết bằng phép đo tất định ở
+lúc khởi tạo, và không dựng được nửa thực nghiệm. Bảng bốn ô ở trên là bằng
+chứng cho việc nó không dựng được, chứ không phải một kết quả yếu.

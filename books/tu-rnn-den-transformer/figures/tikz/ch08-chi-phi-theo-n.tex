@@ -1,0 +1,73 @@
+% Chi phí (FLOPs) của một tầng encoder theo độ dài chuỗi n, tách phần tuyến
+% tính và phần bậc hai. Cấu hình là mô hình base của bài: d_model = 512,
+% d_ff = 2048, 8 đầu, batch 1. Hai công thức, đối chiếu đúng bằng
+% torch.utils.flop_counter.FlopCounterMode (khác biệt bằng 0):
+%   phần tuyến tính (4 phép chiếu cộng FFN): 24 n d^2 = 6291456 n
+%   phần bậc hai (scores cộng weighted values): 4 n^2 d = 2048 n^2
+% Hai đường cắt nhau đúng ở n = 3072 = 2 d_model + d_ff.
+%
+% Không dùng pgfplots (không được nạp): tọa độ tính tay rồi vẽ bằng
+% \draw plot coordinates. Đơn vị trục hoành: x_cm = n / 600 (n = 6000 ->
+% x = 10cm). Đơn vị trục tung: y_cm = FLOP_giga / 10 (80 GFLOP -> y = 8cm,
+% tức 1cm = 10 GFLOP). Giá trị GFLOP dưới đây là FLOP chia 10^9.
+%
+% Điểm n = 512 (= d_model) và dải n = 25-100 (độ dài câu bài chạy) đều nằm
+% sát gốc tọa độ ở tỉ lệ này - đúng luận điểm của mục này - nên được chú
+% thích bằng đường dẫn (leader line) ra vùng trống phía trên đồ thị thay vì
+% vẽ đúng tỉ lệ, việc không thể làm cho ra hình dễ đọc.
+\begin{tikzpicture}[
+    >= Stealth,
+    every node/.style = {font = \footnotesize},
+  ]
+
+  % --- trục ---
+  \draw[->] (-0.3, 0) -- (10.6, 0) node[right] {\(n\) (độ dài chuỗi)};
+  \draw[->] (0, -0.3) -- (0, 8.6) node[above] {FLOP mỗi tầng (GFLOP)};
+  \node[anchor = west, black!55] at (0.15, 8.15) {1 GFLOP \(= 10^9\) FLOP};
+
+  % --- vạch chia trục hoành: n / 600, mỗi 1000 token cách đều 1.667cm ---
+  \foreach \x/\lab in {0/0, 1.6667/1000, 3.3333/2000, 5/3000, 6.6667/4000,
+                       8.3333/5000, 10/6000} {
+    \draw (\x, 0.06) -- (\x, -0.06);
+    \node[anchor = north] at (\x, -0.1) {\lab};
+  }
+
+  % --- vạch chia trục tung: GFLOP / 10, mỗi 10 GFLOP cách đều 1cm ---
+  \foreach \y/\lab in {0/0, 1/10, 2/20, 3/30, 4/40, 5/50, 6/60, 7/70, 8/80} {
+    \draw (0.06, \y) -- (-0.06, \y);
+    \node[anchor = east] at (-0.1, \y) {\lab};
+  }
+
+  % --- phần tuyến tính: 24 n d^2, một đường thẳng từ gốc tới (6000, 37.75GFLOP) ---
+  \draw[thick, black!65] (0, 0) -- (10, 3.7748736);
+  \node[anchor = west, black!65] at (10.1, 3.7748736) {phần tuyến tính};
+
+  % --- phần bậc hai: 4 n^2 d, lấy mẫu mỗi 500 token rồi nối thẳng ---
+  \draw[thick, densely dashed, black] plot coordinates {
+    (0, 0) (0.8333, 0.0512) (1.6667, 0.2048) (2.5, 0.4608) (3.3333, 0.8192)
+    (4.1667, 1.28) (5, 1.8432) (5.12, 1.93274) (5.8333, 2.5088)
+    (6.6667, 3.2768) (7.5, 4.1472) (8.3333, 5.12) (9.1667, 6.1952)
+    (10, 7.3728)
+  };
+  \node[anchor = west, black] at (10.1, 7.3728) {phần bậc hai};
+
+  % --- giao điểm: n = 3072, hai đường bằng nhau (19.327 GFLOP mỗi phần) ---
+  \filldraw[black] (5.12, 1.93274) circle (1.3pt);
+  \draw[black!50, densely dotted] (5.12, 1.93274) -- (5.12, 0);
+  \node[anchor = south west] at (5.2, 2.05) {\(n = 3072\)};
+
+  % --- n = 512 = d_model: phần bậc hai mới chiếm khoảng 14% của tầng ---
+  \filldraw[black] (0.8533, 0) circle (1.0pt);
+  \draw[black!50, densely dotted] (0.8533, 0) -- (0.8533, 0.376);
+  \draw[black!55, densely dashed, ->] (0.8533, 0.42) -- (2.6, 3.5);
+  \node[anchor = west, align = left, text width = 4.0cm] at (2.65, 3.5)
+    {\(n = 512 = \dmodel\): phần bậc hai chỉ khoảng 14\% của tầng};
+
+  % --- n = 25 đến 100: độ dài câu bài thật sự chạy, gần như dính vào gốc ---
+  \draw[line width = 2pt, black] (0.0417, 0) -- (0.1667, 0);
+  \draw[black!55, densely dashed, ->] (0.1, 0.12) -- (1.6, 5.6);
+  \node[anchor = west, align = left, text width = 4.2cm] at (1.65, 5.6)
+    {độ dài câu bài chạy: khoảng 25 đến 100 token, sát gốc tọa độ ở tỉ lệ
+     này};
+
+\end{tikzpicture}

@@ -1,0 +1,153 @@
+\exercises
+
+\tierunderstand
+
+\begin{bt}
+  \item Dẫn \eqref{eq:ch08-flop-tang} lại từ đầu, viết rõ hình dạng của từng ma
+    trận ở từng phép nhân. Rồi trả lời câu đắt hơn: nếu bốn phép chiếu
+    \emph{có} bias thì số hạng nào đổi, và đổi bao nhiêu? Con số ấy có làm
+    \eqref{eq:ch08-giao-diem} dịch đi không?
+
+  \item Mục~\ref{sec:ch08-dem} nói số head triệt tiêu khỏi phép đếm FLOP. Chỉ ra
+    đúng bước đại số nơi nó triệt tiêu, và nói bước ấy dựa vào giả thiết nào.
+    Rồi bỏ giả thiết đi: nếu một cài đặt đặt \(\dk\) là một hằng số thay vì
+    \(\dmodel/h\), công thức thành gì, và \code{tests/test\_ch08.py} sẽ hỏng ở
+    test nào?
+
+  \item Từ \eqref{eq:ch08-ty-le}, chứng minh tỷ lệ bậc hai chỉ phụ thuộc
+    \(n/(2d + \dff)\). Rồi dùng nó trả lời mà không chạy gì: ở
+    \(\dmodel = 1024\) và \(\dff = 4096\), phải lấy \(n\) bằng bao nhiêu thì
+    phần bậc hai chiếm 90\% một tầng?
+
+  \item Mục~\ref{sec:ch08-dem} đo được attention rẻ hơn LSTM tới \(n = 2d\) mà
+    lại đắt hơn một tầng hồi quy trơn ở mọi \(n\). Giải thích cả hai bằng
+    \eqref{eq:ch08-flop-tang}. Rồi nói bảng 1 của bài lẽ ra phải viết thế nào
+    để hai chuyện ấy đọc ra được từ bảng.
+
+  \item Mục~\ref{sec:ch08-cho-vo} đo được cái dốc đi theo số byte chứ không theo
+    \(n\). Thiết kế một phép đo thứ ba tách hai giả thuyết ấy, khác cả phép quét
+    \(n\) lẫn phép quét batch mà mục ấy đã chạy. Nói trước phép đo của bạn sẽ
+    cho kết quả gì dưới mỗi giả thuyết.
+
+  \item Ở \eqref{eq:ch08-warmup}, chứng minh hai nhánh của \(\min\) bằng nhau
+    đúng tại \(s = w\), và tính giá trị đỉnh theo \(\dmodel\) và \(w\). Rồi trả
+    lời: muốn giữ nguyên learning rate đỉnh khi tăng \(\dmodel\) gấp bốn, phải
+    đổi \(w\) thế nào?
+
+  \item Định lý 1 ở hộp cầu nối mục~\ref{sec:ch08-thu-tu-ln} là một upper bound.
+    Giải thích vì sao một phép đo cho thấy gradient pre-LN \emph{không} giảm
+    theo \(1/\sqrt{L}\) thì không bác được định lý. Rồi mô tả một kết quả đo
+    nào \emph{sẽ} bác được nó.
+
+  \item Mô hình pre-LN nhiều hơn post-LN đúng \(4\dmodel\) tham số. Chỉ ra bốn
+    nhóm ấy nằm ở đâu. Rồi nói vì sao một phép so hai kiến trúc chỉ nhìn số tham
+    số sẽ coi hai mô hình này là một, và liên hệ với phép cắt bỏ có đối chứng
+    cùng số tham số ở chương~\ref{ch:mot-vector-cho-moi-tu}.
+
+  \item \eqref{eq:ch08-chan-duoi} cho lower bound của mất mát khi có label
+    smoothing. Kiểm nó ở một trường hợp bạn tính tay được: \(K = 2\),
+    \(\epsilon = 0.1\). Rồi nói lower bound ấy đi về đâu khi \(K\) lớn dần với
+    \(\epsilon\) giữ nguyên, và chuyện đó
+    nói gì về việc so mất mát giữa hai mô hình khác kích thước từ điển.
+\end{bt}
+
+\tierapply
+
+Trạng thái xuất phát cho cả năm bài: clone repo companion, đứng ở thư mục gốc
+của nó, và checkout đúng tag của chương này.
+
+\begin{minted}{console}
+$ git clone https://github.com/Giang-Dang/rnn-to-transformer-lab.git
+$ cd rnn-to-transformer-lab
+$ git checkout ch08
+$ conda env create -f environment.yml
+$ conda activate rnn-to-transformer-lab
+$ python verify.py --only ch08
+\end{minted}
+
+Dòng cuối phải in ra \code{verify: ok}. Cả repo chạy mất khoảng hai mươi phút;
+\code{--only ch08} chạy riêng năm mục của chương này và mất sáu tới bảy. Hai con
+số ấy là của máy tôi đo, và chúng dao động theo việc máy có đang chạy gì khác
+không: hai lần chạy cả repo trên cùng mã trong cùng một buổi cách nhau hơn hai
+phút.
+
+Vẫn cảnh báo cũ: đừng gọi các script qua \code{conda run}, vì nó gom stdout của
+tiến trình con rồi in lại bằng encoding hệ thống và ném
+\code{UnicodeEncodeError} từ bên trong chính conda.
+
+\begin{bt}
+  \item Đổi quy ước đếm. \code{cost.py} đếm một phép nhân-cộng là hai FLOP. Sửa
+    thành một, chạy lại \code{ch08\_flops.py}, và nói bảng nào đổi và bảng nào
+    không. Rồi chạy \code{python -m pytest -q tests/test\_ch08.py} và giải thích
+    vì sao đúng một test hỏng chứ không phải bốn.
+
+  \item Đo lại cái dốc trên máy của bạn. Chạy \code{ch08\_clock.py} và tìm chỗ
+    cột \code{s/GFLOP} bắt đầu leo. Tra kích thước L3 của CPU bạn dùng
+    (\code{wmic cpu get L3CacheSize} trên Windows, \code{lscpu} trên Linux) rồi
+    đối chiếu với cột \code{score MiB}. Chỗ dốc của bạn có rơi vào đúng chỗ
+    cache của bạn hết chỗ không? Nếu không, nêu một cách giải thích khác và một
+    phép đo tách nó.
+
+  \item Cho pre-LN đủ độ sâu. \code{ch08\_norm.py} huấn luyện ở 2 tầng, và
+    mục~\ref{sec:ch08-warmup} nói đó là lý do bảng bốn ô không kết luận được.
+    Sửa cho nó chạy \(L\) bằng 2, 4 và 8 ở cả hai thứ tự, ba seed mỗi ô, rồi hỏi
+    khoảng \code{min}-\code{max} có tách ra ở \(L\) nào không. Bài này vượt xa
+    ngân sách của \code{verify.py}; chạy ngoài nó và nói rõ tổng thời gian bạn
+    đã tiêu.
+
+  \item Bỏ cái layer norm cuối cùng của pre-LN. Trong \code{transformer.py},
+    đổi \code{encoder\_norm} và \code{decoder\_norm} thành \code{nn.Identity()}
+    ở cả hai nhánh, rồi chạy \code{tests/test\_ch08.py} và
+    \code{ch08\_norm.py}. Test nào bắt được? Bảng gradient lúc khởi tạo đổi thế
+    nào, và mô hình huấn luyện ra sao? Trả lời câu cuối: nếu chỉ được nhìn
+    đường cong mất mát, bạn có phát hiện ra lỗi này không?
+
+  \item Đẩy label smoothing tới chỗ nó hỏng. \code{ch08\_recipe.py} chạy
+    \(\epsilon_{ls}\) bằng 0.0 và 0.1. Thêm 0.3, 0.5 và 0.9, giữ nguyên ba seed,
+    và in cả cột \code{excess}. Có giá trị nào mà khớp đúng cả câu tụt hẳn
+    không? Đối chiếu chỗ ấy với hàng \(\epsilon_{ls} = 0.2\) của bảng 3, nơi bài
+    đo BLEU 25.7 so với 25.8 của base, và nói vì sao hai bảng không so trực tiếp
+    được với nhau.
+\end{bt}
+
+\tierextend
+
+\begin{bt}
+  \item Mục~\ref{sec:ch08-dong-ho} in hai cột cho hai cách đọc chữ
+    \enquote{recurrent}, và vòng lặp Python của repo này là cột chậm. Câu hỏi:
+    bao nhiêu phần của khoảng cách ấy là bản chất của tính tuần tự, và bao nhiêu
+    là chi phí của trình thông dịch? Thiết kế một phép đo tách hai phần, ví dụ
+    bằng cách viết cùng một vòng lặp ấy dưới \code{torch.compile} hoặc
+    \code{torch.jit.script} và so ba cột thay vì hai. Kết luận của bạn đổi cách
+    đọc bảng 1 chỗ nào?
+
+  \item Đây là chỗ còn mở thật sự, và mục~\ref{sec:ch08-thu-tu-ln} dừng lại ở
+    đúng mép của nó. Định lý 1 chứng minh trong cấu hình đặt
+    \(\mat{W}^Q = \mat{W}^K = 0\), tức attention là trung bình cộng đều ở lúc
+    khởi tạo. Câu hỏi: upper bound ấy còn đúng dạng nào khi \(\mat{W}^Q\) và
+    \(\mat{W}^K\) khởi tạo như \code{nn.Linear} thật sự làm, tức đều trên
+    \([-1/\sqrt{n_{\mathrm{in}}}, 1/\sqrt{n_{\mathrm{in}}}]\)? Làm được một
+    trong hai chiều là đủ: dẫn lại upper bound ấy với giả thiết khởi tạo mới,
+    hoặc dựng một dãy mô hình mà số đo tách hẳn khỏi \(1/\sqrt{L}\) đủ để nói
+    upper bound cũ không mô tả chúng. Biết trước: mục~\ref{sec:ch07-chia-can} đã đo rằng khởi tạo ấy cho
+    phương sai thành phần 1/3 chứ không phải 1, nên hằng số sẽ không sạch.
+
+  \item Bảng 1 của bài có ba cột, tất cả đều là hàm của \(n\), \(d\), \(k\) và
+    \(r\). Mục~\ref{sec:ch08-cho-vo} đo được một đại lượng không viết được thành
+    hàm của bốn tham số ấy, vì nó phụ thuộc cache của máy. Đề xuất một cột thứ
+    tư cho bảng 1 mô tả chi phí truy cập bộ nhớ, định nghĩa nó đủ chặt để tính
+    được cho cả bốn hàng, rồi tính. Nếu cột của bạn phải mang thêm một tham số
+    của phần cứng, hãy nói rõ đó là tham số nào, và trả lời câu thật sự khó:
+    một bảng \tn{độ phức tạp}{complexity} mang tham số phần cứng thì còn là một
+    bảng độ phức tạp
+    nữa không?
+
+  \item Mục~\ref{sec:ch08-dieu-chuan} đo được dropout làm hỏng ở đây và bài đo
+    được nó đáng 1.2 BLEU. Chương này quy chỗ khác nhau cho lượng dữ liệu, và
+    đó là một giả thuyết chưa được kiểm ở đây. Kiểm nó: giữ nguyên mọi thứ và
+    quét số cặp huấn luyện từ 6000 lên tới chỗ máy bạn còn chịu được, ở cả
+    \(P_{drop} = 0.0\) và \(0.1\), rồi hỏi hai đường có cắt nhau không. Nếu
+    không cắt, giả thuyết \enquote{tại ít dữ liệu} sai, và lời giải thích còn
+    lại là văn phạm hữu hạn sinh ra corpus chứ không phải số lượng; thiết kế
+    tiếp một phép đo tách hai thứ ấy.
+\end{bt}
