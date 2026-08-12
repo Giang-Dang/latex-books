@@ -1,0 +1,66 @@
+% Four steps the router runs over a client document before it prints and
+% hashes the result to a uint64 plan cache key. Referenced from chapter 17.
+% Bare tikzpicture; the figure environment, caption and label live at the
+% call site.
+%
+% The point of the picture is what survives to the hash and what does not.
+% ValidateOperation sits between the two normalisations and changes nothing
+% in the document, which is worth showing because it is surprising.
+% NormalizeVariables is where a literal argument value is lifted out into a
+% JSON side channel that never reaches the hash, so two requests differing
+% only in that value land on the same cache key. The operation name is
+% blanked only in the bytes fed to the hash, not in the document itself.
+\begin{tikzpicture}[
+    font=\small,
+    xform/.style={draw, rounded corners=2pt, minimum width=22mm,
+                  minimum height=9mm, align=center, font=\scriptsize},
+    gate/.style={draw, dashed, rounded corners=2pt, minimum width=22mm,
+                 minimum height=9mm, align=center, font=\scriptsize},
+    final/.style={draw, thick, rounded corners=2pt, minimum width=26mm,
+                  minimum height=9mm, align=center, font=\scriptsize,
+                  fill=black!8},
+    side/.style={draw, rounded corners=2pt, minimum width=26mm,
+                 minimum height=9mm, align=center, font=\scriptsize,
+                 fill=black!15},
+    flow/.style={-{Stealth[length=2mm]}},
+    branch/.style={-{Stealth[length=2mm]}, dashed},
+    note/.style={font=\scriptsize, gray, align=center, inner sep=1pt},
+    hdr/.style={font=\scriptsize\itshape, align=center}
+  ]
+
+  % -- the four steps, in source order -----------------------------------
+  \node[hdr] at (4.05,2.5) {four steps over the client document, in source order};
+
+  \node[xform] (n1) at (0.0,1.5) {\code{Normalize}\\\code{Operation}};
+  \node[gate]  (n2) at (2.7,1.5) {\code{Validate}\\\code{Operation}};
+  \node[xform] (n3) at (5.4,1.5) {\code{Normalize}\\\code{Variables}};
+  \node[xform] (n4) at (8.1,1.5) {\code{Remap}\\\code{Variables}};
+
+  \draw[flow] (n1) -- (n2);
+  \draw[flow] (n2) -- (n3);
+  \draw[flow] (n3) -- (n4);
+
+  \node[note] at (2.7,0.7) {checks the document, changes nothing;\\
+    sits between the two normalisations};
+
+  % -- print, then hash -----------------------------------------------------
+  \node[xform] (p) at (8.1,-1.6)  {print,\\name blanked};
+  \node[final] (h) at (11.0,-1.6) {hash to \code{uint64}\\the plan cache key};
+
+  \draw[flow] (n4) -- (p);
+  \draw[flow] (p) -- (h);
+
+  \node[note, anchor=north] at (9.55,-3.1)
+    {name blanked only in the hash input;\\
+     the document itself still names the operation};
+
+  % -- the literal argument's side channel -----------------------------------
+  \node[side] (j) at (5.4,-1.6) {\code{3}\\JSON side channel};
+
+  \draw[branch] (n3) -- (j);
+
+  \node[note, anchor=north] at (5.4,-2.2)
+    {\code{first: 3} becomes \code{first: \$a};\\
+     same key for \code{first: 3} and \code{first: 7}};
+
+\end{tikzpicture}

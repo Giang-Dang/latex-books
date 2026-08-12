@@ -1,0 +1,62 @@
+% The two federation planners answer "which subgraph serves this field" in
+% opposite styles. Referenced from chapter 17. Bare tikzpicture; the figure
+% environment, caption and label live at the call site.
+%
+% The point of the picture is the asymmetry at the bottom of each column.
+% Apollo enumerates complete candidate plans and prices each one, so a
+% cartesian product needs a ceiling (maxEvaluatedPlans) to stay bounded.
+% Cosmo never enumerates: at each node with more than one candidate
+% subgraph it sorts by three keys and takes the first, so there is nothing
+% to bound. Neither column argues the other is wrong.
+\begin{tikzpicture}[
+    font=\small,
+    keep/.style={draw, thick, rounded corners=2pt, minimum width=26mm,
+                 minimum height=8mm, align=center, font=\scriptsize,
+                 fill=black!8},
+    discard/.style={draw, dashed, rounded corners=2pt, minimum width=26mm,
+                    minimum height=8mm, align=center, font=\scriptsize,
+                    fill=black!5},
+    crit/.style={draw, rounded corners=2pt, minimum width=30mm,
+                 minimum height=8mm, align=center, font=\scriptsize},
+    flow/.style={-{Stealth[length=2mm]}},
+    note/.style={font=\scriptsize, gray, align=center, inner sep=1pt},
+    hdr/.style={font=\scriptsize\itshape, align=center}
+  ]
+
+  % -- left: Apollo, enumerate and price -------------------------------------
+  \node[hdr] at (2.0,4.6) {Apollo: enumerate complete\\plans, price, keep cheapest};
+
+  \node[note] at (2.0,3.6)
+    {\code{fetchCost = 1000} per fetch\\
+     \code{pipeliningCost = 100} per sequential stage};
+
+  \draw[dashed] (0.7,2.6) -- (3.3,2.6);
+  \node[note, anchor=north] at (2.0,2.2)
+    {ceiling: \code{maxEvaluatedPlans}\\defaults to \code{10000}};
+
+  \node[discard] (pl1) at (2.0,1.0)  {\code{plan 1}\\higher cost};
+  \node[keep]    (pl2) at (2.0,-0.4) {\code{plan 2}\\cheapest, kept};
+  \node[discard] (pl3) at (2.0,-1.8) {\code{plan 3}\\higher cost};
+
+  \draw (pl1.south west) -- (pl1.north east);
+  \draw (pl3.south west) -- (pl3.north east);
+
+  % -- right: Cosmo, sort and take the first ---------------------------------
+  \node[hdr] at (9.0,4.6) {Cosmo: at each node, sort\\candidates and take the first};
+
+  \node[note] at (9.0,3.6)
+    {no cost function;\\three sort keys decide it};
+
+  \node[note, anchor=north] at (9.0,2.2)
+    {no \code{maxEvaluatedPlans}:\\nothing enumerated, nothing to bound};
+
+  \node[crit] (s1) at (9.0,1.0)  {1. subtree served\\(descending)};
+  \node[crit] (s2) at (9.0,-0.4) {2. sibling already\\selected (prefer it)};
+  \node[crit] (s3) at (9.0,-1.8) {3. \code{@key} jumps\\(ascending)};
+  \node[keep] (win) at (9.0,-3.2) {first in the\\sorted order};
+
+  \draw[flow] (s1) -- (s2);
+  \draw[flow] (s2) -- (s3);
+  \draw[flow] (s3) -- (win);
+
+\end{tikzpicture}

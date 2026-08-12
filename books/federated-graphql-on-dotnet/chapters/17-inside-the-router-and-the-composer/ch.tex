@@ -1,7 +1,60 @@
 \chapter{Inside the Router and the Composer}
 \label{ch:inside-the-router-and-the-composer}
 
-\emph{Not yet drafted.} Planned scope: How wgc composes (the satisfiability algorithm), Cosmo normalization, planning and the plan cache, entity fetch batching, and the Apollo Router planner for contrast.
+Chapter~\ref{ch:inside-hotchocolate} read an executor that somebody at
+ChilliCream wrote in C\#. This chapter reads the two processes in front of it,
+and neither of them is written in a language this book has used: the composer is
+TypeScript and the router is Go. That turns out to matter less than the other
+thing they have in common, which is that no Mosaic developer wrote a line of
+either and both make decisions that show up in Mosaic's bills.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/17-inside-the-router-and-the-composer/01-section-name}
+\index{router!and the composer, read as source}%
+Four chapters have asked the same question in four different forms and none
+could answer it. Chapter~\ref{ch:how-a-federated-query-actually-runs} asked
+whether the plan for a query is cached between requests.
+Chapter~\ref{ch:enter-the-router} asked whether two documents that plan to
+identical JSON share a cache entry, and was careful to say it had not found out.
+Chapter~\ref{ch:entity-resolution-done-right} asked whether any of the
+representation machinery reaches the key.
+Chapter~\ref{ch:hard-modeling-problems} asked about one argument on one field.
+The answer is in section~\ref{sec:ch17-what-the-plan-cache-keys-on}, it is the
+same answer to all four, and the reason nobody had it is worth stating first: a
+Cosmo Router has metrics for seven of its caches and publishes none of them
+unless you ask.
+
+Two things I did not expect came out of measuring it. Eleven documents that
+differ in their operation name, their variable names, their argument values and
+their whitespace all share one plan, and then an alias buys a second one. And
+the two headers that show you what the planner did are the two that guarantee it
+was done, so the planning time in a trace is the cold number and there is no way
+to see the warm one.
+
+\index{composer!satisfiability, and which route it blames}%
+On the composer's side this chapter pays a debt from
+chapter~\ref{ch:composition}, which measured that an unresolvable key is
+reported against exactly one of Catalog's four root fields returning a product
+and said outright that it could not explain why. It reports the first route in
+declaration order, and I know that because I moved a field to the top of
+\code{type Query} and watched the blame follow it.
+
+Four source trees, all cloned and read rather than browsed a page at a time.
+The composer is \code{@wundergraph/composition} at tag \code{0.63.2}, commit
+\code{818c67e}. The router is \code{router@0.337.1}, commit \code{2f50ab8}. The
+planner is a third project, \code{graphql-go-tools} at \code{v2.14.2}, commit
+\code{ed1d3ad}: it is what the router's \code{go.mod} pins, and it is where
+almost everything interesting in this chapter turned out to live. Apollo appears
+once, in section~\ref{sec:ch17-from-a-document-to-a-fetch-tree}, at
+\code{@apollo/query-planner@2.14.3}.
+
+The companion repository is at tag \code{ch17}, at which no Mosaic service
+changes by a line. What the tag adds is two case scripts, a step in each
+verification script for each of them, and one comment in
+\code{router/config.yaml} about a default nobody should copy.
+
+\input{chapters/17-inside-the-router-and-the-composer/01-the-last-thing-the-composer-does}
+\input{chapters/17-inside-the-router-and-the-composer/02-what-normalization-makes-of-your-document}
+\input{chapters/17-inside-the-router-and-the-composer/03-what-the-plan-cache-keys-on}
+\input{chapters/17-inside-the-router-and-the-composer/04-from-a-document-to-a-fetch-tree}
+\input{chapters/17-inside-the-router-and-the-composer/05-one-request-per-subgraph-per-level}
+\input{chapters/17-inside-the-router-and-the-composer/06-watching-it-changes-it}
+\input{chapters/17-inside-the-router-and-the-composer/07-your-turn}

@@ -1,0 +1,154 @@
+\section{What Normalisation Makes of Your Document}
+\label{sec:ch17-what-normalization-makes}
+\index{router!normalisation pipeline|(}%
+
+The router does not plan the document you sent. It plans what is left of it
+after four passes, and since the plan cache is keyed on a hash of that residue,
+what those passes throw away is exactly what your clients can vary for free.
+Reading them in order is the only way I found to predict which of two documents
+would share a plan, and I got two of my own predictions wrong before I did.
+
+\index{router!the four steps, and where validation sits}%
+The four calls are in the prehandler, in this order:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+NormalizeOperation
+ValidateOperation
+NormalizeVariables
+RemapVariables
+\end{minted}
+
+Validation sits in the middle of normalisation rather than before it or after
+it, which surprised me and has a decent reason: the first pass is what reduces a
+multi-operation document to the one operation being run, and validating before
+that would mean validating operations nobody asked for. It also means the third
+and fourth passes run on a document already known to be valid, so they can
+rewrite it without checking anything.
+
+\subsection*{The first pass, and what it is not}
+
+\index{router!static normaliser options}%
+The static normaliser is built with four options:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{go}
+func buildNormalizationOptions(enableDefer bool, validateInlineArguments config.ValidateInlineArguments) []astnormalization.Option {
+	opts := []astnormalization.Option{
+		astnormalization.WithRemoveNotMatchingOperationDefinitions(),
+		astnormalization.WithInlineFragmentSpreads(),
+		astnormalization.WithRemoveFragmentDefinitions(),
+		astnormalization.WithRemoveUnusedVariables(),
+	}
+\end{minted}
+
+Read that list and then read what is missing from it, because the missing one is
+the interesting one. There is no \code{WithExtractVariables()}.
+Chapter~\ref{ch:enter-the-router} measured that the planner lifts literal
+arguments out into variables, and I assumed on first reading that this pass did
+it. It does not. That happens later, and the distinction matters because the two passes
+have different jobs and only one of them runs on every request shape.
+
+What the first pass does, in the order the stages are assembled: drop every
+operation definition but the one being run; statically resolve a
+\code{@skip} or \code{@include} whose argument is a literal boolean, deleting
+the selection outright; inline every named-fragment spread, in place, at the
+spread's position; remove self-aliasing, which means only \code{foo: foo} and
+never a genuinely different alias; splice inline fragments into their parents;
+merge sibling inline fragments; drop the fragment definitions that are now
+unused; and deduplicate identical fields, keeping the position of the first
+occurrence.
+
+\index{router!nothing sorts a selection set}%
+Nothing in that list sorts anything. I went looking for a pass that puts a
+selection set into a canonical order and there is none, in any of the stages,
+which is a fact section~\ref{sec:ch17-what-the-plan-cache-keys-on} cashes in.
+
+\subsection*{Where a literal becomes a variable}
+
+\index{router!variable extraction}%
+The lifting happens in the third call, through a different normaliser built for
+the purpose. For every argument whose value is a literal, the value is
+serialised to JSON, written into the document's variables under a generated
+name, and the argument rewritten to point at that name. The names come from
+here:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{go}
+const (
+	alphabet = `abcdefghijklmnopqrstuvwxyz`
+)
+
+func (d *Document) GenerateUnusedVariableDefinitionName(operationDefinition int) []byte {
+	var i, k int64
+
+	for i = 1; i < math.MaxInt64; i++ {
+		out := make([]byte, i)
+		for j := range alphabet {
+			for k = 0; k < i; k++ {
+				out[k] = alphabet[j]
+			}
+			_, exists := d.VariableDefinitionByNameAndOperation(operationDefinition, out)
+			if !exists {
+				return out
+			}
+		}
+	}
+
+	return nil
+}
+\end{minted}
+
+So \code{a}, then \code{b}, and after \code{z} it goes to \code{aa} and
+\code{bb} rather than \code{ab}. The fourth pass renames your own declared
+variables by the same scheme, positionally, by first use. Whatever you called
+them is gone.
+
+\index{router!the value travels beside the document}%
+The half that decides everything downstream is where the literal went. It is not
+in the document any more; it is in a JSON side channel that travels alongside.
+The document says \code{first: \$a} whether you wrote \code{3} or \code{7}, and
+the difference between those two requests lives somewhere the next step never
+looks. Figure~\ref{fig:ch17-normalization-to-key} is the whole path with that
+branch on it.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch17-normalization-to-key}
+  \caption{The four passes, and the one thing that leaves the document on the
+  way through. A literal argument is lifted into a generated variable at the
+  third step and its value continues beside the document rather than inside it,
+  so the hash at the end never sees it. The operation name is removed for the
+  hash alone and put straight back, which is why the plan document the router
+  will show you still carries a name the cache key ignored.}
+  \label{fig:ch17-normalization-to-key}
+\end{figure}
+
+\subsection*{The name comes off, and goes back on}
+
+\index{router!the operation name is blanked for the hash}%
+The last step before the hash is the one with the comment that explains it:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{go}
+	// Print the operation without the operation name to get the pure normalized form
+	// Afterward we can calculate the operation ID that is used as a stable identifier for analytics
+
+	o.kit.normalizedOperation.Reset()
+	// store the original name of the operation
+	nameRef := o.kit.doc.OperationDefinitions[o.operationDefinitionRef].Name
+
+	staticNameRef := o.kit.doc.Input.AppendInputBytes([]byte(""))
+	o.kit.doc.OperationDefinitions[o.operationDefinitionRef].Name = staticNameRef
+
+	err = o.kit.printer.Print(o.kit.doc, o.kit.normalizedOperation)
+\end{minted}
+
+The name is saved, replaced with an empty string, the document printed, and that
+print is hashed. Then the name goes back and the document is printed a second
+time, and \emph{that} second print is the one other things in the router use. So
+the operation name is present in the normalised representation and absent from
+the plan cache key, and those two facts are going to collide in the next
+section in a way I find genuinely awkward.
+
+\medskip
+That is what the router makes of a document. What it does with the resulting
+number is the question four chapters have been carrying.
+
+\index{router!normalisation pipeline|)}%

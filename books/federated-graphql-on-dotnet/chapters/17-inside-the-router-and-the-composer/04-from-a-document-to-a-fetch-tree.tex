@@ -1,0 +1,144 @@
+\section{From a Document to a Fetch Tree}
+\label{sec:ch17-from-a-document-to-a-fetch-tree}
+\index{planner!how a plan is built|(}%
+
+Planning proper is four steps: select the operation, select nodes, build
+planning paths, and walk them once per datasource to produce a raw plan. What
+comes out is not the plan a query-plan header shows you. Post-processing turns
+it into that, and post-processing is not part of planning at all: it sits
+outside the planner and the router calls it by hand immediately afterwards.
+That split is not an accident of layering. Several of the things
+post-processing does need the whole flat list of fetches at once, and a visitor
+building that list cannot see the end of it while it is still in the middle.
+
+\subsection*{Choosing between two subgraphs that could both answer}
+
+\index{planner!node suggestions and the sort}%
+The interesting decision is which subgraph serves a field when more than one
+could. In Mosaic that happens less than you would think, because
+chapter~\ref{ch:strangling-the-monolith} cut the seams so that almost every
+field has one owner. It happens constantly on a graph with shareable fields and
+\code{@provides}. The decision is a sort:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{go}
+	// sort by the number of jumps, selectable child count, selected siblings
+	slices.SortFunc(nodesInfos, func(a, b nodeInfo) int {
+		if usePriority {
+			// desc on count
+			if n := cmp.Compare(b.selectableChilds, a.selectableChilds); n != 0 {
+				return n
+			}
+
+			if a.hasSelectedSibling != b.hasSelectedSibling {
+				if a.hasSelectedSibling {
+					return -1 // a comes first
+				}
+				if b.hasSelectedSibling {
+					return 1 // b comes first
+				}
+			}
+		}
+
+		// acs order from 0 to n
+		return cmp.Compare(a.jumpCount, b.jumpCount)
+	})
+\end{minted}
+
+Three keys. First, how much of the remaining subtree this datasource could serve
+if chosen, descending, so a subgraph that can answer a field and four of its
+children beats one that can answer the field alone. Second, whether a sibling on
+the same source has already been selected, which is the rule that keeps one
+fetch from splitting into two. Third, the number of \code{@key} jumps needed to
+get there, ascending.
+
+Then it takes the first one. There is no cost model, no scoring of the finished
+plan, and no comparison of alternatives: the candidates for this node are put in
+an order and the head is chosen. \code{@requires} and \code{@key} both expand
+through the same field-collection machinery, and \code{@provides} enters earlier,
+while nodes are being collected, which is why a promised field looks to the sort
+like a field the promising subgraph simply has.
+
+\subsection*{Apollo does the opposite thing}
+
+\index{Apollo Router!planner contrasted with Cosmo's}%
+This book has mostly treated the two federation stacks as interchangeable at the
+level of ideas, and here they are not. Apollo's query planner generates
+candidate plans and prices them. Its own comment on the function that does it:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+ * Given some initial partial plan and a list of options for the remaining parts that need to be added to that plan to make it complete,
+ * this method "efficiently" generates (or at least evaluate) all the possible complete plans and the returns the "best" one (the one
+ * with the lowest cost).
+\end{minted}
+
+The cost function is explicit, and its two constants say what Apollo believes
+about federated execution:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{typescript}
+const fetchCost = 1000;
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{typescript}
+const pipeliningCost = 100;
+\end{minted}
+
+A fetch is priced at a thousand fields, so the network hop dwarfs anything the
+resolvers do; and fetches in sequence are multiplied relative to fetches in
+parallel, so depth hurts far more than width. The second of those is the belief
+chapter~\ref{ch:strangling-the-monolith} argued from the shape of Mosaic's plan,
+when it read the \code{Parallel} node as evidence that the seams had been cut in
+the right places. Here the same belief is a constant in somebody's source file.
+
+Because the search space is a product of the choices, it needs a ceiling, and
+there is one: the number of complete plans the planner will evaluate defaults to
+ten thousand, and it is a configuration key with a validation error behind it.
+
+\index{planner!optimiser against heuristic}%
+So one planner is an optimiser that needs a safety valve and the other is a
+heuristic that cannot run long.
+Figure~\ref{fig:ch17-two-planners} puts them side by side. I do not think either
+side of that trade is obviously right, and I distrust my own instinct here,
+because a sort is easier to explain and being easier to explain is not an
+argument. What I can say is what each one buys. Apollo will find a better plan
+on a graph where the good plan is not the locally obvious one, and it will
+sometimes spend real time doing it. Cosmo will produce its plan in time that
+scales with the query rather than with the graph's ambiguity, and on a graph
+where two routes genuinely differ in cost it has no machinery for noticing.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch17-two-planners}
+  \caption{The same job, done two ways. Apollo enumerates complete plans, prices
+  each with a cost function whose constants say a fetch is worth a thousand
+  fields and sequencing is worth a hundred, and keeps the cheapest, which is why
+  it needs a ceiling on how many it will consider. Cosmo sorts the candidates
+  for each node by three local keys and takes the first, which is why it needs
+  no ceiling and has nowhere to express that one route is dearer than another.}
+  \label{fig:ch17-two-planners}
+\end{figure}
+
+That difference also explains why the two projects put their caches where they
+do. A planner that may evaluate ten thousand plans has a great deal to amortise.
+A planner that sorts a short list per node has much less, and Cosmo caches it
+anyway, which tells you the cost is not nothing.
+
+\subsection*{What post-processing adds}
+
+\index{planner!post-processing}%
+The pass the router runs afterwards is where a raw plan becomes the thing
+chapter~\ref{ch:how-a-federated-query-actually-runs} printed. It deduplicates
+fetches, assigns the fetch identifiers those plans carry, resolves the input
+templates, converts a generic fetch into the concrete entity or batch-entity
+form, and works out the dependency ordering that decides what can run at the
+same time.
+
+That last one is worth pinning down, because \enquote{Parallel} in a printed
+query plan could easily be a label somebody applies for readability. It is not.
+The grouping is computed from the fetch dependency graph, and the group is run
+with an ordinary Go \code{errgroup}, which is to say concurrently, for real.
+
+\medskip
+Which is a good moment to look at what those fetches actually carry, because the
+router does one more thing to them on the way out that no query plan shows.
+
+\index{planner!how a plan is built|)}%

@@ -1,0 +1,147 @@
+\section{Watching It Changes It}
+\label{sec:ch17-watching-it-changes-it}
+\index{Advanced Request Tracing!and the plan cache|(}%
+
+Chapter~\ref{ch:how-a-federated-query-actually-runs} named Advanced Request
+Tracing once, in a sentence about why the sample router runs in development
+mode, and never printed any of it. It is the router's answer to the request
+timeline this book has been reading off HotChocolate consoles since
+chapter~\ref{ch:the-life-of-a-request}, and it reports the phases you would
+expect:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+parse_stats      duration_nanoseconds
+normalize_stats  duration_nanoseconds
+validate_stats   duration_nanoseconds
+planner_stats    duration_nanoseconds
+\end{minted}
+
+Then a fetch tree, with every subgraph request and response body in it, which is
+where section~\ref{sec:ch17-one-request-per-subgraph}'s representation counts
+came from.
+
+\subsection*{The line that spoils it}
+
+\index{plan cache!skipped when you look at it}%
+In the planner, before anything else happens:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{go}
+	// if we have tracing enabled or want to include a query plan in the response we always prepare a new plan
+	// this is because in case of tracing, we're writing trace data to the plan
+	// in case of including the query plan, we don't want to cache this additional overhead
+
+	skipCache := options.TraceOptions.Enable || options.ExecutionOptions.IncludeQueryPlanInResponse
+\end{minted}
+
+The branch that follows returns before the cache is read, before it is written,
+and before the single-flight group. The two request headers that let you see
+what the planner did, \code{X-WG-Trace} and \code{X-WG-Include-Query-Plan}, are
+the two that guarantee it did it.
+
+\index{plan cache!the traced control}%
+The comment gives a reason, and the reason is sound: trace data is written onto
+fields of the plan object itself, so a traced request sharing a cached plan with
+concurrent requests would be scribbling on something other requests are reading.
+Given that design, bypassing the cache is the only safe thing to do. But sound
+reasons still have consequences, and this one has a sharp consequence.
+
+I ran it rather than trusting the read. One document, eight requests:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+untraced-1   planHit=false
+untraced-2   planHit=true
+untraced-3   planHit=true
+traced-1     planHit=false
+traced-2     planHit=false
+planonly     planHit=false
+untraced-4   planHit=true
+untraced-5   planHit=true
+\end{minted}
+
+Every request is the same document with the same plan key. The first is a cold
+miss. Then two hits. Then two traced requests, both of which miss, on a document
+this router has planned twice already. Then the untraced requests afterwards hit
+again, so a traced request does not poison the cache either; it simply is not
+part of it.
+
+\index{Advanced Request Tracing!reports only the cold number}%
+So the planning duration in a trace is always the cold number. Two consecutive
+traced requests for that document reported 832,666 and 1,083,310 nanoseconds of
+planning, and both are measurements of work that would not have happened at all
+without the header asking for them. Somebody tuning a router, reading
+\code{planner\_stats}, and concluding that planning costs about a millisecond per
+request would be wrong by however good their cache hit rate is, and the tool
+that told them cannot tell them that.
+
+The warm cost is not observable through the mechanism that reports the cold one,
+by construction. What is observable is whether a request hit, and there are two
+ways to see it. \code{planCacheHit} is an access-log expression like any other,
+which is what this chapter's cases are built on and what I would put in a log on
+a real deployment. The other is a debug setting that puts five cache results
+into response headers, and it is the one to reach for at a keyboard:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+cold      plan=MISS normalization=MISS
+warm-1    plan=HIT normalization=HIT
+warm-2    plan=HIT normalization=HIT
+traced    plan=MISS normalization=HIT
+planonly  plan=MISS normalization=HIT
+warm-3    plan=HIT normalization=HIT
+\end{minted}
+
+The two columns are \code{X-WG-Execution-Plan-Cache} and
+\code{X-WG-Normalization-Cache}, shortened by the case that prints them.
+
+\index{plan cache!the skip is the plan cache alone}%
+That is the same finding arriving through a completely different mechanism,
+which is the only reason I am confident in it, and it says one thing the access
+log could not. On the traced request the normalisation cache still reports a
+hit while the plan cache reports a miss. The header is not telling you that
+tracing bypasses the pipeline; it is telling you that tracing bypasses exactly
+one cache out of the several a request passes through, which is what the source
+says and what a single \code{planHit=false} could not have distinguished from a
+request being treated as new all the way down.
+
+\subsection*{Seven caches and a default of false}
+
+\index{router!nine caches, seven with metrics}%
+The server struct holds nine caches and the router registers metrics for seven
+of them by name: the plan cache, three around normalisation, one for persisted
+operations, one for validation, and one for the operation hash. The two with no
+metrics are the complexity cache and the slow-plan fallback. It publishes none
+of the seven unless \code{graphql\_cache} is turned on under the Prometheus
+block, and that setting defaults to false.
+
+I am not sure that default is wrong, exactly. Cache metrics are cardinality and
+somebody decided you should opt in. What I am sure of is the effect it had on
+this book: four chapters asked a question about a cache, a fifth had the
+endpoint in front of it, and the answer arrived only when somebody stopped
+looking for a counter and asked the router to log its own key. A router whose
+caches are invisible is a router you cannot size, and sizing it is a thing the
+configuration expects you to do, since the plan cache takes an entry count.
+
+\code{router/config.yaml} in the companion repository carries the block as a
+comment with this measurement beside it, in the same spirit as the WebSocket
+block chapter~\ref{ch:identity-and-authorization} left there: a setting Mosaic
+does not ship, recorded where somebody operating this graph would look for it.
+Chapter~\ref{ch:observability} owns observability and is where it stops being a
+comment.
+
+\medskip
+\index{router!what reading it was worth}%
+Reading two processes nobody on your team wrote is a strange way to spend a
+chapter, and it has paid differently from
+chapter~\ref{ch:inside-hotchocolate}'s. That chapter mostly confirmed an
+executor and found its surprises attached to lines somebody had written for
+another reason. This one found that the composer blames a route rather than a
+fault, that a plan is shared by more documents than I would have guessed and
+split by fewer things than I would have accepted, and that the instrument
+reports a number the running system never pays. None of the three is a bug and
+all three change what you would do.
+
+The next chapter goes back out to the wire, on the hop this one has not looked
+at: chapter~\ref{ch:the-wire-completely} owns everything between a client and
+the router, where this chapter has been standing entirely on the other side of
+it.
+
+\index{Advanced Request Tracing!and the plan cache|)}%
