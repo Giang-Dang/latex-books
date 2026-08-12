@@ -1,0 +1,160 @@
+% No \label here. \exercises is a starred section, so a label attached to it
+% takes the number of the last *numbered* section instead - it silently
+% resolved to 9.6 in a first draft, which is the closing section, and the build
+% reported nothing because the label was defined, just wrong. Prose refers to
+% these by name.
+\exercises
+
+\tierunderstand
+
+\begin{bt}
+  \item Dẫn \eqref{eq:ch09-phan-attention} lại từ đầu, viết rõ chi phí mỗi
+    token mỗi tầng của bốn phép chiếu, của mạng truyền thẳng, và của hai tích
+    attention. Rồi trả lời câu đắt hơn: vì sao số tầng biến mất khỏi kết quả,
+    và điều đó còn đúng không nếu một mô hình đặt \(\dff\) khác nhau ở các tầng
+    khác nhau?
+
+  \item Mục~\ref{sec:ch09-sau-nd} đo được \(6ND\) sai 2.8\% ở GPT-3 và 11\% ở
+    GPT-1, dù GPT-3 lớn hơn nghìn lần. Giải thích bằng
+    \eqref{eq:ch09-phan-attention}. Rồi tính mà không chạy gì: một mô hình
+    \(\dmodel = 4096\) phải lấy ngữ cảnh bằng bao nhiêu để \(6ND\) sai đúng
+    10\%?
+
+  \item Bảng 1 của Kaplan đếm một trong hai tích bậc hai. Chỉ ra hàng nào của
+    bảng đáng lẽ phải có mặt và không có, và viết ra ô \code{FLOPs per Token}
+    của nó. Rồi trả lời: nếu sửa bảng cho đủ, hàng \code{Total} đổi thế nào, và
+    điều kiện \(d_{\mathrm{model}} \gg n_{\mathrm{ctx}}/12\) mà bài viết ở mục
+    2.1 có đổi theo không?
+
+  \item Từ \eqref{eq:ch09-chinchilla}, chứng minh rằng cực tiểu của \(L\) dưới
+    ràng buộc \(6ND = C\) cho \(N_{\mathrm{opt}} \propto C^{a}\) với
+    \(a = \beta/(\alpha+\beta)\). Rồi nói vì sao \(a + b = 1\) là kết luận của
+    dạng hàm chứ không phải một phát hiện thực nghiệm.
+
+  \item Mục~\ref{sec:ch09-phat-kien} đo được masked language model thu 76 đích
+    trên một chuỗi 512 token còn \tn{mô hình ngôn ngữ}{language model} thu 512.
+    Nhưng hai mục tiêu
+    ấy không cho ra hai mô hình so sánh trực tiếp được. Nêu ít nhất hai lý do,
+    và với mỗi lý do nói phép đo nào sẽ khử được nó.
+
+  \item Bảng 5 mục 5.1 của bài BERT cho SQuAD F1 là 88.5 ở cấu hình đầy đủ,
+    87.9 khi bỏ next-sentence prediction, và 77.8 khi bỏ cả hai chiều lẫn
+    next-sentence prediction. Tách hai đóng góp ra từ ba con số ấy, rồi nói
+    phép tách của bạn dựa trên giả thiết nào và giả thiết ấy có được bảng kiểm
+    hay không.
+
+  \item Kaplan và Hoffmann định nghĩa \(N\) ngược nhau, một bên trừ embedding
+    và một bên cộng. Dùng bảng ở mục~\ref{sec:ch09-sau-nd}: ở GPT-1 và ở GPT-3,
+    một quy luật khớp theo định nghĩa này mà áp theo định nghĩa kia sẽ lệch bao
+    nhiêu? Rồi trả lời câu thật sự khó: chỗ lệch ấy có giải thích được khoảng
+    cách 0.73 với 0.50 không, và bạn kiểm bằng cách nào?
+
+  \item Mục~\ref{sec:ch09-cung-mot-khoi} giải ngược bảng 2 của GPT-2 ra bốn
+    kích thước từ điển quanh 40,500. Phép giải ấy giả thiết bề rộng, độ sâu và
+    \(\dff\) đều đúng như bảng in. Nêu một \tn{giả thuyết}{hypothesis} khác
+    giải thích được cùng
+    bốn khoảng cách ấy, rồi thiết kế một phép kiểm tách hai giả thuyết bằng
+    đúng những con số bài in.
+\end{bt}
+
+\tierapply
+
+Trạng thái xuất phát cho cả năm bài: clone repo companion, đứng ở thư mục gốc
+của nó, và checkout đúng tag của chương này.
+
+\begin{minted}{console}
+$ git clone https://github.com/Giang-Dang/rnn-to-transformer-lab.git
+$ cd rnn-to-transformer-lab
+$ git checkout ch09
+$ conda env create -f environment.yml
+$ conda activate rnn-to-transformer-lab
+$ python verify.py --only ch09
+\end{minted}
+
+Dòng cuối phải in ra \code{verify: ok}. Ba mục của chương này chạy hết dưới năm
+giây cộng lại, vì không mục nào huấn luyện mô hình; nếu máy bạn mất lâu hơn
+nhiều thì gần như chắc chắn là thời gian khởi động của trình thông dịch chứ
+không phải phép tính.
+
+Vẫn cảnh báo cũ: đừng gọi các script qua \code{conda run}.
+
+\begin{bt}
+  \item Dựng lại bảng đầu tiên của chương trên một mô hình bạn tra được siêu
+    tham số. Thêm một hàm vào \code{scaling.py} cho kiến trúc ấy nếu nó khác
+    hình dạng khối ở đây, rồi so số bạn dựng với số nó công bố. Nói rõ bạn lấy
+    siêu tham số từ đâu, và nếu con số không khớp thì đưa ra ít nhất hai cách
+    đọc trước khi kết luận cách nào đúng.
+
+  \item Đo giới hạn của \code{block\_params}. Hàm ấy giả thiết mạng truyền
+    thẳng có hai ma trận. Sửa nó cho kiến trúc dùng cổng, nơi tầng trong có ba
+    ma trận thay vì hai, rồi chạy lại \code{ch09\_counts.py} và nói bảng nào
+    đổi. Rồi chạy bộ test của chương:
+
+    \begin{minted}{console}
+$ python -m pytest -q tests/test_ch09.py
+    \end{minted}
+
+    Test nào bắt được thay đổi của bạn, test nào không, và vì sao?
+
+  \item Kiểm \eqref{eq:ch09-phan-attention} bằng đồng hồ chứ không bằng số học.
+    \code{ch08\_clock.py} của chương trước đo thời gian thật theo \(n\). Dùng
+    nó để hỏi: phần thời gian attention chiếm có đi theo \(n/(6d+n)\) không?
+    Biết trước là không, và mục~\ref{sec:ch08-cho-vo} đã nói vì sao. Chạy đi,
+    rồi đo xem hai đường tách nhau ở đâu và nói chỗ tách ấy khớp với đại lượng
+    nào của chương trước.
+
+  \item Đẩy \eqref{eq:ch09-chinchilla} tới chỗ nó vô nghĩa. Hàm ấy đơn điệu
+    giảm theo cả hai biến, nên nó luôn thích mô hình lớn hơn và dữ liệu nhiều
+    hơn nếu không có ràng buộc. Viết một script quét \(N\) từ \(10^{6}\) tới
+    \(10^{15}\) ở \(D\) cố định và tìm chỗ \(L\) rơi xuống dưới \(E = 1.69\).
+    Chỗ ấy có tồn tại không? Trả lời câu tiếp: điều đó nói gì về việc dùng hàm
+    này ngoài dải nó được khớp?
+
+  \item Dựng lại bảng A4 của Hoffmann, biết trước rằng
+    mục~\ref{sec:ch09-hai-quy-luat} đã thử và không được. Cài phép đếm của phụ
+    lục F từng dòng một, rồi quét độ dài chuỗi và kích thước từ điển trên một
+    lưới rộng hơn lưới chín điểm tôi thử. Nếu bạn tìm được cặp cho lại cả sáu
+    con số, viết ra. Nếu không, hãy nói rõ hơn tôi đã nói: dải nào của hai tham
+    số ấy bị loại trừ, và bị loại trừ bởi hàng nào của bảng?
+\end{bt}
+
+\tierextend
+
+\begin{bt}
+  \item Bài Hoffmann chỉ ra bài Kaplan sai vì một chi tiết của lịch learning
+    rate, và chi tiết ấy chỉ lộ ra khi ai đó chạy lại phép khớp với lịch đặt
+    đúng. Câu hỏi: còn chi tiết nào cùng loại trong chính bài Hoffmann? Chọn
+    một quyết định phương pháp của bài, dựng một phép kiểm cho nó ở quy mô bạn
+    chạy được, và nói trước kết quả nào sẽ làm bạn nghi ngờ. Chương này đã nêu
+    hai chỗ đáng ngờ, bảng A4 và bảng 2, và cả hai đều là chuyện tái lập chứ
+    không phải chuyện phương pháp; chỗ phương pháp thì chưa ai trong sách này
+    đụng tới.
+
+  \item Chương này không đo được luận điểm của chính nó, và
+    mục~\ref{sec:ch09-khong-do-duoc} nói corpus phải đổi chứ không phải script.
+    Dựng corpus ấy. Cần một văn phạm sinh ra một miền rộng và một miền hẹp nằm
+    trong nó, sao cho miền hẹp có ít dữ liệu và mang cấu trúc mà chỉ miền rộng
+    dạy được. Rồi chạy hai pha thật và trả lời: có chuyển giao không, và bạn
+    phân biệt \enquote{có chuyển giao} với \enquote{huấn luyện lâu hơn} bằng
+    phép đối chứng nào? Bài tập 1 tier ba của
+    chương~\ref{ch:mot-vector-cho-moi-tu} đã đòi một văn phạm khó hơn vì một lý
+    do khác; nếu bạn dựng nó rồi thì bài này nối tiếp được.
+
+  \item Cả hai bài \tn{quy luật scaling}{scaling law} đều khớp một hàm lũy thừa
+    lên mất mát và
+    không ai trong hai bài hỏi vì sao mất mát lại là hàm lũy thừa. Đọc
+    \eqref{eq:ch09-chinchilla} như một phát biểu về cấu trúc chứ không như một
+    phép khớp: số hạng \(E\) nói gì, và hai số hạng còn lại nói gì về chỗ hết
+    tham số so với chỗ hết dữ liệu? Rồi đề xuất một dạng hàm khác khớp cùng dữ
+    liệu và cho một dự đoán \emph{khác} ngoài dải đã khớp, và nói phép đo nào
+    phân biệt được hai dạng.
+
+  \item Mục~\ref{sec:ch09-sau-nd} đo được \(6ND\) sai 44\% ở ngữ cảnh 32768, và
+    mục~\ref{sec:ch08-cho-vo} đo được chi phí thật của phần bậc hai đến từ chỗ
+    ma trận điểm số rời cache chứ không từ số phép tính. Hai chuyện ấy là hai
+    đại lượng khác nhau cùng phụ thuộc \(n\). Câu hỏi: một công thức ngân sách
+    cho mô hình ngữ cảnh dài nên đếm cái nào? Đề xuất một thay thế cho \(6ND\)
+    trả lời được cả hai, định nghĩa nó đủ chặt để tính được, rồi tính cho GPT-3
+    ở bốn độ dài ngữ cảnh và nói công thức của bạn mang thêm tham số phần cứng
+    nào.
+\end{bt}

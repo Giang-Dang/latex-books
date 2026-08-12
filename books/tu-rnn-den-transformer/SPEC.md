@@ -91,16 +91,71 @@ number on what pulling it would buy: 25.2 times on the forward-plus-backward
 path. The chapter's own tier-three exercises hand the reader three more, of which
 the layer-norm one is genuinely open.
 
-Next action: chapter 09, "Tiền huấn luyện: BERT, GPT, và quy luật scaling", the
-bridge chapter ViT cannot be understood without. It inherits `transformer.py` at
-tag `ch08`. Two warnings from this session carry into it. It cites Kaplan 2020
-and Hoffmann 2022, neither of which this book has read yet, so decision 58's
-ledger rule applies from the first sentence: the `note` field says which sections
-were read and that field is a claim held to the same standard as a number. And it
-is the first chapter whose subject the running example cannot reach at all -
-decision 35's grammar has no pretraining story in it - so the honest shape is
-probably a chapter that cites rather than measures, and it should say so on the
-page rather than reaching for a toy experiment that measures nothing.
+Chapter 09 is drafted, and both warnings the SPEC handed it turned out to be
+right. It is the first chapter of this book that measures nothing about its own
+subject, because decision 35's grammar has no pretraining story in it; it says so
+on the page in a section of its own rather than reaching for a toy experiment
+(decision 64). And it read six papers this book had never opened, four of them
+vendor-hosted or arXiv-only, so decision 58's ledger did most of the work.
+
+What it did instead of measuring is count, and that is where the session went
+long. Every headline parameter count in BERT, GPT-1, GPT-2 and GPT-3 was rebuilt
+from those papers' own hyperparameter tables. Three do not come back:
+BERT-large's 340M rebuilds to 335.14M, GPT-2's table 2 is only reproducible from
+a vocabulary near 40,500 while its own section 2.3 announces 50,257, and GPT-3
+prints 175.0B in table 2.1 against 174,600M in its own table D.1. That became
+decision 65. GPT-1 states no parameter count at all, so the widely quoted 117M is
+nobody's number.
+
+The chapter's own finding is that Kaplan's table 1 counts one of attention's two
+quadratic products, confirmed against torch's operator counter and against
+Hoffmann's appendix F, and that it does not matter because 6ND drops that term
+anyway. What does matter is the size of the drop: the error is
+`1 + n/(6d)`, and `6d` is exactly chapter 08's `n = 2d + d_ff` crossover reached
+from the other side. Two chapters, two questions, one threshold.
+
+`BUDGET_TOTAL` stays at 1300 and decision 62's warning is answered for one
+chapter rather than deferred: chapter 09 adds three verification items that train
+nothing, 4.90s in total, and the whole run came in at 1001.60s. It is the first
+chapter since chapter 04 to add no training time.
+
+The audit earned its keep and caught one thing that should not have needed
+catching: **decision 60 fired again, one chapter after it was written.** The
+nine-point sweep that fails to reproduce Hoffmann's table A4, and the 0.455 gap
+it reports, existed only as a sentence in the research note - the probe ran in a
+session temp directory and was never committed. Same failure mode as chapter
+08's clock table, smaller blast radius only because the number was one figure
+rather than seventy-eight. It now comes out of `ch09_laws.py`, together with
+appendix F's own FLOP accounting written out term by term. The lesson is not new
+and that is the point: the rule was already written down and the session still
+broke it, so the check is to ask of every printed number *which committed file
+prints this*, rather than to remember the rule.
+
+Two other audit catches worth naming. A count of "eight of nine rows" was seven,
+against the chapter's own table three lines above it. And two `\textemdash`
+macros reached the draft, one in the author's own Vietnamese, which AGENTS.md
+bans and which the `Dashes` family cannot see because it matches literal
+hyphens rather than the macro.
+
+Two things this session had to fix that were not about chapter 09. Appendix B's
+keep-in-English block reached 43 rows and overflowed its page as a plain
+`tabular`, so it is a `longtable` now and the preamble loads one more package
+(decision 66). And the chapter's figure had to be measured with `\savebox`
+rather than judged on the built page, because a `tikzpicture` that overflows
+inside `\centering` raises no Overfull box and the gate is blind to it
+(decision 67).
+
+Next action: chapter 10, "Bias quy nạp của CNN". It inherits `transformer.py`
+and `scaling.py` at tag `ch09`. Three warnings carry into it. Decision 64 applies
+again and probably harder, because the running example is an English-Vietnamese
+grammar and chapter 10's subject is images: the chapter should decide early
+whether it measures anything at all, and say so. It is the first chapter that
+needs a corpus this repo does not have, so if it wants CIFAR-10 for the
+locality experiments then the download, the budget and decision 13's
+no-graphics-card promise all have to be settled before code is written, not
+after. And chapter 11 is where the ViT numbers land, so anything chapter 10
+measures about CNN inductive bias has to be measured in a form chapter 11 can
+put beside a Transformer.
 
 ## Decision log
 
@@ -191,6 +246,16 @@ Rows 59 onward were written in the chapter 08 session, 2026-08-12.
 | 62 | `BUDGET_TOTAL` is 1300 seconds, and the next chapter that needs it raised should not raise it | Chapter 08 adds five verification items, two of which are twelve trainings each - four configurations at three seeds - and the run no longer fits 900. Raised to 1300 and measured at `verify: ok`, 1263.74s. **The third seed is not padding and cannot be traded back for budget**: the finding of the layer-norm table is precisely that the spread within one configuration is wider than the gap between configurations, so a one-seed table asserts an effect three seeds show is noise. Decision 44 is the same lesson one level down; buying the budget back there would buy back a wrong chapter. **What this row does not do is declare the number healthy.** 1263.74s against 1300 is 36 seconds of headroom, and two runs of identical code in this one session came in 132 seconds apart - so by decision 43's own test, a budget whose margin is narrower than its noise, 1300 is already not a budget. It is left at 1300 anyway rather than raised a third time, because decision 13 promises a reader with no graphics card that experiments finish in minutes and 1300s is nearly twenty-two of them. The two honest moves left are to make an experiment cheaper - decision 57's `torch.nn.LSTM` lever is the largest, and chapter 08's own clock table now measures it at 25.2 times on the forward-plus-backward path - or to teach `verify.py --only chNN` in the README so a reader can check one chapter without running all of them. **Whichever it is, it is the author's call and not a drafting session's**, which is why this row states the problem rather than settling it |
 | 63 | Decision 31's 73 columns is the budget on the page; inside a `measured` or `bridge` box it is 69, and `Listings.MaxLineLength` cannot tell the two apart | Chapter 08 puts almost every table inside a `measured` box, and three of them shipped a first draft that wrapped on the page while the gate reported clean. The reason is that decision 31 measured 73 against `\the\textwidth`, and a tcolorbox is narrower than the text block by its rule and padding. **Measured on a built page, not derived:** 68 columns sets flush inside a box, 69 sets flush, 70 gains a continuation arrow, and 71 gains one. Chapter 07's boxed table at exactly 69 is the witness for the upper end and it is correct as it stands; chapter 05's 72 and 73 column listings are not in boxes and are correct too. So the book now has two numbers, 73 on the page and 69 in a box, and only the first is enforced. The three chapter 08 blocks took `[fontsize=\footnotesize]`, which decision 31 already provides for a block that genuinely needs the width, and these do: the widest carries nine columns of real data and dropping one would cost the reader a comparison. **This is not decision 52's misuse coming back** - those nine listings were at `\footnotesize` while fitting comfortably at `\small`, and these three do not fit. `check-chapter.ps1` cannot currently see the difference between a boxed and an unboxed listing, so the gate under-reports for every book that puts listings in tcolorboxes; that is a library problem and the fix is proposed as a script change rather than made here. Until it lands, the rule below carries the number |
 
+Rows 64 onward were written in the chapter 09 session, 2026-08-12.
+
+| # | Question | Decision |
+|---|----------|----------|
+| 64 | A chapter whose subject the running example cannot reach cites rather than measures, and spends a section saying so | Chapter 09 is the first one where decision 35's corpus runs out completely rather than partially. The two earlier cases were ceilings on one table: chapter 06's ablation could not show what a disambiguating mechanism is for because the grammar has no ambiguity (decision 44), and chapter 08's dropout result inverted the paper's because 6000 generated sentences are not 4.5 million real ones. Pretraining is different in kind. A pretraining experiment needs two distributions, a broad one and a narrow one inside it, and splitting one grammar in half gives one distribution twice; a model that "pretrains" on it and then "fine-tunes" on it is training longer under two names, and the table would measure steps, which chapter 07 already measured. So the chapter has no experiment on its own subject and section 9.5 exists to say that in the chapter rather than in this file. **What generalises**: the temptation runs the other way, because a chapter with a table looks like a chapter with evidence. A table measuring the wrong quantity is worse than no table, since it hands the reader a number to remember about something else. The test before building a toy experiment is whether the toy has the structure the claim is about, not whether it produces numbers. Chapters 10 and 11 will meet this again and harder, since their subject is images |
+| 65 | A headline number is rebuilt from the paper's own hyperparameters before this book prints it | Chapter 09 rebuilt every published parameter count in its four papers, expecting a formality. Three of the four do not come back. BERT-large prints 340M and rebuilds to 335,141,888, a 1.4% gap that no reading closes - not the paper's own 30,000 vocabulary, not the released 30,522, not the pooler, not the masked-LM head. GPT-2's table 2 is reproducible only from a vocabulary near 40,500, while section 2.3 of the same paper announces the vocabulary was expanded to 50,257; four rows solve independently to within 1% of each other, so the counts predate the expansion the same page describes. GPT-3 prints 175.0B in table 2.1 and 174,600M in its own table D.1, and the rebuild gives 174,604,259,328, which is the appendix. GPT-1 prints no count at all, and states a BPE merge count rather than a vocabulary size, so the widely quoted 117M is sourced to nothing in the paper. None of this changes any paper's argument, which is exactly why it survives: **a number quoted often enough stops being rebuilt.** The rebuild cost one module and one script that trains nothing and runs in about a second. The rule: a figure this book prints from a paper's table is rebuilt from that paper's other tables first, and where the rebuild disagrees the chapter prints both and says which it used |
+| 66 | Appendix B's keep-in-English block is a `longtable`, and the preamble loads the package for it | That block gains a row or two per chapter and reached 43 in this session, where it overflowed its page by 18.93pt. A plain `tabular` cannot break across a page, and the failure is an Overfull `\vbox` that names no source line, so it points at nothing. Converted rather than split, because splitting is a fix that lasts exactly until the next chapter. `longtable` is the one new package and it is loaded for this one table; the per-chapter blocks above it are short and fixed and stay `tabular`. Recorded because the writing rules already warned that adding an appendix B row can cost typesetting, and this is the second time it has - the first made the appendix's own first table overfull by 30pt |
+| 67 | A figure's width is measured with `\savebox`, never judged from the built page | Chapter 09's figure is three columns wide and the figure agent flagged it as tight. Read on the built page it looked like it ran into both margins. Measured, it is 436.00pt against this book's 441.02pt measure and fits with 5pt to spare. **The reason the eye is not good enough here is that neither is the gate.** A `tikzpicture` wider than the measure, sitting inside a `figure` with `\centering`, raises no Overfull box, so `Log.MaxOverfull = 0` never fires and `check-chapter.ps1` cannot see it either - this is decision 31's blind spot for listings, one environment over. The measurement is three lines, `\newsavebox`, `\savebox` and `\typeout`, run once and removed, and the number goes in a comment at the call site so the next session widening the picture knows what it has to spend. Chapter 09's call site carries that comment |
+| 68 | Nothing carries a `\label` attached to a starred sectioning command, and the exercises are referred to by name | Chapter 09's first draft put `\label{sec:ch09-bai-tap}` under `\exercises`, which is `\section*`. A starred section increments no counter, so the label took the number of the last numbered section before it and three cross-references in the chapter pointed a reader at 9.6, the closing section, instead of at the exercises. **Nothing reported it.** `Log.MaxUndefined = 0` was satisfied because the label was defined; it was defined wrong. `check-chapter.ps1` does not look at labels at all. A build and a full prose-gate run were both clean while three references in the chapter were pointing at the wrong place, and it was found by reading the built page. `preamble/macros.tex` already said the tiers are starred because nothing cross-references an exercise; that comment is now a rule rather than an observation, and the chapter 09 exercises file carries the reason at the top. **What generalises past the exercises**: the same trap sits under every starred heading this book sets, which is `\exercises`, the three tier macros, and the `\subsection*` this book uses throughout its chapters. Refer to those by name, never by number |
+
 ## Version baseline
 
 Verified 2026-08-09 by building this book. Re-verify before any chapter that
@@ -205,6 +270,7 @@ depends on a version.
 | biblatex / biber | 3.21 / 2.21 |
 | csquotes | 2026 |
 | tcolorbox | 2025/11/28 |
+| longtable | loaded 2026-08-12 for appendix B's keep-in-English block (decision 66) |
 | conda | 26.1.1 |
 | The six source papers | Exact arXiv versions and SHA-256 in `research/2026-08-nguon-sau-bai-bao.md` |
 
@@ -297,8 +363,18 @@ created. That section is the hinge to the next chapter and is not optional.
    negative result; post-LN versus pre-LN measured at initialization; gap:
    quadratic, no inductive bias, data-hungry
 9. **Tiền huấn luyện: BERT, GPT, và quy luật scaling** - the bridge chapter ViT
-   cannot be understood without; encoder-only versus decoder-only; pretraining
-   as the invention rather than the architecture; Kaplan 2020 and Hoffmann 2022
+   cannot be understood without; encoder-only versus decoder-only shown as two
+   deletions from one block, differing from each other by a mask; pretraining as
+   the invention rather than the architecture, with the masked-LM objective
+   derived from what removing that mask costs, and its 15% masking rate priced
+   as 6.67 times the compute per gradient signal; every published parameter
+   count in the four papers rebuilt from their own hyperparameters, where three
+   of four disagree with what the papers print (decision 65); `C = 6ND` measured
+   against an exact FLOP count, where the error is `1 + n/(6d)` and `6d` is
+   chapter 08's own crossover; Kaplan 2020 and Hoffmann 2022 set against each
+   other, including two places the later paper cannot be reproduced from what it
+   prints. The chapter measures nothing about pretraining itself and says why in
+   a section of its own (decision 64)
 
 ### Part V - Ra khỏi ngôn ngữ
 
@@ -354,7 +430,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 06 | drafted | Companion tag `ch06`, module `attention.py`. Retitled from \enquote{Đồng chỉnh} with the folder and label following (decision 42). Pays chapter 05's debt: Cho 2014b read in full, from the arXiv and Anthology copies, both nine pages. The chapter's spine is that the paper this chapter reads *conjectured* the bottleneck and cited two SSST-8 workshop papers for it, while chapter 05 is where this book measured it. Reproduces chapter 05's width table digit for digit on its fixed-vector rows, which is what makes the two chapters' tables comparable. Two TikZ figures. `BUDGET_TOTAL` raised to 900 (decision 43) |
 | 07 | drafted | Companion tag `ch07`, module `transformer.py`. Four experiments, two of which train nothing, so the whole repo verifies in 663.51s against the 900s budget and decision 43 is untouched. Reads both copies of the paper and finds they are different documents that disagree on a BLEU score (decision 47). The chapter's table sweeps epochs rather than width, after three other explanations for the 14-epoch result were killed (decision 48). Two TikZ figures. Four appendix B rows, and four terms deliberately kept in English (decision 46) |
 | 08 | drafted | Companion tag `ch08`, module `cost.py` plus four experiment scripts. Pays three of chapter 07's four debts and half of the fourth: table 1 re-measured with constants, the head-count claim measured on the clock as well as in FLOPs, and the layer-norm order measured at initialization. Corrects a chapter 07 sentence that put the head-count slowdown at twenty percent (decision 61). Its own finding is that the quadratic cost bites where the score matrix leaves cache, measured by byte rather than by `n` and confirmed with a batch-held control. The warmup table is a deliberate negative result: three seeds show the within-configuration spread is wider than the between-configuration gap. Two TikZ figures. `BUDGET_TOTAL` raised to 1300 (decision 62) |
-| 09 | not-started | |
+| 09 | drafted | Companion tag `ch09`, module `scaling.py` plus two experiment scripts, none of which trains or times anything, so every number is identical on every machine. The first chapter that measures nothing about its own subject, and it spends section 9.5 on why (decision 64). Rebuilds every published parameter count in BERT, GPT-1, GPT-2 and GPT-3; three of four disagree with what those papers print (decision 65). Its own finding is that Kaplan's table 1 counts one of attention's two quadratic products, ratio exactly 2.00, confirmed against `FlopCounterMode` and against Hoffmann's appendix F - and that it does not matter, because `6N` drops that term anyway. The `6ND` error is `1 + n/(6d)`, and `6d` is chapter 08's `n = 2d + d_ff` from the other side. Two places Hoffmann cannot be reproduced from what it prints: table A4 states neither the sequence length nor the vocabulary it was computed at, and table 2's frontier exponents do not follow from appendix D.2's rounded alpha and beta. One TikZ figure. Four appendix B rows plus one kept in English; seven abbreviations into appendix C. `BUDGET_TOTAL` untouched at 1300, whole run 1001.60s |
 | 10 | not-started | |
 | 11 | not-started | |
 | 12 | not-started | Re-verify the 2021-2026 facts before drafting |
@@ -421,7 +497,11 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   to the appendix and did not go back through the prose. Adding a row can also
   cost typesetting - the longest term in the book made appendix B's first table
   overfull by 30pt - so build after editing the appendix, not only after editing
-  prose.
+  prose. That has now happened twice. The keep-in-English block reached 43 rows
+  in the chapter 09 session and overflowed its page by 18.93pt, which is why it
+  is a `longtable` now and the preamble loads one (decision 66); its failure was
+  an Overfull `\vbox` naming no source line, so it points at nothing and only a
+  build finds it. The per-chapter blocks are still `tabular`.
 - **Voice:** First-person practitioner, the AGENTS.md default, which takes the
   chapter role. In Vietnamese that is "tôi" for the author and "bạn" for the
   reader, one pair for the whole book (decision 10). The book teaches other
@@ -496,6 +576,22 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   flush, 70 gains a continuation arrow. Both numbers were measured on a built
   page rather than derived, and chapter 07's boxed table at exactly 69 is the
   witness.
+- **Nothing gets a `\label` on a starred heading** (decision 68). `\exercises`,
+  the three tier macros and every `\subsection*` are starred, so a label under
+  one takes the number of the last numbered section and points a reader
+  somewhere else. Neither the build nor `check-chapter.ps1` can see it: the
+  label is defined, so `Log.MaxUndefined = 0` is satisfied, and the script does
+  not read labels at all. Refer to the exercises and to any starred subsection
+  by name.
+- **A figure's width is measured, not eyeballed** (decision 67). Wrap the
+  picture in a `\savebox` once, `\typeout` its `\wd` against `\the\textwidth`,
+  read the number out of the log, then delete the three lines and leave the
+  number in a comment at the call site. This measure is 441.02pt. Do not skip
+  it on the grounds that the build is clean: a `tikzpicture` wider than the
+  measure inside a `figure` with `\centering` raises no Overfull box, so both
+  `Log.MaxOverfull = 0` and the eye can pass a picture that runs into the
+  margins. It is decision 31's blind spot for listings, one environment over,
+  and nothing in `check-chapter.ps1` covers it.
 - **Figures:** TikZ, sources in `figures/tikz/chNN-<slug>.tex` as a bare
   `tikzpicture`; the `figure` environment, caption and label stay at the call
   site. Beyond the template's `arrows.meta` and `positioning`, this book loads
@@ -609,6 +705,24 @@ that enforces it. A list where half the entries say "resolved" stops being read,
 which is how the four consecutive gloss regressions kept getting past a rule
 that was written down.
 
-(None. Emptied 2026-08-11: every entry became a decision-log row, a
-writing rule, or a comment in the file that enforces it. Rows 49 to 58 are
-where most of them landed.)
+Emptied 2026-08-11: every entry became a decision-log row, a writing rule, or a
+comment in the file that enforces it. Rows 49 to 58 are where most of them
+landed. One entry has been added since, and it is work nobody has done rather
+than a call nobody has taken.
+
+- **Chapter 10 needs a data decision before it needs code.** Every experiment in
+  this book so far runs on the generated corpus of decision 35, and chapter 10's
+  subject is the inductive bias of convolutional networks, which that corpus
+  cannot express at all. Chapter 11 then needs whatever chapter 10 uses, because
+  the ViT result is a comparison against a CNN on the same images. So the choice
+  is real and it is upstream of any code: ship a real image dataset, generate
+  synthetic images the way `toy_corpus.py` generates sentences, or apply
+  decision 64 again and write a chapter that measures nothing. Each costs
+  something different. A real dataset means a download, which breaks the
+  property that `verify.py` runs on someone else's machine with no network, and
+  it has to fit decision 13's no-graphics-card promise and decision 62's
+  already-tight budget. Synthetic images keep both properties and risk being a
+  toy with none of the structure the claim is about, which is exactly what
+  decision 64 says to check for. Citing costs the chapter its evidence. **This is
+  the author's call and not a drafting session's**, and a session that reaches
+  chapter 10 without it settled should raise it rather than pick one quietly.

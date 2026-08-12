@@ -1,0 +1,130 @@
+% Ba cach cat cung mot khoi Transformer: encoder-decoder (Vaswani va cong su
+% 2017, kien truc chuong 7), encoder-only (BERT) va decoder-only (GPT).
+% Trong tam KHONG phai residual/LayerNorm (do la hinh cua chuong 8) ma la
+% thanh phan cua khoi - self-attention, co khi them cross-attention, roi FFN -
+% va mask nao di kem tung sublayer. Vi vay hinh nay chi ve mot khoi dai dien
+% cho moi ngan xep, boc trong khung cham cham "N x", giong quy uoc cua
+% hinh chuong 7 va chuong 8.
+% Mono-safe va dung lai dung cac style cua hinh chuong 7: diem1 (nen xam nhat)
+% cho self-attention khong che, diem2 (net dut) cho self-attention co che,
+% diem3 (net cham, nen xam dam hon) cho attention noi sang encoder. So hieu
+% 1/2/3 giu nguyen tu hinh chuong 7 de nguoi doc nhan ra day la cung mot hop.
+% Hop FFN dung style mac dinh, khong to nen, giong het nhau o ca bon ngan xep,
+% va do rong hop (2.8cm) giu nguyen tu hinh chuong 7: do chinh la diem hinh
+% nay muon nguoi doc thay ngay, nen khong the thu nho hop de tiet kiem cho.
+\begin{tikzpicture}[
+  >= Stealth,
+  hop/.style     = {draw, rectangle, inner sep = 2pt, font = \scriptsize,
+                     align = center},
+  so/.style      = {draw, circle, fill = white, minimum size = 3.2mm,
+                     inner sep = 0pt, font = \tiny},
+  diem1/.style   = {fill = black!10},
+  diem2/.style   = {densely dashed, line width = 0.8pt},
+  diem3/.style   = {densely dotted, line width = 0.8pt, fill = black!22},
+  mui/.style     = {->, line width = 0.6pt, black!75},
+  ngucanh/.style = {->, line width = 1.6pt, black},
+  khung/.style   = {black!45, densely dotted, line width = 0.5pt},
+  nho/.style     = {font = \scriptsize},
+  ghichu/.style  = {font = \footnotesize, black!60},
+]
+
+  % ================= CỘT 1a: encoder (x = 0) =================
+  \draw[mui] (0, -0.35) -- (0, 0);
+  \node[hop, diem1, minimum width = 2.8cm, minimum height = 0.7cm]
+    (ea1) at (0, 0.35) {Self-attention};
+  \node[so] at (ea1.north east) {1};
+
+  \draw[mui] (0, 0.7) -- (0, 1.05);
+  \node[hop, minimum width = 2.8cm, minimum height = 0.7cm]
+    (ea2) at (0, 1.4) {FFN theo vị trí};
+
+  \draw[mui] (0, 1.75) -- (0, 2.1);
+
+  \begin{scope}[on background layer]
+    \draw[khung, rounded corners = 2pt] (-1.5, -0.2) rectangle (1.5, 1.95);
+  \end{scope}
+  \node[ghichu, anchor = west] at (1.65, 0.875) {N x};
+
+  % ================= CỘT 1b: decoder (x = 3.6) =================
+  \draw[mui] (3.6, -0.35) -- (3.6, 0);
+  \node[hop, diem2, minimum width = 2.8cm, minimum height = 1.0cm]
+    (da1) at (3.6, 0.5) {Self-attention\\có che};
+  \node[so] at (da1.north east) {2};
+
+  \draw[mui] (3.6, 1.0) -- (3.6, 1.35);
+  \node[hop, diem3, minimum width = 2.8cm, minimum height = 1.0cm]
+    (da2) at (3.6, 1.85) {Attention\\encoder-decoder};
+  \node[so] at (da2.north east) {3};
+
+  \draw[mui] (3.6, 2.35) -- (3.6, 2.7);
+  \node[hop, minimum width = 2.8cm, minimum height = 0.7cm]
+    (da3) at (3.6, 3.05) {FFN theo vị trí};
+
+  \draw[mui] (3.6, 3.4) -- (3.6, 3.75);
+
+  \begin{scope}[on background layer]
+    \draw[khung, rounded corners = 2pt] (2.1, -0.2) rectangle (5.1, 3.6);
+  \end{scope}
+  \node[ghichu, anchor = west] at (5.25, 1.7) {N x};
+
+  % mũi tên nặng: đầu ra ngăn xếp encoder đi thẳng vào cross-attention của
+  % decoder. Một mũi tên cho cả ngăn xếp là đủ, không vẽ N lần.
+  \draw[ngucanh] (0, 2.1) -- (0, 2.25) -- (2.0, 2.25) -- (2.0, 1.85)
+    -- (da2.west);
+
+  % ================= CỘT 2: chỉ encoder, BERT (x = 7.45) =================
+  \draw[mui] (7.45, -0.35) -- (7.45, 0);
+  \node[hop, diem1, minimum width = 2.8cm, minimum height = 0.7cm]
+    (ba1) at (7.45, 0.35) {Self-attention};
+  \node[so] at (ba1.north east) {1};
+
+  \draw[mui] (7.45, 0.7) -- (7.45, 1.05);
+  \node[hop, minimum width = 2.8cm, minimum height = 0.7cm]
+    (ba2) at (7.45, 1.4) {FFN theo vị trí};
+
+  \draw[mui] (7.45, 1.75) -- (7.45, 2.1);
+
+  \begin{scope}[on background layer]
+    \draw[khung, rounded corners = 2pt] (5.95, -0.2) rectangle (8.95, 1.95);
+  \end{scope}
+  \node[ghichu, anchor = west] at (9.1, 0.875) {N x};
+
+  % ================= CỘT 3: chỉ decoder, GPT (x = 11.3) =================
+  \draw[mui] (11.3, -0.35) -- (11.3, 0);
+  \node[hop, diem2, minimum width = 2.8cm, minimum height = 1.0cm]
+    (ga1) at (11.3, 0.5) {Self-attention\\có che};
+  \node[so] at (ga1.north east) {2};
+
+  \draw[mui] (11.3, 1.0) -- (11.3, 1.35);
+  \node[hop, minimum width = 2.8cm, minimum height = 0.7cm]
+    (ga2) at (11.3, 1.7) {FFN theo vị trí};
+
+  \draw[mui] (11.3, 2.05) -- (11.3, 2.4);
+
+  \begin{scope}[on background layer]
+    \draw[khung, rounded corners = 2pt] (9.8, -0.2) rectangle (12.8, 2.25);
+  \end{scope}
+  \node[ghichu, anchor = west] at (12.95, 1.025) {N x};
+
+  % ================= nhãn cột =================
+  \node[font = \bfseries\scriptsize] at (1.8, -0.9) {Encoder-decoder};
+  \node[nho, black!60] at (1.8, -1.35) {chương 7};
+
+  \node[font = \bfseries\scriptsize] at (7.45, -0.9) {Chỉ encoder};
+  \node[nho, black!60] at (7.45, -1.35) {BERT};
+
+  \node[font = \bfseries\scriptsize] at (11.3, -0.9) {Chỉ decoder};
+  \node[nho, black!60] at (11.3, -1.35) {GPT};
+
+  % ================= chú giải ba điểm attention, số hiệu giữ nguyên từ
+  % hình kiến trúc chương 7 =================
+  \node[nho, anchor = north, align = left, black!70, text width = 13cm]
+    at (5.85, -1.75)
+    {1: self-attention không che - nhìn toàn bộ chuỗi trong khối \\
+     2: self-attention có che - chỉ được nhìn về sau, cùng kiểu che của
+        nhãn 2 ở kiến trúc gốc \\
+     3: attention nối sang encoder - chỉ có ở cột encoder-decoder; hộp này
+        biến mất hẳn ở hai cột còn lại, đó chính là khác biệt duy nhất giữa
+        chúng và ngăn xếp decoder bên trái};
+
+\end{tikzpicture}

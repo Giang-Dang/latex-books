@@ -173,13 +173,41 @@ ma trận điểm số & score matrix & Dịch, dùng \texttt{\textbackslash tn}
 \normalsize
 
 \bigskip
-\textbf{Giữ nguyên tiếng Anh (không dịch)}
+\textbf{Chương 09}
 
 \footnotesize
-\begin{tabular}{@{}lp{7cm}@{}}
+\begin{tabular}{@{}llp{4cm}@{}}
+\toprule
+Tiếng Việt & Tiếng Anh & Quyết định \\
+\midrule
+tiền huấn luyện & pretraining & Dịch, dùng \texttt{\textbackslash tn}; phát kiến trung tâm của chương~\ref{ch:tien-huan-luyen} \\
+tinh chỉnh & fine-tuning & Dịch, dùng \texttt{\textbackslash tn}; pha thứ hai, đi cặp với \emph{tiền huấn luyện} \\
+quy luật scaling & scaling law & Dịch một nửa, dùng \texttt{\textbackslash tn}; \emph{scaling} ở lại tiếng Anh vì \enquote{co giãn} và \enquote{tỷ lệ} đều đã mang nghĩa khác trong sách \\
+mô hình ngôn ngữ & language model & Dịch, dùng \texttt{\textbackslash tn} \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\bigskip
+\textbf{Giữ nguyên tiếng Anh (không dịch)}
+
+% longtable, not tabular: this block gains a row or two every chapter and hit
+% 43 in the chapter 9 session, where it overflowed its page by 18.93pt. A plain
+% tabular cannot break, and the resulting Overfull \vbox names no source line,
+% so it is worth the one package. The per-chapter blocks above are short and
+% fixed and stay tabular.
+\footnotesize
+\begin{longtable}{@{}lp{7cm}@{}}
 \toprule
 Thuật ngữ & Quyết định \\
 \midrule
+\endfirsthead
+\toprule
+Thuật ngữ & Quyết định \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 bias & Giữ nguyên \\
 gradient & Giữ nguyên ở mọi vị trí, kể cả khi đứng làm danh từ (quyết định~40) \\
 Jacobian & Giữ nguyên (tính từ); \emph{ma trận Jacobi} khi là danh từ \\
@@ -221,6 +249,6 @@ pre-LN & Giữ nguyên (chương~08); cùng lý do với \emph{post-LN} \\
 cache & Giữ nguyên (chương~08); \enquote{bộ nhớ đệm} đọc được nhưng chương này viết \emph{cache mức ba} cạnh dung lượng đo bằng MiB, nơi từ tiếng Anh là từ người đọc gặp trong tài liệu phần cứng \\
 upper bound & Giữ nguyên (quyết định~59); \emph{chặn} là động từ thường ngày và sách dùng nó đúng nghĩa ấy \\
 lower bound & Giữ nguyên (quyết định~59); cùng lý do \\
-\bottomrule
-\end{tabular}
+masked language model & Giữ nguyên (chương~09); tên một mục tiêu huấn luyện, và \emph{mask} đã giữ nguyên từ chương~06 nên cả cụm theo cùng \\
+\end{longtable}
 \normalsize

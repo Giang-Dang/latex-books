@@ -1,0 +1,173 @@
+\section{Cùng một khối, ba cách cắt}
+\label{sec:ch09-cung-mot-khoi}
+
+\index{tiền huấn luyện!khối giống nhau ở ba kiến trúc}%
+Chương~\ref{ch:transformer} dựng một encoder-decoder: một chồng khối encoder mà
+mỗi khối là self-attention không che cộng mạng truyền thẳng, và một chồng khối
+decoder mà mỗi khối là self-attention có che, cộng attention nối sang encoder,
+cộng mạng truyền thẳng.
+
+BERT bỏ chồng bên phải. GPT bỏ chồng bên trái. Cái còn lại ở cả hai bên là cùng
+một khối, và hình~\ref{fig:ch09-ba-cach-cat} đặt ba thứ cạnh nhau để chỗ ấy nhìn
+ra được ngay.
+
+% The picture measures 436.00pt against this book's 441.02pt measure, which is
+% 5pt of margin for three columns. Measured with \savebox rather than judged
+% from the built page, because a tikzpicture that overflows inside \centering
+% raises no Overfull box and the log cannot see it. Recheck this number before
+% widening the picture by so much as a node.
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch09-ba-cach-cat}
+  \caption{Cùng một khối, ba cách cắt. Hộp mạng truyền thẳng giống hệt nhau ở cả
+  bốn ngăn xếp; self-attention cũng vậy, và cái phân biệt hai phiên bản của nó
+  là mask chứ không phải tham số. Cái duy nhất BERT và GPT bỏ đi là attention
+  nối giữa hai chồng, vì mỗi bên chỉ còn một chồng.}
+  \label{fig:ch09-ba-cach-cat}
+\end{figure}
+
+Đọc hình theo chiều ấy thì \enquote{encoder-only} và \enquote{decoder-only} là
+tên của hai phép xóa, không phải tên của hai kiến trúc. Và cái phân biệt hai
+phép xóa còn lại với nhau nhỏ hơn nữa: nó là mask.
+
+\subsection*{Chỉ khác nhau ở một ma trận tam giác}
+
+\index{tiền huấn luyện!khác biệt encoder-only và decoder-only}%
+Mục~\ref{sec:ch07-che} đã dựng mask nhân quả và đo nó bằng phép can thiệp: bỏ
+mask đi thì mô hình đạt mất mát huấn luyện \emph{thấp hơn} và điểm bằng không,
+vì nó học được cách đọc trộm token nó phải đoán.
+
+BERT giữ nguyên phép đọc trộm ấy. Đó là toàn bộ định nghĩa của
+\enquote{bidirectional} trong nhan đề bài: mọi vị trí nhìn thấy mọi vị trí, hai
+chiều, không có ma trận tam giác nào chặn lại. GPT giữ mask.
+
+Cùng bộ tham số, cùng phép tính, khác một ma trận nhị phân. Điều đáng nói là hệ
+quả: một khi bỏ mask thì mục tiêu huấn luyện của chương~\ref{ch:transformer}
+không dùng được nữa, đúng bằng lý do mục~\ref{sec:ch07-che} đo được. Bài BERT
+viết câu ấy ra ở mục 3.1:
+
+\begin{quote}
+\enquote{Unfortunately, standard conditional language models can only be trained
+left-to-right or right-to-left, since bidirectional conditioning would allow
+each word to indirectly \enquote{see itself}, and the model could trivially
+predict the target word in a multi-layered context.}
+\end{quote}
+
+Nên thứ tự nhân quả không phải: chọn kiến trúc rồi chọn mục tiêu. Nó là chọn
+mục tiêu rồi kiến trúc theo sau. Mục~\ref{sec:ch09-phat-kien} là chỗ nói về mục
+tiêu.
+
+\subsection*{Dựng lại số tham số của các bài}
+
+\index{tiền huấn luyện!dựng lại số tham số}%
+Trước khi đi tiếp, một phép kiểm mà tôi nghĩ là rẻ và hóa ra không. Mọi bài
+trên đều in số tham số của mô hình nó dựng, và số ấy suy ra được từ chính bảng
+siêu tham số cùng bài. Một khối là bốn phép chiếu \(d \times d\), hai ma trận
+truyền thẳng \(d \times \dff\) và \(\dff \times d\), hai layer norm. Cộng bảng
+embedding, cộng bảng vị trí, nhân số tầng.
+
+\begin{measured}{số tham số của BERT, dựng lại từ chính L, H và A của bài}
+\begin{minted}{text}
+model       vocab   pooler mlm   rebuilt        paper      ratio
+BERT-base   30000   True   False 109,081,344       110M    0.9916
+BERT-base   30522   True   False 109,482,240       110M    0.9953
+BERT-base   30522   True   True  110,104,890       110M    1.0010
+BERT-large  30000   True   False 334,607,360       340M    0.9841
+BERT-large  30522   True   False 335,141,888       340M    0.9857
+BERT-large  30522   True   True  336,224,058       340M    0.9889
+\end{minted}
+
+30000 là con số bài in; 30522 là con số checkpoint phát hành mang.
+
+Đo bằng \code{experiments/ch09\_counts.py} tại tag \code{ch09}.
+\end{measured}
+
+BERT-base quay về được: 110M là 109.48M làm tròn, và cột \code{mlm} cho thấy
+tính cả đầu ra masked-LM thì nó thành 110.10M, tức là làm tròn theo chiều nào
+cũng ra 110M. Không có gì để nói.
+
+\textbf{BERT-large thì không quay về.} 335.14M so với 340M đã in là lệch 1.4\%,
+và không cách đọc nào trong sáu cách trên đóng được khoảng ấy. Tôi không biết
+340M đếm thêm cái gì, và nói thẳng như vậy chứ không chọn một cách đọc rồi gọi
+phần dư là sai số.
+
+Chuyện tương tự ở GPT-2, và ở đây thì số học nói được nhiều hơn.
+
+\begin{measured}{bảng 2 của GPT-2, dựng lại theo chính từ điển mục 2.3 của bài}
+\begin{minted}[fontsize=\footnotesize]{text}
+model         printed    V=50257 n=1024        gap        gap / d_model
+GPT-2 117M       117M   124,439,808    (1.0636)   7,439,808      9687
+GPT-2 345M       345M   354,823,168    (1.0285)   9,823,168      9593
+GPT-2 762M       762M   774,030,080    (1.0158)  12,030,080      9398
+GPT-2 1542M     1542M   1,557,611,200  (1.0101)  15,611,200      9757
+
+model         V that reproduces the printed count
+GPT-2 117M        40,570
+GPT-2 345M        40,664
+GPT-2 762M        40,858
+GPT-2 1542M       40,500
+\end{minted}
+
+Đo bằng \code{experiments/ch09\_counts.py} tại tag \code{ch09}.
+\end{measured}
+
+Cột cuối của bảng trên là chỗ đọc ra. Khoảng cách chia cho \(\dmodel\) gần như
+là hằng số, nên nó là một bảng embedding chứ không phải một lỗi về bề rộng hay
+độ sâu: bốn hàng thiếu cùng chừng ấy \emph{hàng} embedding. Giải ngược từng
+hàng ra kích thước \tn{từ điển}{vocabulary} làm cho con số in đúng, và bốn phép
+giải độc lập cho
+40,570, 40,664, 40,858 và 40,500, nằm trong 1\% của nhau.
+
+Mục 2.3 của chính bài nói: \enquote{The vocabulary is expanded to 50,257. We
+also increase the context size from 512 to 1024
+tokens}~\autocite{radford2019gpt2}. Nên bảng 2 in số tham số đếm bằng từ điển
+\emph{trước} khi mở rộng, trong khi đoạn văn cách đó vài dòng thông báo việc mở
+rộng. Bài không nói vậy; số học nói vậy. Tôi để nguyên chỗ ấy ở dạng nó có:
+bốn phép giải, và một câu của bài đặt cạnh.
+
+GPT-1 thì không có gì để dựng lại, vì bài không in số tham số ở đâu cả. Tôi đọc
+hết 12 trang để xác nhận điều đó chứ không suy ra từ việc không tìm thấy. Bài
+cũng không in kích thước từ điển: nó nói \enquote{a bytepair encoding (BPE)
+vocabulary with 40,000 merges}, mà số merge và kích thước từ điển là hai đại
+lượng khác nhau. Nếu bạn tra mô hình này ở nơi khác và gặp con số 117M, thì đó
+là một phép dựng lại như phép dựng lại ở trên chứ không phải con số của bài: từ
+điển 40,478 của checkpoint phát hành cho 116,536,320, và làm tròn ra 117M. Bài
+tập cuối chương có một câu hỏi về chỗ đó.
+
+\subsection*{Một bài không đồng ý với chính nó}
+
+\index{tiền huấn luyện!GPT-3 và hai con số tham số}%
+GPT-3 là chỗ phép kiểm này trả công.
+
+\begin{measured}{bảng 2.1 của GPT-3, dựng lại cả tám hàng}
+\begin{minted}[fontsize=\footnotesize]{text}
+model         heads*d_head  d_model  rebuilt             paper     ratio
+GPT-3 Small   768           768      125,226,240          0.125B   1.0018
+GPT-3 Medium  1024          1024     355,871,744          0.350B   1.0168
+GPT-3 Large   1536          1536     760,300,032          0.760B   1.0004
+GPT-3 XL      3072          2048     1,315,723,264        1.300B   1.0121
+GPT-3 2.7B    2560          2560     2,651,553,280        2.700B   0.9821
+GPT-3 6.7B    4096          4096     6,658,404,352        6.700B   0.9938
+GPT-3 13B     5120          5140     12,952,938,780      13.000B   0.9964
+GPT-3 175B    12288         12288    174,604,259,328    175.000B   0.9977
+\end{minted}
+
+Đo bằng \code{experiments/ch09\_counts.py} tại tag \code{ch09}.
+\end{measured}
+
+Hàng cuối dựng lại được 174,604,259,328 tham số. Bảng 2.1 của bài in 175.0B.
+Bảng D.1 ở phụ lục D của \emph{cùng bài ấy} in 174,600M cho cùng mô hình. Hai
+bảng trong một bài không khớp nhau, và phép dựng lại đứng về phía phụ lục, tới
+đúng chữ số bảng D.1 làm tròn tới.
+
+Hai cột đầu của bảng cũng đáng nhìn. Sáu trong tám hàng thỏa
+\(h \cdot \dk = \dmodel\), tức đúng quan hệ mục 3.2.2 của Vaswani đặt ra và
+mục~\ref{sec:ch07-nhieu-dau} đã dùng. Hàng XL in \(\dmodel\) bằng 2048 với 24
+head cỡ 128, tích là 3072. Hàng 13B in \(\dmodel\) bằng 5140 với 40 head cỡ
+128, tích là 5120. Tôi đọc lại trang 8 ở độ phân giải đầy đủ để loại trừ khả
+năng mình đọc nhầm; bài in đúng như vậy. Bảng trên chép nguyên, không sửa.
+
+Không con số nào trong ba chỗ vừa rồi làm thay đổi một luận điểm nào của ba
+bài. Tôi để chúng ở đây vì lý do khác: một con số được trích lại đủ nhiều lần
+thì không còn ai dựng lại nó. Phép dựng lại ở trên tốn một file Python không
+huấn luyện gì, và nó tìm ra ba chỗ.

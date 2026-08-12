@@ -1,0 +1,72 @@
+\section{Cái chương này không đo được, và vì sao tôi không đo bừa}
+\label{sec:ch09-khong-do-duoc}
+
+\index{tiền huấn luyện!corpus của sách không với tới}%
+Mọi chương từ chương~\ref{ch:encoder-decoder} tới đây đều kết thúc bằng một
+bảng tôi tự chạy. Chương này thì không, và tôi nợ bạn lý do: \enquote{không đo}
+ở đây là một quyết định đã cân nhắc, và mục này là chỗ trình bày nó.
+
+Corpus của sách sinh từ một văn phạm phi ngữ cảnh nhỏ. Nó có ba tính chất mà
+\code{toy\_corpus.py} ghi trong docstring của mình từ chương~\ref{ch:encoder-decoder}:
+văn phạm hữu hạn nên một mô hình học được nó chính xác, từ điển đóng nên không
+có từ lạ, và câu thì vô nghĩa về mặt ngữ nghĩa.
+
+Ba tính chất ấy đã lấy đi của sách hai thứ. Chương~\ref{ch:mot-vector-cho-moi-tu}
+không làm phép cắt bỏ hai chiều nói được gì, vì văn phạm không có nhập nhằng nào
+để một cơ chế khử nhập nhằng thể hiện. Chương~\ref{ch:transformer} thì gặp giới
+hạn ở chỗ khác và nhẹ hơn.
+
+Ở chương này nó lấy đi cả thí nghiệm.
+
+\subsection*{Vì sao một thí nghiệm tiền huấn luyện trên corpus ấy đo số không}
+
+\index{tiền huấn luyện!vì sao không có thí nghiệm}%
+\tn{Tiền huấn luyện}{pretraining} được cái gì đó chỉ khi pha một thấy thứ mà
+pha hai cần và không có đủ. Nói cho gọn: hai pha phải nhìn hai phân phối khác nhau, và cái học được
+ở phân phối rộng phải chuyển sang được phân phối hẹp.
+
+Tách corpus của sách làm hai phần và gọi phần lớn là \enquote{tiền huấn luyện}
+thì hai phần ấy rút từ đúng một văn phạm, với đúng một từ điển, và đúng một tập
+luật. Không có phân phối thứ hai. Một mô hình chạy pha một rồi pha hai trên đó
+chỉ đang huấn luyện lâu hơn, và bảng kết quả sẽ cho thấy nó tốt hơn mô hình
+huấn luyện ngắn, đúng như mọi bảng epoch trong sách này đã cho thấy từ
+chương~\ref{ch:transformer}.
+
+Con số sẽ có. Nó sẽ đo số bước, và mục~\ref{sec:ch07-corpus} đã đo số bước rồi.
+Cái nó không đo là chuyển giao, vì không có gì để chuyển.
+
+Sửa cho đúng thì phải đổi corpus, không phải đổi script. Cần một văn phạm sinh
+ra một miền rộng và một miền hẹp nằm trong nó, sao cho miền hẹp có ít dữ liệu
+và có cấu trúc mà chỉ miền rộng dạy được. Đó là một corpus khác hẳn corpus sách
+này đang dùng, và dựng nó là công việc của cả một phiên làm việc, không phải
+của một mục.
+
+Tôi viết chỗ này ra vì cái cám dỗ ngược lại rất mạnh. Một bảng có số trông
+giống một chương có bằng chứng, và một chương toàn trích dẫn trông mỏng hơn.
+Nhưng một bảng đo sai đại lượng thì tệ hơn không có bảng: nó đưa cho người đọc
+một con số để nhớ, và con số ấy nói về chuyện khác.
+
+\subsection*{Chỗ duy nhất sách này chạm được vào luận điểm, và nó ở chương trước}
+
+\index{tiền huấn luyện!dropout đổi chiều theo lượng dữ liệu}%
+Có đúng một phép đo trong sách mà kết luận của nó lật chiều chỉ vì lượng dữ
+liệu, và nó không nằm ở chương này.
+
+Mục~\ref{sec:ch08-dieu-chuan} chạy dropout ở đúng giá trị bài Vaswani dùng, trên
+corpus của sách, và nó làm hỏng. Bài đo cùng cơ chế ấy, cùng giá trị tham số
+ấy, và nó đáng 1.2 BLEU. Cùng công thức, hai kết luận ngược nhau, và cái phân
+biệt là 6000 câu sinh từ văn phạm so với 4.5 triệu cặp câu thật.
+
+Đó là luận điểm của chương này ở dạng nhỏ nhất mà sách này chạm được: một quyết
+định kỹ thuật đúng ở quy mô này và sai ở quy mô kia, không phải vì công thức
+đổi mà vì lượng dữ liệu đổi.
+
+Bài BERT và bài GPT là cùng câu chuyện ấy ở quy mô mà nó không còn là một chi
+tiết điều chuẩn nữa mà thành cả kiến trúc của quy trình. Và
+chương~\ref{ch:vit} là nơi nó đạt dạng gọn nhất: cùng một mô hình, không đổi
+một dòng mã, thua ResNet trên ImageNet-1k và thắng sau khi được tiền huấn luyện
+trên JFT-300M~\autocite{dosovitskiy2021vit}.
+
+Khoảng cách giữa 6000 câu sinh từ văn phạm và 300 triệu ảnh có nhãn là khoảng
+cách mà sách này không bắc qua được bằng một thí nghiệm. Phần ấy là trích dẫn,
+và mục này là chỗ nói ra điều đó thay vì để bạn tự đoán.
