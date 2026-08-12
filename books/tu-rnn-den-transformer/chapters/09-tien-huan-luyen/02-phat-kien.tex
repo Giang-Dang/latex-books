@@ -1,0 +1,141 @@
+\section{Phát kiến nằm ở mục tiêu, không nằm ở kiến trúc}
+\label{sec:ch09-phat-kien}
+
+\index{tiền huấn luyện!hai pha}%
+Mọi mô hình trong sách này cho tới đây đều huấn luyện một lần, trên dữ liệu của
+đúng bài toán nó phải giải, với nhãn của đúng bài toán ấy. Corpus của
+chương~\ref{ch:encoder-decoder} là các cặp câu Anh-Việt, và mô hình học dịch.
+
+Hai bài của mục này bẻ đôi chuyện đó. \tn{Tiền huấn luyện}{pretraining} là pha
+một: huấn luyện trên văn bản trơn không có nhãn nào. \tn{Tinh
+chỉnh}{fine-tuning} là pha hai: lấy mô hình ấy và chỉnh nó sang một bài toán có
+nhãn, với ít dữ liệu hơn nhiều bậc.
+
+GPT-1 viết cả hai pha ra thành công thức. Phương trình (1) là mục tiêu pha một,
+đoán token tiếp theo. Phương trình (4) là mục tiêu pha hai, đoán nhãn. Phương
+trình (5) ghép chúng lại, \(L_3(C) = L_2(C) + \lambda L_1(C)\), và mục 4.1 đặt
+\(\lambda\) bằng 0.5, tức là pha một không tắt hẳn trong pha hai mà ở lại làm
+một số hạng \tn{điều chuẩn}{regularization}.
+
+Cái mua được bằng phép bẻ đôi ấy là dữ liệu. Nhãn thì đắt và hiếm; văn bản trơn
+thì không. BooksCorpus mà GPT-1 dùng có \enquote{over 7,000 unique unpublished
+books}, và bài nói rõ vì sao chọn nó thay vì một corpus cùng cỡ:
+\enquote{Crucially, it contains long stretches of contiguous text, which allows
+the generative model to learn to condition on long-range
+information}~\autocite{radford2018gpt1}. BERT dùng BooksCorpus 800 triệu từ cộng
+Wikipedia tiếng Anh 2500 triệu từ~\autocite{devlin2019bert}. GPT-2 dựng WebText,
+\enquote{slightly over 8 million documents for a total of 40 GB of
+text}~\autocite{radford2019gpt2}.
+
+Không tập nào trong ba tập ấy có nhãn. Đó là toàn bộ phát kiến, và nó là một
+phát kiến về mục tiêu huấn luyện chứ không phải về kiến trúc.
+
+\subsection*{Bỏ mask thì mất mục tiêu, nên phải tìm mục tiêu khác}
+
+\index{tiền huấn luyện!masked language model}%
+Mục~\ref{sec:ch09-cung-mot-khoi} đã nói chỗ này: bỏ mask nhân quả đi thì mục
+tiêu \enquote{đoán token tiếp theo} sụp, vì token tiếp theo nằm trong tầm nhìn
+của chính vị trí phải đoán nó. Mục~\ref{sec:ch07-che} đo được điều đó trên
+corpus của sách bằng phép can thiệp, và bài BERT phát biểu nó bằng lời ở mục
+3.1.
+
+Cái BERT đặt vào chỗ trống là masked language model. Thủ tục, nguyên văn:
+
+\begin{quote}
+\enquote{In all of our experiments, we mask 15\% of all WordPiece tokens in each
+sequence at random. [...] If the i-th token is chosen, we replace the i-th token
+with (1) the [MASK] token 80\% of the time (2) a random token 10\% of the time
+(3) the unchanged i-th token 10\% of the time.}
+\end{quote}
+
+Ba nhánh 80-10-10 tồn tại vì token \code{[MASK]} chỉ xuất hiện lúc tiền huấn
+luyện và không bao giờ xuất hiện lúc tinh chỉnh. Nếu mọi vị trí phải đoán đều
+mang \code{[MASK]}, mô hình học được rằng chỉ cần chú ý tới các vị trí có dấu
+ấy, và pha hai đưa cho nó một câu không có dấu nào. Hai nhánh 10\% còn lại là để
+mô hình không biết chắc vị trí nào đang bị hỏi.
+
+\subsection*{Cái giá của 15 phần trăm, tính bằng số học}
+
+\index{tiền huấn luyện!mật độ tín hiệu của hai mục tiêu}%
+Con số 15 ấy có một cái giá mà tôi chưa thấy bài nào trong hai bài nêu ra, và
+nó tính được mà không cần chạy gì.
+
+Một lượt truyền xuôi qua một chuỗi \(n\) token tốn chừng ấy phép tính dù mục
+tiêu là gì: kiến trúc không biết nó đang được huấn luyện kiểu nào. Nhưng số
+\emph{đích} mà lượt ấy sinh ra thì khác hẳn. Một \tn{mô hình ngôn ngữ}{language
+model} trái sang phải chấm điểm mọi vị trí, vì mỗi vị trí là một bài đoán hợp lệ
+với prefix của riêng nó. Masked language model chỉ chấm các vị trí bị che.
+
+\begin{measured}{mật độ tín hiệu của hai mục tiêu, trên cùng một lượt truyền}
+\begin{minted}{text}
+objective                targets/token  FLOPs/target, relative
+left-to-right LM         1.0000         1.0000
+masked LM at 15%         0.1500         6.6667
+
+at BERT-base's shape, one pretraining sequence of 512 tokens:
+  positions in the sequence        512
+  positions an LM predicts         512
+  positions BERT predicts          76
+\end{minted}
+
+Số học thuần túy từ 15\% của mục 3.1 và độ dài 512 của phụ lục A.2 trong bài
+BERT. Đo bằng \code{experiments/ch09\_counts.py} tại tag \code{ch09}.
+\end{measured}
+
+Trên cùng một chuỗi và cùng một lượt truyền, BERT thu về 76 đích còn một mô
+hình ngôn ngữ thu về 512. Tính theo phép tính bỏ ra cho mỗi đích, mục tiêu che
+đắt hơn 6.67 lần.
+
+Đó không phải một lời chê bài BERT. Đổi lại, mỗi đích của BERT được nhìn cả hai
+phía, còn mỗi đích của mô hình ngôn ngữ chỉ nhìn được bên trái, và bài đo được
+điều đó có giá. Bảng 5 mục 5.1 chạy \tn{phép cắt bỏ}{ablation}:
+
+\begin{quote}
+\enquote{We first examine the impact brought by the NSP task. In Table 5, we
+show that removing NSP hurts performance significantly on QNLI, MNLI, and SQuAD
+1.1.}
+\end{quote}
+
+Hàng \code{LTR \& No NSP} của bảng ấy là hàng đáng đọc: bỏ cả hai chiều lẫn
+next-sentence prediction thì Stanford Question Answering Dataset, viết tắt là
+SQuAD, tụt từ 88.5 xuống 77.8 F1, trong khi bỏ
+riêng next-sentence prediction chỉ làm nó xuống 87.9. Phần lớn khoảng cách là
+của tính hai chiều chứ không của mục tiêu câu.
+
+Nhưng chỗ đánh đổi giữa \enquote{nhiều đích một chiều} và \enquote{ít đích hai
+chiều} thì không bài nào trong hai bài đo, vì hai bài không so với nhau trên
+cùng một ngân sách tính toán. Ngành sau này quay lại đúng câu hỏi ấy, và
+bài tập cuối chương có một câu hỏi ở đó.
+
+\subsection*{Hai pha, và chỗ chi phí dồn vào}
+
+\index{tiền huấn luyện!bất đối xứng chi phí hai pha}%
+Con số làm cho cả câu chuyện này có nghĩa nằm ở phụ lục A.2 và mục 4 của bài
+BERT, và hai câu ấy nên đọc liền nhau.
+
+Pha một: \enquote{Training of BERT\_BASE was performed on 4 Cloud TPUs in Pod
+configuration (16 TPU chips total). Training of BERT\_LARGE was performed on 16
+Cloud TPUs (64 TPU chips total). Each pre-training took 4 days to complete.}
+
+Pha hai: \enquote{Compared to pre-training, fine-tuning is relatively
+inexpensive. All of the results in the paper can be replicated in at most 1 hour
+on a single Cloud TPU, or a few hours on a GPU, starting from the exact same
+pre-trained model.}
+
+Bốn ngày trên 64 chip, một lần. Một giờ trên một chip, cho mỗi bài toán, và bài
+đo trên một loạt bài toán. Cái bất đối xứng ấy là lý do hai pha đáng bẻ đôi: chi
+phí lớn trả một lần rồi chia cho mọi bài toán về sau, và mỗi bài toán mới chỉ
+phải trả phần nhỏ.
+
+Tóm tắt của bài nói cái đó bằng một câu về kiến trúc, và bây giờ thì câu ấy đọc
+ra được: \enquote{the pre-trained BERT model can be fine-tuned with just one
+additional output layer [...] without substantial task-specific architecture
+modifications.} Một tầng ra thêm vào. Không phải một kiến trúc mới cho mỗi bài
+toán, mà là một kiến trúc cộng một tầng.
+
+GPT-1 giải cùng bài toán ấy theo cách khác và nói ra ở mục 3.3: thay vì đổi mô
+hình cho vừa bài toán, nó đổi bài toán cho vừa mô hình, bằng cách viết đầu vào
+có cấu trúc thành một chuỗi tuyến tính. \enquote{These input transformations
+allow us to avoid making extensive changes to the architecture across tasks.}
+
+Hai bài, hai cách, cùng một mục đích: giữ cho phần đắt tiền dùng lại được.

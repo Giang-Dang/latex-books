@@ -15,6 +15,13 @@
 \usepackage{mathtools}
 
 \usepackage{booktabs}
+% longtable is here for exactly one table: appendix B's keep-in-English block,
+% which grows by a row or two every chapter and cannot be page-broken as a
+% plain tabular. It reached 43 rows in the chapter 9 session and overflowed its
+% page by 18.93pt, which is an Overfull \vbox rather than an \hbox and so does
+% not point at any line of source. The rest of the book's tables are short,
+% fixed-size and stay tabular; do not convert them.
+\usepackage{longtable}
 \usepackage{enumitem}
 
 \usepackage{graphicx}

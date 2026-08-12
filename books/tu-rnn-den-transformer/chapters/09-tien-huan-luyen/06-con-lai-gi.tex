@@ -1,0 +1,88 @@
+\section{Cái chương này đóng được, và cái nó mở ra}
+\label{sec:ch09-con-lai-gi}
+
+\index{tiền huấn luyện!chương này đóng được gì}%
+Chương~\ref{ch:chi-phi-va-song-song} để lại ba khoảng trống của kiến trúc:
+chi phí bậc hai theo độ dài, không có thiên kiến quy nạp về vị trí, và đói dữ
+liệu. Chương ấy đo được khoảng trống thứ nhất và loại trừ được khoảng trống thứ
+hai khỏi danh sách nghi phạm. Chương này là chương của khoảng trống thứ ba.
+
+Cái nó đóng được thì gọn, và không phải cái tôi định đóng khi bắt đầu.
+
+Kiến trúc không đổi. Ba bài mở mục kiến trúc bằng ba câu nói rằng chúng dùng
+lại khối của Vaswani, và hình~\ref{fig:ch09-ba-cach-cat} nói lại chuyện ấy bằng
+hình: encoder-only và decoder-only là hai phép xóa trên cùng một khối, và cái
+phân biệt hai phép xóa còn lại với nhau là một ma trận tam giác.
+
+Cái đổi là mục tiêu huấn luyện, và mục tiêu ấy chọn được vì nó không cần nhãn.
+Mọi thứ còn lại theo sau: bỏ mask thì mất mục tiêu đoán token tiếp theo, nên
+phải có masked language model; masked language model chấm 15\% số vị trí nên
+đắt hơn 6.67 lần cho mỗi đích; và cả hai đều đáng, vì pha một trả một lần còn
+pha hai trả cho từng bài toán.
+
+\subsection*{Ba con số không quay về, và một cái bảng đếm thiếu}
+
+\index{tiền huấn luyện!bốn chỗ dựng lại không khớp}%
+Số tham số của BERT-large in 340M và dựng lại ra 335.14M, lệch 1.4\%, không
+đóng được dưới bất kỳ cách đọc nào tôi thử. Bảng 2 của GPT-2 in bốn con số chỉ
+tái lập được bằng một từ điển quanh 40,500, trong khi mục 2.3 cùng bài thông báo
+từ điển đã mở rộng lên 50,257. GPT-3 in 175.0B ở bảng 2.1 và 174,600M ở bảng
+D.1 của chính nó, và phép dựng lại cho 174,604,259,328.
+
+GPT-1 thì không có con số nào để đối chiếu, vì bài không in số tham số.
+
+Không chỗ nào trong ba chỗ ấy làm đổi một luận điểm nào. Chúng đáng in ra vì lý
+do khác, và lý do ấy là cái tôi mang ra khỏi phiên làm việc này: \textbf{một con
+số được trích lại đủ nhiều lần thì không còn ai dựng lại nó.} Phép dựng lại ở
+đây là số học dạng đóng trên siêu tham số các bài tự in, không huấn luyện gì và
+không đo đồng hồ.
+
+Bảng 1 của Kaplan cũng vậy. Nó đếm một trong hai tích bậc hai của attention,
+tỷ lệ đúng 2.00 ở mọi cấu hình, và chuyện ấy không đi tới đâu vì chính số hạng
+đó bị \(6N\) vứt đi ở dòng sau. Nhưng ai dựng phép đếm FLOP của mình theo bảng
+ấy sẽ mang theo chỗ thiếu, và bảng ấy là chỗ bài đặt công thức sẵn để chép.
+
+\subsection*{Chỗ hai chương nối vào nhau}
+
+\index{tiền huấn luyện!ngưỡng 6d nối hai chương}%
+Một chuyện tôi không chờ đợi: sai số của \(6ND\) và phát hiện của
+chương~\ref{ch:chi-phi-va-song-song} là cùng một đại lượng.
+
+\eqref{eq:ch09-phan-attention} nói phần attention của một lượt xuôi là
+\(n/(6d+n)\), bằng nửa tại \(n = 6d\). Mục~\ref{sec:ch08-dem} tìm ra
+\(n = 2d + \dff\) là chỗ phần bậc hai vượt nửa một tầng, và ở \(\dff = 4d\) thì
+đó đúng là \(6d\). Chương trước hỏi khi nào phần bậc hai đắt bằng phần còn lại;
+chương này hỏi khi nào xấp xỉ mà cả ngành dùng để lập ngân sách bỏ sót một nửa.
+Cùng một ngưỡng.
+
+Hệ quả đọc được ngay từ bảng của mục~\ref{sec:ch09-sau-nd}: \(6ND\) sai 2.8\%
+ở GPT-3 và 44\% ở đúng mô hình ấy với ngữ cảnh 32768. Không phải vì quy mô. Vì
+\(n/d\). Mọi thứ trong hai bài \tn{quy luật scaling}{scaling law} đứng trên một
+xấp xỉ đúng trong chế độ \(n \ll d\), và chế độ ấy là chế độ của 2020.
+
+\subsection*{Cái nó mở ra}
+
+\index{tiền huấn luyện!chỗ ba chương sau bắt đầu}%
+Ba chỗ, và chúng đi về ba hướng khác nhau.
+
+Thứ nhất, chương~\ref{ch:bias-quy-nap} và chương~\ref{ch:vit}. Chương này lập
+xong tiền đề mà Vision Transformer, viết tắt là ViT, cần: cùng một kiến trúc
+thắng hay thua tùy vào nó được \tn{tiền huấn luyện}{pretraining} trên cái gì.
+Không có tiền đề ấy thì kết quả trung tâm của ViT đọc
+như một nghịch lý, vì nó là một bảng trong đó cùng một mô hình đứng hai bên của
+một phép so.
+
+Thứ hai, chương~\ref{ch:vi-tri-va-ngu-canh}. Điều kiện của Kaplan,
+\(d_{\mathrm{model}} \gg n_{\mathrm{ctx}}/12\), là điều kiện của các mô hình
+2020 và không phải điều kiện của mô hình ngữ cảnh dài. Bảng ở
+mục~\ref{sec:ch09-sau-nd} đo giá của việc bỏ điều kiện ấy: cùng GPT-3, ngữ cảnh
+gấp mười sáu, sai số từ 2.8\% lên 44\%. Mọi ngân sách tính bằng \(6ND\) cho một
+mô hình ngữ cảnh dài đều thấp, và thấp một khoảng tính được.
+
+Thứ ba, và đây là chỗ mở thật sự. Hai bài trong chương này bất đồng về một câu
+hỏi mà cả hai đều trả lời bằng phép khớp thực nghiệm, và bài sau chỉ ra rằng
+bài trước sai vì một chi tiết của lịch learning rate. Không ai biết bài sau còn
+bao nhiêu chi tiết như thế trong nó. Bảng A4 của chính bài ấy đã không dựng lại
+được từ những gì bài in, và bảng 2 của nó không dựng lại được từ hằng số phụ lục
+D.2 của nó. Bài tập tier ba cuối chương giao lại phần ấy, và tôi ghi ở đây rằng
+nó chưa được giải chứ không ghi rằng nó là bài tập.

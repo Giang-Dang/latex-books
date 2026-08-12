@@ -1,3 +1,43 @@
 % Scope (SPEC table of contents): Chương cầu nối bắt buộc để hiểu ViT. Encoder-only so với decoder-only; pretraining là phát kiến chứ không phải kiến trúc; Kaplan 2020 và Hoffmann 2022.
 \chapter{Tiền huấn luyện: BERT, GPT, và quy luật scaling}
 \label{ch:tien-huan-luyen}
+
+Ba bài báo đổi hẳn ngành này trong quãng 2018 tới 2020, và cả ba đều mở mục
+kiến trúc bằng một câu nói rằng chúng không đổi kiến trúc.
+
+Bidirectional Encoder Representations from Transformers, viết tắt là BERT, mục
+3: \enquote{our implementation is almost identical to the
+original}~\autocite{devlin2019bert}. Generative Pre-Training, viết tắt là GPT,
+ở bản đầu tiên của nó, mục 4.1: \enquote{Our model largely follows the original
+transformer work}~\autocite{radford2018gpt1}. GPT-3, mục 2.1: \enquote{We use the same model and architecture as GPT-2 [...] with the
+exception that we use alternating dense and locally banded sparse attention
+patterns}~\autocite{brown2020gpt3}.
+
+Cái khối các bài ấy xếp chồng lên nhau là khối chương~\ref{ch:transformer} dựng
+xong ở trang cuối. Nên câu hỏi của chương này không phải các bài ấy xây gì. Là
+các bài ấy đổi gì, nếu không phải kiến trúc.
+
+\textbf{Và đây là chương đầu tiên trong sách mà tôi không đo được thứ mình đang
+viết.} Corpus của chương~\ref{ch:encoder-decoder} sinh từ một văn phạm hữu hạn
+với từ điển đóng. Một mô hình học được nó chính xác, và tập kiểm tra rút từ cùng
+văn phạm ấy không phải một miền khác mà là cùng một phân phối. \tn{Tiền huấn
+luyện}{pretraining} trên nó rồi \tn{tinh chỉnh}{fine-tuning} sang nó chỉ là
+huấn luyện lâu hơn, gọi bằng hai cái tên. Con số sẽ có, và sẽ không nói gì về
+chuyện chương này nói.
+
+Nên chương này không huấn luyện gì cả. Cái nó làm thay là đếm. Ba bài trên cộng
+GPT-2, bài đứng giữa GPT-1 và GPT-3: mọi con số tham số bốn bài ấy công bố đều
+được dựng lại từ chính bảng siêu tham số của chúng, và hai bài về
+\tn{quy luật scaling}{scaling law} thì có công thức của chúng đem ra tính. Cả hai việc là số học dạng đóng, chạy trên máy nào cũng cho
+đúng từng chữ số. Ba con số không quay về, và ba chỗ ấy là chỗ đáng đọc.
+
+Bạn sẽ thấy chương này trích nhiều hơn đo, và nó nói thẳng ra như vậy ở
+mục~\ref{sec:ch09-khong-do-duoc} chứ không giấu sau một thí nghiệm đồ chơi.
+
+\input{chapters/09-tien-huan-luyen/01-cung-mot-khoi}
+\input{chapters/09-tien-huan-luyen/02-phat-kien}
+\input{chapters/09-tien-huan-luyen/03-sau-nd}
+\input{chapters/09-tien-huan-luyen/04-hai-quy-luat}
+\input{chapters/09-tien-huan-luyen/05-khong-do-duoc}
+\input{chapters/09-tien-huan-luyen/06-con-lai-gi}
+\input{chapters/09-tien-huan-luyen/07-bai-tap}

@@ -1,0 +1,176 @@
+\section{\texorpdfstring{\(C = 6ND\)}{C = 6ND}, và cái nó bỏ quên}
+\label{sec:ch09-sau-nd}
+
+\index{quy luật scaling!công thức 6ND}%
+Hai bài của mục~\ref{sec:ch09-hai-quy-luat} đều đặt mọi kết luận của mình lên
+một xấp xỉ, và nó là một dòng: huấn luyện một mô hình \(N\) tham số trên \(D\)
+token tốn chừng \(6ND\) phép tính dấu chấm động.
+
+Chỗ con số 6 ra, Kaplan và cộng sự viết ở mục 2.1:
+
+\begin{quote}
+\enquote{Accounting for the backwards pass (approximately twice the compute as
+the forwards pass), we then define the estimated non-embedding compute as
+\(C \approx 6N\) floating point operations per training
+token.}~\autocite{kaplan2020scaling}
+\end{quote}
+
+Mỗi tham số dự đúng một phép nhân-cộng cho mỗi token, và một phép nhân-cộng là
+2 FLOP, nên lượt xuôi tốn \(2N\). Lượt ngược tốn gấp đôi, \(4N\). Cộng lại là
+\(6N\) trên mỗi token, nhân \(D\) token.
+
+Chương~\ref{ch:chi-phi-va-song-song} đã dựng một phép đếm FLOP chính xác cho
+một tầng và kiểm nó bằng bộ đếm toán tử của chính torch. Nên câu hỏi ở đây trả
+lời được: \(6ND\) sai bao nhiêu, và sai ở đâu.
+
+\subsection*{Bảng 1 của Kaplan đếm một trong hai tích bậc hai}
+
+\index{quy luật scaling!bảng 1 thiếu một tích}%
+Trước khi đo sai số, có một chuyện về chính bảng ấy.
+
+Attention có \emph{hai} phép nhân ma trận mang \(n^2\), và
+mục~\ref{sec:ch08-dem} đã đếm cả hai: \(\mat{Q}\mat{K}^\top\) để ra
+\tn{ma trận điểm số}{score matrix}, rồi phép lấy tổ hợp \(\mat{V}\) theo trọng
+số softmax. Mỗi phép tốn
+\(2n^2 d\), tổng \(4n^2 d\) một tầng.
+
+Bảng 1 của Kaplan có đúng một hàng mang \(n_{\mathrm{ctx}}\), tên là
+\code{Attention: Mask}, và hàng ấy ghi \(2 n_{\mathrm{layer}}
+n_{\mathrm{ctx}} d_{\mathrm{attn}}\). Hàng \code{Total} của bảng ghi
+\(C_{\mathrm{forward}} = 2N + 2 n_{\mathrm{layer}} n_{\mathrm{ctx}}
+d_{\mathrm{attn}}\), và phương trình 2.2 trong thân bài mang đúng cùng hệ số
+ấy. Bảng và công thức nhất quán với nhau, và cùng đếm một tích.
+
+\begin{measured}{bảng 1 của Kaplan đặt cạnh phép đếm chính xác, mỗi token một tầng}
+\begin{minted}[fontsize=\footnotesize]{text}
+d_model  n_ctx   kaplan attn   exact attn    ratio  kaplan total  exact total
+768      512     786,432       1,572,864     2.00   14,942,208    15,728,640
+1600     1024    3,276,800     6,553,600     2.00   64,716,800    67,993,600
+12288    2048    50,331,648    100,663,296   2.00   3,674,210,304 3,724,541,952
+\end{minted}
+
+Cấu hình chuẩn của chính bài, \(d_{\mathrm{attn}} = \dff/4 = \dmodel\).
+
+Đo bằng \code{experiments/ch09\_counts.py} tại tag \code{ch09}.
+\end{measured}
+
+Tỷ lệ đúng 2.00 ở cả ba cấu hình. Nửa tham số của hai phép đếm thì khớp nhau
+chính xác, nên chỗ lệch không phải một cách quy ước khác về FLOP mà đúng là một
+tích bị thiếu.
+
+\textbf{Ai đúng thì không phải chuyện đọc kỹ hơn.} \code{tests/test\_ch09.py}
+đem phép đếm dạng đóng so với \code{FlopCounterMode}, tức bản ghi của torch về
+các toán tử thật sự đã chạy, trên một stack thật ở ba kích thước; chênh lệch là
+0 ở cả ba. Đây là cùng phép kiểm chéo mục~\ref{sec:ch08-dem} dùng cho một tầng,
+nâng lên cho cả chồng. Phụ lục F của Hoffmann và cộng sự cũng liệt kê cả hai
+tích, từng dòng một, dưới hai cái tên \code{Key @ Query logits} và
+\code{Softmax @ query reductions}~\autocite{hoffmann2022chinchilla}.
+
+Và điều đáng nói là chuyện ấy không quan trọng. Số hạng bị đếm thiếu chính là số
+hạng mà \(6N\) vứt đi hoàn toàn ở bước sau. Bài nói thẳng ra là nó vứt, cùng
+mục 2.1: \enquote{Since we primarily study models where \(d_{\mathrm{model}} \gg
+n_{\mathrm{ctx}}/12\), we do not include context-dependent terms in our training
+compute estimate.} Một hằng số 2 trong một số hạng sắp bị bỏ thì không đi tới
+đâu cả. Tôi in nó ra vì bảng 1 là chỗ bài viết phép đếm ra thành công thức, nên
+nó là chỗ một người dựng phép đếm FLOP của mình sẽ chép từ đó, và người ấy sẽ
+mang theo đúng chỗ thiếu này.
+
+\subsection*{Sai số của 6ND là đại lượng chương trước đã đo}
+
+\index{quy luật scaling!sai số của 6ND}%
+Câu hỏi thật thì ở chỗ khác: bỏ số hạng ấy đi thì mất bao nhiêu.
+
+Viết ra thì gọn. Mỗi token, mỗi tầng, bốn phép chiếu tốn \(8d^2\), mạng truyền
+thẳng tốn \(4d\dff\), và hai tích attention tốn \(4nd\). Ở \(\dff = 4d\) thì
+hai số hạng đầu gộp thành \(24d^2\), nên phần attention chiếm
+
+\begin{equation}
+\label{eq:ch09-phan-attention}
+\frac{4nd}{24d^2 + 4nd} = \frac{n}{6d + n}.
+\end{equation}
+
+Số tầng biến mất, vì mọi số hạng đều nhân với nó. Còn lại một hàm của đúng tỷ
+số \(n/d\), và nó bằng một nửa tại \(n = 6d\).
+
+\(6d\) là con số của mục~\ref{sec:ch08-dem}. Ở đó \(n = 2d + \dff\) là chỗ phần
+bậc hai vượt nửa một tầng, và ở \(\dff = 4d\) thì \(2d + 4d = 6d\). Hai chương
+tới cùng một ngưỡng từ hai phía: chương trước hỏi khi nào phần bậc hai đắt bằng
+phần còn lại, chương này hỏi khi nào xấp xỉ của Kaplan bỏ sót một nửa. Cùng một
+\(n\).
+
+Từ \eqref{eq:ch09-phan-attention}, tỷ lệ giữa phép đếm chính xác và \(2N\) là
+xấp xỉ \(1 + n/(6d)\), và \(D\) triệt tiêu khỏi nó vì cả hai vế đều tuyến tính
+theo \(D\).
+
+\begin{measured}{6ND so với phép đếm chính xác, ở bốn cấu hình đã công bố}
+\begin{minted}[fontsize=\footnotesize]{text}
+configuration                   n_ctx   ratio    1 + n/(6d)  attn share
+GPT-1        L12 d768           512     1.1095   1.1111      0.1000
+GPT-2 1542M  L48 d1600          1024    1.1059   1.1067      0.0964
+GPT-3 175B   L96 d12288         2048    1.0277   1.0278      0.0270
+GPT-3 175B, 4x context          8192    1.1110   1.1111      0.1000
+GPT-3 175B, 16x context         32768   1.4443   1.4444      0.3077
+\end{minted}
+
+Đo bằng \code{experiments/ch09\_counts.py} tại tag \code{ch09}.
+\end{measured}
+
+Ba chuyện đọc ra từ bảng ấy.
+
+Thứ nhất, xấp xỉ \(1 + n/(6d)\) bám số đo trong vòng 0.002 ở khắp bảng, nên
+\eqref{eq:ch09-phan-attention} không phải một ước lượng thô mà là chính đại
+lượng ấy, sai lệch chỉ vì \(N\) còn mang bias và layer norm.
+
+Thứ hai, \(6ND\) luôn thấp hơn thực tế, không bao giờ cao hơn. Nó bỏ đi một số
+hạng dương và không bỏ gì khác.
+
+Thứ ba, và đây là chỗ đáng dừng: sai số ở GPT-3 là 2.8\% còn ở GPT-1 là 11\%.
+Không phải vì GPT-3 lớn hơn. Là vì GPT-3 \emph{rộng} hơn nhiều so với độ dài
+ngữ cảnh của nó. Cùng mô hình GPT-3 ấy, giữ nguyên mọi tham số và chỉ kéo ngữ
+cảnh lên 32768, sai số thành 44\%. Đại lượng quyết định là \(n/d\), đúng như
+\eqref{eq:ch09-phan-attention} nói, và không phải quy mô.
+
+Đó cũng là lý do các bài \tn{quy luật scaling}{scaling law} dùng được \(6ND\) mà
+vẫn tin được:
+chúng khớp trên các mô hình mà \(n/d\) nhỏ. Điều kiện Kaplan viết ra,
+\(d_{\mathrm{model}} \gg n_{\mathrm{ctx}}/12\), là đúng đại lượng ấy nói theo
+cách khác. Một chương sau, ở chỗ ngữ cảnh dài, điều kiện ấy hỏng, và
+chương~\ref{ch:vi-tri-va-ngu-canh} là chương phải sống với chỗ hỏng ấy.
+
+\subsection*{Vì sao \texorpdfstring{\(N\)}{N} trừ embedding ra}
+
+\index{quy luật scaling!N không tính embedding}%
+Còn một chi tiết định nghĩa mà bỏ qua thì mọi con số dưới đây lệch. Kaplan viết
+ở mục 1.3: \(N\) là \enquote{the number of model parameters, excluding all
+vocabulary and positional embeddings}, và mục 2.1 nói lý do:
+\enquote{we will see that this produces significantly cleaner scaling laws}.
+
+Nghe như chuyện sổ sách. Không phải.
+
+\begin{measured}{bảng embedding chiếm bao nhiêu phần của mô hình}
+\begin{minted}[fontsize=\footnotesize]{text}
+model        total               embedding       non-embedding    emb share
+GPT-1        116,536,320         31,480,320      85,056,000       0.2701
+GPT-2 1542M  1,557,611,200       82,049,600      1,475,561,600    0.0527
+BERT-base    109,482,240         23,837,184      85,645,056       0.2177
+GPT-3 175B   174,604,259,328     642,723,840     173,961,535,488  0.0037
+\end{minted}
+
+Hàng GPT-1 lấy từ điển 40,478 của checkpoint phát hành, vì bài không in kích
+thước từ điển và mục~\ref{sec:ch09-cung-mot-khoi} đã nói chỗ đó. Chọn đầu kia
+của dải, 40,000, thì phần embedding thành 0.2678 thay vì 0.2701, nên chỗ không
+chắc ấy không đụng gì tới điều bảng này nói.
+
+Đo bằng \code{experiments/ch09\_counts.py} tại tag \code{ch09}.
+\end{measured}
+
+Bảng embedding là 27\% của GPT-1 và 0.37\% của GPT-3. Hệ số 73, trên đúng dải
+quy mô mà các quy luật được khớp. Khối stack lớn theo \(d^2\) còn bảng embedding
+lớn theo \(d\), nên hai đại lượng ấy tách nhau ra càng lúc càng xa.
+
+Hệ quả thực hành thì gọn: một quy luật khớp theo \(N\) không tính embedding mà
+đem áp cho tổng số tham số là đang áp qua một hệ số trôi 73 lần. Và
+Hoffmann và cộng sự đếm \emph{ngược lại} với Kaplan, ghi ở phụ lục F:
+\enquote{we also count embeddings matrices in the total parameter count}. Hai
+bài, hai định nghĩa của cùng một chữ \(N\), và
+mục~\ref{sec:ch09-hai-quy-luat} là chỗ chuyện ấy có hậu quả.

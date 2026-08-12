@@ -1,0 +1,318 @@
+\section{Hai quy luật, và chúng không đồng ý}
+\label{sec:ch09-hai-quy-luat}
+
+\index{quy luật scaling!ba luật lũy thừa của Kaplan}%
+Nếu phát kiến là \tn{tiền huấn luyện}{pretraining} trên văn bản không nhãn, thì
+câu hỏi tiếp theo là câu hỏi kỹ thuật: có một ngân sách tính toán, tiêu vào đâu.
+
+Hai đáp án, cách nhau hai năm, và chúng ngược nhau.
+
+\subsection*{Kaplan 2020: mất mát là hàm lũy thừa của ba thứ}
+
+Bài Kaplan khớp ba luật, mỗi luật cho một trong ba đại lượng, và mục 1.2 in cả
+ba với dấu \(\sim\) chứ không phải dấu bằng:
+
+\begin{align}
+\label{eq:ch09-kaplan}
+L(N) &= (N_c/N)^{\alpha_N}, & \alpha_N &\sim 0.076, & N_c &\sim 8.8 \times 10^{13}, \\
+L(D) &= (D_c/D)^{\alpha_D}, & \alpha_D &\sim 0.095, & D_c &\sim 5.4 \times 10^{13}, \notag \\
+L(C_{\min}) &= (C_c/C_{\min})^{\alpha_C}, & \alpha_C &\sim 0.050, & C_c &\sim 3.1 \times 10^{8}. \notag
+\end{align}
+
+\(N\) là tham số không tính embedding, \(D\) là token, \(C_{\min}\) tính bằng
+petaflop-ngày. Hai chữ số có nghĩa là tất cả những gì bài in, và tôi không thêm
+chữ số thứ ba.
+
+Số mũ nhỏ tới mức đáng ngờ. \(\alpha_N = 0.076\) nghĩa là tăng mô hình gấp mười
+thì mất mát chỉ nhân với \(10^{-0.076}\), tức giảm 16.1\%. Đó chính là
+hình dạng của mọi thứ trong bài: cải thiện có, đều đặn, và đắt.
+
+\begin{measured}{ba luật của Kaplan, tính ra số}
+\begin{minted}[fontsize=\footnotesize]{text}
+N (non-embedding)   L(N)      D (tokens)      L(D)      C_min (PF-days)  L(C)
+1.0e+07             3.3712    1.0e+08         3.5041    1.0e+00          2.6581
+1.0e+08             2.8300    1.0e+09         2.8156    1.0e+02          2.1114
+1.0e+09             2.3756    1.0e+10         2.2624    1.0e+04          1.6771
+1.0e+10             1.9943    1.0e+11         1.8179    1.0e+06          1.3322
+\end{minted}
+
+Đo bằng \code{experiments/ch09\_laws.py} tại tag \code{ch09}.
+\end{measured}
+
+\textbf{Một cái bẫy khi trích bài này.} Cùng những ký hiệu ấy mang giá trị khác
+nhau ở những chỗ khác nhau trong bài. Bảng 3 mục 5 khớp dạng hai biến
+\(L(N, S)\) và cho \(\alpha_N = 0.077\) với \(N_c = 6.5 \times 10^{13}\); phụ
+lục A bảng 5 khớp \(L(C)\) dạng thô và cho \(\alpha_C = 0.057\). Bài không mâu
+thuẫn với chính nó, vì đó là ba phép khớp cho ba mục đích, và chú thích 3 nói
+rõ nên dùng đường \(C_{\min}\) để dự đoán. Nhưng trích \(N_c\) mà không nói lấy
+từ phương trình nào là trích sai, và đây là dạng của quyết định về việc trích
+theo phiên bản mà chương~\ref{ch:transformer} đã phải học một lần.
+
+Câu trả lời cho câu hỏi ngân sách nằm ở bảng 6 phụ lục A: \(N_{\mathrm{opt}}
+\propto C_{\min}^{0.73}\) và \(D_{\mathrm{opt}} \propto C_{\min}^{0.27}\). Bài
+nói bằng lời ở trang 5: \enquote{As the computational budget \(C\) increases, it
+should be spent primarily on larger models, without dramatic increases in
+training time or dataset size.}
+
+Tiêu vào tham số. Đó là lời khuyên, và ngành nghe theo: GPT-3 ra cùng năm ấy,
+với 175 tỷ tham số trên 300 tỷ token.
+
+\subsection*{Hoffmann 2022: chia đôi}
+
+\index{quy luật scaling!Chinchilla và phép chia đôi}%
+Hai năm sau, cùng câu hỏi, 400 mô hình. Tóm tắt:
+
+\begin{quote}
+\enquote{we find that for compute-optimal training, the model size and the
+number of training tokens should be scaled equally: for every doubling of model
+size the number of training tokens should also be
+doubled.}~\autocite{hoffmann2022chinchilla}
+\end{quote}
+
+Bảng 2 của bài cho ba cách ước lượng và ba cặp số mũ: 0.50 và 0.50 cho cách
+thứ nhất, 0.49 và 0.51 cho cách thứ hai, 0.46 và 0.54 cho cách thứ ba, với phân
+vị bootstrap thứ 10 và 90 in kèm. Hàng cuối bảng là chính Kaplan, 0.73 và 0.27.
+
+Nói bằng số mũ thì hai bên nghe như chỉ khác nhau về mức độ. Nói bằng số nhân
+thì khác hẳn.
+
+\begin{measured}{một hệ số ngân sách đi về đâu, dưới mỗi bài}
+\begin{minted}{text}
+compute x   Kaplan: model x   Kaplan: data x   Hoffmann: each x
+2           1.66              1.21             1.41
+10          5.37              1.86             3.16
+100         28.84             3.47             10.00
+1000        154.88            6.46             31.62
+\end{minted}
+
+Đo bằng \code{experiments/ch09\_laws.py} tại tag \code{ch09}.
+\end{measured}
+
+Ngân sách gấp nghìn: Kaplan nói mô hình lớn gấp 155 lần với dữ liệu chỉ gấp 6.5;
+Hoffmann nói cả hai gấp 31.6. Ở hàng cuối ấy hai lời khuyên cho ra hai mô hình
+lệch nhau năm lần về kích thước.
+
+Một chi tiết nhỏ trong bảng trên. Phần mở đầu của bài Hoffmann diễn đạt lại
+hàng \code{10} của Kaplan thành \enquote{5.5x} và \enquote{1.8x}. Số mũ của
+chính Kaplan cho 5.37 và 1.86. Bài làm tròn số của đối thủ chứ không trích nó,
+và chênh lệch không đổi kết luận nào; tôi ghi lại vì một người đọc dựng lại
+bảng trên sẽ ra 5.37 và tự hỏi mình sai ở đâu.
+
+\subsection*{Một chỗ bài không dựng lại được từ chính nó}
+
+\index{quy luật scaling!hằng số làm tròn của Hoffmann}%
+Hàng thứ ba của bảng 2 không phải một phép khớp độc lập. Phương trình 4 dẫn nó
+ra từ \tn{hàm mất mát}{loss function} hai biến của phụ lục D.2,
+
+\begin{equation}
+\label{eq:ch09-chinchilla}
+L(N, D) = E + \frac{A}{N^{\alpha}} + \frac{B}{D^{\beta}},
+\end{equation}
+
+với \(E = 1.69\), \(A = 406.4\), \(B = 410.7\), \(\alpha = 0.34\) và
+\(\beta = 0.28\). Từ đó \(a = \beta/(\alpha + \beta)\) và
+\(b = \alpha/(\alpha + \beta)\), nên \(a + b = 1\) đúng theo cấu trúc, và đó
+mới là phát biểu thật: một hệ số ngân sách chia hết cho mô hình và dữ liệu,
+không đi đâu khác.
+
+Thay số vào thì \(a = 0.4516\) và \(b = 0.5484\). Bảng 2 in 0.46 và 0.54, và
+0.4516 không làm tròn thành 0.46.
+
+\begin{measured}{giải ngược ra \(\alpha\) và \(\beta\) mà bảng 2 hàm ý}
+\begin{minted}{text}
+  a = beta/(alpha+beta)  = 0.4516  rounds to 0.45
+  b = alpha/(alpha+beta) = 0.5484  rounds to 0.55
+  a + b = 1.0000  (exactly 1 by construction)
+
+  beta/alpha must be          0.8519
+  with alpha = 0.34, beta would be  0.2896
+  with beta = 0.28, alpha would be   0.3287
+\end{minted}
+
+Đo bằng \code{experiments/ch09\_laws.py} tại tag \code{ch09}.
+\end{measured}
+
+Giữ \(\alpha\) đã in thì \(\beta\) phải là 0.2896; giữ \(\beta\) đã in thì
+\(\alpha\) phải là 0.3287. Không giá trị nào sống sót một mình, nên cả hai đều
+mang thêm chữ số mà phụ lục D.2 không in, và đường biên tính trước khi làm tròn.
+
+Đây không phải mâu thuẫn, và tôi không đọc nó thành lỗi. Nó là chuyện khác:
+\eqref{eq:ch09-chinchilla} và bảng 2 không cùng dựng lại được từ hằng số bài in
+ra. Bạn tính được hàm mất mát, hoặc tính được đường biên, không phải cả hai.
+
+\subsection*{Chinchilla so với Gopher}
+
+\index{quy luật scaling!Chinchilla so với Gopher}%
+Bài không dừng ở phép khớp. Nó lấy ngân sách của một mô hình đã có và tiêu lại
+theo công thức mới. Gopher là 280 tỷ tham số trên 300 tỷ token; Chinchilla là 70
+tỷ trên 1.4 nghìn tỷ. Bốn lần nhỏ hơn, gần năm lần nhiều dữ liệu hơn.
+
+Kết quả trên Massive Multitask Language Understanding, viết tắt là MMLU: Gopher
+60.0, Chinchilla 67.6, theo bảng 6 mục 4.2.2. Tóm tắt
+của bài in 67.5 và \enquote{greater than a 7\% improvement}, còn thân bài in
+67.6 và \enquote{improving upon Gopher by 7.6\%}. Hai con số ấy lệch nhau trong
+chính bài, giống hệt ở cả bản arXiv lẫn bản NeurIPS. Chương này dùng 67.6, vì đó
+là số bảng 6 đo được, và ghi lại chỗ lệch thay vì chọn im lặng.
+
+\begin{measured}{cùng một ngân sách, chia hai kiểu}
+\begin{minted}{text}
+model         N            D            C = 6ND      L(N, D)
+Gopher        2.8e+11      3e+11        5.040e+23    1.9933
+Chinchilla    7e+10        1.4e+12      5.880e+23    1.9366
+\end{minted}
+
+\eqref{eq:ch09-chinchilla} tính ở hai cấu hình bảng 1 của bài in.
+
+Đo bằng \code{experiments/ch09\_laws.py} tại tag \code{ch09}.
+\end{measured}
+
+Hàm mất mát của chính bài xếp Chinchilla trên Gopher, đúng chiều bài đo được
+trên MMLU. Nhưng cột \code{C} thì không khớp với điều bài nói về nó. Mục 4 viết
+hai mô hình \enquote{have been trained for the same number of FLOPs}, và
+\(6ND\) trên chính con số bảng 1 cho 5.040e+23 với 5.880e+23, lệch nhau 16.7\%.
+Để bằng nhau dưới \(6ND\), Chinchilla cần 1.200e+12 token thay vì 1.4e+12.
+
+Cách giải thích khả dĩ nằm trong chính bài, và nó cũng là lý do tôi không đọc
+chỗ này thành lỗi. Bài không dùng \(6ND\) cho phép đếm của mình: phụ lục F đếm
+đủ mọi số hạng, kể cả embedding và logits cuối, và bảng A4 của bài đo tỷ lệ
+giữa phép đếm đủ ấy với \(6ND\), rồi báo rằng nó chạy từ 0.99 tới 1.10 tùy hình
+dạng mô hình. Gopher rộng gấp đôi Chinchilla, nên hai mô hình nằm ở hai chỗ khác
+nhau của dải ấy, và một khoảng 16.7\% dưới \(6ND\) không đòi hỏi con số nào
+phải sai.
+
+\textbf{Chỗ này tôi định kiểm và không kiểm được.} Bảng A4 không dựng lại được
+từ bài, vì phép đếm của phụ lục F phụ thuộc cả độ dài chuỗi lẫn kích thước từ
+điển, và bài không in con số nào trong hai. Tôi tìm cả hai trong mục huấn luyện
+và trong từng phụ lục từ A tới I, và không thấy.
+
+Nên tôi làm việc còn lại làm được: cài phép đếm của phụ lục F rồi quét hai ẩn
+ấy trên chín cặp giá trị hợp lý, ba độ dài chuỗi nhân ba kích thước từ điển.
+
+\begin{measured}{chín cặp, và không cặp nào cho lại cột của bảng A4}
+\begin{minted}{text}
+published:    1.03   1.10   1.08   1.04   1.03   0.99
+
+n_ctx  vocab   rebuilt ratios                          worst gap
+1024   32000    1.48   1.26   1.20   1.14   1.12   1.07   0.455
+2048   32000    1.68   1.41   1.33   1.24   1.20   1.11   0.645
+4096   32000    2.06   1.71   1.57   1.42   1.36   1.21   1.026
+\end{minted}
+
+Ba hàng đại diện của chín; \code{ch09\_laws.py} in cả chín. Cặp gần nhất vẫn
+lệch 0.455 ở hàng tệ nhất của nó.
+
+Đo bằng \code{experiments/ch09\_laws.py} tại tag \code{ch09}.
+\end{measured}
+
+Chín cặp, không cặp nào tới gần. Nên chương này ghi lại bảng A4 nói điều gì, và
+ghi lại rằng nó không kiểm được điều đó, thay vì in một cột số của riêng mình
+cạnh cột của bài như thể hai cột so được với nhau.
+
+\subsection*{GPT-3 dưới thước đo của Chinchilla}
+
+\index{quy luật scaling!GPT-3 huấn luyện thiếu}%
+Bảng 3 của bài chiếu công thức mới lên chín ngân sách. Hàng 175 tỷ tham số muốn
+3.7 nghìn tỷ token. GPT-3 dùng 300 tỷ, kém 12.3 lần.
+
+\begin{measured}{GPT-3 và một mô hình cùng ngân sách, dưới \eqref{eq:ch09-chinchilla}}
+\begin{minted}{text}
+model                      N            D            L(N, D)
+GPT-3 as trained           1.75e+11     3e+11        2.0023
+compute-matched, 20 D/N    5.123e+10    1.025e+12    1.9609
+\end{minted}
+
+Mô hình đối chứng dựng từ chính tỷ số của bảng 3: \(C = 6N(20N) = 120N^2\), nên
+\(N = \sqrt{C/120}\), ở đúng \(C = 3.150 \times 10^{23}\) của GPT-3.
+
+Đo bằng \code{experiments/ch09\_laws.py} tại tag \code{ch09}.
+\end{measured}
+
+Cùng ngân sách, và phép khớp thích mô hình 51 tỷ tham số hơn mô hình 175 tỷ,
+hơn 0.0414 nat. Đọc theo chiều thực hành: theo bài này, cái đắt nhất GPT-3 mua
+là kích thước nó không dùng hết.
+
+Tôi để một cảnh báo cạnh đoạn ấy. \eqref{eq:ch09-chinchilla} là một phép khớp
+trên dữ liệu của một phòng thí nghiệm, với tokenizer của họ và corpus của họ, và
+GPT-3 huấn luyện trên corpus khác với tokenizer khác. Con số 0.0414 nat là con
+số của mô hình đã khớp, không phải một phép đo trên GPT-3. Đó là lý do nó nằm
+trong một hộp \enquote{tôi đo được} ghi rõ công thức, chứ không nằm trong một
+câu bảo rằng GPT-3 lẽ ra nên nhỏ hơn.
+
+\subsection*{Quy tắc hai mươi token, và chỗ nó không được phát biểu}
+
+\index{quy luật scaling!quy tắc hai mươi token}%
+Bài này hay được rút gọn thành một quy tắc: chừng hai mươi token cho mỗi tham
+số. Quy tắc ấy tiện, và nó không có trong bài.
+
+\begin{measured}{bảng 3 của bài, cộng hai cột tôi tính thêm}
+\begin{minted}[fontsize=\footnotesize]{text}
+parameters     tokens        D/N     6ND          table's FLOPs  ratio
+400 Million    8.000e+09     20.0    1.920e+19    1.920e+19      1.0000
+1 Billion      2.020e+10     20.2    1.212e+20    1.210e+20      1.0017
+10 Billion     2.051e+11     20.5    1.231e+22    1.230e+22      1.0005
+67 Billion     1.500e+12     22.4    6.030e+23    5.760e+23      1.0469
+175 Billion    3.700e+12     21.1    3.885e+24    3.850e+24      1.0091
+280 Billion    5.900e+12     21.1    9.912e+24    9.900e+24      1.0012
+520 Billion    1.100e+13     21.2    3.432e+25    3.430e+25      1.0006
+1 Trillion     2.120e+13     21.2    1.272e+26    1.270e+26      1.0016
+10 Trillion    2.162e+14     21.6    1.297e+28    1.300e+28      0.9978
+\end{minted}
+
+Đo bằng \code{experiments/ch09\_laws.py} tại tag \code{ch09}.
+\end{measured}
+
+Cột \code{D/N} chạy từ 20.0 tới 22.4 và trôi lên theo quy mô, chứ không đứng
+yên ở một con số. Tôi tìm trong phần chính và trong từng phụ lục A tới I và
+không thấy bài
+viết quy tắc ấy ra ở đâu; nó là một cách đọc cột này. Chương gọi đúng tên như
+vậy, theo cùng nguyên tắc mà mục~\ref{sec:ch07-chia-can} đã phải giữ một lần:
+một câu chưa được phát biểu thì không được trích như thể đã.
+
+Cột cuối cùng là một phép kiểm phụ và nó trả lời được một câu: bảng 3 dựng bằng
+\(6ND\), khớp tới nửa phần trăm ở bảy trong chín hàng. Hai hàng còn lại lệch vì
+cột token của chúng làm tròn: hàng 67 tỷ lệch 4.7\% ở 1.5 nghìn tỷ token, và
+hàng 175 tỷ lệch 0.91\% ở 3.7 nghìn tỷ.
+
+\subsection*{Vì sao hai bài lệch nhau, theo lời bài sau}
+
+\index{quy luật scaling!lý do hai bài lệch nhau}%
+Bài Hoffmann giải thích chỗ lệch, ở mục 2, và đưa đúng hai lý do.
+
+Lý do thứ nhất là lịch learning rate:
+
+\begin{quote}
+\enquote{First, the authors use a fixed number of training tokens and learning
+rate schedule for all models; this prevents them from modelling the impact of
+these hyperparameters on the loss. [...] For a fixed learning rate cosine
+schedule to 130B tokens, the intermediate loss estimates (for \(D' \ll\) 130B)
+are therefore overestimates of the loss of a model trained with a schedule
+length matching \(D'\).}
+\end{quote}
+
+Đọc chậm thì cơ chế rõ. Kaplan chạy mọi mô hình với một lịch cosine đặt cho một
+độ dài cố định, và lấy mất mát ở các mốc giữa chừng làm điểm dữ liệu cho những
+độ dài huấn luyện ngắn hơn. Nhưng một mô hình dừng ở giữa một lịch dài chưa
+được hạ learning rate xuống đáy, nên nó tệ hơn một mô hình có lịch riêng vừa
+đúng độ dài ấy. Mọi điểm dữ liệu \enquote{ít dữ liệu} vì thế đều bị đánh giá
+thấp, và kết luận nghiêng về phía tham số. Mục 2.2 của bài Kaplan xác nhận đúng
+cách làm ấy, và còn nói thêm một câu: \enquote{results at convergence were
+largely independent of learning rate schedule}. Câu ấy nói về điểm hội tụ. Các
+mốc giữa chừng thì nó không nói gì, và đó đúng là chỗ Hoffmann lấy dữ liệu ra.
+
+Lý do thứ hai là dải kích thước. Bài viết rằng phần lớn các lần chạy của Kaplan
+nhỏ hơn hẳn, nhiều lần dưới 100 triệu tham số
+(\enquote{many being less than 100M parameters}), và quan sát rằng đường biên có
+\tn{độ cong}{curvature} nhẹ chỉ lộ ra khi đưa các mô hình vài tỷ tham số vào.
+
+\textbf{Và một lý do thứ ba, không có trong bài.} Có một cách kể rằng Kaplan sai
+vì trừ embedding ra khỏi \(N\). Tôi đọc cả đoạn giải thích của mục 2 để tìm câu
+ấy và nó không có ở đó. Chỗ duy nhất
+embedding xuất hiện là phụ lục F, thuần kỹ thuật, nơi bài ghi quy ước của
+\emph{chính nó}: \enquote{Note that we also count embeddings matrices in the
+total parameter count.} Hai bài đúng là định nghĩa \(N\) ngược nhau, như
+mục~\ref{sec:ch09-sau-nd} đã đo, và không bài nào nối chuyện ấy với chỗ số mũ
+khác nhau. Một khác biệt định nghĩa có thật, cộng một chỗ bất đồng có thật, ghép
+lại thành một lời giải thích mà không ai kiểm.
+
+Ghép hai thứ đúng thành một câu sai là chuyện dễ xảy ra khi cả hai đều tra được.
+Đó là lý do mục này trích đoạn văn chứ không tóm tắt nó.
