@@ -1,0 +1,166 @@
+% No \label here. \exercises is a starred section, so a label attached to it
+% takes the number of the last *numbered* section instead (quyet dinh 68).
+% Prose refers to these by name.
+\exercises
+
+\tierunderstand
+
+\begin{bt}
+  \item Dẫn lại bảng ba chế độ của mục~\ref{sec:ch10-hai-rang-buoc} cho một
+    tầng tổng quát: ảnh \(H \times W\) với \(C_{\text{in}}\) kênh vào,
+    \(C_{\text{out}}\) kênh ra, kernel \(K \times K\), giữ nguyên độ phân giải.
+    Viết ba công thức số tham số. Rồi trả lời câu đắt hơn: vì sao phép chia do
+    \tn{chia sẻ trọng số}{weight sharing} đúng bằng \(HW\) mà không phụ thuộc
+    \(K\), trong khi phép chia do \tn{tính cục bộ}{locality} thì phụ thuộc cả
+    hai?
+
+  \item Mục~\ref{sec:ch10-hai-rang-buoc} đo được 71.91\% tham số tự do của tầng
+    H1 trong bài 1989 là bias. Tính lại con số ấy cho một tầng
+    \code{nn.Conv2d} hiện đại có bias dùng chung theo kênh. Rồi nói: nếu bài
+    1989 dùng bias dùng chung thì tổng 9,760 thành bao nhiêu, và tỷ số 6.625
+    thành bao nhiêu?
+
+  \item LeNet-5 dựng lại ra đúng 340,908 kết nối chỉ khi đếm cả tầng ra RBF, vốn
+    có 840 kết nối và không tham số tự do nào. Nêu một cách đọc khác của cụm
+    \enquote{trainable free parameters} làm cho con số 60,000 vẫn đúng mà cách
+    chia tầng thì khác, rồi nói phép kiểm nào tách được hai cách đọc bằng đúng
+    những con số bài in.
+
+  \item Chứng minh \eqref{eq:ch10-dang-bien} cho \tn{tích chập}{convolution} một
+    chiều với padding vòng, thẳng từ định nghĩa của phép ấy. Rồi chỉ ra bước nào
+    trong chứng minh hỏng khi padding là padding không, và bước nào hỏng khi có
+    stride bằng 2.
+
+  \item Mục~\ref{sec:ch10-dang-bien} đo được một mạng ba tầng pooling
+    \tn{đẳng biến}{equivariance} ở bội của 8. Tổng quát hóa: cho một mạng có các
+    tầng stride
+    \(s_1, \dots, s_L\), chu kỳ đẳng biến là bao nhiêu? Rồi tính cho ResNet-50,
+    tra stride từng tầng của nó, và nói con số ấy so với 224 pixel đầu vào thì
+    là bao nhiêu phần.
+
+  \item Định lý 1 của Cordonnier và cộng sự đòi \(N_h = K^2\) head cho kernel
+    \(K \times K\). Mục~\ref{sec:ch10-attention-lam-duoc} nói self-attention vì
+    thế \enquote{biểu diễn được} tích chập. Viết ra ba thứ mà phát biểu ấy
+    \emph{không} nói, mỗi thứ kèm một phép đo phân biệt được nó với phát biểu đã
+    chứng minh.
+
+  \item Mục~\ref{sec:ch10-anh-that} đo được khoảng cách CNN với MLP rộng ra theo
+    lượng dữ liệu, còn bội số ảnh cần thì cho kết luận ngược. Dựng một ví dụ số
+    nhỏ - hai đường cong độ chính xác theo lượng dữ liệu, viết bằng công thức -
+    trong đó khoảng cách tuyệt đối rộng ra đơn điệu \emph{và} bội số ảnh cần
+    hẹp lại đơn điệu. Rồi nói điều đó nghĩa là gì cho việc đọc bất kỳ bảng
+    ablation nào.
+
+  \item Ở phép dịch 8, mục~\ref{sec:ch10-anh-that} đo CNN đổi nhãn trên 59.81\%
+    số ảnh, và nêu ba nguyên nhân rời nhau: mạng pad bằng không, bộ phân loại
+    đọc vị trí, và phép dịch vòng thật sự đổi ảnh. Thiết kế một phép đo tách
+    được ba phần ấy. Nói rõ mỗi phần cần đối chứng nào, và phần nào trong ba
+    phần bạn khử được mà không phải huấn luyện lại mô hình.
+\end{bt}
+
+\tierapply
+
+Trạng thái xuất phát cho cả năm bài: clone repo companion, đứng ở thư mục gốc
+của nó, và checkout đúng tag của chương này.
+
+\begin{minted}{console}
+$ git clone https://github.com/Giang-Dang/rnn-to-transformer-lab.git
+$ cd rnn-to-transformer-lab
+$ git checkout ch10
+$ conda env create -f environment.yml
+$ conda activate rnn-to-transformer-lab
+$ python -c "from rnn_to_transformer_lab.cifar import fetch; fetch()"
+$ python verify.py --only ch10
+\end{minted}
+
+Dòng áp chót là bắt buộc và chỉ chạy một lần: nó tải CIFAR-10 về rồi cache
+lại. Trên máy tôi việc ấy mất ba mươi hai phút, nên đừng tưởng là treo. Nó
+không in gì trong lúc tải; muốn biết nó còn sống thì xem kích thước file trong
+thư mục \code{data/} lớn dần lên. Mọi lần chạy sau đọc cache và không cần mạng.
+
+Dòng cuối phải in ra \code{verify: ok}. Bốn mục của chương này chạy hết chừng
+năm phút cộng lại, và gần hết chỗ ấy là một mục: phép quét ở
+mục~\ref{sec:ch10-anh-that} huấn luyện 36 mô hình. Ba mục còn lại không huấn
+luyện gì và xong trong vài giây.
+
+Vẫn cảnh báo cũ: đừng gọi các script qua \code{conda run}.
+
+\begin{bt}
+  \item \textbf{Đo cái mục~\ref{sec:ch10-con-lai-gi} nói là chưa ai đo.} Bảng
+    của chương so CNN với MLP, tức so hai ràng buộc cùng lúc. Dựng mô hình ở
+    giữa: cục bộ mà \emph{không} dùng chung trọng số, tức mỗi vị trí có kernel
+    riêng của nó. PyTorch không có sẵn tầng ấy; dựng bằng \code{unfold} cộng một
+    phép nhân theo lô, hoặc bằng cách khác bạn thấy gọn hơn. Rồi chạy lại đúng
+    phép quét của \code{ch10\_cifar.py} với ba mô hình thành bốn, và trả lời:
+    trong bội số 28.4 lần, bao nhiêu thuộc về tính cục bộ và bao nhiêu thuộc về
+    chia sẻ trọng số? Cảnh báo trước: mô hình ấy có rất nhiều tham số, nên phép
+    so \enquote{cùng số tham số} sẽ không dựng được cùng lúc với phép so
+    \enquote{cùng cấu trúc}, và bạn phải chọn một rồi nói mình chọn cái nào.
+
+  \item Sửa \code{equivariance\_error} cho nó nhận stride không phải lũy thừa
+    của 2, rồi quét: với tầng stride \(s\), tập các phép dịch đầu vào cho sai
+    số đúng bằng không là tập nào? Đoán trước rồi chạy. Rồi chạy bộ test của
+    chương:
+
+    \begin{minted}{console}
+$ python -m pytest -q tests/test_ch10.py
+    \end{minted}
+
+    Test nào bắt được thay đổi của bạn, test nào không, và vì sao?
+
+  \item Đẩy phép dựng của mục~\ref{sec:ch10-attention-lam-duoc} về phía thật.
+    Thay các head đặt bằng tay bằng một tầng self-attention có mã hóa vị trí
+    tương đối bậc hai như bài Cordonnier mô tả, rồi tăng dần hệ số làm softmax
+    nhọn lên và đo sai số so với \code{F.conv2d} theo hệ số ấy. Vẽ đường cong.
+    Nói rõ đường cong ấy đo cái gì, và vì sao nó \emph{không} phải bằng chứng
+    rằng một mô hình được huấn luyện sẽ đi tới đó.
+
+  \item Bảng ở mục~\ref{sec:ch10-anh-that} chuẩn hóa dữ liệu bằng thống kê của
+    chính tập huấn luyện chứ không của cả 50,000 ảnh. Đổi sang dùng thống kê
+    toàn bộ, chạy lại, và đo xem hàng 1000 ảnh đổi bao nhiêu. Rồi trả lời: chỗ
+    rò rỉ ấy làm bảng đẹp lên hay xấu đi, và vì sao nó lại tác động mạnh nhất
+    lên đúng hàng mà chương đọc kỹ nhất?
+
+  \item Dựng lại bảng số tham số của chương cho một kiến trúc hiện đại bạn tra
+    được đủ siêu tham số - ResNet-18 là lựa chọn rẻ. Tính tỷ lệ tham số nằm ở
+    các tầng chia sẻ so với các tầng kết nối đầy đủ, rồi đặt cạnh 0.6250 của bài
+    1989 và 0.9714 của LeNet-5. Con số đi theo hướng nào, và cái gì trong lịch
+    sử kiến trúc giải thích hướng ấy?
+\end{bt}
+
+\tierextend
+
+\begin{bt}
+  \item Mục~\ref{sec:ch10-anh-that} đo bội số 28.4 lần trên CIFAR-10 với một
+    mạng ba tầng tích chập. Con số ấy là của cặp mô hình ấy trên bộ dữ liệu ấy,
+    và chương không tổng quát hóa nó. Câu hỏi: bội số ấy phụ thuộc cái gì? Thiết
+    kế một phép đo cho \emph{một} biến - độ phân giải ảnh, số lớp, mức độ ảnh
+    thật sự có cấu trúc cục bộ - và chạy nó ở quy mô bạn chạy được. Nói trước
+    kết quả nào sẽ làm bạn nghi ngờ chính thiết kế của mình. Gợi ý cho biến thứ
+    ba: xáo cố định thứ tự pixel của mọi ảnh bằng cùng một hoán vị phá cấu trúc
+    cục bộ mà không đổi thông tin, và MLP không được ảnh hưởng gì.
+
+  \item Bài Cordonnier chứng minh sức biểu diễn và đo được rằng các tầng đầu của
+    mạng chỉ-attention tự học ra kiểu chú ý theo lưới. Chưa ai trả lời câu ở
+    giữa: \emph{bao nhiêu} dữ liệu thì đủ để nó học ra? Dựng phép đo ấy. Huấn
+    luyện một mạng self-attention nhỏ trên ảnh ở vài lượng dữ liệu, đo mức độ
+    phân phối attention của tầng đầu giống một kernel cục bộ - bạn phải tự định
+    nghĩa độ đo ấy và bảo vệ định nghĩa - rồi đặt đường cong ấy cạnh đường cong
+    độ chính xác. Hai đường có gãy ở cùng chỗ không?
+
+  \item Mục~\ref{sec:ch10-dang-bien} đo được phép \tn{giảm mẫu}{subsampling} phá
+    đẳng biến ở đúng một nửa số phép dịch, và Zhang đề xuất lọc chống aliasing
+    để vá. Đọc cách vá
+    ấy như một phát biểu về đánh đổi chứ không như một kỹ thuật: nó mua lại tính
+    chất gì, và trả bằng gì? Cài nó, đo cả hai vế trên bảng của
+    mục~\ref{sec:ch10-anh-that}, và trả lời câu mà bài không hỏi: nếu đẳng biến
+    ở mọi phép dịch đáng giá đến thế, vì sao kiến trúc thắng giải năm nào cũng
+    vẫn có stride?
+
+  \item Chương này và chương~\ref{ch:tien-huan-luyen} đo hai thứ mà cả hai đều
+    gọi là \enquote{đói dữ liệu}, ở hai quy mô cách nhau năm bậc độ lớn. Đề xuất
+    một đại lượng duy nhất đo được ở cả hai chỗ, định nghĩa nó đủ chặt để tính
+    được từ những bảng hai chương đã in, rồi tính. Nếu bạn kết luận là không có
+    đại lượng nào như vậy, hãy chứng minh chỗ nào cản - và đó cũng là một câu
+    trả lời, miễn là bạn nói được cản ở đâu.
+\end{bt}

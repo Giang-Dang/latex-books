@@ -1,3 +1,53 @@
-% Scope (SPEC table of contents): Locality, translation equivariance, chia sẻ trọng số; các nỗ lực trước ViT: attention cục bộ, Image Transformer, iGPT.
-\chapter{Bias quy nạp của CNN}
+% Scope (SPEC table of contents): Tính cục bộ, đẳng biến với phép dịch, chia sẻ trọng số, đếm chính xác trên LeCun 1989 và LeNet-5, cả hai đều dựng lại đúng; đẳng biến không phải bất biến, đo tuyệt đối, và chỗ phép giảm mẫu làm mất nó; định lý Cordonnier cho thấy self-attention biểu diễn được convolution nên khác biệt không nằm ở sức biểu diễn; các nỗ lực trước ViT: Image Transformer, Stand-Alone Self-Attention, Attention Augmented, iGPT; và phép đo đầu tiên của sách trên ảnh thật, CIFAR-10 (quyết định 69).
+\chapter{Thiên kiến quy nạp của CNN}
 \label{ch:bias-quy-nap}
+
+Chương~\ref{ch:tien-huan-luyen} kết thúc ở một câu mà chương~\ref{ch:vit} sẽ
+biến thành một bảng: cùng một mô hình, không đổi một dòng mã, thua hay thắng
+tùy vào nó được \tn{tiền huấn luyện}{pretraining} trên cái gì. Muốn đọc bảng ấy
+thì phải biết nó
+thua \emph{ai}, và nó thua một mạng \tn{tích chập}{convolution}.
+
+Nên chương này là chương về đối thủ. Câu hỏi của nó gọn: một mạng tích chập -
+convolutional neural network, viết tắt là CNN - có cái gì mà Transformer không
+có?
+
+Bài Vision Transformer, viết tắt là ViT, trả lời trong đúng một đoạn, mục 3.1,
+và ba danh từ trong câu ấy là ba mục đầu của chương
+này~\autocite{dosovitskiy2021vit}:
+
+\begin{quote}
+\enquote{We note that Vision Transformer has much less image-specific inductive
+bias than CNNs. In CNNs, locality, two-dimensional neighborhood structure, and
+translation equivariance are baked into each layer throughout the whole model.}
+\end{quote}
+
+Chú ý bài viết \emph{equivariance}. Không phải \emph{invariance}. Chỗ khác nhau
+giữa hai chữ ấy là mục~\ref{sec:ch10-dang-bien}, và nó không phải chuyện chữ
+nghĩa: một trong hai là định lý về phép tính, cái còn lại là một phát biểu về
+cả mạng và nó \emph{sai} với những mạng người ta thật sự dựng.
+
+\textbf{Và đây là chương đầu tiên trong sách chạy trên dữ liệu không do sách tự
+sinh ra.} Corpus văn phạm của chương~\ref{ch:encoder-decoder} không có ảnh
+trong nó, và chương~\ref{ch:tien-huan-luyen} đã cho thấy cái giá của việc dựng
+một thí nghiệm đồ chơi cho một luận điểm mà đồ chơi ấy không mang cấu trúc.
+Nên chương này tải CIFAR-10 về - Canadian Institute For Advanced Research, viết
+tắt là CIFAR, là nơi cấp kinh phí cho bộ dữ liệu ấy - chấp nhận cái giá đi kèm,
+và mục~\ref{sec:ch10-anh-that} nói rõ cái giá ấy là gì.
+
+Ba thứ chương này đo được mà tôi không chờ đợi. Số tham số của hai bài kinh
+điển dựng lại \emph{đúng} tới từng đơn vị, ngược hẳn với chương trước.
+\tn{Chia sẻ trọng số}{weight sharing} hóa ra không làm mạng nhỏ đi, nó làm bộ
+trích đặc trưng nhỏ đi, và LeNet-5 tiêu 97\% tham số ở những tầng không chia sẻ
+gì. Và hai chữ ở trên không thay thế được cho nhau: cái mà phép tính tích chập
+thật sự có là equivariance, đúng tuyệt đối nhưng chỉ ở một phần số phép dịch và
+không đúng chút nào ở phần còn lại; còn cái mà cả ngành hay gán cho nó là
+invariance, và mạng thì không có tính chất ấy ở đâu cả.
+
+\input{chapters/10-bias-quy-nap/01-hai-rang-buoc}
+\input{chapters/10-bias-quy-nap/02-dang-bien}
+\input{chapters/10-bias-quy-nap/03-attention-lam-duoc}
+\input{chapters/10-bias-quy-nap/04-truoc-vit}
+\input{chapters/10-bias-quy-nap/05-anh-that}
+\input{chapters/10-bias-quy-nap/06-con-lai-gi}
+\input{chapters/10-bias-quy-nap/07-bai-tap}

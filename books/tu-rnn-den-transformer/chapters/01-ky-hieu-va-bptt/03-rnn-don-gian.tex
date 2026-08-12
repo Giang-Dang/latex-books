@@ -28,8 +28,9 @@ Tại bước $t$, ba thứ xảy ra theo thứ tự:
 \end{enumerate}
 
 Cùng một bộ trọng số $(\mat{W}_{xh}, \mat{W}_{hh}, \mat{W}_{hy},
-\vect{b}_h, \vect{b}_y)$ được dùng ở mọi bước. Đây là \textbf{chia sẻ trọng
-số} (weight sharing): RNN không học một bộ tham số riêng cho $t=1$, một bộ
+\vect{b}_h, \vect{b}_y)$ được dùng ở mọi bước. Đây là
+\textbf{\tn{chia sẻ trọng số}{weight sharing}}: RNN không học một bộ tham số
+riêng cho $t=1$, một bộ
 khác cho $t=2$, mà học một bộ duy nhất áp dụng cho chuỗi dài bất kỳ. Nhờ vậy,
 một RNN huấn luyện trên câu dài 10 từ vẫn chạy được trên câu dài 50 từ mà
 không cần thay đổi gì.

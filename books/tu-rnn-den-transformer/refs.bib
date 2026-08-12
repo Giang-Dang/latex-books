@@ -712,6 +712,212 @@
                  vocabulary size the paper states nowhere.}
 }
 
+%--- Chapter 10: the inductive bias of convolutional networks ---------------
+
+@article{lecun1989zipcode,
+  author       = {LeCun, Yann and Boser, Bernhard and Denker, John S. and
+                  Henderson, Donnie and Howard, Richard E. and Hubbard, Wayne
+                  and Jackel, Lawrence D.},
+  title        = {Backpropagation Applied to Handwritten Zip Code Recognition},
+  journal      = {Neural Computation},
+  volume       = {1},
+  number       = {4},
+  pages        = {541--551},
+  year         = {1989},
+  url          = {http://yann.lecun.com/exdb/publis/pdf/lecun-89e.pdf},
+  urldate      = {2026-08-12},
+  note         = {Read from the journal-typeset PDF on the first author's own
+                 site, sha256 \code{378c00b2...c91fff1}; the MIT Press copyright
+                 line and the 541--551 pagination are on the page images.
+                 Sections 3.2 and 3.3 read in full and their arithmetic rebuilt;
+                 the rest of the paper skimmed. Chapter 10 leans on three things
+                 from section 3.3, all quoted from the page images rather than
+                 from any secondary source: the definition of weight sharing as
+                 \enquote{equality constraints among the connection strengths},
+                 the sentence \enquote{Units do not share their biases
+                 (thresholds)}, and the sentence saying the two-pixel
+                 subsampling means \enquote{some position information is
+                 eliminated}. The paper's own totals - 1256 units, 64,660
+                 connections, 9,760 independent parameters - rebuild exactly
+                 from its per-layer text.}
+}
+
+@article{lecun1998gradient,
+  author       = {LeCun, Yann and Bottou, L{\'e}on and Bengio, Yoshua and
+                  Haffner, Patrick},
+  title        = {Gradient-Based Learning Applied to Document Recognition},
+  journal      = {Proceedings of the IEEE},
+  volume       = {86},
+  number       = {11},
+  pages        = {2278--2324},
+  year         = {1998},
+  url          = {http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf},
+  urldate      = {2026-08-12},
+  note         = {Read from the PDF on the first author's own site. Section II
+                 read in full for the LeNet-5 layer table and the three
+                 architectural ideas; the document-recognition half of the paper
+                 not read. Chapter 10 quotes the \enquote{local receptive
+                 fields, shared weights [...] and spatial or temporal
+                 sub-sampling} sentence from section II.A. Both printed totals
+                 rebuild: 340,908 connections and 60,000 trainable parameters,
+                 where 60,000 is exact rather than rounded, and the connection
+                 total closes only once the fixed-weight RBF output layer's 840
+                 connections are counted.}
+}
+
+@inproceedings{zhang2019shift,
+  author       = {Zhang, Richard},
+  title        = {Making Convolutional Networks Shift-Invariant Again},
+  booktitle    = {Proceedings of the 36th International Conference on Machine
+                  Learning},
+  series       = {Proceedings of Machine Learning Research},
+  volume       = {97},
+  year         = {2019},
+  eprint       = {1904.11486},
+  eprinttype   = {arXiv},
+  eprintclass  = {cs.CV},
+  url          = {https://arxiv.org/abs/1904.11486v2},
+  urldate      = {2026-08-12},
+  note         = {Read as arXiv:1904.11486v2, revised 9 June 2019, whose title
+                 page states \enquote{Accepted to ICML 2019}. The PMLR
+                 proceedings copy was not fetched, so any wording difference
+                 there is unchecked. Section 3.1 read in full for the two
+                 definitions chapter 10 quotes; the anti-aliasing method and its
+                 results tables read but not relied on, and chapter 10 prints no
+                 number from this paper.}
+}
+
+@inproceedings{cordonnier2020relationship,
+  author       = {Cordonnier, Jean-Baptiste and Loukas, Andreas and Jaggi,
+                  Martin},
+  title        = {On the Relationship between Self-Attention and Convolutional
+                  Layers},
+  booktitle    = {International Conference on Learning Representations},
+  year         = {2020},
+  eprint       = {1911.03584},
+  eprinttype   = {arXiv},
+  eprintclass  = {cs.LG},
+  url          = {https://arxiv.org/abs/1911.03584v2},
+  urldate      = {2026-08-12},
+  note         = {Read as arXiv:1911.03584v2, whose title page states
+                 \enquote{Published as a conference paper at ICLR 2020}. Theorem
+                 1, lemma 1, the quadratic positional encoding of section 4.2
+                 and the conclusions read from the PDF page images; the
+                 experimental sections skimmed. **A reading trap worth
+                 recording**, and exactly the shape decision 47 exists for: the
+                 ar5iv HTML rendering of this paper drops the square-root glyph
+                 in theorem 1 and shows the kernel size as \(N_h \times N_h\)
+                 rather than \(\sqrt{N_h} \times \sqrt{N_h}\). The PDF is
+                 unambiguous. That is a rendering fault rather than two copies
+                 disagreeing, but it changes the theorem's content, so chapter
+                 10 quotes the page image.}
+}
+
+@inproceedings{parmar2018image,
+  author       = {Parmar, Niki and Vaswani, Ashish and Uszkoreit, Jakob and
+                  Kaiser, {\L}ukasz and Shazeer, Noam and Ku, Alexander and
+                  Tran, Dustin},
+  title        = {Image Transformer},
+  booktitle    = {Proceedings of the 35th International Conference on Machine
+                  Learning},
+  series       = {Proceedings of Machine Learning Research},
+  volume       = {80},
+  year         = {2018},
+  eprint       = {1802.05751},
+  eprinttype   = {arXiv},
+  eprintclass  = {cs.CV},
+  url          = {https://arxiv.org/abs/1802.05751v3},
+  urldate      = {2026-08-12},
+  note         = {Read as arXiv:1802.05751v3, dated 15 June 2018. Section 3.3
+                 and tables 4 and 5 read from the page images; the local
+                 attention construction and the bits-per-dimension figures
+                 chapter 10 prints come from there. The PMLR copy was not
+                 fetched.}
+}
+
+@inproceedings{chen2020igpt,
+  author       = {Chen, Mark and Radford, Alec and Child, Rewon and Wu, Jeffrey
+                  and Jun, Heewoo and Luan, David and Sutskever, Ilya},
+  title        = {Generative Pretraining from Pixels},
+  booktitle    = {Proceedings of the 37th International Conference on Machine
+                  Learning},
+  series       = {Proceedings of Machine Learning Research},
+  volume       = {119},
+  pages        = {1691--1703},
+  year         = {2020},
+  url          = {https://cdn.openai.com/papers/Generative_Pretraining_from_Pixels_V2.pdf},
+  urldate      = {2026-08-12},
+  note         = {**No arXiv copy of this paper exists**; only the PMLR
+                 proceedings and the publisher-hosted PDF are live. Read from
+                 the latter. Abstract, the model table and the discussion
+                 section read; the pretraining method sections skimmed.
+                 Chapter 10 quotes the discussion's own \enquote{2 to 3 times as
+                 many parameters [...] and uses more compute} rather than the
+                 widely repeated \enquote{2500 V100-days} figure, which is
+                 attributed to a vendor blog post that returned HTTP 403 on
+                 every fetch. That post's byline could not be checked either,
+                 and the house rule admits a vendor source only when a named
+                 engineer is named in the prose, so the figure is out.}
+}
+
+@inproceedings{ramachandran2019standalone,
+  author       = {Ramachandran, Prajit and Parmar, Niki and Vaswani, Ashish and
+                  Bello, Irwan and Levskaya, Anselm and Shlens, Jonathon},
+  title        = {Stand-Alone Self-Attention in Vision Models},
+  booktitle    = {Advances in Neural Information Processing Systems 32},
+  year         = {2019},
+  eprint       = {1906.05909},
+  eprinttype   = {arXiv},
+  eprintclass  = {cs.CV},
+  url          = {https://arxiv.org/abs/1906.05909v1},
+  urldate      = {2026-08-12},
+  note         = {Read as arXiv:1906.05909v1, the only version on arXiv, whose
+                 title page still reads \enquote{Preprint. Under review}; the
+                 NeurIPS camera-ready was not fetched and may differ. Abstract
+                 and table 1 read from the page images, which is where chapter
+                 10's ResNet-50 figures come from.}
+}
+
+@inproceedings{bello2019attention,
+  author       = {Bello, Irwan and Zoph, Barret and Le, Quoc and Vaswani, Ashish
+                  and Shlens, Jonathon},
+  title        = {Attention Augmented Convolutional Networks},
+  booktitle    = {Proceedings of the IEEE/CVF International Conference on
+                  Computer Vision},
+  year         = {2019},
+  eprint       = {1904.09925},
+  eprinttype   = {arXiv},
+  eprintclass  = {cs.CV},
+  url          = {https://arxiv.org/abs/1904.09925v5},
+  urldate      = {2026-08-12},
+  note         = {Read as arXiv:1904.09925v5, dated 9 September 2020, which
+                 postdates the ICCV 2019 presentation by a year. Abstract and
+                 introduction read from the page image; chapter 10 quotes the
+                 introduction's two-part statement of what a convolutional layer
+                 imposes, and prints the abstract's 1.3 percent and 1.4 mAP.
+                 Five revisions exist and only v5 was read, so whether those two
+                 headline figures stood in v1 is unchecked.}
+}
+
+@techreport{krizhevsky2009cifar,
+  author       = {Krizhevsky, Alex},
+  title        = {Learning Multiple Layers of Features from Tiny Images},
+  institution  = {University of Toronto},
+  year         = {2009},
+  url          = {https://cave.cs.toronto.edu/kriz/learning-features-2009-TR.pdf},
+  urldate      = {2026-08-12},
+  note         = {Dated 8 April 2009 on its title page, which carries this one
+                 author; the dataset page separately credits Alex Krizhevsky,
+                 Vinod Nair and Geoffrey Hinton with CIFAR-10 and CIFAR-100.
+                 Chapter 3 read in full for the collection method and the
+                 split; the rest of the report, which is about learning features
+                 rather than about the dataset, not read. The archive chapter 10
+                 actually trains on was verified in the drafting session: md5
+                 \code{c58f3010...e74349a}, matching the digest published on the
+                 dataset page, and 170,498,071 bytes. The page writes that size
+                 as \enquote{163 MB}, which is MiB.}
+}
+
 %--- Chapter 11: Vision Transformer -----------------------------------------
 
 @inproceedings{dosovitskiy2021vit,
@@ -730,5 +936,17 @@
   url          = {https://arxiv.org/abs/2010.11929v2},
   urldate      = {2026-08-09},
   note         = {The title page states \enquote{Published as a conference paper
-                 at ICLR 2021}. Read as arXiv:2010.11929v2, dated 3 June 2021.}
+                 at ICLR 2021}. Read as arXiv:2010.11929v2, dated 3 June 2021.
+                 **Extended in the chapter 10 session.** The published ICLR
+                 copy was read directly for sections 3.1 and 3.2, and v1 (22
+                 October 2020) was diffed against v2 across the passages chapter
+                 10 leans on: the introduction's \enquote{Transformers lack some
+                 of the inductive biases inherent to CNNs} sentence, the
+                 \enquote{large scale training trumps inductive bias} sentence,
+                 the \enquote{Inductive bias} paragraph of section 3.1, and the
+                 four headline accuracies. All identical between the two
+                 versions, so decision 47 has nothing to report for this paper.
+                 Note the paper writes \emph{equivariance} rather than
+                 \emph{invariance}, and chapter 10 measures why that is the
+                 correct word.}
 }

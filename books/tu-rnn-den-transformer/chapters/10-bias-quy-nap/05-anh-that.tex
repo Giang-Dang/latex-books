@@ -1,0 +1,216 @@
+\section{Đo trên ảnh thật}
+\label{sec:ch10-anh-that}
+
+\index{thiên kiến quy nạp!vì sao chương này cần dữ liệu thật}%
+Chương~\ref{ch:tien-huan-luyen} không đo được luận điểm của nó, và mục 9.5 của
+nó nói vì sao: corpus sinh từ văn phạm không mang cấu trúc mà luận điểm ấy nói
+tới, và một bảng đo sai đại lượng tệ hơn không có bảng.
+
+Chương này gặp cùng câu hỏi và trả lời khác, vì ở đây có đường ra. Luận điểm là
+về ảnh, và ảnh thật thì tải về được.
+
+Nên sách này tải CIFAR-10~\autocite{krizhevsky2009cifar}: 60,000 ảnh màu
+32x32, 10 lớp, 50,000 ảnh huấn luyện và 10,000 ảnh kiểm tra, mỗi lớp chia đều.
+
+Cái giá phải nói ra. Cho tới chương trước, mọi thí nghiệm trong repo companion
+sinh dữ liệu của chúng từ một seed, nên \code{verify.py} chạy được trên máy
+người khác mà không cần mạng. Từ chương này thì không. Lần chạy đầu phải tải
+170,498,071 byte, và trên máy tôi viết chương này việc ấy mất ba mươi hai phút.
+Đó không phải chi phí của bộ dữ liệu mà là của đường mạng ở đây, nhưng nó lớn
+tới mức không nhét vào ngân sách nào được, nên nó nằm ngoài phần bấm giờ: tải
+một lần rồi mọi lần sau đọc cache. Một người đọc không có mạng sẽ thấy mục này
+đỏ cho tới khi tải xong một lần.
+
+Trang tải ghi con số ấy là \enquote{163 MB}, tức nó đang gọi MiB là MB; tôi in
+số byte vì đó là số \code{cifar.py} đối chiếu trước khi giải nén.
+
+Tôi đổi tính chất ấy lấy một chương có bằng chứng, và nói ra ở đây để bạn biết
+mình đang trả gì.
+
+\subsection*{Ba mô hình, và số tham số nói trước}
+
+\index{thiên kiến quy nạp!ba mô hình đem so}%
+Phép so là một mạng \tn{tích chập}{convolution} nhỏ đặt cạnh những mạng
+perceptron nhiều tầng - multi-layer perceptron, viết tắt là MLP - nhìn cùng số
+pixel ấy mà không có \tn{tính cục bộ}{locality} và không có
+\tn{chia sẻ trọng số}{weight sharing}.
+
+\begin{measured}{ba mô hình của mục này}
+\begin{minted}{text}
+model         parameters  vs CNN  locality  sharing
+CNN           66,570      1.0000  yes       yes
+MLP matched   64,753      0.9727  no        no
+MLP wide      1,578,506   23.7120 no        no
+\end{minted}
+
+Đo bằng \code{experiments/ch10\_cifar.py} tại tag \code{ch10}.
+\end{measured}
+
+Quyết định của sách là một \tn{phép cắt bỏ}{ablation} phải có đối chứng khớp
+kích thước hoặc nói rõ vì sao không có. Ở đây có hai đối chứng, và cái thứ hai mới là cái đóng
+lập luận.
+
+MLP khớp tham số có \textbf{21 unit ẩn}. Đó là thứ 66,570 tham số mua được khi
+không tham số nào dùng chung, và nó là hệ quả trực tiếp của con số 1024 ở
+mục~\ref{sec:ch10-hai-rang-buoc}: mỗi unit ẩn phải trả riêng cho từng pixel
+trong 3072 pixel. Chỉ so với nó thôi thì phản bác hiển nhiên là \enquote{21
+unit thì làm được gì}, và phản bác ấy đúng. Nên bảng có thêm một MLP với 23.71
+lần số tham số.
+
+\subsection*{Bao nhiêu ảnh thì đủ}
+
+\index{thiên kiến quy nạp!bảng sample efficiency trên CIFAR-10}%
+Cùng một recipe cho mọi hàng: Adam, learning rate \(10^{-3}\), batch 128. Cái
+thay đổi giữa các hàng là lượng dữ liệu. Ba seed, chấm trên toàn bộ 10,000 ảnh
+kiểm tra.
+
+\begin{measured}{độ chính xác theo lượng dữ liệu huấn luyện}
+\begin{minted}{text}
+n_train  epochs  model         test acc     spread   train acc
+1000     25      CNN           0.4365       0.0326   0.8893
+1000     25      MLP matched   0.3163       0.0176   0.9190
+1000     25      MLP wide      0.3469       0.0236   1.0000
+
+4000     14      CNN           0.5499       0.0102   0.7637
+4000     14      MLP matched   0.3733       0.0042   0.6432
+4000     14      MLP wide      0.3915       0.0133   0.9453
+
+16000    7       CNN           0.6399       0.0197   0.7202
+16000    7       MLP matched   0.4251       0.0152   0.5100
+16000    7       MLP wide      0.4534       0.0120   0.6835
+
+50000    4       CNN           0.7036       0.0019   0.7361
+50000    4       MLP matched   0.4478       0.0015   0.4797
+50000    4       MLP wide      0.5025       0.0057   0.5743
+\end{minted}
+
+Số epoch giảm theo lượng dữ liệu vì 1000 ảnh với batch 128 chỉ là 8 bước
+gradient một epoch; giữ epoch cố định là so 8 bước với 390 bước.
+
+Đo bằng \code{experiments/ch10\_cifar.py} tại tag \code{ch10}.
+\end{measured}
+
+Cột \code{train acc} có mặt để phân biệt hai chuyện khác nhau: một mô hình
+không khớp nổi dữ liệu, và một mô hình khớp được mà không tổng quát hóa. Ở hàng
+1000 ảnh, cả ba mô hình đều khớp gần hết tập huấn luyện - MLP wide khớp đúng
+1.0000 - nên không mô hình nào ở đó đang thiếu bước. Đó là phép kiểm rẻ cho một
+cái bẫy tôi đã sập một lần trong chính phiên này; mục~\ref{sec:ch10-con-lai-gi}
+kể.
+
+\begin{measured}{khoảng cách, đặt cạnh spread của seed}
+\begin{minted}{text}
+n_train  CNN-matched  CNN-wide  CNN spread  widest MLP spread
+1000     0.1202       0.0897    0.0326      0.0236
+4000     0.1767       0.1584    0.0102      0.0133
+16000    0.2148       0.1865    0.0197      0.0152
+50000    0.2558       0.2011    0.0019      0.0057
+\end{minted}
+
+Đo bằng \code{experiments/ch10\_cifar.py} tại tag \code{ch10}.
+\end{measured}
+
+Đọc cột khoảng cách cạnh cột spread, vì chương~\ref{ch:chi-phi-va-song-song} là
+chỗ sách này học rằng một khoảng cách hẹp hơn spread thì không phải kết quả.
+Chỗ chặt nhất trong bảng là ô hẹp nhất của cả hai cột khoảng cách, 0.0897 ở
+hàng 1000 ảnh, đặt cạnh spread lớn nhất của chính hàng ấy, 0.0326: rộng gấp
+2.75 lần. Không phải một tỷ lệ áp đảo, và nó là hàng ít dữ liệu nhất nên cũng
+là hàng nhiễu nhất; các hàng còn lại rộng hơn nhiều. Không hàng nào lật chiều
+được, nhưng hàng 1000 ảnh là hàng tôi sẽ không xây một lập luận mảnh lên trên.
+
+\subsection*{Chỗ tôi suýt viết ngược}
+
+\index{thiên kiến quy nạp!khoảng cách rộng ra chứ không hẹp lại}%
+Câu tôi định viết trước khi chạy là câu quen thuộc:
+\tn{thiên kiến quy nạp}{inductive bias} đáng giá nhất khi ít dữ liệu, nên
+khoảng cách phải \emph{hẹp lại} khi dữ liệu nhiều lên.
+
+Bảng nói ngược. Khoảng cách rộng ra, 0.1202 lên 0.2558.
+
+Chỗ nhầm không nằm ở số mà ở đại lượng. \enquote{Khoảng cách ở một lượng dữ
+liệu cố định} và \enquote{số ảnh cần để đạt cùng độ chính xác} là hai câu hỏi
+khác nhau, và chỉ câu thứ hai nói về việc dùng dữ liệu hiệu quả tới đâu. Hỏi
+câu thứ hai thì được cái này:
+
+\begin{measured}{số ảnh mỗi MLP cần để đạt cái CNN đạt}
+\begin{minted}{text}
+CNN trained on  reaches  MLP matched needs  MLP wide needs
+1000            0.4365       28,403 (28.4x)     10,958 (11.0x)
+4000            0.5499          over 50,000        over 50,000
+16000           0.6399          over 50,000        over 50,000
+50000           0.7036          over 50,000        over 50,000
+\end{minted}
+
+Số ảnh cần là nội suy log-tuyến tính giữa hai hàng kề nhau.
+
+Đo bằng \code{experiments/ch10\_cifar.py} tại tag \code{ch10}.
+\end{measured}
+
+\textbf{28.4 lần.} MLP khớp tham số cần 28,403 ảnh để đạt cái CNN đạt được
+bằng 1000. Đó là tỷ giá mà mục~\ref{sec:ch10-attention-lam-duoc} nói tới, đo ở
+quy mô này: hai ràng buộc, nướng sẵn vào tầng, đáng gần một bậc rưỡi độ lớn về
+dữ liệu.
+
+Ba hàng còn lại ghi \enquote{over 50,000} chứ không ngoại suy. Từ 4000 ảnh trở
+lên, không lượng dữ liệu nào \emph{trong bộ dữ liệu này} đưa MLP tới chỗ CNN
+đạt được, và ngoại suy ra ngoài dải đã đo là đúng chuyện
+chương~\ref{ch:tien-huan-luyen} đã dành một bài tập để nói.
+
+Cột cuối là cột trả lời phản bác. Cho MLP 23.71 lần tham số thì nó vẫn cần
+10,958 ảnh, tức 11.0 lần. Bội số nhỏ đi rõ rệt và \emph{không} biến mất: đổ
+thêm tham số mua lại được hơn một nửa khoảng cách và không mua hết.
+
+Còn vì sao khoảng cách tuyệt đối rộng ra thì cũng đọc được từ chính bảng trước.
+MLP khớp tham số bão hòa sớm vì nó chỉ có 21 unit ẩn: nó bị chặn bởi sức chứa
+chứ không bởi dữ liệu. Đó đúng là lý do bảng phải có hàng MLP wide.
+
+\subsection*{Mô hình đã huấn luyện có bất biến với phép dịch không}
+
+\index{thiên kiến quy nạp!đo bất biến trên mô hình đã huấn luyện}%
+Mục~\ref{sec:ch10-dang-bien} đo \tn{đẳng biến}{equivariance} tại khởi tạo, trên
+một tầng. Câu hỏi
+còn lại là câu người ta thật sự muốn hỏi: một mô hình đã học xong có nhận ra
+cùng một ảnh khi ảnh dịch đi không.
+
+\begin{measured}{tỷ lệ ảnh kiểm tra đổi nhãn dự đoán khi dịch}
+\begin{minted}{text}
+shift  CNN     MLP matched  MLP wide
+1      0.1145  0.2409       0.2158
+2      0.1817  0.3790       0.3478
+4      0.3078  0.5446       0.5106
+8      0.5981  0.7343       0.7013
+\end{minted}
+
+Phép dịch ở đây là dịch vòng, nên dịch 8 pixel trên ảnh 32 pixel chuyển hẳn
+một phần tư ảnh sang phía bên kia.
+
+Đo bằng \code{experiments/ch10\_cifar.py} tại tag \code{ch10}.
+\end{measured}
+
+Phép so đáng đọc là theo cột, cùng một phép dịch. Ở dịch một pixel, CNN đổi ý
+trên 11.45\% số ảnh còn MLP khớp tham số đổi trên 24.09\%: chưa bằng một nửa.
+Thiên kiến quy nạp mua được cái đó, và nó mua được thật.
+
+Nhưng nhìn hàng cuối. Ở phép dịch 8, CNN vẫn đổi ý trên 59.81\% số ảnh, và
+\emph{không} có mâu thuẫn nào với con số không tuyệt đối ở
+mục~\ref{sec:ch10-dang-bien}. Có ba lý do rời nhau, và đáng tách ra vì trộn
+chúng lại là cách người ta đi tới câu \enquote{mạng tích chập bất biến với phép
+dịch}.
+
+Thứ nhất, mạng này pad bằng không chứ không pad vòng. Phép đo cho số không
+tuyệt đối ở mục trước dùng padding vòng; với padding không thì
+mục~\ref{sec:ch10-dang-bien} đã đo được rằng đẳng biến hỏng trên khung viền. Mà
+phép dịch vòng ở đây chuyển nội dung qua đúng cái viền ấy.
+
+Thứ hai, kể cả nếu đặc trưng đẳng biến tuyệt đối thì đầu ra vẫn không bất biến.
+Đẳng biến nói \tn{bản đồ đặc trưng}{feature map} dịch theo. Bộ phân loại đứng
+sau là một tầng Linear đọc bản đồ ấy đã phẳng hóa, nên bản đồ dịch đi một ô là
+một vector khác hẳn, và nó có toàn quyền trả lời khác. Đẳng biến của đặc trưng
+không kéo theo \tn{bất biến}{invariance} của mạng, và không có gì trong kiến
+trúc này bắt nó phải kéo theo.
+
+Thứ ba, dịch vòng 8 pixel thật sự đổi ảnh. Một phần tư ảnh sang phía bên kia là
+một ảnh khác, không phải cùng ảnh nhìn lệch đi.
+
+Tôi không tách được ba phần ấy bằng bảng này, và bài tập 8 tier một giao lại
+việc thiết kế phép đo tách được. Cái bảng này nói chắc chắn là phép so theo
+cột, và nó đủ cho luận điểm.

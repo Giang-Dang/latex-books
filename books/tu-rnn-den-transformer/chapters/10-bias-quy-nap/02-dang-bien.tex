@@ -1,0 +1,198 @@
+\section{Đẳng biến, không phải bất biến}
+\label{sec:ch10-dang-bien}
+
+\index{thiên kiến quy nạp!đẳng biến khác bất biến}%
+Hai phát biểu, và cả ngành hay gọi chung bằng một tên.
+
+\tn{Đẳng biến}{equivariance} với phép dịch: dịch đầu vào thì đầu ra dịch theo
+đúng như vậy. \tn{Bất biến}{invariance} với phép dịch: dịch đầu vào thì đầu ra
+\emph{không đổi}. Zhang viết cả hai ra cạnh nhau ở mục 3.1 bài
+mình~\autocite{zhang2019shift}:
+
+\begin{quote}
+\enquote{A function F is shift-equivariant if shifting the input equally shifts
+the output [...] A representation is shift-invariant if shifting the input
+results in an identical representation.}
+\end{quote}
+
+Cái thứ nhất là một định lý về phép \tn{tích chập}{convolution}, và mục này đo
+nó ra số không tuyệt đối. Cái thứ hai là một phát biểu về cả mạng, và mục này
+đo nó ra sai.
+
+Viết bằng ký hiệu thì đẳng biến là một phép hoán vị thứ tự. Gọi \(T_\delta\) là
+phép dịch đi \(\delta\) và \(f\) là tầng tích chập:
+
+\begin{equation}
+\label{eq:ch10-dang-bien}
+f(T_\delta x) = T_\delta f(x).
+\end{equation}
+
+Chương~\ref{ch:transformer} đã đo một phát biểu đúng dạng này một lần rồi, cho
+phép hoán vị thay vì phép dịch, và cách đo giống hệt: chạy hai vế, trừ nhau,
+nhìn số.
+
+\subsection*{Một tầng, đo ra số không}
+
+\index{thiên kiến quy nạp!đo đẳng biến của một tầng}%
+\eqref{eq:ch10-dang-bien} là một đẳng thức về số học chứ không phải về trọng
+số, nên nó đúng ngay tại khởi tạo và không cần huấn luyện gì. Đó cũng là lý do
+con số dưới đây là số không chứ không phải số nhỏ.
+
+\begin{measured}{sai khác hai vế của \eqref{eq:ch10-dang-bien}, dịch một pixel}
+\begin{minted}{text}
+padding     max |f(shift x) - shift f(x)|
+circular    0.000e+00
+zeros       1.772e+00
+\end{minted}
+
+\begin{minted}{text}
+  whole feature map          1.772e+00
+  interior, borders dropped  0.000e+00
+\end{minted}
+
+Đo bằng \code{experiments/ch10\_equivariance.py} tại tag \code{ch10}.
+\end{measured}
+
+Với padding vòng thì hai vế bằng nhau tới từng bit. Với padding không thì
+không, và hàng thứ hai nói chỗ hỏng nằm ở đâu: bỏ hai pixel viền ra, phần trong
+cũng đúng số không.
+
+Nên cách đọc đúng không phải là padding không làm đẳng biến yếu đi. Nó phá đẳng
+biến trên một khung hai pixel và không phá chỗ nào khác. Đó là điều
+\tn{tính cục bộ}{locality} tiên đoán: một unit chỉ hỏng khi
+\tn{trường tiếp nhận}{receptive field} của nó thò ra ngoài ảnh, và chỉ những
+unit sát mép mới thò ra.
+
+\subsection*{Chỗ tính chất ấy mất: phép giảm mẫu}
+
+\index{thiên kiến quy nạp!giảm mẫu phá đẳng biến ở phép dịch lẻ}%
+Ràng buộc thứ ba của bài 1998, \tn{giảm mẫu}{subsampling}, là chỗ phải trả giá.
+
+Một tầng giảm mẫu hai lần thì đầu ra chỉ còn nửa độ phân giải, nên dịch đầu vào
+đi 2 phải cho đầu ra dịch đi 1. Đem so với đầu ra dịch đi 2 là so sai đại
+lượng, và tôi đã so sai đúng như vậy ở bản đầu; mục~\ref{sec:ch10-con-lai-gi}
+kể chỗ đó.
+
+\begin{measured}{conv rồi MaxPool2d(2), so đúng tỷ lệ}
+\begin{minted}{text}
+input shift  output shift  error
+0            0             0.000e+00
+2            1             0.000e+00
+4            2             0.000e+00
+6            3             0.000e+00
+8            4             0.000e+00
+\end{minted}
+
+Đo bằng \code{experiments/ch10\_equivariance.py} tại tag \code{ch10}.
+\end{measured}
+
+Đúng số không ở mọi phép dịch chẵn. Còn phép dịch lẻ thì không có đầu ra nào để
+đem so cả, nên bảng dưới lấy giá trị tốt nhất trên mọi phép dịch đầu ra.
+
+\begin{measured}{phép dịch lẻ: chỗ tốt nhất cũng không gần}
+\begin{minted}{text}
+input shift  best output shift  residual  residual/scale
+1            -2                 2.327e+00 0.9439
+3            -3                 2.258e+00 0.9159
+5            -2                 2.258e+00 0.9159
+\end{minted}
+
+Biên độ đầu ra là 2.4651.
+
+Đo bằng \code{experiments/ch10\_equivariance.py} tại tag \code{ch10}.
+\end{measured}
+
+Cột cuối là chỗ đọc ra. Chỗ khớp nhất mà một phép dịch lẻ đạt được vẫn lệch hơn
+chín phần mười biên độ của chính đầu ra. \textbf{Đây không phải một sự suy giảm
+tăng dần.} Tầng ấy đúng tuyệt đối ở một nửa số phép dịch và không nói được gì
+về nửa còn lại, và hình~\ref{fig:ch10-chan-le} là lý do.
+
+% The picture measures 268.01pt against this book's 441.02pt measure, so it has
+% 173pt to spare and could carry two more sampling rows if a later revision
+% wants them. Measured with \savebox per quyet dinh 67; see the comment at the
+% chapter's first figure for why the built page and the gate are both blind
+% here, and for the savebox-naming trap.
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch10-chan-le}
+  \caption{Vì sao phép dịch chẵn và phép dịch lẻ khác nhau về bản chất chứ
+  không về mức độ. Phép giảm mẫu giữ lại một mẫu trên hai, tức nó chọn một
+  trong hai lưới con. Dịch đi 2 thì tập mẫu giữ lại rơi đúng vào cùng lưới con
+  ấy và đầu ra chỉ trượt đi một ô. Dịch đi 1 thì nó rơi vào lưới con \emph{kia},
+  và không có phép trượt nào trên đầu ra làm hai bên gặp nhau.}
+  \label{fig:ch10-chan-le}
+\end{figure}
+
+\subsection*{Không phải do max, mà do bỏ mẫu}
+
+\index{thiên kiến quy nạp!chẵn lẻ là tính chất của phép bỏ mẫu}%
+Bài của Zhang nói về aliasing, và nó hay bị đọc thành \enquote{max pooling gây
+ra chuyện này}. Đem đúng phép đo trên cho ba cách giảm một nửa lưới thì thấy
+không phải.
+
+\begin{measured}{ba cách giảm mẫu, cùng một phép đo}
+\begin{minted}{text}
+layer           even shift  odd shift  scale   odd/scale
+MaxPool2d(2)    0.000e+00   2.215e+00  2.429   0.912
+AvgPool2d(2)    0.000e+00   1.101e+00  1.343   0.820
+Conv stride 2   0.000e+00   2.968e+00  2.427   1.223
+\end{minted}
+
+Đo bằng \code{experiments/ch10\_equivariance.py} tại tag \code{ch10}.
+\end{measured}
+
+Cả ba đúng tuyệt đối ở phép dịch chẵn, cả ba sai cỡ biên độ tín hiệu ở phép
+dịch lẻ. Hàng thứ ba không có phép max nào trong nó. Nên phân đôi chẵn lẻ là
+tính chất của việc vứt một mẫu trên hai, chứ không phải của phi tuyến đứng cạnh
+nó.
+
+Chồng thêm tầng thì chu kỳ nhân lên.
+
+\begin{measured}{chu kỳ đẳng biến theo số tầng giảm mẫu}
+\begin{minted}{text}
+pool layers  total stride  exact at shifts of
+1            2             2
+2            4             4
+3            8             8
+\end{minted}
+
+Đo bằng \code{experiments/ch10\_equivariance.py} tại tag \code{ch10}.
+\end{measured}
+
+Mạng ba tầng pooling trên ảnh 32 pixel chỉ đẳng biến đúng ở bội của 8, tức 4
+trong 32 phép dịch ngang.
+
+\textbf{Và chuyện này bài 1989 đã nói ra.} Cùng mục 3.3 vừa trích ở
+mục~\ref{sec:ch10-hai-rang-buoc}, về chính phép giảm mẫu hai pixel của
+nó~\autocite{lecun1989zipcode}:
+
+\begin{quote}
+\enquote{For units in layer H1 that are one unit apart, their receptive fields
+(in the input layer) are two pixels apart. Thus the input image is undersampled
+and some position information is eliminated.}
+\end{quote}
+
+\enquote{Some position information is eliminated} là câu đúng, viết năm 1989.
+Cái mất ba mươi năm là đo xem \emph{bao nhiêu}, và câu trả lời là một nửa số
+phép dịch, chứ không phải một ít ở mỗi phép dịch.
+
+\subsection*{Vì sao chỗ này không phải chuyện chữ nghĩa}
+
+\index{thiên kiến quy nạp!vì sao phân biệt hai khái niệm}%
+Người ta thường nói mạng tích chập \enquote{bất biến với phép dịch}, và ý là
+mạng nhận ra con mèo dù nó ở góc nào. Phát biểu ấy sai theo hai đường khác
+nhau, và cả hai đều đo được.
+
+Đường thứ nhất là mục vừa rồi: các đặc trưng chỉ đẳng biến ở bội của tổng
+stride.
+
+Đường thứ hai sâu hơn và mục~\ref{sec:ch10-anh-that} đo nó trên mô hình đã
+huấn luyện thật. Kể cả khi \eqref{eq:ch10-dang-bien} đúng tuyệt đối, cái nó nói
+là \emph{bản đồ đặc trưng dịch theo}. Bộ phân loại đứng sau đọc bản đồ ấy đã
+phẳng hóa, nên một bản đồ dịch đi một ô là một vector đầu vào khác hẳn với nó.
+\tn{Bản đồ đặc trưng}{feature map} đẳng biến không cho ra đầu ra bất biến; nó
+chỉ cho ra đầu ra mà một lớp đọc-toàn-cục \emph{có thể} làm cho bất biến nếu
+người ta bắt nó làm vậy.
+
+Đó là lý do kiến trúc thật hay đặt một phép gộp toàn cục trước bộ phân loại.
+Bất biến không rơi ra từ tích chập; nó phải được xây thêm.
