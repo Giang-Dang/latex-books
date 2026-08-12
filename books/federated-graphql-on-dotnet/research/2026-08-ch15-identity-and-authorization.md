@@ -21,6 +21,7 @@ a tag, not out of a documentation page.
   - I1. What the setting does not do, measured 2026-08-12
 - J. Ownership, and the field that returns anything
 - K. A subscription has no identity
+  - K1. What the block changes, measured 2026-08-12
 - L. The request pipeline gains two middleware
 - M. What chapter 15 changed in Mosaic
 - N. What the gate asserts
@@ -433,32 +434,32 @@ behaviour. This is the same lesson as the em dash in chapter 9's composition
 note, one level up: read the thing that is definitionally the evidence, which
 here is the subgraph's own request log, rather than the thing that reports on it.
 
-**Gate status.** The root-field rows are gated, as described above. The four
-rows in this section are **not** yet gated: nothing in the companion repository
-reproduces the entity-fetch contrast. Under decision 66 a count belongs in a
-gate, so this wants two more checks in `scripts/auth-run.mjs`, which already
-counts Accounts requests and already holds the subscription pair. The reason it
-is a proposal rather than a commit is that `ch15` is tagged and pushed, and
-moving a published tag is the author's call rather than a drafting session's.
-Sketch:
+**Gate status: gated, in two places.**
 
-```js
-// Anonymous, one guarded field alone: the router removes the whole fetch.
-const before = await accountsRequests();
-await post(routerUrl,
-  '{ browseProducts(first:1){ nodes { reviews(first:1){ nodes { author { email } } } } } }');
-record('a guarded field alone costs its subgraph nothing',
-  (await accountsRequests()) - before === 0);
+The three `pre-fetch on` rows the chapter prints are a step in both verification
+scripts, `entity-level authorization`, sitting immediately after the root-field
+step. It sends the three selections, reads the Accounts console either side of
+each, and requires 1, 0 and 1 exactly, plus the refusal strings: the router's
+coordinate on the guarded-alone row, `serviceName: accounts` and
+`AUTH_NOT_AUTHENTICATED` with **no** `Unauthorized to load field` on the mixed
+row, and the `author.displayName` non-null violation as the tell that the mixed
+selection really was mixed. The control runs first, because a product with no
+reviews would make every row count zero and the step would pass by measuring
+nothing.
 
-// The same field beside a permitted one: the fetch happens and carries it.
-const before2 = await accountsRequests();
-const mixed = await post(routerUrl,
-  '{ browseProducts(first:1){ nodes { reviews(first:1){ nodes { author { displayName email } } } } } }');
-record('a guarded field beside a permitted one is refused by the subgraph, not the router',
-  (await accountsRequests()) - before2 === 1
-    && JSON.stringify(mixed.json).includes('AUTH_NOT_AUTHENTICATED')
-    && !JSON.stringify(mixed.json).includes('Unauthorized to load field'));
-```
+The counting lives in the verify scripts rather than in `scripts/auth-run.mjs`,
+and an earlier draft of this note said the opposite. `auth-run.mjs` cannot do
+it: it is handed three URLs and nothing else, imports no `node:fs`, and under
+the gate the subgraphs are `dotnet run` children writing to a temp path only the
+verify script knows. It never counted anything.
+
+The `pre-fetch off` column needs two routers rather than two requests, so it is
+a case: `guarded-field-beside-a-permitted-one` in `scripts/router-cases.mjs`,
+the sixth. It starts two routers differing only in that setting and asserts that
+the guarded field alone reaches Accounts on one and not the other, while the
+mixed selection reaches it on both. It asserts on `AUTH_NOT_AUTHENTICATED`
+rather than the service name alone, because a subgraph that is simply down also
+produces an error naming accounts.
 
 ## J. Ownership, and the field that returns anything
 
@@ -574,21 +575,72 @@ selection "displayName" -> {"data":{"onReviewAdded":{"id":"UmV2aWV3Ov3wnwHwcG17i
 selection "displayName email" -> {"errors":[{"message":"Unauthorized to load field 'Subscription.onReviewAdded.author.email', Reason: not authenticated.","path":["onReviewAdded","author","email"],"extensions":{"code":"UNAUTHORIZED_FIELD_OR_TYPE"}}],"data":{"onReviewAdded":{"id":"UmV2aWV3Ov3wnwFsh8twk5ieH8W2+Xo=","author":null}}}
 ```
 
-**That control pair disagrees with section I1 and the disagreement is not
-resolved.** It was captured with the websocket block on, and its second line has
-the *router* refusing `displayName email`. Section I1, on the shipped
-configuration with the block off, has *Accounts* refusing that same selection,
-reproducibly and with the request counted at the subgraph. So the block appears
-to change which layer refuses a mixed selection, which is a third behaviour of
-that block on top of the two already recorded, and nothing here explains it.
+**That control pair disagreed with section I1, and section K1 resolves it.** It
+was captured with the websocket block on and its second line has the *router*
+refusing `displayName email`, where section I1 has *Accounts* refusing the same
+selection on the shipped configuration. Both are correct. The block changes the
+answer, and K1 has the measurement.
 
-What this does not do is undermine section I1: every measurement there was made
-on the configuration Mosaic ships, which is the one the chapter describes. What
-it does mean is that the pair above cannot be read as evidence for the general
-rule, and the chapter no longer prints it. Anybody re-running the block-on
-configuration should treat "who refuses a mixed selection under
-`from_initial_payload`" as unmeasured. It goes to chapter 17 with the planner
-question, since both are about where the router applies the check.
+### K1. What the block changes, measured 2026-08-12
+
+Measured on a second router rather than by editing `router/config.yaml`: the
+shipped stack kept 3002 and a container running that whole file plus the block
+took 3102, so the two configurations were available in one sitting and nothing
+in the repository was edited. The provoking `submitReview` went through 3002,
+because Reviews publishes `onReviewAdded` to every subscribed router.
+
+Counting `Mosaic.RequestTimeline` at Accounts either side of each event, with a
+valid token in `connection_init`:
+
+| subscription selection | config | Accounts | who refused |
+|---|---|---|---|
+| `author { email }` | shipped | 0 | the router |
+| `author { email }` | plus the block | 0 | the router |
+| `author { displayName email }` | shipped | 1 | Accounts |
+| `author { displayName email }` | plus the block | **1** | **the router** |
+
+Same counts, different layer on the last pair, twice each. What that combination
+says is that the fetch went out either way, because `displayName` has to come
+from somewhere, and that under the block it went out **without** the address in
+it: the router pruned the guarded field out of a fetch it still made, then
+discarded the whole customer anyway because `email` is `String!`. Under the
+shipped configuration the address travels inside the fetch and Accounts refuses
+it.
+
+So the router is capable of the pruning that section I1 says it does not do. On
+the configuration Mosaic runs, it does not do it.
+
+`[measured]` The block-on payload for the mixed selection, which is why the
+desk argument for "mislabelled" was wrong:
+
+```json
+{"errors":[{"message":"Unauthorized to load field 'Subscription.onReviewAdded.author.email', Reason: not authenticated.","path":["onReviewAdded","author","email"],"extensions":{"code":"UNAUTHORIZED_FIELD_OR_TYPE"}}],"data":{"onReviewAdded":{"id":"UmV2aWV3OmP0nwFQl/B6tTKlBIQBNNU=","author":null}}}
+```
+
+The desk argument was that this carries no `Cannot return null for non-nullable
+field ... author.displayName`, where the shipped mixed capture does, so it must
+really have been an `email`-only reply. The absence has a better explanation:
+the fetch succeeded, so there was no subgraph error to attach, and the refused
+non-null `email` nulled the `Customer` while `Review.author` being nullable
+stopped the propagation there. Recorded because the inference was reasonable and
+wrong, and only counting requests distinguished the two stories.
+
+**Causation is not claimed, and the reason is itself a measurement.**
+`[measured]` With the block on, a `connection_init` carrying no token is refused
+outright:
+
+```
+[{"message":"invalid JWT token in initial payload: JWT token is not a string"}]
+```
+
+So there is no such thing as an anonymous subscription on that router. The two
+configurations differ in the block **and** in whether the connection has any
+identity, and no experiment available here varies one without the other. This is
+a fourth consequence of the block, on top of closing anonymous HTTP.
+
+Not gated, for the reason the chapter gives: reproducing any of it needs the
+configuration that answers `401` to every anonymous request, and a gate that
+requires a broken graph is not a gate.
 
 **One nullability consequence, worth its own sentence.** Refusing one field on
 an entity takes the whole entity out. `Customer.email` is `String!`, so a
@@ -670,9 +722,13 @@ Both `verify.ps1` and `verify.sh`, in the same commit, per this book's rule.
 - The pre-fetch count: an anonymous request for a guarded field costs Accounts
   zero requests.
 - `scripts/auth-run.mjs`: fifteen runtime checks.
-- `scripts/router-cases.mjs`: two new cases, the websocket block closing the
-  public graph and the pre-fetch setting deciding whether a refused field is
-  fetched first. Five in the file now, three of them chapter 10's.
+- The `entity-level authorization` step: the three selections section 15.6
+  prints, counted at Accounts, requiring 1, 0 and 1 exactly along with which
+  layer refused each.
+- `scripts/router-cases.mjs`: three new cases, the websocket block closing the
+  public graph, the pre-fetch setting deciding whether a refused root field is
+  fetched first, and `guarded-field-beside-a-permitted-one` for the
+  `pre-fetch off` column. Six in the file now, three of them chapter 10's.
 - `postman/mosaic-auth`: the same field asked four ways.
 - The pipeline assertion is now two exact lists rather than one, selected per
   subgraph.
@@ -680,12 +736,9 @@ Both `verify.ps1` and `verify.sh`, in the same commit, per this book's rule.
   `email`, the walk over `ordersByCustomer`, and the `node(Order)` step.
 - `scripts/subscription-run.mjs` mints a token per write.
 
-Not gated, and section I1 says why it is a proposal rather than a commit: the
-entity-fetch contrast, where the same guarded field is refused by the router or
-by the subgraph depending on what else the caller selected. All three rows of
-the printed table in section 15.6 of the chapter rest on counts nothing reproduces,
-and the chapter says so in its own words rather than leaving the table to imply
-a gate that is not there.
+Still not gated, and section K1 says why it cannot be: everything about the
+websocket block, because reproducing any of it needs the configuration that
+answers `401` to every anonymous request.
 
 ## O. Reproduction recipes
 
@@ -719,8 +772,14 @@ node scripts/auth-run.mjs
 node scripts/router-cases.mjs --print websocket-auth-closes-the-public-graph
 
 # I1: who refuses, and what it costs the subgraph.
-#   Count the Accounts container's request lines either side of each request;
-#   the selection on `author` is the only thing that changes between them.
+#   Both gates run this as the `entity-level authorization` step, so the fastest
+#   route is scripts/verify.ps1. By hand, count the Accounts request lines
+#   either side of each request; the selection on `author` is the only thing
+#   that changes between them.
+#
+#   Where those lines are depends on how Accounts was started, and the two
+#   differ: under docker compose it is a container, and under either verify
+#   script it is a `dotnet run` child writing to a temp file the script names.
 docker logs mosaic-graph-mosaic-accounts-1 | grep -c Mosaic.RequestTimeline
 #   { browseProducts(first:1){ nodes { reviews(first:1){ nodes {
 #       author { email } } } } } }                      -> 0 requests, router refuses
@@ -730,6 +789,15 @@ docker logs mosaic-graph-mosaic-accounts-1 | grep -c Mosaic.RequestTimeline
 #   `subscription { onReviewAdded(productId: "...") { id author { ... } } }`,
 #   provoking one event per run with a review from a customer who has not
 #   reviewed that product, give the same 0 and 1.
+
+# I1, the other column, and K1's pair
+node scripts/router-cases.mjs --print guarded-field-beside-a-permitted-one
+#   K1 needs a second router rather than an edit to router/config.yaml: run the
+#   shipped stack, then start one more container on 3102 with that whole file
+#   plus the commented websocket block uncommented, mounting
+#   federation/supergraph.json, passing the real MOSAIC_JWT_SECRET (a different
+#   secret makes Accounts reject and looks like the other outcome), and
+#   subscribe to 3102 while submitting the provoking review through 3002.
 
 # H: the capture at the Accounts boundary
 #   Accounts on 5114, a recording proxy on 5104, then any query selecting email.

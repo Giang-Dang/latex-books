@@ -148,12 +148,14 @@ The right-hand column is the control, and it is the one that names the cause.
 With pre-fetch authorization off every selection costs Accounts a request,
 including the guarded field on its own, and the router still refuses that field
 afterwards. Turning the setting on buys back exactly one of those three
-requests. So the setting removes a fetch it can remove \emph{entirely}, and does
-not prune a guarded field out of a fetch that has to happen anyway for a
-permitted field beside it. Ask for the address on its own and Accounts is never
-troubled; ask for the address and the display name together and the request goes
-out carrying both, because the display name has to be fetched and the address is
-on the same entity.
+requests. So the setting removes a fetch it can remove \emph{entirely}, and on
+this configuration it prunes nothing out of a fetch that has to happen anyway
+for a permitted field beside it. Ask for the address on its own and Accounts is
+never troubled; ask for the address and the display name together and the
+request goes out carrying both, because the display name has to be fetched and
+the address is on the same entity. Hold on to \enquote{on this configuration}:
+there is one other, and the end of this section is about what it does
+differently.
 
 The subscription pair behaves the same way on the shipped configuration:
 \code{author \{ email \}} costs Accounts nothing and
@@ -161,16 +163,22 @@ The subscription pair behaves the same way on the shipped configuration:
 subscriptions again with the setting off, so the right-hand column above is an
 HTTP measurement and I am not claiming more than that.
 
-\index{authorization!counts that are not yet a gate}%
-Which leaves a debt, and I would rather name it than let the table imply
-otherwise. The counts in section~\ref{sec:ch15-a-token-at-the-router} are gate
-steps, because a count that is the same on every machine belongs in a gate.
-These three are not: nothing in the companion repository reproduces the
-entity-fetch contrast yet. The two checks it wants are sketched in this
-chapter's research note and they belong in \code{scripts/auth-run.mjs}, which
-already counts Accounts requests and already holds the subscription pair. Until
-they are there, this table is a measurement you can repeat by hand and not one
-the build defends.
+\index{authorization!counting a refusal in a gate}%
+All three rows are gate steps, for the reason
+section~\ref{sec:ch15-a-token-at-the-router}'s single row is: a count is the
+same on every machine, so it belongs in a gate rather than in a table I am
+asking you to believe. Both verification scripts now send these three
+selections, read the Accounts console either side of each, and require nought,
+one and one exactly. Asserting exactly is the point. A nought in the middle row
+would mean the router had begun pruning a guarded field out of a fetch it still
+had to make, which would be a better router and a wrong chapter, and I would
+rather find that out from a red gate than from a reader.
+
+The right-hand column needs a second router rather than a second request, so it
+is a case instead: \code{guarded-field-beside-a-permitted-one} in
+\code{scripts/router-cases.mjs} starts two routers differing only in that
+setting and asserts that the guarded field alone reaches Accounts on one and not
+the other, while the mixed selection reaches it on both.
 
 \index{authorization!what a count cannot show}%
 One further limit. A count says a fetch happened; it does not say why the router
@@ -199,21 +207,52 @@ compose file: close the ports and the argument evaporates. This one does not.
 The router's enforcement has a shape, the shape depends on what else the client
 selected, and no amount of network topology changes it.
 
-\subsection*{What is left unmeasured, and why it cannot be a gate}
+\subsection*{The one configuration where the router does prune}
+
+\index{authorization!pre-fetch field authorization!the exception}%
+Everything above is the graph Mosaic ships. There is exactly one other
+configuration it can be run in, the block from earlier in this section, and the
+rule does not survive the move. This wants a second router rather than a
+restart: the shipped one keeps serving 3002 while a second, running this same
+file plus the block, takes 3102.
+
+With the block on, and a valid token in the initial payload, the mixed selection
+costs Accounts one request and the \emph{router} refuses the address:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+                    Accounts requests   who refused the address
+shipped                    1            Accounts
+plus the block             1            the router
+\end{minted}
+
+Same count, different layer, which tells you what changed. The fetch happened
+either way, because the display name still has to come from somewhere. What
+differs is what the fetch carried: with the block the router took the address
+out of it and sent the display name alone, then discarded the whole customer
+anyway because \code{email} is \code{String!}. So the router \emph{can} prune a
+field out of a fetch it still makes. On the configuration Mosaic runs, it does
+not.
+
+I cannot tell you the block causes it, and the reason is worth more than the
+finding. With the block on, a \code{connection\_init} carrying no token is
+refused outright with \code{invalid JWT token in initial payload}, so there is
+no such thing as an anonymous subscription on that router. The two
+configurations therefore differ in the block and in whether the connection has
+any identity at all, and no experiment available to me varies one without the
+other.
 
 \index{subscriptions!the token that is never re-checked}%
-While the block was on, before I understood what it cost, I measured the thing
-this chapter was supposed to be about, and it is worth recording even though
-nothing can assert it. With a token valid for an hour in the initial payload,
-the router validated it, exported it to Accounts correctly, and still refused
-the \code{@authenticated} field inside the subscription as \enquote{not
-authenticated}, on every event. A control with pre-fetch authorization turned
-off behaved identically, so that setting is not the cause.
+The same second router answers the question this chapter was supposed to be
+about, and its answer is still no. With a token valid for an hour in the initial
+payload the router validates it, exports it to Accounts correctly, and refuses
+the \code{@authenticated} field as \enquote{not authenticated} on every event.
+It reads the token well enough to let the connection open and well enough to
+forward it, and not well enough to answer its own directive with it.
 
-I cannot put that in a verification script, because reproducing it needs the
-configuration that answers \code{401} to every anonymous request, and a gate
-that requires a broken graph is not a gate. It goes in this book's open items
-instead, to be asserted when the first bug is fixed.
+None of this is a gate step, because reproducing it needs the configuration that
+answers \code{401} to every anonymous request, and a gate that requires a broken
+graph is not a gate. It goes in this book's open items instead, to be asserted
+when the first bug is fixed.
 
 \index{subscriptions!the connection outlives the token}%
 And the question chapter~\ref{ch:real-time-in-a-federated-world} actually asked,
