@@ -1,0 +1,107 @@
+\section{Cái chương này đóng được, và cái nó mở ra}
+\label{sec:ch10-con-lai-gi}
+
+\index{thiên kiến quy nạp!chương này đóng được gì}%
+Chương~\ref{ch:chi-phi-va-song-song} để lại ba khoảng trống của kiến trúc
+Transformer, và chương~\ref{ch:tien-huan-luyen} đã lấy khoảng trống thứ ba, đói
+dữ liệu. Chương này lấy khoảng trống thứ hai, và
+chương~\ref{ch:chi-phi-va-song-song} gọi tên nó đầy đủ hơn tôi vừa gọi: không
+có \tn{thiên kiến quy nạp}{inductive bias} \emph{về vị trí}. Chữ cuối đáng giữ,
+vì hai ràng buộc của mục~\ref{sec:ch10-hai-rang-buoc} đều là phát biểu về không
+gian.
+
+Cái nó đóng được thì gọn, và gọn hơn tôi tưởng lúc bắt đầu.
+
+Thiên kiến quy nạp của một mạng \tn{tích chập}{convolution} là hai ràng buộc trên một
+\tn{ma trận trọng số}{weight matrix}, và cả hai đếm được.
+\tn{Tính cục bộ}{locality} chia số tham số cho 109.75 ở tầng đầu của mạng
+mục~\ref{sec:ch10-anh-that}; \tn{chia sẻ trọng số}{weight sharing} chia tiếp
+cho đúng 1024, tức đúng số vị trí không gian. Hai ràng buộc không ngang nhau, và cái lớn hơn là cái ít
+được nói tới hơn.
+
+Cái chúng mua không phải kích thước. Bộ trích đặc trưng của LeNet-5 nặng 1,716
+tham số trong tổng 60,000, tức chia sẻ trọng số làm nhỏ đi đúng phần nó chạm
+tới và không làm nhỏ mạng. Cái chúng mua là dữ liệu: một MLP khớp tham số không
+đạt tới chỗ CNN đạt bằng 1000 ảnh ở bất kỳ đâu trong dải đã quét tới 16000, và
+một MLP 23.71 lần tham số cần 11.0 lần số ảnh. Đo trên CIFAR-10 ở quy mô một
+laptop.
+
+\subsection*{Hai con số quay về, và một tính chất không}
+
+\index{thiên kiến quy nạp!hai phép dựng lại đều khớp}%
+Chương~\ref{ch:tien-huan-luyen} dựng lại bốn bài và ba bài không khớp. Chương
+này dựng lại hai bài và cả hai khớp tới đơn vị: 64,660 kết nối với 9,760 tham
+số ở bài 1989, và 340,908 với 60,000 ở LeNet-5, trong đó 60,000 là tổng đúng
+chứ không phải một phép làm tròn.
+
+Tôi in chỗ này ra vì nó là chiều ngược của bài học chương trước. Ở đó kết luận
+là một con số được trích lại đủ nhiều thì không còn ai dựng lại. Ở đây phép
+dựng lại chạy và không tìm ra gì, và điều đó cũng đáng biết: một quy tắc chỉ
+chạy khi người ta đoán nó sẽ hỏng thì không phải quy tắc, nó là một linh cảm.
+
+Cái \emph{không} quay về là một tính chất chứ không phải một con số. Mạng tích
+chập được cả ngành mô tả là \tn{bất biến}{invariance} với phép dịch. Đo ra thì
+tầng tích chập \tn{đẳng biến}{equivariance} tuyệt đối - đúng số không, không
+phải số nhỏ - và phép \tn{giảm mẫu}{subsampling} làm
+mất tính chất ấy ở đúng một nửa số phép dịch, chứ không làm yếu nó đi ở mọi
+phép dịch. Mạng ba tầng pooling trên ảnh 32 pixel đẳng biến ở 4 trong 32 phép
+dịch ngang.
+
+Và nó không phải chuyện của max pooling. Ba cách giảm mẫu, kể cả một tầng conv
+stride 2 không có phép max nào, cho cùng một dạng chẵn lẻ. Bài 1989 đã viết
+\enquote{some position information is eliminated} về chính phép giảm mẫu của
+nó; cái mất ba mươi năm là đo xem bao nhiêu.
+
+\subsection*{Một phép đo tôi làm sai, và cách nó lộ ra}
+
+\index{thiên kiến quy nạp!phép đo đẳng biến sai ở bản đầu}%
+Bản đầu của phép đo đẳng biến so \(f(T_\delta x)\) với \(T_\delta f(x)\) ở đúng
+cùng một \(\delta\), kể cả khi \(f\) giảm mẫu. Với một tầng giảm mẫu hai lần
+thì so như vậy là sai đại lượng: dịch đầu vào 2 phải cho đầu ra dịch 1.
+
+Bảng chạy ra sai lệch lớn ở \emph{mọi} phép dịch, kể cả các phép dịch chẵn mà
+tầng ấy đúng tuyệt đối. Đọc bảng ấy thì kết luận là \enquote{giảm mẫu phá đẳng
+biến ở mọi phép dịch}, mạnh hơn hẳn và sai.
+
+Không có gì trong build hay trong gate bắt được nó. Cả hai bảng đều là số thật,
+chạy thật. Cái bắt được nó là đem số đo so với chuyện mình đoán trước, thấy
+lệch, rồi đi tìm lý do thay vì in ra - và ở đây tôi đoán trước rằng phép dịch
+chẵn phải cho số không, nên khi nó không cho thì có một chỗ để kéo.
+
+Cùng loại với chuyện ở mục~\ref{sec:ch10-anh-that}, nơi tôi suýt viết rằng
+khoảng cách hẹp lại theo dữ liệu trong khi bảng nói nó rộng ra. Cả hai lần, cái
+cứu là có một dự đoán trước khi nhìn số.
+
+\subsection*{Cái nó mở ra}
+
+\index{thiên kiến quy nạp!chỗ hai chương sau bắt đầu}%
+Hai chỗ, và chúng đi hai hướng.
+
+Thứ nhất, chương~\ref{ch:vit}, và chương này vừa dựng xong đúng cái nền nó cần.
+Mục~\ref{sec:ch10-attention-lam-duoc} cho thấy khác biệt giữa hai kiến trúc
+không nằm ở sức biểu diễn: self-attention với \(K^2\) head biểu diễn được tích
+chập \(K \times K\), và điều đó chứng minh được chứ không phải phỏng đoán. Khác
+biệt nằm ở chỗ cái nào là mặc định. Tích chập \emph{bắt buộc} cục bộ và dùng
+chung trọng số; self-attention thì có thể trở thành như vậy nhưng phải học, từ
+dữ liệu.
+
+ViT là chuyện gì xảy ra khi bạn chọn vế thứ hai và có đủ dữ liệu để trả. Bài
+nói ra ở mục 3.2 rằng chỉ có đúng hai chỗ trong cả mô hình mà thông tin về cấu
+trúc hai chiều được đưa vào bằng tay, và một trong hai chỉ là phép cắt ảnh
+thành patch~\autocite{dosovitskiy2021vit}. Bảng của chương ấy là bảng của mục
+này với một Transformer thêm vào, và bội số 11.0 lần ở đây là lý do bảng ấy có
+hai nửa.
+
+Thứ hai, chương~\ref{ch:chi-phi-bac-hai}. Cả bốn hướng của
+mục~\ref{sec:ch10-truoc-vit} đều vấp vào chi phí bậc hai trước khi vấp vào bất
+cứ chuyện gì khác, và câu của Image Transformer nói chỗ ấy gọn nhất: một ảnh
+32x32 là 3072 vị trí, và attention toàn cục trên nó đã không chạy nổi từ 2018.
+ViT không giải quyết chuyện đó, nó đi vòng, bằng cách coi một patch 16x16 là
+một token. Chương~\ref{ch:chi-phi-bac-hai} là chương quay lại giải quyết thật.
+
+Còn một chỗ chương này không đóng và cũng không giao cho ai. Bảng ở
+mục~\ref{sec:ch10-anh-that} đo CNN cạnh MLP, tức đo hai ràng buộc cùng lúc. Tôi
+không tách được phần của tính cục bộ khỏi phần của chia sẻ trọng số bằng bảng
+ấy, vì mô hình ở giữa - cục bộ mà không dùng chung - là thứ PyTorch không có
+sẵn một tầng cho. Bài tập tier hai cuối chương yêu cầu dựng nó, và tôi ghi ở
+đây rằng con số ấy chưa ai đo chứ không ghi rằng nó là bài tập.

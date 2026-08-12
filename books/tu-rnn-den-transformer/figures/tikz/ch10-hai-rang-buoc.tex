@@ -1,0 +1,123 @@
+% Convolution la fully-connected voi hai rang buoc ap chong len nhau: cuc bo
+% (moi don vi ra chi noi voi vai lang gieng, khong phai toan bo dau vao) roi
+% dung chung tham so (cac canh cung do lech trong cua so dung chung dung mot
+% trong so). Ba tam trai sang phai - day dac, cuc bo, cuc bo + dung chung -
+% dung chung mot day 7 don vi vao / 5 don vi ra (kernel 3, buoc nhay 1, mot
+% kenh) de dem canh bang mat; anh 2D that se roi ngay thanh mang nhen.
+% Diem chinh: tam B va C co DUNG MOT TAP CANH (ca hai 15 canh) va chi khac o
+% so THAM SO. B coi moi canh la mot bien doc lap rieng (20 tham so, bias
+% khong dung chung). C bat cac canh cung do lech trong cua so - dau/giua/cuoi
+% cua so - dung chung dung mot trong so, nen chi con 4 tham so; vi vay canh
+% cua C tach ba kieu net (lien dam / dut / cham nhat) lap lai giong het nhau
+% o ca nam vi tri ra, con canh cua A/B dung mot kieu net xam dong nhat vi moi
+% canh la mot tham so rieng, khong co gi de lap lai.
+% Khong ve: padding, stride > 1, nhieu kenh, ham kich hoat - do la chi tiet
+% cai dat, khong phai hai rang buoc dang noi cua hinh nay.
+% Mono-safe: ba kieu net trong tam C phan biet bang net + do dam, khong mau.
+% Do rong DA DO bang \savebox tai cho goi hinh: 367.99pt = 12.93cm, tren mot
+% measure 441.02pt. Do la con so co gia tri; dung uoc luong lai bang mat.
+\begin{tikzpicture}[
+  >= Stealth,
+  vao/.style        = {draw, circle, fill = black!8, minimum size = 3.6mm,
+                        inner sep = 0pt},
+  ra/.style         = {draw, circle, fill = white, minimum size = 3.6mm,
+                        inner sep = 0pt},
+  canhthuong/.style = {black!38, line width = 0.35pt},
+  canhdau/.style    = {black!75, line width = 0.7pt},
+  canhgiua/.style   = {black!75, line width = 0.7pt, densely dashed},
+  canhcuoi/.style   = {black!45, line width = 1.0pt, densely dotted},
+  khung/.style      = {black!45, densely dotted, line width = 0.5pt},
+  nho/.style        = {font = \scriptsize},
+  ten/.style        = {font = \bfseries\scriptsize},
+  ghichu/.style     = {font = \footnotesize, black!60},
+]
+
+  \pgfmathsetmacro\OA{0}
+  \pgfmathsetmacro\OB{4.4}
+  \pgfmathsetmacro\OC{8.8}
+
+  % ================= TẤM A: dày đặc (x0 = 0) =================
+  \foreach \k in {1, 2, 3, 4, 5, 6, 7} {
+    \node[vao] (a-in\k) at ({\OA+(\k-1)*0.5}, 0) {};
+  }
+  \foreach \j in {1, 2, 3, 4, 5} {
+    \node[ra] (a-out\j) at ({\OA+0.5+(\j-1)*0.5}, 2.0) {};
+  }
+  \foreach \j in {1, 2, 3, 4, 5} {
+    \foreach \k in {1, 2, 3, 4, 5, 6, 7} {
+      \draw[canhthuong] (a-in\k) -- (a-out\j);
+    }
+  }
+
+  \begin{scope}[on background layer]
+    \draw[khung, rounded corners = 2pt]
+      ({\OA-0.4}, -1.6) rectangle ({\OA+3.4}, 2.35);
+  \end{scope}
+  \node[ten] at ({\OA+1.5}, -0.55) {Dày đặc};
+  \node[ghichu, align = center] at ({\OA+1.5}, -1.15)
+    {(mọi cặp đều nối)\\35 cạnh, 40 tham số};
+
+  % ================= TẤM B: cục bộ, không dùng chung (x0 = 4.4) =================
+  \foreach \k in {1, 2, 3, 4, 5, 6, 7} {
+    \node[vao] (b-in\k) at ({\OB+(\k-1)*0.5}, 0) {};
+  }
+  \foreach \j in {1, 2, 3, 4, 5} {
+    \node[ra] (b-out\j) at ({\OB+0.5+(\j-1)*0.5}, 2.0) {};
+  }
+  \foreach \j in {1, 2, 3, 4, 5} {
+    \pgfmathtruncatemacro{\ka}{\j}
+    \pgfmathtruncatemacro{\kb}{\j+1}
+    \pgfmathtruncatemacro{\kc}{\j+2}
+    \draw[canhthuong] (b-in\ka) -- (b-out\j);
+    \draw[canhthuong] (b-in\kb) -- (b-out\j);
+    \draw[canhthuong] (b-in\kc) -- (b-out\j);
+  }
+
+  \begin{scope}[on background layer]
+    \draw[khung, rounded corners = 2pt]
+      ({\OB-0.4}, -1.6) rectangle ({\OB+3.4}, 2.35);
+  \end{scope}
+  \node[ten] at ({\OB+1.5}, -0.55) {Cục bộ};
+  \node[ghichu, align = center] at ({\OB+1.5}, -1.15)
+    {(mỗi cạnh 1 tham số riêng)\\15 cạnh, 20 tham số};
+
+  % ================= TẤM C: cục bộ + dùng chung, tích chập (x0 = 8.8) =================
+  \foreach \k in {1, 2, 3, 4, 5, 6, 7} {
+    \node[vao] (c-in\k) at ({\OC+(\k-1)*0.5}, 0) {};
+  }
+  \foreach \j in {1, 2, 3, 4, 5} {
+    \node[ra] (c-out\j) at ({\OC+0.5+(\j-1)*0.5}, 2.0) {};
+  }
+  % Cùng đúng 15 cạnh của tấm B, nhưng mỗi cạnh mang kiểu nét theo ĐỘ LỆCH
+  % của nó trong cửa sổ (đầu/giữa/cuối) - và kiểu đó lặp lại giống hệt nhau
+  % ở cả năm vị trí ra: đó chính là dùng chung tham số.
+  \foreach \j in {1, 2, 3, 4, 5} {
+    \pgfmathtruncatemacro{\ka}{\j}
+    \pgfmathtruncatemacro{\kb}{\j+1}
+    \pgfmathtruncatemacro{\kc}{\j+2}
+    \draw[canhdau]  (c-in\ka) -- (c-out\j);
+    \draw[canhgiua] (c-in\kb) -- (c-out\j);
+    \draw[canhcuoi] (c-in\kc) -- (c-out\j);
+  }
+
+  \begin{scope}[on background layer]
+    \draw[khung, rounded corners = 2pt]
+      ({\OC-0.4}, -1.6) rectangle ({\OC+3.4}, 2.35);
+  \end{scope}
+  \node[ten] at ({\OC+1.5}, -0.55) {Cục bộ + dùng chung};
+  \node[ghichu, align = center] at ({\OC+1.5}, -1.15)
+    {(mỗi độ lệch 1 trọng số)\\15 cạnh, 4 tham số};
+
+  % ================= chú giải chung, đặt dưới cả ba tấm =================
+  \node[nho, anchor = north, align = left, black!70, text width = 12cm]
+    at ({\OB+1.9}, -1.85)
+    {Ba tấm dùng chung một cấu trúc: 7 đơn vị vào (hàng dưới), 5 đơn vị ra
+     (hàng trên), cửa sổ rộng 3, bước nhảy 1, một kênh. Dày đặc nối mọi cặp:
+     35 cạnh, 35 trọng số + 5 bias = 40 tham số. Cục bộ giữ đúng 15 cạnh
+     đó nhưng coi mỗi cạnh là một tham số riêng: 15 trọng số + 5 bias =
+     20 tham số. Cục bộ + dùng chung giữ y nguyên 15 cạnh ấy, nhưng các cạnh
+     cùng độ lệch trong cửa sổ - nét liền đậm là đầu cửa sổ, nét đứt là
+     giữa, nét chấm nhạt là cuối - dùng lại đúng một trọng số ở mọi vị trí
+     ra: chỉ còn 3 trọng số + 1 bias = 4 tham số.};
+
+\end{tikzpicture}

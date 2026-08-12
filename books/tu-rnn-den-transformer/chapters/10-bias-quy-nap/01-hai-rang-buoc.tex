@@ -1,0 +1,234 @@
+\section{Hai ràng buộc trên một ma trận trọng số}
+\label{sec:ch10-hai-rang-buoc}
+
+\index{thiên kiến quy nạp!hai ràng buộc của tích chập}%
+Một tầng \tn{tích chập}{convolution} không phải một loại tầng mới. Nó là tầng
+kết nối đầy đủ của chương~\ref{ch:ky-hieu-va-bptt} với hai ràng buộc đặt lên,
+và hai ràng buộc ấy đặt được riêng rẽ. Bello và cộng sự viết ra gọn nhất, ở
+ngay câu mở đầu bài của họ~\autocite{bello2019attention}:
+
+\begin{quote}
+\enquote{The design of the convolutional layer imposes 1) locality via a
+limited receptive field and 2) translation equivariance via weight sharing.}
+\end{quote}
+
+Ràng buộc thứ nhất là \tn{tính cục bộ}{locality}: một unit đầu ra chỉ được nhìn
+một lân cận nhỏ của đầu vào, gọi là \tn{trường tiếp nhận}{receptive field} của
+nó, thay vì nhìn tất cả. Ràng buộc thứ hai là
+\tn{chia sẻ trọng số}{weight sharing}: các unit đứng ở chỗ khác nhau nhưng nhìn
+theo cùng một hướng thì phải dùng \emph{chung một} tham số.
+
+Hình~\ref{fig:ch10-hai-rang-buoc} đặt ba chế độ cạnh nhau trên cùng một tầng
+nhỏ, và chỗ đáng nhìn nhất ở đó là hai ngăn bên phải có \emph{cùng số cạnh}.
+Chia sẻ trọng số không bỏ đi kết nối nào; nó chỉ bắt các kết nối dùng chung
+tham số.
+
+% The picture measures 367.99pt against this book's 441.02pt measure, so it has
+% 73pt to spare. Measured with \savebox rather than judged from the built page,
+% because a tikzpicture that overflows inside \centering raises no Overfull box
+% and neither the log nor check-chapter.ps1 can see it (quyet dinh 67).
+% Recheck this number before widening the picture by so much as a node.
+%
+% Note for whoever repeats the measurement: the savebox has to be named without
+% digits in it. \newsavebox{\ch10boxa} parses as \ch followed by the letters
+% 10boxa, and the \typeout then prints the width of some other box entirely -
+% it read 5.475pt here, which looks like a plausible small number rather than
+% like an error.
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch10-hai-rang-buoc}
+  \caption{Hai ràng buộc, đặt lần lượt, trên một tầng 7 vào và 5 ra với lân cận
+  cỡ 3. Ngăn giữa và ngăn phải có đúng cùng một tập cạnh: khác biệt duy nhất là
+  ở ngăn phải, các cạnh cùng một độ lệch bị buộc phải dùng chung một tham số,
+  và điều đó đưa 20 tham số xuống còn 4. Số cạnh không đổi, nên chi phí tính
+  toán không đổi.}
+  \label{fig:ch10-hai-rang-buoc}
+\end{figure}
+
+\subsection*{Mỗi ràng buộc đáng bao nhiêu}
+
+\index{thiên kiến quy nạp!giá của tính cục bộ và chia sẻ}%
+Đếm được, nên đếm. Bảng dưới lấy đúng tầng đầu tiên của mạng
+mục~\ref{sec:ch10-anh-that} huấn luyện: ảnh 32x32 ba kênh vào, 32 kênh ra, lân
+cận 3x3.
+
+\begin{measured}{cùng một tầng dưới ba chế độ}
+\begin{minted}{text}
+regime  connections  weights      biases  parameters   conn/param
+dense   100,696,064  100,663,296  32,768  100,696,064        1.00
+local   917,504      884,736      32,768  917,504            1.00
+conv    917,504      864          32      896             1024.00
+\end{minted}
+
+\begin{minted}{text}
+each constraint as a divisor on the parameter count
+  locality alone          109.75
+  sharing, on top        1024.00
+  both together        112384.00
+\end{minted}
+
+Đo bằng \code{experiments/ch10\_counts.py} tại tag \code{ch10}.
+\end{measured}
+
+Hai điều đọc ra.
+
+Thứ nhất, hai ràng buộc \emph{không} ngang nhau. Tính cục bộ chia số tham số
+cho 109.75, chia sẻ trọng số chia tiếp cho 1024. Cái thứ hai lớn hơn cái thứ
+nhất gần mười lần.
+
+Thứ hai, và đây mới là chỗ đáng nhớ: \textbf{con số 1024 đúng bằng số vị trí
+không gian của tầng ấy, 32 nhân 32.} Không phải xấp xỉ. Chia sẻ trọng số chia
+số tham số cho đúng số chỗ mà tầng ấy nhìn, vì đó chính là định nghĩa của nó -
+mọi vị trí dùng lại một bộ trọng số. Tính cục bộ thì chia cho tỷ số hai trường
+tiếp nhận, và tỷ số ấy phụ thuộc kích thước ảnh theo cách khác hẳn.
+
+Hệ quả thực hành xuất hiện lại ở mục~\ref{sec:ch10-anh-that}, và nó khó chịu
+hơn vẻ ngoài: cùng một ngân sách tham số mua cho một mạng tích chập nhiều hơn
+hẳn so với mua cho một mạng không chia sẻ. Nên một phép so \enquote{cùng số
+tham số} giữa hai kiến trúc ấy không phải một phép so công bằng theo nghĩa
+người ta hay tưởng.
+
+\subsection*{Dựng lại bài 1989}
+
+\index{thiên kiến quy nạp!dựng lại số tham số LeCun 1989}%
+Quyết định của sách này là một con số lấy từ bảng của bài phải được dựng lại từ
+các bảng khác của chính bài trước khi in ra. Chương~\ref{ch:tien-huan-luyen}
+chạy phép ấy trên bốn bài và ba bài không quay về. Ở đây tôi chạy lại vì một
+quy tắc chỉ chạy khi đoán trước là sẽ hỏng thì không phải quy tắc.
+
+Bài của LeCun và cộng sự năm 1989 là chỗ chia sẻ trọng số đi vào một mạng
+nơ-ron thị giác được huấn luyện bằng
+\tn{lan truyền ngược}{backpropagation}~\autocite{lecun1989zipcode}. Bài không
+nhận là đã nghĩ ra nó - mục 3.2 dẫn về Rumelhart và cộng sự 1986 - nhưng nó là
+chỗ định nghĩa gọn nhất, trong đúng một câu:
+
+\begin{quote}
+\enquote{Weight sharing was described in Rumelhart et al. (1986) for the
+so-called T-C problem and consists in having several connections (links)
+controlled by a single parameter (weight). It can be interpreted as imposing
+equality constraints among the connection strengths.}
+\end{quote}
+
+\enquote{Equality constraints among the connection strengths} là ràng buộc thứ
+hai, viết ra bằng lời, năm 1989.
+
+\begin{measured}{mạng của LeCun 1989, dựng lại từ chính mục 3.3 của bài}
+\begin{minted}{text}
+layer   connections  weights  biases  parameters  conn/param
+H1      19,968       300      768     1,068          18.697
+H2      38,592       2,400    192     2,592          14.889
+H3      5,790        5,760    30      5,790           1.000
+output  310          300      10      310             1.000
+TOTAL   64,660       8,760    1,000   9,760           6.625
+\end{minted}
+
+Bài in: 1256 unit, 64,660 kết nối, 9,760 tham số độc lập.
+
+Đo bằng \code{experiments/ch10\_counts.py} tại tag \code{ch10}.
+\end{measured}
+
+Khớp cả hai tổng, đúng tới đơn vị. Tỷ số là 6.625 chẵn.
+
+Chuyện đáng đọc nằm ở hàng H1, và nó là chuyện bài nói ra nhưng không nhấn.
+Cùng mục 3.3:
+
+\begin{quote}
+\enquote{Units do not share their biases (thresholds). Each unit thus has 25
+input lines plus a bias.}
+\end{quote}
+
+Nên trong 1,068 tham số tự do của tầng tích chập đầu tiên trong lịch sử, có
+\emph{768 là bias} và chỉ 300 là trọng số kernel.
+
+\begin{measured}{H1 tách ra làm hai phần}
+\begin{minted}{text}
+  H1 shared weights                300
+  H1 unshared biases               768
+  biases as a share of H1       0.7191
+\end{minted}
+
+Đo bằng \code{experiments/ch10\_counts.py} tại tag \code{ch10}.
+\end{measured}
+
+71.91\%. Chia sẻ trọng số bỏ đi các trọng số và không đụng tới bias, nên cái
+còn lại chủ yếu là bias. Chuyện này không sai ở đâu cả, và nó không đổi luận
+điểm nào của bài; tôi in ra vì nó là thứ mà một người đọc chữ \enquote{chỉ 1068
+tham số} sẽ không đoán được, và vì nó cho thấy phép chia 1024 ở bảng trước chỉ
+áp lên một nửa của một tầng.
+
+\subsection*{Dựng lại LeNet-5, và chỗ nó không khớp}
+
+\index{thiên kiến quy nạp!dựng lại LeNet-5}%
+Chín năm sau, cùng nhóm tác giả, bài đặt tên cho ba ý tưởng cùng một
+lúc~\autocite{lecun1998gradient}, mục II.A:
+
+\begin{quote}
+\enquote{Convolutional Networks combine three architectural ideas to ensure
+some degree of shift, scale, and distortion invariance: local receptive fields,
+shared weights (or weight replication), and spatial or temporal sub-sampling.}
+\end{quote}
+
+Ý tưởng thứ ba, \tn{giảm mẫu}{subsampling}, là thứ mục~\ref{sec:ch10-dang-bien}
+sẽ cho thấy phải trả giá.
+
+\begin{measured}{LeNet-5, dựng lại từ mục II.B}
+\begin{minted}{text}
+layer   connections  parameters
+C1      122,304      156
+S2      5,880        12
+C3      151,600      1,516
+S4      2,000        32
+C5      48,120       48,120
+F6      10,164       10,164
+output  840          0
+TOTAL   340,908      60,000
+\end{minted}
+
+Bài in: 340,908 kết nối, \enquote{only 60,000 trainable free parameters}.
+
+Đo bằng \code{experiments/ch10\_counts.py} tại tag \code{ch10}.
+\end{measured}
+
+\textbf{60,000 là con số tròn nhưng chính xác.} Nó là tổng, không phải một phép
+làm tròn, và tôi đã chờ đợi điều ngược lại.
+
+Hàng \code{output} là hàng phải đi tìm. Cộng sáu tầng đầu thì tham số vẫn đúng
+60,000 còn kết nối chỉ ra 340,068, thiếu đúng 840. LeNet-5 kết thúc bằng 10
+unit hàm cơ sở bán kính - radial basis function, viết tắt là RBF - mỗi unit 84
+đầu vào; trọng số của chúng bài đặt bằng tay và không huấn luyện. Nên tầng ấy đóng góp 840 kết nối và \emph{không} tham số tự do nào,
+và nó vào một tổng mà không vào tổng kia. Chỗ lệch 840 là cách tôi tìm ra nó.
+
+\subsection*{Chia sẻ trọng số không làm mạng nhỏ đi}
+
+\index{thiên kiến quy nạp!phần lớn tham số nằm ở tầng không chia sẻ}%
+Còn một cột nữa trong hai bảng trên, và nó nói một chuyện ngược với câu người
+ta hay kể.
+
+\begin{measured}{tham số nằm ở đâu, trong hai mạng tích chập kinh điển}
+\begin{minted}{text}
+LeCun 1989
+  H1 + H2, the shared layers     3,660
+  H3 + output, fully connected   6,100
+  fully connected share         0.6250
+
+LeNet-5
+  C1..S4, the shared layers      1,716
+  C5 + F6, fully connected      58,284
+  fully connected share         0.9714
+\end{minted}
+
+Đo bằng \code{experiments/ch10\_counts.py} tại tag \code{ch10}.
+\end{measured}
+
+62.50\% ở bài 1989, và \textbf{97.14\% ở LeNet-5}. Kiến trúc đặt tên cho chia
+sẻ trọng số tiêu 97\% tham số của nó ở những tầng chia sẻ đúng con số không.
+
+Cách đọc đúng không phải là bài mâu thuẫn với chính nó. Là chia sẻ trọng số
+không làm \emph{mạng} nhỏ đi; nó làm \emph{bộ trích đặc trưng} nhỏ đi. Phần
+tích chập của LeNet-5 nặng 1,716 tham số và sinh ra một biểu diễn mà một bộ
+phân loại kết nối đầy đủ nhỏ đọc được. Đó là phân công lao động, không phải một
+phép nén.
+
+Và nó là lý do câu hỏi của chương này không trả lời được bằng cách đếm tham số.
+Cái mà hai ràng buộc mua được không phải kích thước. Mục sau là chỗ nói nó mua
+được cái gì.

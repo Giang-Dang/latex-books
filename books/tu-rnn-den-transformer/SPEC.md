@@ -16,7 +16,7 @@ picks a side. Chapter titles are quoted in Vietnamese exactly as they are set.
 
 ## Status
 
-Chapters 01 through 07 drafted. Six appendices now: C was split out
+Chapters 01 through 10 drafted. Six appendices now: C was split out
 of B on 2026-08-09 (decision 28) and the old C, D and E became D, E and F.
 
 Chapter 03 was drafted out of order, in a session that branched before chapters
@@ -145,17 +145,81 @@ rather than judged on the built page, because a `tikzpicture` that overflows
 inside `\centering` raises no Overfull box and the gate is blind to it
 (decision 67).
 
-Next action: chapter 10, "Bias quy nạp của CNN". It inherits `transformer.py`
-and `scaling.py` at tag `ch09`. Three warnings carry into it. Decision 64 applies
-again and probably harder, because the running example is an English-Vietnamese
-grammar and chapter 10's subject is images: the chapter should decide early
-whether it measures anything at all, and say so. It is the first chapter that
-needs a corpus this repo does not have, so if it wants CIFAR-10 for the
-locality experiments then the download, the budget and decision 13's
-no-graphics-card promise all have to be settled before code is written, not
-after. And chapter 11 is where the ViT numbers land, so anything chapter 10
-measures about CNN inductive bias has to be measured in a form chapter 11 can
-put beside a Transformer.
+Chapter 10 is drafted, and the three warnings the SPEC handed it went three
+different ways. The data question was settled by the author before any code
+existed, which is what the open item asked for, and it went to CIFAR-10 with the
+download accepted (decision 69). Decision 64 did **not** apply again: unlike
+pretraining, the subject of this chapter is reachable, because images can be
+downloaded where a pretraining corpus had to be invented. And the third warning
+was met by building the measurement in the shape chapter 11 needs - accuracy
+against training-set size, on the same images, with a Transformer to be added
+one chapter later.
+
+What the chapter did not expect is that the constraint everyone assumed was
+binding was not. Decision 13's no-graphics-card promise was never the obstacle:
+a small CNN does a full 50,000-image epoch in 8.25s here. The obstacle was the
+download, 1916 seconds of it, which is why fetching sits outside the timed work.
+
+Two rebuilds, and both come back. Chapter 09 rebuilt four papers' headline
+counts and three disagreed; chapter 10 rebuilt LeCun 1989 and LeNet-5 and both
+close exactly, with LeNet-5's famous 60,000 turning out to be a sum rather than
+a rounding. Getting its 340,908 connections to close required finding that the
+RBF output layer contributes 840 connections and no free parameters at all. The
+reading worth keeping is the one neither paper advertises: 97.14% of LeNet-5's
+parameters sit in layers that share nothing, so weight sharing shrinks the
+feature extractor rather than the network.
+
+The chapter's own finding is about a property rather than a number. Convolution
+is exactly translation-equivariant - bit-exact zero, not small - and the
+subsampling every real network uses does not weaken that, it deletes it at
+exactly half of all shifts. Average pooling and a bare strided convolution show
+the same even/odd split, so it is not about max pooling, which is how Zhang 2019
+is usually read. LeCun et al. wrote "some position information is eliminated"
+about their own subsampling in 1989; what took thirty years was measuring how
+much.
+
+Two places the session nearly printed something false, and both were caught the
+same way, by having a prediction before looking at the number. The equivariance
+table was first measured against the wrong output shift, which made a stride-2
+layer look non-equivariant at every shift including the ones where it is exact -
+a stronger claim than the truth and a wrong one. And the CIFAR sweep was first
+run at a fixed epoch count across all training-set sizes, which starved the
+small-data rows and supported a clean false sentence; that became decision 71.
+Neither the build nor the gate could see either one.
+
+`BUDGET_TOTAL` is the thing this session does **not** settle, and decision 62
+already said whose call it is, and this session hit it twice. With its full
+sweep chapter 10 added 236.24s and the repo came to 1332.17s against the 1300s
+budget on an idle machine, so `verify.py` returned 1 and the chapter could not
+be called drafted. Note what the same run says about the chapters nobody
+touched: 1095.93s against the 1001.60s they measured in the chapter 09 session,
+94s of drift on identical code. So the overrun is not chapter 10's alone, and
+the margin sits inside the noise either way, which is precisely decision 62's
+argument that 1300 stopped being a budget.
+
+Decision 62 forbids raising it and decision 71, written in this same session,
+forbids buying it back by cutting epochs. So chapter 10 dropped its
+50,000-image row (decision 74), the sweep went from 232.25s to 131.51s, and the
+repo verifies again: `verify: ok` at 1230.15s, with chapter 10 contributing
+134.92s across four items. That is **by giving up a result rather than by
+anything having been fixed** - the sample-efficiency table now reports a bound
+where it used to report a crossing point - and the 70s of margin is still
+narrower than the drift measured on untouched code in the same session.
+`BUDGET_TOTAL` is left at 1300 and the open item below carries the three live
+options.
+
+Next action: chapter 11, "Ảnh là 16x16 chữ". It inherits `conv.py`, `cifar.py`
+and `vision.py` at tag `ch10`, and its TOC line's CIFAR-10 is now confirmed
+rather than a plan. Three things carry into it. The comparison it needs is
+already built and already run for two architectures, so a ViT row goes beside
+them on the same recipe and the same seeds rather than in a table of its own -
+but a ViT is more expensive than either existing model, and the budget question
+above has to be answered before that row is added rather than after. Chapter 10
+measured the CNN half of the ViT result honestly at laptop scale and cannot
+reach the half that needs JFT-300M, so chapter 11 will be citing for its
+headline result and measuring only the losing side; it should say so on the page
+the way section 9.5 did. And decision 71 applies directly, because chapter 11's
+table is another sweep over data.
 
 ## Decision log
 
@@ -256,6 +320,18 @@ Rows 64 onward were written in the chapter 09 session, 2026-08-12.
 | 67 | A figure's width is measured with `\savebox`, never judged from the built page | Chapter 09's figure is three columns wide and the figure agent flagged it as tight. Read on the built page it looked like it ran into both margins. Measured, it is 436.00pt against this book's 441.02pt measure and fits with 5pt to spare. **The reason the eye is not good enough here is that neither is the gate.** A `tikzpicture` wider than the measure, sitting inside a `figure` with `\centering`, raises no Overfull box, so `Log.MaxOverfull = 0` never fires and `check-chapter.ps1` cannot see it either - this is decision 31's blind spot for listings, one environment over. The measurement is three lines, `\newsavebox`, `\savebox` and `\typeout`, run once and removed, and the number goes in a comment at the call site so the next session widening the picture knows what it has to spend. Chapter 09's call site carries that comment |
 | 68 | Nothing carries a `\label` attached to a starred sectioning command, and the exercises are referred to by name | Chapter 09's first draft put `\label{sec:ch09-bai-tap}` under `\exercises`, which is `\section*`. A starred section increments no counter, so the label took the number of the last numbered section before it and three cross-references in the chapter pointed a reader at 9.6, the closing section, instead of at the exercises. **Nothing reported it.** `Log.MaxUndefined = 0` was satisfied because the label was defined; it was defined wrong. `check-chapter.ps1` does not look at labels at all. A build and a full prose-gate run were both clean while three references in the chapter were pointing at the wrong place, and it was found by reading the built page. `preamble/macros.tex` already said the tiers are starred because nothing cross-references an exercise; that comment is now a rule rather than an observation, and the chapter 09 exercises file carries the reason at the top. **What generalises past the exercises**: the same trap sits under every starred heading this book sets, which is `\exercises`, the three tier macros, and the `\subsection*` this book uses throughout its chapters. Refer to those by name, never by number |
 
+Rows 69 onward were written in the chapter 10 session, 2026-08-12.
+
+| # | Question | Decision |
+|---|----------|----------|
+| 69 | Chapter 10 runs on CIFAR-10, the download is accepted, and `verify.py` may fetch once and cache | Settled by the author at the top of the session, closing the one open item the list had carried. The item named three options - ship a real dataset, generate synthetic images, or apply decision 64 and measure nothing - and the author took the first. **What it costs, stated so nobody rediscovers it as a surprise:** every experiment from chapter 05 to chapter 09 builds its data from a seed, so `verify.py` has run with no network since the repo existed, and from chapter 10 it does not. A reader with no network gets a red run until they have fetched once. **What was measured before choosing**, because the constraint everybody assumed was binding turned out not to be: a 56,970-parameter CNN does one epoch over all 50,000 images in 8.25s on this machine, so decision 13's no-graphics-card promise was never what stood in the way. The download is: 170,498,071 bytes at roughly 90 KB/s, 1916 seconds. That is far past any per-item budget, so it sits outside the timed work by design rather than by oversight. The loader is forty lines of stdlib against the tarball of pickles rather than torchvision, which would pin a second package to `torch==2.11.0` and hand back `PIL.Image` objects the training loop would immediately undo; `environment.yml` is unchanged. Chapter 11 inherits all of this, and its TOC line naming CIFAR-10 is now confirmed rather than stale |
+| 70 | \enquote{equivariance} is `đẳng biến`, and \enquote{tương đương} is refused | Decision 46 says a candidate whose Vietnamese side is a word the book already uses in another sense goes to the keep-in-English table rather than the appendix. `tương đương` is exactly that: it means \emph{equivalent}, and chapter 06 already uses it that way. Here the collision is not merely confusing, it is the opposite of the chapter's point - chapter 10 exists to keep equivariance apart from invariance, and rendering it with the word for \enquote{equivalent} would fuse the two in the reader's head on first meeting. So this row takes the third option decision 46 does not list: a different Vietnamese term, `đẳng biến`, which is the standard mathematical one and which the book uses nowhere else. `bất biến` takes \enquote{invariance} beside it. **The cost landed on an already-drafted chapter**, as the retroactivity rule says it will: chapter 03 wrote \enquote{khẳng định một bất biến về chuẩn}, where the word is the noun \enquote{an invariant} and not \enquote{invariance}, so glossing it would have taught the wrong English. Reworded rather than glossed, which is what decision 53 did with `giả thuyết`. Five other chapters gained one `\tn` each for `tích chập` and `chia sẻ trọng số`, and chapter 01's hand-written \enquote{(weight sharing)} became a `\tn` - a decision 21 miss that had been sitting there since the first chapter and that nothing could see until appendix B had the row |
+| 71 | A size-matched control is not enough; a sweep over data needs a training-budget-matched control too | Decision 44 says an ablation ships a size-matched control or says why it has none. Chapter 10 shipped one and it was still not enough. A first sweep held the epoch count fixed at 8 across training-set sizes from 1,000 to 50,000. At 1,000 images with batch 128 that is 64 gradient steps against 3,120 at the top end, so the small-data rows were not measuring architecture, they were measuring that one model had not finished training. The number it produced - a matched MLP at 0.1729 on 1,000 images - supported a clean and false sentence, that the CNN on 1,000 images beats the MLP on all 50,000. Giving the small sizes more epochs moved that row to 0.3163 and the sentence disappeared. What survived is stronger and true: within the whole swept range the matched MLP never reaches what the CNN reaches on 1,000 images. **The cheap check that catches this** is the training-accuracy column, which is why the chapter prints one: a model at 0.9207 on its own training split is not short of steps, and a model far below that might be. Generalized because the next data sweep will hit it: a hyperparameter held fixed across a sweep is being asserted not to interact with the swept variable, and here it did |
+| 72 | A `\newsavebox` name may not contain digits, and getting it wrong prints a plausible wrong number | Decision 67 requires a figure's width to be measured with `\savebox` rather than eyeballed. Chapter 10 followed it and the first measurement was silently wrong: `\newsavebox{\ch10boxa}` parses as `\ch` followed by the letters `10boxa`, so `\the\wd\ch10boxa` printed the width of a different box and then the characters `10boxa`. It read 5.475pt. **That is the dangerous shape** - not an error, not a missing macro, but a small plausible number where a small plausible number was expected, and 5.475pt against a 441.02pt measure looks like a picture with lots of room. The real widths are 367.99pt and 268.01pt. Recorded because decision 67 is a procedure this book now runs every chapter, and the procedure has a trap in it that fires silently |
+
+| 73 | \enquote{inductive bias} is `thiên kiến quy nạp`, and chapter 10 was retitled to match the three chapters that got there first | Chapter 10 was drafted as \enquote{Bias quy nạp của CNN}, taking the phrase from its own TOC line, and an audit found that chapters 07, 08 and 09 already write `thiên kiến quy nạp` for the same English in six places. So the book briefly carried two Vietnamese terms for the concept its tenth chapter is named after, and two `\index` families for it. **The TOC line was the thing out of step, not the chapters**: it was written in the skeleton session before any prose existed, and prose has a vote. `thiên kiến quy nạp` also wins on the merits - appendix B keeps `bias` in English because in this literature `bias` is the additive parameter of a layer, which is a different thing from a prior over hypotheses, and using the same English word for both is precisely the confusion the appendix exists to prevent. Chapter 10 is now \enquote{Thiên kiến quy nạp của CNN} and the TOC line follows. **The folder and the label stay `bias-quy-nap`.** Decision 42 moved a slug with a title and this row deliberately does not: there the old title was opaque to a reader, here the two names are synonyms, the slug is not reader-facing, and `ch:bias-quy-nap` is already cross-referenced from chapters 07 and 08. Renaming it would touch three chapters' `\ref` calls and `main.tex` to change a string nobody reads. **What generalizes**: the `Gloss` family cannot see this defect, because a chapter that never glosses a term it does not know it is sharing looks identical to a chapter using ordinary Vietnamese - decision 39 says exactly that, and this is its second confirmed instance after `chỗ thắt` |
+| 74 | The CIFAR sweep stops at 16,000 images, and the cut is budget rather than science | The sweep ran 1,000 / 4,000 / 16,000 / 50,000 and cost 232.25s, which put the repo at 1332.17s against a 1300s `BUDGET_TOTAL` on an idle machine - so `verify.py` returned 1 and the chapter could not be called drafted. Decision 62 forbids raising the number a third time and decision 71, written in this same session, forbids buying the budget back by cutting epochs, because that starves the small-data rows and manufactures the effect being measured. Dropping the largest training-set row is the one cut that starves nothing: every remaining row keeps the epoch count it was measured at. The sweep is now 131.51s. **What it costs, so that it can be undone deliberately:** the sample-efficiency table says \enquote{over 16,000} where the full sweep produced an actual crossing point for the matched MLP, so the chapter's sharpest single number is gone and what replaces it is a bound. Chapter 11 will want the row back when it puts a Vision Transformer beside these models. Restoring it is one tuple entry in `SWEEP`; what has to be settled first is the budget, which is the open item below |
+
 ## Version baseline
 
 Verified 2026-08-09 by building this book. Re-verify before any chapter that
@@ -272,6 +348,7 @@ depends on a version.
 | tcolorbox | 2025/11/28 |
 | longtable | loaded 2026-08-12 for appendix B's keep-in-English block (decision 66) |
 | conda | 26.1.1 |
+| CIFAR-10 | `cifar-10-python.tar.gz`, md5 `c58f30108f718f92721af3b95e74349a`, 170,498,071 bytes. Pinned here from 2026-08-12 (decision 69) because from chapter 10 a printed accuracy depends on which bytes are on disk, and `rnn_to_transformer_lab/cifar.py` refuses to extract an archive whose digest differs |
 | The six source papers | Exact arXiv versions and SHA-256 in `research/2026-08-nguon-sau-bai-bao.md` |
 
 ## Table of contents
@@ -378,8 +455,29 @@ created. That section is the hinge to the next chapter and is not optional.
 
 ### Part V - Ra khỏi ngôn ngữ
 
-10. **Bias quy nạp của CNN** - locality, translation equivariance, weight
-    sharing; the pre-ViT attempts: local attention, Image Transformer, iGPT
+10. **Thiên kiến quy nạp của CNN** - a convolution as a fully connected layer under
+    two constraints, priced separately, where sharing divides the parameter
+    count by exactly the number of spatial positions and locality divides by
+    much less; LeCun 1989 and LeNet-5 rebuilt from their own layer tables, both
+    of which come back exactly, and LeNet-5's 60,000 turns out to be a sum
+    rather than a rounding; the reading nobody advertises, that 97% of LeNet-5
+    sits in the layers that share nothing, so sharing shrinks the feature
+    extractor and not the network; equivariance measured to exact zero and
+    invariance measured to be false, with subsampling losing the property at
+    exactly half of all shifts rather than weakening it everywhere, and the
+    same even/odd split under average pooling and a strided convolution so it
+    is the subsampling and not the max; Cordonnier's theorem that `K^2` heads
+    express a `K x K` kernel, checked by construction, which puts the
+    difference in what is default rather than in what is expressible; the
+    pre-ViT attempts - Image Transformer, Stand-Alone Self-Attention, Attention
+    Augmented, iGPT - read as four positions on one axis; and the book's first
+    experiment on real images, CIFAR-10 (decision 69), where a
+    parameter-matched MLP does not reach the CNN's 1,000-image accuracy
+    anywhere in the swept range, and a 23.71x-parameter MLP needs 11.0 times
+    the images. **Retitled from \enquote{Bias quy nạp của CNN} in the drafting
+    session** (decision 73): chapters 07 to 09 already wrote `thiên kiến quy
+    nạp` for the same English, so the TOC line rather than those chapters was
+    the thing out of step
 11. **Ảnh là 16x16 chữ** (Dosovitskiy et al. 2021) - patch embedding, the `CLS`
     token, learned positional embeddings; the headline result is that it loses
     to ResNet on ImageNet-1k and wins after JFT-300M pretraining; a small ViT
@@ -431,7 +529,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 07 | drafted | Companion tag `ch07`, module `transformer.py`. Four experiments, two of which train nothing, so the whole repo verifies in 663.51s against the 900s budget and decision 43 is untouched. Reads both copies of the paper and finds they are different documents that disagree on a BLEU score (decision 47). The chapter's table sweeps epochs rather than width, after three other explanations for the 14-epoch result were killed (decision 48). Two TikZ figures. Four appendix B rows, and four terms deliberately kept in English (decision 46) |
 | 08 | drafted | Companion tag `ch08`, module `cost.py` plus four experiment scripts. Pays three of chapter 07's four debts and half of the fourth: table 1 re-measured with constants, the head-count claim measured on the clock as well as in FLOPs, and the layer-norm order measured at initialization. Corrects a chapter 07 sentence that put the head-count slowdown at twenty percent (decision 61). Its own finding is that the quadratic cost bites where the score matrix leaves cache, measured by byte rather than by `n` and confirmed with a batch-held control. The warmup table is a deliberate negative result: three seeds show the within-configuration spread is wider than the between-configuration gap. Two TikZ figures. `BUDGET_TOTAL` raised to 1300 (decision 62) |
 | 09 | drafted | Companion tag `ch09`, module `scaling.py` plus two experiment scripts, none of which trains or times anything, so every number is identical on every machine. The first chapter that measures nothing about its own subject, and it spends section 9.5 on why (decision 64). Rebuilds every published parameter count in BERT, GPT-1, GPT-2 and GPT-3; three of four disagree with what those papers print (decision 65). Its own finding is that Kaplan's table 1 counts one of attention's two quadratic products, ratio exactly 2.00, confirmed against `FlopCounterMode` and against Hoffmann's appendix F - and that it does not matter, because `6N` drops that term anyway. The `6ND` error is `1 + n/(6d)`, and `6d` is chapter 08's `n = 2d + d_ff` from the other side. Two places Hoffmann cannot be reproduced from what it prints: table A4 states neither the sequence length nor the vocabulary it was computed at, and table 2's frontier exponents do not follow from appendix D.2's rounded alpha and beta. One TikZ figure. Four appendix B rows plus one kept in English; seven abbreviations into appendix C. `BUDGET_TOTAL` untouched at 1300, whole run 1001.60s |
-| 10 | not-started | |
+| 10 | drafted | Companion tag `ch10`, modules `conv.py`, `cifar.py` and `vision.py` plus three experiment scripts. **The first chapter that runs on data this repo cannot generate** (decision 69): CIFAR-10, fetched once and cached, which costs `verify.py` the property that it ran with no network. Rebuilds LeCun 1989 and LeNet-5 and both come back exactly, which is the opposite of chapter 09 and is why the rule is worth running anyway; LeNet-5's 60,000 is a sum, and its connection total closes only once the fixed-weight RBF output layer's 840 connections are counted. Its own finding is that 97.14% of LeNet-5's parameters sit in layers that share nothing, so weight sharing shrinks the feature extractor rather than the network. Equivariance measured to bit-exact zero and invariance measured false; subsampling loses the property at exactly half of all shifts, and average pooling and a strided convolution show the same split, so it is not the max. On CIFAR-10 a parameter-matched MLP never reaches the CNN's 1,000-image accuracy anywhere up to 16,000, and a 23.71x-parameter MLP needs 11.0x. Two TikZ figures, measured at 367.99pt and 268.01pt. Nine appendix B rows and four abbreviations into appendix C, and the appendix B additions were retroactive to five earlier chapters. Retitled per decision 73. The sweep's 50,000-image row was cut for budget (decision 74) and `BUDGET_TOTAL` is left at 1300 - see open items |
 | 11 | not-started | |
 | 12 | not-started | Re-verify the 2021-2026 facts before drafting |
 | 13 | not-started | Re-verify before drafting |
@@ -710,19 +808,36 @@ comment in the file that enforces it. Rows 49 to 58 are where most of them
 landed. One entry has been added since, and it is work nobody has done rather
 than a call nobody has taken.
 
-- **Chapter 10 needs a data decision before it needs code.** Every experiment in
-  this book so far runs on the generated corpus of decision 35, and chapter 10's
-  subject is the inductive bias of convolutional networks, which that corpus
-  cannot express at all. Chapter 11 then needs whatever chapter 10 uses, because
-  the ViT result is a comparison against a CNN on the same images. So the choice
-  is real and it is upstream of any code: ship a real image dataset, generate
-  synthetic images the way `toy_corpus.py` generates sentences, or apply
-  decision 64 again and write a chapter that measures nothing. Each costs
-  something different. A real dataset means a download, which breaks the
-  property that `verify.py` runs on someone else's machine with no network, and
-  it has to fit decision 13's no-graphics-card promise and decision 62's
-  already-tight budget. Synthetic images keep both properties and risk being a
-  toy with none of the structure the claim is about, which is exactly what
-  decision 64 says to check for. Citing costs the chapter its evidence. **This is
-  the author's call and not a drafting session's**, and a session that reaches
-  chapter 10 without it settled should raise it rather than pick one quietly.
+The chapter 10 data item is closed: it was raised at the top of that session,
+the author settled it, and it is decision 69 now. What replaces it is the
+question decision 62 predicted would arrive.
+
+- **`BUDGET_TOTAL` no longer holds, and decision 62 already said the call is the
+  author's.** Measured twice in the chapter 10 session. On a machine also
+  compiling a book and running a subagent the whole run came to 1371.69s against
+  1300; on an idle one, 1332.17s. Over both times. In the idle run the chapters
+  that existed before this session took 1095.93s against the 1001.60s they
+  measured in the chapter 09 session, so 94s of the overrun is drift on code
+  nobody touched, and the margin sits inside the noise either way - which is
+  decision 62's own test for when a budget has stopped being one. Chapter 10
+  then cut its sweep from 232.25s to 131.51s (decision 74) and the repo verifies
+  again. **It verifies by giving up a result, not by anything having been
+  fixed**, and the next chapter has nothing equivalent left to give up.
+  Decision 62 lists the honest moves and rules one of them out: do not raise the
+  number a third time. Of what remains, `verify.py --only chNN` already exists
+  and chapter 10's exercises already teach it, so that one is spent. What is
+  left is to make an experiment cheaper, and the largest lever is still decision
+  57's - every recurrent layer in the repo is a hand-written Python loop, and
+  chapter 08 measured the fused version at 25.2 times faster on the
+  forward-plus-backward path. Pulling it costs decision 4's promise that the
+  book builds from scratch, which is why it has never been pulled. **The three
+  live options are therefore: pull decision 57's lever for the chapters that
+  only train and never look inside the loop; drop or shrink an experiment
+  somewhere; or accept that the total is advisory and say so in `verify.py`
+  rather than leaving a threshold that fails on a busy machine.** Chapter 10
+  paid twice already - 302.24s down to 232.25s by cutting epochs, then to
+  131.51s by dropping its largest training-set row - and the second cut took a
+  result with it, which is why decision 74 records what it took rather than
+  filing it as housekeeping. The next chapter should not be asked to pay a third
+  time before this is settled, and chapter 11 adds a Vision Transformer to the
+  same sweep and will be more expensive than anything chapter 10 added.

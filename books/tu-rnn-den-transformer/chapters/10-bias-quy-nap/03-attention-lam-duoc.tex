@@ -1,0 +1,98 @@
+\section{Self-attention biểu diễn được tích chập}
+\label{sec:ch10-attention-lam-duoc}
+
+\index{thiên kiến quy nạp!attention biểu diễn được convolution}%
+Tới đây thì câu chuyện có vẻ đã rõ: mạng \tn{tích chập}{convolution} có hai
+ràng buộc, Transformer không có, nên Transformer thiếu một thứ. Chỗ này là chỗ
+câu chuyện ấy hỏng.
+
+Cordonnier, Loukas và Jaggi chứng minh rằng một tầng multi-head self-attention
+\emph{biểu diễn được} một tầng tích chập bất kỳ, miễn đủ head. Định lý 1 của
+bài~\autocite{cordonnier2020relationship}:
+
+\begin{quote}
+\enquote{A multi-head self-attention layer with \(N_h\) heads of dimension
+\(D_h\), output dimension \(D_{out}\) and a relative positional encoding of
+dimension \(D_p \geq 3\) can express any convolutional layer of kernel size
+\(\sqrt{N_h} \times \sqrt{N_h}\) and \(\min(D_h, D_{out})\) output channels.}
+\end{quote}
+
+Đọc ngược lại thì điều kiện gọn: \textbf{cần \(N_h = K^2\) head cho một kernel
+\(K \times K\)}. Một head cho mỗi độ lệch trong lân cận. Và positional encoding
+phải là loại \emph{tương đối}, số chiều ít nhất 3.
+
+Phép dựng đằng sau nó dễ hình dung hơn phát biểu. Chương~\ref{ch:transformer}
+đã dựng \tn{ma trận điểm số}{score matrix} rồi lấy softmax để ra trọng số; nếu ép phân phối
+attention của head thứ \(h\) dồn hết vào đúng một độ lệch cố định, thì head ấy
+không làm gì khác ngoài đi lấy một pixel lân cận. Ghép \(K^2\) head như vậy lại
+và trộn theo ma trận value, thì đó đúng là phép tích chập.
+
+\begin{measured}{dựng tích chập bằng \(K^2\) head, so với \code{F.conv2d}}
+\begin{minted}{text}
+kernel  heads  max |heads - conv2d|  output scale  relative
+3x3     9      7.629e-06             26.823        2.84e-07
+5x5     25     1.717e-05             40.610        4.23e-07
+7x7     49     2.670e-05             52.470        5.09e-07
+\end{minted}
+
+Đo bằng \code{experiments/ch10\_equivariance.py} tại tag \code{ch10}.
+\end{measured}
+
+Sai lệch tuyệt đối lớn lên theo kernel, và cột cuối cho thấy nó lớn nhanh hơn
+biên độ đầu ra một chút: 2.84 lên 5.09 phần mười triệu khi số head đi từ 9 lên
+49. Đó đúng là dáng của sai số cộng dồn float32, vì phép dựng cộng \(K^2\) số
+hạng thay vì một, và không phải dáng của một khoảng cách cấu trúc - một khoảng
+cách cấu trúc không nằm ở mức \(10^{-7}\) tương đối và không đi theo số số hạng
+được cộng.
+
+\textbf{Và tôi phải nói rõ phép đo ấy đo cái gì.} Nó đo \emph{sức biểu diễn},
+không đo việc học. Các head ở đây tôi đặt bằng tay, ở giới hạn softmax đã
+\tn{bão hòa}{saturation} hẳn. Dựng một tầng self-attention thật mà softmax bão
+hòa được thì phải đẩy hệ số của \tn{mã hóa vị trí}{positional encoding} bậc hai
+lên đủ lớn, và khi ấy con số báo cáo việc
+softmax bão hòa tới đâu chứ không báo cáo định lý đúng hay sai. Bảng trên là
+điểm cuối của một phép dựng, không phải kết quả của một phép huấn luyện.
+
+Chính bài cũng cẩn thận đúng chỗ ấy, khi nói về trường hợp một chiều:
+
+\begin{quote}
+\enquote{Since we have not tested empirically if the preceding construction
+matches the behavior of 1D self-attention in practice, we cannot claim that it
+actually learns to convolve an input sequence - only that it has the capacity
+to do so.}
+\end{quote}
+
+\subsection*{Cái định lý ấy đổi của chương này}
+
+\index{thiên kiến quy nạp!khác biệt không nằm ở sức biểu diễn}%
+Nếu self-attention biểu diễn được tích chập, thì khác biệt giữa hai kiến trúc
+\emph{không} nằm ở chỗ cái này làm được điều cái kia không làm được.
+
+Nó nằm ở chỗ cái nào là mặc định.
+
+Một tầng tích chập \emph{bắt buộc} phải cục bộ và dùng chung trọng số: không có
+cấu hình tham số nào của nó phá được hai ràng buộc ấy, vì hai ràng buộc nằm
+trong cách tầng được viết ra chứ không nằm trong giá trị của trọng số. Một tầng
+self-attention có thể trở thành một tầng tích chập, nhưng nó phải \emph{học}
+để trở thành, từ dữ liệu, cùng lúc với việc học mọi thứ khác.
+
+Nói theo cách của bài ViT: hai ràng buộc kia được \enquote{baked into each
+layer}. Nướng sẵn vào. Cái nướng sẵn thì không tốn dữ liệu; cái phải học thì
+tốn.
+
+Đó là toàn bộ luận điểm của chương này, và mục~\ref{sec:ch10-anh-that} là chỗ
+tôi đặt một con số lên chữ \enquote{tốn}.
+
+Bài Cordonnier còn đo thêm một chuyện nói đúng hướng ấy: các tầng đầu của một
+mạng chỉ-attention huấn luyện trên ảnh \emph{tự} học ra kiểu chú ý theo lưới
+quanh mỗi pixel, tức tự đi tới chỗ mà tích chập bắt đầu từ đó. Bài kết luận:
+
+\begin{quote}
+\enquote{Our results seem to suggest that localized convolution is the right
+inductive bias for the first few layers of an image classifying network.}
+\end{quote}
+
+Một kiến trúc không có \tn{thiên kiến quy nạp}{inductive bias} về ảnh, cho đủ
+dữ liệu, học lại được chính cái thiên kiến ấy. Mục sau là bốn lần người ta thử
+xoay quanh chỗ đó: ba lần đặt sẵn một phần của nó vào thay vì bắt mô hình học,
+và một lần không đặt gì cả rồi trả bằng tính toán.

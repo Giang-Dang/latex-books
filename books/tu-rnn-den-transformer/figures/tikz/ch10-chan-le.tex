@@ -1,0 +1,106 @@
+% Vi sao "giu moi mau thu hai" (stride 2) dang bien voi dich chan nhung khong
+% dang bien voi dich le: day la ket qua do duoc cua chuong (bias quy nap cua
+% CNN). Dung "dang bien" chu khong dung "tuong duong", vi "tuong duong" da
+% mang nghia equivalent trong sach nay - xem quyet dinh 70.
+% Mot day 10 vi tri dau vao (0..9), moi vi tri la mot cham; mau GIU (tron
+% dam, cac vi tri chan) va mau BO (tron vien nhat, cac vi tri le) la CO DINH
+% - giong het nhau o ca ba hang - chi mot DAC TRUNG duoc danh dau (hinh thoi)
+% la doi cho giua cac hang, dung vi tri no doi toi moi la dieu thay doi.
+% Hang 1 (dich 0, goc): dac trung o vi tri 4 (chan) -> roi vao mau giu, la
+% dau ra y_2.
+% Hang 2 (dich +2, chan): dac trung sang vi tri 6, van roi vao mau giu, dau
+% ra y_3 = y_2 dich dung 1 buoc - tuong duong dich hoan hao.
+% Hang 3 (dich +1, le): dac trung sang vi tri 5, roi dung vao mau BO - khong
+% con o dau ra nao chua dac trung nay nua. Day khong phai "sai lech mot
+% chut" ma la mot tap mau hoan toan khac (sublattice khac).
+% Khong ve: dau vao 2D, nhieu kenh, gia tri thuc cua dac trung - hinh chi
+% can VI TRI cua no.
+% Mono-safe: giu/bo phan biet bang to dam vs vien nhat (khong mau); hang
+% khop dung mui ten net lien, hang lech dung net cham + dau gach cheo.
+% Do rong DA DO bang \savebox tai cho goi hinh: 268.01pt = 9.42cm, tren mot
+% measure 441.02pt. Do la con so co gia tri; dung uoc luong lai bang mat.
+\begin{tikzpicture}[
+  >= Stealth,
+  giu/.style      = {draw, circle, fill = black, minimum size = 3.0mm,
+                      inner sep = 0pt},
+  bo/.style       = {draw = black!35, circle, fill = white,
+                      minimum size = 3.0mm, inner sep = 0pt},
+  % Hình thoi tự chế bằng hình vuông xoay 45 độ, vì thư viện shapes.geometric
+  % (có sẵn shape "diamond") không nằm trong danh sách thư viện của sách.
+  dactrung/.style = {draw = black, rectangle, line width = 1pt,
+                      minimum size = 3.8mm, inner sep = 0pt, fill = none,
+                      rotate = 45},
+  khop/.style     = {->, black!70, line width = 0.8pt},
+  lech/.style     = {black!55, densely dotted, line width = 0.8pt},
+  ten/.style      = {font = \bfseries\scriptsize},
+  nho/.style      = {font = \scriptsize},
+  be/.style       = {font = \tiny, black!55},
+  ghichu/.style   = {font = \footnotesize, black!60},
+]
+
+  % ================= chú giải ba ký hiệu, phía trên cùng =================
+  \node[giu] (leg-giu) at (1.1, 5.9) {};
+  \node[nho, anchor = west] at (1.25, 5.9) {giữ};
+  \node[bo]  (leg-bo)  at (2.6, 5.9) {};
+  \node[nho, anchor = west] at (2.75, 5.9) {bỏ};
+  \node[dactrung] (leg-dt) at (4.1, 5.9) {};
+  \node[nho, anchor = west] at (4.3, 5.9) {đặc trưng};
+
+  % ================= thước vị trí đầu vào, 0..9, cố định cho cả ba hàng ====
+  \foreach \k in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9} {
+    \node[be] at (\k*0.7, 5.3) {\k};
+  }
+
+  % ================= HÀNG 1: dịch 0 (gốc), y = 4.6 =================
+  \node[ten, anchor = east] at (-0.3, 4.6) {Dịch 0 (gốc)};
+  \foreach \k in {0, 2, 4, 6, 8} {
+    \node[giu] (r1-\k) at (\k*0.7, 4.6) {};
+  }
+  \foreach \k in {1, 3, 5, 7, 9} {
+    \node[bo] (r1-\k) at (\k*0.7, 4.6) {};
+  }
+  \node[dactrung] at (2.8, 4.6) {}; % vị trí 4, chẵn -> rơi vào mẫu giữ
+
+  \draw[khop] (2.8, 4.35) -- (2.8, 4.05);
+  \node[nho, anchor = north] at (2.8, 4.0) {\(y_{2}\)};
+
+  % ================= HÀNG 2: dịch +2, chẵn, y = 2.6 =================
+  \node[ten, anchor = east] at (-0.3, 2.6) {Dịch \(+2\) (chẵn)};
+  \foreach \k in {0, 2, 4, 6, 8} {
+    \node[giu] (r2-\k) at (\k*0.7, 2.6) {};
+  }
+  \foreach \k in {1, 3, 5, 7, 9} {
+    \node[bo] (r2-\k) at (\k*0.7, 2.6) {};
+  }
+  \node[dactrung] at (4.2, 2.6) {}; % vị trí 6, chẵn -> vẫn rơi vào mẫu giữ
+
+  \draw[khop] (4.2, 2.35) -- (4.2, 2.05);
+  \node[nho, anchor = north] at (4.2, 2.0) {\(y_{3}\) (\(=y_{2}\) dịch 1 bước)};
+
+  % ================= HÀNG 3: dịch +1, lẻ, y = 0.6 =================
+  \node[ten, anchor = east] at (-0.3, 0.6) {Dịch \(+1\) (lẻ)};
+  \foreach \k in {0, 2, 4, 6, 8} {
+    \node[giu] (r3-\k) at (\k*0.7, 0.6) {};
+  }
+  \foreach \k in {1, 3, 5, 7, 9} {
+    \node[bo] (r3-\k) at (\k*0.7, 0.6) {};
+  }
+  \node[dactrung] at (3.5, 0.6) {}; % vị trí 5, lẻ -> rơi đúng vào mẫu bị bỏ
+
+  \draw[lech] (3.5, 0.35) -- (3.5, 0.05);
+  \draw[black!55, line width = 0.8pt]
+    (3.42, -0.03) -- (3.58, 0.13);
+  \draw[black!55, line width = 0.8pt]
+    (3.42, 0.13) -- (3.58, -0.03);
+  \node[nho, anchor = north] at (3.5, -0.05) {không rơi vào ô đầu ra nào};
+
+  % ================= chú giải tóm tắt, dưới cùng =================
+  \node[ghichu, anchor = north, align = left, text width = 8.2cm]
+    at (2.5, -1.1)
+    {Mẫu giữ/bỏ cố định qua mọi phép dịch - chỉ đặc trưng di chuyển. Dịch
+     chẵn luôn hạ đúng vào mẫu giữ, nên đầu ra chỉ là đầu ra gốc dịch đi một
+     số nguyên bước: đẳng biến đúng tuyệt đối. Dịch lẻ hạ đúng vào mẫu bị
+     bỏ: đặc trưng biến mất khỏi đầu ra, không bước dịch nào của đầu ra tái
+     tạo lại được nó.};
+
+\end{tikzpicture}

@@ -1,0 +1,102 @@
+\section{Bốn lần thử trước ViT}
+\label{sec:ch10-truoc-vit}
+
+\index{thiên kiến quy nạp!bốn hướng thử trước ViT}%
+Từ 2018 tới 2020, giữa bài Transformer và bài ViT, có bốn cách người ta đem
+attention vào thị giác. Đọc chúng cạnh nhau thì thấy chúng không phải bốn ý
+tưởng rời rạc mà là bốn vị trí trên cùng một trục: giữ lại bao nhiêu phần của
+hai ràng buộc ở mục~\ref{sec:ch10-hai-rang-buoc}.
+
+Và cả bốn đều vấp vào cùng một bức tường trước, bức tường của
+chương~\ref{ch:chi-phi-va-song-song}: chi phí bậc hai theo số vị trí. Với văn
+bản, một câu là vài chục token. Với ảnh, số vị trí là số pixel.
+
+\begin{bridge}{Image Transformer, Parmar và cộng sự 2018}
+Cách thứ nhất: giữ attention, nhưng \emph{bắt} nó cục bộ.
+
+Bài nói thẳng lý do ở mục 3.3, và con số trong câu ấy là chỗ chương này gặp lại
+chương~\ref{ch:chi-phi-va-song-song}~\autocite{parmar2018image}:
+
+\begin{quote}
+\enquote{The decoders in our experiments, however, produce 32x32 pixel images
+with 3072 positions, rendering attending to all positions impractical.}
+\end{quote}
+
+3072 là \(32 \times 32 \times 3\). Một ảnh nhỏ xíu, và attention toàn cục trên
+nó đã không chạy nổi.
+
+Nên bài chia ảnh thành khối truy vấn, mỗi khối kèm một khối bộ nhớ lớn hơn bao
+quanh, và mỗi vị trí chỉ nhìn trong khối bộ nhớ của mình. Đó chính là ràng buộc
+\tn{tính cục bộ}{locality}, đặt lại bằng tay lên một cơ chế vừa mới bỏ nó đi.
+
+Kết quả: log-likelihood âm trên ImageNet từ 3.83 xuống 3.77, và trên CIFAR-10
+là 2.90 so với 2.85 của PixelSNAIL. Tức là hơn ở một bộ dữ liệu và kém ở bộ
+kia.
+\end{bridge}
+
+Cách thứ hai đi xa hơn: bỏ hẳn \tn{tích chập}{convolution}, thay bằng
+self-attention cục bộ ở mọi tầng. Ramachandran và cộng sự làm đúng thế trên ResNet, và bảng 1 của họ đáng
+nhìn kỹ~\autocite{ramachandran2019standalone}. Ở ResNet-50, mô hình chỉ-attention
+đạt 77.6\% so với 76.9\% của baseline, với 18.0 triệu tham số so với 25.6
+triệu, và 7.2 tỷ phép tính dấu chấm động - floating point operation, viết tắt
+là FLOP - so với 8.2 tỷ.
+
+Hơn baseline, và rẻ hơn. Đọc nhanh thì đây là bằng chứng attention thắng tích
+chập. Đọc kỹ thì cái họ thay vào vẫn cục bộ: mỗi vị trí vẫn chỉ nhìn một lân
+cận. Cái bị bỏ là \tn{chia sẻ trọng số}{weight sharing} theo kiểu kernel cố
+định, còn ràng buộc thứ nhất thì giữ nguyên. Nên bảng ấy nói rằng \emph{tính cục bộ} là phần đáng giữ,
+chứ không nói rằng hai ràng buộc đều bỏ được.
+
+Cách thứ ba là thỏa hiệp: giữ tích chập, thêm attention vào cạnh nó. Bello và
+cộng sự báo cáo hơn 1.3\% top-1 trên ImageNet so với ResNet50, và 1.4 điểm
+mean average precision, viết tắt là mAP, trên
+COCO~\autocite{bello2019attention}. Không có gì bị bỏ đi ở đây, nên nó không
+trả lời câu hỏi của chương này; nó có mặt vì nó là thứ phần lớn người làm thực
+tế đã dùng trong hai năm ấy.
+
+\begin{bridge}{Image GPT, Chen và cộng sự 2020}
+Cách thứ tư: không thỏa hiệp gì cả. Lấy nguyên GPT của
+chương~\ref{ch:tien-huan-luyen}, cho nó ăn pixel theo thứ tự raster như thể ảnh
+là một chuỗi token, và trả giá~\autocite{chen2020igpt}.
+
+Không có tính cục bộ. Không có chia sẻ trọng số theo vị trí. Không có bất cứ
+thứ gì trong ảnh được nói cho mô hình biết.
+
+Nó chạy được. Trên CIFAR-10, linear probe đạt 96.3\% và fine-tune đạt 99.0\%;
+trên ImageNet, linear probe đạt 72.0\%.
+
+Cái giá thì bài nói ở hai chỗ. Mục Introduction ghi phần cứng: 2048 lõi tensor
+processing unit, viết tắt là TPU. Và
+mục Discussion tự đánh giá:
+
+\begin{quote}
+\enquote{we observed that our approach requires large models in order to learn
+high quality representations. iGPT-L has 2 to 3 times as many parameters as
+similarly performing models on ImageNet and uses more compute.}
+\end{quote}
+
+Bốn mô hình của bài lần lượt 76 triệu, 455 triệu, 1362 triệu và 6801 triệu tham
+số.
+
+Tôi để bài tự nói câu ấy chứ không đi tìm một con số giờ-GPU ở nơi khác: con số
+hay được trích lại cho bài này nằm trên một trang blog mà tôi không mở được, và
+một nguồn tôi không đọc được thì không vào sách.
+\end{bridge}
+
+\subsection*{Cái bốn hướng ấy nói chung một câu}
+
+\index{thiên kiến quy nạp!kết luận chung của bốn hướng}%
+Xếp bốn hướng theo lượng \tn{thiên kiến quy nạp}{inductive bias} còn giữ lại thì ra
+một dãy: Image
+Transformer giữ tính cục bộ và bỏ kernel cố định; Stand-Alone giữ tính cục bộ
+và thay cách trộn; Attention Augmented giữ cả hai và thêm; iGPT bỏ hết.
+
+Và kết quả đi theo dãy ấy đúng như bạn đoán, với một chỗ ngoặt: iGPT, cái bỏ
+hết, \emph{vẫn chạy được}, chỉ là đắt tới mức lố bịch.
+
+Đó là tiền đề mà chương~\ref{ch:vit} cần và
+chương~\ref{ch:tien-huan-luyen} đã dựng một nửa. Thiên kiến quy nạp không phải thứ
+bắt buộc phải có. Nó là thứ mua được bằng dữ liệu và bằng tính toán, và câu hỏi
+duy nhất là tỷ giá.
+
+Mục sau là chỗ tôi đo tỷ giá ấy, ở quy mô một cái laptop.
