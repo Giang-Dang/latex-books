@@ -1,0 +1,167 @@
+\section{Pure, or a Task}
+\label{sec:ch16-pure-or-a-task}
+\index{resolvers!pure and non-pure|(}%
+
+While it is building a selection, the compiler decides how each field will be
+run. There are four answers, carried on \code{Selection.Strategy}: default,
+serial, pure, and batch. The one worth a section is pure, because it is the
+reason a number this book has been printing since
+chapter~\ref{ch:the-life-of-a-request} does not mean what its label says.
+
+\index{resolvers!the count is a count of tasks}%
+Chapter~\ref{ch:strangling-the-monolith} recorded the outline of this when
+Reviews went from 146 resolvers to 26 and 120 of the missing ones were still
+being resolved. The finding then was that a resolver with no \code{await} in it
+becomes a \code{PureFieldDelegate} that runs inline, and that the diagnostic
+event the count comes from is raised only inside \code{ResolverTask} and
+\code{BatchResolverTask}. That is still exactly true at this tag. The event is
+raised at two call sites, both wrapping genuine asynchronous work:
+\code{ResolverTask.Execute.cs} and
+\code{BatchResolverTask.cs}. A pure field is invoked from a third place, in
+\code{ResolverTaskFactory.cs}, which raises nothing:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+if (resolverContext.TryCreatePureContext(
+    selection,
+    selectionSetType,
+    fieldValue,
+    parent,
+    out var childContext))
+{
+    // if we have a pure context we can execute out pure resolver.
+    resolverResult = selection.PureResolver!(childContext);
+    executedSuccessfully = true;
+}
+\end{minted}
+
+So the timeline line every Mosaic service prints has always counted resolver
+tasks rather than fields resolved. Nothing written before
+chapter~\ref{ch:strangling-the-monolith} was wrong, because every field on the
+path those chapters measured was asynchronous, and the two numbers were the same
+number.
+
+\subsection*{Three decisions, not one}
+
+What I got slightly wrong then is the rule. \enquote{No \code{await} in it} is
+true by accident of C\# syntax rather than by design, and purity is settled
+three separate times, in three different places, by three different things.
+
+\index{resolvers!classified by return type}%
+The first is the source generator, at compile time, and it looks at the
+\emph{declared return type} and nothing else. A generic task or value task is
+classified as a task, unless what is inside it is an async enumerable, which
+gets a kind of its own; an \code{IExecutable}, an \code{IQueryable} and a bare
+async enumerable each get one too. A method returning void, or a task with no
+type inside it, is rejected as invalid. Everything left over falls through to
+pure, which is the last line of the method rather than a case it tests for.
+Because C\# obliges an \code{async}
+method to return one of those, \enquote{no await} and \enquote{not awaitable}
+coincide for ordinary code, but the test being applied is on the signature. A
+resolver is also disqualified if any of its parameters is not itself pure, which
+is a rule I have not chased to the bottom and am therefore not going to describe.
+
+\index{resolvers!middleware defeats purity}%
+The second is schema build, in \code{ObjectField.cs}, and it is the one with
+teeth:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+bool IsPureContext()
+    => skipMiddleware
+        || (context.GlobalComponents.Count == 0
+            && fieldMiddlewareDefinitions.Count == 0);
+\end{minted}
+
+The generated pure delegate is only kept if that returns true. One global field
+middleware registered anywhere in the schema and no field in the schema is pure,
+because a middleware chain has to run and the inline path is what skips it. The
+file states the consequence as an axiom rather than deriving it, in a comment I
+enjoyed finding: \code{// by definition, fields with pure resolvers are parallel
+executable.}
+
+\index{resolvers!demoted per selection by a directive}%
+The third happens per selection, at operation compile time, and reads the query
+text rather than the schema. It is in
+\code{OperationCompiler.CompileResolver.cs}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+if (field.PureResolver is not null && selection.Directives.Count == 0)
+{
+    return field.PureResolver;
+}
+
+for (var i = 0; i < selection.Directives.Count; i++)
+{
+    if (schema.DirectiveTypes.TryGetDirective(selection.Directives[i].Name.Value, out var type)
+        && type.Middleware is not null)
+    {
+        return null;
+    }
+}
+
+return field.PureResolver;
+\end{minted}
+
+Only a directive that has a registered middleware demotes the field, and only
+for that one occurrence. Which settles a question worth asking after
+section~\ref{sec:ch16-what-compiling-produces}: \code{@skip} and \code{@include}
+have no middleware, because they are consumed as bitmask data rather than as
+executable steps, so a field carrying \code{@skip} is still resolved inline by a
+\code{PureFieldDelegate}. A hand-written logging directive on the same field is
+what would push it back onto the full asynchronous path.
+
+\subsection*{Counting it on something small enough to check}
+
+\index{resolvers!measured on the sample}%
+Mosaic's numbers are large enough that the distinction is easy to assert and
+hard to see. \code{samples/executor-internals} has a type with three plain
+fields and one that returns a \code{Task<string>}, and one asynchronous root
+field returning three of them:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+== pure-fields-cost-no-task
+   three things, nine pure fields selected -> 1 resolver tasks
+   the same plus one async field per thing -> 4 resolver tasks
+   PASS
+\end{minted}
+
+Nine pure fields cost nothing at all. Adding one awaitable field per thing adds
+exactly three, and the one task in the first run is the root field, which is
+asynchronous because every case in that sample needs at least one task to exist.
+Both numbers are asserted, so a HotChocolate release that changed the
+classification would fail the gate rather than quietly making this section
+wrong.
+
+\subsection*{Where the mutation rule is enforced}
+
+\index{mutations!serial execution}%
+Serial is the strategy with a specification behind it, and it is applied
+nowhere near the executor. When the schema is being built, in
+\code{ObjectType.Initialization.cs}, every field of the mutation type is
+flagged:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+if (((RegisteredType)context).IsMutationType ?? false)
+{
+    // if this type represents the mutation type we flag all fields as serially executable
+    // so that the operation compiler and execution engine will uphold the spec
+    // algorithm to execute mutations serially.
+    foreach (var field in definition.Fields)
+    {
+        field.IsParallelExecutable = false;
+    }
+}
+\end{minted}
+
+Because nothing in a schema except the root returns the mutation type, this
+marks root mutation fields and nothing else, which is precisely the rule the
+specification states and needs no special case anywhere downstream. Serial also
+beats pure: a field already marked serial cannot become pure even if it has a
+pure resolver, which is stated in the strategy-inference code and is the right
+way round.
+
+\medskip
+Four strategies, then, decided while the selection is compiled. What acts on
+them is a scheduler, and it turns out to be a smaller and stranger object than
+its name suggests.
+
+\index{resolvers!pure and non-pure|)}%

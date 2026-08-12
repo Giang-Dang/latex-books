@@ -56,4 +56,27 @@
 \appto{\bibsetup}{\raggedright}
 \usepackage{imakeidx}
 
+% The index is two columns of multicol, and it grows by roughly fifty entries a
+% chapter. At sixteen chapters its last page went 8.8pt over and the build gate
+% failed on an overfull box for a page nobody wrote.
+%
+% Two settings, and the order they were arrived at matters more than either.
+% \raggedcolumns tells multicol to stop stretching the final page's columns to
+% equal height, which took the overflow from 8.8pt to 6.4pt and proved multicol
+% was the thing to talk to. It was not enough on its own, because the page was
+% genuinely overfull rather than unevenly filled: there was more index than page.
+% \small is what actually buys the room, and it is the ordinary size for an index
+% in a book this length. Together they end the index two pages earlier with about
+% a third of the last page spare, so the next chapter's fifty entries have
+% somewhere to go.
+%
+% What this replaces is worse: deleting index entries until the page happened to
+% fit, which works once and is a lie about what the index is for.
+%
+% othercode is imakeidx's hook for code that has to run inside the index
+% environment. A \raggedbottom before \printindex does not survive into it, and
+% would not have helped anyway - that is the fix for a page with too little on
+% it, not too much.
+\indexsetup{othercode={\small\raggedcolumns}}
+
 \usepackage[hidelinks]{hyperref}

@@ -1,0 +1,184 @@
+\section{One Compilation, and an Operation That Keeps Compiling}
+\label{sec:ch16-one-compilation}
+\index{operation cache!what it holds|(}%
+
+Two questions about the operation cache were left open in
+chapter~\ref{ch:the-life-of-a-request}. The first was what happens when several
+requests for the same uncached operation arrive together, which that chapter read
+in the source and never exercised. The second nobody thought to ask, because the
+word \enquote{compiled} carries an assumption with it.
+
+\subsection*{A burst compiles once}
+
+\index{operation cache!single-flight compilation}%
+The mechanism, in \code{OperationCacheMiddleware.cs}, is a table of compilations
+in progress:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+private readonly ConcurrentDictionary<string, Lazy<TaskCompletionSource<Operation>>> _inFlightOperations =
+    new(StringComparer.Ordinal);
+\end{minted}
+
+and an election written with unusually candid comments:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+// No operation is cached and no compilation is in progress.
+// Use a Lazy<TCS> so that under burst conditions only one TCS is materialized
+// even if multiple requests race through GetOrAdd concurrently.
+inFlightOperation = new Lazy<TaskCompletionSource<Operation>>(
+    static () => new TaskCompletionSource<Operation>(
+        TaskCreationOptions.RunContinuationsAsynchronously));
+var cachedInFlightOperation = _inFlightOperations.GetOrAdd(operationId, inFlightOperation);
+
+if (ReferenceEquals(cachedInFlightOperation, inFlightOperation))
+{
+    // We won the race! This request is the single-flight leader
+    // responsible for compiling and signaling all followers.
+    isSingleFlightLeader = true;
+    context.Features.Set(inFlightOperation.Value);
+}
+\end{minted}
+
+\index{operation cache!where the compile actually happens}%
+Chapter~\ref{ch:the-life-of-a-request} quoted that file and left an impression I
+have to correct, because it is mine. The cache middleware does not compile
+anything at all. The winner stores its completion source as a request feature
+and falls straight through, and the compile happens one position further down,
+in \code{OperationResolverMiddleware}, which signals the waiting requests the
+instant compilation returns:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+operation = _operationPlanner.Compile(...);
+
+context.SetOperation(operation);
+inFlightOperation?.TrySetResult(operation);
+\end{minted}
+
+The difference is not academic. What is coalesced is compilation, not the
+request: the followers are released while the leader is still executing its own
+query, which is what the middleware's name promises and not what I had pictured.
+
+\index{operation cache!the leader that throws}%
+The failure path is the half nobody asked about and the half I would want to
+know. If the leader throws while compiling, it calls \code{TrySetException} on
+the way out, so every follower faults with the leader's exception at its own
+await rather than hanging or silently retrying. The in-flight entry is removed
+in a \code{finally} either way, so the next request to arrive becomes a fresh
+leader and tries again. There is a second guard for the case where the pipeline
+somehow produces no operation and does not throw:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+// The pipeline completed without producing an operation and without
+// throwing. Signal followers so they do not hang indefinitely.
+\end{minted}
+
+And there is no timeout in any of this. A follower waits on its own
+\code{RequestAborted}, which by this point is the token
+\code{TimeoutMiddleware} built from the client's abort signal and the execution
+timeout, thirty seconds by default. Each follower's clock is its own and starts
+when its own request entered the pipeline, so a follower can time out while the
+leader is still compiling, and that affects nobody else.
+
+\index{operation cache!measured under a burst}%
+Chapter~\ref{ch:the-life-of-a-request} could not check any of this, so
+\code{samples/executor-internals} does. Thirty-two concurrent requests for a
+document the executor has never seen:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+== single-flight-compiles-once
+   32 concurrent identical first-time requests -> 1 compilation(s)
+   PASS
+\end{minted}
+
+One compilation, five runs in a row. The comments describe what the code does.
+
+\subsection*{And then it goes on compiling}
+
+\index{operation cache!the operation is not finished}%
+Here is the assumption the word \enquote{compiled} smuggles in. I had read the
+operation cache as holding finished artefacts: parse once, validate once,
+compile once, and thereafter the entry is a constant that many requests read
+concurrently and nobody writes.
+
+That is not what is in there. Section~\ref{sec:ch16-what-compiling-produces}
+established that \code{Compile} builds the root selection set and nothing below
+it. Everything below it is built in \code{Operation.cs}, on demand, at execution
+time:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+var key = (selection.Id, typeContext.Name);
+
+if (!_selectionSets.TryGetValue(key, out var selectionSet))
+{
+    lock (_sync)
+    {
+        if (!_selectionSets.TryGetValue(key, out selectionSet))
+        {
+            selectionSet =
+                _compiler.CompileSelectionSet(
+                    this,
+                    selection,
+                    objectType,
+                    _includeConditions,
+                    _deferConditions,
+                    ref _elementsById,
+                    ref _lastId);
+            _selectionSets.TryAdd(key, selectionSet);
+        }
+    }
+}
+\end{minted}
+
+\index{selection sets!keyed by field and concrete type}%
+Three things in that block are worth separating. The key is a pair, a selection
+identifier and a \emph{concrete object type name}, so one field selected once in
+the document compiles as many selection sets as there are concrete types that
+actually come back through it. The lookup is a double-checked lock rather than a
+plain read, because several in-flight requests share this object. And
+\code{\_elementsById} and \code{\_lastId} go in by reference and are mutated in
+place: the array of compiled elements grows and the identifier counter advances,
+inside the lock, on a cached object.
+
+So a cached operation is a partially compiled one, and what it finishes
+compiling is decided by the shapes your resolvers return.
+Figure~\ref{fig:ch16-lazy-compilation} is the two halves on one picture.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch16-lazy-compilation}
+  \caption{What \code{Compile} builds, and what the first request to see a new
+  concrete type builds. The eager half runs once, at position nine, and produces
+  the root selection set alone. Everything under an abstract field is compiled
+  the first time a resolver actually returns that type, memoised against the
+  pair of a selection identifier and a type name, and written into an object
+  that other requests are reading at the same time. Both caches report a hit
+  throughout, because both of them did.}
+  \label{fig:ch16-lazy-compilation}
+\end{figure}
+
+\index{abstract types!and first-use compilation}%
+For most schemas this is an implementation detail with no consequence you could
+observe. For this book it is worth a paragraph, because abstract types cluster
+exactly where a federated graph puts its seams.
+Chapter~\ref{ch:hard-modeling-problems} gave Mosaic a \code{node} field that
+returns an interface implemented by four types owned by four different services,
+and every one of those is a concrete type that has to be seen once before its
+selection set exists. An implementation that turns up rarely pays a one-off, locked
+compilation on the request that first returns it, long after the operation was
+compiled and cached, and every cache counter you have will report a hit while it
+happens.
+
+How far that goes is a separate question, and I have not answered it. I did not
+measure the cost and I am not going to print a latency I did not take. What the source supports is the shape: the work is real, it is
+deferred to first use, it is per concrete type, and it is invisible to the two
+counters chapter~\ref{ch:the-life-of-a-request} taught you to read. Whether it
+is ever big enough to see on a wall clock is a question for
+chapter~\ref{ch:resilience-and-performance}, which owns the load testing and can
+answer it properly.
+
+\medskip
+That is what the compiler makes and where it makes it. The next question is what
+it decides about each field on the way, because one of those decisions has been
+quietly shaping every number this book has printed.
+
+\index{operation cache!what it holds|)}%

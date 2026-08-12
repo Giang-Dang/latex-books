@@ -1,0 +1,117 @@
+\section{The Other Half of a Dispatch}
+\label{sec:ch16-when-a-batch-goes-out}
+\index{DataLoader!the executor's half|(}
+
+Chapter~\ref{ch:data-without-the-n-plus-1} read this machinery already, and got
+to a sentence it could not finish. It found that the documentation describes the
+dispatch trigger as \enquote{no more resolver work is immediately ready}, and
+answered:
+
+\begin{quote}
+\enquote{Nothing in the code that dispatches batches observes resolver
+readiness. It observes the batch.}
+\end{quote}
+
+That is correct, and it is only half of an arrangement that has two halves.
+Something in this system does observe resolver readiness. It is the scheduler
+from the previous section, and what it does with the observation is not what the
+documentation implies.
+
+\index{WorkScheduler@\code{WorkScheduler}!waking the dispatcher}%
+The scheduler runs \code{TryDispatchOrCompleteUnsafe} whenever the drive loop
+comes round, in \code{WorkScheduler.Execute.cs}, and this is the part that
+matters:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+if (!isWaitingForTaskCompletion)
+{
+    isWaitingForTaskCompletion = _work is { HasRunningTasks: true, IsEmpty: true };
+}
+
+var hasWork = !_work.IsEmpty || !_serial.IsEmpty;
+
+if (isWaitingForTaskCompletion)
+{
+    _signal.Reset();
+
+    if (Interlocked.CompareExchange(ref _hasBatches, 0, 1) == 1)
+    {
+        _batchDispatcher.BeginDispatch(_ct);
+    }
+}
+\end{minted}
+
+\index{WorkScheduler@\code{WorkScheduler}!what idle means here}%
+The condition is \code{HasRunningTasks: true, IsEmpty: true}: there is nothing
+left to hand out, and something is still in flight. That is what \enquote{every
+resolver that can run is now blocked on something} looks like from inside, and
+it is a fair reading of resolver readiness.
+
+But \code{BeginDispatch} does not dispatch anything. It sets a signal and makes
+sure the coordinator loop is running. The coordinator then applies the rule
+chapter~\ref{ch:data-without-the-n-plus-1} printed, which asks the batch about
+itself and never asks the scheduler anything. So both sentences are true at
+once: readiness is observed, and it is not what decides. It decides when to
+start asking.
+
+\index{DataLoader!the seam between the two halves}%
+Which finally locates the gap that chapter's two runs in four hundred came out
+of. It is not inside the dispatcher and not inside the scheduler. It is between
+them: the scheduler knows when work has stalled, the batch knows when it last
+grew, and no line anywhere relates either fact to how many keys the batch is
+still waiting for. Nothing in the system holds that number. The settle window is
+what stands in for it, and a straggler that misses the window is what a stand-in
+costs.
+
+\index{DataLoader!what is not being claimed}%
+That is as far as I will take it, because it would be easy to write a satisfying
+sentence here that the evidence does not carry. The source shows the settle rule
+is the only thing that can release a batch, so it is the only thing that can
+have released one early. It cannot tell me why a particular key was late on
+those two runs. Thread-pool scheduling is the obvious candidate and I have not
+measured it, so a candidate is what it stays. The experiment that would settle
+it is to set \code{BatchSettleTimeUs} to zero, which the option documents as
+making a batch eligible as soon as two evaluations see it unchanged, and run the
+four hundred requests again. I did not, and the note says so.
+
+\subsection*{Two things called batching}
+
+\index{DataLoader!not the same as a batch resolver}%
+One distinction before leaving this, because two unrelated mechanisms here share
+a word and only one of them is the one you know.
+
+\code{Batch} and \code{BatchDispatcher} are GreenDonut's DataLoader key
+batching, which is everything above and everything
+chapter~\ref{ch:data-without-the-n-plus-1} measured.
+\code{BatchResolverTask} is HotChocolate's own thing entirely: a grouping of
+resolver invocations that share one field-selection path, created when a
+selection's strategy is batch, and released when its ancestor paths have
+drained rather than on any timer. It is the fourth of the four strategies
+section~\ref{sec:ch16-pure-or-a-task} listed and the one Mosaic never uses.
+
+They meet in the scheduler and share nothing else, including their dispatch
+conditions. A profiler that shows you both will name them almost identically.
+
+\subsection*{And how it all ends}
+
+\index{WorkScheduler@\code{WorkScheduler}!knowing the operation is done}%
+The same method decides the operation is finished, in its other branch: when
+neither queue has work and no batch entries are pending, \code{\_isCompleted}
+goes true and the drive loop falls out. A resolver blocked on a DataLoader
+promise does not count as absent while it waits, because the queue's running
+counter is incremented when the task is taken and decremented when it completes,
+so the operation cannot be declared done underneath it.
+
+\code{AsyncManualResetEvent} is the primitive holding all of this together, and
+it is hand-written rather than borrowed: an awaitable of seventy-four lines, in
+a file of its own, which resumes its continuation by queueing it to the thread
+pool. There is a \code{SemaphoreSlim} shaped hole in this design, and somebody
+deliberately did not put one in it.
+
+\medskip
+So much for the machinery that runs a request. The last section is about three
+middleware whose whole purpose is that a request does not get that far, and one
+of them turns out to have been switched on by a chapter that was not thinking
+about caching at all.
+
+\index{DataLoader!the executor's half|)}

@@ -1,0 +1,120 @@
+\section*{Your turn}
+
+Check out tag \code{ch16} of the companion repository and run \code{npm ci}
+once. Exercises 1 to 4 need nothing but the .NET SDK: they run a console
+project and never open a socket. Exercises 5 to 8 need the database, the broker
+and the seven services, and the compose line is
+chapter~\ref{ch:identity-and-authorization}'s, unchanged. Exercises 6 and 7 each
+rebuild the Catalog container, so leave them until you have finished the others
+or expect Catalog to answer differently while they are in progress.
+
+No service changes at this tag, so there is no new Postman collection either.
+Exercise 8 uses \code{postman/mosaic-subgraphs}, which has been there since
+chapter~\ref{ch:strangling-the-monolith}.
+
+\begin{enumerate}
+  \item \textbf{Run the five cases.} From the repository root:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+dotnet run --project samples/executor-internals
+  \end{minted}
+
+  Five case names, each with its numbers and a \code{PASS}. Read the numbers
+  before reading the code: four of the five are counts you can predict from this
+  chapter, and one of them is a zero that took a section to explain.
+
+  \item \textbf{Make a pure field cost something.} In the sample's
+  \code{SampleTypes.cs}, change \code{Upper()} so that it returns a
+  \code{Task<string>} and awaits \code{Task.Yield()} before returning, then run
+  the first case alone:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+dotnet run --project samples/executor-internals -- pure-fields-cost-no-task
+  \end{minted}
+
+  The case fails, and the number it reports tells you how many things changed.
+  Work out why it is that number and not one larger. Put it back.
+
+  \item \textbf{Find the sixty-fifth condition.} Write a small loop in the same
+  project that builds a document selecting one field with
+  \code{@skip(if: \$s1)}, then two with \code{\$s1} and \code{\$s2}, and so on,
+  and execute each. Somewhere past sixty-four distinct variables the compiler
+  stops being polite about it. Then change the loop so that all the fields share
+  one variable and take it as far as you like, and confirm that the limit counts
+  distinct conditions rather than annotated fields.
+
+  \item \textbf{Watch the leader compile alone.} Raise the burst in the
+  single-flight case from thirty-two to something that makes your machine work,
+  and confirm the compilation count stays at one. Then make the document differ
+  per request by interpolating the loop index into a field alias, and watch what
+  the same burst costs when nothing can be coalesced.
+
+  \item \textbf{Count the dashes.} Start the stack. Send the same document
+  twice, because the first one is a cache miss and proves nothing, then read the
+  last timeline line the service logged:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+for i in 1 2; do
+  curl -s -X POST http://localhost:5101/graphql \
+      -H 'Content-Type: application/json' \
+      -d '{"query":"{ __typename }"}' > /dev/null
+done
+docker logs mosaic-graph-mosaic-catalog-1 | grep 'parse ' | tail -1
+  \end{minted}
+
+  It should report a document cache hit; if it does not, you read the first
+  request. Repeat for 5102 to 5107, changing the container name each time. Four
+  services print \code{validate -} and three print a duration. Before you look it up, predict which three from what
+  chapter~\ref{ch:identity-and-authorization} did, and check whether your list
+  is the same as the one in that chapter's middleware count.
+
+  \item \textbf{Make Catalog revalidate.} It has nothing to protect, which is
+  the point. Add one line to the builder chain in its \code{Program.cs},
+  together with the \code{using} that Accounts has and Catalog does not:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+.AddMosaicAuthorization()
+  \end{minted}
+
+  Then rebuild that one container:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+docker compose up -d --build mosaic-catalog
+  \end{minted}
+
+  Repeat exercise 5 for Catalog alone. The dash becomes a duration in a service
+  with no \code{[Authorize]} anywhere in it. A build that fails on a missing
+  extension method means the \code{using} did not go in. Put both lines back and
+  rebuild before going on.
+
+  \item \textbf{Give a Mosaic service a warmed cache.} Add a warmup task to
+  Catalog that executes the storefront document with
+  \code{MarkAsWarmupRequest()}, rebuild it, and send that document as your first
+  request after startup. The timeline reports an operation cache hit on a
+  request nothing had made before. Then decide whether you would ship it, and
+  what you would have to know about your traffic first.
+
+  \item \textbf{Verify it in Postman.} There is no collection for this chapter,
+  so use the one that already talks to the subgraphs directly:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+npx newman run postman/mosaic-subgraphs.postman_collection.json \
+    -e postman/mosaic-subgraphs.local.postman_environment.json \
+    --env-var jwtSecret="$(node -e "process.stdout.write(process.env.MOSAIC_JWT_SECRET||'')")"
+  \end{minted}
+
+  Run it twice without restarting anything, and read the Accounts and Catalog
+  consoles either side of the second run. Every request in it is a document
+  those services have already seen. Work out which of the two consoles gained
+  validation time on the second pass and why that is not a property of the
+  collection.
+\end{enumerate}
+
+Exercise 6 is the one to do properly. Most of this chapter is a fact about a
+library, and would be true in any project that used it. That one is a fact about
+yours: a line added for a reason that had nothing to do with performance, in a
+service that gains nothing from it, reaching into a cache an earlier chapter
+measured. There is no artefact anywhere in the build that could have told you,
+because the schema does not change and neither does anything composed from it.
+The only reason this book knows is that somebody counted requests on seven
+consoles and noticed four of them looked different from the other three.

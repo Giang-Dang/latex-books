@@ -1,0 +1,191 @@
+\section{What Compiling Actually Produces}
+\label{sec:ch16-what-compiling-produces}
+\index{operation compilation!what it produces|(}%
+
+Three names sit on one step, and only one of them describes it. The middleware
+at position nine is called
+\code{OperationResolverMiddleware}. The field it keeps the compiler in is called
+\code{\_operationPlanner}. The class that does the work is called
+\code{OperationCompiler}, and that is the one to believe. What is inside it is
+shorter than any of the three names suggests.
+
+\index{OperationCompiler@\code{OperationCompiler}!two phases}%
+\code{Compile}, in \code{OperationCompiler.cs}, does two things. It rewrites the
+document, and then it builds one selection set:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+// Before we can plan an operation, we must de-fragmentize it and remove static include conditions.
+var result = _documentRewriter.RewriteDocument(document, operationName);
+\end{minted}
+
+The comment is theirs, spelling and all. After the rewrite it collects the root
+fields and calls \code{BuildSelectionSet} once, for the root, and hands the
+result to a new \code{Operation}.
+
+\index{OperationCompiler@\code{OperationCompiler}!builds only the root}%
+That is the part worth stopping on. \code{BuildSelectionSet} runs to about two
+hundred lines and does a great deal per field: it resolves the field's resolver
+pipeline, coerces what arguments it can, works out the include conditions, and
+seals a \code{Selection}. What it never does is descend into a field's own child
+selections. Compilation of everything below the root does not happen here at
+all, and section~\ref{sec:ch16-one-compilation} is where it does happen.
+
+\subsection*{Fragments are gone before the compiler starts}
+
+\index{fragments!flattened before compilation}%
+The rewriter is constructed once in that same file, with a flag that matters:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+removeStaticallyExcludedSelections: true
+\end{minted}
+
+Its own class comment, at the top of
+\code{InlineFragmentOperationRewriter.cs}, lists what
+it does: expands every fragment spread by
+substituting the fragment's selection set, merges inline fragments that share a
+type condition, combines duplicate field selections, and optionally removes
+selections whose \code{@skip} or \code{@include} is statically decidable. The
+document that reaches the compiler has no fragment definitions and no fragment
+spreads left in it. What survives is inline fragments whose type condition is
+genuinely different from the type in hand, and those are resolved later, per
+concrete object type.
+
+\index{Fusion!the rewriter the plain engine imports}%
+There is an oddity here that I want to name once and then leave alone, because
+it is a fact about how the repository is laid out rather than about how a graph
+behaves. That rewriter is not core engine code. The compiler imports it:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+using HotChocolate.Fusion.Rewriters;
+\end{minted}
+
+and the project file of the core type system reaches across into the federation
+gateway's tree to get it:
+
+\begin{minted}[fontsize=\scriptsize,breaklines,breakanywhere]{text}
+<ProjectReference Include="..\..\..\Fusion\src\Fusion.Utilities\HotChocolate.Fusion.Utilities.csproj" />
+\end{minted}
+
+There is a second reference to the Fusion language project beside it, and four
+\code{Compile Include} entries that pull individual source files out of the
+Fusion execution project and build them into the core assembly. So the step that
+removes fragments from every request your single-service GraphQL server answers
+is owned by the project named after the federation gateway, and a graph that has
+never heard of federation runs it on every document.
+
+\subsection*{Conditions, not values}
+
+\index{variables!not baked into the compiled operation}%
+Chapter~\ref{ch:the-life-of-a-request} established from outside that one
+compiled operation serves every set of variable values, and used that to argue
+for putting identifiers in the Variables pane. Here is the mechanism, and it is
+tidier than I expected.
+
+\code{@skip} and \code{@include} take two different routes depending on what
+their argument is. A literal boolean is decided during the rewrite and the
+selection is deleted outright: only a \code{BooleanValueNode} is inspected, and
+a variable is left alone. A variable-driven condition survives, and becomes a
+bit, back in \code{OperationCompiler.cs}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+if (IncludeCondition.TryCreate(fieldNode, out var includeCondition))
+{
+    var index = includeConditions.IndexOf(includeCondition);
+    pathIncludeFlags |= 1ul << index;
+}
+\end{minted}
+
+\index{include conditions!the request-time bitmask}%
+Each distinct pair of skip and include variables gets an index in a collection
+held on the operation, and each \code{Selection} stores the pattern of bits it
+requires. Per request, exactly one \code{ulong} is computed from the actual
+variable values, and every selection tests itself against it with a single
+bitwise and. The compiled operation holds no variable value anywhere; what
+changes between two requests for the same document is a 64-bit integer.
+
+\index{include conditions!the limit of sixty-four}%
+Which is where the interesting consequence lives. Sixty-four bits is sixty-four
+conditions, and \code{IncludeConditionCollection.cs} does not degrade gracefully
+when it runs out:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+public bool Add(IncludeCondition item)
+{
+    if (_dictionary.Count == 64)
+    {
+        throw new InvalidOperationException(
+            "The maximum number of include conditions has been reached.");
+    }
+
+    return _dictionary.TryAdd(item, _dictionary.Count);
+}
+\end{minted}
+
+Read \code{distinct} carefully before deciding whether this can reach you. A
+hundred fields all carrying \code{@skip(if: \$hide)} are one condition and one
+bit, because the collection keys on the pair of variable names rather than on
+the occurrence. You need sixty-five different skip-and-include variable
+combinations in a single operation, which is a machine-generated document rather
+than one a person typed. \code{@defer(if:)} has a collection and a mask of its
+own, built the same way.
+
+\index{arguments!partially coerced at compile time}%
+The same principle runs through ordinary field arguments, which I had assumed
+were simply baked in. Only leaf-typed literals that contain no variable and no
+input-object value are coerced eagerly; everything else is stored uncoerced and
+resolved per request. So an argument written as a literal integer is compiled
+once, and the same argument passed as a variable is not, and the compiled
+operation is variable-independent either way.
+
+\subsection*{The counters nobody reads}
+
+\index{OperationCompilerMetrics@\code{OperationCompilerMetrics}!dead at this tag}%
+There is a ten-line file next to the compiler called
+\code{OperationCompilerMetrics.cs}. It declares a struct with three read-only
+properties: \code{Selections}, \code{SelectionSetVariants} and
+\code{BacklogMaxSize}. Search every C\# file in the repository for that type
+name and you get exactly one hit, the line declaring it. Nothing constructs it
+and nothing reads it.
+
+I include it because my first reading of it was wrong, and the correction is
+worth more than the file. A property called \code{BacklogMaxSize} told me the
+compiler works through an iterative backlog rather than recursing, which is the
+sort of detail that reads well and would have gone straight into this section.
+
+The word is certainly in this codebase. The scheduler in
+section~\ref{sec:ch16-two-stacks} calls its work queues a backlog twice in its
+own documentation comments, and the batch dispatcher in
+section~\ref{sec:ch16-when-a-batch-goes-out} keeps a real one, a priority queue
+of open batches. What has no backlog is the compiler: the word appears nowhere
+in \code{OperationCompiler.cs} or any of its partial files, and the only reason
+it appears in that directory at all is the dead struct.
+
+\index{tests!one that no longer asserts anything}%
+The struct has a companion, and together they explain each other. There is a
+test in \code{OperationCompilerTests.cs} called:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Ensure_Selection_Backlog_Does_Not_Exponentially_Grow
+\end{minted}
+
+It builds a three-level query against a self-referential interface, calls
+\code{Compile}, and then asserts this:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+        // assert
+        // Note: Metrics are no longer accessible with static method
+\end{minted}
+
+A test named for a bound that no longer checks the bound, and beside it the type
+it used to check the bound with, left in the tree with no callers. I am not
+going to make that sound worse than it is. It is what a fast-moving codebase
+leaves behind when a design changes, and the design that changed is the subject
+of the next section: there is no backlog to bound because the compiler stopped
+building the thing that accumulated in one.
+
+\medskip
+Which leaves an obvious question hanging. If \code{Compile} builds only the root
+selection set, and the document below the root is where all the work is, then
+what compiled the rest of it, and when?
+
+\index{operation compilation!what it produces|)}%

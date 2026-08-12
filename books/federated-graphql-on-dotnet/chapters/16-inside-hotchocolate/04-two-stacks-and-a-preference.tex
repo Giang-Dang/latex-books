@@ -1,0 +1,135 @@
+\section{Two Stacks and a Preference}
+\label{sec:ch16-two-stacks}
+\index{WorkScheduler@\code{WorkScheduler}|(}%
+
+The thirteenth middleware calls \code{\_queryExecutor.ExecuteAsync}, and that is
+the line chapter~\ref{ch:the-life-of-a-request} stopped at. Below it is
+\code{WorkScheduler}, one per operation context, and it is worth reading for two
+reasons: it explains how much concurrency you are actually getting, and it is
+where the last of chapter~\ref{ch:the-life-of-a-request}'s owed items turns out
+to have a surprising answer.
+
+\index{WorkQueue@\code{WorkQueue}!is a pair of stacks}%
+The scheduler holds two queues, one for parallel work and one for serial work.
+Neither is a queue, and \code{WorkQueue.cs} opens by saying so:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+internal sealed class WorkQueue
+{
+    private readonly Stack<IExecutionTask> _immediateStack = new();
+    private readonly Stack<IExecutionTask> _deferredStack = new();
+\end{minted}
+
+\code{TryTake} pops the immediate stack and falls back to the deferred one, so
+within a bucket the order is most-recently-pushed first. The only ordering
+guarantee anywhere in here is that immediate work is taken before deferred work.
+If you have ever wondered why sibling resolvers do not run in the order you
+wrote them, that is the answer, and it is a stack rather than anything cleverer.
+
+\index{WorkScheduler@\code{WorkScheduler}!parallel work is preferred}%
+The drive loop prefers parallel work absolutely. A serial task is only dequeued
+when the parallel queue is empty \emph{and} has nothing still running, one at a
+time, and then the loop waits for that one task before going round again. The
+comment says why: \enquote{Parallel work is always preferred, so we take a
+single serial task and see if this results in more parallel work.} Which is how
+the mutation rule from section~\ref{sec:ch16-pure-or-a-task} ends up meaning
+what the specification wants. One root mutation field's entire subtree drains
+out of the parallel queue before the next root mutation field starts, and the
+serialisation is at the granularity of a root field rather than of a resolver.
+
+\index{WorkScheduler@\code{WorkScheduler}!the buffer is not a limit}%
+There is one number in \code{WorkScheduler.Execute.cs} that invites a wrong
+conclusion, and I reached for it before reading what happens to it:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+private readonly IExecutionTask?[] _buffer = new IExecutionTask?[ProcessorCount * 2];
+\end{minted}
+
+That is not a concurrency limit. It bounds how many tasks are drained per
+acquisition of the lock, to cut contention, and every non-serial task in the
+batch is then started and not awaited: \enquote{if work is NOT serial we will
+just enqueue it and not wait for it to finish.} HotChocolate does not cap how
+many of your resolvers run at once. The thread pool does, and if you want a
+ceiling, the concurrency gate chapter~\ref{ch:the-life-of-a-request} watched
+remove itself is the setting that provides one.
+
+\subsection*{The event that counts nothing}
+
+\index{RunTask@\code{RunTask}!what it actually counts}%
+Chapter~\ref{ch:the-life-of-a-request} recorded three things it had not
+verified, and told itself to say nothing about task counts. The specific item
+was \code{RunTask}, a diagnostic event sitting on the same listener as the
+per-field event, gated by the same property, and never measured.
+
+The call graph is three links long and every one of them is narrow. The event is
+raised in exactly one place, in
+\code{OperationContext.IExecutionTaskContext.cs}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+IDisposable IExecutionTaskContext.Track(IExecutionTask task)
+{
+    AssertInitialized();
+    return DiagnosticEvents.RunTask(task);
+}
+\end{minted}
+
+\code{Track} is called from exactly one place, inside the base class
+\code{ExecutionTask}. And exactly two types derive from \code{ExecutionTask}:
+\code{DeferTask}, which orchestrates one \code{@defer} branch, and a private
+\code{NoOpExecutionTask} that exists for the case where every root field was
+skipped, with a comment saying so in as many words. The two types that actually
+run your resolvers are \code{ResolverTask} and \code{BatchResolverTask}. Both
+implement the task interface directly, and neither passes through that base
+class at all.
+
+So \code{RunTask} fires once per deferred branch, once in an edge case you will
+never deliberately hit, and otherwise never. On a query with no \code{@defer} it
+fires zero times, which is every query Mosaic has ever served, because
+chapter~\ref{ch:real-time-in-a-federated-world} established that
+\code{EnableDefer} defaults off and no subgraph turns it on.
+
+\index{RunTask@\code{RunTask}!measured against a defer}%
+That is a claim about an absence, so it wants a run where the number is not
+zero. The sample turns \code{EnableDefer} on and asks the same executor for the
+same data twice, once plainly and once with a deferred fragment:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+== run-task-counts-no-resolver
+   plain      -> 4 resolver tasks, 0 execution tasks
+   with defer -> execution tasks 3
+   PASS
+\end{minted}
+
+Four resolver tasks and no execution tasks for the ordinary query. Same
+listener, same flag, same schema: the event only has anything to count once
+something defers.
+
+\index{diagnostic events!one flag, two unrelated events}%
+Two things about that are worth carrying away. The first is that the names point
+the wrong way round. \code{ResolveFieldValue} sounds like the special case and
+is the one that fires on every field that costs a task; \code{RunTask} sounds
+like the general case and is the rare one. The second is that they share a
+gate. Turning on the per-field property to get resolver timings also subscribes
+you to defer orchestration, and the interface documents both as being controlled
+by that one flag. Two unrelated event streams behind one switch is a thing to
+know before you write a listener that assumes the switch means what it is named
+after.
+
+\index{RunTask@\code{RunTask}!the documented example that cannot happen}%
+There is one more wrinkle, and it is the reason I chased this as far as I did.
+The interface's own documentation offers, as its example of what a
+\code{RunTask} might be, \enquote{DataLoader batch execution or other background
+processing tasks}. DataLoader dispatch does not go through the execution-task
+machinery at all. It is a separate component with diagnostic events of its own,
+and it is the subject of the next section. The example in the documentation
+describes no code path that raises this event.
+
+\medskip
+Which puts a piece back into an argument
+chapter~\ref{ch:data-without-the-n-plus-1} left standing. That chapter read the
+DataLoader dispatcher end to end and found that nothing in it observes resolver
+readiness, which is true and which leaves an obvious question hanging: something
+must, or the phrase would not be in the documentation at all. The scheduler is
+the other side of that boundary.
+
+\index{WorkScheduler@\code{WorkScheduler}|)}%
