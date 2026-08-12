@@ -111,24 +111,93 @@ field added to the selection set:
 
 \code{serviceName: accounts}. Code \code{AUTH\_NOT\_AUTHENTICATED}, which is
 HotChocolate's wording. And nowhere in it the router's own
-\code{Unauthorized to load field}, which is what an anonymous HTTP request for
-that same field gets before any subgraph is called.
+\code{Unauthorized to load field}.
 
-The router did not refuse it. It planned the entity fetch, sent it, and Accounts
-refused it. Inside a subscription payload the router's field authorization,
-which is airtight over HTTP, simply does not run.
+So the router planned the entity fetch, sent it, and Accounts refused it. My
+first reading of that was that a subscription payload skips the router's field
+authorization, and that reading is wrong. The control that breaks it is the same
+subscription asking for the guarded field on its own:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{json}
+{"errors":[{"message":"Unauthorized to load field
+   'Subscription.onReviewAdded.author.email', Reason: not authenticated.",
+  "path":["onReviewAdded","author","email"],
+  "extensions":{"code":"UNAUTHORIZED_FIELD_OR_TYPE"}}],
+ "data":{"onReviewAdded":{"id":"UmV2aWV3OojznwFCcah+j2s8Y2FXU5Q=","author":null}}}
+\end{minted}
+
+That is the router refusing the field itself, inside a subscription, with
+Accounts never called. The transport is not what changed.
+
+\index{authorization!pre-fetch field authorization!what it does not do}%
+\index{authorization!which layer refuses, and what decides it}%
+What did change is the selection set, and the count from
+section~\ref{sec:ch15-a-token-at-the-router} is what shows it. Accounts logs one
+\code{Mosaic.RequestTimeline} line per request it serves, so count those either
+side of each of three anonymous requests, run with the setting on and again with
+it off:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+author selection        pre-fetch on   pre-fetch off   who refused, on
+email                        0              1          the router
+displayName email            1              1          Accounts
+displayName (control)        1              1          nobody, it is public
+\end{minted}
+
+The right-hand column is the control, and it is the one that names the cause.
+With pre-fetch authorization off every selection costs Accounts a request,
+including the guarded field on its own, and the router still refuses that field
+afterwards. Turning the setting on buys back exactly one of those three
+requests. So the setting removes a fetch it can remove \emph{entirely}, and does
+not prune a guarded field out of a fetch that has to happen anyway for a
+permitted field beside it. Ask for the address on its own and Accounts is never
+troubled; ask for the address and the display name together and the request goes
+out carrying both, because the display name has to be fetched and the address is
+on the same entity.
+
+The subscription pair behaves the same way on the shipped configuration:
+\code{author \{ email \}} costs Accounts nothing and
+\code{author \{ displayName email \}} costs it one. I did not run the
+subscriptions again with the setting off, so the right-hand column above is an
+HTTP measurement and I am not claiming more than that.
+
+\index{authorization!counts that are not yet a gate}%
+Which leaves a debt, and I would rather name it than let the table imply
+otherwise. The counts in section~\ref{sec:ch15-a-token-at-the-router} are gate
+steps, because a count that is the same on every machine belongs in a gate.
+These three are not: nothing in the companion repository reproduces the
+entity-fetch contrast yet. The two checks it wants are sketched in this
+chapter's research note and they belong in \code{scripts/auth-run.mjs}, which
+already counts Accounts requests and already holds the subscription pair. Until
+they are there, this table is a measurement you can repeat by hand and not one
+the build defends.
+
+\index{authorization!what a count cannot show}%
+One further limit. A count says a fetch happened; it does not say why the router
+kept it. That the guarded field travelled inside the kept fetch is not inference
+though, because Accounts' own refusal names the path it was asked for, right
+down to \code{author.email}, and a subgraph cannot refuse a field nobody sent
+it. Whether the router's check runs per fetch or per field is a question about
+its planner, and chapter~\ref{ch:inside-the-router-and-the-composer} is where
+this book reads that source rather than measuring around it.
 
 \index{authorization!the layer that saved it}%
-Nothing leaked, and the reason nothing leaked is the attribute I described in
-section~\ref{sec:ch15-two-vocabularies} as redundant. \code{Customer.email}
+Nothing leaked, and the reason nothing leaked is the attribute that looked
+redundant in section~\ref{sec:ch15-nothing-is-authorized} and that
+section~\ref{sec:ch15-two-vocabularies} justified by counting published ports.
+\code{Customer.email}
 carries \code{[Authenticated]} for the router and \code{[Authorize]} for the
-service, and here the router's copy contributed nothing at all. A graph that had
-read the documentation, annotated its fields with the federation directives, and
-trusted the router to enforce them, would have served that address to an
-anonymous subscriber and had no way to find out.
+service, and in the second row of that table the router's copy contributed
+nothing. A graph that had read the documentation, annotated its fields with the
+federation directives, and trusted the router to enforce them, would have served
+that address to anybody who thought to ask for a display name alongside it.
 
-That is the argument for writing the rule twice, and I did not expect to be able
-to make it with a measurement.
+That is the argument for writing the rule twice, and it is a better argument
+than the one I started with. I had justified the second attribute by saying that
+all seven services publish host ports, which is true and is a property of one
+compose file: close the ports and the argument evaporates. This one does not.
+The router's enforcement has a shape, the shape depends on what else the client
+selected, and no amount of network topology changes it.
 
 \subsection*{What is left unmeasured, and why it cannot be a gate}
 
@@ -161,8 +230,12 @@ What this chapter kept running into is that a rule is written in one place and
 the data it governs goes wherever a field points, with nothing relating the two
 except somebody remembering. It is why \code{Customer.email} carries two
 attributes, why an order had to be guarded twice, and why the one case where a
-whole layer silently did nothing was caught by a measurement rather than by a
-compiler, a composer or a review.
+layer I was relying on stepped aside was caught by counting requests at a
+subgraph rather than by a compiler, a composer or a review. It was not caught by
+reading the error payload either, which is the part worth carrying: the payloads
+told me the router was absent from a subscription and present over HTTP, and the
+count told me the router was doing the same thing in both and the selection set
+was what differed.
 
 Which is a fair place to stop, because the next part of this book is about the
 machinery underneath all of it, and the first thing it reads is the executor

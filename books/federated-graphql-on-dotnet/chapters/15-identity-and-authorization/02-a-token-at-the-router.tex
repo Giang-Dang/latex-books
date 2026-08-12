@@ -81,10 +81,12 @@ authorization:
 
 The first two are defaults written out, because both are decisions. The first of
 them, left false, is what keeps the storefront public, and Mosaic needs that: it
-sells to people who have not signed in. A field that needs
-a caller says so itself, and the router refuses that field to an anonymous
-request whatever this setting is. The global switch decides whether an anonymous
-request may enter the graph at all, not whether it may have everything in it.
+sells to people who have not signed in. A field that needs a caller says so
+itself, and an anonymous request is refused that field whatever this setting is.
+The global switch decides whether an anonymous request may enter the graph at
+all, not whether it may have everything in it. Which layer does the refusing is
+a separate question with a more interesting answer, and
+section~\ref{sec:ch15-a-connection-with-no-identity} is where I measure it.
 
 So there are three outcomes rather than two. No token gets you in as nobody. A
 token that will not validate, including an expired one, gets a flat \code{401}
@@ -174,6 +176,13 @@ refused field costs and require zero. And a case in
 setting and asserts that the nested \code{serviceName} error is present in one
 reply and absent from the other, which is the same fact as the count without
 needing a subgraph's console to read it.
+
+One caution, which took me until
+section~\ref{sec:ch15-a-connection-with-no-identity} to measure and which I
+would rather you carried from here: the zero in that table is a root field being
+refused, and a root field is a whole fetch. A guarded field hanging off an
+entity that the caller is also entitled to read is a different case, and the
+setting does less there than its name suggests.
 
 \medskip
 That is the router holding up its end. What it is enforcing, though, came out of

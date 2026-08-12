@@ -25,10 +25,13 @@ Getting a field right can mean writing it three times, and nothing in the build
 checks that the three agree.
 
 By the end of this chapter Mosaic has all three, a token, and four guarded
-fields. It also has two findings I did not expect and would rather have been
+fields. It also has three findings I did not expect and would rather have been
 wrong about: a directive the specification defines that this composer discards
-without a word, and a router setting that turns on authentication for
-subscriptions by taking the public storefront offline.
+without a word, a router setting that turns on authentication for subscriptions
+by taking the public storefront offline, and a router that stops enforcing a
+guarded field as soon as the caller asks for a public one beside it. The last of
+those is the one that decides how much of this chapter you can skip, and I got
+it wrong the first time.
 
 Everything the composer says was said by wgc 0.129.7, which bundles version
 0.63.2 of \code{@wundergraph/composition}. The router is Cosmo 0.337.1. Every

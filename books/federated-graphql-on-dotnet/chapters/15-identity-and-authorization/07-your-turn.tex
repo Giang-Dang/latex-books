@@ -1,10 +1,12 @@
 \section*{Your turn}
 
 Check out tag \code{ch15} of the companion repository and run \code{npm ci}
-once. Exercises 1 to 6 and 9 to 10 need the database, the broker, the seven
+once. Exercises 1 to 6 and 9 to 11 need the database, the broker, the seven
 services and the router. Exercise 7 needs node and nothing started. Exercise 8
 needs Docker and the seven services, and starts two routers of its own on ports
-of their own.
+of their own. Exercise 10 restarts the router on an edited configuration and
+puts it back, so do it last of the running ones or expect the others to answer
+differently while it is in progress.
 
 The compose line is chapter~\ref{ch:real-time-in-a-federated-world}'s, unchanged:
 
@@ -109,6 +111,25 @@ node scripts/router-cases.mjs --print websocket-auth-closes-the-public-graph
   arrives. Now open the same subscription selecting
   \code{author \{ displayName email \}} and submit another. Read which service
   refused it, and which service did not.
+
+  \item \textbf{Then break your own conclusion.} Exercise 9 is the pair I
+  reasoned from, and on its own it points at the wrong answer, so run the two
+  controls it is missing. First open the subscription selecting
+  \code{author \{ email \}} with no display name, and submit again: a different
+  layer refuses it. Then send both selections over ordinary HTTP through
+  \code{browseProducts} and count \code{Mosaic.RequestTimeline} lines in the
+  Accounts console either side of each:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+docker logs mosaic-graph-mosaic-accounts-1 | grep -c Mosaic.RequestTimeline
+  \end{minted}
+
+  The transport turns out to make no difference and the selection set makes all
+  of it. Then set \code{enable\_pre\_fetch\_field\_authorization} to
+  \code{false}, recreate the router, and count again: one of the two zeroes
+  becomes a one, which is what tells you the setting caused it rather than the
+  planner. Write down how many of those runs you would have made before writing
+  the sentence.
 
   \item \textbf{Verify it in Postman.} The collection for this chapter is
   \code{postman/mosaic-auth}. It mints nothing: newman cannot sign a token, so
