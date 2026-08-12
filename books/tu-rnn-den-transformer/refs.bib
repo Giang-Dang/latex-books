@@ -389,6 +389,141 @@
             comes from; the body's experiments are cited nowhere in this book.}
 }
 
+%--- Chapter 08: cost, parallelization and the price ------------------------
+
+@inproceedings{xiong2020layernorm,
+  author       = {Xiong, Ruibin and Yang, Yunchang and He, Di and Zheng, Kai and
+                  Zheng, Shuxin and Xing, Chen and Zhang, Huishuai and Lan,
+                  Yanyan and Wang, Liwei and Liu, Tie-Yan},
+  title        = {On Layer Normalization in the Transformer Architecture},
+  booktitle    = {Proceedings of the 37th International Conference on Machine
+                  Learning},
+  series       = {Proceedings of Machine Learning Research},
+  volume       = {119},
+  pages        = {10524--10533},
+  year         = {2020},
+  eprint       = {2002.04745},
+  eprinttype   = {arXiv},
+  eprintclass  = {cs.LG},
+  url          = {https://arxiv.org/abs/2002.04745v2},
+  urldate      = {2026-08-11},
+  note         = {Read as arXiv:2002.04745v2, 29 June 2020: the abstract,
+                 section 3.3 with theorem 1 and its stated simplifications,
+                 table 1, and the warmup experiments of section 4. The volume
+                 above is from proceedings.mlr.press and \emph{not} from the
+                 PDF, because the arXiv copy misprints its own venue: its page
+                 one footer reads \enquote{PMLR 108, 2020} for the 37th ICML,
+                 and PMLR 108 is AISTATS 2020. Theorem 1 is proved in a reduced
+                 setting the chapter names on the page: single-head attention,
+                 and \(W^Q\) and \(W^K\) initialized to zero so that attention
+                 is a uniform average at initialization.}
+}
+
+@inproceedings{nguyen2019tears,
+  author       = {Nguyen, Toan Q. and Salazar, Julian},
+  title        = {Transformers without Tears: Improving the Normalization of
+                  Self-Attention},
+  booktitle    = {Proceedings of the 16th International Conference on Spoken
+                  Language Translation (IWSLT)},
+  year         = {2019},
+  eprint       = {1910.05895},
+  eprinttype   = {arXiv},
+  eprintclass  = {cs.CL},
+  url          = {https://arxiv.org/abs/1910.05895v2},
+  urldate      = {2026-08-11},
+  note         = {Read as arXiv:1910.05895v2, 30 December 2019, at abstract and
+                 introduction level only, which is where both sentences chapter
+                 8 uses sit. This is the earliest published claim that pre-norm
+                 removes the need for a warmup stage, and Xiong et al.\ call it
+                 concurrent and independent work. Its own qualification is
+                 quoted alongside the claim, because it is usually dropped:
+                 \enquote{we find it degrades base Transformer performance on
+                 WMT'14 English-German}. Its headline result is on IWSLT'15
+                 English-Vietnamese.}
+}
+
+@inproceedings{wang2019deep,
+  author    = {Wang, Qiang and Li, Bei and Xiao, Tong and Zhu, Jingbo and Liu,
+               Changliang and Wong, Derek F. and Chao, Lidia S.},
+  title     = {Learning Deep Transformer Models for Machine Translation},
+  booktitle = {Proceedings of the 57th Annual Meeting of the Association for
+               Computational Linguistics},
+  pages     = {1810--1822},
+  year      = {2019},
+  eprint    = {1906.01787},
+  eprinttype = {arXiv},
+  eprintclass = {cs.CL},
+  urldate   = {2026-08-11},
+  note      = {Cited for attribution only, and deliberately \emph{not} for the
+              warmup claim: this paper uses warmup and raises it to 16000 steps
+              for its deep models, and its result is about depth rather than
+              about warmup. Anthology id P19-1176. Chapter 8 says so on the page
+              because the three pre-norm papers are often summarised as having
+              jointly found that warmup can be dropped, and this one did not say
+              that.}
+}
+
+@inproceedings{szegedy2016rethinking,
+  author    = {Szegedy, Christian and Vanhoucke, Vincent and Ioffe, Sergey and
+               Shlens, Jon and Wojna, Zbigniew},
+  title     = {Rethinking the Inception Architecture for Computer Vision},
+  booktitle = {Proceedings of the IEEE Conference on Computer Vision and
+               Pattern Recognition (CVPR)},
+  pages     = {2818--2826},
+  year      = {2016},
+  eprint    = {1512.00567},
+  eprinttype = {arXiv},
+  eprintclass = {cs.CV},
+  urldate   = {2026-08-11},
+  note      = {The origin of label smoothing, and what Vaswani et al.\ cite for
+              it. Read as arXiv:1512.00567v3, 11 December 2015, section 7 only,
+              which is where the formula and the value \(\epsilon = 0.1\) sit.
+              The page range is from the CVF citation page and DBLP rather than
+              first-hand, because openaccess.thecvf.com refused a direct
+              download. One reading caveat: the section says the improvement is
+              \enquote{about 0.2\% absolute} for both top-1 and top-5, while its
+              own table 3 shows 0.3 and 0.2 points respectively, so quote the
+              word \enquote{about} with the number.}
+}
+
+@article{srivastava2014dropout,
+  author  = {Srivastava, Nitish and Hinton, Geoffrey E. and Krizhevsky, Alex and
+             Sutskever, Ilya and Salakhutdinov, Ruslan},
+  title   = {Dropout: A Simple Way to Prevent Neural Networks from Overfitting},
+  journal = {Journal of Machine Learning Research},
+  volume  = {15},
+  number  = {1},
+  pages   = {1929--1958},
+  year    = {2014},
+  urldate = {2026-08-11},
+  note    = {Cited from its bibliographic record only, for attribution: chapter
+            8 uses dropout as Vaswani et al.\ apply it rather than as this paper
+            derives it. Recorded because it settles a common misattribution -
+            Vaswani et al.\ cite this paper and not Hinton et al.\ 2012, in both
+            copies, as reference [33] in arXiv v7 and [27] in the proceedings.
+            The volume and pages match jmlr.org, which labels it paper 56 rather
+            than issue 1.}
+}
+
+@article{popel2018tips,
+  author  = {Popel, Martin and Bojar, Ond{\v{r}}ej},
+  title   = {Training Tips for the Transformer Model},
+  journal = {The Prague Bulletin of Mathematical Linguistics},
+  number  = {110},
+  pages   = {43--70},
+  year    = {2018},
+  eprint  = {1804.00247},
+  eprinttype = {arXiv},
+  eprintclass = {cs.CL},
+  urldate = {2026-08-11},
+  note    = {Read as arXiv:1804.00247v2, 2 May 2018, sections 4.5 and 4.6 only.
+            Used for one thing chapter 8 could not measure at its own scale:
+            setting warmup too low does not merely slow training down, it
+            diverges, which their sweep shows at 12000 steps against a default
+            of 16000. The page range is from the arXiv record rather than from
+            the journal's own site.}
+}
+
 %--- Chapter 11: Vision Transformer -----------------------------------------
 
 @inproceedings{dosovitskiy2021vit,

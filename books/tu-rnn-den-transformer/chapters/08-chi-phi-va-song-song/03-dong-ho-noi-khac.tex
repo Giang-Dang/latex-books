@@ -1,0 +1,179 @@
+\section{Đồng hồ nói khác phép đếm}
+\label{sec:ch08-dong-ho}
+
+\index{đồng hồ!vì sao phải đo riêng}%
+Mục trước đếm được chính xác tới từng FLOP. Mục này hỏi cái đồng hồ, và hai câu
+trả lời không khớp nhau. Chỗ chúng lệch là nội dung của mục này và của mục sau.
+
+Trước hết một chuyện về cách đo, vì một bảng thời gian không nói rõ cách đo thì
+không lặp lại được. Mọi số dưới đây là trung vị sau một lần chạy làm nóng: chín
+lần lặp ở các bảng chỉ đo forward, năm lần ở bảng đo cả forward lẫn backward, vì
+bảng ấy đắt hơn một bậc. Cột \code{spread} bằng lớn nhất trừ nhỏ nhất, để một
+hàng bị nhiễu tự lộ ra. Máy là một CPU 20 nhân và \code{torch.get\_num\_threads()} trả
+về 20. Con số cuối ấy không phải chi tiết vặt, và cuối mục có một bảng cho thấy
+vì sao.
+
+\begin{measured}{một tầng con, forward, batch 8, 8 head}
+\begin{minted}{text}
+d    n     attention   spread      repo loop   nn.LSTM     attn/lstm
+128  32    0.000470    0.000258    0.003149    0.000454    1.03
+128  64    0.000470    0.000391    0.006256    0.000776    0.61
+128  128   0.000786    0.000177    0.006428    0.001368    0.57
+128  256   0.001860    0.000418    0.026182    0.002508    0.74
+128  512   0.023154    0.014496    0.026852    0.004983    4.65
+128  1024  0.087120    0.010140    0.068895    0.009825    8.87
+512  32    0.000979    0.000335    0.004106    0.001723    0.57
+512  64    0.002140    0.000327    0.008026    0.004157    0.51
+512  128   0.003691    0.000508    0.022771    0.007345    0.50
+512  256   0.009894    0.001401    0.036816    0.015056    0.66
+512  512   0.035190    0.003143    0.086326    0.028690    1.23
+512  1024  0.127809    0.010557    0.182810    0.057187    2.23
+\end{minted}
+
+Đo bằng \code{experiments/ch08\_clock.py} tại tag \code{ch08}.
+\end{measured}
+
+\subsection*{Chỗ đổi dấu không đi theo bề rộng}
+
+\index{đồng hồ!chỗ đổi dấu không phụ thuộc d}%
+Đọc cột \code{attn/lstm}, chỗ nó vượt qua 1 là chỗ attention bắt đầu đắt hơn.
+Bỏ qua hàng \(n = 32\), nơi cả hai bên chỉ tốn vài phần mười nghìn giây và phần
+chi phí cố định lấn át hết phần số học; ở đó con số 1.03 không nói gì về kiến
+trúc cả.
+
+Ở \(d = 512\), cột ấy đi từ 0.66 ở \(n = 256\) lên 1.23 ở \(n = 512\). Ở
+\(d = 128\), nó đi từ 0.74 ở \(n = 256\) lên 4.65 ở \(n = 512\). Hai bề rộng
+cách nhau bốn lần, và chỗ đổi dấu nằm trong \emph{cùng một khoảng},
+giữa 256 và 512.
+
+Đó không phải cái \eqref{eq:ch08-attention-vs-lstm} dự đoán. Theo FLOP, chỗ đổi
+dấu ở \(n = 2d\), tức 256 ở bề rộng nhỏ và 1024 ở bề rộng lớn: nó phải \emph{đi
+theo} bề rộng. Đo thì nó đứng yên.
+
+Ở \(d = 512\) phép đếm nói attention còn rẻ tới 1024 và đồng hồ nói nó hết rẻ ở
+quãng 512, tức đồng hồ khắc nghiệt hơn phép đếm đúng hai lần. Ở \(d = 128\) thì
+ngược lại, phép đếm nói 256 và đồng hồ cho attention đi thêm được một quãng.
+
+Một đại lượng đứng yên khi \(d\) đổi bốn lần thì không phải hàm của \(d\).
+Mục~\ref{sec:ch08-cho-vo} là chỗ đi tìm xem nó là hàm của cái gì, và câu trả lời
+giải thích luôn cả cột \code{spread}, vốn phình lên đúng ở hàng
+\(d = 128, n = 512\): 0.014496 trên một trung vị 0.023154, tức gần hai phần ba.
+
+\subsection*{Chữ \enquote{recurrent} phải nói rõ là cài đặt nào}
+
+\index{đồng hồ!vòng lặp Python so với kernel gộp}%
+Cột \code{repo loop} là encoder của chính repo này, một vòng lặp Python qua từng
+\tn{bước thời gian}{time step}, và cột \code{nn.LSTM} là cùng phép tính ấy sau
+một kernel đã gộp
+sẵn. Ở forward, khoảng cách giữa hai cột còn đi theo bề rộng: quanh năm tới mười
+lần ở \(d = 128\) và chỉ quanh hai tới ba lần ở \(d = 512\).
+
+Ở forward cộng backward thì khoảng cách ấy đổi hẳn bậc, và đó là phép đo đáng
+giá hơn, vì huấn luyện trả cả hai chiều:
+
+\begin{measured}{forward cộng backward, \(d = 128\), batch 8}
+\begin{minted}{text}
+n     attention   repo loop   nn.LSTM     loop/lstm  attn/lstm
+128   0.002371    0.036614    0.008458    4.3        0.28
+256   0.012425    0.082913    0.015498    5.3        0.80
+512   0.049383    0.856043    0.033927    25.2       1.46
+\end{minted}
+
+Đo bằng \code{experiments/ch08\_clock.py} tại tag \code{ch08}.
+\end{measured}
+
+Ở \(n = 512\), vòng lặp của repo chậm hơn kernel gộp 25.2 lần. Lý do thì nằm ở
+autograd chứ không ở số học: vòng lặp Python dựng một nút đồ thị cho mỗi bước
+thời gian, nên chiều ngược phải đi qua 512 nút thay vì một.
+
+Chuyện ấy có hệ quả cho cách đọc cả chương. Nếu tôi lấy cột \code{repo loop} làm
+\enquote{một tầng hồi quy} thì attention trông tốt hơn nhiều so với thực tế, và
+kết luận của chương sẽ là một phát biểu về Python chứ không phải về kiến trúc.
+Bảng in cả hai cột vì thế, và mọi so sánh trong chương này lấy cột
+\code{nn.LSTM}.
+
+Nó cũng đặt giá lên một lựa chọn của repo. Mọi tầng hồi quy trong repo này là
+một vòng lặp Python viết tay, không phải \code{torch.nn.LSTM}, vì một cuốn sách
+dựng lại từ đầu rồi lặng lẽ thay bằng thư viện ở đúng chương cần tốc độ thì đã
+thôi dựng lại từ đầu. Cột \code{nn.LSTM} ở đây là để so, không phải để thay. Con
+số 25.2 là cái giá của lựa chọn ấy, đo được, ở một chỗ.
+
+\subsection*{Số head: món nợ của chương trước, trả kèm một đính chính}
+
+\index{multi-head!đồng hồ không đồng ý với FLOP}%
+Mục~\ref{sec:ch08-dem} chứng minh số head triệt tiêu khỏi phép đếm FLOP, và
+\code{tests/test\_ch08.py} khẳng định điều đó thành một đẳng thức đúng. Số tham
+số cũng không đổi theo \(h\), và chương trước đã có một test cho chuyện ấy.
+
+Nên bảng dưới đây là một bảng mà cả hai cột kiểm được đều hằng, và chỉ đồng hồ
+đổi:
+
+\begin{measured}{quét số head ở \(\dmodel = 512\), FLOP và tham số đều hằng}
+\begin{minted}{text}
+every row holds 1,048,576 parameters
+
+h    d_k   n=128       vs h=1   n=512       spread      vs h=1
+1    512   0.003287    1.00     0.017986    0.004141    1.00
+2    256   0.003602    1.10     0.020214    0.001773    1.12
+4    128   0.003221    0.98     0.026352    0.002604    1.47
+8    64    0.003421    1.04     0.035445    0.002492    1.97
+16   32    0.003639    1.11     0.058174    0.010010    3.23
+32   16    0.004835    1.47     0.096588    0.011568    5.37
+\end{minted}
+
+Đo bằng \code{experiments/ch08\_clock.py} tại tag \code{ch08}.
+\end{measured}
+
+Ở \(n = 512\), ba mươi hai head chậm hơn một head 5.37 lần. Cùng số phép tính,
+cùng số tham số, cùng phần cứng.
+
+Lý do thì không sâu: chia một phép nhân ma trận lớn thành \(h\) phép nhỏ hơn thì
+mỗi phép có ít việc hơn để che chi phí không phải số học, và ở \(h = 32\) thì
+\(\dk = 16\), tức các ma trận đủ hẹp để phần dựng và dọn lấn át. Câu của bài,
+\enquote{the total computational cost is similar}, đúng theo phép đếm và bài nói
+rõ nó đang đếm.
+
+\index{multi-head!đính chính con số của chương 7}%
+\textbf{Một đính chính cho chương trước.} Mục~\ref{sec:ch07-nhieu-dau} viết rằng
+một phiên đo riêng thấy \(h = 16\) chậm hơn \(h = 1\) khoảng hai mươi phần trăm
+ở \(\dmodel = 512\) trên CPU. Con số ấy sai. Đo tử tế thì là 3.23 lần ở
+\(n = 512\) và 1.11 lần ở \(n = 128\), không phải hai mươi phần trăm ở bất kỳ độ
+dài nào tôi thử, và bốn lần chạy độc lập trên máy rảnh cho 3.23, 3.03, 3.09 và
+3.32 nên nó không phải nhiễu. Chương trước đã tự nói rằng nó không in con số ấy thành một
+phát biểu chung vì nó phụ thuộc cài đặt và phần cứng, và sự thận trọng ấy đúng
+chỗ. Cái sai là vẫn in nó ra.
+
+Cột \code{n=128} thì không đọc được thành xu hướng: 1.00, 1.10, 0.98, 1.04,
+1.11, 1.47 không đơn điệu, vì ở đó mỗi phép đo chỉ vài phần
+nghìn giây và phần chi phí cố định lấn át. Tôi in nó ra để nói rằng hiệu ứng phụ
+thuộc độ dài, và để không ai đọc cột \code{n=512} thành một hằng số của kiến
+trúc.
+
+\subsection*{Đổi số luồng thì đổi cả kết luận}
+
+\index{đồng hồ!số luồng đổi chỗ giao nhau}%
+Một bảng cuối, ngắn, và nó là lý do mọi bảng trên đều ghi số luồng.
+
+\begin{measured}{cùng phép đo ở 20 luồng và ở 1 luồng, \(d = 512\)}
+\begin{minted}{text}
+threads  n     attention   nn.LSTM     attn/lstm
+20       128   0.003935    0.007834    0.50
+20       512   0.035344    0.031290    1.13
+1        128   0.022032    0.041252    0.53
+1        512   0.118236    0.141877    0.83
+\end{minted}
+
+Đo bằng \code{experiments/ch08\_clock.py} tại tag \code{ch08}.
+\end{measured}
+
+Ở \(n = 512\), hai mươi luồng cho 1.13 và một luồng cho 0.83. Tức ở cùng một
+kiến trúc, cùng một độ dài, cùng một máy, attention đắt hơn hay rẻ hơn
+\tn{mạng hồi quy}{recurrent network} \emph{tùy vào số luồng}. Đổi một tham số không có trong bảng 1, không có
+trong \eqref{eq:ch08-flop-tang}, và không có trong bất kỳ phát biểu nào của bài,
+thì kết luận đổi dấu.
+
+Đó là lời cảnh báo tôi muốn để lại trước khi sang mục sau. Một bảng
+\tn{độ phức tạp}{complexity}
+nói về thuật toán. Một bảng thời gian nói về một thuật toán chạy trên một cỗ máy
+cụ thể ở một cấu hình cụ thể, nên khi bạn gặp một bảng thời gian không ghi cỗ
+máy và cấu hình ra, nó không nói về gì cả.

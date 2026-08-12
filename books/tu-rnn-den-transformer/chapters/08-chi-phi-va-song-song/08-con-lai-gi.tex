@@ -1,0 +1,78 @@
+\section{Cái chương này đóng được, và cái nó mở ra}
+\label{sec:ch08-con-lai-gi}
+
+\index{chi phí!bốn món nợ chương 7 để lại}%
+Bốn món nợ chương~\ref{ch:transformer} để lại thì ba trả xong và một trả một
+nửa.
+
+Ô \(O(n^2 \cdot d)\) giờ có hằng số. Phần bậc hai vượt nửa một tầng ở
+\(n = 2d + \dff\), tức 3072 ở cấu hình của bài, và ở ngưỡng \(n = d\) mà bài lấy
+làm chuẩn thì nó mới chiếm một phần bảy. Câu điều kiện của bài đúng, và đúng
+rộng rãi hơn bài tự nhận.
+
+Số head: FLOP không đổi theo \(h\), đúng như bài nói, và đồng hồ thì đổi 5.37
+lần từ \(h = 1\) tới \(h = 32\) ở \(n = 512\). Món này trả xong, kèm một đính chính cho chương
+trước.
+
+Thứ tự layer norm: nửa lý thuyết đo được ở lúc khởi tạo, gradient của post-LN
+lớn gấp khoảng năm lần và không nhỏ đi theo độ sâu. Nửa thực nghiệm thì không,
+vì hai tầng không phải quy mô mà chuyện này xảy ra.
+
+Warmup: hình dạng của \eqref{eq:ch08-warmup} dẫn ra được, và chỗ nó nối vào
+gradient ban đầu thì rõ. Bảng bốn ô không tách được nó khỏi nhiễu seed, và mục
+ấy nói thẳng ra.
+
+\subsection*{Chỗ ba chương sau bắt đầu}
+
+Ba khoảng trống mà kiến trúc này để lại là ba chương sau, và chương này chạm
+được vào cả ba theo ba mức khác nhau. Đánh số chúng ở đây để phần còn lại của
+mục gọi tên được: thứ nhất là chi phí bậc hai theo độ dài, thứ hai là không có
+thiên kiến quy nạp về vị trí, thứ ba là đói dữ liệu.
+
+\index{chi phí!cái đắt nhất không phải FLOP}%
+Khoảng trống thứ nhất là khoảng trống chương này đo, và phát hiện tôi không chờ
+đợi khi bắt đầu nằm ở mục~\ref{sec:ch08-cho-vo}. Nó đổi cách tôi đọc cả bảng 1.
+
+Chi phí thật của phần bậc hai, trên máy, không đến khi số phép tính vượt lên. Nó
+đến khi \tn{ma trận điểm số}{score matrix} không còn nằm vừa trong cache, và
+ngưỡng ấy tính bằng
+byte chứ không tính bằng \(n\). Giữ nguyên \(n\) mà tăng batch thì vẫn gặp đúng
+cái dốc ấy, ở đúng số byte ấy. Bảng 1 có ba cột và không cột nào đo cái đó, vì
+cả ba cột đều là hàm của \(n\), \(d\), \(k\) và \(r\), và không cột nào biết máy
+có bao nhiêu cache.
+
+Mục~\ref{sec:ch08-cho-vo} đã nói FlashAttention thắng vì nó sửa đúng vào đại
+lượng ấy. Chỗ này chỉ thêm một câu: đó là lý do phép đo nằm ở chương này chứ
+không ở chương~\ref{ch:chi-phi-bac-hai}. Một chương mở đầu bằng \enquote{cách
+này nhanh hơn} thì đang hứa; một chương mở đầu bằng một cột số không phẳng thì
+đang nợ người đọc một lời giải thích, và đó là thứ dễ trả hơn nhiều.
+
+\index{chi phí!thiên kiến quy nạp vẫn chưa trả}%
+Khoảng trống thứ hai thì chương này không đụng tới, và điều nó đóng góp được là
+một phép loại trừ. Mục~\ref{sec:ch07-nhieu-dau} và mục~\ref{sec:ch07-corpus} để
+lại một nghi vấn hợp lý: nếu Transformer cần gấp ba số epoch mới đuổi kịp, biết
+đâu cái nó thiếu chỉ là ngân sách tính toán, và bảng chi phí của chương này sẽ
+nói ra điều đó.
+
+Nó không nói. Bốn mục đầu đo chi phí theo ba cách và không cách nào tìm ra chỗ
+kiến trúc bị phạt oan: ở độ dài câu mà corpus này chạy, phần bậc hai chưa tới
+một phần trăm một tầng, ma trận điểm số nằm gọn trong cache, và số bước là số
+bước. Cái thiếu không phải chỗ chứa cũng không phải thời gian mỗi bước. Loại trừ
+xong thì chỉ còn lại thứ mà bạn không mua được bằng đồng hồ, và
+chương~\ref{ch:bias-quy-nap} là chương dành riêng cho nó.
+
+\index{chi phí!chỗ dữ liệu mua được thiên kiến}%
+Khoảng trống thứ ba thì chương này chỉ chạm được vào mép, và mép ấy là
+mục~\ref{sec:ch08-dieu-chuan}. Dropout làm hỏng ở đây và đáng 1.2 BLEU ở bài.
+Cùng một cơ chế, cùng một giá trị tham số, hai kết luận ngược nhau, và cái phân
+biệt chúng là 6000 câu sinh từ văn phạm so với 4.5 triệu cặp câu thật.
+
+Đó là lần đầu trong sách này một kết luận lật hẳn chiều chỉ vì lượng dữ liệu, và
+nó là bản xem trước của luận điểm trung tâm ở chương~\ref{ch:tien-huan-luyen} và
+chương~\ref{ch:vit}. Ở chương~\ref{ch:vit} câu chuyện ấy đạt dạng gọn nhất của
+nó: cùng một kiến trúc thua ResNet trên ImageNet-1k và thắng sau khi được huấn
+luyện trước trên JFT-300M~\autocite{dosovitskiy2021vit}. Không đổi một dòng mã
+nào.
+
+Ba khoảng trống ấy là ba chương, và chương này đo được khoảng trống thứ nhất rồi
+đo tiếp rằng nó không phải khoảng trống đắt nhất.

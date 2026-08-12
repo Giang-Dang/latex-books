@@ -1,0 +1,196 @@
+\section{Hai phép điều chuẩn, và một dự đoán sai}
+\label{sec:ch08-dieu-chuan}
+
+\index{điều chuẩn!mục 5.4 nói ba, in ra hai}%
+Mục 5.4 của bài mở bằng \enquote{We employ three types of regularization during
+training:} rồi in ra hai tiêu đề đậm, \code{Residual Dropout} và
+\code{Label Smoothing}. Tôi tìm cái thứ ba ở cả hai bản và không có. Cách đọc
+duy nhất làm chữ \enquote{three} đúng là đếm đoạn dropout thành hai, vì nó nêu
+hai chỗ đặt khác nhau:
+
+\begin{quote}
+\enquote{We apply dropout to the output of each sub-layer, before it is added
+to the sub-layer input and normalized. In addition, we apply dropout to the sums
+of the embeddings and the positional encodings in both the encoder and decoder
+stacks. For the base model, we use a rate of \(P_{drop} = 0.1\).}
+\end{quote}
+
+Chuyện đếm ấy nhỏ. Chuyện đáng nói là câu ngay sau đó, về phép thứ hai:
+
+\begin{quote}
+\enquote{During training, we employed label smoothing of value
+\(\epsilon_{ls} = 0.1\). This hurts perplexity, as the model learns to be more
+unsure, but improves accuracy and BLEU score.}
+\end{quote}
+
+\index{label smoothing!bài tự nói nó làm xấu perplexity}%
+Một bài báo nói thẳng rằng thứ họ dùng làm xấu một độ đo của chính họ. Đó là câu
+làm tôi muốn đo mục này, vì nó là một phát biểu kiểm được, và bảng 3 của chính
+bài kiểm nó.
+
+\subsection*{Bảng 3 hàng (D), và hai độ đo đi ngược nhau}
+
+\index{điều chuẩn!hàng (D) của bảng 3}%
+Hàng (D) đổi hai tham số ấy quanh cấu hình base, và đo trên tập phát triển
+Anh-Đức. Cấu hình base là \(P_{drop} = 0.1\), \(\epsilon_{ls} = 0.1\), với
+perplexity 4.92 và BLEU 25.8:
+
+\begin{minted}{text}
+                PPL (dev)   BLEU (dev)
+base            4.92        25.8
+P_drop  = 0.0   5.77        24.6
+P_drop  = 0.2   4.95        25.5
+eps_ls  = 0.0   4.67        25.3
+eps_ls  = 0.2   5.47        25.7
+\end{minted}
+
+Đọc từng nửa.
+
+\textbf{Dropout.} Tắt hẳn thì perplexity đi từ 4.92 lên 5.77 và BLEU từ 25.8
+xuống 24.6. Hai độ đo cùng xấu đi, và 1.2 BLEU là một khoảng lớn theo tiêu chuẩn
+của chính bảng ấy, nơi cả bảng chỉ trải từ 23.7 tới 26.4. Đẩy lên 0.2 thì cũng
+xấu hơn base nhưng ít. Nên 0.1 là một cực trị đã chỉnh, không phải một con số
+mặc định.
+
+\textbf{Label smoothing.} Tắt hẳn thì perplexity đi từ 4.92 \emph{xuống} 4.67,
+tức \emph{tốt hơn}, trong khi BLEU đi từ 25.8 xuống 25.3, tức xấu hơn. Hai cột
+đi ngược chiều nhau, đúng bằng câu ở mục 5.4, và đo được trong bảng của chính
+bài.
+
+Đó là chỗ chữ \enquote{mẹo} hỏng hẳn. Một mẹo là thứ làm mọi độ đo tốt lên một
+chút. Cái này làm một độ đo xấu đi để đổi lấy một độ đo khác, và nhóm tác giả
+biết điều đó, viết ra, rồi vẫn giữ. Đó là một quyết định về việc độ đo nào là độ
+đo thật.
+
+\begin{bridge}{Szegedy và cộng sự 2016: label smoothing đến từ đâu}
+\index{label smoothing!Szegedy 2016}%
+Bài này về kiến trúc Inception cho ảnh, không liên quan gì tới
+chuỗi~\autocite{szegedy2016rethinking}. Mục 7 đưa ra phép làm mượt nhãn: thay
+phân phối đích một điểm \(\delta_{k,y}\) bằng
+
+\begin{equation*}
+  q'(k \mid x) = (1 - \epsilon)\,\delta_{k,y} + \epsilon\, u(k),
+\end{equation*}
+
+với \(u(k)\) là phân phối đều, tức \(\epsilon/K\) rải đều trên \(K\) lớp. Bài
+viết \enquote{In our ImageNet experiments with \(K = 1000\) classes, we used
+\(u(k) = 1/1000\) and \(\epsilon = 0.1\)}. Đúng \(\epsilon\) mà Vaswani và cộng
+sự lấy lại một năm rưỡi sau, cho một bài toán khác hẳn.
+
+Hiệu quả bài báo cáo: \enquote{a consistent improvement of about 0.2\% absolute
+both for top-1 error and the top-5 error}. Chữ \enquote{about} nên trích kèm,
+vì bảng 3 của chính bài cho 0.3 điểm phần trăm ở top-1 và 0.2 ở top-5, không
+phải 0.2 cho cả hai.
+
+Tôi đọc bài này ở riêng mục 7.
+\end{bridge}
+
+\subsection*{Dự đoán trước khi chạy}
+
+\index{điều chuẩn!dự đoán trước khi chạy}%
+Corpus của sách này không phải WMT'14, và tôi viết dự đoán ra trước khi chạy để
+sau đó không viết lại nó cho khớp kết quả.
+
+Dropout là phép phòng overfit, và bài lấy nó từ Srivastava và cộng sự
+2014~\autocite{srivastava2014dropout} chứ không phải từ Hinton và cộng sự 2012,
+điều đáng nói vì chỗ trích lại hay đổi hai bài cho nhau.
+Mục~\ref{sec:ch07-corpus} đã đo rằng kiến trúc
+này \emph{không} overfit trên corpus này: chấm mô hình \(\dmodel = 32\) của mục
+ấy trên 300 cặp lấy từ chính tập huấn luyện cho 0.5967, không cao hơn 0.6533 nó
+được trên tập test. Đó là một mô hình rộng hơn mô hình bảng dưới đây huấn luyện,
+nên nó là bằng chứng về kiểu chứ không phải về đúng cấu hình này. Một phép phòng
+một chuyện không xảy ra thì chỉ có thể tốn. Dự đoán: dropout làm hỏng.
+
+Label smoothing thì tôi dự đoán cùng chiều, và lý do tôi đưa ra lúc ấy là văn
+phạm sinh ra corpus này hữu hạn nên đích thật sự là một điểm, không phải một
+phân phối. Dự đoán: cũng làm hỏng.
+
+Bảng chạy 2x2 chứ không quét từng cái một, vì bài chưa bao giờ chạy riêng một
+trong hai và tôi muốn thấy chúng có tương tác không. Ba seed mỗi ô, vì lý do
+mục~\ref{sec:ch08-warmup} vừa trả giá.
+
+\begin{measured}{dropout và label smoothing trên corpus của sách, 2x2, ba seed}
+\begin{minted}[fontsize=\footnotesize]{text}
+P_drop  eps_ls  loss    floor   excess  exact   min     max     long
+0.0     0.0     0.1449  0.0000  0.1449  0.5333  0.4700  0.5667  0.1798
+0.1     0.0     0.3644  0.0000  0.3644  0.3522  0.2867  0.4233  0.0219
+0.0     0.1     0.7910  0.6678  0.1233  0.5700  0.5267  0.6067  0.1886
+0.1     0.1     1.0050  0.6678  0.3372  0.3822  0.3467  0.4267  0.0175
+\end{minted}
+
+2 tầng, 14 epoch, \(\dmodel = 24\), seed 0, 1, 2. \tn{Từ điển}{vocabulary} đích
+37 lớp.
+
+Đo bằng \code{experiments/ch08\_recipe.py} tại tag \code{ch08}.
+\end{measured}
+
+\subsection*{Cột \code{floor}, và vì sao cột \code{loss} một mình nói dối}
+
+\index{label smoothing!lower bound của mất mát}%
+Trước khi đọc kết quả, phải xử lý một chuyện về thang đo, và nó là chỗ dễ kết
+luận ngược nhất trong cả chương.
+
+Dưới label smoothing, đích không còn là một điểm, nên một mô hình \emph{hoàn
+hảo} vẫn phải trả mất mát. Giá trị nhỏ nhất của entropy chéo với đích đã làm
+mượt là entropy của chính đích ấy:
+
+\begin{equation}
+  H(q') = -\left(1 - \epsilon + \tfrac{\epsilon}{K}\right)
+            \log\!\left(1 - \epsilon + \tfrac{\epsilon}{K}\right)
+          - (K-1)\,\tfrac{\epsilon}{K} \log \tfrac{\epsilon}{K}.
+  \label{eq:ch08-chan-duoi}
+\end{equation}
+
+Với \(K = 37\) và \(\epsilon = 0.1\), \eqref{eq:ch08-chan-duoi} cho 0.6678, và
+đó là cột \code{floor}. Cột \code{excess} là mất mát trừ lower bound, tức phần
+mô hình thật sự còn thiếu.
+
+Đọc cột \code{loss} thô thì label smoothing làm mất mát tệ đi 5.5 lần, từ 0.1449
+lên 0.7910. Đọc cột \code{excess} thì nó \emph{tốt lên}, từ 0.1449 xuống 0.1233.
+Cùng một phép đo, hai kết luận ngược nhau, và cái đúng là cái đã trừ lower
+bound. Không có cột ấy thì bảng này chỉ nói được rằng smoothing làm một con số
+to lên, mà nó làm thế theo định nghĩa.
+
+\subsection*{Một dự đoán đúng, một dự đoán sai}
+
+\index{điều chuẩn!dropout hỏng ngoài nhiễu}%
+\textbf{Dropout làm hỏng, và vượt nhiễu.} 0.5333 xuống 0.3522 khi không có
+smoothing, 0.5700 xuống 0.3822 khi có. Quan trọng hơn hai con số ấy: khoảng
+\code{min}-\code{max} của hai bên không giao nhau, 0.4700 tới 0.5667 so với
+0.2867 tới 0.4233. Đây là hiệu ứng thật chứ không phải seed. Câu dài chịu gần
+hết, 0.1798 xuống 0.0219.
+
+Dự đoán đúng, và lý do đứng vững: bỏ ngẫu nhiên một phần tín hiệu ở một mô hình
+đang thiếu tín hiệu thì chỉ tốn. Chỗ này \emph{không} mâu thuẫn với hàng (D) của
+bài. Bài đo trên 4.5 triệu cặp câu thật, nơi overfit là chuyện có thật; sách này
+đo trên 6000 câu sinh từ một văn phạm hữu hạn, nơi nó không phải. Hai bảng trả
+lời hai câu hỏi khác nhau, và cái chung của chúng là dropout không phải một mẹo
+mà là một phép đánh đổi có điều kiện, với điều kiện là mô hình đang overfit.
+
+\index{label smoothing!dự đoán của chương sai}%
+\textbf{Label smoothing thì không làm hỏng, và ở đây tôi dự đoán sai.} Khớp đúng
+cả câu đi từ 0.5333 lên 0.5700 và từ 0.3522 lên 0.3822, tức tốt lên ở cả hai
+điều kiện dropout. Khoảng \code{min}-\code{max} có giao nhau nên độ lớn không
+kết luận được, nhưng chiều thì nhất quán, và cột \code{excess} cũng đi cùng
+chiều ấy, 0.1449 xuống 0.1233.
+
+Chỗ tôi sai nằm ở lập luận chứ không ở số. Tôi coi label smoothing là một họ với
+dropout, tức một phép phòng overfit, nên đã suy ra cùng một kết luận từ cùng một
+tiền đề. Nó không phải. Dropout bỏ tín hiệu đi trong lúc học; label smoothing
+giữ nguyên tín hiệu và chỉ chặn mô hình đừng đẩy xác suất của một token lên sát
+1. Corpus không có gì để overfit vẫn có thể có mô hình quá tự tin, và hai chuyện
+ấy độc lập với nhau.
+
+Chiều của kết quả cũng khớp với bài theo một nghĩa hẹp nhưng thật. Bảng 3 hàng
+(D) cho hai độ đo tách nhau, perplexity và BLEU. Ở đây khớp đúng cả câu là độ đo
+họ BLEU, và \code{excess} là độ đo họ perplexity, và cả hai cùng nói smoothing
+có lợi nhẹ. Không cùng kết quả với bài, vì bài thấy perplexity xấu đi, nhưng
+cùng một chuyện: hai độ đo của cùng một mô hình không buộc phải đi cùng chiều,
+và chọn nhìn cái nào là một quyết định chứ không phải một chi tiết.
+
+\index{điều chuẩn!tương tác giữa hai phép}%
+Còn tương tác thì gần như không có, và đó cũng là một kết quả. Dropout lấy đi
+0.1811 khi không có smoothing và 0.1878 khi có; smoothing thêm 0.0367 khi không
+có dropout và 0.0300 khi có. Hai hiệu ứng cộng vào nhau chứ không nhân lên,
+trong phạm vi bảng này phân biệt được. Bài chưa bao giờ chạy riêng một trong hai
+nên không có gì để đối chiếu.
