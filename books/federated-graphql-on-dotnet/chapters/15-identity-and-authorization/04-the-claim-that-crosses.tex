@@ -1,0 +1,138 @@
+\section{The Claim That Crosses the Boundary}
+\label{sec:ch15-the-claim-that-crosses}
+\index{header forwarding!the router's \code{headers} block|(}%
+
+Chapter~\ref{ch:how-a-federated-query-actually-runs} put a logger inside two
+subgraphs and found that the router forwards no client header at all. That was a
+measurement in search of a consequence for eight chapters. Here is the
+consequence: two of Mosaic's three enforcement layers run inside a subgraph, and
+a subgraph with no header has no caller.
+
+The smallest thing that changes it is five lines:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{yaml}
+headers:
+  all:
+    request:
+      - op: propagate
+        named: Authorization
+\end{minted}
+
+\code{propagate} and \code{set} are the two operations the block
+has~\autocite{cosmodocs2026headers}. \code{propagate} moves a header the client
+sent; \code{set} writes one the router computes.
+
+\subsection*{Which of the two arrangements, and why}
+
+\index{header forwarding!the token or a claim derived from it}%
+WunderGraph documents the other arrangement and recommends
+it~\autocite{cosmodocs2026headers}: do not forward the token, and instead set a
+header derived from a claim.
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{yaml}
+      - op: set
+        name: "X-Mosaic-Customer"
+        expression: "request.auth.isAuthenticated ? request.auth.claims.sub : ''"
+\end{minted}
+
+It is the better arrangement on every axis but one. It is smaller on the wire.
+It keeps the token in one process, so a subgraph log that dumps headers is not a
+credential leak. It means a subgraph needs no JWT library, no signing key and no
+clock. And every subgraph gets a plain string it can read without ceremony.
+
+The axis it loses on is the one that matters here: it requires the subgraph to
+trust a header, which is only safe if nothing but the router can send one.
+Mosaic publishes all seven services on host ports. A header that says
+\code{X-Mosaic-Customer} is a header anybody with \code{curl} can also say, and
+the whole model would come apart on a request the router never saw.
+
+So Mosaic forwards the token itself and every service validates it again. The
+cost is a signature verification per subgraph per request, which is real and
+small. The cost of the other choice is that the security of the graph depends on
+a network boundary that nothing in this repository creates or checks, and which
+somebody re-opens the first time they add a deployment target. I would take the
+documented arrangement in a heartbeat behind a mesh I controlled. I am not going
+to take it behind seven published ports and a comment.
+
+\index{header forwarding!one rule covers both transports}%
+One detail worth knowing before you need it, measured on a two-service probe
+rather than on Mosaic: that single \code{propagate} entry covers the WebSocket
+upgrade as well as an ordinary HTTP fetch. There is no second,
+subscription-specific header block for it. Mosaic cannot show you that, because
+by the end of this chapter no subscription it serves carries a token at all,
+which is section~\ref{sec:ch15-a-connection-with-no-identity}'s subject.
+
+\subsection*{What a subgraph does with it}
+
+\index{Mosaic.ServiceDefaults@\code{Mosaic.ServiceDefaults}!the security defaults}%
+Validating a bearer token is the same work in every service and nothing any two
+of them have to agree about, so by chapter~\ref{ch:strangling-the-monolith}'s
+test it is platform and lives in the shared library. Four of the seven call it.
+
+Two lines in there are worth reading twice. The first:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+options.MapInboundClaims = false;
+\end{minted}
+
+Left at its default of true, ASP.NET Core rewrites well-known JWT claim names
+into the long-form URIs of the old WS-Federation claim types, so the \code{sub}
+the token carries arrives under a name ending in \code{nameidentifier} and a
+resolver looking for \code{sub} finds nothing. The token is correct, the
+signature is valid, the request is authenticated, and the claim is missing under
+the name it was written with. Turning the map off makes the claim names in a
+resolver the claim names in the token, which are also the names the router
+reads.
+
+The second is a policy that does not work:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+policy.RequireClaim("scope", "orders:read")   // wrong
+\end{minted}
+
+A scope claim is one string holding every granted scope separated by spaces, so
+that comparison puts \code{"orders:read reviews:write"} up against
+\code{"orders:read"} and refuses a token that plainly holds the scope. The
+failure is a \code{403} on a correct token, which is a bad half hour. Mosaic's
+policies split on the space, once, in a shared helper, because the alternative
+is getting it right in three services.
+
+\subsection*{Two more middleware in the pipeline}
+
+\index{request pipeline!what authorization adds}%
+Turning authorization on changes something
+chapter~\ref{ch:the-life-of-a-request} counted. That chapter walked thirteen
+request middleware and both verification scripts have asserted the list in order
+ever since. A service that calls \code{AddAuthorization()} assembles fifteen,
+and the two new ones do not go on the end:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+ 5. DocumentParserMiddleware
+ 6. HotChocolate.Authorization.Pipeline.PrepareAuthorization
+ 7. DocumentValidationMiddleware
+ 8. HotChocolate.Authorization.Pipeline.AuthorizeRequest
+ 9. CostAnalyzerMiddleware
+\end{minted}
+
+One in front of validation and one behind it. That placement is why the
+\code{[Authorize]} attribute has an \code{apply} argument at all: set to
+\code{Validation}, a refusal happens in the request pipeline before any resolver
+runs, which is how a whole operation gets rejected rather than one field nulled.
+Mosaic uses the default, \code{BeforeResolver}, everywhere, and the difference
+is visible from outside. At the default a refused field is an error with a
+\code{path} and an HTTP \code{200}. At \code{Validation} it is an HTTP
+\code{401} with no \code{path} and no \code{data} key at all.
+
+Chapter~\ref{ch:the-life-of-a-request}'s thirteen is still right for the service
+that chapter measured, and four of the seven still assemble exactly thirteen.
+The gate holds both lists now, per subgraph, and asserts the order of each. It
+would have been easier to assert \enquote{thirteen or fifteen} and that is
+exactly the kind of loosening this book's own rules forbid.
+
+\medskip
+A token at the router, a token at the subgraph, and a policy in front of a
+resolver. That is two of the three layers working. The third one is the
+interesting one, and the field that makes it necessary is the one this graph
+grew two chapters ago to be helpful.
+
+\index{header forwarding!the router's \code{headers} block|)}%

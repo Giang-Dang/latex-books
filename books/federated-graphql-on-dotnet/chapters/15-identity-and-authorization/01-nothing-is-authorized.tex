@@ -1,0 +1,113 @@
+\section{Nothing Here Is Authorized}
+\label{sec:ch15-nothing-is-authorized}
+\index{authorization!the state before any of it|(}%
+
+Check out tag \code{ch14}, start the graph, and read somebody's email address:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{graphql}
+{ products { reviews(first: 1) { nodes { author { displayName email } } } } }
+\end{minted}
+
+Twenty-five products, an author on nearly every one, and an address for each.
+There is no token in that request and no place to put one. Ask Ordering for
+somebody's purchase history and it is the same story, one argument and no
+question about who is asking.
+
+I want to be precise about what is wrong here, because \enquote{the graph has no
+authorization} is a description of a to-do item rather than of a defect. The
+defect is narrower and it is worth naming: \code{Customer.email} is a field
+Accounts publishes for the convenience of a graph that reaches customers through
+their reviews, and a review is public. Nobody decided that an address should
+follow a display name into a product page. It followed because the two are
+properties of one type, and a type is the unit federation composes.
+
+That is the shape of the problem for the rest of the chapter. The units a
+federated graph is assembled from are types and fields; the units authorization
+cares about are rows and people.
+
+\subsection*{Three places to put a rule}
+
+\index{authorization!where a rule can live}%
+Before any code, the decision that everything else follows from. A request to
+this graph passes through at least two processes, and it can be refused in three
+places, which are not interchangeable.
+
+\index{authorization!at the router}%
+The router can refuse a field from the token alone. It has the claims, it has
+the operation, and the composed config tells it which fields need what. It does
+this before planning a fetch, so a refusal costs nothing. What it cannot do is
+know whose data it was about to fetch, because it has not fetched it yet.
+
+\index{authorization!at the subgraph}%
+The subgraph can refuse the same field inside its own process, using ASP.NET
+Core's authorization and HotChocolate's \code{[Authorize]}. That looks redundant
+next to the first one and is not, for a reason that is a property of this
+deployment rather than of federation: all seven Mosaic services listen on a host
+port. A client that skips the router is one \code{curl} away, and every rule the
+router was holding evaporates.
+
+\index{authorization!in the resolver}%
+The resolver can refuse this row to this caller. An order belongs to one
+customer, and the question is not whether you hold a scope but whether you are
+that customer. Answering it needs the row, so it happens after the fetch, in the
+service that owns the data, and no directive anywhere can advertise that it
+happened.
+
+Figure~\ref{fig:ch15-three-layers} is the three of them on one path, including
+the arrow that makes the second one necessary.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch15-three-layers}
+  \caption{One field, three rules, three places. The router answers from the
+  token before it fetches; the subgraph answers in its own process, which is the
+  only rule left for a caller who never went through the router; the resolver
+  answers with the row in hand, which is the only place the question \enquote{is
+  this yours} can be asked at all. Each layer can express something the ones
+  above it cannot, and nothing in the build checks that the three agree.}
+  \label{fig:ch15-three-layers}
+\end{figure}
+
+\subsection*{What Mosaic decides}
+
+\index{Mosaic!the authorization model}%
+Four fields get guarded, and they were chosen to cover the three layers rather
+than to be a complete policy. \code{Customer.email} needs a caller who is
+somebody. \code{Query.customerById} needs a scope, because looking a customer up
+by identifier is a different act from following a review to its author.
+\code{Query.ordersByCustomer} needs a scope and needs you to be the customer in
+the argument. \code{submitReview} needs a caller and needs the review to be in
+your own name, and its scope is checked only inside Reviews rather than at the
+router, which is a difference section~\ref{sec:ch15-two-vocabularies} is about
+and not an oversight.
+
+\index{tokens!what Mosaic puts in one}%
+The token is HS256 with a shared secret, minted by
+\code{scripts/mint-token.mjs}, and I want to be blunt about what that costs.
+A symmetric key means every party that can check a token can also mint one, and
+the key is in a public repository. A deployment points the router at a JWKS
+endpoint instead and gives the services nothing; the router's configuration
+takes either and \code{router/config.yaml} carries the two-line swap as a
+comment. Nothing else in the repository changes between them, which is the only
+reason I am comfortable spending a symmetric key on a chapter about federation
+rather than a chapter about OAuth.
+
+\index{tokens!the subject is a global object identifier}%
+One decision inside the token is worth more than it looks. The \code{sub} claim
+is a customer's global object identifier, the same base64 string
+chapter~\ref{ch:schema-design-that-survives-change} built,
+chapter~\ref{ch:the-first-cut-extracting-catalog} first taught a subgraph to
+decode, and chapter~\ref{ch:strangling-the-monolith} copied into every service
+that needed one. So a service that wants the customer behind a token decodes the
+subject with its own copy of \code{CustomerKey}, and there are two more copies at
+this tag for exactly that. Chapter~\ref{ch:strangling-the-monolith} argued that the
+format of an identifier is a contract and a shared class would turn it into a
+build dependency. This adds a party to the contract who is not a Mosaic service
+at all: whatever mints tokens has to encode a customer the way Accounts does,
+and no compiler will ever check it.
+
+\medskip
+So: a token, and somewhere to check it. The router first, because it is the one
+that can refuse a field before anything is fetched.
+
+\index{authorization!the state before any of it|)}%

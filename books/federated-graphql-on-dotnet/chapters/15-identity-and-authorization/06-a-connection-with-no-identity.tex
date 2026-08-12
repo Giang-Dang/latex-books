@@ -1,0 +1,283 @@
+\section{A Connection With No Identity}
+\label{sec:ch15-a-connection-with-no-identity}
+\index{subscriptions!authorizing one|(}%
+
+Chapter~\ref{ch:real-time-in-a-federated-world} closed by saying a connection
+that stays open for an hour is the hardest case the question \enquote{who is
+allowed to ask} has. It is harder than that. In this stack, on this release, a
+subscription has no identity at all, and getting it one costs the public
+storefront.
+
+The trouble starts somewhere unglamorous. A WebSocket client cannot send a
+header. The constructor takes a url and a list of subprotocols and that is the
+whole interface, in browsers and in node alike. So the \code{headers} block from
+section~\ref{sec:ch15-the-claim-that-crosses}, which moves an
+\code{Authorization} header so neatly on an ordinary fetch, is moving a header a
+subscribing client has no way to set.
+
+\index{connection\_init@\code{connection\_init}!carrying a token}%
+Everybody who meets this arrives at the same answer: put the token in the first
+message instead. The \code{connection\_init} frame carries a free-form payload
+and Cosmo will read a token out of it:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{yaml}
+websocket:
+  authentication:
+    from_initial_payload:
+      enabled: true
+      key: "Authorization"
+      export_token:
+        enabled: true
+        header_key: "Authorization"
+\end{minted}
+
+\code{key} names the property to read. \code{export\_token} is the half that
+matters to a subgraph: the router writes the value it read back onto the
+subgraph request as a header, so Reviews and Accounts see an ordinary bearer
+token and nothing in their code knows a WebSocket was involved.
+
+It works. I put a recording proxy in front of Accounts, the way
+chapter~\ref{ch:real-time-in-a-federated-world} did in front of Reviews, and
+watched a subscription's per-event entity fetch arrive correctly formed. The
+recorder prints each header it saw and then the first hundred and sixty bytes of
+the body, which is where the last line stops:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+POST /graphql
+authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Im1vc2FpYy1kZXYifQ..."
+body: {"variables":{"representations":[{"__typename":"Customer","id":"Q3VzdG9tZXI6..."}]},
+       "query":"query($representations: [_Any!]!){_entities(re
+\end{minted}
+
+Reading the router's own source afterwards explains the one detail that catches
+people. Two files in \code{wundergraph/cosmo}, at tag \code{router@0.337.1}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+router/pkg/authentication/initial_payload_authenticator.go
+router/core/websocket.go
+\end{minted}
+
+The first insists on the \code{Bearer} prefix before it will decode anything.
+The second writes whatever string it found onto the subgraph request verbatim.
+So a payload holding a bare token authenticates nobody, and a payload holding
+\code{Bearer} and the token authenticates and forwards correctly.
+
+\subsection*{And it takes the storefront off the internet}
+
+\index{websocket@\code{websocket.authentication}!what it does to HTTP}%
+Here is the finding. Turn that block on and every anonymous HTTP request to the
+router is answered \code{401}.
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+anonymous, no websocket block:   HTTP 200 {"data":{"__typename":"Query"}}
+anonymous, with websocket block: HTTP 401 {"errors":[{"message":"unauthorized"}]}
+\end{minted}
+
+Same router, same execution config, same \code{require\_authentication: false}.
+The only difference between those two lines is the presence of a block whose
+every key is about WebSockets, and it closes ordinary HTTP to anybody without a
+token.
+
+I did not believe it either, which is why it is isolated rather than observed.
+The pair above comes from a case in \code{scripts/router-cases.mjs} that starts
+two routers, identical except for that block, and asks each one
+\code{\{ \_\_typename \}} with no credentials. It runs in both verification
+scripts, so a release that fixes this fails the gate and gets read.
+
+For Mosaic that settles it. A storefront that refuses anonymous browsers is not
+a storefront, so the block is commented out in \code{router/config.yaml} with
+the measurement beside it, and every subscription this graph serves is
+anonymous.
+
+\subsection*{Which is not, in itself, the problem}
+
+\index{subscriptions!where the refusal comes from}%
+An anonymous subscription is fine as long as it only carries public data, and
+\code{onReviewAdded} mostly does. So ask it for something that is not public and
+watch which layer says no. This is the same connection, the same event, one
+field added to the selection set:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'accounts' at Path
+  'onReviewAdded.author'.","extensions":{"errors":[{"message":"The current user is
+  not authorized to access this resource.","path":["onReviewAdded","author","email"],
+  "extensions":{"code":"AUTH_NOT_AUTHENTICATED"}}],"serviceName":"accounts",
+  "statusCode":200}},{"message":"Cannot return null for non-nullable field
+  'Subscription.onReviewAdded.author.displayName'.",
+  "path":["onReviewAdded","author","displayName"]}],
+ "data":{"onReviewAdded":{"id":"UmV2aWV3OvXwnwFsO+d5vD3awsWCD1M=","rating":4,
+  "author":null}}}
+\end{minted}
+
+\code{serviceName: accounts}. Code \code{AUTH\_NOT\_AUTHENTICATED}, which is
+HotChocolate's wording. And nowhere in it the router's own
+\code{Unauthorized to load field}.
+
+So the router planned the entity fetch, sent it, and Accounts refused it. My
+first reading of that was that a subscription payload skips the router's field
+authorization, and that reading is wrong. The control that breaks it is the same
+subscription asking for the guarded field on its own:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{json}
+{"errors":[{"message":"Unauthorized to load field
+   'Subscription.onReviewAdded.author.email', Reason: not authenticated.",
+  "path":["onReviewAdded","author","email"],
+  "extensions":{"code":"UNAUTHORIZED_FIELD_OR_TYPE"}}],
+ "data":{"onReviewAdded":{"id":"UmV2aWV3OojznwFCcah+j2s8Y2FXU5Q=","author":null}}}
+\end{minted}
+
+That is the router refusing the field itself, inside a subscription, with
+Accounts never called. The transport is not what changed.
+
+\index{authorization!pre-fetch field authorization!what it does not do}%
+\index{authorization!which layer refuses, and what decides it}%
+What did change is the selection set, and the count from
+section~\ref{sec:ch15-a-token-at-the-router} is what shows it. Accounts logs one
+\code{Mosaic.RequestTimeline} line per request it serves, so count those either
+side of each of three anonymous requests, run with the setting on and again with
+it off:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+author selection        pre-fetch on   pre-fetch off   who refused, on
+email                        0              1          the router
+displayName email            1              1          Accounts
+displayName (control)        1              1          nobody, it is public
+\end{minted}
+
+The right-hand column is the control, and it is the one that names the cause.
+With pre-fetch authorization off every selection costs Accounts a request,
+including the guarded field on its own, and the router still refuses that field
+afterwards. Turning the setting on buys back exactly one of those three
+requests. So the setting removes a fetch it can remove \emph{entirely}, and on
+this configuration it prunes nothing out of a fetch that has to happen anyway
+for a permitted field beside it. Ask for the address on its own and Accounts is
+never troubled; ask for the address and the display name together and the
+request goes out carrying both, because the display name has to be fetched and
+the address is on the same entity. Hold on to \enquote{on this configuration}:
+there is one other, and the end of this section is about what it does
+differently.
+
+The subscription pair behaves the same way on the shipped configuration:
+\code{author \{ email \}} costs Accounts nothing and
+\code{author \{ displayName email \}} costs it one. I did not run the
+subscriptions again with the setting off, so the right-hand column above is an
+HTTP measurement and I am not claiming more than that.
+
+\index{authorization!counting a refusal in a gate}%
+All three rows are gate steps, for the reason
+section~\ref{sec:ch15-a-token-at-the-router}'s single row is: a count is the
+same on every machine, so it belongs in a gate rather than in a table I am
+asking you to believe. Both verification scripts now send these three
+selections, read the Accounts console either side of each, and require nought,
+one and one exactly. Asserting exactly is the point. A nought in the middle row
+would mean the router had begun pruning a guarded field out of a fetch it still
+had to make, which would be a better router and a wrong chapter, and I would
+rather find that out from a red gate than from a reader.
+
+The right-hand column needs a second router rather than a second request, so it
+is a case instead: \code{guarded-field-beside-a-permitted-one} in
+\code{scripts/router-cases.mjs} starts two routers differing only in that
+setting and asserts that the guarded field alone reaches Accounts on one and not
+the other, while the mixed selection reaches it on both.
+
+\index{authorization!what a count cannot show}%
+One further limit. A count says a fetch happened; it does not say why the router
+kept it. That the guarded field travelled inside the kept fetch is not inference
+though, because Accounts' own refusal names the path it was asked for, right
+down to \code{author.email}, and a subgraph cannot refuse a field nobody sent
+it. Whether the router's check runs per fetch or per field is a question about
+its planner, and chapter~\ref{ch:inside-the-router-and-the-composer} is where
+this book reads that source rather than measuring around it.
+
+\index{authorization!the layer that saved it}%
+Nothing leaked, and the reason nothing leaked is the attribute that looked
+redundant in section~\ref{sec:ch15-nothing-is-authorized} and that
+section~\ref{sec:ch15-two-vocabularies} justified by counting published ports.
+\code{Customer.email}
+carries \code{[Authenticated]} for the router and \code{[Authorize]} for the
+service, and in the second row of that table the router's copy contributed
+nothing. A graph that had read the documentation, annotated its fields with the
+federation directives, and trusted the router to enforce them, would have served
+that address to anybody who thought to ask for a display name alongside it.
+
+That is the argument for writing the rule twice, and it is a better argument
+than the one I started with. I had justified the second attribute by saying that
+all seven services publish host ports, which is true and is a property of one
+compose file: close the ports and the argument evaporates. This one does not.
+The router's enforcement has a shape, the shape depends on what else the client
+selected, and no amount of network topology changes it.
+
+\subsection*{The one configuration where the router does prune}
+
+\index{authorization!pre-fetch field authorization!the exception}%
+Everything above is the graph Mosaic ships. There is exactly one other
+configuration it can be run in, the block from earlier in this section, and the
+rule does not survive the move. This wants a second router rather than a
+restart: the shipped one keeps serving 3002 while a second, running this same
+file plus the block, takes 3102.
+
+With the block on, and a valid token in the initial payload, the mixed selection
+costs Accounts one request and the \emph{router} refuses the address:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+                    Accounts requests   who refused the address
+shipped                    1            Accounts
+plus the block             1            the router
+\end{minted}
+
+Same count, different layer, which tells you what changed. The fetch happened
+either way, because the display name still has to come from somewhere. What
+differs is what the fetch carried: with the block the router took the address
+out of it and sent the display name alone, then discarded the whole customer
+anyway because \code{email} is \code{String!}. So the router \emph{can} prune a
+field out of a fetch it still makes. On the configuration Mosaic runs, it does
+not.
+
+I cannot tell you the block causes it, and the reason is worth more than the
+finding. With the block on, a \code{connection\_init} carrying no token is
+refused outright with \code{invalid JWT token in initial payload}, so there is
+no such thing as an anonymous subscription on that router. The two
+configurations therefore differ in the block and in whether the connection has
+any identity at all, and no experiment available to me varies one without the
+other.
+
+\index{subscriptions!the token that is never re-checked}%
+The same second router answers the question this chapter was supposed to be
+about, and its answer is still no. With a token valid for an hour in the initial
+payload the router validates it, exports it to Accounts correctly, and refuses
+the \code{@authenticated} field as \enquote{not authenticated} on every event.
+It reads the token well enough to let the connection open and well enough to
+forward it, and not well enough to answer its own directive with it.
+
+None of this is a gate step, because reproducing it needs the configuration that
+answers \code{401} to every anonymous request, and a gate that requires a broken
+graph is not a gate. It goes in this book's open items instead, to be asserted
+when the first bug is fixed.
+
+\index{subscriptions!the connection outlives the token}%
+And the question chapter~\ref{ch:real-time-in-a-federated-world} actually asked,
+whether a connection outlives the token that opened it, turns out to be
+unaskable here for the same reason. Reading the router's source, validation
+happens once, at the upgrade or at the initial payload, and the message loop
+that handles every later \code{subscribe} never re-authenticates. So the answer
+is almost certainly yes. I did not measure it, because a subscription this graph
+serves has no token to expire, and chapter~\ref{ch:resilience-and-performance}
+owns long-lived connections.
+
+\medskip
+What this chapter kept running into is that a rule is written in one place and
+the data it governs goes wherever a field points, with nothing relating the two
+except somebody remembering. It is why \code{Customer.email} carries two
+attributes, why an order had to be guarded twice, and why the one case where a
+layer I was relying on stepped aside was caught by counting requests at a
+subgraph rather than by a compiler, a composer or a review. It was not caught by
+reading the error payload either, which is the part worth carrying: the payloads
+told me the router was absent from a subscription and present over HTTP, and the
+count told me the router was doing the same thing in both and the selection set
+was what differed.
+
+Which is a fair place to stop, because the next part of this book is about the
+machinery underneath all of it, and the first thing it reads is the executor
+that has been enforcing half of these rules without ever being asked how.
+
+\index{subscriptions!authorizing one|)}%

@@ -1,0 +1,50 @@
+% Three places a rule can live, on one path. Referenced from chapter 15. Bare
+% tikzpicture; the figure environment, caption and label live at the call site.
+%
+% The point of the picture is that the three checkpoints are not
+% interchangeable: each one can say something the others cannot, and each one
+% sits where it does because that is where the thing it asks about is. The
+% dashed arrow is what makes the middle one necessary rather than redundant.
+\begin{tikzpicture}[
+    font=\small,
+    box/.style={draw, rounded corners=2pt, minimum width=18mm,
+                minimum height=7mm, align=center, font=\scriptsize},
+    gate/.style={draw, rounded corners=2pt, minimum width=24mm,
+                 minimum height=8mm, align=center, font=\scriptsize,
+                 fill=black!8},
+    flow/.style={-{Stealth[length=2mm]}},
+    bypass/.style={-{Stealth[length=2mm]}, dashed},
+    hangs/.style={gray},
+    note/.style={font=\scriptsize, gray, align=center, inner sep=1pt}
+  ]
+
+  % -- the path a request takes ---------------------------------------------
+  \node[box] (client)   at (0.7,0)  {client};
+  \node[box] (router)   at (4.0,0)  {router};
+  \node[box] (ordering) at (7.6,0)  {\code{ordering}};
+  \node[box] (row)      at (11.1,0) {the row};
+
+  \draw[flow] (client)   -- (router);
+  \draw[flow] (router)   -- (ordering);
+  \draw[flow] (ordering) -- (row);
+
+  % -- the rule each one is able to apply ------------------------------------
+  \node[gate] (r1) at (4.0,2.0)  {\code{@authenticated}\\\code{@requiresScopes}};
+  \node[gate] (r2) at (7.6,2.0)  {\code{[Authorize]}};
+  \node[gate] (r3) at (11.1,2.0) {\code{CustomerId}\\\code{== the subject}};
+
+  \draw[hangs] (r1) -- (router);
+  \draw[hangs] (r2) -- (ordering);
+  \draw[hangs] (r3) -- (row);
+
+  \node[note, anchor=south] at (4.0,2.6)  {read from the token,\\before any fetch};
+  \node[note, anchor=south] at (7.6,2.6)  {this process only,\\and no router sees it};
+  \node[note, anchor=south] at (11.1,2.6) {needs the row,\\so no schema can say it};
+
+  % -- and the door the first rule does not cover ----------------------------
+  \draw[bypass] (client.south) to[out=-45, in=-135] (ordering.south);
+  \node[note, anchor=north] at (4.15,-2.1)
+    {every service listens on a host port, so this request happens\\
+     and only the middle rule is left to refuse it};
+
+\end{tikzpicture}

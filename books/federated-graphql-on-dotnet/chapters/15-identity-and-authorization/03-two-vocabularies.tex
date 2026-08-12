@@ -1,0 +1,244 @@
+\section{Two Vocabularies, and What Survives Composition}
+\label{sec:ch15-two-vocabularies}
+\index{authorization!the two families of attribute|(}%
+
+Here is \code{Customer}, as Accounts declares it at this tag. Look at the last
+field and count the attributes:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+[Key("id")]
+public sealed record Customer(
+    Guid Id,
+    string DisplayName,
+    [property: Authenticated]
+    [property: Authorize]
+    string Email)
+\end{minted}
+
+Two attributes that read like synonyms. They come from different packages, they
+are enforced by different processes, and neither one does the other's job.
+
+\index{Authenticated@\code{[Authenticated]}!emits and does not enforce}%
+The first comes from the federation package,
+\code{HotChocolate.ApolloFederation}. It prints \code{@authenticated} into this
+service's published schema, the composer copies it into the router's field
+configuration, and the router refuses the field to a caller with no token.
+Inside this process it does nothing whatsoever.
+
+\index{Authorize@\code{[Authorize]}!enforces and does not compose}%
+The second comes from \code{HotChocolate.Authorization}, which Mosaic gets
+through the ASP.NET Core integration package that wires it to a policy engine.
+It puts middleware in front of the resolver in this service. It knows nothing
+about federation, and the composer, as we are about to see, throws it away.
+
+\subsection*{Why the first one cannot enforce anything}
+
+\index{HotChocolate.ApolloFederation@\code{HotChocolate.ApolloFederation}!what it references}%
+I expected to establish this with a grep and found something better. The
+federation package's own project file declares exactly one project reference:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+<ProjectReference Include="..\..\..\Core\src\Core\HotChocolate.Core.csproj" />
+\end{minted}
+
+\code{HotChocolate.Authorization} is a different package and is not among them,
+so there is no path from \code{[Authenticated]} to any authorization handler.
+This is not a gap somebody forgot to close. The attributes are schema
+annotations, they are documented as instructions to a supergraph router, and
+the package that owns them could not enforce them without taking a dependency it
+does not have. Read at tag \code{16.6.0}, commit \code{8fea46e}; the three
+attributes and the directive types they configure are in
+\code{Types/Directives/}, and it is the directive types that carry the
+\code{[Package(...)]} version gate, at federation v2.5 for \code{@authenticated}
+and \code{@requiresScopes} and v2.6 for \code{@policy}.
+
+The consequence is the thing to carry. A subgraph that declares
+\code{@requiresScopes} and nothing else is protected only for as long as every
+caller arrives through the router. For a graph whose services sit on a private
+network that may be a fair bet. For Mosaic, whose seven services publish host
+ports so that a reader can \code{curl} them, it is not a bet at all, and that is
+why \code{Customer.email} carries two attributes rather than one.
+
+\subsection*{What the composer keeps}
+
+\index{composition!the authorization field configuration}%
+Compose the eight subgraphs and the routing table gains something
+chapters~\ref{ch:composition} and~\ref{ch:enter-the-router} never saw:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{json}
+{
+  "typeName": "Query",
+  "fieldName": "customerById",
+  "authorizationConfiguration": {
+    "requiresAuthentication": true,
+    "requiredOrScopes": [{"requiredAndScopes": ["customers:read"]}]
+  }
+}
+\end{minted}
+
+Four fields carry one at this tag. Two details in that fragment are worth more
+than a glance.
+
+\index{requiresScopes@\code{@requiresScopes}!implies authentication}%
+The first is that \code{customerById} never said \code{@authenticated}
+anywhere. It carries \code{[RequiresScopes]} alone, and the composer wrote
+\code{requiresAuthentication: true} as well, because a caller who must hold a
+scope must first be somebody. One directive, two flags, and the consequence is
+that a schema review counting \code{@authenticated} annotations will undercount
+what the graph enforces.
+
+\index{requiresScopes@\code{@requiresScopes}!the shape of its argument}%
+The second is \code{requiredOrScopes} wrapping \code{requiredAndScopes}. The
+directive's argument is a list of lists: the outer list is an OR and the inner
+list an AND, so one scope is written \code{[["customers:read"]]} and
+\code{[["a","b"],["c"]]} means \code{a} and \code{b}, or else \code{c}. That
+reads oddly and it is the specification's shape rather than HotChocolate's
+invention. Applying \code{[RequiresScopes]} twice to one field appends a second
+OR branch rather than replacing the first.
+
+\subsection*{Three names for one scalar}
+
+\index{openfed\_\_Scope@\code{openfed\_\_Scope}}%
+Now introspect the router. The client-facing schema declares both directives,
+which is already interesting: chapter~\ref{ch:composition} found that a Cosmo
+execution config carries no \code{join\_\_} directives at all, and these two
+survive. What it declares is not quite what the subgraph published:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+subgraph:  directive @requiresScopes(scopes: [[String!]!]!) on ...
+composed:  directive @requiresScopes(scopes: [[openfed__Scope!]!]!) on ...
+           scalar openfed__Scope
+\end{minted}
+
+Three projects, three names for it. Apollo's reference says
+\code{federation\_\_Scope}~\autocite{apollo2026authdirectives}. Cosmo says
+\code{openfed\_\_Scope}. HotChocolate declares a \code{Scope} scalar of its
+own, then overrides the directive's argument to plain \code{String} with a
+\code{[GraphQLType]} attribute, so what a HotChocolate subgraph publishes is
+neither of those. The composer quietly substitutes its own and declares the
+scalar, so that the document still makes sense.
+
+Nothing breaks, because all three serialise as strings. What it costs is that
+\code{scalar openfed\_\_Scope} is now in Mosaic's published schema, visible to
+anyone who introspects the router, chosen by nobody. It has company:
+\code{scalar FieldSet} has been leaking the same way since
+chapter~\ref{ch:composition}, and chapter~\ref{ch:security-hardening} owns
+deciding whether a production graph does anything about either.
+
+\subsection*{What the composer throws away, and what it keeps by accident}
+
+\index{authorize@\code{@authorize}!printed, then dropped}%
+So much for the federation pair. Here is what happens to the other one.
+
+\code{@authorize} is printed in full into the SDL a composer reads. That
+surprised me, because its directive type calls \code{.Internal()}, and I had
+assumed that meant hidden. It does mean hidden, from
+\code{\{ \_\_schema \{ directives \{ name \} \} \}}, because \code{IsPublic} is
+consulted when building the introspection listing. The SDL printer behind
+\code{\_service \{ sdl \}} does not consult it, and \code{\_service \{ sdl \}}
+is the field a federation composer actually reads. So the committed
+\code{schema/accounts.graphql} carries this:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+type Query {
+  customerById(id: ID!): Customer
+    @authorize(policy: "CustomersRead")
+    @requiresScopes(scopes: [["customers:read"]])
+  ...
+}
+
+type Customer implements Node @key(fields: "id") {
+  id: ID!
+  displayName: String!
+  email: String! @authenticated @authorize
+}
+\end{graphqlsdl}
+
+together with a full \code{directive @authorize(...)} definition, because a
+subgraph schema is a document that has to stand on its own.
+
+Compose it and \code{@authorize} is gone, without being rejected or warned
+about: there are zero occurrences of the string in the client-facing schema, and
+no authorization configuration anywhere that came from it. That is correct
+behaviour. It is not a federation directive, the composer has never heard of it,
+and dropping an unknown directive is what a composer should do with one.
+
+What it does not drop is this:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+"""Defines when a policy shall be executed."""
+enum ApplyPolicy {
+  """Before the resolver was executed."""
+  BEFORE_RESOLVER
+  """After the resolver was executed."""
+  AFTER_RESOLVER
+  """The policy is applied in the validation step before the execution."""
+  VALIDATION
+}
+\end{minted}
+
+\index{ApplyPolicy@\code{ApplyPolicy}!in the published graph}%
+That enum is in Mosaic's published client schema. It is there because it is the
+type of \code{@authorize}'s \code{apply} argument, and the directive that gave
+it a reason to exist was removed while it was not. Anybody who introspects this
+graph, or generates a client from it, is told about the resolver execution
+phases of one subgraph's server library.
+
+I am confident about where it came from rather than guessing, because the case
+is committed both ways: strip every \code{@authorize} usage and both definitions
+out of the three subgraphs that carry them, recompose, and the authorization
+table is identical while \code{ApplyPolicy} disappears. Two things fall out of
+that. The enum is the directive's fault, and a subgraph that stops enforcing
+anything locally composes to exactly the same routing table as one that does,
+which is the whole problem with having the rule written twice.
+
+\subsection*{The directive that composes and does nothing}
+
+\index{policy@\code{@policy}!accepted and discarded}%
+There is a third federation directive, and this is the part of the chapter I
+would most like to be wrong about.
+
+\code{@policy} is in Apollo's federation directive
+reference~\autocite{apollo2026authdirectives}, beside the two that work.
+HotChocolate ships a \code{[Policy]} attribute that emits it, gated at
+federation v2.6, which is the version this stack composes at by default. So a
+subgraph author can reach for it with no ceremony at all.
+
+So annotate a field with it. Inventory's \code{availableQuantity} gets this,
+with the \code{@link} import and the directive definition beside it:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+availableQuantity: Int! @policy(policies: [["stock:read"]])
+\end{graphqlsdl}
+
+Compose, and wgc 0.129.7 exits zero and prints its ordinary success line. The
+composed config has no authorization configuration for that field. Not an empty
+one: none. The client schema has no \code{@policy} in it. There is no warning
+and no error.
+
+The reason is in the composer's source. Version 0.63.2 of
+\code{@wundergraph/composition} defines \code{@authenticated} and
+\code{@requiresScopes} in its directive table and has no \code{@policy} entry of
+any kind, under that name or Cosmo's own. The router agrees: its authorizer
+enforces the two and mentions no policy.
+
+So the sequence is: a directive the specification defines, which the subgraph
+library ships an attribute for, annotated onto a field by somebody who has read
+the specification, accepted by the composer, and enforced by nothing. There is
+no step in that chain where anyone is told.
+
+Chapter~\ref{ch:real-time-in-a-federated-world} ended on a directive the router
+advertises and does not honour, and said that a directive in a published schema
+is a promise. This is the same failure with the polarity reversed and the stakes
+raised. \code{@defer} promises a client something the graph will not do, and
+costs a loading state. \code{@policy} promises a \emph{developer} something the
+graph will not do, and costs whatever was behind the field. Both are committed
+as cases now, so a release that fixes either fails the gate rather than making a
+chapter quietly wrong.
+
+\medskip
+That settles what the router knows. The next question is what reaches the
+service behind it, because two of Mosaic's three layers live there and neither
+can do anything without a caller.
+
+\index{authorization!the two families of attribute|)}%

@@ -1,7 +1,49 @@
 \chapter{Identity and Authorization Across the Graph}
 \label{ch:identity-and-authorization}
 
-\emph{Not yet drafted.} Planned scope: JWT validation at router versus subgraph, claim forwarding, HotChocolate authorization, \code{@authenticated} and \code{@requiresScopes}, and public versus internal graphs.
+Thirteen chapters of building a graph, and anybody who can reach it can read
+anything in it. \code{Query.ordersByCustomer} takes a customer identifier and
+hands back that customer's orders, to whoever asked. \code{Customer.email} sits
+on the storefront, two hops from any product page. \code{submitReview} takes the
+author's identifier as an argument and believes it, so a client can post a
+review in anybody's name.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/15-identity-and-authorization/01-section-name}
+None of that is an oversight I am about to apologise for. It is what a graph
+looks like when nobody has asked the question yet, and asking it late is the
+normal case: authorization is the thing that gets added to a system that already
+works, by someone who did not design it, under a deadline. What makes it hard
+here is not that Mosaic is unusual. It is that a federated graph has more than
+one place to put a rule, and the places do not agree about what a rule can say.
+
+There are three of them. The router can refuse a field from the token alone,
+before it fetches anything, using directives the composer copied out of a
+subgraph's published schema. The subgraph can refuse the same field in its own
+process, using an attribute the composer throws away. And a resolver holding the
+row can refuse this particular order to this particular caller, which is the
+only rule that matters most of the time and the only one no schema can express.
+Getting a field right can mean writing it three times, and nothing in the build
+checks that the three agree.
+
+By the end of this chapter Mosaic has all three, a token, and four guarded
+fields. It also has three findings I did not expect and would rather have been
+wrong about: a directive the specification defines that this composer discards
+without a word, a router setting that turns on authentication for subscriptions
+by taking the public storefront offline, and a router that stops enforcing a
+guarded field as soon as the caller asks for a public one beside it. The last of
+those is the one that decides how much of this chapter you can skip, and I got
+it wrong the first time.
+
+Everything the composer says was said by wgc 0.129.7, which bundles version
+0.63.2 of \code{@wundergraph/composition}. The router is Cosmo 0.337.1. Every
+line of library source is HotChocolate at tag \code{16.6.0}, commit
+\code{8fea46e}. The tokens are HS256, signed with a key that is in a public
+repository, which is a development convenience and would be a finding anywhere
+else.
+
+\input{chapters/15-identity-and-authorization/01-nothing-is-authorized}
+\input{chapters/15-identity-and-authorization/02-a-token-at-the-router}
+\input{chapters/15-identity-and-authorization/03-two-vocabularies}
+\input{chapters/15-identity-and-authorization/04-the-claim-that-crosses}
+\input{chapters/15-identity-and-authorization/05-the-field-that-returns-anything}
+\input{chapters/15-identity-and-authorization/06-a-connection-with-no-identity}
+\input{chapters/15-identity-and-authorization/07-your-turn}

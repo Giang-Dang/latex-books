@@ -1,0 +1,192 @@
+\section{A Token at the Router}
+\label{sec:ch15-a-token-at-the-router}
+\index{Cosmo Router!JWT validation|(}%
+
+The router reads tokens because a block in \code{router/config.yaml} tells it
+how. Mosaic's is three lines of substance:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{yaml}
+authentication:
+  jwt:
+    jwks:
+      - symmetric_algorithm: HS256
+        secret: "${MOSAIC_JWT_SECRET}"
+        header_key_id: mosaic-dev
+\end{minted}
+
+\index{authentication@\code{authentication}!the symmetric branch}%
+The third line is not optional and I found that out the way you would expect.
+The schema for this block is a \code{oneOf}: one branch wants a \code{url} and
+the other wants \code{secret}, \code{symmetric\_algorithm} and
+\code{header\_key\_id} together. Leave the key id out and the container does not
+start:
+
+\begin{minted}[fontsize=\scriptsize,breaklines,breakanywhere]{text}
+Could not load config: errors while loading config files: router config
+validation error for /etc/mosaic-router/config.yaml: jsonschema validation failed
+with 'https://raw.githubusercontent.com/wundergraph/cosmo/main/router/pkg/config/config.schema.json#'
+- at '/authentication/jwt/jwks/0': oneOf failed, none matched
+  - at '/authentication/jwt/jwks/0': validation failed
+    - at '/authentication/jwt/jwks/0': missing property 'url'
+    - at '/authentication/jwt/jwks/0': not failed
+  - at '/authentication/jwt/jwks/0': missing property 'header_key_id'
+\end{minted}
+
+Read that against chapter~\ref{ch:real-time-in-a-federated-world}, where wgc
+took a misspelled key without a word and quietly used a default. Two tools in
+one ecosystem, and they disagree about whether an unknown or missing
+configuration key is a bug report or a shrug. The router is right and it is not
+close: this message names the file, the JSON pointer and both branches it tried.
+
+\index{header\_key\_id@\code{header\_key\_id}!required to start, not to validate}%
+Having insisted on a key id, the router then does not require one of a token. I
+minted one with no \code{kid} header at all, which
+\code{scripts/mint-token.mjs --no-kid} still does, and the router accepted it
+and answered the query. The configuration is mandatory and the thing it names is
+not checked. That is a small finding and it is the kind that costs an afternoon,
+because the natural conclusion from the startup failure is that key ids matter
+here.
+
+\subsection*{What it logs, which is nothing}
+
+\index{Cosmo Router!silence about authentication}%
+Start the router with that block and compare its output to a run without it.
+There is no line saying JWT validation is on. Not at \code{info}, and not at
+\code{debug}: grepping the whole startup log for \code{auth}, \code{jwt} and
+\code{jwk} matches nothing at all.
+
+That is worth sitting with for a second, because chapter~\ref{ch:enter-the-router}
+made a point of how much this process says about itself at startup. It names its
+listen address, its playground, its introspection setting, the config file it is
+watching, and every Cosmo Cloud feature it is doing without. It does not mention
+that it has begun checking signatures.
+
+The two ways to find out are both behavioural. Send a token that is wrong and
+you get a \code{401}. Send one that is right and the response carries an
+\code{X-Authenticated-By: jwks} header. Neither of those is something you would
+think to look for if you were trying to answer \enquote{did my config load}, and
+the first thing most people do with a security setting is check that it took.
+
+\subsection*{Anonymous, wrong, and expired are three different answers}
+
+\index{authorization@\code{authorization}!the block and its defaults}%
+The companion block decides what happens to a request with no token at all:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{yaml}
+authorization:
+  require_authentication: false
+  reject_operation_if_unauthorized: false
+  enable_pre_fetch_field_authorization: true
+\end{minted}
+
+The first two are defaults written out, because both are decisions. The first of
+them, left false, is what keeps the storefront public, and Mosaic needs that: it
+sells to people who have not signed in. A field that needs a caller says so
+itself, and an anonymous request is refused that field whatever this setting is.
+The global switch decides whether an anonymous request may enter the graph at
+all, not whether it may have everything in it. Which layer does the refusing is
+a separate question with a more interesting answer, and
+section~\ref{sec:ch15-a-connection-with-no-identity} is where I measure it.
+
+So there are three outcomes rather than two. No token gets you in as nobody. A
+token that will not validate, including an expired one, gets a flat \code{401}
+before anything is planned:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+HTTP/1.1 401 Unauthorized
+{"errors":[{"message":"unauthorized"}]}
+\end{minted}
+
+\index{tokens!ClockSkew@\code{ClockSkew}}%
+A token expires when it says it does, in this repository, because the shared
+security defaults set \code{ClockSkew} to zero. The default is five minutes,
+which is the right production setting and makes a one-second token useless as a
+demonstration.
+
+And a token that validates but lacks the scope a field wants gets refused with
+the scope named back:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{json}
+{"errors":[{"message":"Unauthorized to load field 'Query.customerById', Reason:
+  missing required scopes.","path":["customerById"],
+  "extensions":{"code":"UNAUTHORIZED_FIELD_OR_TYPE"}}],
+ "data":{"customerById":null},
+ "extensions":{"authorization":{"missingScopes":[{"coordinate":
+   {"typeName":"Query","fieldName":"customerById"},"required":[["customers:read"]]}],
+  "actualScopes":["reviews:write"]}}}
+\end{minted}
+
+\code{required} is a list of lists, and section~\ref{sec:ch15-two-vocabularies}
+is where that shape comes from. What I want to point at here is that the router
+tells a client exactly which scope it was missing and exactly which ones it
+holds. That is generous, and whether it is too generous is a question
+chapter~\ref{ch:security-hardening} should answer rather than this one.
+
+\subsection*{The setting that decides whether a refusal costs anything}
+
+\index{authorization!pre-fetch field authorization}%
+The third line is the one that is not a default, and it is there because of a
+number rather than a principle.
+
+Left off, which is how the router ships, an anonymous request for
+\code{Query.customerById} is planned, sent to Accounts, answered, and then the
+field is discarded. Accounts logs one \code{Mosaic.RequestTimeline} line per
+request it serves, so count those either side of one refused request:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+enable_pre_fetch_field_authorization   requests Accounts served
+off (the default)                      1
+on                                     0
+\end{minted}
+
+The client can see it too, because with the setting off the answer carries both
+refusals, the subgraph's nested inside the router's:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'accounts'.","extensions":
+  {"errors":[{"message":"The current user is not authorized to access this resource.",
+   "path":["customerById"],"extensions":{"code":"AUTH_NOT_AUTHENTICATED"}}],
+   "serviceName":"accounts","statusCode":200}},
+  {"message":"Unauthorized to load field 'Query.customerById', Reason: not
+   authenticated.","path":["customerById"],
+   "extensions":{"code":"UNAUTHORIZED_FIELD_OR_TYPE"}}],
+ "data":{"customerById":null}}
+\end{minted}
+
+and with it on, one:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{json}
+{"errors":[{"message":"Unauthorized to load field 'Query.customerById', Reason: not
+   authenticated.","path":["customerById"],
+   "extensions":{"code":"UNAUTHORIZED_FIELD_OR_TYPE"}}],
+ "data":{"customerById":null}}
+\end{minted}
+
+One round trip is not worth a configuration change. What is worth it is the
+other half: with the setting off, data the caller was never allowed to see was
+loaded out of a database and assembled in a process on their behalf, and then
+thrown away. Nothing went wrong. Something has to go wrong later, in how a
+response is put together or logged or traced, for that to matter, and the point
+of not loading it is that the later thing then has nothing to leak.
+
+Both rows are gated, in two different ways, because they are visible in two
+different places. Both verification scripts count the Accounts requests a
+refused field costs and require zero. And a case in
+\code{scripts/router-cases.mjs} starts two routers differing only in that
+setting and asserts that the nested \code{serviceName} error is present in one
+reply and absent from the other, which is the same fact as the count without
+needing a subgraph's console to read it.
+
+One caution, which took me until
+section~\ref{sec:ch15-a-connection-with-no-identity} to measure and which I
+would rather you carried from here: the zero in that table is a root field being
+refused, and a root field is a whole fetch. A guarded field hanging off an
+entity that the caller is also entitled to read is a different case, and the
+setting does less there than its name suggests.
+
+\medskip
+That is the router holding up its end. What it is enforcing, though, came out of
+the subgraphs' own schemas, and the way those two families of annotation reach
+it is stranger than it looks.
+
+\index{Cosmo Router!JWT validation|)}%

@@ -1,0 +1,158 @@
+\section*{Your turn}
+
+Check out tag \code{ch15} of the companion repository and run \code{npm ci}
+once. Exercises 1 to 6 and 9 to 11 need the database, the broker, the seven
+services and the router. Exercise 7 needs node and nothing started. Exercise 8
+needs Docker and the seven services, and starts two routers of its own on ports
+of their own. Exercise 10 restarts the router on an edited configuration and
+puts it back, so do it last of the running ones or expect the others to answer
+differently while it is in progress.
+
+The compose line is chapter~\ref{ch:real-time-in-a-federated-world}'s, unchanged:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+docker compose up -d --build mosaic-db mosaic-nats mosaic-catalog \
+    mosaic-pricing mosaic-inventory mosaic-accounts mosaic-reviews \
+    mosaic-ordering mosaic-nodes mosaic-router
+docker compose ps
+\end{minted}
+
+Ten containers, all healthy. Four of them now want a signing key, and the
+compose file supplies a development default, so nothing extra is needed here. A
+service you start by hand with \code{dotnet run} will refuse to start without
+\code{MOSAIC\_JWT\_SECRET} and will say which variable it wanted.
+
+Every exercise below needs a customer's global object identifier. Ask the router
+for one, with no token:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+{ products { reviews(first: 1) { nodes { author { id displayName } } } } }
+\end{minted}
+
+\begin{enumerate}
+  \item \textbf{Mint one and read your own email.} With an identifier from
+  above:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/mint-token.mjs --customer "<id>"
+  \end{minted}
+
+  Send \code{\{ customerById(id: "<id>") \{ displayName email \} \}} to port
+  3002 three times: with no \code{Authorization} header, with
+  \code{Bearer <token>}, and with \code{Bearer nonsense}. Three different
+  answers, and only one of them is a \code{401}. Work out which of the three the
+  router decided and which it passed to a subgraph.
+
+  \item \textbf{Ask for a scope you do not have.} Mint a second token, this
+  time passing \code{--scopes} with only the review-writing one in it, and send
+  the same query. Read the \code{authorization} member of \code{extensions} in
+  the reply: it names the scope the field wanted and the scopes you brought.
+  Decide whether you
+  would ship a graph that tells a caller that much, and note that
+  chapter~\ref{ch:security-hardening} is where that argument belongs.
+
+  \item \textbf{Count what a refusal costs.} Count the
+  \code{Mosaic.RequestTimeline} lines in the Accounts console, send the
+  anonymous version of exercise 1 again, and count them again. The delta is
+  zero. Now open \code{router/config.yaml}, set the pre-fetch field
+  authorization key to \code{false}, recreate the router, and do it once more.
+  The delta is one, and the error in the reply grows a second layer with
+  \code{serviceName} in it.
+
+  \item \textbf{Go round the router.} Send the same query straight to Accounts
+  on port 5104, with no token and then with one. The subgraph refuses it on its
+  own, in HotChocolate's wording rather than the router's. Now open Accounts'
+  \code{Customer} record, take the \code{[Authorize]} attribute off
+  \code{email} and leave \code{[Authenticated]} where it is, rebuild that one
+  service, and do it again. Note what the graph still refuses and what it now
+  hands over, and to whom.
+
+  \item \textbf{Open the second door.} Find an order: walk the review authors,
+  minting a token for each, until \code{ordersByCustomer} returns one. Then ask
+  \code{node(id: "<that order>") \{ ... on Order \{ total \{ amount \} \} \}}
+  three ways: as the owner, as a different customer, and with no token. Then ask
+  for an order identifier that decodes but does not exist, as a different
+  customer, and compare that answer to the second one byte for byte.
+
+  \item \textbf{Take the check out and watch the door open.} In Ordering's
+  \code{Order} record, comment out the ownership condition in
+  \code{ResolveReferenceAsync}, rebuild that service alone, and repeat the
+  middle case of exercise 5. The query field beside it still refuses you. Put
+  it back.
+
+  \item \textbf{Find out what a composer keeps.} No services needed:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/auth-cases.mjs --print baseline
+node scripts/auth-cases.mjs --print policy-composes-and-enforces-nothing
+node scripts/auth-cases.mjs --print authorize-is-dropped-and-takes-nothing-with-it
+  \end{minted}
+
+  The first prints the four guarded fields and the directives that reach a
+  client. The second annotates a field with a directive Apollo's specification
+  defines and shows you the silence. In the third, find the enum that survives
+  the removal of everything that referenced it, and then find it again in the
+  first.
+
+  \item \textbf{Break the storefront with a security setting.}
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/router-cases.mjs --print websocket-auth-closes-the-public-graph
+  \end{minted}
+
+  Two routers, one block of configuration between them, and the same anonymous
+  request for \code{\_\_typename} answered two different ways. Then decide what
+  you would do if you needed authenticated subscriptions and a public catalogue
+  on the same graph next week.
+
+  \item \textbf{Watch a subscription have no identity.} Open
+  \code{onReviewAdded} on a product, selecting \code{author \{ displayName \}},
+  and submit a review from a customer who has not reviewed that product. It
+  arrives. Now open the same subscription selecting
+  \code{author \{ displayName email \}} and submit another. Read which service
+  refused it, and which service did not.
+
+  \item \textbf{Then break your own conclusion.} Exercise 9 is the pair I
+  reasoned from, and on its own it points at the wrong answer, so run the two
+  controls it is missing. First open the subscription selecting
+  \code{author \{ email \}} with no display name, and submit again: a different
+  layer refuses it. Then send both selections over ordinary HTTP through
+  \code{browseProducts} and count \code{Mosaic.RequestTimeline} lines in the
+  Accounts console either side of each:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+docker logs mosaic-graph-mosaic-accounts-1 | grep -c Mosaic.RequestTimeline
+  \end{minted}
+
+  The transport turns out to make no difference and the selection set makes all
+  of it. Then set \code{enable\_pre\_fetch\_field\_authorization} to
+  \code{false}, recreate the router, and count again: one of the two zeroes
+  becomes a one, which is what tells you the setting caused it rather than the
+  planner. Write down how many of those runs you would have made before writing
+  the sentence.
+
+  \item \textbf{Verify it in Postman.} The collection for this chapter is
+  \code{postman/mosaic-auth}. It mints nothing: newman cannot sign a token, so
+  the two it uses are passed in.
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+npx newman run postman/mosaic-auth.postman_collection.json \
+    -e postman/mosaic-auth.local.postman_environment.json \
+    --env-var customerId="<id>" \
+    --env-var token="$(node scripts/mint-token.mjs --customer '<id>')" \
+    --env-var scopelessToken="$(node scripts/mint-token.mjs --customer '<id>' --scopes 'reviews:write')"
+  \end{minted}
+
+  Six requests, eighteen assertions, all green at \code{ch15}. Two of those
+  requests do not go to the router at all: they ask Accounts directly, once
+  without a token and once with one. Work out why the collection would be worth
+  much less without them.
+\end{enumerate}
+
+Exercise 4 is the one to do properly. Everything else in this chapter is a
+property of a tool; that one is a property of a decision, and it is the decision
+most graphs get wrong in the same direction. A federation directive is a note to
+a router. If the router is the only thing reading your notes, then every port
+you publish is a rule you are not enforcing, and nothing in a schema, a
+composition check or a review diff will point at it.
+Chapter~\ref{ch:security-hardening} is where the rest of the doors get counted.
