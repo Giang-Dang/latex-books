@@ -1,0 +1,57 @@
+% What Compile builds eagerly, and what execution builds later. Referenced from
+% chapter 16. Bare tikzpicture; the figure environment, caption and label live
+% at the call site.
+%
+% The point of the picture is that the dividing line runs through the middle of
+% one object. The root selection set is built once at position nine; every
+% selection set below an abstract field is built the first time a resolver
+% actually returns that concrete type, and written into the same cached
+% Operation that other requests are reading. The dashed boxes are the ones that
+% do not exist yet when the operation is called compiled.
+\begin{tikzpicture}[
+    font=\small,
+    box/.style={draw, rounded corners=2pt, minimum width=24mm,
+                minimum height=7mm, align=center, font=\scriptsize},
+    later/.style={draw, dashed, rounded corners=2pt, minimum width=22mm,
+                  minimum height=7mm, align=center, font=\scriptsize},
+    op/.style={draw, thick, rounded corners=2pt, minimum width=32mm,
+               minimum height=9mm, align=center, font=\scriptsize,
+               fill=black!8},
+    flow/.style={-{Stealth[length=2mm]}},
+    lazy/.style={-{Stealth[length=2mm]}, dashed},
+    note/.style={font=\scriptsize, gray, align=center, inner sep=1pt},
+    hdr/.style={font=\scriptsize\itshape, align=center}
+  ]
+
+  % -- the eager half, at position nine --------------------------------------
+  \node[hdr] at (2.2,2.4) {position nine, once};
+  \node[op]  (op)   at (2.2,1.5) {the compiled \code{Operation}};
+  \node[box] (root) at (2.2,0.1) {root selection set};
+
+  \draw[flow] (op) -- (root);
+
+  % -- the lazy half, at execution time --------------------------------------
+  \node[hdr] at (8.6,2.4) {later, on first sight of a type};
+  \node[box] (field) at (8.6,1.5) {the \code{node} selection};
+
+  \node[later] (t1) at (6.4,0.1)  {for \code{Product}};
+  \node[later] (t2) at (10.8,0.1) {for \code{Order}};
+  \node[later] (t3) at (8.6,-1.1) {for \code{Review}};
+
+  \draw[flow] (root) -- (field);
+  \draw[lazy] (field) -- (t1);
+  \draw[lazy] (field) -- (t2);
+  \draw[lazy] (field) -- (t3);
+
+  \node[note, anchor=north] at (8.6,-1.5)
+    {each compiled the first time a resolver returns that type,\\
+     then memoised against the pair (selection id, type name)};
+
+  % -- and what it costs the object ------------------------------------------
+  \node[note, anchor=north] at (5.4,-2.6)
+    {The memo table, the element array and the id counter all live on the cached
+     \code{Operation},\\
+     and are written under a lock while other requests read it. Both caches
+     report a hit throughout.};
+
+\end{tikzpicture}

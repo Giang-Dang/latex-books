@@ -1,7 +1,52 @@
 \chapter{Inside HotChocolate}
 \label{ch:inside-hotchocolate}
 
-\emph{Not yet drafted.} Planned scope: The executor end to end: operation compiler, execution plans, middleware chains, resolver compilation, and DataLoader scheduling, pinned to 16.x source tags.
+Chapter~\ref{ch:the-life-of-a-request} printed a list of thirteen middleware and
+stopped at the last one on it, which is the line that hands a compiled operation
+to the executor. Everything on the far side of that line is this chapter.
 
-% Drafting adds one file per section here, paths from the book root, e.g.:
-% \input{chapters/16-inside-hotchocolate/01-section-name}
+Four things were written down as unchecked at the time, which is the only reason
+they are not mine to remember wrong: which validation rules survive a document
+cache hit, what happens to compilation when a burst of identical requests
+arrives at once, what the diagnostic event called \code{RunTask} actually
+counts, and where the two authorization middleware
+chapter~\ref{ch:identity-and-authorization} located in a startup log live in the
+source. All four are paid here.
+
+\index{HotChocolate!reading the executor}%
+Reading an executor is not the same kind of work as the rest of this book. There
+is no composer to disagree with and no router to configure. There is a source
+tree, a debugger's worth of patience, and the discipline of checking that the
+thing you are describing is the thing you ran. Every listing below names the
+file it came out of, and the ones that are measurements say what produced them.
+
+Three of the findings surprised me. The number this book has printed since
+chapter~\ref{ch:the-life-of-a-request} counts something narrower than its name
+suggests, and the event sitting next to it counts nothing at all on any request
+Mosaic serves. A compiled operation is not finished when it goes into the cache:
+it keeps compiling, under a lock, for as long as it lives there, and what it
+compiles depends on what your traffic returns. And one line
+chapter~\ref{ch:identity-and-authorization} added to three services, for reasons
+that had nothing to do with caching, stopped those three skipping validation on
+every repeat request they will ever serve.
+
+That last one is the one I would want to know about, and it is invisible from
+every artefact this book has learned to read: the schema does not change, so
+nothing composed from it changes either. It took a control before I believed it.
+I added the same line to a service with nothing guarded in it at all, and
+watched the same thing happen there.
+
+Every line of library source here is HotChocolate at tag \code{16.6.0}, commit
+\code{8fea46e}~\autocite{chillicream2026source}, cloned locally rather than read
+a page at a time. The companion repository is at tag \code{ch16}, at which no
+Mosaic service changes by a line: what the tag adds is
+\code{samples/executor-internals}, five cases that assert the facts this chapter
+prints, and two new steps in each verification script.
+
+\input{chapters/16-inside-hotchocolate/01-what-compiling-produces}
+\input{chapters/16-inside-hotchocolate/02-one-compilation-and-an-operation-that-keeps-compiling}
+\input{chapters/16-inside-hotchocolate/03-pure-or-a-task}
+\input{chapters/16-inside-hotchocolate/04-two-stacks-and-a-preference}
+\input{chapters/16-inside-hotchocolate/05-when-a-batch-goes-out}
+\input{chapters/16-inside-hotchocolate/06-the-middleware-that-will-not-run}
+\input{chapters/16-inside-hotchocolate/07-your-turn}

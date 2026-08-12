@@ -1,0 +1,302 @@
+\section{Three Middleware That Exist So a Request Will Not Run}
+\label{sec:ch16-the-middleware-that-will-not-run}
+\index{request pipeline!middleware that refuse|(}%
+
+Chapter~\ref{ch:the-life-of-a-request} printed thirteen middleware and explained
+twelve of them. The one it listed and left alone was
+\code{SkipWarmupExecutionMiddleware} at position ten, which is a good name for
+something whose purpose is not obvious.
+Chapter~\ref{ch:identity-and-authorization} then added two more to three
+services and located them by reading a startup log, which told it where they sat
+and nothing about what they do. All three are in this section, and the last of
+them turns out to have done something neither chapter noticed.
+
+\subsection*{Position ten, and the request that is thrown away}
+
+\index{warmup requests!the middleware at position ten}%
+Here is the whole of \code{SkipWarmupExecutionMiddleware.cs}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+public async ValueTask InvokeAsync(RequestContext context)
+{
+    if (context.IsWarmupRequest())
+    {
+        context.Result = new WarmupExecutionResult();
+        return;
+    }
+
+    await next(context).ConfigureAwait(false);
+}
+\end{minted}
+
+The interesting part is not the code, it is the address. Position ten sits after
+the document cache, the parser, validation, the cost analyzer, the operation
+cache and the compiler, and before variable coercion and execution. So a warmup
+request is parsed, validated, costed and compiled, and then dropped on the
+floor. It fills the caches and touches no resolver, no variable coercion and no
+database. Everything expensive about a first request except the part that has
+side effects.
+
+\index{warmup requests!registering one}%
+You get one by registering a warmup task.
+\code{RequestExecutorManager.Warmup.cs} runs them when the executor is created:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+var warmupTasks = executor.Schema.Services
+    .GetServices<IRequestExecutorWarmupTask>();
+
+if (!isInitialCreation)
+{
+    warmupTasks = warmupTasks.Where(t => !t.ApplyOnlyOnStartup);
+}
+
+foreach (var warmupTask in warmupTasks)
+{
+    await warmupTask.WarmupAsync(executor, cancellationToken).ConfigureAwait(false);
+}
+\end{minted}
+
+They run one after another rather than together, and \code{ApplyOnlyOnStartup}
+distinguishes the first creation from a later one, which is what a schema reload
+produces. Note where they are resolved from: the schema service provider, not
+the application's. That is the same distinction that obliged
+\code{MosaicSubgraphDefaults} to hand the logger factory across with
+\code{AddApplicationService}, so that
+chapter~\ref{ch:the-life-of-a-request}'s listener could find one, and it bites
+in the same way.
+
+\index{warmup requests!marked in process only}%
+The marker, in \code{OperationRequestBuilderExtensions.cs}, is worth one
+paragraph because it looks alarming and is not:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+/// Marks this request as a warmup request that will bypass security measures and skip execution.
+public static OperationRequestBuilder MarkAsWarmupRequest(
+    this OperationRequestBuilder builder)
+    => builder.SetGlobalState(ExecutionContextData.IsWarmupRequest, true);
+\end{minted}
+
+It is set through global state on a request builder. An HTTP client sends a
+query, variables, an operation name and extensions, and has no route to global
+state at all, so nothing outside your own process can mark a request this way.
+As for the plural in that comment, exactly two middleware in the whole
+repository consult the flag: this one, and the one that enforces
+persisted-operations-only, which waives the requirement for a warmup request.
+One security measure, and it belongs to
+chapter~\ref{ch:security-hardening}'s subject rather than this one.
+
+\index{warmup requests!measured}%
+Measured on the sample, a warmed executor answers its first client request with
+the operation already compiled:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+== warmup-fills-the-operation-cache
+   first request, no warmup task -> document cache hits 0, operation cache hits 0
+   first request, warmed         -> document cache hits 0, operation cache hits 1
+   PASS
+\end{minted}
+
+\index{document cache!needs an identifier to be consulted}%
+The document cache stays cold there, and that is not the warmup's doing. It is a
+difference between the two harnesses this book has used, and it is worth knowing
+before you instrument anything in process. \code{DocumentCacheMiddleware} only
+looks in the cache when the request carries a document id or a document hash,
+and only stores one when the parsed document ended up with an id. Over HTTP the
+transport supplies a hash and this is invisible; a request built in process from
+source text carries neither, so there is no lookup to hit. Mosaic's own
+timelines report document cache hits all day, which is the same code behaving
+differently because the request arrived differently.
+
+\subsection*{The two that arrived with authorization}
+
+\index{authorization!the two middleware, in source}%
+One call in \code{AuthorizeRequestExecutorBuilder.cs} registers both, and a
+validation rule with them:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+builder.AddValidationRule(
+    (s, _) => new AuthorizeValidationRule(
+        s.GetRequiredService<AuthorizationCache>()));
+
+var prepareAuthorization = PrepareAuthorizationMiddleware.Create();
+builder.UseRequest(
+    prepareAuthorization.Middleware,
+    key: prepareAuthorization.Key,
+    before: WellKnownRequestMiddleware.DocumentValidationMiddleware);
+
+var authorizeRequest = AuthorizeRequestMiddleware.Create();
+builder.UseRequest(
+    authorizeRequest.Middleware,
+    key: authorizeRequest.Key,
+    after: WellKnownRequestMiddleware.DocumentValidationMiddleware);
+\end{minted}
+
+So chapter~\ref{ch:identity-and-authorization} read the startup log correctly,
+and this is the line that put them there, using the named-neighbour mechanism
+chapter~\ref{ch:the-life-of-a-request} described for the cost analyzer.
+
+\code{PrepareAuthorizationMiddleware.cs} prepares exactly one thing: it resolves
+the authorization handler out of the request scope and stores it in a request
+feature. It has to run before validation because the validation rule registered
+alongside it runs during validation, and because everything downstream asks for
+that handler and throws if nobody put it there.
+
+\index{authorization!refusing by not calling next}%
+\code{AuthorizeRequestMiddleware.cs} is the enforcing half, and it refuses by
+declining to continue:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+if (result is not AuthorizeResult.Allowed)
+{
+    context.Result = CreateErrorResult(result);
+    return;
+}
+\end{minted}
+
+That \code{return} is the whole mechanism behind an \code{[Authorize]} in
+validation mode refusing a request before any resolver runs: the pipeline stops
+there, above the operation cache, the compiler and the executor. The apply-policy
+enum has three members. \code{BeforeResolver}, the
+default, and \code{AfterResolver} are both a field middleware inserted per
+guarded field, checking before or after the resolver runs. \code{Validation}
+gets no field middleware at all, and is handled here. Mosaic uses the default
+everywhere, which is why chapter~\ref{ch:identity-and-authorization}'s refusals
+came back as field errors with a path and an HTTP 200 rather than as a bare
+401.
+
+\subsection*{And what that cost, which nobody was watching}
+
+\index{validation!the non-cacheable rule}%
+Chapter~\ref{ch:the-life-of-a-request} recorded, as the first of its three
+unverified items, that it did not know which shipped validation rules are
+non-cacheable, and warned against generalising. Good instinct, wrong worry. The
+rule that matters did not exist in this graph then, and
+chapter~\ref{ch:identity-and-authorization} installed it.
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+public bool IsCacheable => false;
+\end{minted}
+
+That is \code{AuthorizeValidationRule.cs}, and the property is hard-coded. It is
+not conditioned on any field using \code{apply: Validation}, or on any field
+being guarded, or on anything else. It is registered unconditionally by the call
+above. And \code{DocumentValidator.cs} computes its verdict once, when it is
+built:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+_nonCacheableRules = [.. rules.Where(rule => !rule.IsCacheable)];
+...
+public bool HasNonCacheableRules => _nonCacheableRules.Length > 0;
+\end{minted}
+
+which \code{DocumentValidationMiddleware.cs} then consults on every request:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{csharp}
+if (!documentInfo.IsValidated || _documentValidator.HasNonCacheableRules)
+{
+    using (_diagnosticEvents.ValidateDocument(context))
+    {
+        var result =
+            _documentValidator.Validate(
+                context.Schema,
+                documentInfo.Id,
+                documentInfo.Document,
+                context.Features,
+                documentInfo.IsValidated);
+\end{minted}
+
+\index{document cache!validation is narrowed, not skipped}%
+Two things follow. The smaller one is that
+chapter~\ref{ch:the-life-of-a-request} described a binary where the code has a
+narrowing: that last argument is \code{onlyNonCacheable}, and on a cache hit it
+is true, so a validator with non-cacheable rules re-runs only those rather than
+all of them. The larger one is that merely calling \code{AddAuthorization} is
+enough to re-open the validation phase on every document-cache hit that service
+will ever serve.
+
+\index{validation!measured across the seven subgraphs}%
+Which is a claim about the real graph, so here is the real graph. The same
+document sent to each of the seven subgraphs three times, and the last timeline
+line each of them logged:
+
+\begin{minted}[fontsize=\scriptsize,breaklines,breakanywhere]{text}
+catalog     parse - validate - compile - coerce - execute 0.108ms total 0.209ms (document cache hit, operation cache hit, 1 resolvers, 0 SQL)
+pricing     parse - validate - compile - coerce - execute 0.101ms total 0.190ms (document cache hit, operation cache hit, 1 resolvers, 0 SQL)
+inventory   parse - validate - compile - coerce - execute 0.105ms total 0.205ms (document cache hit, operation cache hit, 1 resolvers, 0 SQL)
+accounts    parse - validate 0.037ms compile - coerce - execute 0.090ms total 0.231ms (document cache hit, operation cache hit, 1 resolvers, 0 SQL)
+reviews     parse - validate 0.054ms compile - coerce - execute 0.140ms total 0.272ms (document cache hit, operation cache hit, 1 resolvers, 0 SQL)
+ordering    parse - validate 0.040ms compile - coerce - execute 0.099ms total 0.238ms (document cache hit, operation cache hit, 1 resolvers, 0 SQL)
+nodes       parse - validate - compile - coerce - execute 0.089ms total 0.182ms (document cache hit, operation cache hit, 1 resolvers, 0 SQL)
+\end{minted}
+
+Four dashes and three durations. The three are Accounts, Reviews and Ordering,
+which are exactly the three that call \code{AddMosaicAuthorization}, and exactly
+the three that chapter~\ref{ch:identity-and-authorization} found assembling
+fifteen middleware instead of thirteen. One line bought both, and only one of
+them was intended.
+
+The claim is the dash rather than the milliseconds. Those durations are
+single-machine numbers and move between runs; what is the same everywhere is
+whether the phase opened at all, and that is what both verification scripts now
+assert.
+
+\subsection*{The run that could have proved me wrong}
+
+\index{authorization!the control}%
+That is a correlation across seven services that differ in more than one way, so
+it is not yet an argument. The sentence blames \code{AddAuthorization}, so the
+run worth making is the one where that call is the only thing that changed.
+
+The obvious control is to take the call out of Accounts, and it is the wrong
+one: removing it would leave the \code{[Authorize]} attributes behind and vary
+two things. So I went the other way and added
+\code{AddMosaicAuthorization()} to Catalog, which has no guarded field, no
+attribute and no security registration of any kind, and rebuilt that one
+container:
+
+\begin{minted}[fontsize=\scriptsize,breaklines,breakanywhere]{text}
+catalog     parse - validate 0.047ms compile - coerce - execute 0.132ms total 0.281ms (document cache hit, operation cache hit, 1 resolvers, 0 SQL)
+\end{minted}
+
+Catalog's dash becomes a duration, with nothing in that service to authorise.
+The bare registration is sufficient. I put it back immediately, and the same
+contrast is committed as a case in \code{samples/executor-internals}, two
+executors over one schema differing in that call and nothing else:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+== authorization-defeats-the-validation-cache
+   without AddAuthorization -> 1 validation(s) over 2 requests, 1 document cache hit(s)
+   with AddAuthorization    -> 2 validation(s) over 2 requests, 1 document cache hit(s)
+   PASS
+\end{minted}
+
+Both hit the document cache; only the authorized one validates twice.
+
+\index{validation!the second trigger, outside development}%
+There is a second way to acquire a non-cacheable rule and it has nothing to do
+with authorization. \code{AddGraphQLServer} disables introspection unless the
+host environment is Development, and the rule it uses to do that is registered
+as non-cacheable. So any HotChocolate server picks one up the day it runs in
+production. Every Mosaic service runs as Development, in the compose file, in
+its launch settings and in both verification scripts, so that trigger never
+fires here. It would fire in a deployment, and the four services that look
+exempt in the capture above are exempt only on this machine.
+
+Finally, the thing I do not want misread. Nothing
+chapter~\ref{ch:the-life-of-a-request} wrote was wrong. It measured a graph with
+no authorization anywhere and found that a document cache hit skips validation,
+and that is still true today of Catalog, Pricing, Inventory and Nodes. What
+changed is the graph, in a chapter that was thinking about tokens and scopes.
+This is the same shape as the resolver count in
+section~\ref{sec:ch16-pure-or-a-task}: a number that stayed correct while the
+sentence around it quietly stopped covering every case.
+
+\medskip
+Which is the useful thing to take out of a chapter spent inside somebody else's
+executor. Not that any of this is wrong, because almost none of it is, but that
+the layer you are not reading has opinions about the layer you are, and they
+arrive attached to a line you wrote for another reason.
+Chapter~\ref{ch:inside-the-router-and-the-composer} does the same walk on the
+two processes in front of these seven.
+
+\index{request pipeline!middleware that refuse|)}%
