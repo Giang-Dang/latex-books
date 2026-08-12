@@ -524,20 +524,32 @@ n_train  epochs  model         test acc     spread   train acc
 16000    7       CNN           0.6399       0.0197   0.7202
 16000    7       MLP matched   0.4251       0.0152   0.5100
 16000    7       MLP wide      0.4534       0.0120   0.6835
+
+50000    4       CNN           0.7036       0.0019   0.7361
+50000    4       MLP matched   0.4478       0.0015   0.4797
+50000    4       MLP wide      0.5025       0.0057   0.5743
 ```
 
 3 seed (0, 1, 2), chấm trên toàn bộ 10,000 ảnh test, cùng một recipe.
 
-**Bảng dừng ở 16000 chứ không tới 50000.** Hàng 50000 bị cắt vì ngân sách, xem
-quyết định 74; với nó phép quét mất 232.25s và cả repo lên 1332.17s so với
-`BUDGET_TOTAL` 1300, tức `verify.py` trả về 1. Không có nó, phép quét mất
-131.51s.
+**Hàng 50000 từng bị cắt rồi được trả lại.** Nó bị cắt vì với nó phép quét mất
+232.25s và cả repo lên 1332.17s so với `BUDGET_TOTAL` 1300, tức `verify.py`
+trả về 1; xem quyết định 74. Nó được trả lại khi câu hỏi ngân sách được giải
+quyết thay vì trả tiếp: `BUDGET_TOTAL` thành `TOTAL_TARGET` và `TOTAL_CEILING`.
+Xem quyết định 75.
+
+Chú ý một tính chất tiện: **ba hàng nhỏ giữ nguyên từng chữ số** giữa bản chạy
+ba kích thước và bản bốn kích thước. Vì mỗi hàng chuẩn hóa theo tập con của
+chính nó và seed riêng, các hàng độc lập với nhau, nên thêm một hàng không đụng
+tới hàng nào khác. Đó cũng là phép kiểm rẻ rằng phép sửa rò rỉ ở mục 6.6 làm
+đúng việc nó nói.
 
 ```
 n_train  CNN-matched  CNN-wide  CNN spread  widest MLP spread
 1000     0.1202       0.0897    0.0326      0.0236
 4000     0.1767       0.1584    0.0102      0.0133
 16000    0.2148       0.1865    0.0197      0.0152
+50000    0.2558       0.2011    0.0019      0.0057
 ```
 
 Ô hẹp nhất của cả hai cột khoảng cách là 0.0897, ở hàng 1000, so với spread lớn
@@ -547,9 +559,10 @@ không rộng rãi, nên hàng 1000 là hàng không nên xây lập luận mả
 
 ```
 CNN trained on  reaches  MLP matched needs  MLP wide needs
-1000            0.4365          over 16,000     10,958 (11.0x)
-4000            0.5499          over 16,000        over 16,000
-16000           0.6399          over 16,000        over 16,000
+1000            0.4365       28,403 (28.4x)     10,958 (11.0x)
+4000            0.5499          over 50,000        over 50,000
+16000           0.6399          over 50,000        over 50,000
+50000           0.7036          over 50,000        over 50,000
 ```
 
 Số ảnh cần là nội suy log-tuyến tính giữa hai hàng kề nhau của đường cong MLP.
@@ -558,17 +571,17 @@ Số ảnh cần là nội suy log-tuyến tính giữa hai hàng kề nhau củ
 
 ```
 shift  CNN     MLP matched  MLP wide
-1      0.1262  0.2720       0.2370
-2      0.2247  0.4272       0.3951
-4      0.3685  0.5904       0.5386
-8      0.6262  0.7566       0.7067
+1      0.1145  0.2409       0.2158
+2      0.1817  0.3790       0.3478
+4      0.3078  0.5446       0.5106
+8      0.5981  0.7343       0.7013
 ```
 
 Cùng bốn hàng ấy viết theo phần trăm, vì chương in cả hai dạng: ở shift 1, CNN
-đổi trên 12.62% số ảnh và MLP khớp tham số đổi trên 27.20%. Ở shift 8, CNN đổi
-trên 62.62%.
+đổi trên 11.45% số ảnh và MLP khớp tham số đổi trên 24.09%. Ở shift 8, CNN đổi
+trên 59.81%.
 
-Tỷ lệ ảnh test đổi nhãn dự đoán, trên các mô hình seed 0 của hàng 16000.
+Tỷ lệ ảnh test đổi nhãn dự đoán, trên các mô hình seed 0 của hàng 50000.
 
 **Ba nguyên nhân rời nhau, và chương phải tách chúng ra.** Bản đầu của chương
 viết rằng ở shift 8 đặc trưng của CNN đẳng biến tuyệt đối, và câu ấy sai:
@@ -601,6 +614,36 @@ cắt lấy đi một kết quả chứ không chỉ lấy đi độ chính xác
 Ba seed thì **không** cắt, và không đổi được lấy ngân sách: cột khoảng cách ở
 mục 6.3 chỉ đọc được khi đặt cạnh spread, và một bảng một seed không đỡ được
 cách đọc ấy. Đây đúng là lập luận quyết định 62 đã ghi.
+
+**Lần ba: trả lại hàng 50000.** Không phải bằng cách tìm thêm giây, mà bằng
+cách sửa cái gate. `BUDGET_TOTAL` là một ngưỡng cứng duy nhất làm hai việc
+không tương thích, và biên của nó đã hẹp hơn nhiễu của chính nó; nó thành
+`TOTAL_TARGET` 1700s và `TOTAL_CEILING` 1850s, xem quyết định 75. Phép quét trở
+lại bốn kích thước và mất 292.54s.
+
+Cả repo chạy hai lần trên máy rảnh sau khi trả hàng ấy về: 1305.35s và 1358.24s,
+cả hai `verify: ok`. Ngưỡng lấy từ số lớn hơn, vì một lần chạy thì ước lượng
+thấp.
+
+292.54s cao hơn 232.25s của bản bốn kích thước cũ, và chênh lệch không phải do
+hàng 50000. Phép sửa rò rỉ ở mục 6.6 làm `standardize` chạy theo từng tập con
+thay vì một lần cho cả tập, nên ở hàng 50000 nó tính lại thống kê cho mỗi seed
+và mỗi kiến trúc. Đắt hơn, và đúng hơn.
+
+Hệ quả cho ngân sách từng mục: 292.54s so với hạn mức 360s của mục ấy chỉ là
+1.23 lần, trong khi mọi mục khác trong repo mang 1.5 lần trở lên. Nâng hạn mức
+mục ấy lên 450, đúng bằng 1.5 lần mà con số 360 vốn được dựng từ đó. Đây là
+thay đổi ngân sách **từng mục** duy nhất trong phiên; nó không liên quan tới
+tổng.
+
+Và chính mục ấy cho thêm một số đo về nhiễu, trên đúng cùng một đoạn mã: chạy
+riêng thì 292.54s, chạy trong `verify.py` thì 251.10s. Chênh 41.44s, tức 14.2%,
+nằm đúng trong dải 9.4-15.5% mà mục 6.5 này lấy làm hằng số `R` của phép dựng
+ngưỡng. Nói cách khác, nhiễu của repo này không phải chuyện của riêng cái tổng;
+nó có mặt ở từng mục, và đó là lý do ngân sách từng mục mang 1.5 lần chứ không
+mang 1.1 lần.
+
+Và điểm cắt thật quay lại: 28,403 ảnh, tức 28.4 lần.
 
 ### 6.6 Một chỗ rò rỉ phải sửa trước khi bảng có nghĩa
 
@@ -663,19 +706,24 @@ Trước khi đo, giả thuyết vào phiên là câu quen thuộc: thiên kiế
 giá nhất khi ít dữ liệu, nên khoảng cách CNN với MLP phải **hẹp lại** khi dữ
 liệu nhiều lên.
 
-Số đo nói ngược: khoảng cách **rộng ra**, 0.1202 lên 0.2148. Nếu cứ viết theo
+Số đo nói ngược: khoảng cách **rộng ra**, 0.1202 lên 0.2558. Nếu cứ viết theo
 giả thuyết thì chương đã in một câu mà chính bảng của nó bác bỏ.
 
 Chỗ nhầm nằm ở việc đọc sai đại lượng. Khoảng cách tuyệt đối ở một lượng dữ
 liệu cố định và số ảnh cần để đạt cùng độ chính xác là hai câu hỏi khác nhau,
-và chỉ câu thứ hai nói về sample efficiency. Đo câu thứ hai thì trong toàn bộ
-dải đã quét, MLP khớp tham số không lúc nào đạt tới chỗ CNN đạt bằng 1000 ảnh,
-tức bội số lớn hơn 16 lần và bảng không nói được chính xác hơn thế.
+và chỉ câu thứ hai nói về sample efficiency. Đo câu thứ hai thì MLP khớp tham số
+cần 28,403 ảnh để đạt cái CNN đạt bằng 1000, tức 28.4 lần.
 
 Lý do khoảng cách rộng ra cũng đọc được từ chính bảng: MLP khớp tham số bão hòa
 sớm vì nó chỉ có 21 unit ẩn, tức nó bị chặn bởi sức chứa chứ không bởi dữ liệu.
-Đó đúng là lý do bảng phải có hàng MLP wide, và hàng ấy **có** đạt tới, ở 10,958
-ảnh, tức 11.0 lần. Bội số nhỏ đi rõ rệt và không biến mất.
+Đó đúng là lý do bảng phải có hàng MLP wide, và hàng ấy cần 10,958 ảnh, tức
+11.0 lần. Bội số nhỏ đi rõ rệt và không biến mất.
+
+**Chú ý bội số này phụ thuộc hàng 50000.** Khi hàng ấy bị cắt, ô này chỉ ghi
+được \"over 16,000\" - đường cong MLP dừng trước chỗ nó cắt qua. Nên con số
+28.4 lần là thứ trực tiếp mất đi vì ngân sách và trực tiếp lấy lại được khi
+ngân sách được sửa; đó là ví dụ cụ thể cho câu \"một gate hỏng được trả bằng
+kết quả\" ở quyết định 75.
 
 **Một chỗ nữa cùng loại, và nó là chuyện lịch epoch.** Một phép quét sơ bộ chạy
 với 8 epoch cố định ở mọi kích thước cho MLP ở n=1000 chỉ 0.1729, và từ đó suy

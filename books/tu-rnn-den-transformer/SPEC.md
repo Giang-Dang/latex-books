@@ -187,34 +187,43 @@ run at a fixed epoch count across all training-set sizes, which starved the
 small-data rows and supported a clean false sentence; that became decision 71.
 Neither the build nor the gate could see either one.
 
-`BUDGET_TOTAL` is the thing this session does **not** settle, and decision 62
-already said whose call it is, and this session hit it twice. With its full
-sweep chapter 10 added 236.24s and the repo came to 1332.17s against the 1300s
-budget on an idle machine, so `verify.py` returned 1 and the chapter could not
-be called drafted. Note what the same run says about the chapters nobody
-touched: 1095.93s against the 1001.60s they measured in the chapter 09 session,
-94s of drift on identical code. So the overrun is not chapter 10's alone, and
-the margin sits inside the noise either way, which is precisely decision 62's
-argument that 1300 stopped being a budget.
+`BUDGET_TOTAL` was the thing chapter 10's drafting session could not settle, and
+it is settled now, in a follow-up on the same branch. The session hit the wall
+twice: with its full sweep chapter 10 added 236.24s and the repo came to
+1332.17s against 1300 on an idle machine, so `verify.py` returned 1. In that
+same run the chapters nobody touched took 1095.93s against the 1001.60s they
+measured one session earlier - 94s of drift on identical code - so the overrun
+was never chapter 10's alone and the margin sat inside the noise either way,
+which is decision 62's own test.
 
-Decision 62 forbids raising it and decision 71, written in this same session,
-forbids buying it back by cutting epochs. So chapter 10 dropped its
-50,000-image row (decision 74), the sweep went from 232.25s to 131.51s, and the
-repo verifies again: `verify: ok` at 1230.15s, with chapter 10 contributing
-134.92s across four items. That is **by giving up a result rather than by
-anything having been fixed** - the sample-efficiency table now reports a bound
-where it used to report a crossing point - and the 70s of margin is still
-narrower than the drift measured on untouched code in the same session.
-`BUDGET_TOTAL` is left at 1300 and the open item below carries the three live
-options.
+Decision 62 forbade raising it and decision 71 forbade buying it back by cutting
+epochs, so the drafting session dropped the 50,000-image row (decision 74) and
+the repo verified at 1230.15s - **by giving up a result rather than by anything
+having been fixed.** The follow-up fixed the thing instead. `BUDGET_TOTAL` is
+retired for a reported `TOTAL_TARGET` of 1700s and a hard `TOTAL_CEILING` of
+1850s (decision 75), because one number was doing two jobs that need different
+strictness; the row is back and the crossing point with it, 28,403 images or
+28.4 times (decision 76); and the `torch.nn.LSTM` lever everyone was saving
+turns out to be smaller than recorded and unavailable anyway (decision 77). Two
+idle runs at this shape measure 1305.35s and 1358.24s, so the repo sits well
+under its target with the row restored.
+
+The lesson worth carrying out of it: **a gate that fails on healthy code gets
+paid off rather than obeyed.** In one session this one was paid twice, and both
+payments were wrong - the first starved the rows the table was about and had to
+be reversed, the second bought the threshold with the chapter's sharpest number.
+Neither was visible as a defect at the time; both looked like discipline.
 
 Next action: chapter 11, "Ảnh là 16x16 chữ". It inherits `conv.py`, `cifar.py`
 and `vision.py` at tag `ch10`, and its TOC line's CIFAR-10 is now confirmed
 rather than a plan. Three things carry into it. The comparison it needs is
-already built and already run for two architectures, so a ViT row goes beside
-them on the same recipe and the same seeds rather than in a table of its own -
-but a ViT is more expensive than either existing model, and the budget question
-above has to be answered before that row is added rather than after. Chapter 10
+already built and already run for two architectures across four training-set
+sizes, so a ViT row goes beside them on the same recipe and the same seeds
+rather than in a table of its own. The budget question that used to block that
+is settled (decisions 75 to 77), and there is room: a healthy run sits well
+under `TOTAL_TARGET`. What chapter 11 should not do is spend that room without
+reading the arithmetic in `verify.py` first, because the stop condition there is
+what says when this scheme runs out. Chapter 10
 measured the CNN half of the ViT result honestly at laptop scale and cannot
 reach the half that needs JFT-300M, so chapter 11 will be citing for its
 headline result and measuring only the losing side; it should say so on the page
@@ -330,7 +339,11 @@ Rows 69 onward were written in the chapter 10 session, 2026-08-12.
 | 72 | A `\newsavebox` name may not contain digits, and getting it wrong prints a plausible wrong number | Decision 67 requires a figure's width to be measured with `\savebox` rather than eyeballed. Chapter 10 followed it and the first measurement was silently wrong: `\newsavebox{\ch10boxa}` parses as `\ch` followed by the letters `10boxa`, so `\the\wd\ch10boxa` printed the width of a different box and then the characters `10boxa`. It read 5.475pt. **That is the dangerous shape** - not an error, not a missing macro, but a small plausible number where a small plausible number was expected, and 5.475pt against a 441.02pt measure looks like a picture with lots of room. The real widths are 367.99pt and 268.01pt. Recorded because decision 67 is a procedure this book now runs every chapter, and the procedure has a trap in it that fires silently |
 
 | 73 | \enquote{inductive bias} is `thiên kiến quy nạp`, and chapter 10 was retitled to match the three chapters that got there first | Chapter 10 was drafted as \enquote{Bias quy nạp của CNN}, taking the phrase from its own TOC line, and an audit found that chapters 07, 08 and 09 already write `thiên kiến quy nạp` for the same English in six places. So the book briefly carried two Vietnamese terms for the concept its tenth chapter is named after, and two `\index` families for it. **The TOC line was the thing out of step, not the chapters**: it was written in the skeleton session before any prose existed, and prose has a vote. `thiên kiến quy nạp` also wins on the merits - appendix B keeps `bias` in English because in this literature `bias` is the additive parameter of a layer, which is a different thing from a prior over hypotheses, and using the same English word for both is precisely the confusion the appendix exists to prevent. Chapter 10 is now \enquote{Thiên kiến quy nạp của CNN} and the TOC line follows. **The folder and the label stay `bias-quy-nap`.** Decision 42 moved a slug with a title and this row deliberately does not: there the old title was opaque to a reader, here the two names are synonyms, the slug is not reader-facing, and `ch:bias-quy-nap` is already cross-referenced from chapters 07 and 08. Renaming it would touch three chapters' `\ref` calls and `main.tex` to change a string nobody reads. **What generalizes**: the `Gloss` family cannot see this defect, because a chapter that never glosses a term it does not know it is sharing looks identical to a chapter using ordinary Vietnamese - decision 39 says exactly that, and this is its second confirmed instance after `chỗ thắt` |
-| 74 | The CIFAR sweep stops at 16,000 images, and the cut is budget rather than science | The sweep ran 1,000 / 4,000 / 16,000 / 50,000 and cost 232.25s, which put the repo at 1332.17s against a 1300s `BUDGET_TOTAL` on an idle machine - so `verify.py` returned 1 and the chapter could not be called drafted. Decision 62 forbids raising the number a third time and decision 71, written in this same session, forbids buying the budget back by cutting epochs, because that starves the small-data rows and manufactures the effect being measured. Dropping the largest training-set row is the one cut that starves nothing: every remaining row keeps the epoch count it was measured at. The sweep is now 131.51s. **What it costs, so that it can be undone deliberately:** the sample-efficiency table says \enquote{over 16,000} where the full sweep produced an actual crossing point for the matched MLP, so the chapter's sharpest single number is gone and what replaces it is a bound. Chapter 11 will want the row back when it puts a Vision Transformer beside these models. Restoring it is one tuple entry in `SWEEP`; what has to be settled first is the budget, which is the open item below |
+| 74 | The CIFAR sweep stops at 16,000 images, and the cut is budget rather than science | The sweep ran 1,000 / 4,000 / 16,000 / 50,000 and cost 232.25s, which put the repo at 1332.17s against a 1300s `BUDGET_TOTAL` on an idle machine - so `verify.py` returned 1 and the chapter could not be called drafted. Decision 62 forbids raising the number a third time and decision 71, written in this same session, forbids buying the budget back by cutting epochs, because that starves the small-data rows and manufactures the effect being measured. Dropping the largest training-set row is the one cut that starves nothing: every remaining row keeps the epoch count it was measured at. The sweep is now 131.51s. **What it costs, so that it can be undone deliberately:** the sample-efficiency table says \enquote{over 16,000} where the full sweep produced an actual crossing point for the matched MLP, so the chapter's sharpest single number is gone and what replaces it is a bound. Chapter 11 will want the row back when it puts a Vision Transformer beside these models. Restoring it is one tuple entry in `SWEEP`; what has to be settled first is the budget, which is the open item below. **Reversed by decision 76 in a follow-up on the same branch**, once decision 75 settled the budget rather than paying it again. The row is back and so is the crossing point. This row stays because it is the receipt for what a broken gate costs, and decision 75's argument rests on it |
+
+| 75 | `BUDGET_TOTAL` is retired; the whole-run total is now a reported `TOTAL_TARGET` and a hard `TOTAL_CEILING` | This is the open item decision 62 predicted, settled by the author in the chapter 10 session. **What broke:** at tag `ch10` the run was 1230.15s against 1300 on an idle machine, 70s of headroom, while the chapters nobody touched drifted 94.33s between that run and the one recorded at tag `ch09`. The margin was narrower than the noise, which is decision 43's own test for when a budget has stopped being one. **Why leaving it was worse than it looks:** a gate that fails on healthy code gets paid off rather than obeyed, and chapter 10 paid twice in one session - decision 71's epoch cut, reversed because it starved the small-data rows and manufactured the effect being measured, and decision 74's dropped row, which cost the chapter a measured crossing point. The gate's real effect was not \enquote{the repo stays under 22 minutes} but \enquote{chapters buy the threshold with results}. So the number splits, because it was doing two jobs needing different strictness: reporting how long a run takes, which wants a number printed every time and never fatal because wall clock on a shared laptop is not a property of the repo; and catching accretion that per-item budgets wave through, which wants a threshold noise cannot reach. Per-item budgets are untouched and still fatal. **The derivation is recorded in `verify.py` so a future session re-applies it rather than re-arguing it**: `D = max(A, R*H)` taking the worse of additive and proportional drift because four samples cannot distinguish them, `TARGET = ceil_50(H + 1.5D)`, `CEILING = ceil_50((TARGET + H + R_min)/2)` with `R_min` the smallest regression worth catching. The ceiling is the midpoint between the worst a healthy run reaches and the best a regressed one does, which is why it is not a round number. **Substituted from two idle runs**, 1305.35s and 1358.24s, so `H = 1358.24` - the larger, because one run underestimates and this pair is 52.89s apart on identical code. That gives `TOTAL_TARGET = 1700` and `TOTAL_CEILING = 1850`. **Say the cost plainly rather than calling it a refactor:** before, a run over about 22 minutes failed; now one up to about 31 passes, so the enforced upper bound moved by nine minutes. **What replaces \enquote{do not raise it a third time}** is arithmetic a session can check: the scheme needs `H < R_min/(1.5R)`, about 2580s, past which no pair of thresholds can both avoid firing on noise and catch a ten-minute experiment. Today's H uses 52.6% of it. That is a measurement and not an allowance to spend |
+| 76 | Decision 74 is reversed: chapter 10's 50,000-image row is back, and the crossing point with it | Decision 74 cut that row because with it the repo did not verify, and recorded what the cut took so it could be undone. Decision 75 removed the reason, so the row is back and the sweep is 292.54s. **What came back is a result, not a decimal:** the sample-efficiency table reports that a parameter-matched MLP needs 28,403 images - 28.4 times - to reach what the convolutional network reaches on 1,000, where the cut version could only report the bound \enquote{over 16,000}. The MLP with 23.71 times the parameters still needs 10,958, so extra parameters buy back more than half the gap and not all of it. **Two things worth recording.** The three smaller rows came back bit-identical, because each row standardizes from its own subset and its own seed, so rows are independent and adding one disturbs nothing - which is also a free check that decision 71's leak fix does what it says. And the sweep's own per-item budget had to move, 360s to 450s: 292.54 against 360 is 1.23x where every other item in the repo carries 1.5x or better, so a slower laptop would have failed an item that was not misbehaving. That is the only per-item budget this session touched, and it is unrelated to the total |
+| 77 | The `torch.nn.LSTM` lever of decision 57 is smaller than recorded and is not available at all | `verify.py` carried a sentence saying chapter 08's clock table measures the fused kernel \enquote{at 50 to 95 times on this hardware}. **No table in this repo says that.** `experiments/ch08_clock_canonical.txt` measures the repo's loop against `nn.LSTM` at 2.4x to 8.1x across `d` of 128 and 512 at `n` from 32 to 128, and the 25.2x chapter 08 prints is one cell - forward-plus-backward at `n = 512` - which the chapter's own prose is careful to scope as \enquote{đo được, ở một chỗ}. The corpus chapters 05 to 07 train on is a few tokens per sentence, nowhere near 512, so the lever is worth far less here than the sentence implied. **And it is not available even at that size.** `LstmLayer` carries one bias vector of `4*n_hidden` where `torch.nn.LSTM` carries two, so swapping changes printed parameter counts - 27365, 40805, 41495 in chapter 06 and 35845 in chapter 07 are quoted in prose. Chapter 06's attention decoder cannot be fused at all, because its input at step `t` is the concatenation of the word and a context vector chosen using `s_{t-1}`, a sequential dependency in the *input* rather than the state. So decision 57 stands, and the reason it stands is stronger than the one it was written with: not only would swapping break decision 4's promise, it would rewrite four chapters' tables and could not touch the chapter where most of the time goes. **This is the same defect class chapter 10's audit found** - a figure repeated until nobody rebuilds it - and it was found by reading the committed table rather than by anyone doubting the sentence |
 
 ## Version baseline
 
@@ -529,7 +542,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 07 | drafted | Companion tag `ch07`, module `transformer.py`. Four experiments, two of which train nothing, so the whole repo verifies in 663.51s against the 900s budget and decision 43 is untouched. Reads both copies of the paper and finds they are different documents that disagree on a BLEU score (decision 47). The chapter's table sweeps epochs rather than width, after three other explanations for the 14-epoch result were killed (decision 48). Two TikZ figures. Four appendix B rows, and four terms deliberately kept in English (decision 46) |
 | 08 | drafted | Companion tag `ch08`, module `cost.py` plus four experiment scripts. Pays three of chapter 07's four debts and half of the fourth: table 1 re-measured with constants, the head-count claim measured on the clock as well as in FLOPs, and the layer-norm order measured at initialization. Corrects a chapter 07 sentence that put the head-count slowdown at twenty percent (decision 61). Its own finding is that the quadratic cost bites where the score matrix leaves cache, measured by byte rather than by `n` and confirmed with a batch-held control. The warmup table is a deliberate negative result: three seeds show the within-configuration spread is wider than the between-configuration gap. Two TikZ figures. `BUDGET_TOTAL` raised to 1300 (decision 62) |
 | 09 | drafted | Companion tag `ch09`, module `scaling.py` plus two experiment scripts, none of which trains or times anything, so every number is identical on every machine. The first chapter that measures nothing about its own subject, and it spends section 9.5 on why (decision 64). Rebuilds every published parameter count in BERT, GPT-1, GPT-2 and GPT-3; three of four disagree with what those papers print (decision 65). Its own finding is that Kaplan's table 1 counts one of attention's two quadratic products, ratio exactly 2.00, confirmed against `FlopCounterMode` and against Hoffmann's appendix F - and that it does not matter, because `6N` drops that term anyway. The `6ND` error is `1 + n/(6d)`, and `6d` is chapter 08's `n = 2d + d_ff` from the other side. Two places Hoffmann cannot be reproduced from what it prints: table A4 states neither the sequence length nor the vocabulary it was computed at, and table 2's frontier exponents do not follow from appendix D.2's rounded alpha and beta. One TikZ figure. Four appendix B rows plus one kept in English; seven abbreviations into appendix C. `BUDGET_TOTAL` untouched at 1300, whole run 1001.60s |
-| 10 | drafted | Companion tag `ch10`, modules `conv.py`, `cifar.py` and `vision.py` plus three experiment scripts. **The first chapter that runs on data this repo cannot generate** (decision 69): CIFAR-10, fetched once and cached, which costs `verify.py` the property that it ran with no network. Rebuilds LeCun 1989 and LeNet-5 and both come back exactly, which is the opposite of chapter 09 and is why the rule is worth running anyway; LeNet-5's 60,000 is a sum, and its connection total closes only once the fixed-weight RBF output layer's 840 connections are counted. Its own finding is that 97.14% of LeNet-5's parameters sit in layers that share nothing, so weight sharing shrinks the feature extractor rather than the network. Equivariance measured to bit-exact zero and invariance measured false; subsampling loses the property at exactly half of all shifts, and average pooling and a strided convolution show the same split, so it is not the max. On CIFAR-10 a parameter-matched MLP never reaches the CNN's 1,000-image accuracy anywhere up to 16,000, and a 23.71x-parameter MLP needs 11.0x. Two TikZ figures, measured at 367.99pt and 268.01pt. Nine appendix B rows and four abbreviations into appendix C, and the appendix B additions were retroactive to five earlier chapters. Retitled per decision 73. The sweep's 50,000-image row was cut for budget (decision 74) and `BUDGET_TOTAL` is left at 1300 - see open items |
+| 10 | drafted | Companion tag `ch10`, modules `conv.py`, `cifar.py` and `vision.py` plus three experiment scripts. **The first chapter that runs on data this repo cannot generate** (decision 69): CIFAR-10, fetched once and cached, which costs `verify.py` the property that it ran with no network. Rebuilds LeCun 1989 and LeNet-5 and both come back exactly, which is the opposite of chapter 09 and is why the rule is worth running anyway; LeNet-5's 60,000 is a sum, and its connection total closes only once the fixed-weight RBF output layer's 840 connections are counted. Its own finding is that 97.14% of LeNet-5's parameters sit in layers that share nothing, so weight sharing shrinks the feature extractor rather than the network. Equivariance measured to bit-exact zero and invariance measured false; subsampling loses the property at exactly half of all shifts, and average pooling and a strided convolution show the same split, so it is not the max. On CIFAR-10 a parameter-matched MLP needs 28.4x the images to reach what the CNN reaches on 1,000, and one with 23.71x the parameters still needs 11.0x. Two TikZ figures, measured at 367.99pt and 268.01pt. Nine appendix B rows and four abbreviations into appendix C, and the appendix B additions were retroactive to five earlier chapters. Retitled per decision 73. The sweep's 50,000-image row was cut for budget (decision 74) and restored once the budget question was settled rather than paid again (decisions 75 and 76); its per-item budget moved 360s to 450s, the only per-item change in either session |
 | 11 | not-started | |
 | 12 | not-started | Re-verify the 2021-2026 facts before drafting |
 | 13 | not-started | Re-verify before drafting |
@@ -808,36 +821,49 @@ comment in the file that enforces it. Rows 49 to 58 are where most of them
 landed. One entry has been added since, and it is work nobody has done rather
 than a call nobody has taken.
 
-The chapter 10 data item is closed: it was raised at the top of that session,
-the author settled it, and it is decision 69 now. What replaces it is the
-question decision 62 predicted would arrive.
+Both chapter 10 items are closed. The data question became decision 69, and the
+`BUDGET_TOTAL` question became decisions 75, 76 and 77 - the total is split into
+a target and a ceiling, chapter 10's 50,000-image row is back with its crossing
+point, and the `torch.nn.LSTM` lever turns out to be smaller than recorded and
+unavailable. What replaces them is work nobody has done rather than a call
+nobody has taken.
 
-- **`BUDGET_TOTAL` no longer holds, and decision 62 already said the call is the
-  author's.** Measured twice in the chapter 10 session. On a machine also
-  compiling a book and running a subagent the whole run came to 1371.69s against
-  1300; on an idle one, 1332.17s. Over both times. In the idle run the chapters
-  that existed before this session took 1095.93s against the 1001.60s they
-  measured in the chapter 09 session, so 94s of the overrun is drift on code
-  nobody touched, and the margin sits inside the noise either way - which is
-  decision 62's own test for when a budget has stopped being one. Chapter 10
-  then cut its sweep from 232.25s to 131.51s (decision 74) and the repo verifies
-  again. **It verifies by giving up a result, not by anything having been
-  fixed**, and the next chapter has nothing equivalent left to give up.
-  Decision 62 lists the honest moves and rules one of them out: do not raise the
-  number a third time. Of what remains, `verify.py --only chNN` already exists
-  and chapter 10's exercises already teach it, so that one is spent. What is
-  left is to make an experiment cheaper, and the largest lever is still decision
-  57's - every recurrent layer in the repo is a hand-written Python loop, and
-  chapter 08 measured the fused version at 25.2 times faster on the
-  forward-plus-backward path. Pulling it costs decision 4's promise that the
-  book builds from scratch, which is why it has never been pulled. **The three
-  live options are therefore: pull decision 57's lever for the chapters that
-  only train and never look inside the loop; drop or shrink an experiment
-  somewhere; or accept that the total is advisory and say so in `verify.py`
-  rather than leaving a threshold that fails on a busy machine.** Chapter 10
-  paid twice already - 302.24s down to 232.25s by cutting epochs, then to
-  131.51s by dropping its largest training-set row - and the second cut took a
-  result with it, which is why decision 74 records what it took rather than
-  filing it as housekeeping. The next chapter should not be asked to pay a third
-  time before this is settled, and chapter 11 adds a Vision Transformer to the
-  same sweep and will be more expensive than anything chapter 10 added.
+- **Roughly 180-200 seconds of this repo's run is the same training done twice
+  or three times, and removing it is a decision rather than a cleanup.**
+  Thirteen trainings run in two or three scripts with argument-for-argument
+  identical calls. `train_one` reseeds internally and takes an explicit
+  generator, and `toy_corpus.batches` touches the global RNG nowhere, so the
+  trained weights are a pure function of the arguments and reuse would be
+  exactly value-preserving rather than approximately. The largest single overlap
+  is worth about 45s and sits between the repo's two most expensive items:
+  `ch08_norm.py`'s post-LN flat row and `ch08_recipe.py`'s `(0.0, 0.0)` grid
+  cell are the same three models. Chapter 05's reversed models are retrained in
+  `ch05_search.py`, chapter 06's width sweep retrains four of its six from
+  chapter 05, and `ch07_corpus.py` retrains chapter 06's attention model.
+
+  **Why this is the author's call and not a session's.** `ch06_width.py` and
+  `ch07_corpus.py` say in their own docstrings that they retrain rather than
+  quote, precisely so a stale number cannot hide an environment difference, and
+  chapter 06's prose leans on reproducing chapter 05's table figure for figure.
+  Removing the duplication means overturning that, and the honest version keys
+  any reuse on the torch version so an environment change is still caught -
+  once per version rather than once per script.
+
+  **A runtime cache is not the answer and should not be proposed again.** The
+  whole-run number protects a promise to a reader who runs this repo once, cold.
+  A cache would speed up only a maintainer's repeat runs and leave the reader's
+  run exactly as slow, so it would stop the gate firing without making anything
+  faster for the person the gate is for. What counts is work that disappears on
+  a cold run.
+
+  Smaller and unambiguous, in the same family: `ch02_symptoms.py` computes two
+  Frobenius norms per BPTT step and discards them at every training call site,
+  needing them only on one fresh sample per model afterwards (estimated 10-20s,
+  worth measuring before relying on it); `ch05_search.py` runs the identical
+  beam-2 evaluation of 300 sentences three times; and `ch07_mask.py` recomputes
+  a position-independent intervention once per output position. All three are
+  exact-preserving and all three make a cold run faster.
+
+  Chapter 11 adds a Vision Transformer to chapter 10's sweep and will be the
+  most expensive thing in the repo, so this is the item to settle before that
+  chapter rather than after.

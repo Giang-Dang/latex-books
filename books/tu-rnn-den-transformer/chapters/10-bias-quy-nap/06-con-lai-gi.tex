@@ -21,10 +21,8 @@ cho đúng 1024, tức đúng số vị trí không gian. Hai ràng buộc khôn
 
 Cái chúng mua không phải kích thước. Bộ trích đặc trưng của LeNet-5 nặng 1,716
 tham số trong tổng 60,000, tức chia sẻ trọng số làm nhỏ đi đúng phần nó chạm
-tới và không làm nhỏ mạng. Cái chúng mua là dữ liệu: một MLP khớp tham số không
-đạt tới chỗ CNN đạt bằng 1000 ảnh ở bất kỳ đâu trong dải đã quét tới 16000, và
-một MLP 23.71 lần tham số cần 11.0 lần số ảnh. Đo trên CIFAR-10 ở quy mô một
-laptop.
+tới và không làm nhỏ mạng. Cái chúng mua là dữ liệu: 28.4 lần, và một MLP với
+23.71 lần tham số vẫn cần 11.0 lần. Đo trên CIFAR-10 ở quy mô một laptop.
 
 \subsection*{Hai con số quay về, và một tính chất không}
 
@@ -89,7 +87,7 @@ ViT là chuyện gì xảy ra khi bạn chọn vế thứ hai và có đủ dữ
 nói ra ở mục 3.2 rằng chỉ có đúng hai chỗ trong cả mô hình mà thông tin về cấu
 trúc hai chiều được đưa vào bằng tay, và một trong hai chỉ là phép cắt ảnh
 thành patch~\autocite{dosovitskiy2021vit}. Bảng của chương ấy là bảng của mục
-này với một Transformer thêm vào, và bội số 11.0 lần ở đây là lý do bảng ấy có
+này với một Transformer thêm vào, và bội số 28.4 lần ở đây là lý do bảng ấy có
 hai nửa.
 
 Thứ hai, chương~\ref{ch:chi-phi-bac-hai}. Cả bốn hướng của

@@ -51,7 +51,7 @@
     hẹp lại đơn điệu. Rồi nói điều đó nghĩa là gì cho việc đọc bất kỳ bảng
     ablation nào.
 
-  \item Ở phép dịch 8, mục~\ref{sec:ch10-anh-that} đo CNN đổi nhãn trên 62.62\%
+  \item Ở phép dịch 8, mục~\ref{sec:ch10-anh-that} đo CNN đổi nhãn trên 59.81\%
     số ảnh, và nêu ba nguyên nhân rời nhau: mạng pad bằng không, bộ phân loại
     đọc vị trí, và phép dịch vòng thật sự đổi ảnh. Thiết kế một phép đo tách
     được ba phần ấy. Nói rõ mỗi phần cần đối chứng nào, và phần nào trong ba
@@ -79,8 +79,8 @@ không in gì trong lúc tải; muốn biết nó còn sống thì xem kích th�
 thư mục \code{data/} lớn dần lên. Mọi lần chạy sau đọc cache và không cần mạng.
 
 Dòng cuối phải in ra \code{verify: ok}. Bốn mục của chương này chạy hết chừng
-hai phút rưỡi cộng lại, và gần hết chỗ ấy là một mục: phép quét ở
-mục~\ref{sec:ch10-anh-that} huấn luyện 27 mô hình. Ba mục còn lại không huấn
+năm phút cộng lại, và gần hết chỗ ấy là một mục: phép quét ở
+mục~\ref{sec:ch10-anh-that} huấn luyện 36 mô hình. Ba mục còn lại không huấn
 luyện gì và xong trong vài giây.
 
 Vẫn cảnh báo cũ: đừng gọi các script qua \code{conda run}.
@@ -92,7 +92,7 @@ Vẫn cảnh báo cũ: đừng gọi các script qua \code{conda run}.
     riêng của nó. PyTorch không có sẵn tầng ấy; dựng bằng \code{unfold} cộng một
     phép nhân theo lô, hoặc bằng cách khác bạn thấy gọn hơn. Rồi chạy lại đúng
     phép quét của \code{ch10\_cifar.py} với ba mô hình thành bốn, và trả lời:
-    trong bội số 11.0 lần, bao nhiêu thuộc về tính cục bộ và bao nhiêu thuộc về
+    trong bội số 28.4 lần, bao nhiêu thuộc về tính cục bộ và bao nhiêu thuộc về
     chia sẻ trọng số? Cảnh báo trước: mô hình ấy có rất nhiều tham số, nên phép
     so \enquote{cùng số tham số} sẽ không dựng được cùng lúc với phép so
     \enquote{cùng cấu trúc}, và bạn phải chọn một rồi nói mình chọn cái nào.
@@ -131,7 +131,7 @@ $ python -m pytest -q tests/test_ch10.py
 \tierextend
 
 \begin{bt}
-  \item Mục~\ref{sec:ch10-anh-that} đo bội số 11.0 lần trên CIFAR-10 với một
+  \item Mục~\ref{sec:ch10-anh-that} đo bội số 28.4 lần trên CIFAR-10 với một
     mạng ba tầng tích chập. Con số ấy là của cặp mô hình ấy trên bộ dữ liệu ấy,
     và chương không tổng quát hóa nó. Câu hỏi: bội số ấy phụ thuộc cái gì? Thiết
     kế một phép đo cho \emph{một} biến - độ phân giải ảnh, số lớp, mức độ ảnh

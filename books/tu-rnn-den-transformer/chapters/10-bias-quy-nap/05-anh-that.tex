@@ -78,19 +78,17 @@ n_train  epochs  model         test acc     spread   train acc
 16000    7       CNN           0.6399       0.0197   0.7202
 16000    7       MLP matched   0.4251       0.0152   0.5100
 16000    7       MLP wide      0.4534       0.0120   0.6835
+
+50000    4       CNN           0.7036       0.0019   0.7361
+50000    4       MLP matched   0.4478       0.0015   0.4797
+50000    4       MLP wide      0.5025       0.0057   0.5743
 \end{minted}
 
 Số epoch giảm theo lượng dữ liệu vì 1000 ảnh với batch 128 chỉ là 8 bước
-gradient một epoch; giữ epoch cố định là so 8 bước với 125 bước.
+gradient một epoch; giữ epoch cố định là so 8 bước với 390 bước.
 
 Đo bằng \code{experiments/ch10\_cifar.py} tại tag \code{ch10}.
 \end{measured}
-
-Bảng dừng ở 16000 ảnh chứ không chạy hết 50000, và lý do là ngân sách chứ không
-phải khoa học: cả repo companion có một hạn mức thời gian tổng, thêm hàng 50000
-thì vượt, và quyết định của sách là không nâng hạn mức ấy thêm lần nữa. Tôi nói
-ra vì nó đổi một câu ở bảng dưới, chỗ ghi \enquote{over 16,000} mà nếu chạy đủ
-thì có lẽ ghi được một con số.
 
 Cột \code{train acc} có mặt để phân biệt hai chuyện khác nhau: một mô hình
 không khớp nổi dữ liệu, và một mô hình khớp được mà không tổng quát hóa. Ở hàng
@@ -105,6 +103,7 @@ n_train  CNN-matched  CNN-wide  CNN spread  widest MLP spread
 1000     0.1202       0.0897    0.0326      0.0236
 4000     0.1767       0.1584    0.0102      0.0133
 16000    0.2148       0.1865    0.0197      0.0152
+50000    0.2558       0.2011    0.0019      0.0057
 \end{minted}
 
 Đo bằng \code{experiments/ch10\_cifar.py} tại tag \code{ch10}.
@@ -125,7 +124,7 @@ Câu tôi định viết trước khi chạy là câu quen thuộc:
 \tn{thiên kiến quy nạp}{inductive bias} đáng giá nhất khi ít dữ liệu, nên
 khoảng cách phải \emph{hẹp lại} khi dữ liệu nhiều lên.
 
-Bảng nói ngược. Khoảng cách rộng ra, 0.1202 lên 0.2148.
+Bảng nói ngược. Khoảng cách rộng ra, 0.1202 lên 0.2558.
 
 Chỗ nhầm không nằm ở số mà ở đại lượng. \enquote{Khoảng cách ở một lượng dữ
 liệu cố định} và \enquote{số ảnh cần để đạt cùng độ chính xác} là hai câu hỏi
@@ -135,9 +134,10 @@ câu thứ hai thì được cái này:
 \begin{measured}{số ảnh mỗi MLP cần để đạt cái CNN đạt}
 \begin{minted}{text}
 CNN trained on  reaches  MLP matched needs  MLP wide needs
-1000            0.4365          over 16,000     10,958 (11.0x)
-4000            0.5499          over 16,000        over 16,000
-16000           0.6399          over 16,000        over 16,000
+1000            0.4365       28,403 (28.4x)     10,958 (11.0x)
+4000            0.5499          over 50,000        over 50,000
+16000           0.6399          over 50,000        over 50,000
+50000           0.7036          over 50,000        over 50,000
 \end{minted}
 
 Số ảnh cần là nội suy log-tuyến tính giữa hai hàng kề nhau.
@@ -145,19 +145,19 @@ Số ảnh cần là nội suy log-tuyến tính giữa hai hàng kề nhau.
 Đo bằng \code{experiments/ch10\_cifar.py} tại tag \code{ch10}.
 \end{measured}
 
-\textbf{Hơn mười sáu lần, và với MLP khớp tham số thì bảng không nói được hơn
-thế.} Trong toàn bộ dải đã quét, không lượng dữ liệu nào đưa nó tới chỗ CNN đạt
-được bằng 1000 ảnh. Bảng ghi \enquote{over 16,000} chứ không ngoại suy, vì
-ngoại suy ra ngoài dải đã đo là đúng chuyện
-chương~\ref{ch:tien-huan-luyen} đã dành một bài tập để nói. Nếu hàng 50000 còn
-trong bảng thì ô ấy có lẽ là một con số; nó bị cắt vì ngân sách, và đó là chỗ
-duy nhất trong chương mà việc cắt lấy đi một kết quả.
+\textbf{28.4 lần.} MLP khớp tham số cần 28,403 ảnh để đạt cái CNN đạt được
+bằng 1000. Đó là tỷ giá mà mục~\ref{sec:ch10-attention-lam-duoc} nói tới, đo ở
+quy mô này: hai ràng buộc, nướng sẵn vào tầng, đáng gần một bậc rưỡi độ lớn về
+dữ liệu.
 
-Cột cuối là cột trả lời phản bác. Cho MLP 23.71 lần tham số thì nó \emph{có}
-đạt tới, ở 10,958 ảnh, tức 11.0 lần. Bội số nhỏ đi rõ rệt và \emph{không} biến
-mất. Đó là tỷ giá mà mục~\ref{sec:ch10-attention-lam-duoc} nói tới, đo ở quy mô
-này: hai ràng buộc, nướng sẵn vào tầng, đáng khoảng một bậc độ lớn về dữ liệu,
-và không mua lại được bằng cách đổ thêm tham số vào.
+Ba hàng còn lại ghi \enquote{over 50,000} chứ không ngoại suy. Từ 4000 ảnh trở
+lên, không lượng dữ liệu nào \emph{trong bộ dữ liệu này} đưa MLP tới chỗ CNN
+đạt được, và ngoại suy ra ngoài dải đã đo là đúng chuyện
+chương~\ref{ch:tien-huan-luyen} đã dành một bài tập để nói.
+
+Cột cuối là cột trả lời phản bác. Cho MLP 23.71 lần tham số thì nó vẫn cần
+10,958 ảnh, tức 11.0 lần. Bội số nhỏ đi rõ rệt và \emph{không} biến mất: đổ
+thêm tham số mua lại được hơn một nửa khoảng cách và không mua hết.
 
 Còn vì sao khoảng cách tuyệt đối rộng ra thì cũng đọc được từ chính bảng trước.
 MLP khớp tham số bão hòa sớm vì nó chỉ có 21 unit ẩn: nó bị chặn bởi sức chứa
@@ -174,10 +174,10 @@ cùng một ảnh khi ảnh dịch đi không.
 \begin{measured}{tỷ lệ ảnh kiểm tra đổi nhãn dự đoán khi dịch}
 \begin{minted}{text}
 shift  CNN     MLP matched  MLP wide
-1      0.1262  0.2720       0.2370
-2      0.2247  0.4272       0.3951
-4      0.3685  0.5904       0.5386
-8      0.6262  0.7566       0.7067
+1      0.1145  0.2409       0.2158
+2      0.1817  0.3790       0.3478
+4      0.3078  0.5446       0.5106
+8      0.5981  0.7343       0.7013
 \end{minted}
 
 Phép dịch ở đây là dịch vòng, nên dịch 8 pixel trên ảnh 32 pixel chuyển hẳn
@@ -187,10 +187,10 @@ một phần tư ảnh sang phía bên kia.
 \end{measured}
 
 Phép so đáng đọc là theo cột, cùng một phép dịch. Ở dịch một pixel, CNN đổi ý
-trên 12.62\% số ảnh còn MLP khớp tham số đổi trên 27.20\%: chưa bằng một nửa.
+trên 11.45\% số ảnh còn MLP khớp tham số đổi trên 24.09\%: chưa bằng một nửa.
 Thiên kiến quy nạp mua được cái đó, và nó mua được thật.
 
-Nhưng nhìn hàng cuối. Ở phép dịch 8, CNN vẫn đổi ý trên 62.62\% số ảnh, và
+Nhưng nhìn hàng cuối. Ở phép dịch 8, CNN vẫn đổi ý trên 59.81\% số ảnh, và
 \emph{không} có mâu thuẫn nào với con số không tuyệt đối ở
 mục~\ref{sec:ch10-dang-bien}. Có ba lý do rời nhau, và đáng tách ra vì trộn
 chúng lại là cách người ta đi tới câu \enquote{mạng tích chập bất biến với phép
