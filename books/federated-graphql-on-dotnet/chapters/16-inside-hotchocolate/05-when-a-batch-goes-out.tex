@@ -41,6 +41,7 @@ if (isWaitingForTaskCompletion)
 }
 \end{minted}
 
+\index{WorkScheduler@\code{WorkScheduler}!what idle means here}%
 The condition is \code{HasRunningTasks: true, IsEmpty: true}: there is nothing
 left to hand out, and something is still in flight. That is what \enquote{every
 resolver that can run is now blocked on something} looks like from inside, and
