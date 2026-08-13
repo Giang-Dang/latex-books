@@ -1,0 +1,38 @@
+\section{Cùng kiến trúc, đổi dữ liệu}
+\label{sec:ch11-hai-nua-cua-bang}
+
+\index{Vision Transformer!ImageNet và JFT}%
+Đọc bài ViT chỉ qua con số cao nhất là cách nhanh nhất để bỏ lỡ luận điểm. Bài
+có một headline 88.55, nhưng headline ấy đi cùng fine-tune độ phân giải 512 và
+Polyak averaging. Nó không phải phép so chỉ đổi dữ liệu.
+
+Phép so sách này cần nằm ở bảng 5, phụ lục C. Cùng ViT-B/16, cùng fine-tune ở
+384, đổi tập pretraining từ ImageNet-1k sang JFT-300M:
+
+\begin{bridge}{bảng 5 của Dosovitskiy và cộng sự}
+\begin{minted}{text}
+pretraining data  ImageNet top-1
+ImageNet-1k       77.91
+JFT-300M          84.15
+\end{minted}
+
+ImageNet-1k có 1,000 lớp và 1.3M ảnh. JFT có 18,000 lớp và 303M ảnh; chữ
+\enquote{300M} trong tên là làm tròn. Hai số accuracy là số tác giả báo cáo ở
+cùng bảng, cùng kiến trúc, cùng cách fine-tune~\autocite{dosovitskiy2021vit}.
+\end{bridge}
+
+Từ 77.91 lên 84.15 không chứng minh một định luật rằng thêm dữ liệu luôn thắng
+mọi thiên kiến. Nó nói hẹp hơn và đúng hơn: trong recipe của bài, kiến trúc mà
+trước đó không đủ cạnh các baseline tích chập trở thành kiến trúc mạnh khi có
+JFT. Chính mục 4.3 của bài mô tả các ViT lớn ban đầu kém hơn Base trên
+ImageNet, gần nhau hơn sau ImageNet-21k, rồi bộc lộ lợi thế ở JFT-300M.
+
+Đây cũng là câu trả lời cho thắc mắc hợp lý ở cuối chương trước. Nếu attention
+biểu diễn được convolution, tại sao cần convolution? Câu trả lời không phải
+là attention thiếu phép tính. Nó thiếu một lời hứa về dữ liệu: ở đây là một
+chi tiết gần một pixel đáng được đọc như chi tiết gần pixel khác. JFT cho mô
+hình quá nhiều ví dụ để tự mua lại một phần lời hứa ấy.
+
+Nhưng JFT không phải thứ tôi có trên laptop, và một bảng 303M ảnh không biến
+thành thí nghiệm bằng cách viết ít layer hơn. Mục sau chỉ đo phần đối nghịch
+với headline: điều gì xảy ra khi giữ dữ liệu nhỏ.

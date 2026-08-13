@@ -1,0 +1,95 @@
+% No \label here. \exercises is starred; attaching one would capture the last
+% numbered section's counter instead (quyet dinh 68).
+\exercises
+
+\tierunderstand
+
+\begin{bt}
+  \item Từ \eqref{eq:ch11-so-patch}, dẫn lại số token ảnh và số token kể cả
+    token lớp cho ảnh RGB 224x224 với patch 16x16. Rồi làm lại cho ảnh 384x384
+    mà không nhìn ghi chú nghiên cứu. Câu nào trong phép tính thay đổi nếu ảnh
+    không vuông?
+
+  \item Phân biệt bằng một ví dụ cụ thể ba việc: dùng cùng patch projection ở
+    mọi patch, có positional embedding học được, và có convolution. Ví dụ của
+    bạn phải chỉ ra một hoán vị patch mà hai việc đầu không cấm nhưng việc thứ
+    ba có ràng buộc để chống lại.
+
+  \item Bảng 5 của ViT-B/16 giữ model và fine-tune ở 384, đổi dữ liệu
+    pretraining. Nêu ba thứ nó kiểm soát được và ba thứ nó không kiểm soát
+    được. Vì sao dùng headline 88.55 để thay cho 84.15 sẽ đổi câu hỏi bảng trả
+    lời?
+
+  \item Chứng minh rằng giảm cạnh patch từ \(P\) xuống \(P/2\), giữ nguyên
+    kích thước ảnh, làm số patch tăng bốn lần. Sau đó tính chính xác tỷ số số
+    cặp khi có token lớp, và nói tại sao nó không đúng hẳn bằng 16.
+
+  \item Hàng 50,000 của mục~\ref{sec:ch11-cung-recipe} có ViT test accuracy
+    0.4576 và train accuracy 0.4644. Nêu ít nhất hai giả thuyết khác nhau còn
+    hợp với hai số này, rồi thiết kế một phép đo tách chúng mà không dùng test
+    split để chọn hyperparameter.
+\end{bt}
+
+\tierapply
+
+Trạng thái xuất phát: clone companion repo, checkout tag `ch11`, tạo conda
+environment như phụ lục~\ref{app:moi-truong}, rồi tải CIFAR-10 một lần. Repo
+dùng một \tn{token lớp}{class token} trước dãy patch; trong các câu hỏi dưới,
+\tn{giả thuyết}{hypothesis} là một dự đoán có thể bị số đo bác.
+
+\begin{minted}{console}
+$ git clone https://github.com/Giang-Dang/rnn-to-transformer-lab.git
+$ cd rnn-to-transformer-lab
+$ git checkout ch11
+$ conda env create -f environment.yml
+$ conda activate rnn-to-transformer-lab
+$ python -c "from rnn_to_transformer_lab.cifar import fetch; fetch()"
+$ python verify.py --only ch11
+\end{minted}
+
+Dòng cuối chạy test cấu trúc và 12 lần huấn luyện ViT; nó phải in
+\code{verify: ok}. Đừng dùng `conda run`; phụ lục~\ref{app:moi-truong} giải
+thích lỗi encoding của đường đó.
+
+\begin{bt}
+  \item Mở \code{SmallViT.\_\_init\_\_} và thay đối số mặc định \code{patch\_size}
+    từ 8 bằng 4. Trước khi
+    chạy, tính số token, chiều patch vector và tỷ số số cặp attention. Sau đó
+    chỉ chạy test geometry, không đưa một accuracy nào vào báo cáo cho tới khi
+    bạn quyết định lại số layer, budget và recipe cho phép so mới.
+
+  \item Thêm một đường đo attention weights của class token trong
+    \code{SmallViT}. Huấn luyện đúng một cấu hình đã có, lấy một ảnh đúng và
+    một ảnh sai, rồi vẽ lưới 4x4 từ 16 trọng số. Cảnh báo: một bản đồ đẹp không
+    chứng minh model dùng đúng lý do; hãy nêu một đối chứng có thể làm nó lộ ra.
+
+  \item Thay learned positional embedding bằng sin-cos của
+    chương~\ref{ch:transformer}. Giữ nguyên mọi tham số còn lại, chạy ba seed
+    ở một lượng dữ liệu, và đặt kết quả cạnh spread. Nếu khoảng cách nhỏ hơn
+    spread, câu trả lời đúng là gì?
+
+  \item Giữ khoảng 66,000 tham số nhưng thử hai patch size khác nhau. Bạn sẽ
+    phải đổi width hoặc số layer để giữ budget tham số. Ghi công thức đếm trước
+    khi code, rồi nói rõ thí nghiệm của bạn đang đổi mấy biến cùng lúc.
+\end{bt}
+
+\tierextend
+
+\begin{bt}
+  \item Bài ViT nói scale có thể mua lại inductive bias. Thiết kế đường cong
+    thử đúng câu ấy ở quy mô bạn chạy được: ít nhất ba lượng dữ liệu, một CNN,
+    một ViT, cùng một cách chọn checkpoint. Nêu trước một kết quả sẽ bác chính
+    câu chuyện \enquote{càng nhiều dữ liệu, ViT càng bắt kịp}.
+
+  \item Patch 8x8 biến một ảnh CIFAR thành 16 token. Hãy xáo thứ tự 16 patch
+    bằng cùng một hoán vị ở train và test. CNN, ViT có positional embedding và
+    ViT không có positional embedding sẽ mất gì khác nhau? Đừng chỉ dự đoán:
+    thiết kế đối chứng để biết mất vì phá cấu trúc cục bộ hay vì thay đổi tọa
+    độ mà model đã học.
+
+  \item Chương~\ref{ch:chi-phi-bac-hai} sẽ nói FlashAttention không xóa số
+    cặp attention. Dựng một benchmark quét số token, tách thời gian tính và
+    lưu lượng bộ nhớ, rồi xem ở đâu patch nhỏ bắt đầu mất lợi ích chi tiết của
+    nó. Đây là câu hỏi mở trong thiết lập máy của bạn, không có một con số sách
+    đã trả lời sẵn.
+\end{bt}

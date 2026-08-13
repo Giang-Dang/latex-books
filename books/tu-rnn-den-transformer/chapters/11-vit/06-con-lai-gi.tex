@@ -1,0 +1,32 @@
+\section{Cái bài ViT chứng minh, và cái nó không}
+\label{sec:ch11-con-lai-gi}
+
+\index{Vision Transformer!cái còn lại}%
+ViT không chứng minh CNN đã lỗi thời. Nó làm một việc khó hơn: tách hai câu
+người ta hay dán vào nhau.
+
+Câu thứ nhất: attention toàn cục có đủ sức biểu diễn cho ảnh. Chương 10 đã có
+một phiên bản hẹp của câu này: self-attention biểu diễn được convolution nếu
+ta đặt đủ head đúng cách. ViT cho thấy, với JFT-300M, người ta không cần tự đặt
+cách ấy bằng tay ở mỗi layer để đạt kết quả mạnh.
+
+Câu thứ hai: vì thế cấu trúc ảnh không còn đáng giá. Bảng CIFAR-10 của mục
+\ref{sec:ch11-cung-recipe} không cho phép nói vậy. CNN 66,570 tham số đạt
+0.7036 ở 50,000 ảnh; ViT 66,095 tham số đạt 0.4576. ViT không phải MLP, nhưng
+nó không thay CNN dưới recipe này. Cả hai câu cùng đúng vì chúng hỏi hai điều
+khác: cái gì \emph{có thể học}, và cái gì \emph{được cho sẵn}.
+
+Chỗ dễ lẫn cuối cùng là số trong bài với số tôi đo. Bài báo nói ViT-B/16 từ
+77.91 lên 84.15 khi đổi pretraining data. Tôi không đo JFT, không dựng
+ViT-B/16, và cũng không có ImageNet-1k trong companion repo. Tôi đo cái đối
+nghịch: ViT nhỏ, CIFAR-10, CPU, không pretraining. Hai bảng ở hai đầu cùng một
+đường, không phải hai phép tái lập của nhau.
+
+Vậy chương này đóng được một câu hẹp: nếu bỏ tính cục bộ khỏi kiến trúc, dữ
+liệu nhỏ và recipe ngắn không tự bù lại. Nó mở hai câu khó hơn.
+
+Một là patch nên nhỏ tới đâu. Patch nhỏ giữ chi tiết tốt hơn và đẩy chi phí
+lên bậc hai; patch lớn rẻ hơn nhưng đã nén ảnh trước attention. Hai là khi
+attention đã phải nhìn 577 token hay hàng chục nghìn token, cái gì thực sự
+giới hạn nó: số phép tính hay dữ liệu đi qua bộ nhớ? Chương sau không đổi bài
+toán bằng một kernel mới. Nó đổi thứ attention phải mang qua bộ nhớ.

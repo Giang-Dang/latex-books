@@ -1,0 +1,44 @@
+% Ảnh 32x32 ở trên được chia thành lưới 4x4 patch 8x8. Mỗi patch được làm
+% phẳng rồi qua cùng một phép chiếu tuyến tính. Dưới ảnh là dãy 17 token:
+% class token đứng trước 16 token ảnh. Positional embedding được cộng vào mọi
+% ô trong dãy. Hình chỉ vẽ input của encoder, không vẽ attention.
+% Mono-safe: patch khác nhau bằng độ xám xen kẽ; cấu trúc nằm ở lưới và mũi tên.
+\begin{tikzpicture}[
+  >=Stealth,
+  anh/.style={draw, minimum size=6mm, inner sep=0pt},
+  patchdam/.style={anh, fill=black!18},
+  patchnhat/.style={anh, fill=black!4},
+  token/.style={draw, rounded corners=1.5pt, minimum width=5.6mm,
+                minimum height=5mm, font=\tiny, fill=white},
+  cls/.style={token, fill=black!16, font=\tiny\bfseries},
+  nhan/.style={font=\footnotesize},
+  nho/.style={font=\scriptsize, black!65},
+]
+  \node[nhan] at (1.5, 3.45) {Ảnh RGB 32x32};
+  \foreach \r in {0,1,2,3} {
+    \foreach \c in {0,1,2,3} {
+      \pgfmathtruncatemacro\k{4*\r+\c+1}
+      \ifodd\k
+        \node[patchdam] (p\k) at (\c, {2.45-\r}) {};
+      \else
+        \node[patchnhat] (p\k) at (\c, {2.45-\r}) {};
+      \fi
+    }
+  }
+  \draw[black!55] (-0.38,-0.93) rectangle (3.38,2.83);
+  \node[nho, align=center] at (1.5,-1.48) {16 mảnh ảnh 8x8\\mỗi mảnh có 192 số};
+
+  \draw[-{Stealth[length=2mm]}, black!65] (1.5,-1.95) -- (1.5,-2.7);
+  \node[nho, anchor=west] at (1.75,-2.32)
+    {làm phẳng, chiếu bằng cùng ma trận \(\mat{E}\)};
+
+  \node[nhan] at (5.0,-3.2) {Chuỗi vào encoder};
+  \node[cls] (c) at (-0.05,-4.05) {class};
+  \foreach \k in {1,...,16} {
+    \node[token] (t\k) at ({0.42+0.58*\k},-4.05) {\(p_\k\)};
+  }
+  \draw[black!45, rounded corners=2pt] (-0.48,-4.5) rectangle (9.85,-3.6);
+  \node[nho, align=center] at (4.7,-5.0)
+    {17 token: một token lớp và 16 token ảnh.\\
+     Mỗi token nhận thêm một embedding vị trí học được.};
+\end{tikzpicture}
