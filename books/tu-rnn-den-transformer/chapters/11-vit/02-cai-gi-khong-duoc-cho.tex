@@ -1,0 +1,40 @@
+\section{Vị trí không còn nằm trong kiến trúc}
+\label{sec:ch11-vi-tri-khong-duoc-cho}
+
+\index{Vision Transformer!token lớp và vị trí}%
+Self-attention của chương~\ref{ch:transformer} không biết thứ tự. Hoán vị token
+đầu vào thì nó hoán vị đầu ra theo, và phép tính vẫn đúng y nguyên. Với ảnh,
+điều đó còn khó chịu hơn: đổi patch ở góc trái với patch ở giữa không chỉ đổi
+vị trí trong danh sách, nó đổi nghĩa của cả bố cục.
+
+ViT thêm hai loại tham số mà ảnh không tự mang. Đầu dãy là một \tn{token lớp}{class
+token}, một vector. Sau encoder, bài dùng output ở đúng vị trí ấy làm biểu diễn của cả ảnh
+và đặt classifier lên nó. Bài viết `class token`; gọi nó là `CLS` trong code
+thì tiện, nhưng đừng để cái tên làm nó giống một pixel. Nó không nhìn một mảnh
+nào cả. Nó là một chỗ để các patch dồn thông tin về.
+
+Thứ hai là \tn{embedding vị trí}{positional embedding} học được, một bảng có
+một hàng cho mỗi vị trí. Nếu \(\vect{x}_1, \ldots, \vect{x}_N\) là các patch
+đã làm phẳng và \(\vect{c}\) là class token, đầu vào encoder là
+
+\begin{equation}
+\label{eq:ch11-dau-vao-vit}
+\mat{Z}_0 = [\vect{c}; \vect{x}_1\mat{E}; \ldots; \vect{x}_N\mat{E}]
+  + \mat{E}_{\mathrm{pos}}.
+\end{equation}
+
+\(\mat{E}_{\mathrm{pos}}\) có một hàng cho mỗi vị trí, kể cả class token.
+Nó không là mã sin-cos của chương~\ref{ch:transformer}; nó là tham số học được
+từ dữ liệu. Bài thử cả 1-D, 2-D và relative position ở phụ lục D.4. Bảng của
+họ không thấy lợi ích đáng kể của loại biết lưới hai chiều hơn, trong cấu hình
+ablation ấy~\autocite{dosovitskiy2021vit}.
+
+Chỗ này đáng dừng lại. Một embedding vị trí nói patch thứ bảy ở vị trí thứ bảy.
+Nó không nói patch thứ bảy chỉ nên nhìn bốn patch sát nó, cũng không nói một
+cạnh thẳng ở đó giống một cạnh thẳng ở patch khác. Nó đưa tọa độ vào dãy. Còn
+biến tọa độ thành một quy tắc cục bộ là việc mô hình phải học.
+
+Đó là lý do tôi không gọi ViT là \enquote{CNN viết bằng attention}. Nó có thể
+học các quan hệ mà CNN buộc sẵn, như định lý Cordonnier ở
+chương~\ref{ch:bias-quy-nap} đã nói. Nhưng hai chữ \enquote{có thể} đi kèm một
+đánh đổi về dữ liệu.

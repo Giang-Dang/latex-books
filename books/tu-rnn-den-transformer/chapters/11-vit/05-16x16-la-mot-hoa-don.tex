@@ -1,0 +1,45 @@
+\section{16x16 đổi chi phí gì}
+\label{sec:ch11-chi-phi-patch}
+
+\index{Vision Transformer!chi phí patch}%
+Nhan đề bài nghe như một phép ẩn dụ. Trong code, 16x16 đặt một chi phí rất cụ
+thể. Phương trình~\ref{eq:ch11-so-patch} nói khi cạnh patch giảm một nửa thì
+số token tăng bốn lần. Attention nhìn mọi cặp token, nên riêng ma trận score
+tăng gần mười sáu lần.
+
+Lấy ảnh 224x224. Patch 32x32 cho 49 token ảnh, cộng token lớp là 50. Patch
+16x16 cho 196 token ảnh, cộng \tn{token lớp}{class token} là 197. Tỷ số số cặp là
+
+\begin{equation}
+\label{eq:ch11-chi-phi-patch}
+\frac{197^2}{50^2} = 15.52.
+\end{equation}
+
+Đây không phải benchmark GPU. Nó là phép đếm số ô pairwise mà attention phải
+giữ và dùng, suy ra trực tiếp từ số token. Có thể có phần khác của layer không
+tăng theo cùng tỷ số, nên biến 15.52 thành lời hứa wall-clock là sai loại số
+mà chương~\ref{ch:chi-phi-va-song-song} đã dạy đừng in.
+
+Cùng một giá ấy xuất hiện khi tăng độ phân giải. Giữ patch 16x16, ảnh 384x384
+có 576 token ảnh và 577 token kể cả token lớp. So với 197 token ở 224x224,
+chỉ riêng số cặp tăng 8.58 lần. Bài ViT làm đúng đường này khi fine-tune độ
+phân giải cao hơn: giữ patch size, nội suy positional embedding theo lưới
+hai chiều~\autocite{dosovitskiy2021vit}.
+
+Đó là nút thắt hai chương cùng đụng. Chương 10 nói attention theo pixel trên
+ảnh 32x32 đã quá đắt. ViT không xóa chi phí bậc hai; nó giảm \(N\) bằng patch
+lớn. Đổi lại, các chi tiết nhỏ nằm trong cùng patch đã bị nén trước khi
+attention được nhìn chúng. Patch 16x16 là một cấu hình, không phải kích thước
+được thiên nhiên chọn.
+
+Ở CIFAR-10 của tôi, patch 8x8 cho 16 token ảnh. Dùng patch 4x4 sẽ thành 64,
+và số cặp kể cả token lớp đổi từ \(17^2\) sang \(65^2\), tức 14.62 lần. Đó là
+số học, không phải benchmark. Bản `ch11` chọn 8x8, một layer, để phép so có
+output canonical và chạy được trên CPU. Nó không phải 16x16, cũng không phải
+ViT-B/16 thu nhỏ; đó là giới hạn của phép đo này.
+
+Chương~\ref{ch:chi-phi-bac-hai} quay lại đúng chi phí này. FlashAttention
+không biến attention thành cục bộ và không làm \(N^2\) cặp biến mất; nó đổi
+chỗ các giá trị trung gian sống, để cùng phép tính không phải đi qua bộ nhớ
+chậm nhiều lần. ViT cần cả hai ý: patch để hạ \(N\), rồi sau này là một cách
+xử lý phần \(N^2\) còn lại.

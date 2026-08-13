@@ -1,3 +1,31 @@
 % Scope (SPEC table of contents): Dosovitskiy và cộng sự 2021. Patch embedding, token CLS, positional embedding học được; kết quả then chốt là thua ResNet ở ImageNet-1k và thắng khi pretrain JFT-300M; ViT nhỏ tự train trên CIFAR-10 để tái hiện đúng chỗ nó thua; gap: đói dữ liệu, bậc hai với ảnh lớn.
 \chapter{Ảnh là 16x16 chữ}
 \label{ch:vit}
+
+Mạng tích chập của chương~\ref{ch:bias-quy-nap} bắt đầu bằng một điều nó không
+hề xin phép người dùng: mỗi unit chỉ nhìn lân cận nhỏ quanh mình. Vision
+Transformer, viết tắt là ViT, bắt đầu bằng việc bỏ điều đó đi. Nó cắt ảnh thành
+các ô, coi mỗi ô là một token, rồi đưa cả dãy vào đúng encoder đã gặp ở
+chương~\ref{ch:transformer}. Không có kernel. Không có cửa sổ cục bộ.
+
+Tiêu đề bài báo viết \enquote{16x16 words}, nhưng 16x16 không phải một phép màu
+hay một kích thước bắt buộc. Nó là chỗ tác giả đổi một ảnh lớn thành một chuỗi
+đủ ngắn để attention toàn cục chạy được. Đổi patch là đổi cả hai thứ ViT cần
+trả: cấu trúc ảnh mà nó không còn được cho sẵn, và số cặp token mà attention
+phải nhìn.
+
+Chương này đọc hai nửa kết quả của Dosovitskiy và cộng sự cạnh nhau. Trên dữ
+liệu ImageNet-1k, một ViT-B/16 nhỏ hơn không làm được điều mô hình tích chập
+đã làm tốt. Cùng kiến trúc ấy, sau JFT-300M, đổi hẳn vị trí. Rồi tôi thu nhỏ
+câu hỏi xuống CIFAR-10 và chạy đúng nửa nó thua: một ViT 66,095 tham số cạnh
+CNN 66,570 tham số, chung recipe và chung seed. Nó thua, và nó còn không khớp
+nổi cả phần tập huấn luyện được chấm. Đó là số đo về điều cái kiến trúc không được cho sẵn, chứ
+không phải một bản sao thu nhỏ của JFT.
+
+\input{chapters/11-vit/01-anh-thanh-token}
+\input{chapters/11-vit/02-cai-gi-khong-duoc-cho}
+\input{chapters/11-vit/03-hai-nua-cua-bang}
+\input{chapters/11-vit/04-cung-recipe}
+\input{chapters/11-vit/05-16x16-la-mot-hoa-don}
+\input{chapters/11-vit/06-con-lai-gi}
+\input{chapters/11-vit/07-bai-tap}

@@ -1,0 +1,66 @@
+\section{Cùng recipe, ViT thua ở đâu}
+\label{sec:ch11-cung-recipe}
+
+\index{Vision Transformer!CIFAR-10}%
+Chương~\ref{ch:bias-quy-nap} đã có một CIFAR-10 sweep. Tôi không chạy lại ba
+mô hình cũ để có một bảng mới đẹp mắt: code và recipe của CNN cùng hai MLP
+không đổi, nên output canonical ở tag `ch10`, vẫn có mặt ở tag `ch11`, đã là
+hàng tham chiếu. Chương này chỉ chạy 12 mô hình mới: ViT, bốn lượng dữ liệu,
+ba seed.
+
+ViT nhỏ này có 66,095 tham số, CNN có 66,570. Nó cắt ảnh thành 16 patch 8x8,
+thêm một \tn{token lớp}{class token}, dùng một encoder layer post-LN và một classifier tuyến
+tính. Không có convolution, local attention, augmentation hay một thủ thuật
+thị giác nào khác. Code, test và output gốc ở tag `ch11`.
+
+\begin{measured}{một ViT cạnh ba hàng của chương 10}
+\begin{minted}{text}
+n_train  CNN     ViT     MLP matched  MLP wide
+1000     0.4365  0.2948  0.3163       0.3469
+4000     0.5499  0.3578  0.3733       0.3915
+16000    0.6399  0.4150  0.4251       0.4534
+50000    0.7036  0.4576  0.4478       0.5025
+\end{minted}
+
+Ba seed của ViT có spread lần lượt 0.0274, 0.0094, 0.0210 và 0.0190. CNN có
+spread 0.0326, 0.0102, 0.0197 và 0.0019. Chạy bằng
+\code{python verify.py --only ch11} tại tag \code{ch11}; gate in
+\code{verify: ok}.
+\end{measured}
+
+Khoảng cách CNN-ViT là 0.1417 ở 1,000 ảnh và 0.2460 ở 50,000. Cả hai rộng hơn
+spread lớn hơn của hàng tương ứng, nên đây không phải một thứ tự do seed lật
+được. Nhưng cách đọc quan trọng hơn là hàng ViT cạnh MLP: ở 50,000 ảnh, ViT
+vẫn thua CNN mà vượt MLP khớp tham số một ít. Bỏ cấu trúc cục bộ không đồng
+nghĩa với trở thành MLP; attention vẫn cho patch nói chuyện toàn cục từ layer
+đầu.
+
+\subsection*{Nó chưa khớp cả phần huấn luyện được chấm}
+
+Chỉ nhìn test accuracy thì dễ kể sai câu chuyện: ViT tổng quát hóa kém. Cột
+train accuracy chặn câu đó.
+
+\begin{measured}{độ chính xác trên tối đa 10,000 ảnh huấn luyện đầu}
+\begin{minted}{text}
+n_train  ViT train acc
+1000     0.5297
+4000     0.4306
+16000    0.4418
+50000    0.4644
+\end{minted}
+
+Đo bằng \code{experiments/ch11\_vit.py} tại tag \code{ch11}.
+\end{measured}
+
+Hàm chấm của companion repo cố ý chỉ đọc tối đa 10,000 ảnh huấn luyện, để không
+đốt thêm thời gian cho một cột chẩn đoán. Vì vậy ở hai hàng 16,000 và 50,000,
+đây không phải accuracy trên toàn bộ tập train. Dù với giới hạn ấy, ViT chỉ
+khớp 0.5297 ở hàng dễ nhất, rồi còn thấp hơn khi dữ liệu nhiều lên vì số epoch
+giảm để giữ số bước gần cùng bậc với chương 10. Nên bảng này không được phép
+nói \enquote{ViT overfit trên CIFAR-10}. Nó chưa khớp cả phần dữ liệu huấn luyện
+được chấm trong ngân sách recipe này. Đó là một kết quả tệ hơn cho ViT, nhưng
+sạch hơn: không phải một câu chuyện sau khi mô hình đã học xong.
+
+Tôi không nâng số epoch cho ViT để nó đẹp hơn. Làm thế sẽ đổi hai biến cùng
+lúc, kiến trúc và ngân sách huấn luyện, rồi không còn biết số nào trả tiền cho
+số nào.

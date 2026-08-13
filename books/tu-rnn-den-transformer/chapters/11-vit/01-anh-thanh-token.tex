@@ -1,0 +1,52 @@
+\section{Ảnh thành token}
+\label{sec:ch11-anh-thanh-token}
+
+\index{Vision Transformer!ảnh thành token}%
+Một ảnh không tự nhiên là một câu. Pixel đứng cạnh nhau có quan hệ mà token
+trong câu không có, và chương~\ref{ch:bias-quy-nap} vừa dành cả một chương để
+đếm giá của quan hệ ấy. ViT không phủ nhận điều đó. Nó chọn một đường khác:
+gói nhiều pixel cạnh nhau thành một \tn{mảnh ảnh}{patch}, rồi để self-attention
+học quan hệ giữa các gói. Khác với \tn{tích chập}{convolution}, nó không buộc
+\tn{tính cục bộ}{locality} giữa các gói, cũng không có \tn{chia sẻ trọng
+số}{weight sharing} theo từng lệch pixel.
+
+Gọi ảnh đầu vào là \(\mat{X} \in \R^{H \times W \times C}\), patch vuông có
+cạnh \(P\). Bỏ qua biên cho gọn, ảnh tách thành
+
+\begin{equation}
+\label{eq:ch11-so-patch}
+N = \frac{HW}{P^2}
+\end{equation}
+
+mảnh. Mỗi mảnh có \(P^2C\) số, được làm phẳng rồi nhân với cùng ma trận
+\(\mat{E}\) để thành một vector \(D\) chiều. Đây là phép chiếu tuyến tính, không
+phải tích chập: hai patch ở hai chỗ khác nhau đi qua cùng \(\mat{E}\), nhưng
+\(\mat{E}\) nhìn trọn patch 8x8 một lần chứ không trượt từng pixel trên ảnh.
+
+Hình~\ref{fig:ch11-anh-thanh-token} vẽ đúng phiên bản tôi chạy sau này. CIFAR-10
+là ảnh RGB 32x32. Patch 8x8 tạo 16 patch, mỗi patch có 192 số. Một
+\tn{token lớp}{class token} đứng trước 16 token ấy. Con số patch nhỏ hơn 16x16
+của nhan đề bài báo, vì nếu giữ 16x16 trên ảnh 32x32 thì cả ảnh chỉ còn bốn
+token và câu hỏi về attention gần như biến mất.
+
+% Width measured with \savebox: 302.15pt against this book's 441.02pt measure,
+% leaving 138.87pt. Do not estimate it from the page (quyet dinh 67).
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch11-anh-thanh-token}
+  \caption{Ảnh không đi thẳng vào encoder. Nó được chia thành 16 mảnh ảnh,
+  mỗi mảnh được làm phẳng và chiếu bằng cùng một ma trận, rồi thành 16 token.
+  Token lớp đứng đầu dãy, nên encoder nhận 17 token. Cái hình cố ý không vẽ
+  một cửa sổ cục bộ nào: sau đường cắt patch, mọi token có thể nhìn mọi token.}
+  \label{fig:ch11-anh-thanh-token}
+\end{figure}
+
+Chữ \enquote{cùng ma trận} dễ làm người ta gọi đây là chia sẻ trọng số rồi đi
+tiếp. Không đúng theo nghĩa chương trước cần. Một kernel 3x3 được dùng lại ở
+mỗi lệch một pixel, nên nó buộc một con mèo ở góc và một con mèo ở giữa sinh ra
+cùng kiểu đặc trưng. Phép chiếu patch chỉ buộc bốn mươi tám hay một trăm chín
+mươi hai pixel \emph{bên trong một patch} dùng cùng phép chiếu. Nó không nói
+patch thứ nhất và patch thứ mười sáu phải có quan hệ nào.
+
+Điều đó là điểm xuất phát của ViT, không phải một khuyết điểm nhỏ cần giấu.
+Mục sau nói cách mô hình biết patch nào đang ở đâu.
