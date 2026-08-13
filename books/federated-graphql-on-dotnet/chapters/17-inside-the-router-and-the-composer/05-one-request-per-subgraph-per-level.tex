@@ -1,0 +1,111 @@
+\section{One Request per Subgraph, per Level}
+\label{sec:ch17-one-request-per-subgraph}
+\index{entity fetch!batching in the router|(}%
+
+Chapter~\ref{ch:entity-resolution-done-right} established from the outside that
+\code{\_entities} is called once with a list of representations rather than once
+per representation, and chapter~\ref{ch:strangling-the-monolith} watched three
+of those calls happen at the same time. Neither could say what decides it, and
+neither saw what the router does to the list before it sends it.
+
+Here is the storefront query's fetch tree, taken from a trace rather than a
+query plan so that the representations are visible:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+Sequence
+  Single      catalog    path=''
+  Parallel
+    BatchEntity pricing    path='browseProducts.nodes'  reps=3
+    BatchEntity inventory  path='browseProducts.nodes'  reps=3
+    BatchEntity reviews    path='browseProducts.nodes'  reps=3
+  BatchEntity accounts
+      path='browseProducts.nodes.@.reviews.nodes.@.author'  reps=5
+\end{minted}
+
+The shape is chapter~\ref{ch:strangling-the-monolith}'s, down to that last path
+with its two \code{@} steps, and needs no re-deriving. What that chapter's query
+plan could not show is the column on the right, because a query plan does not
+carry representations. Three of them for each of the three subgraphs
+contributing to a product, which is what you would expect from three products.
+And five for the authors.
+
+\subsection*{Five representations for six authors}
+
+\index{entity fetch!representations deduplicated}%
+Three products, two reviews each, is six reviews and therefore six authors. Five
+went out. One customer had written two of the six reviews, and the router
+noticed.
+
+That is the kind of observation I have been wrong about in this book before, so
+rather than reason about the seed data I asked for a duplicate on purpose. Three
+positions, two distinct identifiers, the first one repeated:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+asked for 3 positions holding 2 distinct ids, got 3 items back
+catalog    sent 2 representations
+pricing    sent 2 representations
+\end{minted}
+
+Both subgraphs were asked for two things, and the client got three, the first
+two identical. The mechanism is in the loader, where each rendered
+representation is hashed on its way into the outgoing buffer:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{go}
+			res.tools.keyGen.Reset()
+			_, _ = res.tools.keyGen.Write(itemInput.Bytes())
+			itemHash := res.tools.keyGen.Sum64()
+			if existingIndex, ok := res.tools.batchHashToIndex[itemHash]; ok {
+				batchStats[existingIndex] = arena.SliceAppend(res.tools.a, batchStats[existingIndex], items[i])
+				continue WithNextItem
+			} else {
+\end{minted}
+
+A hit on that map appends the item to the bucket belonging to the representation
+already queued and jumps to the next item without writing anything. The
+representation never reaches the wire a second time. Afterwards each answer is
+merged onto every item in its bucket, which is how three response positions get
+filled from two answers.
+
+\index{entity fetch!two deduplications, two layers}%
+Now put that next to chapter~\ref{ch:entity-resolution-done-right}. That chapter
+measured four resolver calls collapsing to one key lookup, and attributed it to
+GreenDonut, correctly: the DataLoader inside the subgraph deduplicates the keys
+it is given. This is a different deduplication, in a different process, and it
+runs first. By the time the subgraph's DataLoader sees the batch, the router has
+already removed the repeats.
+
+Both are live at once and they compose, which is worth knowing before you go
+looking for a duplicate that is not arriving. A subgraph instrumented to count
+distinct keys will never see the router's duplicates, so a graph where the same
+customer is fetched under two names will look, from inside Accounts, like a
+graph with no repetition in it at all.
+
+\subsection*{What decides a batch, and what bounds it}
+
+\index{entity fetch!what makes a batch}%
+The condition for a batch rather than a single entity fetch is structural: the
+entity jump happens at a path that is a list rather than an object. That is why
+\code{browseProducts.nodes} batches and a single \code{productById} would not.
+Post-processing turns that into the concrete batch form with one item template
+and a comma separator, which is exactly the shape
+chapter~\ref{ch:how-a-federated-query-actually-runs} printed off the wire
+without knowing where it came from.
+
+\index{entity fetch!no batch size limit}%
+What bounds it is nothing I could find. The loop runs over every matching item
+unconditionally, and there is no size cap in the loader. I want to be honest
+about the strength of that claim: I read the loop and searched the package, and
+the settings elsewhere in the router with \code{BatchSize} in the name belong to
+an OpenTelemetry exporter and to the client-side request batching feature, which
+are different things. What I did not do is read every path that produces the
+item list, so \enquote{nothing bounds it} is the reading of one function rather
+than a proof about the whole engine. If you serve a page of five hundred
+entities, the \code{\_entities} call carrying five hundred representations is
+what the code I read would produce.
+
+\medskip
+Which raises the obvious question of how any of this was visible at all, given
+that the previous section's numbers came out of a trace. The trace is the last
+subject of the chapter, and it has a sting in it.
+
+\index{entity fetch!batching in the router|)}%

@@ -1,0 +1,175 @@
+\section{What the Plan Cache Keys On}
+\label{sec:ch17-what-the-plan-cache-keys-on}
+\index{plan cache!what it keys on|(}%
+
+The cache itself is one line of declaration, a \code{ristretto} cache from a
+\code{uint64} to a prepared plan. What matters is the key, and the key is the
+number section~\ref{sec:ch17-what-normalization-makes} just watched being made:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{go}
+	operationID := opContext.internalHash
+	// try to get a prepared plan for this operation ID from the cache
+	cachedPlan, ok := p.planCache.Get(operationID)
+\end{minted}
+
+Planning on a miss is single-flighted on the same identifier, so a burst of
+identical first-time requests plans once and the rest wait. That is the same
+arrangement chapter~\ref{ch:inside-hotchocolate} found around compilation in
+HotChocolate, arrived at independently by a different team in a different
+language, which is either convergent design or a sign that everybody eventually
+meets the same thundering herd.
+
+\subsection*{Measuring it without a metrics endpoint}
+
+\index{plan cache!why no earlier chapter could see it}%
+The reason four chapters left this open is that a stock router will not tell
+you. It registers cache metrics for seven caches by name and publishes none of
+them, because the Prometheus setting that turns them on defaults to false.
+Chapter~\ref{ch:enter-the-router} saw the metrics endpoint in the startup log
+and there was nothing on it worth reading.
+
+There is a better route than the counters anyway, and it is exact rather than
+sampled. The router will evaluate expressions into access-log fields, and one of
+the expressions is the plan cache key itself:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{yaml}
+access_logs:
+  enabled: true
+  router:
+    fields:
+      - key: planHash
+        value_from:
+          expression: request.operation.queryPlanHash
+      - key: planHit
+        value_from:
+          expression: request.operation.planCacheHit
+\end{minted}
+
+That is a router reporting its own cache key, per request, with no counter in
+between. Everything below is read off that log.
+
+\subsection*{Eleven documents, one plan}
+
+\index{plan cache!what it ignores}%
+Eleven documents, each sent twice, land on one key:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+baseline     plan=17972416575696450974
+named-a      plan=17972416575696450974
+named-b      plan=17972416575696450974
+var-n        plan=17972416575696450974
+var-count    plan=17972416575696450974
+literal-7    plan=17972416575696450974
+declared     plan=17972416575696450974
+declared-9   plan=17972416575696450974
+spaced       plan=17972416575696450974
+commented    plan=17972416575696450974
+fragment     plan=17972416575696450974
+\end{minted}
+
+Reading that list against
+section~\ref{sec:ch17-what-normalization-makes}: the operation name is blanked,
+so \code{query A} and \code{query B} collapse. Variables are renamed
+positionally, so \code{\$n} and \code{\$count} collapse. Literals are lifted
+into the side channel, so \code{first: 3} and \code{first: 7} collapse, and so
+does a properly declared variable carrying either value. Whitespace and comments
+never survive a parse. Fragments are inlined at the spread's position, so a
+fragment and the same selection written out collapse too.
+
+\index{plan cache!the control}%
+One shared plan answering two different questions is either the point or a bug,
+so I checked rather than assuming:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+control: first: 3 -> 3 nodes, first: 7 -> 7 nodes
+\end{minted}
+
+The plan is the shape of the work and the values ride in beside it. So a client
+that inlines its arguments costs the router nothing, which is a friendlier
+answer than I expected. Chapter~\ref{ch:the-life-of-a-request} argued for
+putting identifiers in the Variables pane instead, and that argument is
+untouched: it was about a subgraph's operation cache, which is a different cache
+in a different process, and it still holds there.
+
+\subsection*{Three things that buy you a second plan}
+
+\index{plan cache!what splits it}%
+Now the half I did not expect. Three pairs, each differing in exactly one thing:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+alias        varies the alias on a root field
+             12452750417983769066 vs 2728077130562092255
+order        varies the order of two fields in a selection set
+             15843417663884115703 vs 1777378001281248594
+nullability  varies the declared type of a variable
+             17972416575696450974 vs 16573561200335999562
+\end{minted}
+
+Those twenty-digit numbers are properties of this composed graph rather than
+facts worth remembering. Recompose and they all change; what does not change is
+which of them match.
+
+Put that beside the previous list and the shape of it is odd. Asking for a
+completely different slice of the catalogue is free. Renaming a field in your
+own response is not. Writing \code{\{ title sku \}} where somebody else wrote
+\code{\{ sku title \}} is not, because nothing normalises the order and the two
+print differently. And adding a \code{!} to a variable you declared is not,
+because the declared type survives into the printed document where the lifted
+literal's value did not.
+
+\index{plan cache!field order and generated clients}%
+The field-order one is the one I would worry about in a real deployment, and it
+is invisible from every artefact anybody looks at. A client that assembles
+selection sets from a set, or a map, or anything else without a defined
+iteration order will emit the same query in several orders across processes and
+restarts, and each order is a separate plan occupying a separate entry in a
+cache that holds 1024 of them by default. Nothing warns you. The queries are
+identical, the answers are identical, and one query quietly occupies as many
+entries as its fields have orderings.
+
+\subsection*{Chapter~\ref{ch:enter-the-router} was right, and this is the rest of it}
+
+\index{plan cache!the nullability split}%
+Chapter~\ref{ch:enter-the-router} found that a properly declared variable
+produces a different plan \emph{document} from the inlined form, and was careful
+about what that licensed: it said outright that this showed two documents
+differing, not a cache holding two entries, and handed the cache question here.
+Both halves are true and the reason they look contradictory is the type. Here
+are the normalised documents for five forms:
+
+\begin{minted}[fontsize=\scriptsize,breaklines]{text}
+inline-3       query($a: Int){browseProducts(first: $a){nodes {title}}}
+declared-null  query($a: Int){browseProducts(first: $a){nodes {title}}}
+declared-nonnl query($a: Int!){browseProducts(first: $a){nodes {title}}}
+named+nonnull  query Storefront($a: Int!){browseProducts(first: $a){nodes {title}}}
+named+null     query Storefront($a: Int){browseProducts(first: $a){nodes {title}}}
+\end{minted}
+
+The extraction pass synthesises a nullable variable, because a lifted literal
+cannot be required. Chapter~\ref{ch:enter-the-router}'s declared form was
+\code{\$first: Int!}, so its document differed by that one character and it was
+looking at a genuine difference. Declare the variable nullable and the document
+is identical to the inlined one, and so is the key.
+
+\index{plan cache!two documents, one entry}%
+The last two lines are the awkward part. Those two documents differ, visibly, in
+the operation name, and they share a cache key, because the name was blanked
+before the hash and not before the print. Whichever arrives first is planned,
+stored, and served to the other. The plan a request executes is correct either
+way, since execution runs the fetch tree and the fetch tree is the same; what
+differs is the \code{normalizedQuery} string carried along with it, which now
+names an operation the second caller did not send.
+
+I want to be careful about how much that is worth. It is cosmetic as far as I
+can tell, and I could not construct a case where it changes an answer. It is
+also permanently unobservable from outside, for a reason
+section~\ref{sec:ch17-watching-it-changes-it} gets to: the only way to make the
+router show you a plan document is a header that stops it using the cache. So
+the mismatch exists exactly where nobody can look at it.
+
+\medskip
+That is which plan you get. The next question is what a plan is, and how the
+router decided that this subgraph rather than that one should answer a field
+both of them offer.
+
+\index{plan cache!what it keys on|)}%

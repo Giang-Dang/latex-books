@@ -1,0 +1,172 @@
+\section{The Last Thing the Composer Does}
+\label{sec:ch17-the-last-thing-the-composer-does}
+\index{composer!resolvability graph|(}%
+
+Satisfiability is the check chapter~\ref{ch:composition} spent a section on and
+this one can finally explain. Before any of that, there is a fact about
+\emph{when} it runs that changes how you should read every composition failure
+you have ever seen.
+
+\index{composer!satisfiability runs last}%
+It runs last, and only if nothing else went wrong. In
+\code{federation-factory.ts}, at the end of composition:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{typescript}
+    // Return any composition errors before checking whether all fields are resolvable
+    if (this.errors.length > 0) {
+      return { errors: this.errors, success: false, warnings: this.warnings };
+    }
+\end{minted}
+
+The comment is theirs. Every merge-time error, which is to say every
+shareability complaint, every type mismatch, every missing or mismatched key
+that chapter~\ref{ch:composition} catalogued, is collected and returned before
+the resolvability check is even attempted. So a schema pair that fails with one
+shareability error has told you nothing at all about whether its fields can be
+reached. Fix that error and the next run can produce a satisfiability failure
+that was there the whole time. I had read composition output for eight chapters
+without knowing that, and it is not something the output can teach you, because
+a run that never reached the check looks exactly like a run that passed it.
+
+\subsection*{What the walk is walking}
+
+\index{composer!graph nodes are per subgraph and type}%
+The composer builds a graph, once, and threads the same instance through every
+subgraph's normalisation pass. Its nodes are keyed by a pair:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{typescript}
+export class Graph {
+  edgeId = -1;
+  entityDataNodeByTypeName = new Map<TypeName, EntityDataNode>();
+  nodeByNodeName = new Map<NodeName, GraphNode>();
+  nodesByTypeName = new Map<TypeName, Array<GraphNode>>();
+  resolvedRootFieldNodeNames = new Set<NodeName>();
+  rootNodeByTypeName = new Map<RootTypeName, RootNode>();
+\end{minted}
+
+A node name is \code{subgraph.Type}, so \code{catalog.Product} and
+\code{pricing.Product} are two different nodes rather than one merged type.
+Ordinary fields are edges inside a subgraph; a resolvable \code{@key} is an edge
+between subgraphs. Chapter~\ref{ch:composition} drew that picture already, in
+figure~\ref{fig:ch09-resolvability-walk}, and the picture was right. What it did
+not know is that the traversal is an ordinary recursive depth-first walk with
+cycle detection done by stamping a per-walk index into each edge, rather than
+anything cleverer.
+
+\subsection*{Why one route gets the blame}
+
+\index{composer!reports the first failing route}%
+Here is chapter~\ref{ch:composition}'s open question. Catalog declares four root
+fields that reach a product: \code{products}, \code{browseProducts},
+\code{productById} and \code{productBySku}. Make Pricing's key unresolvable and
+the composer names \code{Query.products} and nothing else.
+
+The answer is in \code{Graph.validate()}, which loops over root fields and does
+not accumulate:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{typescript}
+        const fieldData = getOrThrowError(rootNode.fieldDataByName, rootFieldName, 'fieldDataByName');
+        const rootFieldData = newRootFieldData(rootNode.typeName, rootFieldName, fieldData.subgraphNames);
+        // If there are no nested entities, then the unresolvable fields must be impossible to resolve.
+        if (!involvesEntities) {
+          return {
+            errors: generateRootResolvabilityErrors({
+              unresolvablePaths: rootFieldWalker.unresolvablePaths,
+              resDataByPath: rootFieldWalker.resDataByPath,
+              rootFieldData,
+            }),
+            success: false,
+          };
+        }
+
+        const result = this.validateEntities({ isSharedRootField, rootFieldData, walker: rootFieldWalker });
+        if (!result.success) {
+          return result;
+        }
+\end{minted}
+
+Two \code{return} statements, both inside the loop. The first failing root field
+ends the function, and \code{validate()} is called from exactly one place and
+its result used as-is, so nothing anywhere retries the rest. The loop runs over
+a JavaScript \code{Map}, which iterates in insertion order, and edges are
+inserted while the parser walks each subgraph's document. Insertion order is
+declaration order in the SDL.
+
+\index{composer!the control that moved the blame}%
+That is a satisfying explanation and satisfying explanations are exactly the
+ones this book has been wrong about before, so I ran the control rather than
+printing it. Four compositions, each making the same edit to Pricing, varying
+only Catalog's \code{type Query}:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+all four, as committed                 names ["Query.products"]
+products deleted                       names ["Query.browseProducts"]
+products and browseProducts deleted    names ["Query.productById"]
+all four, productBySku moved to the top names ["Query.productBySku"]
+\end{minted}
+
+The last line is the one that does the work. Nothing is removed; one field moves
+to the top of the type and the blame moves with it. All four runs report the
+same two fields unresolvable, \code{price} and \code{shippingCost}, because the
+fault never changed and only the route to it did.
+
+\index{composition errors!fixing the named route surfaces the next}%
+What this costs you in practice is worth being blunt about. If you fix the route
+the error names, you have not necessarily fixed anything. You have made the
+composer walk one field further and find the next way in. On a type with four
+entry points that is four rounds of compose, read, edit before the error goes
+away, and each round looks like progress.
+
+\subsection*{Two errors, one route, and neither number means what it looks like}
+
+\index{composition errors!repeated identically}%
+Chapter~\ref{ch:composition} also recorded that the composer prints some errors
+more than once, identically, and established no pattern. There are two different
+things going on and they are worth separating, because one of them is not
+repetition at all.
+
+The unresolvable key produces two errors, one per unresolvable field, and each
+error renders the same explanation. So the sentence naming the root field
+appears twice while still naming a single route:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+unsatisfiable-key: 7 distinct sentences, 10 lines
+  the root-field sentence appears x2, naming one route
+\end{minted}
+
+The incompatible shared field is the other shape, and there the whole error is
+printed twice over, every sentence of it:
+
+\begin{minted}[fontsize=\footnotesize,breaklines]{text}
+incompatible-type: 5 distinct sentences, 10 lines
+  x2  Each instance of a shared field must resolve identically across ...
+  x2  The field "Product.averageRating" could not be federated due to ...
+  x2  The discrepancies are as follows:
+  x2  The named type "Int" is returned by the following subgraph: "catalog".
+  x2  The named type "Float" is returned by the following subgraph: "reviews".
+\end{minted}
+
+The two long sentences are shortened by the case rather than by the composer,
+which is why they end in an ellipsis.
+
+\index{composer!has no error deduplication}%
+Nothing in the composer collapses either. The error list is a bare array, every
+call site is a plain \code{push}, and wgc calls composition once and prints one
+row per entry, so the doubling starts inside the composer rather than in the
+tool around it. I can say that the incompatible-type message is constructed
+twice; I cannot say from which two places, and I am not going to guess at it in
+print. Both counts are cases in the companion repository, so a release that
+starts deduplicating will fail the gate rather than quietly making this section
+wrong.
+
+The practical rule is the one chapter~\ref{ch:composition} reached for and can
+now be stated with a reason behind it: count faults, never lines. Both cases
+above are ten lines of composition output, both are one mistake, and the ten
+lines get there by two different routes.
+
+\medskip
+That is the composer, which decides what the graph is. The rest of this chapter
+is the router, which decides what to do about it, and the first thing it does is
+take your document apart.
+
+\index{composer!resolvability graph|)}%

@@ -1,0 +1,127 @@
+\section*{Your turn}
+
+Check out tag \code{ch17} of the companion repository and run \code{npm ci}
+once. Exercises 1 and 2 compose files and need nothing running. Exercises 3 to 8
+need the seven services and the database, so start the stack the way
+chapter~\ref{ch:identity-and-authorization} does; the case scripts start their
+own routers on ports of their own, so leave the composed stack up rather than
+stopping it.
+
+No service changes at this tag, so there is no new Postman collection.
+Exercise 8 uses \code{postman/mosaic-router}, which is the one that goes through
+the router and has been there since chapter~\ref{ch:enter-the-router}.
+
+\begin{enumerate}
+  \item \textbf{Watch the blame move.} From the repository root:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/satisfiability-cases.mjs --print satisfiability-names-the-first-route
+  \end{minted}
+
+  Four compositions, four different root fields named, one fault throughout.
+  Before reading the fourth line, predict which field it will name from the
+  edit its label describes.
+
+  \item \textbf{Make the composer blame a field you choose.} Open
+  \code{schema/catalog.graphql} and swap the declaration order of
+  \code{products} and \code{browseProducts} in \code{type Query}. Run exercise 1
+  again. The case now fails, and it should: its four expected answers encode the
+  committed declaration order, so changing that order is exactly the thing it
+  exists to notice. Before running it, predict which of the four runs report a
+  different root field than they did in exercise 1. Then put the file back.
+
+  Do not move \code{productById} above \code{browseProducts} for this. The third
+  run deletes the block between them by position and will throw rather than
+  compose, which tells you nothing about the composer.
+
+  \item \textbf{Read a plan cache key.} Start the stack, then:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/planner-cases.mjs --print plan-key-ignores-almost-everything
+  \end{minted}
+
+  Eleven documents and one number. If the case fails on a document you added
+  rather than passing, you have found something this chapter does not describe,
+  which is worth more than the exercise.
+
+  \item \textbf{Break the class.} Add a twelfth document to that case's list
+  that you expect to share the key, and a pair to the next case that you expect
+  to split it. Good candidates for the first: the same query with its fields in
+  the same order but on different lines, or with a directive the schema does not
+  restrict. Good candidates for the second: a nested field's alias rather than a
+  root field's, and a variable with a default value. Two of those four will
+  surprise you, and which two is the point.
+
+  \item \textbf{Cost yourself a plan without changing a query.} The case
+  scripts start their own routers and remove them again, so to watch this on the
+  stack you started, add the debug block to \code{router/config.yaml} and
+  restart the router:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{yaml}
+engine:
+  debug:
+    enable_cache_response_headers: true
+  \end{minted}
+
+  Now send the storefront query twice with its two fields in each order, reading
+  the plan cache header each time. Both orders miss on their first send. Then
+  count how many orderings a client that builds selection sets from an unordered
+  collection could emit for that one query, and hold the answer against
+  \code{execution\_plan\_cache\_size}, which defaults to 1024 entries. Decide at
+  what number of distinct client queries you would start to care. Take the block
+  out again when you are done, or the next chapter's captures will not match.
+
+  \item \textbf{Confirm the observer effect yourself.} Run:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+node scripts/planner-cases.mjs --print tracing-never-hits-the-plan-cache
+  \end{minted}
+
+  Then read the planning duration on the last line, run it again, and read it
+  again. The two numbers differ and neither is the number a production request
+  pays. Decide what you would put in an access log instead.
+
+  \item \textbf{Find the duplicate on the wire.} Ask the router for two products
+  through \code{nodes}, naming the same identifier twice, with
+  \code{X-WG-Trace: true}, and count the representations in the traced input
+  against the items in \code{data}. Two go out and three come back. Then post
+  the same three representations, duplicate included, straight to Catalog's
+  \code{\_entities} on 5101, the way
+  chapter~\ref{ch:the-first-cut-extracting-catalog} did, and count what comes
+  back. The subgraph answers all three, because the deduplication you just
+  watched belongs to the router and Catalog never sees it.
+
+  \item \textbf{Verify it in Postman.} There is no collection for this chapter,
+  so use the one that goes through the router:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{text}
+npx newman run postman/mosaic-router.postman_collection.json \
+    -e postman/mosaic-router.local.postman_environment.json
+  \end{minted}
+
+  Run it twice without restarting the router. Every request in the second pass
+  is a document the router has already planned, and nothing in the collection
+  can see that. Now make it see it. Turn on the debug setting that reports cache
+  results in response headers:
+
+  \begin{minted}[fontsize=\footnotesize,breaklines]{yaml}
+engine:
+  debug:
+    enable_cache_response_headers: true
+  \end{minted}
+
+  Restart the router, then write a test asserting that the plan cache header
+  says \code{HIT}. Then decide whether you would ship a collection whose second
+  run asserts something its first run cannot, and what that says about running
+  it in CI.
+\end{enumerate}
+
+If you only have time for one of these, make it exercise 2, because it is the
+one that can still surprise somebody who has read the chapter. Predicting which
+runs change is easy; predicting the ones that do not is where you find out
+whether you believed the mechanism or just remembered the table.
+
+Exercise 5 is the one that will change something you do. A plan cache sized for
+your traffic is sized for the number of distinct documents your clients emit,
+and that is not the number of queries anybody wrote. The router will not
+complain about the difference. It will evict.
