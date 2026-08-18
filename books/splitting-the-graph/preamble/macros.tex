@@ -8,6 +8,50 @@
 % Inline code in prose.
 \newcommand{\code}[1]{\texttt{#1}}
 
+% Diaeresis on a cited author's name. SPEC decision 30 puts the book in strict
+% Ascii mode, so a name like Philip Mueller's is spelled with an accent macro
+% rather than the Unicode letter; spelling it "Mueller" instead would misspell
+% a real person. This wrapper exists because writing \" directly in a chapter
+% trips the prose gate's quote check, which reads the accent's double quote as
+% a literal quotation mark. Usage: M\uml{u}ller.
+\newcommand{\uml}[1]{\"{#1}}
+
+% The one skin every box in this book wears, so that a callout and a summary
+% read as the same family: square corners, a single 0.4pt stroke, black on
+% white, and a sans-serif title in its own compartment above a rule. That is
+% the box equivalent of the figure idiom in SPEC decision 33.
+%
+% Two settings here are load-bearing and were arrived at by building the box
+% and looking at the page, so do not drop them:
+%
+%   coltitle=black    tcolorbox derives the title color from colframe, which
+%                     is black, so the default title color is white. On a
+%                     white title background that renders an invisible title.
+%
+%   the title compartment, rather than "attach boxed title to top left"
+%                     the attached-tab form draws its tab but then draws only
+%                     the left rule of the box itself: no top, right or bottom
+%                     edge. The compartment form draws all four.
+%
+% Both defects were present in the first version of the onhc14 box below and
+% are what a summary box built to copy it inherited.
+\tcbset{
+  bookbox/.style={
+    enhanced,
+    breakable,
+    colback=white,
+    colbacktitle=white,
+    colframe=black,
+    coltitle=black,
+    boxrule=0.4pt,
+    titlerule=0.4pt,
+    arc=0pt,
+    outer arc=0pt,
+    left=3mm, right=3mm, top=2mm, bottom=2mm,
+    fonttitle=\sffamily\bfseries\small,
+  }
+}
+
 % SPEC decision 32: the "On HotChocolate 14" callout.
 %
 % Hot Chocolate 16 is this book's spine and 14 is out of support. A reader on
@@ -20,20 +64,45 @@
 %   \begin{onhc14}
 %     ...prose, and listings if the branch compiled them...
 %   \end{onhc14}
-\newtcolorbox{onhc14}{
-  breakable,
-  enhanced,
-  colback=white,
-  colframe=black,
-  boxrule=0.4pt,
-  arc=0pt,
-  outer arc=0pt,
-  left=3mm, right=3mm, top=2mm, bottom=2mm,
-  fonttitle=\sffamily\bfseries\small,
-  title={On HotChocolate 14},
-  attach boxed title to top left={xshift=3mm, yshift=-2mm},
-  boxed title style={colback=white, colframe=black, boxrule=0.4pt, arc=0pt, outer arc=0pt},
-}
+\newtcolorbox{onhc14}{bookbox, title={On HotChocolate 14}}
+
+% SPEC decisions 20 and 21: the end-of-chapter summary box.
+%
+% This book has no labs. Every chapter closes with one of these instead, and
+% the box is the single named exception to the Economy line, which is why its
+% shape is fixed rather than left to whoever drafts the chapter.
+%
+% Decision 21 fixes two shapes. Parts I, II and IV close with three to five
+% bullets stating the chapter's claims:
+%
+%   \begin{chaptersummary}
+%     \item ...
+%   \end{chaptersummary}
+%
+% Part III closes with a fixed symptom, cause, fix triple - the symptom a
+% reader searches for months later, the mechanism underneath it, and the change
+% that fixes it. That triple is what makes the box a lookup rather than a
+% restatement, so it takes three mandatory arguments and cannot be written any
+% other way:
+%
+%   \begin{problemsummary}{<symptom>}{<cause>}{<fix>}\end{problemsummary}
+%
+% Both wear the shared bookbox skin above, so a summary and a callout are
+% visibly the same object.
+\newtcolorbox{summarybox}[1]{bookbox, title={#1}}
+
+\newenvironment{chaptersummary}
+  {\begin{summarybox}{Summary}\begin{itemize}[leftmargin=*, topsep=0pt, itemsep=2pt]}
+  {\end{itemize}\end{summarybox}}
+
+\newenvironment{problemsummary}[3]
+  {\begin{summarybox}{Summary}%
+   \begin{description}[leftmargin=0pt, style=sameline, font=\sffamily\bfseries, topsep=0pt, itemsep=2pt]
+   \item[Symptom.] #1
+   \item[Cause.] #2
+   \item[Fix.] #3
+   \end{description}}
+  {\end{summarybox}}
 
 % Theorem environments (amsthm) - uncomment if the book needs them.
 % \theoremstyle{definition}
