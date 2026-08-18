@@ -76,7 +76,12 @@ Read these before writing anything. Each one changes what the chapter may say.
 
 - `books/<name>/SPEC.md`, in full. The TOC line scopes the chapter, the decision
   log constrains it, the writing-rules section binds it, and open items may name
-  work this chapter owes.
+  work this chapter owes. Two of its writing-rules slots settle the shape of the
+  session before anything else does: `Companion code:` says whether this book has
+  a repo to build and tag before prose, and `Listings:` says what a listing in
+  this book may be. A book answering "none" to the first is a book where step 2
+  never runs, and the second is then the only answer to where a listing came
+  from.
 - `books/<name>/check-chapter.psd1`, if the book has one. It is the machine half
   of those writing rules, and which checks are live changes how you write: a
   book that leaves the spelling check off is a book whose variety nothing will
@@ -108,9 +113,15 @@ The sequence matters more than any individual step.
    research pair in `references/delegation.md`. Either way the orchestrator
    writes the findings to `books/<name>/research/` itself, following the shape
    of the existing files there.
-2. **Companion code**, if the chapter ships any. See
-   `references/companion-code.md`. The repo has to exist, pass its own
-   verification, and be tagged **before** prose is written.
+2. **Companion code**, where the SPEC names a repo and this chapter ships code
+   into it. Two conditions, and they are answered in different places: whether
+   the mechanism exists at all is the book's, settled once on the SPEC's
+   `Companion code:` line, and whether this chapter uses it is the chapter's.
+   Read the line rather than inferring the book's answer from the chapter. Where
+   it names a repo, that repo has to exist, pass its own verification, and be
+   tagged **before** prose is written; see `references/companion-code.md`. Where
+   it says "none", this step and the gate under it retire, and the `Listings:`
+   line carries the weight instead.
 3. **Report, then keep going.** Post the real schema, the measured numbers, and
    anything the build taught you that the docs did not. This is a progress
    report, not a request for approval: the author can interrupt if something
@@ -195,17 +206,20 @@ The sequence matters more than any individual step.
    ```
 
    The body covers what the chapter does, which gates passed and how each audit
-   finding was resolved, the companion tag its listings depend on, the SPEC rows
-   that moved, and step 7's proposals as a list the author can act on. Write it
-   to a scratch path rather than the working tree, so drafting the PR does not
-   leave a file behind in the commit that follows. Target `main`, never another
-   book's branch.
+   finding was resolved, the companion tag its listings depend on where the book
+   has one, the SPEC rows that moved, and step 7's proposals as a list the author
+   can act on. Write it to a scratch path rather than the working tree, so
+   drafting the PR does not leave a file behind in the commit that follows.
+   Target `main`, never another book's branch.
 
    Stop at the open PR. Merging it and clearing the worktree are the author's,
    and a worktree removed before review takes the branch's working state with it.
 
 Writing prose before the code exists produces listings that then have to be made
-true, which is backwards and tends to leave inventions in the text.
+true, which is backwards and tends to leave inventions in the text. A book with
+no repo meets the same failure in a smaller form: a listing written to illustrate
+a sentence is not evidence for it, so the prose has to say what that listing
+actually is.
 
 ## Gates
 
@@ -215,9 +229,9 @@ Do not pass one of these without the previous one holding.
 |---|---|
 | Branch | Work is in a worktree on a new branch cut from `origin/main`; the main checkout is untouched |
 | Research | Every load-bearing fact has a primary source at a pinned version, or was measured |
-| Companion code | That repo's verification script passes; the chapter's tag is pushed |
-| Report | Real schema and numbers posted before prose starts |
-| Prose | Every listing traceable to a file in the companion repo at the chapter's tag |
+| Companion code | Where the SPEC names a repo: its verification script passes and the chapter's tag is pushed |
+| Report | What the research settled posted before prose starts: the real schema, the measured numbers, whatever the sources and the machine disagreed about |
+| Prose | Every listing has the provenance the SPEC's `Listings:` line names, and nothing invented is presented as real code |
 | Build | `latexmk` exits 0; `pwsh scripts/check-chapter.ps1 books/<name>` exits 0 |
 | Audit | A subagent with no drafting context reported; every finding is fixed, or rejected on the record |
 | SPEC | Progress row, decisions, TOC and open items all reflect reality |
@@ -274,7 +288,9 @@ Load these when the task reaches them, not before.
 - `references/house-style.md` - LaTeX and prose conventions shared by books in
   this repo: citations, quoting, index entries, listings, figures, labels.
 - `references/companion-code.md` - the code-before-prose workflow, and the
-  wave pattern that keeps parallel code work from colliding.
+  wave pattern that keeps parallel code work from colliding. Nothing in it
+  applies to a book whose SPEC says "none" for companion code, so that book
+  never opens it.
 - `references/delegation.md` - when to hand work to a subagent, the session
   budget, model tiers, and the briefs. Read before spawning anything beyond
   the audit.
@@ -285,8 +301,8 @@ Load these when the task reaches them, not before.
 
 ## Done when
 
-The full book compiles clean with `\includeonly` commented out, every listing is
-traceable to a companion-repo tag, `SPEC.md` reflects the new state, the
+The full book compiles clean with `\includeonly` commented out, every listing has
+the provenance its SPEC names for it, `SPEC.md` reflects the new state, the
 pre-commit hook passes on its own, and the branch is pushed with a PR open
 against `main`. Leave the worktree where it is: whether that PR merges is the
 author's call, not the session's.
