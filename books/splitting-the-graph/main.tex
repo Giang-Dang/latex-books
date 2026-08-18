@@ -1,0 +1,66 @@
+% !TeX program = lualatex
+% Build with: latexmk   (configured by .latexmkrc; output lands in build/main.pdf)
+\documentclass[11pt,a4paper,twoside,openright]{book}
+
+\input{preamble/packages}
+\input{preamble/fonts}
+\input{preamble/macros}
+
+\addbibresource{refs.bib}
+\makeindex[intoc]
+
+% Drafting aid: uncomment to recompile only the listed chapters while keeping
+% page numbers and cross-references intact. Comment it out again before a
+% release build.
+% \includeonly{chapters/01-do-you-actually-need-this/ch}
+
+\begin{document}
+
+\frontmatter
+\input{frontmatter/titlepage}
+\input{frontmatter/copyright}
+\tableofcontents
+\input{frontmatter/preface}
+
+\mainmatter
+
+\part{Foundations}
+\include{chapters/01-do-you-actually-need-this/ch}
+\include{chapters/02-hot-chocolate-from-zero/ch}
+\include{chapters/03-data-without-the-n-plus-1/ch}
+\include{chapters/04-schema-design-that-survives-change/ch}
+
+\part{Federation End to End}
+\include{chapters/05-the-federation-model/ch}
+\include{chapters/06-your-first-subgraph/ch}
+\include{chapters/07-composition/ch}
+\include{chapters/08-enter-the-router/ch}
+\include{chapters/09-the-second-and-third-subgraph/ch}
+
+\part{The Problems}
+\include{chapters/10-the-n-plus-1-the-router-creates/ch}
+\include{chapters/11-right-data-wrong-entity/ch}
+\include{chapters/12-entities-never-asks-who-you-are/ch}
+\include{chapters/13-the-page-you-cannot-ask-for/ch}
+\include{chapters/14-one-field-fails-response-is-empty/ch}
+\include{chapters/15-where-satisfiability-actually-fails/ch}
+\include{chapters/16-the-subgraph-that-broke-everyone/ch}
+\include{chapters/17-nobody-owns-that-field/ch}
+\include{chapters/18-slow-and-nobody-knows-which/ch}
+
+\part{Living With It}
+\include{chapters/19-testing-a-federated-graph/ch}
+\include{chapters/20-observability-resilience-hardening/ch}
+
+\appendix
+\include{backmatter/appendix-a-toolchain}
+\include{backmatter/appendix-b-hotchocolate-14}
+\include{backmatter/appendix-c-directives}
+\include{backmatter/appendix-d-composition-errors}
+\include{backmatter/appendix-e-complete-source}
+
+\backmatter
+\printbibliography[heading=bibintoc]
+\printindex
+
+\end{document}

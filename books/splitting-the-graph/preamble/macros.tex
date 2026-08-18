@@ -1,0 +1,40 @@
+% Book-specific commands, environments and metadata.
+
+% Title metadata used by the frontmatter pages.
+\newcommand{\thebooktitle}{Splitting the Graph}
+\newcommand{\thebooksubtitle}{Federated GraphQL with Hot Chocolate and Cosmo on .NET}
+\newcommand{\thebookauthor}{Giang Dang}
+
+% Inline code in prose.
+\newcommand{\code}[1]{\texttt{#1}}
+
+% SPEC decision 32: the "On HotChocolate 14" callout.
+%
+% Hot Chocolate 16 is this book's spine and 14 is out of support. A reader on
+% 16 must be able to skip every one of these without losing the thread, which
+% is why they are boxed rather than set as body prose. A callout may only
+% state what the verification repo's hc14 branch actually compiled (decision
+% 11), and it points at appendix B for the full mapping.
+%
+% Usage:
+%   \begin{onhc14}
+%     ...prose, and listings if the branch compiled them...
+%   \end{onhc14}
+\newtcolorbox{onhc14}{
+  breakable,
+  enhanced,
+  colback=white,
+  colframe=black,
+  boxrule=0.4pt,
+  arc=0pt,
+  outer arc=0pt,
+  left=3mm, right=3mm, top=2mm, bottom=2mm,
+  fonttitle=\sffamily\bfseries\small,
+  title={On HotChocolate 14},
+  attach boxed title to top left={xshift=3mm, yshift=-2mm},
+  boxed title style={colback=white, colframe=black, boxrule=0.4pt, arc=0pt, outer arc=0pt},
+}
+
+% Theorem environments (amsthm) - uncomment if the book needs them.
+% \theoremstyle{definition}
+% \newtheorem{definition}{Definition}[chapter]

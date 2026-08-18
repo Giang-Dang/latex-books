@@ -1,0 +1,64 @@
+% Package loads shared by the whole book. Keep hyperref last.
+
+\usepackage{geometry}
+\geometry{a4paper, inner=30mm, outer=25mm, top=25mm, bottom=25mm}
+
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{booktabs}
+% csquotes is loaded further down, after minted: minted pulls in fvextra, which
+% warns if csquotes was loaded first.
+
+\usepackage{graphicx}
+\graphicspath{{figures/images/}{figures/tikz/}}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc, fit}
+% Figure idiom (SPEC decision 33): engineering-drawing style. Square corners,
+% no fills, single stroke weight, sans-serif labels, black on white; biased
+% toward sequence and timeline figures rather than box-and-arrow diagrams,
+% because this book's difficulty is what happens in what order. The existing
+% figures, not this comment, are the authority once the first one exists.
+%
+% TikZ externalization caches compiled figures between runs; enable it when
+% figure-heavy chapters slow the build down:
+%   1. -shell-escape is already set in .latexmkrc (needed by minted below)
+%   2. uncomment the two lines below
+% \usetikzlibrary{external}
+% \tikzexternalize[prefix=tikz-cache/]
+
+% Code listings: minted v3 (Pygments-based). Needs -shell-escape and
+% TEXMF_OUTPUT_DIRECTORY, both set in this book's .latexmkrc, and a Python
+% with Pygments on the build machine.
+\usepackage{minted}
+\setminted{autogobble, breaklines, fontsize=\small, tabsize=2}
+
+% SPEC decision 31. Pygments' graphql lexer handles executable documents
+% (queries, mutations, fragments) and has no schema-definition-language
+% support at all. Measured with Pygments 2.19.2 on 2026-08-19: a nine-line
+% federation SDL snippet using @key, @external, extend type and "!" produces
+% 77 Error tokens, rendered as red boxes. The same snippet through the ruby
+% lexer produces 0: "#" comments, CamelCase type names, "@directive" names,
+% quoted strings and block strings all land on sensible tokens.
+%
+% So SDL uses this environment, which borrows that lexer under an honest name.
+% Executable GraphQL still uses minted's real graphql lexer. A custom Pygments
+% lexer was rejected because minted v3 needs a per-machine .latexminted_config
+% to load one, which would break a fresh clone and the pre-commit build gate.
+% Revisit if Pygments gains an SDL lexer.
+\newminted[graphqlsdl]{ruby}{}
+
+% After minted (and so after fvextra), per the note beside booktabs above.
+\usepackage{csquotes}
+
+\usepackage[style=numeric, backend=biber]{biblatex}
+
+\usepackage{imakeidx}
+
+% tcolorbox backs the "On HotChocolate 14" callout defined in macros.tex
+% (SPEC decision 32). Loaded here so macros.tex only declares the environment.
+\usepackage[most]{tcolorbox}
+
+\usepackage[hidelinks]{hyperref}
