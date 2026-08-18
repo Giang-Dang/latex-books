@@ -1294,9 +1294,21 @@ foreach ($f in $texFiles) {
             }
         }
 
-        # 4. quote: quoted content is NOT exempt (nested quotes nest the macro)
-        if ($policy.Quotes.Enabled -and $noCode.Contains('"')) {
-            Add-Finding $f.FullName $lineNo 'quote' 'literal double quote in prose; use \enquote{...}'
+        # 4. quote: quoted content is NOT exempt (nested quotes nest the macro).
+        #
+        # A double quote carried by a LaTeX accent macro is not a quotation
+        # mark. \"u and \"{u} are how a book under Characters.Mode = 'Ascii'
+        # spells a name that has a diaeresis in it, and the two alternatives
+        # are a byte the character check rejects and a misspelt name, so this
+        # has to pass or the two checks contradict each other.
+        #
+        # Escaped backslashes go first, so that \\" - a line break followed by
+        # a real quotation mark - is still caught.
+        if ($policy.Quotes.Enabled) {
+            $quoteProbe = ($noCode -replace '\\\\', '') -replace '\\"', ''
+            if ($quoteProbe.Contains('"')) {
+                Add-Finding $f.FullName $lineNo 'quote' 'literal double quote in prose; use \enquote{...}'
+            }
         }
 
         # 5. index-pct: raw line, range markers |( |) excepted by convention

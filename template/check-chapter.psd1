@@ -107,8 +107,12 @@
     # gives the book correct quotation marks in every language babel is loaded
     # for. Inline code is masked before the check (see Macros below), so a quote
     # inside \code{...} is fine, and a nested quotation is fine because the
-    # macro nests. Turning it off means choosing quote glyphs by hand for the
-    # rest of the book.
+    # macro nests. A LaTeX accent macro is fine too: \"u and \"{o} are a
+    # diaeresis rather than a quotation mark, and under Characters.Mode =
+    # 'Ascii' they are the only way to spell such a name without misspelling
+    # it. A line break followed by a real quote, \\", is still caught.
+    # Turning it off means choosing quote glyphs by hand for the rest of the
+    # book.
     # Quotes = @{ Enabled = $true }
 
     # -- 5. Index -------------------------------------------------------------
