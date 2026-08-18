@@ -88,7 +88,8 @@ is listed first.
 - `<companion repo and tag, or "none">` - the tag every listing must match.
   Write "none" for a chapter that ships no code rather than dropping the line:
   an auditor told there is no repo stops looking for one, and an auditor told
-  nothing goes looking.
+  nothing goes looking. On "none" the listings are judged against the SPEC's
+  `Listings:` line, which the auditor is already reading.
 - `<policy line>` - the `==> policy:` line `check-chapter.ps1` printed on the
   run you just fixed everything from. Paste it exactly, do not summarise it.
 
