@@ -10,6 +10,10 @@ the author talking about the book, before the book's own voice takes over.
 and every paragraph answers one of the reader's real questions: why this book exists, who it is
 for, what it assumes, how to read it.
 
+**Economy:** `standard`. The one-to-three-page bound already does most of the work. Within it a
+paragraph may take its time, because a preface is the author talking rather than the book
+teaching. See ECONOMY in `SKILL.md`.
+
 **Terminology:** plain. The book's technical vocabulary starts in chapter one; the preface may
 name the topic but does not teach it.
 

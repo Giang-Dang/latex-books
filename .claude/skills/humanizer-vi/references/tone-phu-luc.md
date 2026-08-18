@@ -10,6 +10,10 @@ một mục chứa.
 nào (thuật ngữ, một câu định nghĩa, ví dụ) thì mọi mục có đúng hình dạng đó. Người đọc rơi vào
 đây từ index, đọc một mục rồi đi.
 
+**Độ cô đọng:** `chặt`. Một mục là chỗ để tra, không phải chỗ để giảng. Không mục nào mở đầu bằng
+việc nhắc lại phụ lục này nói về cái gì, và không chỗ nào dạy lại thứ một chương đã dạy rồi. Xem
+phần Độ cô đọng trong `SKILL.md`.
+
 **Thuật ngữ:** chính xác và đầy đủ: tên lệnh đầy đủ, cú pháp option đầy đủ, đơn vị cho mọi con
 số. Từ ba mục cùng hình dạng trở lên thì bảng thắng văn xuôi.
 

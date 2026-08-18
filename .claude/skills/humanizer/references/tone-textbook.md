@@ -10,6 +10,10 @@ together, never the author's biography.
 **Sentence rhythm:** even and unhurried is correct here; this is the one book tone where a steady
 cadence is a feature. Complexity goes into precision, not into subordinate-clause nesting.
 
+**Economy:** `standard`. A derivation shows every step, and a step is not padding. What still
+gets cut is the prose around the mathematics: the paragraph announcing the theorem to come, and
+the one summarizing what the section proved. See ECONOMY in `SKILL.md`.
+
 **Terminology:** define a term before first use, then one name per concept for the whole book.
 §11 does more damage here than any other pattern: a beginner reads "model", "network", and
 "architecture" as three different things. Number definitions and theorems if the book's apparatus

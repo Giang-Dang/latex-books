@@ -9,6 +9,10 @@ giọng của chính cuốn sách bắt đầu.
 trả lời một câu hỏi thật của người đọc: vì sao cuốn sách này tồn tại, viết cho ai, giả định
 người đọc đã biết gì, nên đọc theo lối nào.
 
+**Độ cô đọng:** `vừa`. Giới hạn một đến ba trang đã lo phần lớn việc rồi. Trong khuôn đó, một
+đoạn được phép thong thả, vì lời nói đầu là tác giả đang nói chứ không phải cuốn sách đang dạy.
+Xem phần Độ cô đọng trong `SKILL.md`.
+
 **Thuật ngữ:** để dành. Vốn từ kỹ thuật của cuốn sách bắt đầu ở chương một; lời nói đầu được nêu
 tên chủ đề nhưng không dạy nó.
 

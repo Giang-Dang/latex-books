@@ -9,6 +9,9 @@ only to flag a judgment call the reader may make differently.
 **Sentence rhythm:** short. One action per step, one step per paragraph or list item. Prose
 between steps only when the reader must understand something before acting on it.
 
+**Economy:** `tight`. A step is an action and its result. Background the reader does not need to
+finish the step belongs in the chapter, not between two commands. See ECONOMY in `SKILL.md`.
+
 **Terminology:** commands, file paths, tags, and flags verbatim, with expected output shown after
 any step whose success is not obvious. Declare the starting state before step one: the branch or
 tag to check out, the directory to be in, the services that must already run. A lab that starts

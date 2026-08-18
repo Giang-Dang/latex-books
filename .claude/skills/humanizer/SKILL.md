@@ -88,6 +88,35 @@ Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as
 
 When voice is appropriate, avoid uniform sentence structures, bloodless neutrality, and perfect organization. Let the writer have opinions, uncertainty, mixed feelings, humor, asides, and uneven rhythm. Never add factual claims to create that personality.
 
+## ECONOMY
+
+How *much* a piece says is a separate dial from how it sounds. The book tone profiles state
+an **Economy** level: `tight`, `standard`, or `expansive`. A profile with no Economy line runs
+`standard`. This section defines what the levels require.
+
+**Economy is not sentence length.** Sentence rhythm is set by the profile's own rhythm line and
+is untouched here: at `tight`, a long explanatory sentence followed by a short verdict is still
+correct, and a run of uniform short sentences is still the tell §31 describes. Economy governs
+what to cut, not how long what survives is allowed to be.
+
+`tight` requires four things:
+
+- **Say it once.** A point made in the prose is not restated in the section's closing paragraph.
+- **No setup paragraph.** The paragraph that explains what the next paragraph will do is §28 at paragraph scale. Cut it and let the next paragraph start.
+- **One idea per paragraph.** A paragraph that needs "and also" is either two paragraphs or one cut.
+- **Every sentence carries a fact, a decision, or a consequence.** A sentence that only restages the one before it goes.
+
+`expansive` is not permission to pad: the same four tests apply to any sentence that adds
+nothing. It means a scene, a derivation, or a worked example may take the room it genuinely
+needs before reaching its point.
+
+**Before:** Before we look at how the router resolves a query, it is worth taking a moment to
+consider what the router is actually doing. The router is the component that receives the
+incoming query. Once it has received that query, it must then decide which subgraph should
+handle each field. This decision process is what we will examine in this section.
+
+**After:** The router receives the query and decides which subgraph owns each field.
+
 ## CONTENT PATTERNS
 
 ### 1. Undue Emphasis on Significance, Legacy, and Broader Trends

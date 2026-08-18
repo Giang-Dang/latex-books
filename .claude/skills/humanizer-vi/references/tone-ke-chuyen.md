@@ -10,6 +10,10 @@ chuyện, không bị hướng dẫn.
 câu chuyện có thể là một dòng. Lỗi hay gặp nhất là đoạn nào cũng kết bằng một câu chốt như trích
 dẫn treo tường, rồi chuỗi câu cụt dồn dập để tạo kịch tính (nhóm G).
 
+**Độ cô đọng:** `rộng`. Một cảnh cần chỗ, và chi tiết làm cảnh đó thật vẫn đang làm việc kể cả
+khi nó không chở theo lập luận nào. Cái vẫn bị cắt là kể lại: cảnh nào đã chốt được một ý thì
+không kèm thêm một đoạn giải thích cái ý đó. Xem phần Độ cô đọng trong `SKILL.md`.
+
 **Thuật ngữ:** dịch hoặc cắt. Mỗi cảnh một thuật ngữ, giới thiệu qua chính câu chuyện cần nó.
 Người đọc phổ thông phải giữ ba thuật ngữ mới để đọc hết một đoạn nghĩa là đoạn đó đang giảng
 bài, không phải kể chuyện.

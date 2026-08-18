@@ -10,6 +10,11 @@ the reader at their keyboard. The pair holds for the whole book, not just the ch
 A chapter that runs at one even cadence for six pages reads machine-made even with zero watched
 words.
 
+**Economy:** `tight`. A chapter earns its length by what it teaches, not by how thoroughly it
+introduces itself. Cut the paragraph that says what the section is about, and cut the one at the
+end that says what it just said; the chapter's own first move and last finding do both jobs. See
+ECONOMY in `SKILL.md` for the four tests.
+
 **Terminology:** identifiers, commands, versions, and numbers verbatim. A number appears only if
 the author measured it or a named source did; "about 40x faster" with no run behind it is a §5
 weasel wearing a benchmark.

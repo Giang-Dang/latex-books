@@ -14,6 +14,10 @@ gạch dài, nháy thẳng, như mọi nơi.
 **Nhịp câu:** ngắn, ý đắt đứng trước. Câu đầu quyết định câu thứ hai có được đọc hay không. Bìa
 sau khoảng 100 đến 200 chữ.
 
+**Độ cô đọng:** `chặt`, và ở đây chính giới hạn số chữ ép nó. Mỗi câu phải nêu được một vấn đề
+của người đọc hoặc một việc cuốn sách làm với vấn đề đó. Câu nào tả tham vọng của cuốn sách thay
+vì nội dung của nó là câu bị cắt đầu tiên. Xem phần Độ cô đọng trong `SKILL.md`.
+
 ## Dấu vết riêng của tone này (vẫn cấm kể cả khi đang bán)
 
 - **Lời khen bịa.** Không trích review, lời chứng thực, con số bán ra hay chữ "được đánh giá

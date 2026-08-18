@@ -9,6 +9,10 @@ một lựa chọn mà người đọc có thể quyết khác đi.
 **Nhịp câu:** ngắn. Một thao tác một bước, một bước một đoạn hoặc một mục danh sách. Văn xuôi
 giữa các bước chỉ khi người đọc phải hiểu điều gì đó trước khi thao tác.
 
+**Độ cô đọng:** `chặt`. Một bước gồm một thao tác và kết quả của nó. Phần nền mà người đọc không
+cần để làm xong bước đó thuộc về thân chương, không phải chỗ chen giữa hai câu lệnh. Xem phần Độ
+cô đọng trong `SKILL.md`.
+
 **Thuật ngữ:** lệnh, đường dẫn, tag, flag ghi nguyên văn, kèm kết quả kỳ vọng sau bước nào mà
 thành công không tự hiển nhiên. Khai báo trạng thái xuất phát trước bước một: checkout tag nào,
 đứng ở thư mục nào, dịch vụ nào phải đang chạy sẵn. Lab xuất phát từ trạng thái không khai báo

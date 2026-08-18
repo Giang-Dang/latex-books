@@ -69,6 +69,36 @@ Cách chốt tone:
 
 Ở chế độ nhúng (xem phần Chế độ gọi), không hỏi. Suy ra tone từ loại văn bản và chạy tiếp.
 
+## Độ cô đọng
+
+Một bài **nói bao nhiêu** là một cái núm riêng, không dính gì tới việc nó **nghe như thế nào**.
+Các file tone sách ghi một mức **Độ cô đọng**: `chặt`, `vừa`, hoặc `rộng`. File tone nào không
+ghi dòng này thì chạy mức `vừa`. Phần này định nghĩa từng mức. Đây là chỗ triển khai vế "nén chỗ
+nhạt, dừng lâu chỗ đáng dừng" của ràng buộc cứng số 1.
+
+**Độ cô đọng không phải độ dài câu.** Nhịp câu do dòng "Nhịp câu" trong file tone quyết định và
+phần này không đụng tới: ở mức `chặt`, một câu giải thích dài theo sau bởi một câu chốt ngắn vẫn
+đúng, và một chuỗi câu cụt đều tăm tắp vẫn là dấu vết nhóm G. Độ cô đọng nói về cái gì bị cắt,
+không nói về cái còn lại được phép dài bao nhiêu.
+
+Mức `chặt` đòi bốn điều:
+
+- **Nói một lần.** Ý đã nói trong bài thì đoạn cuối mục không nhắc lại.
+- **Không có đoạn dạo đầu.** Đoạn văn giải thích rằng đoạn sau sắp nói gì chính là dấu vết nhóm I ở cấp độ đoạn. Cắt nó đi, để đoạn sau tự vào việc.
+- **Một đoạn một ý.** Đoạn nào phải dùng "ngoài ra" mới nối được thì hoặc là hai đoạn, hoặc là một đoạn cộng một chỗ cần cắt.
+- **Mỗi câu phải mang một dữ kiện, một quyết định, hoặc một hệ quả.** Câu nào chỉ diễn đạt lại câu trước thì bỏ.
+
+Mức `rộng` không phải giấy phép viết dài: bốn phép thử trên vẫn áp cho mọi câu không thêm được
+gì. Nó chỉ có nghĩa là một cảnh, một suy diễn, hay một ví dụ chạy được phép lấy đủ chỗ nó thật
+sự cần trước khi tới đích.
+
+**Trước:** Trước khi xem router phân giải một query như thế nào, chúng ta hãy cùng dành một chút
+thời gian để suy nghĩ xem router thật ra đang làm gì. Router là thành phần nhận query gửi tới.
+Sau khi đã nhận query đó, nó phải quyết định xem subgraph nào sẽ xử lý từng field. Quá trình
+quyết định này chính là thứ chúng ta sẽ tìm hiểu trong phần này.
+
+**Sau:** Router nhận query rồi quyết định subgraph nào sở hữu từng field.
+
 ## Dấu vết văn AI trong tiếng Việt
 
 ### A. Nhồi ý nghĩa và tâng bốc

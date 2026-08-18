@@ -10,6 +10,10 @@ third person where they were not. The reader is told a story, not given instruct
 turn of a story can be one line. The failure mode is every paragraph ending on a quotable closer
 (§31 lives here).
 
+**Economy:** `expansive`. A scene needs room, and the detail that makes it real is doing work
+even when it carries no argument. What still gets cut is retelling: a scene that lands a point
+does not get a paragraph afterwards explaining the point. See ECONOMY in `SKILL.md`.
+
 **Terminology:** translate or cut jargon. One technical term per scene, introduced through the
 story that needs it. A general reader holding three new terms to finish a paragraph is reading
 exposition, not narrative.
