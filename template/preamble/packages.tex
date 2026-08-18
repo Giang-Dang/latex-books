@@ -23,6 +23,15 @@
 % \tikzexternalize[prefix=tikz-cache/]
 
 \usepackage[style=numeric, backend=biber]{biblatex}
+
+% biblatex will not break a URL anywhere except after a slash, so one long
+% documentation or engineering-blog URL runs past the measure and the build
+% gate fails on an overfull box in a bibliography nobody edited. These permit a
+% break after a digit, an uppercase letter and a lowercase letter respectively.
+\setcounter{biburlnumpenalty}{9000}
+\setcounter{biburlucpenalty}{9000}
+\setcounter{biburllcpenalty}{9000}
+
 \usepackage{imakeidx}
 
 \usepackage[hidelinks]{hyperref}
