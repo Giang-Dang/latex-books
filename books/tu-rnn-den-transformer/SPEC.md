@@ -342,6 +342,7 @@ Rows 78 onward were written in the chapter 11 session, 2026-08-13.
 |---|----------|----------|
 | 78 | Chapter 11 compares a 66,095-parameter ViT with chapter 10's 66,570-parameter CNN, and it uses 8x8 patches with one encoder layer | The shipped model has 8x8 patches, 17 tokens including class, one post-LN layer, `d_model = 88`, `d_ff = 85`, and 66,095 parameters. Its twelve new ViT trainings use exactly chapter 10's four data sizes, epochs, Adam recipe, split standardization and seeds, while the unmodified CNN and MLP rows are read from their committed chapter 10 canonical run. This tests the losing small-data half, not a miniature reproduction of ViT-B/16 or JFT-300M. Patch 4x4's `65^2/17^2 = 14.62` pairwise ratio is recorded as arithmetic only, not a benchmark |
 | 79 | A reported train accuracy names the part of the training set it scores | `train_and_score` reads at most the first 10,000 training examples for its diagnostic. Chapter 11 initially described that column as though it covered the whole training set, which could have turned a bounded diagnostic into a claim about fitting or generalization. Every later chapter that prints a train accuracy must name the scored subset when it is capped or sampled |
+| 80 | The companion repo's name is settled, and the writing rules now name it | The `Companion code:` slot had carried "name still open" since the skeleton session, while the progress table, eleven pushed tags and the prose had been naming `rnn-to-transformer-lab` since chapter 01. The slot now names the repo, its public URL and the exact gate command, `python verify.py`. Recorded rather than edited quietly because the draft-chapter skill reads that slot to decide whether this book has a repo at all. Settled 2026-08-19 |
 
 ## Version baseline
 
@@ -727,7 +728,9 @@ machine-checkable half is `check-chapter.psd1` in this folder.
   ran myself. The chapter's argument runs outside the boxes, so a reader can
   skip every box and still follow it. Chapters in parts II to VI also end with a
   section naming what the paper left unsolved and what it created.
-- **Companion code:** a second git repo, public on GitHub, name still open. The
+- **Companion code:** `rnn-to-transformer-lab`, a second git repo, public on
+  GitHub at https://github.com/Giang-Dang/rnn-to-transformer-lab. The one command
+  that proves it is good is `python verify.py` at the repo root. The
   environment is conda from a pinned `environment.yml`; the verify script
   activates that env before doing anything, so a run does not depend on the
   machine. Tag convention `chNN`, and `chNN-<step>` when a chapter needs a

@@ -53,7 +53,12 @@ reads as a decision.
 - **Humanizer skill:** which humanizer the book's language needs (humanizer for
   English, humanizer-vi for Vietnamese).
 - **Listings:** which listing environments the book uses and what each is for,
-  where code comes from, and what proves it runs - or "no code".
+  where code comes from, and what proves it runs. A book with no companion repo
+  answers the same question differently and still has to answer it: say what its
+  listings are - pseudo-code, sketches, fragments from a cited source - and how
+  the prose frames each, so that nothing reads as code that ran. Naming only the
+  environments does not answer it, and a book that answers nothing here ships no
+  listings. Or "no code".
 - **Figures:** this book's figure idiom: what a picture is drawn with, which
   file its source lives in, and what stays at the call site.
 - **Chapter apparatus:** the end-of-chapter lab's heading and shape, and

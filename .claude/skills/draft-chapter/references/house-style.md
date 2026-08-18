@@ -61,9 +61,20 @@ aliases in that book's `preamble/packages.tex`. Read both before picking an
 environment for a new listing - an environment named only in prose is one that
 nothing typesets and nothing checks.
 
-**Every listing is real code from the companion repo at the chapter's tag.**
-Before the repo exists, a book may permit illustrative sketches, but the prose
-must frame them as sketches; check the book's decision log.
+**Every listing has a source outside the draft, and the prose is honest about
+which.** Where that source is, is the `Listings:` line in the book's SPEC. A book
+with a companion repo takes every listing from it at the chapter's tag. A book
+with none ships no listings at all, unless that line names what it may show
+instead - pseudo-code, a sketch, a fragment quoted from a cited source - and says
+how the prose frames each, in which case the prose calls each one what it is. A
+line that names only environments has not answered this, and silence in it is not
+permission. A book whose repo is planned but not yet created is in the same
+position meanwhile, and what it allows until then is a row in its decision log.
+
+What no book does is print invented code as though it ran. That is the half the
+SPEC does not get to set: a book chooses which sources are legitimate for it, and
+a listing that claims a provenance it does not have is not a choice any wording
+makes available.
 
 Long inline `\code{}` spans cause overfull boxes because a 40-character
 identifier will not break. Display it as a listing or reword around it.
