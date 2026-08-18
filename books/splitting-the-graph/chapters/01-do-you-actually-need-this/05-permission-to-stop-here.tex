@@ -1,0 +1,28 @@
+\section{Permission to Stop Here}
+\label{sec:ch01-permission-to-stop-here}
+
+Before you decide how much weight to put on the case I have just made, here is
+what I could not find. No account exists, that I can locate, of a team that
+federated its graph,
+regretted it, and took it apart: no postmortem, no conference talk, no
+engineering blog, from any company. I am not going to tell you what that means,
+because I do not know. It is consistent with federation working when it is
+adopted for the reasons in section~\ref{sec:ch01-the-threshold}. It is equally
+consistent with nobody wanting to publish that particular retrospective. What I
+can say is that the public case for federation is made almost entirely by
+people who adopted it and by the vendors selling the tooling, and that is worth
+holding in mind while you read them. It is worth holding in mind while you read
+me.
+
+The honest recommendation does not sell a book about federation.
+
+If the four conditions do not hold, read chapter~\ref{ch:hot-chocolate-zero}
+through chapter~\ref{ch:schema-design} and stop. Those three build one Hot
+Chocolate service, kill the N+1 problem inside it, and work through the schema
+design decisions that hurt later no matter how many services you finish with.
+Not one of them assumes a federated graph, and all of them apply to the single
+service you should be building instead. Chapter~\ref{ch:federation-model} is
+where this book starts splitting things apart, and that is where you should put
+it down.
+
+Come back when a second team needs to change your schema and cannot.

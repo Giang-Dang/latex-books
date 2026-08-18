@@ -10,8 +10,10 @@ Author: Giang Dang
 
 ## Status
 
-Settled 2026-08-19 through a seven-round requirements interview. Nothing is
-drafted. Next action: verify the version baseline below, then outline chapter 1.
+Settled 2026-08-19 through a seven-round requirements interview. Chapter 1 is
+drafted. Next action: stand up the verification repo at
+`F:/repo/splitting-the-graph-graph` and verify the version baseline below,
+both of which chapter 2 needs before a line of it can be written.
 
 **Why this book exists.** It is the second book in this library on federated
 GraphQL in .NET, and it exists because the first one,
@@ -80,6 +82,10 @@ and why, in the row.
 | 35 | Version pinning | One version table, in appendix A. No chapter names a version anywhere else, so bumping the toolchain is one edit and no chapter can go stale independently of another. Re-verified once before release rather than per chapter. Per-chapter pinning was rejected: it existed in the other book to serve two source-diving chapters, and this book has none. |
 | 36 | Research notes | `research/` holds one note per chapter. A note records every external fact with its source URL and access date, every version pinned, every count with the procedure that reproduces it, and **every claim that was checked and found false**, so a later chapter does not re-derive it. |
 | 37 | Citations, quotes, index | Citations are `~\autocite{...}`, always with the tilde, so a bracketed number can never start a line. Quoted material uses `\enquote{}` (csquotes), never literal quote characters. The index is maintained while writing, not retrofitted. |
+| 38 | What to do when no source passes the Sources bar | State the claim as my own judgment, in first person, and cite nobody. Settled while drafting chapter 1, whose central claim is the adoption threshold: no named engineer has published one, and the only source that gives a threshold at all is a vendor guide bylined "WunderGraph" with no author. The two rejected alternatives are citing the weak source anyway, which launders a vendor's marketing into an authority, and dropping the claim, which would gut the chapter the book opens with. A judgment labelled as judgment is honest and is what decision 26's "opinionated where experience warrants it" is for. This is a precedent, not a one-off: a later chapter in the same position does the same thing and says so. |
+| 39 | Whether an unsigned document passes the Sources rule | Yes, when it is the artifact rather than a claim about the artifact. The Sources rule exists to stop a vendor's prose about a company or an outcome being read as evidence, and a byline is what separates evidence from marketing in that case. It does not reach three things chapter 1 cites unsigned: a standards body recording its own working group (the GraphQL Specification Working Group on its Composite Schemas Subcommittee), a specification's publisher defining that specification, and the normative list of what a specification requires of an implementation (Apollo's subgraph specification, which is where chapter 1's four-requirement count comes from). All three can be checked against a running implementation, which is what a byline would otherwise be standing in for, and `research/2026-08-hard-cases.md` already cites unsigned RFC documents on the same basis. Still barred: any unsigned vendor page arguing a result, including one about that vendor's own customers. A chapter relying on this row records the reasoning in its research note rather than leaving it implicit, because an audit reading the chapter cold cannot tell a considered call from an oversight. |
+| 40 | Non-ASCII letters in cited authors' names | An accent macro, never the Unicode letter and never a respelling. Decision 30 puts the book in strict `Ascii` mode, so `Philip M\uml{u}ller` is written with the `\uml` wrapper defined in `preamble/macros.tex`; spelling him "Mueller" would misspell a real person, and the raw `\"u` trips the prose gate's quote check, which reads the accent's double quote as a literal quotation mark. The wrapper exists to keep both the name and the gate correct. |
+| 41 | Every box in the book wears one skin | `bookbox`, defined once in `preamble/macros.tex` and worn by the decision 32 callout and both decision 21 summary boxes. Settled while drafting chapter 1, which needed the first summary box and found the callout it was built to match rendering wrong: the title was drawn in white on white and invisible, and `attach boxed title to top left` drew its tab but then only the left rule of the box, with no top, right or bottom edge. Both are fixed in the shared skin, so neither can be reintroduced by a chapter copying the old pattern. |
 
 ## Version baseline
 
@@ -151,7 +157,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | Chapter | Status | Notes |
 |---------|--------|-------|
 | Preface | not-started | Write last. Must carry decision 8's plain statement that HC 14 is out of support. |
-| 01 | not-started | No code. The one chapter that can be drafted before the verification repo exists. |
+| 01 | drafted | No code, as planned. Note at `research/ch01-do-you-actually-need-this.md`. Established the summary box (decisions 20, 21, 41) and the figure idiom (decision 33); `figures/tikz/ch01-one-field.tex` is the idiom specification later figures are matched against. Its threshold is stated as my judgment under decision 38, because no source passed the Sources bar. |
 | 02 | not-started | First code, and the first `verify.ps1` run. The `hc14` branch's file set is defined here. |
 | 03 | not-started | Sets up chapter 10; the counts printed here are the single-service baseline. |
 | 04 | not-started | Owes chapter 14 its nullability groundwork. |
@@ -202,6 +208,10 @@ keep the two in step.
   `check-chapter.psd1` starts empty and grows only as the gate finds a real
   case - a British spelling inside captured tool output or a vendor's own
   prose. A spelling exemption is never added to accommodate the author's habit.
+  A cited author whose name carries a diacritic keeps it, written with the
+  `\uml`-style accent macro from `preamble/macros.tex` rather than the Unicode
+  letter, which strict `Ascii` mode forbids, or a respelling, which would
+  misspell a real person (decision 40).
 - **Humanizer skill:** `humanizer`.
 - **Listings:** every C# and SDL listing is build-along and complete. A file
   appears in full the first time it matters. A later change to it is shown as
@@ -223,8 +233,18 @@ keep the two in step.
   visual, defined by the first figure that draws them and reused unchanged
   afterwards. A figure's `tikzpicture` lives in `figures/tikz/` as a bare
   picture; the `figure` environment, caption and label stay at the call site.
+  **The idiom specification is `figures/tikz/ch01-one-field.tex`**, the book's
+  first figure: stroke weights, arrowhead, dash pattern, label sizes and how a
+  timeline is laid out all come from that file rather than from this
+  paragraph, in the same way the previous chapter rather than a style note
+  specifies the prose.
 - **Chapter apparatus:** no labs. Every chapter follows the five beats of
-  decision 13 and closes with the summary box of decisions 20 and 21.
+  decision 13 and closes with the summary box of decisions 20 and 21. The
+  environments are in `preamble/macros.tex`: `chaptersummary`, holding three to
+  five `\item` bullets, for Parts I, II and IV, and `problemsummary`, taking
+  the symptom, cause and fix as three mandatory arguments, for Part III. The
+  Part III box takes arguments rather than free content so that the triple
+  cannot quietly become a restatement.
 - **HotChocolate 14:** an "On HotChocolate 14" callout uses the boxed
   environment in `preamble/macros.tex`, may only state what the `hc14` branch
   compiled, and points at appendix B. A reader on 16 must be able to skip every
@@ -245,7 +265,13 @@ keep the two in step.
   is written without it. Vendor-published sources are usable only when they
   quote a named engineer at the company being described, and the prose says
   whose blog it was. A name is not a source: an identifier in a source tree is
-  evidence that somebody once meant something by it and nothing more.
+  evidence that somebody once meant something by it and nothing more. A
+  standards body's record of its own working group is not vendor prose and
+  passes unsigned (decision 39); a vendor's unsigned post does not. **When no
+  source passes the bar, the claim is stated as my judgment, in first person,
+  citing nobody** (decision 38). Citing the weak source anyway is the failure
+  this rule exists to prevent, and quietly dropping the claim is how a chapter
+  loses its argument to a sourcing gap.
 - Citations are `~\autocite{...}`, always with the tilde. Quoted material uses
   `\enquote{}`, never literal quote characters.
 - Chapter numbers in prose are `chapter~\ref{ch:...}`, never a literal number.
@@ -269,3 +295,12 @@ An unresolved question, and the condition that unblocks it.
   measured justification, not a preference. Unblocked by a Pygments release
   whose `graphql` lexer handles type definitions, `!` and directives; at that
   point `graphqlsdl` is redefined in one place and nothing else changes.
+- **Whether any public account exists of a team abandoning federation.**
+  Chapter 1 says outright that I looked and found none, so if one surfaces the
+  chapter has a claim to correct rather than merely a citation to add. The
+  strongest lead is a GraphQLConf 2026 talk, *Shifting Instagram Development
+  Towards Monolith Server Via Federated Schema*, whose existence is confirmed
+  from the conference's own schedule but whose content is not: no abstract,
+  recording or slides could be found, and nothing from it is used. Unblocked by
+  a recording or transcript of that talk appearing. Details in
+  `research/ch01-do-you-actually-need-this.md`.

@@ -1,0 +1,20 @@
+\begin{chaptersummary}
+  \item Federation solves a coordination problem between teams, not a
+        technical problem with GraphQL. Netflix and Booking.com both moved to
+        it after one team became the bottleneck for everybody else's schema
+        changes.
+  \item The trade is a merge performed by people for a merge performed by a
+        program. Services publish their own schemas, a composer merges them
+        into a supergraph, and a router answers queries across them.
+  \item That swap is what everything costs. Four obligations in every
+        subgraph, a composition step that fails on other teams' changes, a
+        router tier on the request path, and a development loop that now spans
+        services.
+  \item The coordination does not go away. It moves into ownership of types
+        and keys, which is negotiated between the same teams as before and is
+        now enforced by the composer.
+  \item The threshold is four conditions, not a team count. Nobody has
+        published a number, so this one is mine, and the condition worth
+        testing hardest is whether your teams can already release without each
+        other.
+\end{chaptersummary}

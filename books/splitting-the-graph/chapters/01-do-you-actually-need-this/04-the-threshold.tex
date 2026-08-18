@@ -1,0 +1,78 @@
+\section{The Threshold}
+\label{sec:ch01-the-threshold}
+
+\index{adoption threshold|(}%
+I went looking for a published threshold and did not find one. No engineer I
+could find has written down a number of teams, or of services, above which
+federation pays. The closest thing is a vendor guide with no author's name on
+it, and I am not willing to build a chapter on a claim nobody signed. So what
+follows is my judgment. I would rather say that plainly than dress it up as a
+finding.
+
+Four conditions. Federation pays when all four hold, and the count of your
+teams is not one of them.
+
+\begin{enumerate}[topsep=4pt, itemsep=3pt]
+  \item More than one team needs to change the same API surface, and they
+        cannot wait on each other to do it.
+  \item Those teams already release independently. Separate pipelines,
+        separate on-call, separate ability to roll back without a meeting.
+  \item Every domain you intend to put in the graph has an owner who is
+        allowed to say no to a schema change.
+  \item Somebody will own the router and the composition pipeline as their
+        product, not as a rota.
+\end{enumerate}
+
+The failure modes are more useful than the conditions. If the first is false,
+you have one team, and you are about to solve a scheduling problem with a
+distributed system. If the second is false, you get the entire cost of
+federation and none of its benefit: the schema is split, and it still ships on
+one train, so you have added a composer and a router to a release process that
+was already the bottleneck. If the third is false, the composer will make the
+ownership decision for you, at merge time, in the form of an error nobody feels
+responsible for. If the fourth is false, the router is everyone's problem,
+which means it is nobody's until it is down.
+
+That second condition is the one I would test hardest, because it is the one
+teams assume they pass. Deploying services separately is not the same as being
+able to. If a schema change to your subgraph still needs a coordinated release
+with two others, splitting the graph has changed the file layout and nothing
+else.
+\index{adoption threshold|)}%
+
+\subsection{What Wins Below the Line}
+\label{sec:ch01-what-wins-below-the-line}
+
+\index{modular monolith}%
+One GraphQL service with real module boundaries inside it. That is not a
+consolation prize, and the argument for it does not depend on GraphQL at all.
+Martin Fowler put it as a rule about starting: \enquote{you shouldn't start a
+new project with microservices, even if you're sure your application will be
+big enough to make it worthwhile}~\autocite{fowler2015}. His evidence was that
+nearly every successful microservice system he had seen grew out of a monolith
+that got too big, while the ones built distributed from the start tended to end
+in trouble.
+
+Shopify says the same thing from the other end, as a standing policy rather
+than a starting rule. \enquote{We are very deliberate about when to split
+functionality out into separate services, and we only do it for good reasons},
+writes Philip M\uml{u}ller, and \enquote{That's because splitting a single
+monolithic application into a distributed system of services increases the
+overall complexity considerably}~\autocite{mueller2020}. That is a claim about
+distribution generally, not about graphs, and it applies here because a
+federated graph is a distributed system wearing a schema.
+
+The GraphQL-specific version of the same choice runs at a scale most readers
+will never need. Aditya Pratap Singh describes Zalando running one GraphQL
+service across all of its domains: \enquote{instead of having multiple Graphs connected
+via a library and gateway we have a single service at Zalando which connects
+all the domains in a single schema Graph}, a schema that had grown \enquote{to
+a dense graph now with more than 12 domains and serves more than 80\% of Web
+and 50\% of the App use cases}~\autocite{singh2021}. More than twelve domains
+in one service, covering most of that company's web use cases.
+
+I want to be careful about what that last one proves, because it is easy to
+over-read. Singh's post describes what Zalando built. It does not say they
+evaluated federation and turned it down, and I am not going to imply that it
+does. It establishes one thing only, and one thing is enough: a single graph
+service is not a toy architecture you outgrow at three domains.
