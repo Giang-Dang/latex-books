@@ -47,6 +47,11 @@ reads as a decision.
 - **Voice:** name the voice, even when it is AGENTS.md's first-person
   practitioner, because the draft-chapter skill reads this line to pick a
   humanizer tone profile and has nothing to go on without it.
+- **Economy:** how much the book says, named even when it is AGENTS.md's tight,
+  for the same reason. The tone profile carries a level already, so this line
+  exists to override it: name it when the book wants something other than what
+  its profile sets, and say why. Economy is not sentence length; the Voice line
+  still owns cadence.
 - **Language and spelling:** the language the book is written in, the spelling
   variety, and the words exempt from it; set the same variety in
   check-chapter.psd1's Spelling.Preset.

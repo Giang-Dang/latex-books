@@ -118,6 +118,14 @@ the book wins.
   experience warrants it. This is the template's default, not a library rule;
   a textbook or a narrative book says so in its SPEC's Voice line, and the
   draft-chapter skill reads that line to pick a tone profile.
+- Economy: tight. Say it once, cut the paragraph that announces what the next
+  paragraph will do, one idea per paragraph, and every sentence carries a fact,
+  a decision or a consequence. This is a separate dial from voice and from
+  sentence rhythm: it governs what gets cut, never how long a surviving
+  sentence may be, so varied cadence still holds and a run of uniform short
+  sentences is still a tell. Each humanizer tone profile states an Economy
+  level and the humanizer's own ECONOMY section defines the levels; a book that
+  wants a different one names it on its SPEC's Economy line.
 - Prose must read as human-written. Load the humanizer skill for the book's
   language before drafting or reviewing any book prose, and apply its full
   checklist. One is vendored into .claude/skills/ per language the library

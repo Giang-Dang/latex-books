@@ -15,6 +15,10 @@ dashes, as everywhere (only a user-provided writing sample reopens it).
 **Sentence rhythm:** short and front-loaded. The first sentence decides whether the second gets
 read. Around 100 to 200 words for a back cover.
 
+**Economy:** `tight`, and here the word count enforces it. Every sentence names a reader problem
+or what the book does about it. A sentence describing the book's ambition rather than its
+contents is the first one to cut. See ECONOMY in `SKILL.md`.
+
 ## Tells specific to this tone (still banned while selling)
 
 - **Invented praise** (§2 and the no-invented-facts rule). No endorsements, review quotes, sales

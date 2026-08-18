@@ -10,6 +10,10 @@ entry contains.
 the first entry has (term, one-sentence definition, example), every entry has. Readers land here
 from the index, read one entry, and leave.
 
+**Economy:** `tight`. An entry is a lookup, not an explanation. No entry opens by restating what
+the appendix covers, and nothing here re-teaches what a chapter already taught. See ECONOMY in
+`SKILL.md`.
+
 **Terminology:** exact and complete: full command names, full option syntax, units on every
 number. Tables beat prose wherever three or more entries share a shape.
 

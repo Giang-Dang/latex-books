@@ -11,6 +11,11 @@ từng chương. Nhóm F cắn tone này nặng nhất khi giọng trôi từ "t
 theo sau. Sáu trang chạy đều một nhịp là văn máy, kể cả khi không dính từ nào trong danh sách
 cảnh giác.
 
+**Độ cô đọng:** `chặt`. Một chương dài ra vì thứ nó dạy được, không phải vì nó tự giới thiệu kỹ.
+Cắt đoạn nói mục này sắp bàn về cái gì, cắt luôn đoạn cuối nói mục này vừa bàn cái gì; câu mở đầu
+và phát hiện cuối của chương đã làm cả hai việc đó. Bốn phép thử nằm ở phần Độ cô đọng trong
+`SKILL.md`.
+
 **Thuật ngữ:** giữ tiếng Anh theo ràng buộc cứng số 4. Lệnh, tên hàm, phiên bản, con số ghi
 nguyên văn; con số chỉ xuất hiện khi tác giả tự đo hoặc một nguồn nêu tên đã đo. "Nhanh hơn
 khoảng 40 lần" mà không có lần chạy nào đứng sau là câu mơ hồ đội lốt benchmark.
