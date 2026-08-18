@@ -1,0 +1,271 @@
+# SPEC - Splitting the Graph
+
+Source of truth for this book: decisions, approved TOC, and progress. Read it
+fully before working on the book; update the progress table before finishing a
+working session.
+
+Title: **Splitting the Graph**
+Subtitle: *Federated GraphQL with Hot Chocolate and Cosmo on .NET*
+Author: Giang Dang
+
+## Status
+
+Settled 2026-08-19 through a seven-round requirements interview. Nothing is
+drafted. Next action: verify the version baseline below, then outline chapter 1.
+
+**Why this book exists.** It is the second book in this library on federated
+GraphQL in .NET, and it exists because the first one,
+`federated-graphql-on-dotnet`, failed its reader in three specific ways. Those
+three failures are the reason for most of the decisions below, so they are
+stated here rather than buried in the log:
+
+1. **Code the reader could not see.** Listings were fragments whose enclosing
+   file lived in a companion repo. A reader who had not cloned the repo was
+   shown a method and expected to supply the other two hundred lines from
+   somewhere. Decisions 15, 16 and 17 exist to make this impossible.
+2. **Chapters that circled.** Seventeen chapters of six sections each, with no
+   fixed shape and no rule about what came first, so a reader could finish a
+   section unable to say what it had claimed. Decisions 13 and 14 exist to make
+   this impossible.
+3. **Prose that narrated the author's own bug fixes.** Pages spent on wrong
+   turns, control runs and corrected measurements, which are lessons about how
+   the author works rather than about federated GraphQL. Decisions 19 and 22
+   exist to make this impossible.
+
+Each of those three is a design failure with a mechanical fix, not a matter of
+writing better sentences. If a drafting session finds itself arguing that an
+exception is warranted, the exception is the failure returning.
+
+## Decision log
+
+Settled 2026-08-19. A settled row is re-opened only by recording what changed
+and why, in the row.
+
+| # | Question | Decision |
+|---|----------|----------|
+| 1 | Why this book | To do what `federated-graphql-on-dotnet` did not: put the whole program on the page, give every chapter a shape, and keep the author's debugging out of the reader's book. The three failures are stated in Status above and are the origin of decisions 13 to 22. |
+| 2 | Relationship to `federated-graphql-on-dotnet` | That book is left exactly as it is: not frozen in its own SPEC, not annotated, not deleted. **Nothing is reused** - no prose, no figures, no research notes, no bib entries. Every fact this book prints is re-established from source here. Its `research/` remains a place to look for a starting URL, but a fact only enters this book through this book's own note. |
+| 3 | Title and slug | *Splitting the Graph*, subtitle *Federated GraphQL with Hot Chocolate and Cosmo on .NET*, folder `splitting-the-graph`. The other book holds *Federated GraphQL on .NET* and the two must not be confusable in a `books/` listing. |
+| 4 | Language | English. Considered and rejected: Vietnamese, and Vietnamese prose with English technical terms. The difficulty being fixed is structural, not lexical. |
+| 5 | Spine | Apollo Federation v2 subgraphs built with `HotChocolate.ApolloFederation`, composed with `wgc` and served by the WunderGraph Cosmo Router. |
+| 6 | Why not Fusion | Fusion cannot span the two versions this book covers. The Fusion v1 line (Hot Chocolate 13 and 14 era, `fusion compose` CLI, pre-spec directives) ended at 15.1.17 on 2026-06-16, and Fusion 16 is a complete rewrite on the GraphQL Composite Schemas specification, composed with Nitro CLI. They are different products, and a reader on 14 could not follow a Fusion 16 chapter at all. `HotChocolate.ApolloFederation` shipped in the 14 era and still ships in lockstep with 16, which makes Apollo Federation v2 the only subgraph contract reaching both. |
+| 7 | Why Cosmo and not Apollo Router | Cosmo Router is Apache-2.0, self-hostable, and speaks Federation v1 and v2, so it composes subgraphs regardless of which Hot Chocolate produced them. Apollo Router Core is Elastic License v2, which forbids offering it as a managed service - an awkward thing to teach in a book about running your own graph. Hive Router was considered and is the strongest alternative; rejected only because a book with no reader-facing repo cannot afford to teach two gateways shallowly. |
+| 8 | Versions covered | Hot Chocolate 16 is the spine. Hot Chocolate 14 appears as inline boxed callouts where the API difference changes the reader's code, plus appendix B in full. HC 14 is out of support - the platform's SECURITY.md lists only 16.x and 15.x - and the preface says so plainly: 14 coverage exists to get a reader off 14, not to endorse staying. |
+| 9 | Companion repo | **None that a reader ever hears about.** No URL, no tags, no checkout instructions, nothing in the preface. See decision 10 for what exists instead, and decision 15 for what replaces it on the page. |
+| 10 | The verification repo | One local repository at `F:/repo/splitting-the-graph-graph`, never pushed and never mentioned in the book. `main` carries the conference example on .NET 10 and Hot Chocolate 16. A long-lived `hc14` branch carries only the files an HC 14 callout quotes, pinned to Hot Chocolate 14.3.1 on `net8.0`, because 14 does not target .NET 10. |
+| 11 | HC 14 callouts are compiled | An "On HotChocolate 14" callout may only say what the `hc14` branch compiled. A callout sourced from documentation and never built is the invented-listing failure wearing a version number. Rejected alternatives: documentation-sourced callouts, and prose-only pointers to appendix B. |
+| 12 | Shape | Two movements. Parts I and II take a reader from zero to a working three-subgraph federated graph. Part III is problems-first: each chapter opens with a failure a reader will actually meet, reproduces it, explains the mechanism underneath, and fixes it. Part IV covers living with the result. Problems-first suits a book with no repo, because a problem chapter is self-contained by construction: it needs the failure, not everything that came before. |
+| 13 | Chapter skeleton | Five beats, same order, every chapter. **(1) The one sentence** - what this chapter establishes, stated first, before anything else; a chapter needing two sentences is two chapters. **(2) Show it** - the thing running, or in Part III the thing failing, with code and output on the page. **(3) Why it does that** - the mechanism; all theory lives here. **(4) Do it properly** - the complete, correct implementation. **(5) Summary box.** |
+| 14 | The ordering law | No concept is explained before the reader has seen the behaviour it explains. This is the direct inverse of the first book's habit of theory followed by code the reader could not see, and it is what beat 3 following beat 2 enforces. |
+| 15 | Listings are build-along and complete | Every file appears in full the first time it matters. The reader can type the entire system out of the book. No listing is a fragment of something that lives elsewhere, because there is no elsewhere. |
+| 16 | How a change to an already-shown file is typeset | The full file again, with changed lines marked by minted's `highlightlines` and a caption naming what moved. For a file too long to reprint, the complete enclosing member - whole class or whole method - with the same highlighting. **Never a unified diff**: three lines of context is the same failure as a fragment, in miniature. |
+| 17 | Source appendix | Appendix E carries the final complete source of all three subgraphs. Estimated 25 to 35 pages for a three-service SQLite example. This was rejected earlier in the interview on the assumption of a larger example and reinstated when decision 23 fixed the example's size. |
+| 18 | Provenance is not declared | The book makes no statement about how its listings were produced. It does not need to: decision 15 puts the whole program on the page, so a reader who doubts a listing can compile it. Rejected alternatives: a preface contract, and per-listing markers. |
+| 19 | Counts yes, timings never | A count - SQL statements issued, `_entities` calls made, round trips taken - is deterministic and reproducible by a reader who typed the code out of the book, and it carries the whole argument of chapter 10. A timing is a property of one machine, cannot be reproduced by any reader, and is the largest single source of the measurement narration decision 22 bans. No milliseconds appear in this book. |
+| 20 | Chapter apparatus | No end-of-chapter labs. Each chapter closes with a summary box, which is the single named exception to the Economy line. |
+| 21 | Summary box shape | Parts I, II and IV: the chapter's claims as three to five bullets. Part III: a fixed three-line **symptom, cause, fix** - the symptom a reader will search for, the mechanism underneath it, and the change that fixes it. That triple is what a reader flips back to find months later, which is why it is not a restatement. |
+| 22 | The book never narrates the author's debugging | A problem earns space if it is a property of federation, Hot Chocolate or Cosmo that a competent reader will meet. It earns none if it is a property of the author's code being wrong. Wrong turns, control runs and corrected measurements go in `research/` and never reach prose. First person is for judgement and choice, never for a debugging log. The one carve-out: a listing shown deliberately broken to demonstrate a failure mode is the reader's problem, not the author's, and stays. |
+| 23 | Running example | A conference system: Sessions, Speakers, Ratings. Three subgraphs, SQLite or in-memory, no container, no message broker. Chosen because the cross-seam paging problem is obvious in it rather than contrived - everyone understands sorting sessions by rating, and everyone can see why the service owning sessions cannot do it - and because it resembles nothing in the other book. |
+| 24 | The hard cases the book owns | Twelve, established by research on 2026-08-19 and recorded in `research/2026-08-hard-cases.md`. Six mechanical ones take a chapter each: N+1 at the reference resolver; entity representation order; `_entities` bypassing authorization; cross-subgraph filter, sort and paginate; non-null blast radius; satisfiability and `@requires`. Ownership takes a chapter of its own because it is the failure that kills federation projects. Breaking changes and the REST-shaped schema share one. Blame routing and latency share one. The adoption threshold opens the book. |
+| 25 | Length | No ceiling, on the book or on any chapter. Recorded as a decision rather than an omission: the author was shown that the other book removed its ceiling at 358 pages with eleven chapters unwritten, and chose this anyway. The four controls that stand in a ceiling's place are decision 13's one-sentence rule, decision 13's skeleton, decision 14's ordering law and decision 22's ban. |
+| 26 | Voice | First-person practitioner. First person singular, opinionated where experience warrants it and willing to concede. No contractions in my own voice; they appear only inside quoted material. Sentence length varies. Claims are concrete - a company, a date, a count, a name. Bounded by decision 22: first person for judgement and choice, never for a debugging log. |
+| 27 | Economy | Tight, as AGENTS.md sets it. Say it once, no setup paragraph before the paragraph that does the work, one idea per paragraph, every sentence carries a fact, a decision or a consequence. Economy is not sentence length and does not touch decision 26's cadence. One named exception: the decision 20 summary box. |
+| 28 | Humanizer skill | `humanizer`. The book is in English, so drafts are judged against the English tone profiles. |
+| 29 | Spelling | `en-US`. Enforced by `check-chapter.psd1`. The exemption list starts **empty**; the words that will need it are British spellings appearing inside captured tool output and vendor prose, added one at a time as the gate finds them. |
+| 30 | Characters | Strict `Ascii` mode, with the captured-output exception on `minted:text`, because composition errors and router output contain punctuation that is not ours to edit. Both halves are required and no control character is forgiven, so the exception cannot reach prose or an invented listing. |
+| 31 | How SDL is typeset | Two environments. Executable GraphQL - queries, mutations, fragments - uses `\begin{minted}{graphql}`. SDL uses `\begin{graphqlsdl}`, defined in `preamble/packages.tex` as minted's Ruby lexer under an honest name. Measured on this machine 2026-08-19: Pygments 2.19.2's `graphql` lexer emits **77 Error tokens** on a nine-line federation SDL snippet using `@key`, `@external`, `extend type` and `!`; the `ruby` lexer emits **0**. A custom Pygments lexer is blocked in practice, because minted v3 needs a per-machine `.latexminted_config` to load one, which breaks a fresh clone and the pre-commit build gate. Revisit if Pygments ships an SDL lexer. |
+| 32 | HC 14 callouts on the page | A boxed environment titled "On HotChocolate 14", defined once in `preamble/macros.tex`. A reader on 16 must be able to skip every one of them without losing the thread, and only a visual break makes that possible. It also makes the appendix B cross-reference mechanical rather than hand-written each time. |
+| 33 | Figure idiom | Engineering-drawing style: square corners, no fills, single stroke weight, sans-serif labels, black on white. Deliberately unlike the other book's rounded corners and Stealth arrowheads. Biased hard toward sequence and timeline figures over box-and-arrow architecture diagrams, because this book's difficulty is what happens in what order - the router fanning out, `_entities` batching, non-null errors propagating upward - and a box diagram cannot show order. Two recurring visuals are fixed once and reused: the seam between two subgraphs, and the router. |
+| 34 | Clients and the dev loop | Nitro appears in Part I only, capped at three screenshots in the whole book, because screenshots are the fastest-rotting content in a technical book. Postman carries the repeatable request sets in Parts II to IV. **Every request is also printed as raw HTTP**, so no page depends on a tool the reader has not installed. |
+| 35 | Version pinning | One version table, in appendix A. No chapter names a version anywhere else, so bumping the toolchain is one edit and no chapter can go stale independently of another. Re-verified once before release rather than per chapter. Per-chapter pinning was rejected: it existed in the other book to serve two source-diving chapters, and this book has none. |
+| 36 | Research notes | `research/` holds one note per chapter. A note records every external fact with its source URL and access date, every version pinned, every count with the procedure that reproduces it, and **every claim that was checked and found false**, so a later chapter does not re-derive it. |
+| 37 | Citations, quotes, index | Citations are `~\autocite{...}`, always with the tilde, so a bracketed number can never start a line. Quoted material uses `\enquote{}` (csquotes), never literal quote characters. The index is maintained while writing, not retrofitted. |
+
+## Version baseline
+
+**Unverified.** Every row below is a starting point carried into this SPEC from
+the interview, not a measurement. Verify each before drafting the chapter that
+depends on it, and record the verification in that chapter's research note.
+Decision 35 puts the verified table in appendix A, and this section is what
+appendix A is built from.
+
+| Component | Version | Status |
+|-----------|---------|--------|
+| .NET (`main`) | 10 (LTS) | to verify |
+| .NET (`hc14` branch) | `net8.0` | fixed by HC 14's target frameworks |
+| HotChocolate / HotChocolate.ApolloFederation (`main`) | 16.6.0 | to verify; a newer 16.x is likely |
+| HotChocolate (`hc14` branch) | 14.3.1, last 14.x patch | to verify |
+| WunderGraph Cosmo Router | unpinned | to verify before chapter 8 |
+| `wgc` (Cosmo CLI) | unpinned | to verify before chapter 7 |
+| Pygments | 2.19.2 | verified 2026-08-19 on this machine; see decision 31 |
+
+## Table of contents
+
+Approved 2026-08-19. If drafting deviates, update this list in the same
+session. Chapter folders in `chapters/` carry the same scope lines.
+
+### Part I - Foundations
+
+1. **Do You Actually Need This?** - what federation costs, the coordination problem it solves, the threshold below which a modular monolith wins, and explicit permission to stop reading
+2. **Hot Chocolate from Zero** - the first service, implementation-first types, the schema it produces, and the development loop
+3. **Data Without the N+1** - SQLite and EF Core, DataLoader, projections, paging; the single-service version of the problem chapter 10 meets again across a seam
+4. **Schema Design That Survives Change** - Relay conventions, abstract types, error design, deprecation, and the first pass at nullability that chapter 14 collects on
+
+### Part II - Federation End to End
+
+5. **The Federation Model** - supergraph and subgraphs, entity ownership, keys, and the Apollo Federation v2 directive tour
+6. **Your First Subgraph** - `HotChocolate.ApolloFederation`, `@key`, reference resolvers, and what `_service` and `_entities` expose
+7. **Composition** - `wgc router compose`, what a router execution config actually contains, and satisfiability as a graph walk
+8. **Enter the Router** - Cosmo Router locally, what it loads and what it serves, and the first query answered across two subgraphs
+9. **The Second and Third Subgraph** - the seams, `@external`, `@requires` and `@provides`, and the graph the rest of the book uses
+
+### Part III - The Problems
+
+10. **The N+1 the Router Creates** - the router batches representations and a naive reference resolver does not; what a DataLoader behind one is worth
+11. **Right Data, Wrong Entity** - `_entities` must answer in representation order, and what silently wrong data looks like when it does not
+12. **`_entities` Never Asks Who You Are** - the guard on the root field that the entity route walks straight past
+13. **The Page You Cannot Ask For** - filtering, sorting and paginating across a seam; why no directive fixes it, and the dedicated search domain as the escape
+14. **One Field Fails and the Response Is Empty** - non-null error propagation, blast radius, designing for partial failure, and `@semanticNonNull`
+15. **Where Satisfiability Actually Fails** - reading composition errors, and why the composer blames one route out of four that fail
+16. **The Subgraph That Broke Everyone** - breaking changes as the highest availability risk, schema checks as a gate, and the REST-shaped schema nobody uses
+17. **Nobody Owns That Field** - ownership, governance, and schema evolution as a social problem wearing an API problem's clothes
+18. **Slow, and Nobody Knows Which Subgraph** - trace correlation across the router and three subgraphs, routing a failure to its owner, and caching
+
+### Part IV - Living With It
+
+19. **Testing a Federated Graph** - reference-resolver tests, composition checks as tests, contract tests
+20. **Observability, Resilience and Hardening** - OpenTelemetry across the router and subgraphs, timeouts and partial failure, depth and complexity limits, introspection policy
+
+### Appendices
+
+- A. **Toolchain and Versions** - setup, and the one version table decision 35 names
+- B. **HotChocolate 14, in Full** - the 14-to-16 mapping every callout points at
+- C. **Federation Directives Quick Reference**
+- D. **Composition Errors, Decoded**
+- E. **The Complete Source** - all three subgraphs, final state (decision 17)
+
+## Progress
+
+Status values: not-started / outlined / drafted / reviewed / final.
+
+| Chapter | Status | Notes |
+|---------|--------|-------|
+| Preface | not-started | Write last. Must carry decision 8's plain statement that HC 14 is out of support. |
+| 01 | not-started | No code. The one chapter that can be drafted before the verification repo exists. |
+| 02 | not-started | First code, and the first `verify.ps1` run. The `hc14` branch's file set is defined here. |
+| 03 | not-started | Sets up chapter 10; the counts printed here are the single-service baseline. |
+| 04 | not-started | Owes chapter 14 its nullability groundwork. |
+| 05 | not-started | First SDL. Confirms decision 31's `graphqlsdl` environment against real federation SDL. |
+| 06 | not-started | |
+| 07 | not-started | Verify the `wgc` version first. |
+| 08 | not-started | Verify the Cosmo Router version first. |
+| 09 | not-started | End of the zero-to-hero movement: the graph Part III uses. |
+| 10 | not-started | |
+| 11 | not-started | Carries a deliberately broken listing under decision 22's carve-out. |
+| 12 | not-started | |
+| 13 | not-started | **Open item:** may need a fourth subgraph. See Open items. |
+| 14 | not-started | |
+| 15 | not-started | |
+| 16 | not-started | |
+| 17 | not-started | No code. Prose and figures only. |
+| 18 | not-started | |
+| 19 | not-started | |
+| 20 | not-started | |
+| App A | not-started | Built from the Version baseline section once verified. |
+| App B | not-started | Accumulates as chapters 2 to 20 emit callouts; drafted last. |
+| App C | not-started | |
+| App D | not-started | Accumulates from chapters 7 and 15. |
+| App E | not-started | Generated from the `main` branch at the end; never hand-maintained. |
+
+## Writing rules (book-specific)
+
+Library-wide defaults are in AGENTS.md; these are this book's additions and
+deviations. The machine-checkable half is `check-chapter.psd1` in this folder;
+keep the two in step.
+
+- **Voice:** first-person practitioner. First person singular, opinionated
+  where experience warrants it and willing to concede. No contractions in my
+  own voice; they appear only inside quoted material. Sentence length varies,
+  and a short declarative sentence lands the end of a paragraph. Claims are
+  concrete - a company, a date, a count, a name - because vague authority is
+  the failure this voice exists to avoid. **Bounded:** first person is for
+  judgement and choice, never for a debugging log. The book does not narrate
+  the author's wrong turns, control runs or corrected measurements. A problem
+  earns space only if it is a property of federation, Hot Chocolate or Cosmo
+  that a competent reader will meet. See decision 22 for the one carve-out.
+- **Economy:** tight. Say it once, no setup paragraph before the paragraph that
+  does the work, one idea per paragraph, every sentence carries a fact, a
+  decision or a consequence. Economy is not sentence length and does not touch
+  the Voice line's cadence. **One named exception:** the end-of-chapter summary
+  box, whose shape decision 21 fixes so that it cannot become a restatement.
+- **Language and spelling:** English, `en-US`. The exemption list in
+  `check-chapter.psd1` starts empty and grows only as the gate finds a real
+  case - a British spelling inside captured tool output or a vendor's own
+  prose. A spelling exemption is never added to accommodate the author's habit.
+- **Humanizer skill:** `humanizer`.
+- **Listings:** every C# and SDL listing is build-along and complete. A file
+  appears in full the first time it matters. A later change to it is shown as
+  the full file again with `highlightlines` marking what moved, or for a long
+  file as the complete enclosing member with the same highlighting. **A unified
+  diff is never used.** Environments: `minted{csharp}`, `minted{graphql}` for
+  executable GraphQL, `graphqlsdl` for SDL (decision 31), plus `text`, `json`,
+  `sql` and `yaml`. Adding an environment is a decision, recorded in the log.
+  The book makes no claim about where a listing came from, because the reader
+  has the whole program and can compile it.
+- **Numbers:** counts only. Statement counts, `_entities` call counts, round
+  trips. **No timings anywhere**, in prose, tables or figures. A count printed
+  in the prose must be reproducible by a reader who typed the code out of the
+  book, and the chapter's research note records the procedure.
+- **Figures:** engineering-drawing style - square corners, no fills, single
+  stroke weight, sans-serif labels, black on white. Biased toward sequence and
+  timeline figures over box-and-arrow diagrams, because this book's difficulty
+  is what happens in what order. The seam and the router each have one fixed
+  visual, defined by the first figure that draws them and reused unchanged
+  afterwards. A figure's `tikzpicture` lives in `figures/tikz/` as a bare
+  picture; the `figure` environment, caption and label stay at the call site.
+- **Chapter apparatus:** no labs. Every chapter follows the five beats of
+  decision 13 and closes with the summary box of decisions 20 and 21.
+- **HotChocolate 14:** an "On HotChocolate 14" callout uses the boxed
+  environment in `preamble/macros.tex`, may only state what the `hc14` branch
+  compiled, and points at appendix B. A reader on 16 must be able to skip every
+  callout without losing the thread.
+- **Companion code:** none that a reader hears about. The verification repo is
+  local at `F:/repo/splitting-the-graph-graph`, never pushed and never named in
+  the book. `verify.ps1` builds all three subgraphs, runs `wgc router compose`,
+  starts the router, sends the book's canonical requests and asserts the counts
+  the book prints. It runs on `main` and on `hc14`. No chapter is drafted until
+  both print PASS. If a chapter legitimately changes a number the script
+  asserts, update the script and say so in the commit message; **never loosen
+  an assertion to make a run pass.**
+- **Research:** one note per chapter under `research/`. A note records every
+  external fact with its source URL and access date, every version pinned,
+  every count with the procedure that reproduces it, and every claim that was
+  checked and found false.
+- **Sources:** a number that fixes a fact in time needs a source or the claim
+  is written without it. Vendor-published sources are usable only when they
+  quote a named engineer at the company being described, and the prose says
+  whose blog it was. A name is not a source: an identifier in a source tree is
+  evidence that somebody once meant something by it and nothing more.
+- Citations are `~\autocite{...}`, always with the tilde. Quoted material uses
+  `\enquote{}`, never literal quote characters.
+- Chapter numbers in prose are `chapter~\ref{ch:...}`, never a literal number.
+- The index is maintained while writing, not retrofitted.
+
+## Open items
+
+An unresolved question, and the condition that unblocks it.
+
+- **Chapter 13 may need a fourth subgraph.** Decision 23 fixed the example at
+  three, and the accepted answer to cross-seam filtering, sorting and paging is
+  a dedicated search domain with its own index. Whether that domain is built as
+  a fourth service or described without being built decides how much of
+  decision 23 survives. Unblocked by outlining chapter 13.
+- **The `hc14` branch's file set is undefined.** Decision 10 says it carries
+  only the files a callout quotes, and no callout exists yet. Unblocked by
+  chapter 2, which emits the first one.
+- **Cosmo Router and `wgc` versions are unpinned.** Unblocked by running the
+  toolchain, which chapters 7 and 8 require anyway.
+- **Whether Pygments gains an SDL lexer.** Decision 31 is a workaround with a
+  measured justification, not a preference. Unblocked by a Pygments release
+  whose `graphql` lexer handles type definitions, `!` and directives; at that
+  point `graphqlsdl` is redefined in one place and nothing else changes.
