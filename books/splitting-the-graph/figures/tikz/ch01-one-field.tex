@@ -1,0 +1,51 @@
+% Adding one field, in a shared graph and in a federated one.
+%
+% This is the book's first figure and therefore fixes the idiom SPEC decision
+% 33 describes: square corners, no fills, one stroke weight, sans-serif labels,
+% black on white, and order shown as a timeline rather than as a box-and-arrow
+% architecture diagram. Later figures are matched against this file, not
+% against the decision's wording.
+%
+% Bare tikzpicture (house style): the figure environment, caption and label
+% live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  axis/.style={draw, line width=0.4pt, -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  tick/.style={draw, line width=0.4pt},
+  event/.style={anchor=south, align=center, text width=33mm, inner sep=1pt},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  lane/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+]
+
+% ------------------------------------------------------------------- lane A
+\node[lane] at (0,13) {A. one schema, owned by one team};
+
+\draw[axis] (0,0) -- (150,0);
+\foreach \x in {15,55,95,135}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+
+\node[event] at (15,3)  {you ask for\\the field};
+\node[event] at (55,3)  {it joins\\their queue};
+\node[event] at (95,3)  {they edit the schema\\and the resolver};
+\node[event] at (135,3) {one deployment,\\everyone's};
+
+\draw[span] (48,-4) -- (48,-7) -- (102,-7) -- (102,-4);
+\node[spanlabel] at (75,-8) {another team's calendar, and you are not on it};
+
+% ------------------------------------------------------------------- lane B
+\begin{scope}[shift={(0,-42)}]
+  \node[lane] at (0,13) {B. a federated graph};
+
+  \draw[axis] (0,0) -- (150,0);
+  \foreach \x in {20,75,130}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+
+  \node[event] at (20,3)  {you edit your\\own subgraph};
+  \node[event] at (75,3)  {it composes,\\or it does not};
+  \node[event] at (130,3) {your deployment,\\yours alone};
+
+  \draw[span] (64,-4) -- (64,-7) -- (86,-7) -- (86,-4);
+  \node[spanlabel] at (75,-8) {a machine, and it answers every time you ask};
+\end{scope}
+
+\end{tikzpicture}

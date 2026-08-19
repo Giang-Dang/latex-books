@@ -8,6 +8,10 @@
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{booktabs}
+% Backs the list shapes inside the summary box defined in macros.tex: tight
+% itemize for the Parts I, II and IV box, and a sameline description for Part
+% III's fixed symptom, cause, fix triple (SPEC decision 21).
+\usepackage{enumitem}
 % csquotes is loaded further down, after minted: minted pulls in fvextra, which
 % warns if csquotes was loaded first.
 
@@ -54,6 +58,15 @@
 \usepackage{csquotes}
 
 \usepackage[style=numeric, backend=biber]{biblatex}
+
+% Documentation and engineering-blog URLs are long, and the bibliography is the
+% one place this book prints them in full. Without these, biblatex refuses to
+% break a URL anywhere except after a slash and the entry runs past the measure
+% as an overfull box. The penalties permit a break after a digit, an uppercase
+% letter and a lowercase letter respectively.
+\setcounter{biburlnumpenalty}{9000}
+\setcounter{biburlucpenalty}{9000}
+\setcounter{biburllcpenalty}{9000}
 
 \usepackage{imakeidx}
 

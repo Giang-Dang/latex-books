@@ -1,0 +1,46 @@
+\section{What Federation Costs}
+\label{sec:ch01-what-federation-costs}
+
+\index{federation!cost of}%
+The first cost is a contract every service signs and keeps signing. To act as a
+subgraph, a service must extend its schema with the federation definitions,
+resolve \code{Query.\_service}, provide a mechanism for resolving entity fields
+through \code{Query.\_entities}, and apply \code{@link} to its \code{schema}
+type to opt into Federation v2~\autocite{apollosubgraphspec}. None of those
+four will mean anything to you yet, and they are not supposed to:
+chapter~\ref{ch:first-subgraph} is where you implement them and see what each
+one does. Count them for now. Four requirements, in every service,
+permanently. A library implements them for you and this book uses one, which
+changes who writes the code and not who owns the obligation.
+
+The second is that composition becomes a build step that can fail on a change
+you did not make. Two subgraphs that each compile can still refuse to compose,
+because the schemas disagree about a type they share. The failure surfaces
+after both teams have merged, it names a route through the graph rather than a
+line in a file, and reading those messages is a skill.
+Chapter~\ref{ch:satisfiability} is about the ones that are genuinely hard to
+read, and appendix~\ref{app:comperrors} decodes the rest.
+
+The third is that you now operate a router, and it is on the request path for
+everything. Ernst's team at Booking.com reports \enquote{nearly 1,000 instances
+of our Gateway running in production}~\autocite{ernst2022}. That is what the
+tier becomes at their scale. Yours will be smaller, and it will still be a tier
+you capacity-plan, monitor, roll out and get paged for, which you did not have
+before.
+
+The fourth is quieter and it is the one I would weigh most heavily. Running the
+graph locally now means running several services, and answering \enquote{why is
+this field null} means reading traces across all of them.
+Chapter~\ref{ch:blame-routing} is entirely about the fact that when a federated
+graph misbehaves, the team that owns the router gets asked first and usually
+cannot answer.
+
+The largest cost is not on that list. The coordination did not disappear when
+you moved the merge into a program; it moved into the things the program
+checks. Which service owns which type, which fields make up a key, which
+subgraph is allowed to extend somebody else's entity: these are negotiated
+between teams, the same teams as before, and the negotiation is now
+load-bearing because the composer enforces the result.
+Chapter~\ref{ch:ownership} gives that its own chapter, and it is there because
+I think ownership is where federated graphs actually come apart, well before
+anyone struggles with the composer.

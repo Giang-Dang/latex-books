@@ -1,0 +1,58 @@
+\section{The Field You Cannot Ship}
+\label{sec:ch01-the-field-you-cannot-ship}
+
+\index{coordination problem|(}%
+Booking.com built its GraphQL layer the way many teams build their first one:
+a single service that called the services behind it and mapped their responses
+into one schema. Christian Ernst, writing on Booking.com's engineering blog,
+wrote down what that had cost by the time it grew up. \enquote{As our single
+GraphQL service grew, it became more difficult to maintain not only for the
+GraphQL team who had dozens of merge requests a day to review for schema
+changes and service mappings but also manage frequent service deployments and
+help resolve merge conflicts with multiple teams}~\autocite{ernst2022}.
+
+Read that again for who is doing the work. Every schema change in the company
+arrives as a merge request in front of one team, which reviews it, deploys it,
+and untangles it when two other teams collide in the same file. The teams that
+own the data are not the teams shipping the change, and Ernst names what
+follows: \enquote{This also made it difficult for service owners to have strong
+ownership of their data and schema as they were heavily tied to the single
+service}~\autocite{ernst2022}.
+
+Netflix arrived at the same place from a different direction. Its Studio API
+was a curated graph API over the data behind Netflix's studio applications, and
+Tejas Shikhare's account of it is unusually honest, because the thing worked
+first. \enquote{The One Graph exposed by Studio API was a runaway success;
+product teams loved the reusability and easy, consistent data
+access}~\autocite{shikhare2020}. Then it got big, and three bottlenecks
+appeared. Two of them are this chapter's subject: \enquote{the Studio API team
+was disconnected from the domain expertise and the product needs, which
+negatively impacted the schema's health}, and \enquote{it was hard for one
+small team to handle the increasing operational and support burden for the
+expanding graph}~\autocite{shikhare2020}.
+
+Neither company describes a technical failure. In both, one team sits between
+every other team and the schema, and that team is the bottleneck when it is
+busy and the wrong team to ask when it is not, because it does not own the
+domains it is being asked to model.
+
+Figure~\ref{fig:ch01-one-field} traces one change through both arrangements:
+you need a single field added to a type another team owns. Nobody in lane A is
+careless. Your change is scheduled against work you do not control and cannot
+see.
+\index{coordination problem|)}%
+
+\begin{figure}
+  \centering
+  \input{figures/tikz/ch01-one-field}
+  \caption{One new field on a type somebody else owns, in each arrangement.
+  Lane A waits on another team's priorities, which you cannot query. Lane B
+  waits on a program, which answers the same way every time you run it. That
+  difference, rather than the number of steps, is what federation buys.}
+  \label{fig:ch01-one-field}
+\end{figure}
+
+This is worth being precise about, because it is the test that decides whether
+the rest of the book is for you. The pain is not that the schema is large. It
+is that the number of teams who need to change it exceeds the number of teams
+who are allowed to.
