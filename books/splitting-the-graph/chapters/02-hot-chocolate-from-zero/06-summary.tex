@@ -1,0 +1,20 @@
+\begin{chaptersummary}
+  \item Hot Chocolate derives the schema from your C\# types at compile time.
+        \code{[QueryType]} feeds a source generator, which writes a
+        registration method named after your assembly, so the line you call is
+        \code{AddSessionsTypes} here and something else in your project.
+  \item Leaving that attribute off fails in two opposite ways. On the last
+        remaining root class the host refuses to start and names the problem;
+        on any other class the build passes, the service starts, and the
+        fields are absent.
+  \item Your nullable reference type annotations are the schema's non-null
+        annotations. \code{string} becomes \code{String!} and \code{string?}
+        becomes \code{String}, and a client's generated code will believe both.
+  \item Every public member is published unless you mark it otherwise, so a
+        foreign key added for the compiler becomes an API commitment.
+        \code{[GraphQLIgnore]} is the only thing between \code{SpeakerId} and
+        every client you will ever have.
+  \item The loop is export the schema, read the diff, send the request. The
+        schema is validated against before any resolver runs, which is why a
+        misspelled field costs a round trip rather than an afternoon.
+\end{chaptersummary}

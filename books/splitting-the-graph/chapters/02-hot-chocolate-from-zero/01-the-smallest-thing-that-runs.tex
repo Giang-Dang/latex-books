@@ -1,0 +1,172 @@
+\section{The Smallest Thing That Runs}
+\label{sec:ch02-the-smallest-thing-that-runs}
+
+Start from an empty ASP.NET Core project rather than from the Hot Chocolate
+template. The template writes files this book would have to print anyway, and
+printing them is the point: every file this chapter needs is on the page,
+complete, so you can type the service out of the book.
+
+\begin{minted}{text}
+dotnet new web -n Sessions
+cd Sessions
+dotnet add package HotChocolate.AspNetCore
+dotnet add package HotChocolate.AspNetCore.CommandLine
+dotnet add package HotChocolate.Types.Analyzers
+\end{minted}
+
+\index{HotChocolate.Types.Analyzers}%
+Three packages, and only the first is obvious. \code{HotChocolate.AspNetCore}
+is the server. The command line package adds subcommands that let the built
+program export its own schema, which
+section~\ref{sec:ch02-the-development-loop} turns into the loop you work in.
+The analyzers package is a source generator, and
+section~\ref{sec:ch02-where-the-registration-comes-from} is about what it
+writes for you. That leaves the project file.
+
+\begin{minted}[fontsize=\footnotesize]{xml}
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HotChocolate.AspNetCore" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.Types.Analyzers" Version="16.6.1" />
+  </ItemGroup>
+
+</Project>
+\end{minted}
+
+\index{nullable reference types}%
+Two of those properties are load-bearing and neither is here for style.
+\code{Nullable} decides whether a field arrives in the schema as
+\code{String} or as \code{String!}, which is the difference between a
+client that copes with a missing value and one that does not. And
+\code{GenerateDocumentationFile}, despite its name, decides whether your
+XML comments reach the schema as descriptions or evaporate.
+Section~\ref{sec:ch02-what-the-schema-says-about-your-types} shows both
+happening. \code{NoWarn} then silences the warning about undocumented
+public members that the second one would otherwise raise across the whole
+project.
+
+Replace the generated launch profile with this one, so that the port is yours
+rather than whatever number the template picked. Every request in this chapter
+goes to it.
+
+\begin{minted}{json}
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5001",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
+\end{minted}
+
+Now the program itself. Two files, and the whole service is in them. First
+\code{Program.cs}, replacing what the template generated:
+
+\begin{minted}{csharp}
+var builder = WebApplication.CreateBuilder(args);
+
+builder
+    .AddGraphQL()
+    .AddTypes();
+
+var app = builder.Build();
+
+app.MapGraphQL();
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+Then \code{Query.cs}, which is the entire schema for now:
+
+\begin{minted}{csharp}
+namespace Sessions;
+
+[QueryType]
+public static class Query
+{
+    public static string Hello() => "world";
+}
+\end{minted}
+
+\index{source generator!AddTypes}%
+That is what the documentation tells you to write. It describes the template as
+calling \enquote{a source-generated \code{AddTypes} method that registers all
+types decorated with attributes like \code{[QueryType]} in the current
+assembly}~\autocite{chillicreamgetstarted}. Build it and the compiler
+disagrees.
+
+\begin{minted}[fontsize=\footnotesize, breakanywhere]{text}
+Program.cs(5,6): error CS0121: The call is ambiguous between the following methods or properties: 'Microsoft.Extensions.DependencyInjection.SchemaRequestExecutorBuilderExtensions.AddTypes(HotChocolate.Execution.Configuration.IRequestExecutorBuilder, params System.Type[])' and 'Microsoft.Extensions.DependencyInjection.SchemaRequestExecutorBuilderExtensions.AddTypes(HotChocolate.Execution.Configuration.IRequestExecutorBuilder, params HotChocolate.Types.ITypeDefinition[])'
+\end{minted}
+
+\code{AddTypes} is not the name of the generated method. It is the name of two
+older overloads that each take a parameter array, and a call with no arguments
+matches both of them equally well. What the generator wrote is called
+\code{AddSessionsTypes}, after the assembly, which makes it a different
+identifier in every project you will ever create. \code{Program.cs} again, with
+the one line that changes marked:
+
+\begin{minted}[highlightlines={5}]{csharp}
+var builder = WebApplication.CreateBuilder(args);
+
+builder
+    .AddGraphQL()
+    .AddSessionsTypes();
+
+var app = builder.Build();
+
+app.MapGraphQL();
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+A compile error in a hello-world is a strange place to start a chapter, and it
+is where the chapter starts because the error is the first thing this stack
+tells you about itself. The method you call does not exist until you build, its
+name came from the name of your assembly, and an attribute on a class is what
+produced it. That is how the rest of the schema gets made too.
+
+Run it and ask for the one field there is. Requests appear as raw HTTP
+throughout this book, so no page depends on a tool you have not installed.
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:5001
+Content-Type: application/json
+
+{"query":"{ hello }"}
+\end{minted}
+
+and back:
+
+\begin{minted}{text}
+HTTP/1.1 200 OK
+Content-Type: application/graphql-response+json; charset=utf-8
+
+{"data":{"hello":"world"}}
+\end{minted}
+
+\index{media type!application/graphql-response+json}%
+Look at the media type in that response. It is not
+\code{application/json}, and it is worth checking now what your own HTTP
+client does with a type it has never met, because a client that unwraps
+JSON by media type alone will hand you bytes.
+Section~\ref{sec:ch02-the-development-loop} shows the same endpoint answering
+with a status code you probably were not expecting either.

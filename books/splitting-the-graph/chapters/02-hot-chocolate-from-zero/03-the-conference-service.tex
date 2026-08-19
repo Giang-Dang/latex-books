@@ -1,0 +1,204 @@
+\section{The Conference Service}
+\label{sec:ch02-the-conference-service}
+
+The example the rest of this book uses is a conference: sessions, the people
+who give them, and later the ratings attendees leave. It is small enough to
+print and it has the one property this book needs: everybody wants sessions
+sorted by rating, and the service that owns sessions holds no ratings.
+Chapter~\ref{ch:cross-seam-paging} is where that bites. For now everything is
+in one process and in memory, and chapter~\ref{ch:data-without-n-plus-1} puts
+it in SQLite.
+
+Two records carry the domain. \code{Session.cs} first:
+
+\begin{minted}{csharp}
+namespace Sessions;
+
+/// <summary>
+/// A talk on the conference program.
+/// </summary>
+/// <param name="Id">Stable identifier for this session.</param>
+/// <param name="Title">The line that goes in the program.</param>
+/// <param name="Abstract">The longer text, if there is one.</param>
+/// <param name="SpeakerId">Who gives it. Not part of the schema.</param>
+/// <param name="StartsAt">When it starts, in conference time.</param>
+/// <param name="DurationMinutes">How long the slot is.</param>
+public sealed record Session(
+    int Id,
+    string Title,
+    string? Abstract,
+    [property: GraphQLIgnore] int SpeakerId,
+    DateTimeOffset StartsAt,
+    int DurationMinutes);
+\end{minted}
+
+Then \code{Speaker.cs}:
+
+\begin{minted}{csharp}
+namespace Sessions;
+
+/// <summary>
+/// A person giving one or more sessions.
+/// </summary>
+/// <param name="Id">Stable identifier for this speaker.</param>
+/// <param name="Name">The name to print in the program.</param>
+/// <param name="Bio">A sentence or two, if the speaker sent any.</param>
+public sealed record Speaker(int Id, string Name, string? Bio);
+\end{minted}
+
+\index{GraphQLIgnore@\code{[GraphQLIgnore]}}%
+\code{SpeakerId} is the one line here that is a decision rather than a
+transcription. It is how a session finds its speaker in memory, and it has no
+business being in the schema: a client that reads it is reading a storage
+detail, and a client that reads it will eventually be a client that depends on
+it. \code{[property: GraphQLIgnore]} keeps it out.
+Section~\ref{sec:ch02-what-the-schema-says-about-your-types} is about why that
+attribute has to exist at all.
+
+\code{ConferenceData.cs} holds four sessions and three speakers, chosen so that
+one speaker gives two sessions and one speaker sent no biography. Both of those
+turn up again before the chapter ends.
+
+\begin{minted}{csharp}
+namespace Sessions;
+
+/// <summary>
+/// The conference program, held in memory. The next chapter replaces this
+/// with SQLite and EF Core; nothing outside this file knows where the data
+/// lives.
+/// </summary>
+public static class ConferenceData
+{
+    public static readonly IReadOnlyList<Speaker> Speakers =
+    [
+        new Speaker(1, "Ada Fischer", "Works on query planners."),
+        new Speaker(2, "Bruno Kaminski", null),
+        new Speaker(3, "Chidi Okafor", "Runs platform engineering.")
+    ];
+
+    public static readonly IReadOnlyList<Session> Sessions =
+    [
+        new Session(
+            1,
+            "Schemas That Outlive Their Authors",
+            "A five-year-old schema, and the decisions that shaped it.",
+            1,
+            new DateTimeOffset(2026, 9, 14, 9, 0, 0, TimeSpan.Zero),
+            45),
+        new Session(
+            2,
+            "Reading a Query Plan",
+            null,
+            1,
+            new DateTimeOffset(2026, 9, 14, 10, 0, 0, TimeSpan.Zero),
+            45),
+        new Session(
+            3,
+            "Paging Without Offsets",
+            "Why the page you get is not the page you asked for.",
+            2,
+            new DateTimeOffset(2026, 9, 14, 11, 0, 0, TimeSpan.Zero),
+            30),
+        new Session(
+            4,
+            "The Bank That Split Its Graph",
+            "Eighteen months, four teams, and the unwritten parts.",
+            3,
+            new DateTimeOffset(2026, 9, 14, 14, 0, 0, TimeSpan.Zero),
+            60)
+    ];
+}
+\end{minted}
+
+\code{Query.cs} replaces the hello-world of
+section~\ref{sec:ch02-the-smallest-thing-that-runs} entirely.
+
+\begin{minted}{csharp}
+namespace Sessions;
+
+[QueryType]
+public static class Query
+{
+    /// <summary>
+    /// Every session on the schedule, earliest first.
+    /// </summary>
+    public static IEnumerable<Session> GetSessions()
+        => ConferenceData.Sessions.OrderBy(s => s.StartsAt);
+
+    /// <summary>
+    /// One session by its identifier, or null if no session has it.
+    /// </summary>
+    public static Session? GetSessionById(int id)
+        => ConferenceData.Sessions.FirstOrDefault(s => s.Id == id);
+}
+\end{minted}
+
+\index{resolver!on a type extension}%
+That leaves the field that is not a property of anything. A session's speaker
+lives in a different collection, so it is computed rather than stored, and it
+goes in \code{SessionType.cs}, on a class that extends \code{Session} the same
+way \code{Query} extends the root type.
+
+\begin{minted}{csharp}
+namespace Sessions;
+
+[ObjectType<Session>]
+public static partial class SessionType
+{
+    /// <summary>
+    /// The person giving this session.
+    /// </summary>
+    public static Speaker? GetSpeaker([Parent] Session session)
+        => ConferenceData.Speakers
+            .FirstOrDefault(s => s.Id == session.SpeakerId);
+}
+\end{minted}
+
+\index{Parent@\code{[Parent]}}%
+\code{[Parent]} is the whole of the mechanism. It marks the parameter that
+receives the object this field is being resolved on, so the method is an
+ordinary static function taking a \code{Session} and returning a
+\code{Speaker}. That is worth pausing on, because it is the same shape you will
+write in chapter~\ref{ch:first-subgraph} to resolve an entity the router asks
+for by key, and the same shape that quietly issues one query per parent in
+chapter~\ref{ch:router-n-plus-1}. This one runs against a list in memory, so it
+costs nothing here. It will not stay free.
+
+\code{Program.cs} does not change at all. It registers whatever the generator
+found, and the generator has now found \code{SessionType} as well as
+\code{Query}, so the same call registers more than it did in
+section~\ref{sec:ch02-the-smallest-thing-that-runs}.
+
+Run it, and ask for something that spans both records.
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:5001
+Content-Type: application/json
+
+{"query":"{ sessions { id title startsAt speaker { name bio } } }"}
+\end{minted}
+
+and back:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"sessions":[
+  {"id":1,"title":"Schemas That Outlive Their Authors",
+   "startsAt":"2026-09-14T09:00:00Z",
+   "speaker":{"name":"Ada Fischer","bio":"Works on query planners."}},
+  {"id":2,"title":"Reading a Query Plan",
+   "startsAt":"2026-09-14T10:00:00Z",
+   "speaker":{"name":"Ada Fischer","bio":"Works on query planners."}},
+  {"id":3,"title":"Paging Without Offsets",
+   "startsAt":"2026-09-14T11:00:00Z",
+   "speaker":{"name":"Bruno Kaminski","bio":null}},
+  {"id":4,"title":"The Bank That Split Its Graph",
+   "startsAt":"2026-09-14T14:00:00Z",
+   "speaker":{"name":"Chidi Okafor","bio":"Runs platform engineering."}}]}}
+\end{minted}
+
+The response above is the server's, re-indented so that it fits the measure;
+the server sends it on one line. Ada Fischer appears twice, once for each of
+her sessions, and Bruno Kaminski's \code{bio} came back as \code{null} rather
+than as an omitted key. Both of those are the schema doing what the C\# told it
+to, and the next section is where you can read what that was.

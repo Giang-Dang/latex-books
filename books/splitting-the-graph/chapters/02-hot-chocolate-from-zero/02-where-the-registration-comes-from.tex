@@ -1,0 +1,76 @@
+\section{Where the Registration Comes From}
+\label{sec:ch02-where-the-registration-comes-from}
+
+\index{source generator|(}%
+You can read the method you just called. Build with the generated sources kept
+on disk, into a directory outside the project so that the next build does not
+compile them a second time.
+
+\begin{minted}[fontsize=\footnotesize, breakanywhere]{text}
+dotnet build -p:EmitCompilerGeneratedFiles=true -p:CompilerGeneratedFilesOutputPath=../gen
+\end{minted}
+
+Two generators write into that path, and one of them is the ASP.NET Core SDK's
+own. Hot Chocolate's sits under a directory named for the analyzers package.
+Below is its body, with the signature broken across lines and the
+\code{global::} qualifications on Hot Chocolate's own types dropped, both to
+fit the page; above it the real file carries a using block and a pair of
+pragmas.
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+public static partial class SessionsTypesRequestExecutorBuilderExtensions
+{
+    public static IRequestExecutorBuilder AddSessionsTypes(
+        this IRequestExecutorBuilder builder)
+    {
+        builder.AddTypeExtension(typeof(global::Sessions.Query));
+        builder.ConfigureSchema(
+            b => b.TryAddRootType(
+                () => new ObjectType(
+                    d => d.Name(OperationTypeNames.Query)),
+                OperationType.Query));
+        return builder;
+    }
+}
+\end{minted}
+
+\index{schema!built at compile time}%
+The registration list is a compile-time artifact. \code{[QueryType]} is not
+read at startup by a reflection scan over your assembly. It is a signal to a
+Roslyn generator, which emits a method naming each type explicitly. So the
+attribute is not documentation. It is the whole of the wiring, and the
+consequence of leaving it off depends entirely on whether it was the last one.
+
+Take the attribute off a second class that was going to add fields, while some
+other class still carries one, and the project compiles, the service starts,
+the requests you already had keep working, and the fields that class would have
+contributed are absent from the schema. Nothing is logged. Take it off the only
+class that has one and you get the opposite, a startup failure that tells you
+exactly what is wrong:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+HotChocolate.SchemaException: The schema builder was unable to identify
+the query type of the schema. Either specify which type is the query type
+or set the schema builder to non-strict validation mode.
+\end{minted}
+
+That one stops the host before it listens, so you meet it the moment you press
+run. The silent one you meet when a client asks for a field that is not there.
+
+The method's name comes from the assembly name and nowhere else. Rename the
+project and this method is renamed with it, and the call in \code{Program.cs}
+stops compiling. That is a reasonable trade, since a broken build beats an
+empty schema, but it does mean that the registration line you copy from any
+tutorial is wrong for your project by construction.
+
+\index{Query type}%
+The root \code{Query} type is created by the generator rather than by you. Your
+class is registered as a \emph{type extension} on it. That is how a static
+class with no base type and no interface contributes fields to a type it never
+mentions, and it is also how several classes contribute to the same
+\code{Query} without any of them owning it. Hold on to that shape. When
+chapter~\ref{ch:first-subgraph} turns this service into a subgraph, the
+federation library adds its own fields to that same \code{Query} by the same
+mechanism, and \code{\_service} and \code{\_entities} will arrive from nowhere
+in exactly the way \code{sessions} does now.
+\index{source generator|)}%
