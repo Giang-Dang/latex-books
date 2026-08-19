@@ -39,6 +39,28 @@
         Enabled = $true
     }
 
+    # SPEC decision 50. Measured in this book on 2026-08-19 rather than copied
+    # from another: lines of 70 to 76 columns, each ending in a run with no
+    # break point, set in a chapter file at this book's own geometry and
+    # \setminted settings and read off the page. 73 fits; 74 gains a
+    # continuation arrow, and the build log says nothing either way, which is
+    # the whole reason this family exists.
+    #
+    # Every C# file the book prints is written to 73. Two kinds of block cannot
+    # be and declare their own fontsize instead, which is how they tell the
+    # check to stand down: the project file, whose package identifiers are not
+    # ours to shorten, and the exported schema, whose directive descriptions
+    # are the vendor's own prose. Captured compiler output adds breakanywhere
+    # as well, because a fully qualified .NET type name offers no break point
+    # anywhere and breaklines cannot help it.
+    #
+    # Re-measure if the geometry or the mono font changes. Do not carry this
+    # number to another book; two books that happen to agree on it agree by
+    # coincidence.
+    Listings = @{
+        MaxLineLength = 73
+    }
+
     Spelling = @{
         Preset = 'en-US'
 

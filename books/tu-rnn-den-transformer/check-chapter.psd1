@@ -311,10 +311,20 @@
     # CJK glyph counts one and sets two. A tab counts one. autogobble strips a
     # block's common indent before typesetting, so an indented block is measured
     # wider than it sets. This book's listings start at column zero.
-    # Schema, kept for reference now that this key is live below:
+    #
+    # AliasAsLexer - the family's other check. A book that writes
+    #                \newminted[NAME]{lexer} can then write \begin{minted}{NAME}
+    #                by mistake, which sends NAME to Pygments and kills the run
+    #                with `Pygments lexer "NAME" is unknown`. This book declares
+    #                no aliases, so the check has nothing to compare against and
+    #                costs nothing; it is left on rather than switched off,
+    #                because the day this book declares one is the day it wants
+    #                the check.
+    # Schema, kept for reference now that MaxLineLength is live below:
     # Listings = @{
     #     Enabled       = $true
     #     MaxLineLength = 0
+    #     AliasAsLexer  = $true
     # }
     #
     # THIS BOOK: 73 columns, measured rather than assumed. \the\textwidth is
@@ -406,16 +416,24 @@
     # nothing: it fails the build with an error naming the key rather than the
     # style, which reads as a missing \usetikzlibrary and sends you looking in
     # the preamble.
-    # Enabled      - the master switch.
+    # Enabled      - the master switch, and it takes both checks below.
+    # NodeText     - `--` inside node or label text, which sets an en dash. TikZ
+    #                draws a segment with `--` and that is why these files are
+    #                outside the prose dash check; the text inside a node is
+    #                prose all the same, and nothing else reads it. Only braced
+    #                groups after a node or label are read, so path syntax stays
+    #                silent.
     # Paths        - which folders hold picture sources, relative to the book
     #                root. They sit outside Paths.Prose on purpose, so this is
     #                the only check that reads them, and -Chapter does not
     #                narrow them.
     # ReservedKeys - the names to reject. Emptying the list is the other way to
-    #                switch the check off, so a book that disagrees with one
-    #                name does not have to disable the family to say so.
+    #                switch the key check off, so a book that disagrees with one
+    #                name does not have to disable the family to say so, and it
+    #                leaves NodeText running.
     # Figures = @{
     #     Enabled      = $true
+    #     NodeText     = $true
     #     Paths        = @('figures/tikz')
     #     ReservedKeys = @('in', 'out', 'step', 'shift', 'scale', 'text', 'style')
     # }

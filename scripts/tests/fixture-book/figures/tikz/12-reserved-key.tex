@@ -1,9 +1,11 @@
-% Triggers the figures check once, and proves it is narrow four times over.
+% Triggers both figure checks once each, and proves each is narrow.
 %
-% Only the first line below is a finding: `step` is a pgfkeys key, so declaring
-% a style with that name fails the build with an error naming the key. The rest
-% is ordinary TikZ that happens to mention the same words, and none of it may
-% be reported.
+% Only two lines below are findings. `step` is a pgfkeys key, so declaring a
+% style with that name fails the build with an error naming the key. And the
+% node text further down sets an en dash, which the prose dash check never
+% sees because these files sit outside Paths.Prose. Everything else is
+% ordinary TikZ that happens to mention the same words or carry the same
+% characters, and none of it may be reported.
 %
 % Never compiled. See main.tex.
 \begin{tikzpicture}[
@@ -17,5 +19,16 @@
   \draw[help lines, step=0.5cm] (0,0) grid (2,1);
   \node[note, scale=0.9, text width=3cm] at (1,-1) {an ordinary node};
   \draw[thin arrow] (0,-2) -- node[midway, above] {in and out} (2,-2);
+
+  % Path syntax, on four lines that must stay silent. `--` is how TikZ draws a
+  % segment, which is the whole reason these files are outside the dash check,
+  % so a node-text pass that reads paths would report every one of these.
+  \draw (0,-3) -- (2,-3) -- (2,-4) -- (0,-4) -- cycle;
+  \draw[thin arrow] (0,-5) -- (2,-5);
+  \node at (1,-6) {a caption with an ASCII hyphen-minus in it};
+  \draw (0,-7) -- (2,-7) node[right] {labelled at the end};
+
+  % The finding: a node whose text sets an en dash.
+  \node[note] at (1,-8) {parses -- then validates};
 
 \end{tikzpicture}
