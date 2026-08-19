@@ -1,0 +1,22 @@
+\begin{chaptersummary}
+  \item A field resolver runs once per parent object, and that is the
+        definition of the field rather than a defect. Four sessions and their
+        speakers cost five statements against SQLite: one for the list, one
+        per session, and the four repeats identical to each other.
+  \item A DataLoader changes when the calls become work, not how many calls
+        there are. The resolver records a key and returns a promise, the
+        engine collects the batch, and one statement goes out. Five became
+        two, and three keys covered four sessions because one speaker gives
+        two of them.
+  \item \code{[DataLoader]} on a static method is the whole of the wiring. The
+        generated loader is named after the method with \code{Get} and
+        \code{Async} stripped, and \code{AddSessionsTypes} registers it
+        without being asked, which is not what the documentation describes.
+  \item A projection narrows the parent object to the fields the client named,
+        so a resolver that reads anything else gets a default and answers
+        wrongly with no error anywhere. \code{[Parent(nameof(...))]} is how a
+        resolver declares what it reads.
+  \item Paging belongs in the statement. \code{[UsePaging]} puts \code{LIMIT}
+        into the SQL and turns the field into a Relay connection, which breaks
+        every query already written against it.
+\end{chaptersummary}

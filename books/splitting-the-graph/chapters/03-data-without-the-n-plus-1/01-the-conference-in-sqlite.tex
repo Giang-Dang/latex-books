@@ -1,0 +1,336 @@
+\section{The Conference in SQLite}
+\label{sec:ch03-the-conference-in-sqlite}
+
+Two packages, and the conference stops living in a static field.
+
+\begin{minted}{text}
+dotnet add package Microsoft.EntityFrameworkCore.Sqlite
+dotnet add package HotChocolate.Data.EntityFramework
+\end{minted}
+
+\index{Entity Framework Core!SQLite provider}%
+The first is the database provider and needs no introduction. The second is the
+join between Hot Chocolate and EF Core, and it brings more with it than its own
+name suggests: section~\ref{sec:ch03-asking-for-less} uses two types that
+arrive through its dependencies rather than out of the package itself. The
+project file gains both, and nothing else.
+
+\begin{minted}[fontsize=\footnotesize, highlightlines={14,16}]{xml}
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HotChocolate.AspNetCore" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.Data.EntityFramework" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.Types.Analyzers" Version="16.6.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+  </ItemGroup>
+
+</Project>
+\end{minted}
+
+\index{DbContext@\code{DbContext}}%
+\code{ConferenceContext.cs} is the whole of the mapping. Two tables, and the
+seed data is the same \code{ConferenceData} class
+chapter~\ref{ch:hot-chocolate-zero} printed, now read once at database creation
+instead of on every request.
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+/// <summary>
+/// The conference program, in SQLite. Session carries SpeakerId as a
+/// plain column and no navigation property, so EF Core never joins the
+/// two tables on its own and every speaker lookup is a resolver's job.
+/// </summary>
+public sealed class ConferenceContext(
+    DbContextOptions<ConferenceContext> options) : DbContext(options)
+{
+    public DbSet<Session> Sessions => Set<Session>();
+
+    public DbSet<Speaker> Speakers => Set<Speaker>();
+
+    protected override void OnModelCreating(ModelBuilder model)
+    {
+        // SQLite stores no date type of its own and refuses to sort a
+        // DateTimeOffset. Keep the offset out of the column and put it
+        // back on the way in; every session here is in conference time.
+        model.Entity<Session>()
+            .Property(s => s.StartsAt)
+            .HasConversion(
+                v => v.UtcDateTime,
+                v => new DateTimeOffset(v, TimeSpan.Zero));
+
+        model.Entity<Speaker>().HasData(ConferenceData.Speakers);
+        model.Entity<Session>().HasData(ConferenceData.Sessions);
+    }
+}
+\end{minted}
+
+\index{SQLite!storage classes}%
+\index{value converter}%
+That converter is not decoration. SQLite has no date type of its own, and the
+provider will not pretend otherwise: ask it to \code{ORDER BY} a
+\code{DateTimeOffset} and it refuses to translate the query at all, naming the
+type and telling you to convert it or to sort in memory instead. Since
+\code{GetSessions} has ordered by \code{StartsAt} since
+chapter~\ref{ch:hot-chocolate-zero}, that is the first thing to break. Storing
+the instant and putting the offset back on the way out keeps the record, the
+schema and every request already written exactly as they were. Sorting in
+memory would have worked too, and would have meant reading every session on
+every request forever, which is the opposite of where this chapter is going.
+
+\index{Session@\code{Session}!has no navigation property}%
+The other decision in that file is the one that is not there. \code{Session}
+has a \code{SpeakerId} and no \code{Speaker} property, so EF Core sees an
+\code{int} column and no relationship, and will never join the two tables on
+its own initiative. A navigation property would have made this chapter's
+problem disappear and taught you nothing, because
+chapter~\ref{ch:router-n-plus-1} puts a network between these two tables and
+there is no navigation property that spans it. The seam is easier to see if you
+build it now, while both halves are still in the same process.
+
+\index{statement log}%
+\index{DbCommandInterceptor@\code{DbCommandInterceptor}}%
+Next, the instrument. A database you cannot watch is a database you will guess
+about, and the guesses in this particular area are famously wrong, so
+\code{StatementLog.cs} prints every statement the service sends and numbers it.
+
+\begin{minted}{csharp}
+using System.Data.Common;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+
+namespace Sessions;
+
+/// <summary>
+/// Prints every statement the service sends to SQLite, numbered, so a
+/// request's cost can be read off the console. The counter is
+/// process-wide and never reset: start the service, send one request,
+/// and the last number is what that request cost.
+/// </summary>
+public sealed class StatementLog : DbCommandInterceptor
+{
+    private static int _count;
+
+    public override InterceptionResult<DbDataReader> ReaderExecuting(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result)
+    {
+        Print(command);
+        return result;
+    }
+
+    public override ValueTask<InterceptionResult<DbDataReader>>
+        ReaderExecutingAsync(
+            DbCommand command,
+            CommandEventData eventData,
+            InterceptionResult<DbDataReader> result,
+            CancellationToken cancellationToken = default)
+    {
+        Print(command);
+        return ValueTask.FromResult(result);
+    }
+
+    private static void Print(DbCommand command)
+    {
+        var n = Interlocked.Increment(ref _count);
+        Console.WriteLine($"-- statement {n}");
+        Console.WriteLine(command.CommandText);
+    }
+}
+\end{minted}
+
+EF Core will log commands for you and I am not using that here, for a reason
+worth stating once. Its own logging reports each command after it completes,
+with the elapsed time attached, and this book prints no timings anywhere: a
+duration is a fact about my laptop, and a statement count is a fact about the
+program you typed. Counting on the way in also means the number is the same
+whether the query returned in a millisecond or timed out.
+
+\index{Program.cs@\code{Program.cs}!database registration}%
+\code{Program.cs} carries the wiring. Everything
+chapter~\ref{ch:hot-chocolate-zero} put there is untouched at the bottom of the
+file; the new material is at the top.
+
+\begin{minted}[highlightlines={3,4,8-24,29-31,35-41}]{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Sessions;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<ConferenceContext>(options =>
+{
+    options.UseSqlite("Data Source=conference.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+builder
+    .AddGraphQL()
+    .AddSessionsTypes()
+    .RegisterDbContextFactory<ConferenceContext>()
+    .AddQueryContext()
+    .AddPagingArguments();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<ConferenceContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{RegisterDbContextFactory@\code{RegisterDbContextFactory}}%
+Two of those lines are worth stopping on. The \code{using} for the
+\code{Sessions} namespace is needed because \code{Program.cs} is a top-level
+program in no namespace, and this is the first file in the book that names a
+type of yours rather than only calling generated methods. And
+\code{AddDbContextFactory} does double duty: it teaches the container how to
+build a context on demand, and it also registers the context itself as a
+scoped service, which is what makes a \code{ConferenceContext} parameter on a
+resolver resolvable at all.
+
+\code{RegisterDbContextFactory} is the line I can tell you least about. It is
+what the documentation pairs with a factory registration, and it is here
+because I would ship it. Taking it out, though, leaves the exported schema,
+every response and every statement count in this chapter unchanged, so I will
+not tell you what it buys you.
+
+\index{AddQueryContext@\code{AddQueryContext}}%
+\index{AddPagingArguments@\code{AddPagingArguments}}%
+\code{AddQueryContext} and \code{AddPagingArguments} belong to
+section~\ref{sec:ch03-asking-for-less} and do nothing until something uses
+them. They are here rather than there because
+chapter~\ref{ch:hot-chocolate-zero} printed this file whole and
+decision-by-decision reprints of a program get tiresome; this is the last time
+\code{Program.cs} appears in the chapter.
+
+\index{EnsureCreated@\code{EnsureCreated}}%
+The block after \code{Build()} creates the database file and seeds it on first
+run, and the call it makes is the blunt one. \code{EnsureCreated} builds the
+schema if none is there and does nothing at all if a file already exists, so
+it never migrates, and it will leave a stale database in place after you
+change a record. Delete the file when that happens. Migrations are the
+grown-up answer, and they generate files this book would then have to print,
+for a two-table example that is rebuilt from nothing in a second.
+
+\index{resolver!taking a DbContext}%
+The two resolvers change shape. \code{Query.cs} first, taking the context as a
+parameter and awaiting the result:
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+[QueryType]
+public static class Query
+{
+    /// <summary>
+    /// Every session on the schedule, earliest first.
+    /// </summary>
+    public static async Task<List<Session>> GetSessionsAsync(
+        ConferenceContext db,
+        CancellationToken ct)
+        => await db.Sessions.OrderBy(s => s.StartsAt).ToListAsync(ct);
+
+    /// <summary>
+    /// One session by its identifier, or null if no session has it.
+    /// </summary>
+    public static async Task<Session?> GetSessionByIdAsync(
+        int id,
+        ConferenceContext db,
+        CancellationToken ct)
+        => await db.Sessions.FirstOrDefaultAsync(s => s.Id == id, ct);
+}
+\end{minted}
+
+\index{Parent@\code{[Parent]}!with a service beside it}%
+Then \code{SessionType.cs}, the file this chapter is really about. The
+translation from the in-memory version is mechanical: the linear scan over
+\code{ConferenceData.Speakers} becomes a query, and the method gains the
+context and a cancellation token.
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+[ObjectType<Session>]
+public static partial class SessionType
+{
+    /// <summary>
+    /// The person giving this session.
+    /// </summary>
+    public static async Task<Speaker?> GetSpeakerAsync(
+        [Parent] Session session,
+        ConferenceContext db,
+        CancellationToken ct)
+        => await db.Speakers
+            .FirstOrDefaultAsync(s => s.Id == session.SpeakerId, ct);
+}
+\end{minted}
+
+Nothing about that is wrong. It is the obvious translation, it is what the
+resolver did before, and it is what I would write first. Send
+chapter~\ref{ch:hot-chocolate-zero}'s request and every response comes back
+exactly as it did, which is what the move was supposed to achieve: the data
+moved and the API did not.
+
+\index{cost directive!attached to a resolver}%
+Export the schema anyway. One line of it is different, and it is not a line you
+wrote. Where chapter~\ref{ch:hot-chocolate-zero} exported \code{speaker:
+Speaker}, the same field now reads:
+
+\begin{graphqlsdl}
+speaker: Speaker @cost(weight: "10")
+\end{graphqlsdl}
+
+Two things about the new method are enough to attach that weight, and either
+does it alone: returning a \code{Task}, and taking a service parameter.
+Compile chapter~\ref{ch:hot-chocolate-zero}'s method unchanged in this project
+and the field exports bare again. Hot Chocolate is reading the signature and
+concluding that this field might cost something, which is the same conclusion
+this section has just reached by hand, and it is worth knowing before
+chapter~\ref{ch:operations} makes those weights add up to a rejected query.
+
+Everything else about the service is what it was, and it is now more expensive
+than you can see from outside it.

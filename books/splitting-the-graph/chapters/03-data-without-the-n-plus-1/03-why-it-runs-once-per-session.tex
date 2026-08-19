@@ -1,0 +1,61 @@
+\section{Why It Runs Once Per Session}
+\label{sec:ch03-why-it-runs-once-per-session}
+
+\index{execution!field by field|(}%
+The engine resolved \code{sessions} first and got four objects back. Then it
+had a list of four and a field to resolve on each of them, and it did the only
+thing it can do without knowing anything about your resolver: it called the
+resolver four times.
+
+That is not a defect and there is no setting that turns it off. A resolver is a
+function from one parent object to one value, and the four calls are the
+literal meaning of asking for a field on a list of four things. The engine
+cannot merge them because it cannot see inside them. As far as it knows,
+\code{GetSpeakerAsync} reads a file, calls a payment provider or returns a
+constant, and nothing in its signature says which.
+
+\index{DataLoader!what it changes about timing}%
+What can be changed is when the four calls turn into work. The engine knows
+something your resolver does not: it knows that all four are happening at the
+same moment, on the same list, in the same request. If the resolver could hand
+back a promise instead of a query, and the four promises could be collected
+before any of them was answered, the four lookups become one lookup for four
+keys. That is the entire idea, and the thing that implements it is called a
+DataLoader.
+
+Figure~\ref{fig:ch03-one-batch} is the two arrangements side by side. The
+difference is not that lane B does less work. It is that lane B does its
+database work after the engine has finished asking, and lane A does its work
+during.
+
+\begin{figure}
+  \centering
+  \input{figures/tikz/ch03-one-batch}
+  \caption{The same four sessions, resolved two ways. In lane A each call to
+  the speaker resolver reaches SQLite on its own, so the statements interleave
+  with the calls and there are as many as there are sessions. In lane B the
+  resolver returns a promise and records a key; nothing reaches SQLite until
+  the engine has stopped asking, at which point three distinct keys go out in
+  one statement. The batch boundary, not the amount of data, is what the
+  DataLoader moves.}
+  \label{fig:ch03-one-batch}
+\end{figure}
+
+\index{DataLoader!deduplicates keys}%
+Lane B also shows the second thing a DataLoader does, which is easy to miss
+because it is invisible in the code. Four sessions produced three keys, because
+Ada Fischer gives two of them and a set does not hold a duplicate. The naive
+resolver could not have known that, since each of its calls saw one session and
+had no way to ask what the other three wanted.
+
+\index{N+1@N+1!across a seam}%
+Hold on to the shape of lane A rather than the fix. In this chapter the four
+repeated statements go to a database in the same process, and the worst that
+happens is that you notice. In chapter~\ref{ch:router-n-plus-1} the same
+picture has a router in the place of the engine and an HTTP request in the
+place of each statement, the parent list arrives from one service and the
+field belongs to another, and the four calls are four round trips over a
+network you do not control. The mechanism is identical, and the unit of
+repetition stops being a local statement and becomes a request to another
+team's service.
+\index{execution!field by field|)}%

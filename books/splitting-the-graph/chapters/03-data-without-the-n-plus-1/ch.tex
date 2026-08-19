@@ -2,12 +2,17 @@
 \chapter{Data Without the N+1}
 \label{ch:data-without-n-plus-1}
 
-\emph{Not yet drafted.}
+A field resolver runs once for every object it resolves, so a list of four
+sessions asks for four speakers, one lookup at a time.
 
-% Chapter skeleton, SPEC decision 13. Five beats, this order:
-%   1. The one sentence  - what this chapter establishes, stated first.
-%   2. Show it          - the thing running, or in Part III the thing failing.
-%   3. Why it does that - the mechanism. All theory lives here (decision 14).
-%   4. Do it properly   - the complete, correct implementation.
-%   5. Summary box      - decision 21.
-% Section files are \input from here, numbered 01-, 02-, ... from the book root.
+Chapter~\ref{ch:hot-chocolate-zero} hid that behind a list in memory, where
+four lookups cost nothing and nothing counted them. A database charges for
+each one and can be made to say so, which is the whole reason this chapter
+moves the conference into SQLite before it fixes anything.
+
+\input{chapters/03-data-without-the-n-plus-1/01-the-conference-in-sqlite}
+\input{chapters/03-data-without-the-n-plus-1/02-what-one-query-costs}
+\input{chapters/03-data-without-the-n-plus-1/03-why-it-runs-once-per-session}
+\input{chapters/03-data-without-the-n-plus-1/04-the-batch-that-fixes-it}
+\input{chapters/03-data-without-the-n-plus-1/05-asking-for-less}
+\input{chapters/03-data-without-the-n-plus-1/06-summary}

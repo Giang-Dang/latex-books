@@ -10,12 +10,13 @@ Author: Giang Dang
 
 ## Status
 
-Settled 2026-08-19 through a seven-round requirements interview. Chapters 1 and
-2 are drafted. The verification repo exists at
-`F:/repo/splitting-the-graph-graph` with both branches tagged for chapter 2 and
-`verify.ps1` passing on each. Next action: chapter 3, which replaces the
-in-memory store with SQLite and EF Core and produces the single-service
-statement counts chapter 10 measures against.
+Settled 2026-08-19 through a seven-round requirements interview. Chapters 1, 2
+and 3 are drafted. The verification repo at `F:/repo/splitting-the-graph-graph`
+carries tags `ch02`, `ch02-hc14`, `ch03`, `ch03-naive`, `ch03-starved` and
+`ch03-hc14`, with `verify.ps1` passing on each. The single-service baseline chapter 10 measures
+against is settled: **five statements naive, two batched**, for four sessions
+and three distinct speakers. Next action: chapter 4, which owes chapter 14 its
+nullability groundwork.
 
 **Why this book exists.** It is the second book in this library on federated
 GraphQL in .NET, and it exists because the first one,
@@ -97,6 +98,11 @@ and why, in the row.
 | 48 | The chapter's request set lives in `verify.ps1` | Every request a chapter prints, and every response it quotes, is asserted by the verification script before the prose is written. Chapter 2 asserts twelve, including the two the callout's version comparison rests on. This is what makes decision 11's rule enforceable rather than aspirational: a callout that stops being true fails a run instead of ageing quietly on the page. |
 | 49 | `xml` joins the listing environments | Added by chapter 2, which prints a `.csproj` in full under decision 15. The project file is a file the reader types, so it is a listing like any other, and `minted{xml}` is the environment that renders it. No other build file format is admitted by this row: a `.json` launch profile uses `json`, which was already on the list. |
 | 50 | The listing measure is 73 columns | Measured in the book itself on 2026-08-19 at its own geometry and `\setminted` settings: a 73-column line fits and a 74-column line gains a continuation arrow nobody chose, while the build log stays silent either way. Every C# file the book prints is written to 73. A block that genuinely cannot be, a package identifier or a vendor's own directive description, declares `fontsize=\footnotesize` in its option list, and captured output with no break point anywhere adds `breakanywhere`. Re-measure if the geometry or the mono font changes. |
+| 51 | A state the book argues against gets its own tag | Chapter 3 opens on a statement count it then removes, and decision 48 says every number the book prints is asserted by `verify.ps1`. The verification repo cannot hold two states of one file, so the state being argued against gets a branch, a tag and a `verify.ps1` of its own: `ch03-naive`, asserting the five statements the chapter opens with. Nothing is built on such a branch and it ends at its tag. Rejected: leaving the opening number reproducible only by following a recipe in the research note, which is the class of claim this book exists to avoid. Chapter 11 owes a deliberately broken listing and uses the same mechanism. |
+| 52 | `verify.ps1` asserts the current state, and tags carry the rest | Settled by chapter 3, which turned `sessions` into a Relay connection and so made chapter 2's printed requests illegal against `main`. The script asserts the example as it now stands, and an earlier chapter's requests stay provable by checking out that chapter's tag. Rejected: keeping every chapter's requests answerable forever, which would freeze the example at chapter 2, and dropping the older assertions, which would leave those listings unproved. Recorded because the alternative reading, that a chapter-2 assertion failing on `main` is a regression, is wrong. |
+| 53 | A failure no tagged state produces is described, not quoted | Two things chapter 3 wanted to print and could not: SQLite's refusal to `ORDER BY` a `DateTimeOffset`, and the exception `[UseProjection]` raises on a positional record. Neither can be produced by the corrected code, so under decision 48 neither response may be quoted. Both are stated in prose as facts and recorded verbatim in the research note instead. Narrower than decision 51: a state worth a tag gets one, and a one-off message that no tagged state produces is described rather than quoted. |
+| 54 | The chapter counts statements with an interceptor, not EF Core's logger | `StatementLog`, a `DbCommandInterceptor` printing a numbered marker and the command text, is a file the book prints like any other. EF Core's own `LogTo` was rejected twice over: with `CommandExecuted` it prints an elapsed time and decision 19 puts no milliseconds in this book, and with `CommandExecuting` it prefixes each statement with a 113-column line that decision 50's budget cannot take and that carries nothing a reader needs. The interceptor also numbers the statements, which is the currency of chapters 3 and 10. `builder.Logging.AddFilter` silences EF Core's duplicate report; without it every statement is printed twice. |
+| 55 | Projection is `QueryContext<T>`, never `[UseProjection]` | `[UseProjection]` builds its projected row with `Expression.New` and member assignment, so it needs a parameterless constructor and settable properties. Decision 23's domain is positional records, so every request against a field wearing the attribute throws `Type 'Session' does not have a default constructor` at run time, not at build and not at schema build. Measured on 16.6.1 and on 14.3.1, so it is a property of the attribute rather than a version to wait out. `QueryContext<T>` with the `System.Linq` `.With()` extension works on records and is what the book uses, at the cost of being unavailable on 14. The ordering rule that comes with it: sort before projecting, because `.With()` rewrites the entity and EF Core cannot then translate an `OrderBy` over the result. |
 
 ## Version baseline
 
@@ -113,6 +119,9 @@ and this section is what appendix A is built from.
 | .NET (`hc14` branch) | `net8.0` | verified 2026-08-19: 14.3.1 targets net6.0 to net9.0 and not net10.0 |
 | HotChocolate / HotChocolate.ApolloFederation (`main`) | 16.6.1 | verified 2026-08-19, chapter 2 note; the two are on the same version sequence |
 | HotChocolate (`hc14` branch) | 14.3.1 | verified 2026-08-19 as the last stable 14.x: no 14.3.2, and 14.4.0 shipped only as prereleases |
+| HotChocolate.Data.EntityFramework (`main`) | 16.6.1 | verified 2026-08-19, chapter 3 note; same version sequence as the rest of the family |
+| Microsoft.EntityFrameworkCore.Sqlite (`main`) | 10.0.11 | verified 2026-08-19, chapter 3 note; 10.x targets `net10.0` only |
+| Microsoft.EntityFrameworkCore.Sqlite (`hc14` branch) | 9.0.19 | verified 2026-08-19, chapter 3 note: the latest 9.x, chosen because EF Core 10 cannot run on `net8.0` |
 | WunderGraph Cosmo Router | unpinned | to verify before chapter 8 |
 | `wgc` (Cosmo CLI) | unpinned | to verify before chapter 7 |
 | Pygments | 2.19.2 | verified 2026-08-19 on this machine; see decision 31 |
@@ -177,7 +186,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | Preface | not-started | Write last. Must carry decision 8's plain statement that HC 14 is out of support. |
 | 01 | drafted | No code, as planned. Note at `research/ch01-do-you-actually-need-this.md`. Established the summary box (decisions 20, 21, 41) and the figure idiom (decision 33); `figures/tikz/ch01-one-field.tex` is the idiom specification later figures are matched against. Its threshold is stated as my judgment under decision 38, because no source passed the Sources bar. |
 | 02 | drafted | Note at `research/ch02-hot-chocolate-from-zero.md`. Stood up the verification repo, tags `ch02` and `ch02-hc14`, `verify.ps1` PASS on both. Emitted the first callout, which fixed the `hc14` file set (decision 47) and settled decisions 42 to 46. Measured the listing column budget at 73. |
-| 03 | not-started | Sets up chapter 10; the counts printed here are the single-service baseline. |
+| 03 | drafted | Note at `research/ch03-data-without-the-n-plus-1.md`. Four tags, `verify.ps1` PASS on each: `ch03` (main), `ch03-naive` and `ch03-starved` (the two states the chapter argues against, decision 51), `ch03-hc14`. The single-service baseline chapter 10 measures against is **5 statements naive, 2 batched**, for four sessions and three distinct speakers. Settled decisions 51 to 55. Turned `sessions` into a Relay connection, the first change to break an earlier chapter's printed requests. |
 | 04 | not-started | Owes chapter 14 its nullability groundwork. |
 | 05 | not-started | First SDL. Confirms decision 31's `graphqlsdl` environment against real federation SDL. |
 | 06 | not-started | |
@@ -302,6 +311,37 @@ keep the two in step.
 
 An unresolved question, and the condition that unblocks it.
 
+- **What `RegisterDbContextFactory<T>()` actually buys.** Chapter 3 calls it
+  and says in the prose that it cannot tell the reader what it changes.
+  Removing it leaves the exported schema, every response and every statement
+  count in the chapter identical, because `AddDbContextFactory<T>()` already
+  registers the context as a scoped service. The plausible answer is that it
+  governs which context instance a resolver is handed, which only matters if
+  resolvers run concurrently, and that is the next item. Unblocked by a test
+  that observes two resolvers holding different context instances, at which
+  point the chapter gains a sentence.
+- **Whether Hot Chocolate ever resolves sibling list-item resolvers
+  concurrently.** A `DbContext` is not thread-safe, so this decides whether
+  chapter 3's naive resolver was ever at risk of anything worse than being
+  expensive. Four sessions with an artificial delay executed strictly one at a
+  time, which shows nothing about a longer list or a different execution
+  strategy. **No chapter claims anything about resolver concurrency
+  meanwhile**, and chapter 3 criticises the naive resolver for its statement
+  count alone. Unblocked by a run that observes genuine overlap, or by
+  ChilliCream documenting the execution strategy.
+- **Whether `totalCount` on a connection costs a second statement.** Chapter 3
+  prints no query that asks for it, so it was not measured. It matters the
+  first time a chapter does, because decision 19 makes statement counts the
+  book's only numbers. Unblocked by measuring it, which is a one-line change
+  to a query.
+- **Whether `[UseConnection]` can be made to work.** Chapter 3 tried it first,
+  and it compiled, exported `sessions` as an ordinary list, and leaked its
+  `PagingArguments` parameter into the schema as a required argument.
+  `AddPagingArguments()` fixed the leak and the field still did not become a
+  connection. `[UsePaging]` was substituted and worked immediately, so the
+  question was abandoned rather than answered and **the book says nothing about
+  `[UseConnection]`**. Unblocked by finding the registration or return type it
+  wants, at which point decision 55's neighbourhood is worth re-reading.
 - **Chapter 13 may need a fourth subgraph.** Decision 23 fixed the example at
   three, and the accepted answer to cross-seam filtering, sorting and paging is
   a dedicated search domain with its own index. Whether that domain is built as
