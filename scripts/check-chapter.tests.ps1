@@ -158,10 +158,17 @@ function Invoke-BookFixture {
 # 01-clean.tex appears nowhere: it holds a contraction, two American spellings,
 # a dash ligature and a literal quote, all inside \code{}, so a masking
 # regression shows up as an extra line rather than a missing one.
+#
+# 03-quoting.tex is listed twice on purpose. Line 4 is a plain literal quote
+# and line 11 is a line break followed by one; between them sit two accented
+# names, \"u and \"{o}, which must stay silent. A fix that stops reading an
+# accent macro as a quotation mark can overshoot into swallowing line 11, so
+# both ends of that behaviour are pinned here.
 $Expected = @(
     "chapters/01-triggers/02-citations.tex:4: [tilde-cite] use a non-breaking tie: ~\autocite{...}"
     "chapters/01-triggers/02-citations.tex:8: [cite-key] citation key 'missingkey' not found in refs.bib"
     "chapters/01-triggers/03-quoting.tex:4: [quote] literal double quote in prose; use \enquote{...}"
+    "chapters/01-triggers/03-quoting.tex:11: [quote] literal double quote in prose; use \enquote{...}"
     "chapters/01-triggers/04-index.tex:4: [index-pct] \index{...} line must end with %"
     "chapters/01-triggers/05-language.tex:4: [contraction] contraction 'It's' in the author's voice"
     "chapters/01-triggers/05-language.tex:7: [spelling] 'color' -> colour(s)"
