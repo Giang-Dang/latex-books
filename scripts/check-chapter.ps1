@@ -143,9 +143,18 @@ function Get-DefaultPolicy {
         # A block whose \begin line carries its own [option list] is not
         # measured: naming fontsize or breaklines for one block is a deliberate
         # decision about that block, and whoever made it owns its width.
+        # AliasAsLexer catches the other way to get a listing wrong, and it is
+        # a build failure rather than a typographic one. A book that declares
+        # \newminted[NAME]{lexer} has two ways to write NAME, and only one of
+        # them is an environment: \begin{NAME} is right, and
+        # \begin{minted}{NAME} sends NAME to Pygments, which has never heard of
+        # it. The build dies with `Pygments lexer "NAME" is unknown`, which
+        # reads as a missing lexer and is not one. Costs nothing for a book
+        # that declares no aliases, because there is then nothing to confuse.
         Listings     = [ordered]@{
             Enabled       = $true
             MaxLineLength = 0
+            AliasAsLexer  = $true
         }
 
         # The masking macros. These default to the template's own \code and
@@ -194,8 +203,16 @@ function Get-DefaultPolicy {
         #
         # Figures are outside Paths.Prose on purpose, so this is the only
         # family that reads them.
+        # NodeText is the second thing that exclusion costs. TikZ path syntax
+        # is `--`, which is exactly why these files are outside Paths.Prose and
+        # so outside the dash check. Node and label text is prose all the same,
+        # and `--` in it sets an en dash on the page, which the repo-wide rule
+        # bans and nothing else reads. Braced groups only: a coordinate or a
+        # path never carries one and a node's text always does, so the
+        # exclusion still buys quiet on paths without buying it on words.
         Figures      = [ordered]@{
             Enabled      = $true
+            NodeText     = $true
             Paths        = @('figures/tikz')
             ReservedKeys = @('in', 'out', 'step', 'shift', 'scale', 'text', 'style')
         }
@@ -578,6 +595,9 @@ $charFiles = if ($policy.Paths.Characters -join '|' -eq ($policy.Paths.Prose -jo
 # hold the language.
 $verbatimEnvs = @('minted', 'verbatim', 'verbatim*', 'Verbatim', 'Verbatim*')
 $starredAliases = @()
+# The unstarred names on their own, which is what the AliasAsLexer check
+# compares a \begin{minted}{...} argument against.
+$mintedAliases = @()
 $preambleDir = Join-Path $bookPath 'preamble'
 if (Test-Path $preambleDir) {
     foreach ($f in Get-ChildItem $preambleDir -Filter '*.tex') {
@@ -585,6 +605,7 @@ if (Test-Path $preambleDir) {
             $verbatimEnvs += $m.Groups[1].Value
             $verbatimEnvs += $m.Groups[1].Value + '*'
             $starredAliases += $m.Groups[1].Value + '*'
+            $mintedAliases += $m.Groups[1].Value
         }
     }
 }
@@ -993,8 +1014,14 @@ function Format-Policy {
     $bits += "verbatim=$(if ($verbatimArmRe -and $researchBlob) { $policy.Verbatim.Environments -join ',' } else { 'off' })"
 
     # $listingMax is already 0 when the family is disabled, so one expression
-    # covers both ways of switching it off.
-    $bits += "listings=$(if ($listingMax -gt 0) { $listingMax } else { 'off' })"
+    # covers both ways of switching it off. AliasAsLexer is reported beside it
+    # rather than folded in: they are two checks under one family and a run
+    # that has only one of them running should not read as though it had both.
+    $listingBit = if ($listingMax -gt 0) { "$listingMax" } else { 'off' }
+    if ($policy.Listings.Enabled -and $policy.Listings.AliasAsLexer) {
+        $listingBit += '+alias'
+    }
+    $bits += "listings=$listingBit"
 
     # $glossary is already $null when the family is off for either reason, so
     # one expression covers "Enabled = $false" and "no Glossary named".
@@ -1004,7 +1031,9 @@ function Format-Policy {
     } else { $bits += 'gloss=off' }
 
     if ($policy.Figures.Enabled) {
-        $bits += "figures=$($policy.Figures.ReservedKeys.Count) reserved keys"
+        $figBit = "figures=$($policy.Figures.ReservedKeys.Count) reserved keys"
+        if ($policy.Figures.NodeText) { $figBit += '+node text' }
+        $bits += $figBit
     } else { $bits += 'figures=off' }
 
     $bits += "log=$(if ($policy.Log.Enabled) { "$($policy.Log.MaxOverfull)/$($policy.Log.MaxUndefined)" } else { 'off' })"
@@ -1235,6 +1264,25 @@ foreach ($f in $texFiles) {
 
             $bm = [regex]::Match($stripped, '\\begin\{([A-Za-z]+\*?)\}')
             if ($bm.Success -and $verbatimEnvs -contains $bm.Groups[1].Value) {
+
+                # 11b. minted-alias: an environment this book declared with
+                # \newminted is an environment name, never a lexer name.
+                # Checked before the single-line guard below, because
+                # \begin{minted}{NAME}...\end{minted} on one line fails the
+                # build exactly the same way.
+                if ($policy.Listings.Enabled -and $policy.Listings.AliasAsLexer -and
+                    $bm.Groups[1].Value -eq 'minted' -and $mintedAliases.Count -gt 0) {
+                    $am = [regex]::Match(
+                        $stripped.Substring($bm.Index + $bm.Length),
+                        '^\s*(?:\[[^\]]*\])?\s*\{([A-Za-z][A-Za-z0-9]*)\}')
+                    if ($am.Success -and $mintedAliases -contains $am.Groups[1].Value) {
+                        $alias = $am.Groups[1].Value
+                        Add-Finding $f.FullName $lineNo 'minted-alias' (
+                            "'$alias' is an environment this book declares with \newminted, not a " +
+                            "Pygments lexer; write \begin{$alias} instead")
+                    }
+                }
+
                 if ($stripped -notmatch ('\\end\{' + [regex]::Escape($bm.Groups[1].Value) + '\}')) {
                     $inVerb = $bm.Groups[1].Value
 
@@ -1576,7 +1624,10 @@ if ($glossary -and $glossary.Owner.Count -gt 0) {
 # outside chapters/ and a book's figure is worth checking whichever chapter is
 # being linted.
 
-if ($policy.Figures.Enabled -and $policy.Figures.ReservedKeys.Count -gt 0) {
+$figureKeys = $policy.Figures.Enabled -and $policy.Figures.ReservedKeys.Count -gt 0
+$figureText = $policy.Figures.Enabled -and $policy.Figures.NodeText
+
+if ($figureKeys -or $figureText) {
     $figureFiles = @()
     foreach ($part in $policy.Figures.Paths) {
         $p = Join-Path $bookPath $part
@@ -1596,12 +1647,30 @@ if ($policy.Figures.Enabled -and $policy.Figures.ReservedKeys.Count -gt 0) {
             $n++
             if ($line -match '^\s*%') { continue }
 
-            foreach ($m in [regex]::Matches($line, $declPattern)) {
-                $name = $m.Groups[1].Value.Trim()
-                if ($policy.Figures.ReservedKeys -contains $name) {
-                    Add-Finding $f.FullName $n 'tikz' (
-                        "style name '$name' is a pgfkeys key already; the picture will " +
-                        'fail to compile with an error naming the key rather than the style')
+            if ($figureKeys) {
+                foreach ($m in [regex]::Matches($line, $declPattern)) {
+                    $name = $m.Groups[1].Value.Trim()
+                    if ($policy.Figures.ReservedKeys -contains $name) {
+                        Add-Finding $f.FullName $n 'tikz' (
+                            "style name '$name' is a pgfkeys key already; the picture will " +
+                            'fail to compile with an error naming the key rather than the style')
+                    }
+                }
+            }
+
+            # Node and label text, which is the only prose in these files. The
+            # braced group is what separates it from path syntax: `(0,0) --
+            # (2,0)` carries no braces and a node's text always does. An
+            # options group is skipped because the pattern anchors on
+            # node/label and takes the group that follows it, and a style
+            # declaration is skipped because a `--` cannot appear in one.
+            if ($figureText -and $line -match '--') {
+                foreach ($m in [regex]::Matches($line, '(?:node|label)\b[^{}]*\{([^{}]*)\}')) {
+                    if ($m.Groups[1].Value -match '--') {
+                        Add-Finding $f.FullName $n 'tikz-dash' (
+                            'en/em dash ligature in node text; figure sources sit outside the ' +
+                            'prose dash check, so this is the only pass that reads them')
+                    }
                 }
             }
         }

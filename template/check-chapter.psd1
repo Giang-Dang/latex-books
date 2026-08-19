@@ -270,9 +270,22 @@
     # tab counts one. autogobble strips a block's common indent before
     # typesetting, so an indented block is measured wider than it sets. A book
     # absorbs all three by measuring its own number instead of borrowing one.
+    #
+    # AliasAsLexer - the family's other check, and a build failure rather than a
+    #                typographic one. A book that writes \newminted[NAME]{lexer}
+    #                has given itself two ways to spell NAME, and only
+    #                \begin{NAME} is one of them: \begin{minted}{NAME} sends
+    #                NAME to Pygments, which has never heard of it, and the run
+    #                dies with `Pygments lexer "NAME" is unknown`. That reads as
+    #                a missing lexer and sends you into Pygments rather than
+    #                into your own preamble. On by default and free for a book
+    #                that declares no aliases, because there is then nothing to
+    #                confuse. Unlike MaxLineLength it needs no number, so
+    #                Enabled = $false is the only other way off.
     # Listings = @{
     #     Enabled       = $true
     #     MaxLineLength = 0
+    #     AliasAsLexer  = $true
     # }
 
     # -- 12. Macros -----------------------------------------------------------
@@ -338,16 +351,28 @@
     # nothing: it fails the build with an error naming the key rather than the
     # style, which reads as a missing \usetikzlibrary and sends you looking in
     # the preamble.
-    # Enabled      - the master switch.
+    # Enabled      - the master switch, and it takes both checks below.
+    # NodeText     - the second thing that exclusion costs, and the reason it is
+    #                a check rather than a footnote. TikZ draws a segment with
+    #                `--`, which is precisely why these files are kept out of
+    #                the prose dash check; node and label text is prose all the
+    #                same, and `--` there sets an en dash the repo-wide rule
+    #                bans and nothing else reads. Only braced groups following a
+    #                node or label are read, because a coordinate never carries
+    #                one and a node's text always does, so the exclusion still
+    #                buys quiet on paths without buying it on words.
     # Paths        - which folders hold picture sources, relative to the book
     #                root. They sit outside Paths.Prose on purpose, so this is
     #                the only check that reads them, and -Chapter does not
     #                narrow them.
     # ReservedKeys - the names to reject. Emptying the list is the other way to
-    #                switch the check off, so a book that disagrees with one
-    #                name does not have to disable the family to say so.
+    #                switch the key check off, so a book that disagrees with one
+    #                name does not have to disable the family to say so. It
+    #                leaves NodeText running, which is the point of their being
+    #                two switches.
     # Figures = @{
     #     Enabled      = $true
+    #     NodeText     = $true
     #     Paths        = @('figures/tikz')
     #     ReservedKeys = @('in', 'out', 'step', 'shift', 'scale', 'text', 'style')
     # }

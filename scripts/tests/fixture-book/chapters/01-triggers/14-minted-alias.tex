@@ -1,0 +1,34 @@
+\section{An alias written where a lexer goes}
+\label{sec:ch01-minted-alias}
+
+This book declares \code{fixturesdl} with a \code{newminted} line in its
+preamble, so it is an environment name. Written where the lexer goes it
+reaches Pygments, which has never heard of it, and the build dies naming a
+lexer problem the book does not have.
+
+\begin{minted}{fixturesdl}
+type Session { id: Int! }
+\end{minted}
+
+An option list does not hide the argument, so this is the second finding.
+
+\begin{minted}[breaklines]{fixturesdl}
+type Speaker { id: Int! }
+\end{minted}
+
+A block that opens and closes on one line fails the build the same way, so it
+is the third: \begin{minted}{fixturesdl}x\end{minted}
+
+The three below are not findings, and each is a different way of being right.
+
+\begin{fixturesdl}
+type Session { id: Int! }
+\end{fixturesdl}
+
+\begin{minted}{ruby}
+puts 'the real lexer the alias borrows'
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{text}
+an option list before a lexer that is not an alias
+\end{minted}

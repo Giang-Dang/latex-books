@@ -193,6 +193,16 @@ $Expected = @(
     # In a subfolder, so it is only reached when the walk recurses. The full
     # path always did; -Chapter did not, and -Chapter is the mode a drafting
     # session iterates with. The group below runs that mode and looks for this.
+    # Three ways to write an alias where a lexer goes, and all three fail the
+    # build identically: bare, behind an option list, and opened and closed on
+    # one line. That last one is why the check sits before the single-line
+    # guard rather than inside it. The three blocks below them in the fixture
+    # are the negative cases - the alias used as the environment it is, the
+    # real lexer it borrows, and an option list in front of a lexer that is not
+    # an alias - and a regression there adds a line rather than taking one away.
+    "chapters/01-triggers/14-minted-alias.tex:9: [minted-alias] 'fixturesdl' is an environment this book declares with \newminted, not a Pygments lexer; write \begin{fixturesdl} instead"
+    "chapters/01-triggers/14-minted-alias.tex:15: [minted-alias] 'fixturesdl' is an environment this book declares with \newminted, not a Pygments lexer; write \begin{fixturesdl} instead"
+    "chapters/01-triggers/14-minted-alias.tex:20: [minted-alias] 'fixturesdl' is an environment this book declares with \newminted, not a Pygments lexer; write \begin{fixturesdl} instead"
     "chapters/01-triggers/nested/01-nested.tex:4: [dash] en/em dash ligature in prose; reword or use ASCII punctuation"
     # The gloss family runs as its own pass after the line-at-a-time loop, so
     # its findings arrive together and sorted by file and line rather than
@@ -212,7 +222,13 @@ $Expected = @(
     # One line out of a picture that also grids on step=0.5cm, scales a node,
     # sets text=gray and names a style with a space in it. Exactly one of those
     # is a style declaration using a reserved name.
-    "figures/tikz/12-reserved-key.tex:10: [tikz] style name 'step' is a pgfkeys key already; the picture will fail to compile with an error naming the key rather than the style"
+    "figures/tikz/12-reserved-key.tex:12: [tikz] style name 'step' is a pgfkeys key already; the picture will fail to compile with an error naming the key rather than the style"
+    # The other half of that file: one node whose text sets an en dash, out of
+    # a picture that also draws six `--` path segments and a node containing an
+    # ASCII hyphen. TikZ path syntax is why these files are outside the prose
+    # dash check in the first place, so a node-text pass that read paths would
+    # report every segment and the exclusion would have bought nothing.
+    "figures/tikz/12-reserved-key.tex:32: [tikz-dash] en/em dash ligature in node text; figure sources sit outside the prose dash check, so this is the only pass that reads them"
     "build/main.log: [log] 1 Overfull box(es); locate with: grep -A3 Overfull build/main.log"
     "build/main.log: [log] 1 line(s) mentioning undefined references or citations"
 )
@@ -270,8 +286,13 @@ $WiringCases = @(
     # gets the other half for free the way Figures does: the budget defaults to
     # 0, so a row naming only Enabled would silence the family for the wrong
     # reason and pass even if Enabled were wired to nothing.
-    @{ Name = 'Listings';     Override = @{ Listings = '@{ Enabled = $false; MaxLineLength = 60 }' }; Silences = @('listing') }
+    @{ Name = 'Listings';     Override = @{ Listings = '@{ Enabled = $false; MaxLineLength = 60 }' }; Silences = @('listing', 'minted-alias') }
     @{ Name = 'Listings.Max'; Override = @{ Listings = '@{ Enabled = $true; MaxLineLength = 0 }' };   Silences = @('listing') }
+    # The family's second check has its own switch, and the two rows above and
+    # below pin the boundary between them: Enabled off takes both, MaxLineLength
+    # takes only the width one, and this takes only the alias one.
+    @{ Name = 'Listings.Alias'; Override = @{ Listings = '@{ Enabled = $true; MaxLineLength = 60; AliasAsLexer = $false }' }
+       Silences = @('minted-alias') }
     # Two ways off again, and for the same reason as Listings: the glossary path
     # defaults to empty, so a row naming only Enabled would silence the family
     # whether or not Enabled is wired to anything.
@@ -283,11 +304,15 @@ $WiringCases = @(
     # has to reach the check. 'gear box' is the fixture's only gloss-missing.
     @{ Name = 'Gloss.Exempt'; Override = @{ Gloss = '@{ Glossary = ''backmatter/appendix-b.tex''; BlockPattern = ''\\textbf\{Chapter\s+(\d+)\}''; KeepPattern = ''\\textbf\{Keep''; Exempt = @(''gear box'') }' }
        Silences = @('gloss-missing') }
-    @{ Name = 'Figures';      Override = @{ Figures = '@{ Enabled = $false }' };           Silences = @('tikz') }
+    @{ Name = 'Figures';      Override = @{ Figures = '@{ Enabled = $false }' };           Silences = @('tikz', 'tikz-dash') }
     # Emptying the reserved list is the other way to turn it off, and it has to
     # work: a book that disagrees with one name should not have to disable the
-    # family to say so.
+    # family to say so. It must not take the node-text check with it, which is
+    # the regression this row exists to catch: the loop used to be gated on the
+    # key list alone, so a book with no reserved keys would have stopped
+    # reading its figures for dashes as well.
     @{ Name = 'Figures.Keys'; Override = @{ Figures = '@{ ReservedKeys = @() }' };         Silences = @('tikz') }
+    @{ Name = 'Figures.Text'; Override = @{ Figures = '@{ NodeText = $false }' };          Silences = @('tikz-dash') }
     @{ Name = 'Log';          Override = @{ Log = '@{ Enabled = $false }' };               Silences = @('log') }
     # Paths.Prose empties the prose pass. The character scan reads its own list
     # and must survive, which is what keeps the two lists genuinely separate.
@@ -297,7 +322,7 @@ $WiringCases = @(
     # read would look like it still worked.
     @{ Name = 'Paths.Prose';  Override = @{ Paths = '@{ Prose = @() }' }
        Silences = @('tilde-cite', 'cite-key', 'quote', 'index-pct', 'contraction',
-                    'spelling', 'dash', 'number', 'verbatim', 'listing',
+                    'spelling', 'dash', 'number', 'verbatim', 'listing', 'minted-alias',
                     'gloss-borrowed', 'gloss-missing', 'gloss-orphan', 'gloss-repeat') }
 )
 
