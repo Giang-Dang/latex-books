@@ -10,10 +10,12 @@ Author: Giang Dang
 
 ## Status
 
-Settled 2026-08-19 through a seven-round requirements interview. Chapter 1 is
-drafted. Next action: stand up the verification repo at
-`F:/repo/splitting-the-graph-graph` and verify the version baseline below,
-both of which chapter 2 needs before a line of it can be written.
+Settled 2026-08-19 through a seven-round requirements interview. Chapters 1 and
+2 are drafted. The verification repo exists at
+`F:/repo/splitting-the-graph-graph` with both branches tagged for chapter 2 and
+`verify.ps1` passing on each. Next action: chapter 3, which replaces the
+in-memory store with SQLite and EF Core and produces the single-service
+statement counts chapter 10 measures against.
 
 **Why this book exists.** It is the second book in this library on federated
 GraphQL in .NET, and it exists because the first one,
@@ -86,24 +88,40 @@ and why, in the row.
 | 39 | Whether an unsigned document passes the Sources rule | Yes, when it is the artifact rather than a claim about the artifact. The Sources rule exists to stop a vendor's prose about a company or an outcome being read as evidence, and a byline is what separates evidence from marketing in that case. It does not reach three things chapter 1 cites unsigned: a standards body recording its own working group (the GraphQL Specification Working Group on its Composite Schemas Subcommittee), a specification's publisher defining that specification, and the normative list of what a specification requires of an implementation (Apollo's subgraph specification, which is where chapter 1's four-requirement count comes from). All three can be checked against a running implementation, which is what a byline would otherwise be standing in for, and `research/2026-08-hard-cases.md` already cites unsigned RFC documents on the same basis. Still barred: any unsigned vendor page arguing a result, including one about that vendor's own customers. A chapter relying on this row records the reasoning in its research note rather than leaving it implicit, because an audit reading the chapter cold cannot tell a considered call from an oversight. |
 | 40 | Non-ASCII letters in cited authors' names | An accent macro, never the Unicode letter and never a respelling. Decision 30 puts the book in strict `Ascii` mode, so `Philip M\uml{u}ller` is written with the `\uml` wrapper defined in `preamble/macros.tex`; spelling him "Mueller" would misspell a real person, and the raw `\"u` trips the prose gate's quote check, which reads the accent's double quote as a literal quotation mark. The wrapper exists to keep both the name and the gate correct. |
 | 41 | Every box in the book wears one skin | `bookbox`, defined once in `preamble/macros.tex` and worn by the decision 32 callout and both decision 21 summary boxes. Settled while drafting chapter 1, which needed the first summary box and found the callout it was built to match rendering wrong: the title was drawn in white on white and invisible, and `attach boxed title to top left` drew its tab but then only the left rule of the box, with no top, right or bottom edge. Both are fixed in the shared skin, so neither can be reintroduced by a chapter copying the old pattern. |
+| 42 | A build file printed in full carries its own version pins | Decision 35 says no chapter names a version outside appendix A, and it means prose. A `.csproj` shown complete under decision 15 necessarily carries `Version="..."` on each `PackageReference`, and a reader typing it out needs those numbers. So the rule reads: no chapter states a version in a sentence, and a build file printed as a listing shows what it actually pins. Appendix A stays the one place the table lives, and stays the thing re-verified before release. Settled while drafting chapter 2, which prints the first `.csproj`. |
+| 43 | The verification repo's one layout rule | One folder per service under `src/`, and **no project reference between them, ever**: no shared model library, no `Common` project, no linked source file. Where two services need the same shape, each declares its own copy. Chapters 6 and 9 split this graph into subgraphs that would in real life be separate repositories owned by separate teams, and a shared type would make the book demonstrate the opposite of what it says. Recorded here rather than only in the repo's README because the extraction chapters depend on it and the repo is not the source of truth. |
+| 44 | Where a chapter's requests go | Sessions on port 5001, Speakers on 5002, Ratings on 5003, each pinned in the service's own `Properties/launchSettings.json` with `launchBrowser` off. `dotnet new web` picks a random port, so a book that prints raw HTTP under decision 34 has to pin one or its addresses are fiction. The launch profile is therefore a file the book prints in full like any other. The router's port is chapter 8's to settle. |
+| 45 | Nitro is served from the package, not the CDN | Every service in this book sets `Tool.ServeMode` to the embedded build. Measured 2026-08-19: under the default, `ServeMode.Latest`, a request to the local endpoint comes back with `Server: cloudflare` and a `Last-Modified` later than the assembly's build date, because the IDE is fetched from ChilliCream's CDN and passed through; with `Embedded` the same request is answered by Kestrel from the 17.9 MB copy in the package. A book whose reader must see what the author saw cannot depend on a component that updates itself. What happens with no network was **not** established, so no chapter claims anything about it. |
+| 46 | Nitro screenshots | None. Decision 34 caps the book at three and spends none of them in chapter 2, which describes the IDE and prints every request as raw HTTP instead. The budget is unspent, not withdrawn; a later Part I chapter may take it. Recorded so that a future session does not read the absence as an oversight and add one. |
+| 47 | What the `hc14` branch carries | Whatever the callouts issued so far actually quote, plus the minimum needed to compile them, and nothing else. Settled by chapter 2, which was the open case. For chapter 2 that happens to be the whole first service, because the callout covers the whole of `Program.cs` and the project file; the branch is not therefore a running port of the book, and from chapter 3 it keeps only what a live callout still quotes. Kept in step with `main` by cherry-picking the shared files rather than by merging, so the two `Program.cs` files can differ permanently. |
+| 48 | The chapter's request set lives in `verify.ps1` | Every request a chapter prints, and every response it quotes, is asserted by the verification script before the prose is written. Chapter 2 asserts twelve, including the two the callout's version comparison rests on. This is what makes decision 11's rule enforceable rather than aspirational: a callout that stops being true fails a run instead of ageing quietly on the page. |
+| 49 | `xml` joins the listing environments | Added by chapter 2, which prints a `.csproj` in full under decision 15. The project file is a file the reader types, so it is a listing like any other, and `minted{xml}` is the environment that renders it. No other build file format is admitted by this row: a `.json` launch profile uses `json`, which was already on the list. |
+| 50 | The listing measure is 73 columns | Measured in the book itself on 2026-08-19 at its own geometry and `\setminted` settings: a 73-column line fits and a 74-column line gains a continuation arrow nobody chose, while the build log stays silent either way. Every C# file the book prints is written to 73. A block that genuinely cannot be, a package identifier or a vendor's own directive description, declares `fontsize=\footnotesize` in its option list, and captured output with no break point anywhere adds `breakanywhere`. Re-measure if the geometry or the mono font changes. |
 
 ## Version baseline
 
-**Unverified.** Every row below is a starting point carried into this SPEC from
-the interview, not a measurement. Verify each before drafting the chapter that
-depends on it, and record the verification in that chapter's research note.
-Decision 35 puts the verified table in appendix A, and this section is what
-appendix A is built from.
+Partly verified. Rows marked verified were measured on this machine on the date
+shown and the procedure is in the named research note; the rest are still
+starting points carried in from the interview. Verify each before drafting the
+chapter that depends on it. Decision 35 puts the verified table in appendix A,
+and this section is what appendix A is built from.
 
 | Component | Version | Status |
 |-----------|---------|--------|
-| .NET (`main`) | 10 (LTS) | to verify |
-| .NET (`hc14` branch) | `net8.0` | fixed by HC 14's target frameworks |
-| HotChocolate / HotChocolate.ApolloFederation (`main`) | 16.6.0 | to verify; a newer 16.x is likely |
-| HotChocolate (`hc14` branch) | 14.3.1, last 14.x patch | to verify |
+| .NET SDK (`main`) | 10.0.303 | verified 2026-08-19, chapter 2 note |
+| .NET runtime (`main`) | 10.0.11, LTS, supported to 2028-11-14 | verified 2026-08-19, chapter 2 note |
+| .NET (`hc14` branch) | `net8.0` | verified 2026-08-19: 14.3.1 targets net6.0 to net9.0 and not net10.0 |
+| HotChocolate / HotChocolate.ApolloFederation (`main`) | 16.6.1 | verified 2026-08-19, chapter 2 note; the two are on the same version sequence |
+| HotChocolate (`hc14` branch) | 14.3.1 | verified 2026-08-19 as the last stable 14.x: no 14.3.2, and 14.4.0 shipped only as prereleases |
 | WunderGraph Cosmo Router | unpinned | to verify before chapter 8 |
 | `wgc` (Cosmo CLI) | unpinned | to verify before chapter 7 |
 | Pygments | 2.19.2 | verified 2026-08-19 on this machine; see decision 31 |
+
+Two things the interview assumed and the measurement corrected. The version is
+16.6.1 rather than 16.6.0. And Hot Chocolate 16 targets `net8.0`, `net9.0`,
+`net10.0` and `net11.0`, so a reader on .NET 8 can move to 16 without moving
+framework, which is a more useful thing for an "On HotChocolate 14" callout to
+say than anything about what 14 lacks.
 
 ## Table of contents
 
@@ -158,7 +176,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 |---------|--------|-------|
 | Preface | not-started | Write last. Must carry decision 8's plain statement that HC 14 is out of support. |
 | 01 | drafted | No code, as planned. Note at `research/ch01-do-you-actually-need-this.md`. Established the summary box (decisions 20, 21, 41) and the figure idiom (decision 33); `figures/tikz/ch01-one-field.tex` is the idiom specification later figures are matched against. Its threshold is stated as my judgment under decision 38, because no source passed the Sources bar. |
-| 02 | not-started | First code, and the first `verify.ps1` run. The `hc14` branch's file set is defined here. |
+| 02 | drafted | Note at `research/ch02-hot-chocolate-from-zero.md`. Stood up the verification repo, tags `ch02` and `ch02-hc14`, `verify.ps1` PASS on both. Emitted the first callout, which fixed the `hc14` file set (decision 47) and settled decisions 42 to 46. Measured the listing column budget at 73. |
 | 03 | not-started | Sets up chapter 10; the counts printed here are the single-service baseline. |
 | 04 | not-started | Owes chapter 14 its nullability groundwork. |
 | 05 | not-started | First SDL. Confirms decision 31's `graphqlsdl` environment against real federation SDL. |
@@ -219,9 +237,12 @@ keep the two in step.
   file as the complete enclosing member with the same highlighting. **A unified
   diff is never used.** Environments: `minted{csharp}`, `minted{graphql}` for
   executable GraphQL, `graphqlsdl` for SDL (decision 31), plus `text`, `json`,
-  `sql` and `yaml`. Adding an environment is a decision, recorded in the log.
-  The book makes no claim about where a listing came from, because the reader
-  has the whole program and can compile it.
+  `sql`, `yaml` and `xml` (decision 49). Adding an environment is a decision,
+  recorded in the log. The book makes no claim about where a listing came from,
+  because the reader has the whole program and can compile it.
+  A listing wider than the measure wraps on the page and the build log stays
+  silent, so a line stays inside 73 columns or the block declares its own
+  `fontsize`; see decision 50.
 - **Numbers:** counts only. Statement counts, `_entities` call counts, round
   trips. **No timings anywhere**, in prose, tables or figures. A count printed
   in the prose must be reproducible by a reader who typed the code out of the
@@ -286,11 +307,23 @@ An unresolved question, and the condition that unblocks it.
   a dedicated search domain with its own index. Whether that domain is built as
   a fourth service or described without being built decides how much of
   decision 23 survives. Unblocked by outlining chapter 13.
-- **The `hc14` branch's file set is undefined.** Decision 10 says it carries
-  only the files a callout quotes, and no callout exists yet. Unblocked by
-  chapter 2, which emits the first one.
 - **Cosmo Router and `wgc` versions are unpinned.** Unblocked by running the
   toolchain, which chapters 7 and 8 require anyway.
+- **Whether the Nitro IDE works with no network at all.** Decision 45 pins the
+  embedded serve mode and gives reproducibility as the reason, which is
+  measured. The stronger reason, that the default cannot work offline, is
+  **not**: setting `HTTP_PROXY` and `HTTPS_PROXY` to a dead port did not change
+  the behaviour, which shows .NET ignored those variables on this machine
+  rather than showing anything about the fetch. No chapter claims it meanwhile.
+  Unblocked by a genuinely disconnected run, or by a documented setting that
+  forces the fetch to fail.
+- **Whether `[QueryType]` classes are required to be `partial`.** The
+  get-started documentation says they must be. Measured 2026-08-19 on both
+  16.6.1 and 14.3.1: a non-partial class compiles, the generator picks it up,
+  and the field reaches the schema. Chapter 2 makes no claim either way and
+  its `Query` is not partial. Unblocked by finding the generator feature the
+  requirement is actually about, at which point it is a sentence in chapter 2
+  and possibly a change to `Query.cs`.
 - **Whether Pygments gains an SDL lexer.** Decision 31 is a workaround with a
   measured justification, not a preference. Unblocked by a Pygments release
   whose `graphql` lexer handles type definitions, `!` and directives; at that

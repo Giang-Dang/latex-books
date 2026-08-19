@@ -1,0 +1,160 @@
+\section{What the Schema Says About Your Types}
+\label{sec:ch02-what-the-schema-says-about-your-types}
+
+\index{schema!export}%
+Nothing so far required you to look at the schema, and that is exactly the
+problem. Ask the program for it. \code{RunWithGraphQLCommands} in
+\code{Program.cs} is what makes the subcommand available, and the double dash
+separates your arguments from the ones \code{dotnet run} wants.
+
+\begin{minted}{text}
+dotnet run -- schema export --output schema.graphql
+\end{minted}
+
+It writes two files. The second, \code{schema-settings.json}, is a workspace
+file for the IDE in section~\ref{sec:ch02-the-development-loop} and records
+whatever address the export run happened to bind, which is not the one your
+launch profile pins. Nothing in this book uses it. The first is the schema, and
+these are its type definitions:
+
+\begin{graphqlsdl}
+schema {
+  query: Query
+}
+
+type Query {
+  "Every session on the schedule, earliest first."
+  sessions: [Session!]! @cost(weight: "10")
+  "One session by its identifier, or null if no session has it."
+  sessionById(id: Int!): Session @cost(weight: "10")
+}
+
+"A talk on the conference program."
+type Session {
+  "The person giving this session."
+  speaker: Speaker
+  "Stable identifier for this session."
+  id: Int!
+  "The line that goes in the program."
+  title: String!
+  "The longer text, if there is one."
+  abstract: String
+  "When it starts, in conference time."
+  startsAt: DateTime!
+  "How long the slot is."
+  durationMinutes: Int!
+}
+
+"A person giving one or more sessions."
+type Speaker {
+  "Stable identifier for this speaker."
+  id: Int!
+  "The name to print in the program."
+  name: String!
+  "A sentence or two, if the speaker sent any."
+  bio: String
+}
+\end{graphqlsdl}
+
+The rest of the file is the two things those definitions lean on, neither of
+which you wrote:
+
+\begin{graphqlsdl}[fontsize=\footnotesize, breakanywhere]
+"The `DateTime` scalar type represents a date and time with time zone offset information."
+scalar DateTime
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/date-time.html")
+
+"The purpose of the `cost` directive is to define a `weight` for GraphQL types, fields, and arguments. Static analysis can use these weights when calculating the overall cost of a query or response."
+directive @cost(
+  "The `weight` argument defines what value to add to the overall cost for every appearance, or possible appearance, of a type, field, argument, etc."
+  weight: String!
+) on
+  | SCALAR
+  | OBJECT
+  | FIELD_DEFINITION
+  | ARGUMENT_DEFINITION
+  | ENUM
+  | INPUT_FIELD_DEFINITION
+\end{graphqlsdl}
+
+Read that against the C\# and every line of it is a rule you can now
+predict.
+
+\index{naming!Get prefix}%
+\index{nullability!mapped from C\#}%
+\index{scalar!DateTime}%
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textrm{What you wrote} & \textrm{What the schema says} \\
+\midrule
+\code{GetSessions()}            & \code{sessions}              \\
+\code{GetSessionById(int id)}   & \code{sessionById(id: Int!)} \\
+\code{string Title}             & \code{title: String!}        \\
+\code{string? Abstract}         & \code{abstract: String}      \\
+\code{DateTimeOffset StartsAt}  & \code{startsAt: DateTime!}   \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The \code{Get} prefix is stripped and the first letter is lowercased, so
+the C\# convention and the GraphQL convention are reconciled without either
+side giving way. An argument keeps its name and its type.
+
+The second pair is the most consequential mapping in Hot Chocolate and the
+one people discover last. Your nullable reference type annotations are the
+schema's non-null annotations. A client's code generator reads
+\code{String!} and emits a non-optional field, so a question mark you did
+not type in C\# becomes a crash in somebody else's application. It is also
+why \code{sessionById} returns \code{Session} rather than \code{Session!},
+which is the whole reason that asking for a session that is not there is an
+answer instead of an error. Chapter~\ref{ch:null-blast-radius} is about a
+field marked non-null resolving to null anyway, across a seam, and it
+collects on every decision made here.
+
+The last pair introduces a scalar the server defines itself. \code{DateTime} is
+not a built-in, which is why the export carries a definition for it and an
+\code{@specifiedBy} pointing at a written specification: a client that has
+never met the type has to be told what is in the string.
+
+\index{schema!descriptions from XML comments}%
+Every field carries a description, and none of them was written in a schema
+file. A \code{<summary>} on a method, and a \code{<param>} on a positional
+record's own doc comment, both become the description of the field they
+name. The second is worth knowing, because there is no reason to expect
+that a tag documenting a constructor parameter would end up describing a
+schema field. Delete \code{GenerateDocumentationFile} from the project file
+and every one of these quoted lines disappears, silently, leaving the
+schema undocumented and the build clean.
+
+\index{cost directive}%
+Then there is \code{@cost(weight: "10")}, which appears on both fields and
+which nobody asked for. Hot Chocolate applies a cost weight to fields with no
+configuration at all, so complexity analysis is present in the schema from the
+first build. It is not a version~16 novelty either; the same directive comes
+out of a version~14 build of these same files. Chapter~\ref{ch:operations} is
+where the numbers on it start mattering.
+
+\index{schema!field order}%
+One detail is a curiosity rather than a rule, and it is worth naming so you do
+not go looking for meaning in it. \code{speaker} is listed first on
+\code{Session}, ahead of \code{id} and \code{title}, because the type extension
+is applied before the record's own members are read. Field order in a schema
+carries no semantics. It does mean that a schema file checked into version
+control will reorder itself if you move a resolver, which matters the day
+schema diffs become a gate rather than a curiosity, in
+chapter~\ref{ch:breaking-changes}.
+
+\index{schema!leaked fields}%
+Now the field that is not there. \code{SpeakerId} is a public property on a
+public record, and without \code{[GraphQLIgnore]} it would be
+\code{speakerId: Int!} in the schema, between \code{abstract} and
+\code{startsAt}, published to every client, forever. Nothing warned me. Nothing
+would have warned you. This is the cost of the sentence this chapter opened
+with: the schema is derived from your types, so a member you added for the
+compiler is an API commitment until you say otherwise, and the direction of the
+default is publish.
+
+I would rather have the opposite default, and I do not get it. What I do
+instead is read the exported schema after every change that adds a member, and
+treat \code{schema.graphql} as a reviewed file rather than a build artifact.

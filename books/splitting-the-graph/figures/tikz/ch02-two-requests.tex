@@ -1,0 +1,55 @@
+% Two requests against the same schema: one fails validation, one does not.
+%
+% Same idiom as figures/tikz/ch01-one-field.tex: each lane is a timeline read
+% left to right, ticks mark stages, and a brace under the stages that matter
+% carries a one-line label. Lane A and lane B are the same URL, the same
+% service, the same HTTP method (POST /graphql). The parse and validate ticks
+% sit at the same x in both lanes, so the reader sees identical machinery up
+% to that point and only a divergence after validation runs.
+%
+% Bare tikzpicture (house style): the figure environment, caption and label
+% live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  axis/.style={draw, line width=0.4pt, -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  tick/.style={draw, line width=0.4pt},
+  event/.style={anchor=south, align=center, text width=22mm, inner sep=1pt},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  lane/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+]
+
+% ------------------------------------------------------------------- lane A
+\node[lane] at (0,13) {A. \{ sessions \{ titel \} \}, a field the schema does not have};
+
+\draw[axis] (0,0) -- (150,0);
+\foreach \x in {15,50,85,120}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+
+\node[event] at (15,3)  {parses the\\document};
+\node[event] at (50,3)  {validates against\\the schema};
+\node[event, text width=26mm] at (85,3)  {validation fails:\\no field named titel};
+\node[event, text width=26mm] at (120,3) {400 Bad Request:\\errors key, no data};
+
+\draw[span] (62,-4) -- (62,-7) -- (133,-7) -- (133,-4);
+\node[spanlabel] at (97,-8) {no resolver ran};
+
+% ------------------------------------------------------------------- lane B
+\begin{scope}[shift={(0,-46)}]
+  \node[lane] at (0,13) {B. \{ sessions \{ id title startsAt speaker \{ name bio \} \} \}, fields it has};
+
+  \draw[axis] (0,0) -- (150,0);
+  \foreach \x in {15,50,74,96,118,140}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+
+  \node[event] at (15,3)  {parses the\\document};
+  \node[event] at (50,3)  {validates against\\the schema};
+  \node[event, text width=16mm] at (74,3)  {validation\\passes};
+  \node[event, text width=20mm] at (96,3)  {sessions resolver\\runs: 4 sessions};
+  \node[event, text width=16mm] at (118,3) {speaker resolver\\runs, per session};
+  \node[event, text width=16mm] at (140,3) {200 OK:\\data key present};
+
+  \draw[span] (86,-4) -- (86,-7) -- (126,-7) -- (126,-4);
+  \node[spanlabel] at (106,-8) {this is where your C\# runs};
+\end{scope}
+
+\end{tikzpicture}

@@ -1,0 +1,173 @@
+\section{The Development Loop}
+\label{sec:ch02-the-development-loop}
+
+\index{schema!as a reviewed file}%
+The loop that works is small. Change a type, export the schema, read the diff,
+then send a request. The export is what makes it work, because it turns a
+question you would otherwise answer by clicking around an IDE into a file your
+version control system can answer for you. Commit \code{schema.graphql} and a
+pull request that adds a field shows it as an added line, and a pull request
+that removes one shows that too, in red, where a reviewer will see it.
+Chapter~\ref{ch:breaking-changes} turns that from a habit into a gate.
+
+The second half of the loop is asking. Point a browser at the same address the
+requests go to and Hot Chocolate answers with Nitro, an IDE that reads the
+schema and completes your query against it. It was called Banana Cake Pop
+until October 2024, so anything written before then describes this same tool
+under the older name. Rafael Staib announced the change on ChilliCream's blog,
+writing that
+\enquote{by renaming Banana Cake Pop and Barista to Nitro, we're simplifying
+our ecosystem and making it easier for developers to navigate and interact
+with our suite of products}~\autocite{staib2024nitro}.
+
+\index{Nitro!serve mode}%
+Where that IDE comes from is a default worth changing. Ask for it with the
+stock configuration and the response carries somebody else's server header:
+
+\begin{minted}{text}
+HTTP/1.1 200 OK
+Content-Type: text/html
+Server: cloudflare
+Last-Modified: Thu, 13 Aug 2026 10:13:03 GMT
+\end{minted}
+
+Your service is on localhost and cannot produce that header. It is fetching the
+IDE from ChilliCream's content delivery network on request and passing it
+through, which is what the default serve mode means: always the current build.
+The package you installed also contains a copy, and serving that one instead is
+one assignment, plus the two \code{using} directives that bring its two names
+into scope.
+
+\begin{minted}[highlightlines={1,2,12-19},fontsize=\footnotesize]{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder
+    .AddGraphQL()
+    .AddSessionsTypes();
+
+var app = builder.Build();
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+Same request, same build, and now the service answers for itself:
+
+\begin{minted}{text}
+HTTP/1.1 200 OK
+Content-Type: text/html
+Server: Kestrel
+Last-Modified: Tue, 09 Jun 2026 09:05:20 GMT
+\end{minted}
+
+\index{reproducibility}%
+That second date is the assembly's, not today's. I pin this in every project I
+start, so that the tool a colleague sees is the tool that came out of the
+package we both restored rather than whatever shipped this morning. The
+embedded copy is also the only one a disconnected machine could serve, though I
+have not measured what the default does when the network is gone and this
+chapter does not claim it fails.
+
+\index{validation!before execution|(}%
+The last part of the loop is the part that makes it fast, and it is easiest to
+see by getting something wrong on purpose. Misspell a field:
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:5001
+Content-Type: application/json
+
+{"query":"{ sessions { titel } }"}
+\end{minted}
+
+and back:
+
+\begin{minted}[fontsize=\footnotesize, breakanywhere]{json}
+{"errors":[{"message":"The field `titel` does not exist on the type `Session`.","locations":[{"line":1,"column":14}],"extensions":{"type":"Session","field":"titel","responseName":"titel","specifiedBy":"https://spec.graphql.org/September2025/#sec-Field-Selections"}}]}
+\end{minted}
+
+That answer arrives with status \code{400 Bad Request}, and it has no
+\code{data} key at all, not even \code{null}. The status is the first surprise,
+since a 400 from a GraphQL endpoint is easy to read as a transport failure when
+it is a message about your document. The missing \code{data} key is the second,
+and it is the one your client code has to handle.
+
+What the response does not contain is any evidence that your code ran, because
+none of it did. Figure~\ref{fig:ch02-two-requests} puts the two requests side
+by side. The server parses the document, validates it against the schema built
+at startup, and only then calls anything you wrote. A field name that is not in
+the schema is settled before the first resolver, which is why the loop is quick:
+most of what you get wrong is caught by a program that already knows the answer.
+
+\begin{figure}
+  \centering
+  \input{figures/tikz/ch02-two-requests}
+  \caption{The same endpoint answering two requests. Everything up to
+  validation is identical, and the lanes diverge only after it. A misspelled
+  field is settled against the schema, so no resolver of yours is reached and
+  there is nothing to debug in your own code. That boundary is why an
+  implementation-first schema is worth reading before you go looking for a bug.}
+  \label{fig:ch02-two-requests}
+\end{figure}
+
+The \code{specifiedBy} member of the error names the edition of the GraphQL
+specification the server validated against. It is a useful thing to check when
+a client and a server disagree about whether a document is legal, because they
+may be reading different editions.
+\index{validation!before execution|)}%
+
+\begin{onhc14}
+Every file in this chapter compiles unchanged on Hot Chocolate 14 except
+\code{Program.cs}, and there the difference is one statement. On 14,
+\code{WithOptions} takes the options object rather than an action, and the
+serve mode enumeration lives in \code{HotChocolate.AspNetCore} rather than in
+the Nitro package, so that \code{using} goes away. The whole file, on 14, with
+what moved marked:
+
+\begin{minted}[highlightlines={1,11-15}]{csharp}
+using HotChocolate.AspNetCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder
+    .AddGraphQL()
+    .AddSessionsTypes();
+
+var app = builder.Build();
+
+app.MapGraphQL()
+    .WithOptions(new GraphQLServerOptions
+    {
+        Tool = { ServeMode = GraphQLToolServeMode.Embedded }
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+The project targets \code{net8.0}, because 14 does not target .NET 10.
+Upgrading in the other direction is easier than that implies: 16 still targets
+\code{net8.0}, so moving off 14 does not oblige you to move framework at the
+same time.
+
+The schema these files produce on 14 is identical for \code{Query},
+\code{Session} and \code{Speaker}, down to the order of the fields, and
+\code{@cost} is on them there too. The exported file differs in the parts
+nobody writes. The \code{DateTime} scalar is described differently and points
+at a different specification URL, the definition of \code{@specifiedBy} is
+written out where 16 omits it, and the directive definitions are printed on one
+line each rather than broken across several. The file also begins with a UTF-8
+byte order mark, the bytes \code{EF BB BF}, which 16 does not write; if a tool
+downstream of you reads that file, it is worth knowing which of the two
+produced it. Appendix~\ref{app:hc14} carries the full mapping.
+\end{onhc14}
