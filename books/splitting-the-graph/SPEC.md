@@ -10,13 +10,17 @@ Author: Giang Dang
 
 ## Status
 
-Settled 2026-08-19 through a seven-round requirements interview. Chapters 1, 2
-and 3 are drafted. The verification repo at `F:/repo/splitting-the-graph-graph`
-carries tags `ch02`, `ch02-hc14`, `ch03`, `ch03-naive`, `ch03-starved` and
-`ch03-hc14`, with `verify.ps1` passing on each. The single-service baseline chapter 10 measures
+Settled 2026-08-19 through a seven-round requirements interview. Chapters 1, 2,
+3 and 4 are drafted. The verification repo at `F:/repo/splitting-the-graph-graph`
+carries tags `ch02`, `ch02-hc14`, `ch03`, `ch03-naive`, `ch03-starved`,
+`ch03-hc14`, `ch04`, `ch04-orphan` and `ch04-hc14`, with `verify.ps1` passing
+on each. The single-service baseline chapter 10 measures
 against is settled: **five statements naive, two batched**, for four sessions
-and three distinct speakers. Next action: chapter 4, which owes chapter 14 its
-nullability groundwork.
+and three distinct speakers. Chapter 4 put every entity behind a global node
+id, so from `ch04` onward an id in a response is `U2Vzc2lvbjox` and not `1`.
+Next action: chapter 5, the first chapter to print federation SDL and therefore
+the first test of decision 31's `graphqlsdl` environment against the real
+thing.
 
 **Why this book exists.** It is the second book in this library on federated
 GraphQL in .NET, and it exists because the first one,
@@ -103,6 +107,13 @@ and why, in the row.
 | 53 | A failure no tagged state produces is described, not quoted | Two things chapter 3 wanted to print and could not: SQLite's refusal to `ORDER BY` a `DateTimeOffset`, and the exception `[UseProjection]` raises on a positional record. Neither can be produced by the corrected code, so under decision 48 neither response may be quoted. Both are stated in prose as facts and recorded verbatim in the research note instead. Narrower than decision 51: a state worth a tag gets one, and a one-off message that no tagged state produces is described rather than quoted. |
 | 54 | The chapter counts statements with an interceptor, not EF Core's logger | `StatementLog`, a `DbCommandInterceptor` printing a numbered marker and the command text, is a file the book prints like any other. EF Core's own `LogTo` was rejected twice over: with `CommandExecuted` it prints an elapsed time and decision 19 puts no milliseconds in this book, and with `CommandExecuting` it prefixes each statement with a 113-column line that decision 50's budget cannot take and that carries nothing a reader needs. The interceptor also numbers the statements, which is the currency of chapters 3 and 10. `builder.Logging.AddFilter` silences EF Core's duplicate report; without it every statement is printed twice. |
 | 55 | Projection is `QueryContext<T>`, never `[UseProjection]` | `[UseProjection]` builds its projected row with `Expression.New` and member assignment, so it needs a parameterless constructor and settable properties. Decision 23's domain is positional records, so every request against a field wearing the attribute throws `Type 'Session' does not have a default constructor` at run time, not at build and not at schema build. Measured on 16.6.1 and on 14.3.1, so it is a property of the attribute rather than a version to wait out. `QueryContext<T>` with the `System.Linq` `.With()` extension works on records and is what the book uses, at the cost of being unavailable on 14. The ordering rule that comes with it: sort before projecting, because `.With()` rewrites the entity and EF Core cannot then translate an `OrderBy` over the result. |
+| 56 | Global object identification is on, and the id format is not a secret | Every entity type carries a `[NodeResolver]`, so `id` exports as `ID!` and the type implements `Node`. Measured 2026-08-21: the value is the type name, a colon and the primary key, base64 encoded, so `U2Vzc2lvbjox` decodes to `Session:1` and nothing else is in the string. The chapter says both halves out loud, because the alternative reading, that an opaque id is unguessable and therefore a control, is the mistake chapter 12 is about. Also recorded: the Relay object identification specification requires global uniqueness and refetchability and never uses the words "opaque" or "base64", checked by searching the fetched document. The book attributes the encoding to convention, not to the specification. |
+| 57 | Every id the schema hands back is a node id, errors included | Settled by chapter 4, where the first `SpeakerDoubleBookedError` exposed `speakerId: Int!` and `verify.ps1` failed on chapter 3's assertion that the schema hides that foreign key. The assertion was right. An error type is part of the schema and obeys the same rules the rest of it does, so both exception properties carry `[ID<T>]` and a client can feed what comes back to `node(id:)`. The chapter 3 assertion was narrowed in the same commit, from a whole-file search to a search inside the `Session` type plus a new check that no field anywhere is typed `speakerId: Int`; a check that cannot tell two different fields apart is a check that fails for the wrong reason. |
+| 58 | Errors are data, in a union with an interface under it | `AddMutationConventions` plus one `[Error<T>]` per declared failure. The union names every failure that exists today and the generated `Error` interface is what lets tomorrow's arrive without breaking a client that shipped before it. Marc-Andre Giroux argues exactly this pairing in *A Guide to GraphQL Errors*, on his own site and bylined, so the vendor rule does not arise; the chapter cites him. Rejected: the top-level `errors` array for a failure a caller should act on, which arrives as a string with a path and nothing to branch on. Sasha Solomon's post, which Giroux credits as first, could not be fetched from Medium and nothing from it is used. |
+| 59 | Nullability is ownership, not caution | A field is non-null only where the value is guaranteed from data this service owns with a constraint behind it. `speaker` stays nullable although chapter 4 could have made it non-null, and the measurement is why: on `ch04-orphan` one session pointing at a missing speaker empties the whole `nodes` list, all four sessions, at HTTP 200 with one error. The rule is not "prefer nullable": a schema with no exclamation marks pushes a null check onto every field of every client forever. Chapter 14 collects on this. |
+| 60 | The mutation's overlap test runs in memory, and the book says so in the listing | Decision 23's `StartsAt` goes through chapter 3's value converter, so EF Core cannot translate arithmetic over that column and the first version of `rescheduleSession` answered `Unexpected Execution Error` rather than either declared error. The shipped version loads one speaker's other sessions and tests in C\#, and the comment explaining why is in the printed file rather than in the prose, because a reader typing the listing out needs the reason at the line. |
+| 61 | A quotation long enough to display uses `\begin{quote}`, and `\enquote{}` stays for everything else | Decision 37 names `\enquote{}` and chapters 1 to 3 never needed anything else, because they quoted phrases. Chapter 4 quotes four normative passages from two specifications, each two or three sentences, and an inline `\enquote{}` around a passage that long stops reading as a quotation halfway through. A displayed quote carries its `~\autocite{}` on the sentence that introduces it, so the source is still attached to the claim rather than to the block. Rejected: paraphrasing the normative text, which is exactly the thing a reader would want to check word for word. |
+| 62 | A chapter may take more than one subject through beats 2 to 4 | Decision 13 fixes the order of the five beats and says nothing about how many subjects a chapter may run through them. Chapter 3's fifth section already restarted at beat 2 for projection and again for paging, and chapter 4 does it three times: identity, errors, nullability. The one-sentence rule in decision 13 is what stops this from becoming three chapters in a trench coat, and chapter 4's one sentence covers all three. Recorded because a cold audit raised it as a possible skeleton violation, and the answer should not have to be re-derived every chapter. |
 
 ## Version baseline
 
@@ -187,7 +198,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 01 | drafted | No code, as planned. Note at `research/ch01-do-you-actually-need-this.md`. Established the summary box (decisions 20, 21, 41) and the figure idiom (decision 33); `figures/tikz/ch01-one-field.tex` is the idiom specification later figures are matched against. Its threshold is stated as my judgment under decision 38, because no source passed the Sources bar. |
 | 02 | drafted | Note at `research/ch02-hot-chocolate-from-zero.md`. Stood up the verification repo, tags `ch02` and `ch02-hc14`, `verify.ps1` PASS on both. Emitted the first callout, which fixed the `hc14` file set (decision 47) and settled decisions 42 to 46. Measured the listing column budget at 73. |
 | 03 | drafted | Note at `research/ch03-data-without-the-n-plus-1.md`. Four tags, `verify.ps1` PASS on each: `ch03` (main), `ch03-naive` and `ch03-starved` (the two states the chapter argues against, decision 51), `ch03-hc14`. The single-service baseline chapter 10 measures against is **5 statements naive, 2 batched**, for four sessions and three distinct speakers. Settled decisions 51 to 55. Turned `sessions` into a Relay connection, the first change to break an earlier chapter's printed requests. |
-| 04 | not-started | Owes chapter 14 its nullability groundwork. |
+| 04 | drafted | Note at `research/ch04-schema-design-that-survives-change.md`. Three tags, `verify.ps1` PASS on each: `ch04` (main, 96 assertions), `ch04-orphan` (the non-null state the chapter argues against, decision 51), `ch04-hc14` (the same 96 assertions from the same script). Global object identification on both types, `sessionById` deprecated, and the book's first mutation, whose conventions generate the first union and the second interface. The nullability groundwork chapter 14 collects on is section 4.5. Settled decisions 56 to 62. The audit's findings and the two it raised that were rejected are recorded at the end of the research note. |
 | 05 | not-started | First SDL. Confirms decision 31's `graphqlsdl` environment against real federation SDL. |
 | 06 | not-started | |
 | 07 | not-started | Verify the `wgc` version first. |
@@ -364,6 +375,29 @@ An unresolved question, and the condition that unblocks it.
   its `Query` is not partial. Unblocked by finding the generator feature the
   requirement is actually about, at which point it is a sentence in chapter 2
   and possibly a change to `Query.cs`.
+- **Chapter 14's scope line names `@semanticNonNull`, and 16.6.1 does not work
+  that way.** Established while drafting chapter 4 and recorded in its research
+  note. The directive is in no published edition of the GraphQL specification:
+  it is an open, unmerged RFC on the specification repository, PR 1065, opened
+  2023-11-24 and still open. In 16.6.1 it exists only as an **export-time
+  rewrite** of a schema that is otherwise ordinary, through
+  `schema export --semantic-non-null`, `RewriteToSemanticNonNull` and a
+  `MapGraphQLSemanticNonNullSchema()` endpoint. Alongside it the same version
+  carries a `HotChocolate.Language.ErrorHandlingMode` on every request object,
+  which is a per-request mechanism rather than a schema one. **Chapter 4 claims
+  none of this** and mentions the directive nowhere. Unblocked by outlining
+  chapter 14, at which point the TOC line either keeps the directive with an
+  accurate account of what it now is, or names what replaced it. Do not
+  reconcile this from memory: the RFC and Hot Chocolate have both moved twice.
+- **Whether `nodes` can be made to batch.** Chapter 4 measured it: two ids cost
+  two statements even when both are sessions, because the field resolves each
+  id on its own. A node resolver that goes through a DataLoader gets batching
+  anyway, which is why `SpeakerType`'s does and `SessionType`'s does not. The
+  chapter states the count and does not claim the plural field cannot be made
+  to batch, because that was not established. Unblocked by finding whether a
+  node resolver taking a `QueryContext` can be routed through a loader without
+  losing the projection, at which point chapter 10's neighbourhood is worth
+  re-reading, since the router's `_entities` has the same shape.
 - **Whether Pygments gains an SDL lexer.** Decision 31 is a workaround with a
   measured justification, not a preference. Unblocked by a Pygments release
   whose `graphql` lexer handles type definitions, `!` and directives; at that

@@ -1,0 +1,358 @@
+\section{A Mutation That Can Fail}
+\label{sec:ch04-a-mutation-that-can-fail}
+
+\index{mutation!the book's first}%
+A query that gains a field inconveniences nobody. A mutation gains a way to
+fail every time somebody adds a business rule, which is why the book's first
+one is here rather than in chapter~\ref{ch:hot-chocolate-zero}: where those
+failures land in the response is a decision you make once and live with.
+
+\index{rescheduling!the operation}%
+The operation moves a session to a different slot, and it can fail two ways
+the caller should be able to act on. The session may not exist. The new slot
+may collide with another session the same speaker is giving. Both are answers
+rather than accidents.
+
+\index{exception!as a declared failure}%
+Each is a C\# exception, and each exception is the shape of the error the
+client will see, so its properties are chosen for the client rather than for
+the log. The missing session first, in
+\code{SessionNotFoundException.cs}:
+
+\begin{minted}{csharp}
+using HotChocolate.Types.Relay;
+
+namespace Sessions;
+
+/// <summary>
+/// No session on the program carries the identifier that was asked for.
+/// </summary>
+public sealed class SessionNotFoundException(int sessionId)
+    : Exception($"No session has id {sessionId}.")
+{
+    /// <summary>
+    /// The identifier that matched nothing.
+    /// </summary>
+    [ID<Session>]
+    public int SessionId { get; } = sessionId;
+}
+\end{minted}
+
+Then \code{SpeakerDoubleBookedException.cs}:
+
+\begin{minted}{csharp}
+using HotChocolate.Types.Relay;
+
+namespace Sessions;
+
+/// <summary>
+/// The new slot overlaps another session the same speaker gives.
+/// </summary>
+public sealed class SpeakerDoubleBookedException(
+    int speakerId,
+    int clashingSessionId)
+    : Exception(
+        $"Speaker {speakerId} already gives session "
+        + $"{clashingSessionId} in that slot.")
+{
+    /// <summary>
+    /// The speaker who cannot be in two rooms at once.
+    /// </summary>
+    [ID<Speaker>]
+    public int SpeakerId { get; } = speakerId;
+
+    /// <summary>
+    /// The session already occupying the slot.
+    /// </summary>
+    [ID<Session>]
+    public int ClashingSessionId { get; } = clashingSessionId;
+}
+\end{minted}
+
+\index{IDattribute@\code{[ID<T>]}!on an error type}%
+Those \code{[ID<T>]} attributes are the section that just ended applying to a
+type it did not obviously reach. An error is part of the schema, so an error
+carries node ids like everything else, and a client that receives
+\enquote{session 4 is already in that slot} can pass the id straight back to
+\code{node} and show the reader which session. Handing back a bare \code{4}
+would also have republished the primary key that
+chapter~\ref{ch:data-without-n-plus-1} took the trouble to hide.
+
+\index{Mutation@\code{Mutation}!the type class}%
+\code{Mutation.cs} is one method, and the two attributes above it are what
+turn the exceptions into schema:
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+[MutationType]
+public static class Mutation
+{
+    /// <summary>
+    /// Moves one session to a new slot, keeping its length.
+    /// </summary>
+    [Error<SessionNotFoundException>]
+    [Error<SpeakerDoubleBookedException>]
+    public static async Task<Session> RescheduleSessionAsync(
+        [ID<Session>] int sessionId,
+        DateTimeOffset startsAt,
+        ConferenceContext db,
+        CancellationToken ct)
+    {
+        var session = await db.Sessions
+            .FirstOrDefaultAsync(s => s.Id == sessionId, ct)
+            ?? throw new SessionNotFoundException(sessionId);
+
+        var ends = startsAt.AddMinutes(session.DurationMinutes);
+
+        // The overlap test is done in memory on purpose. StartsAt goes
+        // through a value converter, so SQLite cannot do arithmetic on
+        // that column, and one speaker's program is a handful of rows.
+        var alsoTheirs = await db.Sessions
+            .Where(s => s.SpeakerId == session.SpeakerId)
+            .Where(s => s.Id != session.Id)
+            .ToListAsync(ct);
+
+        var clash = alsoTheirs.FirstOrDefault(
+            s => s.StartsAt < ends
+                && startsAt < s.StartsAt.AddMinutes(s.DurationMinutes));
+
+        if (clash is not null)
+        {
+            throw new SpeakerDoubleBookedException(
+                session.SpeakerId,
+                clash.Id);
+        }
+
+        var moved = session with { StartsAt = startsAt };
+        db.Entry(session).CurrentValues.SetValues(moved);
+        await db.SaveChangesAsync(ct);
+
+        return moved;
+    }
+}
+\end{minted}
+
+\index{value converter!blocks translation}%
+The comment in the middle is the value converter from
+chapter~\ref{ch:data-without-n-plus-1} coming back to collect. The start time
+is stored as an instant and converted on the way out, so EF~Core cannot
+translate arithmetic over that column into SQL, and an overlap test is
+arithmetic. Loading one speaker's sessions and testing in memory is the honest
+answer at this size, and it costs the second statement in the counts below.
+
+\index{mutation conventions!what they generate}%
+Now the part that is not in that file. \code{AddMutationConventions} on the
+builder, one call, and the schema gains every one of these. As before, the
+descriptions and the \code{@cost} directive the export writes are dropped,
+and two definitions it writes on one line are wrapped to fit the measure:
+
+\begin{graphqlsdl}
+type Mutation {
+  rescheduleSession(
+    input: RescheduleSessionInput!
+  ): RescheduleSessionPayload!
+}
+
+input RescheduleSessionInput {
+  sessionId: ID!
+  startsAt: DateTime!
+}
+
+type RescheduleSessionPayload {
+  session: Session
+  errors: [RescheduleSessionError!]
+}
+
+union RescheduleSessionError =
+  SessionNotFoundError | SpeakerDoubleBookedError
+
+interface Error {
+  message: String!
+}
+
+type SessionNotFoundError implements Error {
+  message: String!
+  sessionId: ID!
+}
+
+type SpeakerDoubleBookedError implements Error {
+  message: String!
+  speakerId: ID!
+  clashingSessionId: ID!
+}
+\end{graphqlsdl}
+
+\index{mutation conventions!input type}%
+The method's non-service parameters became the fields of an input type named
+after the mutation, and the argument itself is called \code{input}. That is
+not decoration: an argument list is positional in the schema's grammar and
+adding to it is awkward, while an input object grows a field without any
+existing query changing. The shape is Relay's, and Relay's current
+documentation no longer mentions the \code{clientMutationId} that used to
+travel with it. Nothing generates one here.
+
+\index{payload!success field is nullable}%
+The payload's \code{session} field is nullable, and the method returns
+\code{Task<Session>}, which in C\# with nullable reference types enabled is a
+promise that it is never null. The convention makes the field nullable anyway,
+and it is right to: the call can answer with errors instead, and a payload
+that promised a session would be lying about two of its three outcomes. This
+is the schema and the C\# annotation disagreeing on purpose, and
+section~\ref{sec:ch04-what-a-non-null-field-promises} is where that turns into
+a rule.
+
+\index{error type!generated from an exception}%
+Each \code{[Error<T>]} contributed an object type. The naming rule strips
+\code{Exception} and appends \code{Error}, so the not-found exception became
+\code{SessionNotFoundError}. That is the same rule, a generated name derived
+from a name you wrote, that the two previous chapters met on
+\code{AddSessionsTypes} and on the DataLoader interface. Inside the type, the
+exception's message became a
+\code{message} field. Every other public property became a field too, which is
+the only reason the two id fields are in the schema at all.
+
+\index{union!of error types}%
+\index{abstract type!union versus interface}%
+Then a union of those types, and an interface both of them implement. Either
+one alone would be worse than the pair.
+
+A union is a closed list. \code{errors} returns a
+\code{RescheduleSessionError}, and the schema says exactly which types that can
+be, so a client reading the schema knows every way this call can fail before
+writing a line. A generated client can produce an exhaustive switch. That is
+the expressiveness Marc-Andr\'{e} Giroux argues for in \emph{A Guide to GraphQL
+Errors}~\autocite{giroux2020}: \enquote{Error unions are great because they are
+a really expressive way of structuring our schema. It lets clients see right
+away what could happen when querying or mutating a resource.}
+
+The problem with a closed list is that adding to it changes what an existing
+client's exhaustive switch covers. Which is where the interface earns its
+place, and Giroux names that combination too:
+
+\begin{quote}
+What if we could combine the extensibility of the interface with the
+expressivity of the union? Well, we can! [\ldots] Make sure all of your union
+members implement a common interface for this solution to work.
+\end{quote}
+
+\index{Error@\code{Error} interface!fallback for unknown members}%
+A client writes \code{... on Error \{ message \}} once, and every future member
+of the union answers it, including the ones added after that client shipped.
+The union carries what is knowable now, the interface carries what is knowable
+forever, and a new failure mode becomes an additive change. Both fell out of
+two attributes.
+
+\index{errors as data!versus the errors array}%
+An exception that is not declared escapes into the top-level \code{errors}
+array instead, where it is a string with a path and no type, arriving beside
+\code{data: null} for the whole field. A client can display it and cannot
+branch on it, because there is nothing to branch on. Declaring the failure
+moves it into the payload, where it has a type, has fields, and is something
+the client can act on.
+
+\subsection{The Three Outcomes}
+
+\index{mutation!the operation the three runs send}%
+All three runs below send this one operation and differ only in their
+variables. Both error types are named in it so that the responses show their
+own fields, which a client that only wanted to display the message would not
+bother with.
+
+\begin{minted}{graphql}
+mutation R($input: RescheduleSessionInput!) {
+  rescheduleSession(input: $input) {
+    session { id title startsAt }
+    errors {
+      __typename
+      ... on SessionNotFoundError { message sessionId }
+      ... on SpeakerDoubleBookedError {
+        message
+        speakerId
+        clashingSessionId
+      }
+    }
+  }
+}
+\end{minted}
+
+\index{mutation!a session that does not exist}%
+On the wire it is an ordinary POST carrying that operation and a variables
+object. The envelope for the first run, with the operation text standing in
+for the block above and the body wrapped across three lines to fit the page:
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:5001
+Content-Type: application/json
+
+{"query":"<the operation above>","variables":
+{"input":{"sessionId":"U2Vzc2lvbjo5OQ==",
+"startsAt":"2026-09-14T16:00:00Z"}}}
+\end{minted}
+
+That id decodes to \code{Session:99}, and there is no session 99. One
+statement, the lookup, and then the exception:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"rescheduleSession":{"session":null,"errors":[
+{"__typename":"SessionNotFoundError","message":"No session has id 99.",
+"sessionId":"U2Vzc2lvbjo5OQ=="}]}}}
+\end{minted}
+
+\index{errors as data!status 200}%
+Status 200, no error at the top level, no null in \code{data}. As far as HTTP
+is concerned nothing went wrong, because nothing did: the request was valid,
+the server answered it, and the answer is that there is no such session.
+
+\index{mutation!a clash}%
+The second failure needs the schedule. Ada Fischer gives session~1 at nine and
+session~2 at ten, forty-five minutes each, so moving session~2 to half past
+nine puts her in two rooms at once.
+
+\begin{minted}{text}
+{"input":{"sessionId":"U2Vzc2lvbjoy",
+          "startsAt":"2026-09-14T09:30:00Z"}}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"rescheduleSession":{"session":null,"errors":[
+{"__typename":"SpeakerDoubleBookedError",
+"message":"Speaker 1 already gives session 1 in that slot.",
+"speakerId":"U3BlYWtlcjox","clashingSessionId":"U2Vzc2lvbjox"}]}}}
+\end{minted}
+
+\index{statement count!mutation}%
+Two statements, and no third. The lookup, the speaker's other sessions, and
+then nothing: the clash was detected before anything was written, so the
+\code{UPDATE} never ran. That is the property that separates a declared failure
+from an exception thrown halfway through a transaction, and it is a property of
+how the method is written rather than anything the conventions did.
+
+\index{mutation!success}%
+A move that works costs three: the lookup, the speaker's other sessions, and
+the write.
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"rescheduleSession":{"session":{"id":"U2Vzc2lvbjoz",
+"title":"Paging Without Offsets","startsAt":"2026-09-14T16:00:00Z"},
+"errors":null}}}
+\end{minted}
+
+\code{errors} is null rather than an empty list, so a client tests for absence
+and not for length. The session comes back with the same node id it had before
+the move, which is the identity work of
+section~\ref{sec:ch04-every-entity-gets-a-name} paying off: rescheduling a
+session does not make it a different session, and nothing about the id says
+when it starts.
+
+\begin{onhc14}
+The mutation conventions, \code{[MutationType]}, \code{[Error<T>]} and
+\code{[ID<T>]} on an exception property all exist on Hot Chocolate~14 and
+generate the same input type, the same payload, the same union and the same
+\code{Error} interface. Every file in this section compiles there unchanged,
+and the three statement counts are the same.
+Appendix~\ref{app:hc14} carries the full mapping.
+\end{onhc14}

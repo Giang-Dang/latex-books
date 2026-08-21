@@ -1,0 +1,29 @@
+\begin{chaptersummary}
+  \item A schema has no version number, so a field you regret is a field you
+        live with. Every decision in this chapter is about making the next
+        change additive rather than breaking.
+  \item A global node id is the type name and the key, base64 encoded:
+        \code{U2Vzc2lvbjox} is \code{Session:1}. One \code{[NodeResolver]}
+        method per type rewrites its \code{id} to \code{ID!}, makes it
+        implement \code{Node}, and gives every object in the graph one way to
+        be refetched. The encoding is not a secret, and a well-formed id of
+        the wrong type resolves to the wrong object with no error at all.
+  \item \code{@deprecated} is advisory and that is its whole value: the field
+        keeps answering, and introspection stops offering it, so tooling
+        migrates clients while nothing breaks. The reason string is the only
+        message the person removing the field will read, so it names the
+        replacement. It may not go on a required argument, and the schema
+        refuses to build if it does.
+  \item A failure the caller should act on belongs in the payload, not in the
+        top-level \code{errors} array where it is a string nobody can branch
+        on. Two \code{[Error<T>]} attributes generate a union of error types
+        and an \code{Error} interface they both implement: the union tells a
+        client every failure that exists today, and the interface lets
+        tomorrow's arrive without breaking that client. The answer is 200,
+        and the double-booking in this chapter wrote nothing.
+  \item A non-null field is a promise the specification collects on by
+        propagating the null upward until it reaches a position that may hold
+        one. One session pointing at a missing speaker emptied a list of four,
+        at status 200, with one error. Promise a field only when you own the
+        value and something enforces it.
+\end{chaptersummary}

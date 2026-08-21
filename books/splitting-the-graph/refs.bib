@@ -149,3 +149,51 @@
                   source-generated DataLoader is registered, which the generated code
                   contradicts; see the chapter's research note}
 }
+
+%--------------------------------------------------------------------------
+% Chapter 4 - Schema Design That Survives Change
+%
+% Provenance in research/ch04-schema-design-that-survives-change.md. Two
+% specifications, cited under decision 39 as the artifact rather than as a
+% claim about it, and one bylined post on an author's own site, which the
+% vendor rule does not reach at all. Every quotation in the chapter was read
+% out of the fetched document rather than out of a description of it.
+%--------------------------------------------------------------------------
+
+@online{relayobjectid,
+  title        = {{GraphQL} Global Object Identification Specification},
+  organization = {relay.dev},
+  url          = {https://relay.dev/graphql/objectidentification.htm},
+  urldate      = {2026-08-21},
+  addendum     = {No byline: the specification document itself, cited for what it
+                  requires. Searched for the words {\enquote{opaque}} and
+                  {\enquote{base64}} while it was open; neither appears anywhere in
+                  it, which is the point the chapter makes about the encoding being
+                  a convention rather than a requirement}
+}
+
+@online{graphqlspec2025,
+  author       = {{GraphQL Foundation}},
+  title        = {{GraphQL} Specification, September 2025 Edition},
+  organization = {spec.graphql.org},
+  url          = {https://spec.graphql.org/September2025/},
+  urldate      = {2026-08-21},
+  addendum     = {The edition the running service names in its own error extensions.
+                  Cited for section 3.6.2, on a deprecated field staying legal to
+                  select; section 3.13.3, on the directive's locations and the bar on
+                  required arguments; and section 6.4.4, on how an execution error
+                  propagates out of a non-null position}
+}
+
+@online{giroux2020,
+  author   = {Giroux, Marc-Andr{\'e}},
+  title    = {A Guide to {GraphQL} Errors},
+  date     = {2020-08-01},
+  url      = {https://productionreadygraphql.com/2020-08-01-guide-to-graphql-errors/},
+  urldate  = {2026-08-21},
+  addendum = {The author's own site rather than a vendor's, and bylined on the page,
+              so the named-engineer rule does not arise. The chapter quotes his
+              stages 5 and 6a. His note that Sasha Solomon's post is where the union
+              approach was argued first is recorded in the research note; that post
+              could not be fetched and nothing from it is used}
+}

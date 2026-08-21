@@ -2,12 +2,18 @@
 \chapter{Schema Design That Survives Change}
 \label{ch:schema-design}
 
-\emph{Not yet drafted.}
+A schema carries no version number, so every change you will ever want to make
+has to be one you can make while the old clients are still connected.
 
-% Chapter skeleton, SPEC decision 13. Five beats, this order:
-%   1. The one sentence  - what this chapter establishes, stated first.
-%   2. Show it          - the thing running, or in Part III the thing failing.
-%   3. Why it does that - the mechanism. All theory lives here (decision 14).
-%   4. Do it properly   - the complete, correct implementation.
-%   5. Summary box      - decision 21.
-% Section files are \input from here, numbered 01-, 02-, ... from the book root.
+Chapter~\ref{ch:data-without-n-plus-1} made one anyway. Paging turned
+\code{sessions} from a list into a connection and broke every query written
+against it, which cost nothing because the only client was you. This chapter
+is what that change would have cost with somebody else's application on the
+other end, and what to decide now so that the next one does not.
+
+\input{chapters/04-schema-design-that-survives-change/01-the-schema-is-the-version}
+\input{chapters/04-schema-design-that-survives-change/02-why-an-id-has-to-say-what-it-names}
+\input{chapters/04-schema-design-that-survives-change/03-every-entity-gets-a-name}
+\input{chapters/04-schema-design-that-survives-change/04-a-mutation-that-can-fail}
+\input{chapters/04-schema-design-that-survives-change/05-what-a-non-null-field-promises}
+\input{chapters/04-schema-design-that-survives-change/06-summary}
