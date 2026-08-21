@@ -95,6 +95,28 @@ function Get-DefaultPolicy {
         Index        = [ordered]@{ Enabled = $true; RangeMarkers = $true }
         Dashes       = [ordered]@{ Enabled = $true }
 
+        # A JSON string literal opened on one line and not closed on it. JSON
+        # forbids a raw newline inside a string - RFC 8259 requires the control
+        # characters U+0000 to U+001F to be escaped - so this is invalid in a
+        # whole document and equally invalid in an excerpt of one. That is what
+        # makes it safe to check by default: it never fires on the two things
+        # books legitimately print, a fragment lifted out of a larger config
+        # file and a listing with an elision in it, because both keep their
+        # strings closed on the line that opens them.
+        #
+        # Parsing the block instead was tried and rejected. Across the books in
+        # this repository it reported a dozen findings and every one was a
+        # deliberate excerpt or elision, which is a check that gets switched off
+        # in a week. This rule found only real defects on the same corpus.
+        #
+        # The defect it exists for: a long response wrapped by hand to fit the
+        # measure, with the break landing inside a "message" or a "query". The
+        # page looks right and the listing cannot be typed out.
+        Json         = [ordered]@{
+            Enabled      = $true
+            Environments = @('minted:json')
+        }
+
         # Off by default: whether contractions belong in the author's voice is
         # a voice decision, and most books have not made it.
         Contractions = [ordered]@{
@@ -210,6 +232,14 @@ function Get-DefaultPolicy {
         # bans and nothing else reads. Braced groups only: a coordinate or a
         # path never carries one and a node's text always does, so the
         # exclusion still buys quiet on paths without buying it on words.
+        #
+        # Read per file rather than per line. A label long enough to want an en
+        # dash is a label long enough to be written across two lines, with the
+        # \node on one and its braced text on the next, and a line-scoped scan
+        # sees a keyword with no group and a group with no keyword and reports
+        # neither. That is the shape every multi-line label in this repository
+        # is written in, so the line-scoped version missed the case it was
+        # built for.
         Figures      = [ordered]@{
             Enabled      = $true
             NodeText     = $true
@@ -521,6 +551,28 @@ if ($policy.Characters.AllowInCapturedListings.Count -gt 0) {
     }
     if ($armParts.Count -gt 0) {
         $capturedArmRe = '(?:' + ($armParts -join '|') + ')'
+    }
+}
+
+# And once more for Json.Environments. Three lists rather than one because the
+# three answer different questions - where a claim may be armed, where a byte
+# may survive, and which listings hold JSON - and a book that wants them the
+# same says so three times, which is cheaper than discovering they were never
+# separable.
+$jsonArmRe = $null
+if ($policy.Json.Enabled) {
+    $armParts = @()
+    foreach ($e in $policy.Json.Environments) {
+        if ($e -match '^([A-Za-z]+)[:]([A-Za-z0-9_+-]+)$') {
+            $armParts += '\\begin\{' + [regex]::Escape($Matches[1]) + '\}(?:\[[^\]]*\])?\{' + [regex]::Escape($Matches[2]) + '\}'
+        } elseif ($e -match '^[A-Za-z]+\*?$') {
+            $armParts += '\\begin\{' + [regex]::Escape($e) + '\}'
+        } else {
+            Write-Error "check-chapter.psd1: Json.Environments entry '$e' must be 'name' or 'name:lexer'"
+        }
+    }
+    if ($armParts.Count -gt 0) {
+        $jsonArmRe = '(?:' + ($armParts -join '|') + ')'
     }
 }
 
@@ -915,6 +967,85 @@ function ConvertTo-GlossSections {
     return , $out
 }
 
+# True when a JSON string literal opens on this line and does not close on it.
+# Walks the line in one pass because a regex cannot see that a quote is inside
+# a string: the escape has to be consumed as it is met, or the backslash in
+# "he said \"no\"" ends the literal three characters early.
+function Test-JsonUnterminatedString {
+    param([string]$line)
+
+    $inString = $false
+    for ($i = 0; $i -lt $line.Length; $i++) {
+        $c = $line[$i]
+        if ($inString) {
+            # Skip the escaped character whatever it is. \\ has to consume both
+            # of its own characters or the second one is read as an escape and
+            # a following quote is swallowed.
+            if ($c -eq '\') { $i++; continue }
+            if ($c -eq '"') { $inString = $false }
+        } elseif ($c -eq '"') {
+            $inString = $true
+        }
+    }
+    return $inString
+}
+
+# Blank every LaTeX comment in $text, replacing its characters with spaces so
+# that every offset after it is unchanged. That is the whole reason it is not a
+# -replace: the figure scan reports line numbers computed from match offsets,
+# and shortening the text would move every finding after the first comment.
+#
+# `\%` is a percent sign, not a comment, which is why this walks rather than
+# splitting on '%'.
+function Clear-TexComments {
+    param([string]$text)
+
+    $chars = $text.ToCharArray()
+    $inComment = $false
+    for ($i = 0; $i -lt $chars.Length; $i++) {
+        $c = $chars[$i]
+        if ($c -eq "`n") { $inComment = $false; continue }
+        if ($inComment) { $chars[$i] = ' '; continue }
+        if ($c -eq '\') { $i++; continue }
+        if ($c -eq '%') { $inComment = $true; $chars[$i] = ' ' }
+    }
+    return [string]::new($chars)
+}
+
+# Every braced group that follows a `node` or `label` keyword, with the offset
+# its content starts at so the caller can turn that into a line number.
+#
+# Brace counting rather than `\{([^{}]*)\}`, because node text carries braces of
+# its own - `{nodes\\{}[Session!]}` is one label - and a non-greedy group stops
+# at the first inner brace and never reads the rest of the label. The keyword is
+# matched with \b so that a coordinate like (nodes.north) is not one.
+function Get-TikzNodeText {
+    param([string]$text)
+
+    $out = @()
+    foreach ($m in [regex]::Matches($text, '(?:node|label)\b[^{}]*\{')) {
+        $start = $m.Index + $m.Length
+        $depth = 1
+        $i = $start
+        while ($i -lt $text.Length -and $depth -gt 0) {
+            $c = $text[$i]
+            if ($c -eq '\') { $i += 2; continue }
+            if ($c -eq '{') { $depth++ }
+            elseif ($c -eq '}') { $depth-- }
+            $i++
+        }
+        # An unbalanced group means the file will not compile; say nothing
+        # about it here and let the build be the one to complain.
+        if ($depth -eq 0) {
+            $out += [pscustomobject]@{
+                Start = $start
+                Value = $text.Substring($start, $i - $start - 1)
+            }
+        }
+    }
+    return , $out
+}
+
 # Every line of a listing the prose called a capture has to appear in this
 # book's research notes, matched against the whitespace-collapsed blob so that
 # a capture re-wrapped to fit the measure still traces.
@@ -1012,6 +1143,10 @@ function Format-Policy {
     } else { $bits += 'numbers=off' }
 
     $bits += "verbatim=$(if ($verbatimArmRe -and $researchBlob) { $policy.Verbatim.Environments -join ',' } else { 'off' })"
+
+    # Unlike verbatim, this needs no research notes, so the arm regex alone
+    # decides whether it ran.
+    $bits += "json=$(if ($jsonArmRe) { $policy.Json.Environments -join ',' } else { 'off' })"
 
     # $listingMax is already 0 when the family is disabled, so one expression
     # covers both ways of switching it off. AliasAsLexer is reported beside it
@@ -1206,6 +1341,9 @@ foreach ($f in $texFiles) {
     $listingReported = 0
     $listingTotal = 0
 
+    # Whether the open block is one of the JSON environments.
+    $jsonBlock = $false
+
     # verbatim-claim state: how many lines the pending claim has left, what it
     # said, and the block being collected once one starts.
     $claimWindow = 0
@@ -1229,6 +1367,7 @@ foreach ($f in $texFiles) {
             # happens to follow one.
             if ($raw -match ('\\end\{' + [regex]::Escape($inVerb) + '\}')) {
                 $inVerb = $null
+                $jsonBlock = $false
                 if ($null -ne $capture) {
                     Test-VerbatimClaim $f.FullName $captureLine $claimLine $claimPhrase $capture $researchBlob $policy.Verbatim.MinLineLength
                     $capture = $null
@@ -1252,6 +1391,24 @@ foreach ($f in $texFiles) {
                         }
                     }
                 }
+                # 11c. json: a string literal that opens on this line and does
+                # not close on it. Always invalid, in a whole document and in
+                # an excerpt of one, so it fires on neither of the two things
+                # books legitimately print here - a fragment lifted out of a
+                # larger file, and a listing carrying an elision.
+                #
+                # The defect is a long response wrapped by hand to fit the
+                # measure, with the break landing inside a "message". The page
+                # looks right and a reader who types it out gets a parse error,
+                # which is the same shape as the listing-width family: a
+                # typographic decision that damages the thing being shown.
+                if ($jsonBlock -and (Test-JsonUnterminatedString $raw)) {
+                    Add-Finding $f.FullName $lineNo 'json' (
+                        'a JSON string opens on this line and does not close on it; a raw ' +
+                        'newline inside a string is invalid JSON, so break between tokens ' +
+                        'instead, or let the listing wrap on its own')
+                }
+
                 if ($null -ne $capture) { [void]$capture.Add($raw) }
             }
             $stripped = ''
@@ -1308,6 +1465,12 @@ foreach ($f in $texFiles) {
                         $capture = [System.Collections.Generic.List[string]]::new()
                         $captureLine = $lineNo
                     }
+
+                    # Unlike the capture arm above, this needs no research
+                    # notes and no claim in the prose: a JSON listing is
+                    # malformed or it is not, whatever the book says about it.
+                    $jsonBlock = $jsonArmRe -and $stripped -match $jsonArmRe
+
                     $claimWindow = 0
                 }
                 $stripped = ''
@@ -1642,12 +1805,12 @@ if ($figureKeys -or $figureText) {
     $declPattern = '(?:^|[\[,{])\s*([A-Za-z][A-Za-z0-9 ]*?)\s*/\.style'
 
     foreach ($f in $figureFiles) {
-        $n = 0
-        foreach ($line in [System.IO.File]::ReadAllLines($f.FullName)) {
-            $n++
-            if ($line -match '^\s*%') { continue }
+        if ($figureKeys) {
+            $n = 0
+            foreach ($line in [System.IO.File]::ReadAllLines($f.FullName)) {
+                $n++
+                if ($line -match '^\s*%') { continue }
 
-            if ($figureKeys) {
                 foreach ($m in [regex]::Matches($line, $declPattern)) {
                     $name = $m.Groups[1].Value.Trim()
                     if ($policy.Figures.ReservedKeys -contains $name) {
@@ -1657,20 +1820,48 @@ if ($figureKeys -or $figureText) {
                     }
                 }
             }
+        }
 
-            # Node and label text, which is the only prose in these files. The
-            # braced group is what separates it from path syntax: `(0,0) --
-            # (2,0)` carries no braces and a node's text always does. An
-            # options group is skipped because the pattern anchors on
-            # node/label and takes the group that follows it, and a style
-            # declaration is skipped because a `--` cannot appear in one.
-            if ($figureText -and $line -match '--') {
-                foreach ($m in [regex]::Matches($line, '(?:node|label)\b[^{}]*\{([^{}]*)\}')) {
-                    if ($m.Groups[1].Value -match '--') {
-                        Add-Finding $f.FullName $n 'tikz-dash' (
-                            'en/em dash ligature in node text; figure sources sit outside the ' +
-                            'prose dash check, so this is the only pass that reads them')
-                    }
+        # Node and label text, which is the only prose in these files. The
+        # braced group is what separates it from path syntax: `(0,0) -- (2,0)`
+        # carries no braces and a node's text always does. An options group is
+        # skipped because the pattern anchors on node/label and takes the group
+        # that follows it, and a style declaration is skipped because a `--`
+        # cannot appear in one.
+        #
+        # Read as one string rather than line by line, because a \node and the
+        # braced text it labels are routinely on different lines and neither
+        # half is a finding on its own. Comments are blanked first, in place, so
+        # that a `--` in a separator comment cannot be swept into the group that
+        # follows it and every offset still maps to its own line.
+        if ($figureText) {
+            $body = Clear-TexComments ([System.IO.File]::ReadAllText($f.FullName))
+
+            # Inline code comes out first, exactly as it does for the prose
+            # dash check, which reads a line only after Macros.Code has been
+            # masked out of it. A figure that labels a box \texttt{dotnet run
+            # -- schema export} is showing a command-line argument separator,
+            # and a figure that labels one \code{--disable-resolvability-
+            # validation} is showing a flag. Neither sets an en dash, because
+            # the ligature belongs to the text font and not the mono one, and
+            # both are real labels in this repository's figures. \texttt is on
+            # the list beside the book's own code macros for the same reason
+            # \enquote is: it is a LaTeX fact rather than a book's choice.
+            #
+            # \textbf and \emph are deliberately NOT on it. They set the text
+            # font, so a `--` inside one is an en dash exactly as it is outside.
+            foreach ($name in (@($policy.Macros.Code) + 'texttt')) {
+                foreach ($call in (Get-BalancedCalls $body $name 1)) {
+                    $body = Clear-Span $body $call.Index $call.Length
+                }
+            }
+
+            foreach ($node in (Get-TikzNodeText $body)) {
+                if ($node.Value -match '--') {
+                    $n = ($body.Substring(0, $node.Start) -split "`n").Count
+                    Add-Finding $f.FullName $n 'tikz-dash' (
+                        'en/em dash ligature in node text; figure sources sit outside the ' +
+                        'prose dash check, so this is the only pass that reads them')
                 }
             }
         }

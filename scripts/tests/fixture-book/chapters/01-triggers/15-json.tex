@@ -1,0 +1,52 @@
+\section{JSON listings}
+\label{sec:ch01-json}
+
+The defect: a response wrapped by hand to fit the measure, with the break
+landing inside a string. The page looks right and the listing cannot be typed
+out, because JSON forbids a raw newline inside a string.
+
+\begin{minted}{json}
+{"errors":[{"message":"the id type name does not
+  match the one that was expected.",
+  "path":["submitReview"]}],
+ "data":null}
+\end{minted}
+
+Two lines of that block are findings: the one that opens the string and the
+one that goes on to close it, because each of them leaves a string open at its
+own end. The two lines after are balanced and report nothing.
+
+Everything below is legitimate and must stay silent.
+
+\begin{minted}{json}
+"version": "00000000-0000-0000-0000-000000000000",
+"compatibilityVersion": "1:0.63.2"
+\end{minted}
+
+A fragment lifted out of a larger config file. It is not a whole document and
+never parses on its own, which is exactly why this family does not try to
+parse: every book in this library prints excerpts like it, and a check that
+reported them would be switched off within the week.
+
+\begin{minted}{json}
+{"data":{"products":[{"id":"UHJvZHVjdDoAAAAB"}, ...]}}
+\end{minted}
+
+An elision. The bare \ldots{} is not valid JSON either, and it is deliberate.
+
+\begin{minted}{json}
+{"quoted":"he said \"no\"","escaped":"back \\ slash"}
+\end{minted}
+
+Escapes. The first value carries quotes that do not end the string and the
+second ends with an escaped backslash immediately before the real closing
+quote, so a scan that fails to consume an escape reports one of these.
+
+\begin{minted}[fontsize=\footnotesize]{text}
+{"message":"a text listing is not a json one, so this string
+  runs on unchecked"}
+\end{minted}
+
+The last block is the family's boundary: the same defect in an environment the
+book did not nominate as holding JSON. It reports nothing, and a regression
+that widens the family shows up here as an extra finding.

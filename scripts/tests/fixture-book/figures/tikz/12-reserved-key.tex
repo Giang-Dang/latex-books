@@ -31,4 +31,32 @@
   % The finding: a node whose text sets an en dash.
   \node[note] at (1,-8) {parses -- then validates};
 
+  % The second finding, and the case a line-at-a-time scan cannot see: the
+  % \node is on one line and its text on the next, which is how every label
+  % long enough to want an en dash is actually written.
+  \node[note] at (1,-9)
+    {reads the config -- then serves it};
+
+  % The third: the label carries braces of its own, and the dash is past them.
+  % A non-greedy \{([^{}]*)\} stops at the inner brace and never reads this.
+  \node[note] at (1,-10) {one\\{}[two] -- three};
+
+  % Negative cases below. None of these may be reported.
+  %
+  % A separator comment full of dashes, which the scan must blank before it
+  % looks for a node -- including this one, mid-line, right before a node.
+  % ------------------------------------------------------------------
+  \node[note] at (1,-11) {no dash here at all};
+
+  % Code spans. `--` is an argument separator and a flag, both set in the mono
+  % font, where the en dash ligature does not apply. The prose dash check masks
+  % \code the same way before it looks at a line.
+  \node[note] at (1,-12) {\texttt{dotnet run -- schema export}};
+  \node[note] at (1,-13) {run \code{--no-restore} first};
+
+  % Emphasis is NOT code: it sets the text font, so a dash inside it would be
+  % a finding. This one carries a hyphen, so it stays silent and proves the
+  % masking list stops where it should.
+  \node[note] at (1,-14) {\textbf{well-formed} input};
+
 \end{tikzpicture}

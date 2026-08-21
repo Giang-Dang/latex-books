@@ -135,7 +135,34 @@
     # check on --- with it, because one flag covers both ligatures.
     # Dashes = @{ Enabled = $true }
 
-    # -- 7. Contractions ------------------------------------------------------
+    # -- 7. Json --------------------------------------------------------------
+    # Flags a JSON string literal that opens on a line and does not close on
+    # it. JSON forbids a raw newline inside a string, so this is invalid in a
+    # whole document and equally invalid in an excerpt of one, which is what
+    # makes it safe to leave on: it fires on neither of the two things books
+    # legitimately print here, a fragment lifted out of a larger config file
+    # and a listing carrying an elision.
+    #
+    # The defect it exists for is a long response wrapped by hand to fit the
+    # measure, with the break landing inside a "message". The page looks right
+    # and a reader who types the listing out gets a parse error.
+    #
+    # Parsing the block instead was tried and rejected: across the books in
+    # this repository it reported a dozen findings and every one was a
+    # deliberate excerpt or elision, which is a check that gets switched off
+    # within the week.
+    #
+    # Environments - where this book puts JSON, in the same notation
+    #                Verbatim.Environments uses: a bare name matches
+    #                \begin{name}, and minted:json matches
+    #                \begin{minted}[opts]{json}. Emptying the list turns the
+    #                family off as surely as Enabled = $false does.
+    # Json = @{
+    #     Enabled      = $true
+    #     Environments = @('minted:json')
+    # }
+
+    # -- 8. Contractions ------------------------------------------------------
     # Off by default, because contractions are a voice decision rather than a
     # language fact, and the house first-person practitioner voice wants some.
     # Turning it on bans the whole preset list in the author's own words, and
@@ -153,7 +180,7 @@
     #     Allow   = @()
     # }
 
-    # -- 8. Spelling ----------------------------------------------------------
+    # -- 9. Spelling ----------------------------------------------------------
     # Preset accepts 'en-GB' or 'en-US'. The default is '', meaning no variety
     # has been chosen and the check does not run: the library will not guess
     # which side of the Atlantic a new book is written on, and a book written in
@@ -180,7 +207,7 @@
     #     Extra   = @{}
     # }
 
-    # -- 9. Numbers -----------------------------------------------------------
+    # -- 10. Numbers ----------------------------------------------------------
     # Every decimal printed in the book has to appear in one of this book's
     # research notes, so that a measured number is reproducible rather than
     # remembered. While the notes folder is empty the check is skipped entirely;
@@ -203,7 +230,7 @@
     #     Allow        = @()
     # }
 
-    # -- 10. Verbatim ---------------------------------------------------------
+    # -- 11. Verbatim ---------------------------------------------------------
     # When prose calls a listing a capture, every substantial line of that
     # listing has to appear in this book's research notes. It catches the
     # listing that was tidied on the way to the page, which is the number check
@@ -233,7 +260,7 @@
     #     MinLineLength = 12
     # }
 
-    # -- 11. Listings ---------------------------------------------------------
+    # -- 12. Listings ---------------------------------------------------------
     # A listing line wider than the measure is the one typographic defect the
     # log check cannot see. A book that loads minted with breaklines has asked
     # for an over-wide line to be broken to fit, and it is obliged silently: no
@@ -288,7 +315,7 @@
     #     AliasAsLexer  = $true
     # }
 
-    # -- 12. Macros -----------------------------------------------------------
+    # -- 13. Macros -----------------------------------------------------------
     # The masking macros: what is blanked out of a line before the line is read
     # as English. These are library facts rather than book decisions, and they
     # are settable only so that a book which renames one of them keeps its
@@ -308,7 +335,7 @@
     #     Identifiers = @('begin', 'end', 'label', 'ref', 'pageref', 'input', 'include', 'autocite')
     # }
 
-    # -- 13. Gloss ------------------------------------------------------------
+    # -- 14. Gloss ------------------------------------------------------------
     # For a book that translates its vocabulary and prints the original
     # alongside. One rule with no direction in it: a term the chapter owns is
     # glossed once per section, a term another chapter owns is glossed once per
@@ -346,7 +373,7 @@
     #     Exempt       = @()
     # }
 
-    # -- 14. Figures ----------------------------------------------------------
+    # -- 15. Figures ----------------------------------------------------------
     # TikZ style names pgfkeys has already taken. `step/.style={...}` shadows
     # nothing: it fails the build with an error naming the key rather than the
     # style, which reads as a missing \usetikzlibrary and sends you looking in
@@ -377,7 +404,7 @@
     #     ReservedKeys = @('in', 'out', 'step', 'shift', 'scale', 'text', 'style')
     # }
 
-    # -- 15. Log --------------------------------------------------------------
+    # -- 16. Log --------------------------------------------------------------
     # Reads the build log that latexmk already wrote. The check never runs
     # latexmk itself, so a missing log is a warning and a log older than the
     # sources is a warning; build first if you want these numbers to mean
