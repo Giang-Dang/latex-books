@@ -1,0 +1,50 @@
+\section{The Schema Is the Version}
+\label{sec:ch04-the-schema-is-the-version}
+
+\index{schema!has no version number}%
+Export the schema chapter~\ref{ch:data-without-n-plus-1} left behind and find
+the identifier on each of the two types. The descriptions the export writes
+above every field are dropped here, and the fields that are not identifiers
+are elided:
+
+\begin{graphqlsdl}
+type Session {
+  speaker: Speaker
+  id: Int!
+  ...
+}
+
+type Speaker {
+  id: Int!
+  ...
+}
+\end{graphqlsdl}
+
+\index{identifier!collides across types}%
+Session~1 and speaker~1 are different objects of different types wearing the
+same identifier, because each \code{Int} is a primary key from a table and each
+table starts counting at one. Inside SQLite that is fine: a key is only ever
+read next to the name of the table it came from. Once it leaves through the
+schema the table name is gone, and \code{1} is all the client has.
+
+\index{client!caching by identifier}%
+A client that stores objects by identifier now has to decide whether those two
+are the same thing, and nothing in the response tells it. The type name is
+available, through \code{\_\_typename}, so a careful client can pair the two and
+be safe. That is the point: the schema has pushed a decision onto every client
+that the server could have settled once, and the server is the one that knows
+there are two tables.
+
+\index{sessionById@\code{sessionById}!cannot be fixed in place}%
+Now try to fix it. \code{sessionById(id: Int!)} takes an integer, so an
+identifier that carries its type is a different type, a different argument and
+a different field. Change it and every stored query breaks. Add a second field
+beside it and the schema has two ways to fetch a session forever. There is no
+third option, because there is no version number to raise. A REST service can
+ship \code{/v2/sessions} and let \code{/v1} rot; a GraphQL service has one
+endpoint, one schema, and every client it has ever had on it at once.
+
+\index{schema!is the contract}%
+That constraint is the whole of this chapter, and it is the deal rather than an
+oversight. One endpoint means one contract, and a contract you cannot version
+is a contract you have to be able to extend without breaking.

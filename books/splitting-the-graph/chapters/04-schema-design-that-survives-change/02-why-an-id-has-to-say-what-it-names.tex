@@ -1,0 +1,53 @@
+\section{Why an Id Has to Say What It Names}
+\label{sec:ch04-why-an-id-has-to-say-what-it-names}
+
+\index{Relay!object identification specification|(}%
+The fix has a specification behind it, and the specification is two paragraphs
+long. \emph{GraphQL Global Object Identification} asks a server for exactly two
+things~\autocite{relayobjectid}. First, an interface:
+
+\begin{quote}
+The server must provide an interface called \code{Node}. That interface must
+include exactly one field, called \code{id} that returns a non-null \code{ID}.
+\end{quote}
+
+And second, a way in:
+
+\begin{quote}
+The server must provide a root field called \code{node} that returns the
+\code{Node} interface. This root field must take exactly one argument, a
+non-null ID named \code{id}.
+\end{quote}
+
+\index{node@\code{node}!what it buys a client}%
+Read what that gives a client rather than what it asks of you. Any object it
+holds, of any type, it can refetch by handing back the string the server gave
+it, without knowing which field it originally came through or which service
+answered. A cache can refresh one entry; a page can deep-link to a session
+whose type it worked out at run time. The alternative is a lookup field per
+type, which is \code{sessionById} multiplied by every type in the graph.
+
+\index{ID@\code{ID}!is not an integer}%
+\code{ID} is a scalar in its own right and it is not \code{Int} wearing a
+different name. It serializes as a string, it accepts a string, and the
+specification says nothing whatever about what is inside it. The words
+\enquote{opaque} and \enquote{base64} appear nowhere in that document. What it
+requires is that the value be globally unique and that handing it back
+refetches the same object.
+
+\index{ID@\code{ID}!opacity is a convention}%
+Opacity is a convention that grew up around the requirement rather than part
+of it, and it is worth keeping for a reason that is not about tidiness. An id
+a client can take apart is an id a client will take apart, and the moment one
+does, the encoding is a public API you did not mean to publish. Base64 is weak
+enough that anyone determined will read it in a second, and awkward enough
+that nobody does it by accident.
+
+\index{ID@\code{ID}!is not a secret}%
+So an opaque id is not a secret. Base64 is an encoding, not a cipher, and
+anything you put in one you have published: an internal customer number, or
+the fact that your ids are sequential and therefore how many sessions you
+have. Chapter~\ref{ch:entities-authorization} is about a related mistake one
+level up, where a route into the graph is assumed to be guarded because the
+field in front of it is.
+\index{Relay!object identification specification|)}%

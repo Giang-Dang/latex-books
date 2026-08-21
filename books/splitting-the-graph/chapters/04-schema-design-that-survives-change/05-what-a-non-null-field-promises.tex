@@ -1,0 +1,199 @@
+\section{What a Non-Null Field Promises}
+\label{sec:ch04-what-a-non-null-field-promises}
+
+\index{nullability!comes from the C\# annotation|(}%
+Nobody has typed an exclamation mark into this book's schema. Every one on a
+field you wrote came from a C\# annotation: \code{Nullable} has been enabled in
+the project file since chapter~\ref{ch:hot-chocolate-zero}, and Hot Chocolate
+reads it straight across.
+
+\begin{minted}{text}
+string Title           ->  title: String!
+string? Abstract       ->  abstract: String
+Task<Speaker?>         ->  speaker: Speaker
+Task<Speaker>          ->  speaker: Speaker!
+\end{minted}
+
+\index{nullability!the question mark is API design}%
+So a question mark in a C\# signature is an API decision made in a file that
+does not look like one. Chapter~\ref{ch:data-without-n-plus-1} chose
+\code{Task<Speaker?>} because a DataLoader answers a missing key with null and
+the type had to allow it. That was a local choice about a return value, and it
+was also a permanent promise to every client the graph will ever have.
+
+\index{non-null!what it costs to be wrong}%
+Permanent because there is no safe direction out of it. Adding an exclamation
+mark later breaks every client that handled null, whose null branch is now
+dead code guarding against a case the schema says cannot occur. Removing one
+breaks every client that trusted the field and never wrote that branch at all.
+The nullability of a field is a decision you make once.
+
+\subsection{One Missing Row}
+
+\index{non-null!and a missing row}%
+So take the promise chapter~\ref{ch:data-without-n-plus-1} did not make, and
+make it. One character comes off the speaker resolver, and session~4 in
+\code{ConferenceData} is pointed at speaker~99, who does not exist.
+
+\begin{minted}[highlightlines={12}]{csharp}
+using GreenDonut.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+[ObjectType<Session>]
+public static partial class SessionType
+{
+    /// <summary>
+    /// The person giving this session.
+    /// </summary>
+    public static async Task<Speaker> GetSpeakerAsync(
+        [Parent(nameof(Session.SpeakerId))] Session session,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+        => await speakerById.LoadAsync(session.SpeakerId, ct);
+
+    /// <summary>
+    /// Loads one session by the identifier inside a global node id.
+    /// </summary>
+    [NodeResolver]
+    public static async Task<Session?> GetSessionAsync(
+        int id,
+        ConferenceContext db,
+        QueryContext<Session> query,
+        CancellationToken ct)
+        => await db.Sessions
+            .Where(s => s.Id == id)
+            .With(query)
+            .FirstOrDefaultAsync(ct);
+}
+\end{minted}
+
+\index{CS8603!the compiler saw it first}%
+The build still succeeds, and it does not go quietly:
+
+\begin{minted}{text}
+warning CS8603: Possible null reference return.
+\end{minted}
+
+The method promises a \code{Speaker}, the loader can hand it back a null, and
+the compiler can see the gap before a single request has been sent. The schema
+now carries \code{speaker: Speaker!}, so the same gap is in the contract.
+
+Ask for the page.
+
+\begin{minted}{text}
+{"query":"{ sessions(first: 10) { nodes { title speaker { name } } } }"}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"errors":[{"message":"Cannot return null for non-nullable field.",
+"path":["sessions","nodes",3,"speaker"],"extensions":{"code":"HC0018"}}],
+"data":{"sessions":{"nodes":null}}}
+\end{minted}
+
+\index{blast radius!four sessions for one bad row}%
+Four sessions asked for, none returned. Sessions one, two and three resolved
+perfectly well and are gone with the fourth.
+
+\index{status 200!with an empty list}%
+Status 200, incidentally, and one error rather than one per lost session: the
+count follows the position that failed, not the rows that vanished.
+
+\subsection{Why It Climbs}
+
+\index{null propagation!the specification's rule}%
+The specification describes this as a walk upward rather than as a
+rule about lists~\autocite{graphqlspec2025}:
+
+\begin{quote}
+Since Non-Null response positions cannot be null, execution errors are
+propagated to be handled by the parent response position. If the parent
+response position may be null then it resolves to null, otherwise if it is a
+Non-Null type, the execution error is further propagated to its parent
+response position.
+\end{quote}
+
+\index{null propagation!through a list of non-null items}%
+Walk it on this response. \code{speaker} is \code{Speaker!} and cannot hold the
+null, so the error goes to its parent, which is the \code{Session} at index
+three. \code{nodes} is typed \code{[Session!]}, so the items in it cannot be
+null either, and the error keeps going. The parent of the item is the list, and
+the list itself is nullable, so it stops there and \code{nodes} resolves to
+null. Figure~\ref{fig:ch04-null-climbs} is that walk, drawn over a selection
+that asks for \code{pageInfo} as well, because where the climb does not reach
+is half of what the picture is for.
+
+\begin{figure}
+  \centering
+  \input{figures/tikz/ch04-null-climbs}
+  \caption{The same response as a tree of positions, with the three positions
+  on the path carrying their own types. The failure starts at the speaker of
+  session four and climbs until it reaches one that is allowed to be null. Two
+  on the way up are not, which is why three sessions that resolved correctly
+  are lost with the fourth, and why the damage stops at \code{nodes} rather
+  than reaching \code{sessions}. \code{pageInfo} is on the other branch and
+  never learns anything happened.}
+  \label{fig:ch04-null-climbs}
+\end{figure}
+
+\index{null propagation!stops at the first nullable position}%
+The list is the position that absorbs it, and \code{[Session!]} is worth
+stopping on because it reads like a stronger guarantee than \code{[Session]}
+and is the shape I write by reflex. It is stronger, and the strength is what
+does the damage: a list that may not contain a null has nowhere to put one, so
+it goes null entirely rather than shortening by an element.
+
+\index{blast radius!bounded by the nearest nullable position}%
+Three more requests bound the damage. Ask for \code{pageInfo} alongside and it
+comes back intact, because it is a sibling of \code{nodes} under
+\code{sessions} and the climb never reaches their common parent. Ask through
+\code{edges} instead of \code{nodes} and the same thing happens one level
+deeper, with a path of \code{sessions}, \code{edges}, 3, \code{node},
+\code{speaker}: the edge's \code{node} is non-null too, so \code{edges} is the
+position that absorbs it. And ask for the orphaned session on its own through
+\code{sessionById}, whose type is nullable, and the whole field is null with a
+path two entries long. The blast radius is the distance from where the failure
+happened to the nearest position that may be null, and nothing about the
+failure itself sets it.
+
+\index{selection set!decides whether the failure is visible}%
+A fourth request is the uncomfortable one. Ask the same broken service for
+\code{sessions \{ nodes \{ title \} \}}, without the speaker, and all four
+titles come back with no error key anywhere. The schema is exactly as wrong.
+Whether a given client ever sees it depends on what that client selected, so
+this is a defect that arrives in production on the day somebody adds a field to
+a query.
+
+\subsection{The Rule I Use}
+
+\index{nullability!the rule}%
+Mark a field non-null when you can guarantee it from data you own, in the same
+process, with a constraint behind it. \code{Session.title} is non-null because
+the column is not nullable and the row cannot exist without one. Everything
+else is nullable.
+
+\index{nullability!a field that leaves the process}%
+The load-bearing half is \enquote{data you own, in the same process}, and this
+section has just measured why. \code{speaker} reads through a DataLoader whose
+answer depends on a row in another table matching a foreign key nothing
+enforces, and that is already too far. By
+chapter~\ref{ch:enter-the-router} the same field is answered by a different
+service over the network, where a non-null field is a promise about another
+team's uptime written into your schema.
+
+\index{non-null!where it is still right}%
+None of which argues for a schema with no exclamation marks. Make everything
+nullable and every field of every client grows a null check, paid on every
+line of client code forever to insure against failures that mostly cannot
+happen. Non-null on \code{id}, on a required column, on the fields of a type
+you constructed yourself: keep all of it. What decides the field is who owns
+the value, and how cautious you feel is not a factor.
+
+\index{nullability!where the rest of this belongs}%
+Chapter~\ref{ch:null-blast-radius} is where it gets expensive, because a
+subgraph that fails is a whole branch of the response failing at once and the
+walk in figure~\ref{fig:ch04-null-climbs} can reach \code{data} itself. It
+also covers what the specification working group is doing about the fact that
+the only tool here is a type modifier.
+\index{nullability!comes from the C\# annotation|)}%

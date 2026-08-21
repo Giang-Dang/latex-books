@@ -1,0 +1,91 @@
+% One response, drawn as its tree of positions: a null raised at the speaker
+% of session index 3 climbs until it reaches a position whose type is allowed
+% to hold it.
+%
+% Same stroke weight, arrowhead and font as figures/tikz/ch01-one-field.tex,
+% the file that fixes this book's idiom: 0.4pt strokes, the Straight Barb
+% arrowhead, sans-serif scriptsize labels, square corners, no fills, black on
+% white. That figure and ch03-one-batch.tex are timelines because their
+% subject is order. This one is a shape, so it is a tree; the idiom is the
+% line weight and the labelling, not the axis.
+%
+% Solid box: a position that is present in the response. That includes nodes,
+% whose key survives even though its value is null. Dashed box: a position
+% that does not exist in the response at all, because the list that would
+% have held it is gone. Each box on the path carries its own GraphQL type,
+% because the nullability of that type is the only thing deciding whether the
+% climb stops there.
+%
+% The two solid arrows are the climb, drawn along the tree edges they run up.
+% The query's title and name fields are left out: neither changes where the
+% climb stops.
+%
+% Bare tikzpicture (house style): the figure environment, caption and label
+% live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  posbox/.style={draw, line width=0.4pt, minimum width=20mm,
+    minimum height=9mm, align=center, inner sep=1pt},
+  lostbox/.style={posbox, dashed},
+  link/.style={draw, line width=0.4pt},
+  lostlink/.style={draw, line width=0.4pt, dashed},
+  climb/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  note/.style={anchor=west, align=left, inner sep=2pt},
+  haltnote/.style={anchor=east, align=right, text width=30mm, inner sep=2pt},
+]
+
+% --------------------------------------------------------------- positions
+\node[posbox] (root)  at (83,78) {sessions};
+
+\node[posbox] (nodes) at (46,54) {nodes\\{}[Session!]};
+\node[posbox] (page)  at (120,54) {pageInfo};
+
+\node[lostbox] (i0) at (10,30) {nodes[0]};
+\node[lostbox] (i1) at (32,30) {nodes[1]};
+\node[lostbox] (i2) at (54,30) {nodes[2]};
+\node[lostbox] (i3) at (82,30) {nodes[3]\\Session!};
+
+\node[lostbox] (speaker) at (82,6)  {speaker\\Speaker!};
+\node[posbox]  (hasnext) at (120,30) {hasNextPage};
+
+% ---------------------------------------------------------- tree structure
+\draw[link] (root.south) -- (83,66) -- (46,66) -- (nodes.north);
+\draw[link] (root.south) -- (83,66) -- (120,66) -- (page.north);
+\draw[link] (page.south) -- (hasnext.north);
+
+\draw[lostlink] (nodes.south) -- (46,42) -- (10,42) -- (i0.north);
+\draw[lostlink] (nodes.south) -- (46,42) -- (32,42) -- (i1.north);
+\draw[lostlink] (nodes.south) -- (46,42) -- (54,42) -- (i2.north);
+
+% ------------------------------------------------------------- the climb
+\draw[climb] (speaker.north) -- (i3.south);
+\draw[climb] (i3.north) -- (82,42) -- (46,42) -- (nodes.south);
+
+% ------------------------------------------------------------------ notes
+% Each note sits on a row of its own. The types are carried inside the boxes
+% rather than in side labels, because a label beside nodes[3] runs into the
+% pageInfo branch at this width.
+\node[note] at (94,6)
+  {the resolver returned null here,\\and Speaker! cannot hold it};
+\node[haltnote] at (32,54)
+  {the first position that may be null, so the climb stops and nodes is
+   null};
+\node[spanlabel] at (120,24) {untouched};
+
+% ------------------------------------------------------- collateral loss
+\draw[span] (0,23) -- (0,19) -- (64,19) -- (64,23);
+\node[spanlabel] at (32,17)
+  {these three resolved correctly and are gone anyway};
+
+% ----------------------------------------------------------------- legend
+\node[posbox, minimum width=7mm, minimum height=4mm] at (4,-2) {};
+\node[note] at (9,-2) {present in the response};
+
+\node[lostbox, minimum width=7mm, minimum height=4mm] at (62,-2) {};
+\node[note] at (67,-2) {not in the response at all};
+
+\end{tikzpicture}

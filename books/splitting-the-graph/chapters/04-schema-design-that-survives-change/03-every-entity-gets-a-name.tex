@@ -1,0 +1,412 @@
+\section{Every Entity Gets a Name}
+\label{sec:ch04-every-entity-gets-a-name}
+
+\index{AddGlobalObjectIdentification@\code{AddGlobalObjectIdentification}}%
+Two calls go on the end of \code{Program.cs}, and the second one belongs to
+section~\ref{sec:ch04-a-mutation-that-can-fail}. They are the only lines in
+the file that chapter~\ref{ch:data-without-n-plus-1} did not already print;
+the line above them gave up its semicolon to make room, and nothing else
+moved.
+
+\begin{minted}[highlightlines={32,33}]{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Sessions;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<ConferenceContext>(options =>
+{
+    options.UseSqlite("Data Source=conference.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+builder
+    .AddGraphQL()
+    .AddSessionsTypes()
+    .RegisterDbContextFactory<ConferenceContext>()
+    .AddQueryContext()
+    .AddPagingArguments()
+    .AddGlobalObjectIdentification()
+    .AddMutationConventions();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<ConferenceContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{NodeResolver@\code{[NodeResolver]}}%
+Then one method per type that wants to be reachable. \code{SessionType.cs}
+gains a second resolver beside the speaker one, and the new method is the same
+query \code{sessionById} already runs. It also gains two \code{using}
+directives, because until now this file had none:
+
+\begin{minted}[highlightlines={1,2,18-30}]{csharp}
+using GreenDonut.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+[ObjectType<Session>]
+public static partial class SessionType
+{
+    /// <summary>
+    /// The person giving this session.
+    /// </summary>
+    public static async Task<Speaker?> GetSpeakerAsync(
+        [Parent(nameof(Session.SpeakerId))] Session session,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+        => await speakerById.LoadAsync(session.SpeakerId, ct);
+
+    /// <summary>
+    /// Loads one session by the identifier inside a global node id.
+    /// </summary>
+    [NodeResolver]
+    public static async Task<Session?> GetSessionAsync(
+        int id,
+        ConferenceContext db,
+        QueryContext<Session> query,
+        CancellationToken ct)
+        => await db.Sessions
+            .Where(s => s.Id == id)
+            .With(query)
+            .FirstOrDefaultAsync(ct);
+}
+\end{minted}
+
+\index{SpeakerType@\code{SpeakerType}!exists only to be a node}%
+\code{Speaker} has never needed a type class, and now it does. The whole of
+\code{SpeakerType.cs} is the node resolver, and it borrows
+chapter~\ref{ch:data-without-n-plus-1}'s DataLoader rather than writing a
+query of its own:
+
+\begin{minted}{csharp}
+namespace Sessions;
+
+[ObjectType<Speaker>]
+public static partial class SpeakerType
+{
+    /// <summary>
+    /// Loads one speaker by the identifier inside a global node id.
+    /// </summary>
+    [NodeResolver]
+    public static async Task<Speaker?> GetSpeakerAsync(
+        int id,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+        => await speakerById.LoadAsync(id, ct);
+}
+\end{minted}
+
+\index{node resolver!takes the decoded key}%
+Both take a plain \code{int}. The decoding happens before the method is
+entered, so what arrives is the key that came out of the string, and the
+resolver never sees an id it has to parse. That is why neither method carries
+an \code{[ID]} attribute: attaching the node resolver is what declares the
+type a node, and being a node is what rewrites the id field.
+
+\index{schema!what a node resolver generates}%
+Nothing else changed, and the exported schema gained all of this. As in
+chapter~\ref{ch:data-without-n-plus-1}, the descriptions and the \code{@cost}
+directives the export writes are dropped here and the unchanged fields of the
+two types are elided, because the shape is what the section is about:
+
+\begin{graphqlsdl}
+type Query {
+  node(id: ID!): Node
+  nodes(ids: [ID!]!): [Node]!
+  ...
+}
+
+interface Node {
+  id: ID!
+}
+
+type Session implements Node {
+  id: ID!
+  ...
+}
+
+type Speaker implements Node {
+  id: ID!
+  ...
+}
+\end{graphqlsdl}
+
+\index{Node@\code{Node}!the book's first interface}%
+That is the book's first interface, and nothing in this chapter asked for one.
+An interface is a promise that every type implementing it carries those
+fields, and the only reason \code{node} can exist is that \code{Node} makes
+the promise: a field returning an interface is a field whose concrete type the
+client discovers at run time, which is why every query against \code{node}
+carries either \code{\_\_typename} or an inline fragment.
+
+\index{nodes@\code{nodes}!is Hot Chocolate's own}%
+\code{nodes} is Hot Chocolate's, not the specification's. The specification
+describes plural identifying root fields in general and names none of them, so
+the field is a convention with a good reason and not a requirement.
+
+\index{node id!what it decodes to}%
+Send the paged query and read the identifiers instead of the names.
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:5001
+Content-Type: application/json
+
+{"query":"{ sessions(first: 10) { nodes { id speaker { id } } } }"}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"sessions":{"nodes":[
+  {"id":"U2Vzc2lvbjox","speaker":{"id":"U3BlYWtlcjox"}},
+  {"id":"U2Vzc2lvbjoy","speaker":{"id":"U3BlYWtlcjox"}},
+  {"id":"U2Vzc2lvbjoz","speaker":{"id":"U3BlYWtlcjoy"}},
+  {"id":"U2Vzc2lvbjo0","speaker":{"id":"U3BlYWtlcjoz"}}]}}}
+\end{minted}
+
+Decode the first two:
+
+\begin{minted}{text}
+U2Vzc2lvbjox  ->  Session:1
+U3BlYWtlcjox  ->  Speaker:1
+\end{minted}
+
+\index{node id!format}%
+The type name, a colon, the key, and nothing else. No length prefix, no
+version byte, no signature. Both objects are still row one of their table and
+the string now says which table, which is the entire fix and the reason
+section~\ref{sec:ch04-the-schema-is-the-version}'s collision cannot recur.
+
+\index{statement count!node field}%
+One \code{node} costs one statement, and the projection still applies, because
+that resolver took a \code{QueryContext<Session>} like every other query in
+chapter~\ref{ch:data-without-n-plus-1}. Ask \code{node} for a title and SQLite
+is asked for two columns.
+
+\begin{minted}{text}
+-- statement 1
+SELECT "s"."Id", "s"."Title"
+FROM "Sessions" AS "s"
+WHERE "s"."Id" = @id
+LIMIT 1
+\end{minted}
+
+\index{nodes@\code{nodes}!batches nothing}%
+\code{nodes} costs one statement per id. Two ids of two types cost two
+statements, and so do two ids that are both sessions, which one query could
+obviously have fetched together. The field takes a list and resolves it one
+element at a time, which is the shape
+chapter~\ref{ch:data-without-n-plus-1} named and did not fix here. A node
+resolver that goes through a DataLoader gets the batching anyway, which is
+what \code{SpeakerType} above quietly has and \code{SessionType} does not.
+
+\subsection{Three Ways to Get an Id Wrong}
+
+\index{node id!malformed}%
+A string that is not a node id at all answers 200, resolves the field to null,
+and reports an error carrying back what you sent:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"errors":[{"message":"The node ID string has an invalid format.",
+"path":["node"],"extensions":{"originalValue":"not-an-id"}}],
+"data":{"node":null}}
+\end{minted}
+
+\index{node id!rejected at coercion}%
+The second is a bad id that never reaches execution at all.
+Section~\ref{sec:ch04-a-mutation-that-can-fail}'s mutation takes its session
+as an \code{ID!} inside an input type, and the string \code{2} is a perfectly
+legal \code{ID} that is not a node id. It answers 400, with no \code{data} key
+anywhere in the response:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"errors":[{"message":"The node ID string has an invalid format.",
+"extensions":{"originalValue":"2"}}]}
+\end{minted}
+
+Same message, same complaint, two different stages, two different statuses.
+An argument on a root field is coerced as the field executes; a variable
+feeding an input object is coerced before the operation runs at all. Worth
+knowing before you write the client code that has to tell a user what went
+wrong.
+
+\index{node id!wrong type resolves silently}%
+The third case is the one to actually worry about, because nothing fails.
+Feed \code{node} a well-formed speaker id under a fragment expecting a
+session. The operation:
+
+\begin{minted}{graphql}
+query N($id: ID!) {
+  node(id: $id) {
+    __typename
+    ... on Session { title }
+  }
+}
+\end{minted}
+
+sent with \code{\{"id": "U3BlYWtlcjox"\}} as its variables, which is speaker~1:
+
+\begin{minted}{text}
+{"data":{"node":{"__typename":"Speaker"}}}
+\end{minted}
+
+Status 200, no error key, and an object with none of the fields that were
+asked for. The fragment did not match, so it contributed nothing, and that is
+correct behavior rather than a defect: \code{node} promised a \code{Node} and
+delivered one. It is also exactly what a mixed-up id looks like from the
+client, which is why \code{\_\_typename} belongs in the query and not only in
+the debugging session that follows.
+
+\subsection{Retiring the Field This Replaces}
+
+\index{deprecation!as the only removal mechanism}%
+\code{sessionById} is now redundant, and removing it is not available. Deleting
+a field from a schema breaks every client still asking for it, on the
+deployment, with no warning and no migration window. What the specification
+gives instead is a marker, and \code{Query.cs} is where it goes.
+
+\begin{minted}[highlightlines={23-25}]{csharp}
+using GreenDonut.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+[QueryType]
+public static class Query
+{
+    /// <summary>
+    /// Sessions on the schedule, earliest first.
+    /// </summary>
+    [UsePaging(DefaultPageSize = 2, MaxPageSize = 10)]
+    public static IQueryable<Session> GetSessions(
+        ConferenceContext db,
+        QueryContext<Session> query)
+        => db.Sessions
+            .OrderBy(s => s.StartsAt)
+            .With(query);
+
+    /// <summary>
+    /// One session by its identifier, or null if no session has it.
+    /// </summary>
+    [GraphQLDeprecated(
+        "Ask for `node(id:)` instead. This field takes the database "
+        + "key, which is only unique among sessions.")]
+    public static async Task<Session?> GetSessionByIdAsync(
+        int id,
+        ConferenceContext db,
+        QueryContext<Session> query,
+        CancellationToken ct)
+        => await db.Sessions
+            .Where(s => s.Id == id)
+            .With(query)
+            .FirstOrDefaultAsync(ct);
+}
+\end{minted}
+
+\index{deprecated@\code{@deprecated}!is advisory}%
+The field keeps working. Ask for it and it answers 200 with the session, and
+the specification is explicit that this is the
+point~\autocite{graphqlspec2025}:
+
+\begin{quote}
+It is still legal to include these fields in a selection set (to ensure
+existing clients are not broken by the change), but the fields should be
+appropriately treated in documentation and tooling.
+\end{quote}
+
+\index{introspection!hides deprecated fields by default}%
+Tooling is where the change lands. Introspect the \code{Query} type and
+\code{sessionById} is not in the list; ask again with
+\code{fields(includeDeprecated: true)} and it appears, with
+\code{isDeprecated} true and the reason string attached. That is what makes an
+editor stop offering the field, a schema check flag a new query against it, and
+a code generator emit a warning. Nothing stops the request.
+
+\index{deprecation!reason is the whole message}%
+So the reason string is the entire user interface of the deprecation. It is
+the only sentence the person removing the field will ever be shown, and
+\enquote{deprecated} tells them nothing they did not already know. Name the
+replacement. That is my rule rather than anybody's requirement, and it comes
+from the number of reasons I have read that said \enquote{use the new one}.
+
+\index{deprecation!not on a required argument}%
+One place it will not go. The specification bars the directive from a required
+argument, meaning one that is non-null with no
+default~\autocite{graphqlspec2025}:
+
+\begin{quote}
+The \code{@deprecated} directive must not appear on required (non-null without
+a default) arguments or input object field definitions. [\ldots] To deprecate a
+required argument or input field, it must first be made optional by either
+changing the type to nullable or adding a default value.
+\end{quote}
+
+\index{schema build!refuses an illegal deprecation}%
+Hot Chocolate enforces it, and the failure is a good one. Put the attribute on
+the \code{id} parameter of \code{sessionById}, which is an \code{Int!} with no
+default, and the schema fails to build: a \code{SchemaException} naming the
+argument, and a service that does not start. Not at run time on the first
+request that happens to use it. The reasoning is worth carrying: a client
+that omits an optional argument has taken your advice, and a client that omits
+a required one has sent an invalid query, so deprecating a required argument
+advises nobody of anything.
+
+\begin{onhc14}
+\code{AddGlobalObjectIdentification}, \code{[NodeResolver]} and
+\code{[GraphQLDeprecated]} all exist on Hot Chocolate~14 and produce the same
+\code{node} and \code{nodes} fields, the same \code{Node} interface and the
+same \code{@deprecated}. The refusal to deprecate a required argument is
+identical too, down to the wording of the message.
+
+One line of this section's \code{SessionType.cs} does not compile there. The
+node resolver takes a \code{QueryContext<Session>}, and 14 has no
+\code{IQueryable} overload of \code{With} to apply it, which is the same gap
+chapter~\ref{ch:data-without-n-plus-1}'s callout described. Drop the parameter
+and the \code{.With(query)} line, and the resolver selects every column
+instead of the two the client asked for. The statement count is unchanged.
+
+The difference worth planning around is one that is not there.
+\code{U2Vzc2lvbjox} is what 14 produces and it is what 16 produces, byte for
+byte, for the same entity, so a client holding cached global ids keeps them
+across the upgrade. That is not something you can assume of an id format in
+general.
+
+Two things do differ in what comes back, and neither is chapter~4's doing. On
+14 the malformed-id error above carries an extra \code{locations} entry. And
+the exported schema names a different specification URL for \code{DateTime}
+and begins with a byte order mark, both of which
+chapter~\ref{ch:hot-chocolate-zero} already met.
+Appendix~\ref{app:hc14} carries the full mapping.
+\end{onhc14}
