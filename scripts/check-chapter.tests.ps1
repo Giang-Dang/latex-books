@@ -203,6 +203,15 @@ $Expected = @(
     "chapters/01-triggers/14-minted-alias.tex:9: [minted-alias] 'fixturesdl' is an environment this book declares with \newminted, not a Pygments lexer; write \begin{fixturesdl} instead"
     "chapters/01-triggers/14-minted-alias.tex:15: [minted-alias] 'fixturesdl' is an environment this book declares with \newminted, not a Pygments lexer; write \begin{fixturesdl} instead"
     "chapters/01-triggers/14-minted-alias.tex:20: [minted-alias] 'fixturesdl' is an environment this book declares with \newminted, not a Pygments lexer; write \begin{fixturesdl} instead"
+    # Both halves of one hand-wrapped response: the line that opens the string
+    # and the line that closes it, because each leaves a string open at its own
+    # end. Everything else in that file is a negative case and a regression
+    # there adds a line rather than taking one away - a config fragment that
+    # never parses on its own, an elision, a value carrying escaped quotes and
+    # a trailing escaped backslash, and the same defect in a text listing,
+    # which is not an environment this book nominated as holding JSON.
+    "chapters/01-triggers/15-json.tex:9: [json] a JSON string opens on this line and does not close on it; a raw newline inside a string is invalid JSON, so break between tokens instead, or let the listing wrap on its own"
+    "chapters/01-triggers/15-json.tex:10: [json] a JSON string opens on this line and does not close on it; a raw newline inside a string is invalid JSON, so break between tokens instead, or let the listing wrap on its own"
     "chapters/01-triggers/nested/01-nested.tex:4: [dash] en/em dash ligature in prose; reword or use ASCII punctuation"
     # The gloss family runs as its own pass after the line-at-a-time loop, so
     # its findings arrive together and sorted by file and line rather than
@@ -229,6 +238,15 @@ $Expected = @(
     # dash check in the first place, so a node-text pass that read paths would
     # report every segment and the exclusion would have bought nothing.
     "figures/tikz/12-reserved-key.tex:32: [tikz-dash] en/em dash ligature in node text; figure sources sit outside the prose dash check, so this is the only pass that reads them"
+    # Line 38 is the case a line-at-a-time scan cannot see: the \node on one
+    # line and its braced text on the next, which is how every label long
+    # enough to want an en dash is actually written, and which is why this
+    # family missed two real dashes in a drafted book until the scan was made
+    # file-scoped. Line 42 is the other half of the same rewrite: the label
+    # carries braces of its own and the dash is past them, so the non-greedy
+    # group the old version used stopped short and never read it.
+    "figures/tikz/12-reserved-key.tex:38: [tikz-dash] en/em dash ligature in node text; figure sources sit outside the prose dash check, so this is the only pass that reads them"
+    "figures/tikz/12-reserved-key.tex:42: [tikz-dash] en/em dash ligature in node text; figure sources sit outside the prose dash check, so this is the only pass that reads them"
     "build/main.log: [log] 1 Overfull box(es); locate with: grep -A3 Overfull build/main.log"
     "build/main.log: [log] 1 line(s) mentioning undefined references or citations"
 )
@@ -254,7 +272,7 @@ if (Compare-Findings 'fixture-book with every check on' $Expected $actual) {
 # letters of any script pass, spelling has no variety to enforce, whether
 # contractions belong in the voice is left to the book, and no column budget has
 # been declared, so the listing-width check does not run either.
-$DefaultIds = @('cite-key', 'dash', 'index-pct', 'log', 'number', 'quote', 'tikz', 'tilde-cite', 'verbatim')
+$DefaultIds = @('cite-key', 'dash', 'index-pct', 'json', 'log', 'number', 'quote', 'tikz', 'tikz-dash', 'tilde-cite', 'verbatim')
 $defaultIds = Get-FindingIds (Invoke-BookFixture -NoPolicy)
 if (($defaultIds -join ',') -ne ($DefaultIds -join ',')) {
     Write-Fail 'the library defaults are not the expected reduced set'
@@ -323,7 +341,9 @@ $WiringCases = @(
     @{ Name = 'Paths.Prose';  Override = @{ Paths = '@{ Prose = @() }' }
        Silences = @('tilde-cite', 'cite-key', 'quote', 'index-pct', 'contraction',
                     'spelling', 'dash', 'number', 'verbatim', 'listing', 'minted-alias',
-                    'gloss-borrowed', 'gloss-missing', 'gloss-orphan', 'gloss-repeat') }
+                    'json', 'gloss-borrowed', 'gloss-missing', 'gloss-orphan', 'gloss-repeat') }
+    @{ Name = 'Json';         Override = @{ Json = '@{ Enabled = $false }' };            Silences = @('json') }
+    @{ Name = 'Json.Envs';    Override = @{ Json = '@{ Environments = @() }' };          Silences = @('json') }
 )
 
 $baselineIds = Get-FindingIds $actual

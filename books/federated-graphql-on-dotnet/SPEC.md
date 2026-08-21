@@ -353,6 +353,18 @@ Status values: not-started / outlined / drafted / reviewed / final.
 
 Library-wide defaults are in AGENTS.md; these are this book's additions.
 
+- **JSON listings are not checked in this book, and seven of them are wrong.**
+  `check-chapter.psd1` sets `Json.Enabled = $false`. The library's default
+  reports a JSON string that opens on one line and does not close on it, which
+  is invalid JSON: a raw newline inside a string is not legal, so the listing
+  cannot be typed out. Seven captured responses here are wrapped that way, one
+  in chapter 5 and six in chapter 15, and every one of those blocks already
+  carries `breaklines`, so the wrapping was never needed. They are not being
+  fixed because this book is left exactly as it is, which is the standing
+  decision in `books/splitting-the-graph/SPEC.md`, row 2 of its log. Recorded
+  here rather than only in the psd1 so that the waiver is a known defect
+  instead of a setting nobody can account for. Take the setting out if this
+  book is ever reopened; the first run without it names all seven sites.
 - Every hands-on chapter includes a "verify it in Postman" step.
 - Internals claims are pinned: name the HotChocolate 16.x source tag or Cosmo
   release a walkthrough was checked against.

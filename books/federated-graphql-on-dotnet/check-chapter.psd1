@@ -30,6 +30,26 @@
         AllowInCapturedListings = @('minted:text')
     }
 
+    # Off, and this one is a waiver rather than a preference.
+    #
+    # Seven captured responses in this book are wrapped by hand with the break
+    # landing inside a "message" string, which is invalid JSON: a raw newline
+    # inside a string is not legal, so those seven listings cannot be typed out
+    # by a reader. They are in chapter 5 (one) and chapter 15 (six), and every
+    # one of the blocks already carries `breaklines`, so minted would have
+    # wrapped a single long line without being asked.
+    #
+    # The fix is therefore small and known. It is not being made here: this
+    # book is left exactly as it is, which is the standing decision recorded in
+    # books/splitting-the-graph/SPEC.md, row 2 of its decision log. Turning the
+    # family off for this book keeps that promise and keeps every other book,
+    # and every new book, checked. Take this setting out if the book is ever
+    # reopened; the seven sites are the ones the family reports on the first
+    # run without it.
+    Json = @{
+        Enabled = $false
+    }
+
     # No contractions in the author's own voice; they appear only inside quoted
     # material, which the check already exempts because \enquote{} spans are
     # masked before it runs. Off by default across the library, because whether
