@@ -1,0 +1,86 @@
+\section{What One Query Costs}
+\label{sec:ch03-what-one-query-costs}
+
+\index{statement count!single service}%
+Delete the database file, start the service, and send one request. One request,
+because the counter runs from the moment the process starts and never resets,
+so the last number printed is what that request cost.
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:5001
+Content-Type: application/json
+
+{"query":"{ sessions { title speaker { name } } }"}
+\end{minted}
+
+The answer is the one chapter~\ref{ch:hot-chocolate-zero} got. The console is
+where the new information is.
+
+\begin{minted}[fontsize=\footnotesize, breakanywhere]{text}
+-- statement 1
+SELECT "s"."Id", "s"."Abstract", "s"."DurationMinutes", "s"."SpeakerId", "s"."StartsAt", "s"."Title"
+FROM "Sessions" AS "s"
+ORDER BY "s"."StartsAt"
+-- statement 2
+SELECT "s"."Id", "s"."Bio", "s"."Name"
+FROM "Speakers" AS "s"
+WHERE "s"."Id" = @session_SpeakerId
+LIMIT 1
+-- statement 3
+SELECT "s"."Id", "s"."Bio", "s"."Name"
+FROM "Speakers" AS "s"
+WHERE "s"."Id" = @session_SpeakerId
+LIMIT 1
+-- statement 4
+SELECT "s"."Id", "s"."Bio", "s"."Name"
+FROM "Speakers" AS "s"
+WHERE "s"."Id" = @session_SpeakerId
+LIMIT 1
+-- statement 5
+SELECT "s"."Id", "s"."Bio", "s"."Name"
+FROM "Speakers" AS "s"
+WHERE "s"."Id" = @session_SpeakerId
+LIMIT 1
+\end{minted}
+
+\index{N+1@N+1!the shape of it}%
+Five statements for four sessions. One to get the list, then one per session,
+and statements two through five are identical to each other in every character
+including the parameter name. That is the shape the chapter is named after:
+one query for the collection, N for the rows in it, and the N is not a constant
+you can look up. It is however many sessions the conference has. Four here.
+Four hundred on a schedule anyone would pay to attend.
+
+\index{Ada Fischer!gives two sessions}%
+One of those four is pure waste. Ada Fischer gives the first two sessions on
+the schedule, so statements two and three ask SQLite for the same row and get
+the same answer back. The resolver has no way to know that. It is called with
+one \code{Session} and returns one \code{Speaker}, and by the time it runs, the
+list it belongs to is not something it can see.
+
+\index{ordering!done in SQL}%
+The good news is in statement one. \code{ORDER BY "s"."StartsAt"} means the
+sort is happening in SQLite rather than in your process, which is the value
+converter from section~\ref{sec:ch03-the-conference-in-sqlite} paying for
+itself. Ask a database to sort and it sorts; ask it for everything and sort
+afterwards and you have moved the whole table across a process boundary to
+put four rows in order.
+
+\index{statement count!with no nested field}%
+One more measurement before the fix, because it isolates the cost. Restart, and
+ask for the sessions without their speakers:
+
+\begin{minted}{text}
+{"query":"{ sessions { title } }"}
+\end{minted}
+
+That is one statement. Not five, not two: the speaker resolver is never called,
+so it never asks. The extra four in the previous run were not the price of
+loading the conference. They were the price of one field, and a client that
+adds \code{speaker \{ name \}} to an existing query has quintupled the cost of
+that query without touching your code or your schema.
+
+In a controller you would have written that query yourself and seen what it
+cost. In a graph the client writes it, you never see it, and the only thing you
+control is what a single field costs when somebody asks for it.

@@ -1,0 +1,308 @@
+\section{Asking for Less}
+\label{sec:ch03-asking-for-less}
+
+\index{projection!columns nobody asked for}%
+Read statement one again. The client asked for \code{title} and the speaker's
+\code{name}; SQLite was asked for six columns, including an abstract that can
+run to a paragraph. Statement count was the interesting number because it grows
+with the list. Column count does not grow, which is why it is second, but it is
+paid on every row of every request forever.
+
+\index{QueryContext@\code{QueryContext<T>}}%
+The fix is a parameter. \code{QueryContext<Session>} is Hot Chocolate handing
+the resolver the client's selection set in a form \code{IQueryable} understands,
+and \code{With} applies it:
+
+\begin{minted}[highlightlines={1,14,18,27,29}]{csharp}
+using GreenDonut.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+[QueryType]
+public static class Query
+{
+    /// <summary>
+    /// Every session on the schedule, earliest first.
+    /// </summary>
+    public static async Task<List<Session>> GetSessionsAsync(
+        ConferenceContext db,
+        QueryContext<Session> query,
+        CancellationToken ct)
+        => await db.Sessions
+            .OrderBy(s => s.StartsAt)
+            .With(query)
+            .ToListAsync(ct);
+
+    /// <summary>
+    /// One session by its identifier, or null if no session has it.
+    /// </summary>
+    public static async Task<Session?> GetSessionByIdAsync(
+        int id,
+        ConferenceContext db,
+        QueryContext<Session> query,
+        CancellationToken ct)
+        => await db.Sessions
+            .Where(s => s.Id == id)
+            .With(query)
+            .FirstOrDefaultAsync(ct);
+}
+\end{minted}
+
+Both fields take the parameter, and \code{GetSessionByIdAsync} had to be
+rewritten to get it: a \code{QueryContext} applies to a query, so the
+predicate moves out of \code{FirstOrDefaultAsync} into a \code{Where} and the
+projection goes between them. That matters more than it looks, and
+this section comes back to it.
+
+\code{AddQueryContext} in \code{Program.cs} is what makes that parameter
+resolvable, which is why it was there in
+section~\ref{sec:ch03-the-conference-in-sqlite}. The order of the two calls
+before \code{ToListAsync} matters and the failure is unpleasant: \code{With}
+appends a \code{Select} that rebuilds each \code{Session} from the fields that
+were asked for, so sorting after it sorts by a property of a half-built object
+and EF Core gives up, quoting back a constructor call you never wrote. Sort
+first, then project.
+
+\index{Session@\code{Session}!is a positional record}%
+There is an older attribute for this, \code{[UseProjection]}, and it cannot be
+used in this book at all. Its provider builds the projected row with
+\code{Expression.New} followed by member assignment, so it needs a type with a
+parameterless constructor and settable properties. \code{Session} is a
+positional record, and every request against a field wearing that attribute
+fails at run time with \code{Type 'Session' does not have a default
+constructor}. Not at build time, and not at schema build: on the first request.
+The attribute has behaved this way for as long as this book's two versions have
+existed, so it is a property of how it projects rather than something to wait
+out. If you are reading a tutorial that uses it, this is why it is not here.
+
+Send the request again and statement one has shrunk:
+
+\begin{minted}{text}
+-- statement 1
+SELECT "s"."Title"
+FROM "Sessions" AS "s"
+ORDER BY "s"."StartsAt"
+\end{minted}
+
+\index{projection!starves a resolver|(}%
+And every session's speaker is now \code{null}. The server sends this on one
+line; it is broken across four here to fit the measure, and nothing else about
+it is changed.
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"sessions":[
+  {"title":"Schemas That Outlive Their Authors","speaker":null},
+  {"title":"Reading a Query Plan","speaker":null},
+  {"title":"Paging Without Offsets","speaker":null},
+  {"title":"The Bank That Split Its Graph","speaker":null}]}}
+\end{minted}
+
+Status 200. No error key. Nothing in the log, nothing on the console, and a
+response that is the right shape and wrong. This is the worst failure in the
+chapter and an optimization that worked introduced it.
+
+\index{Parent@\code{[Parent]}!declaring what a resolver reads}%
+The cause is in statement two, which asked for one key rather than three.
+\code{SpeakerId} is not in the client's selection set, because
+\code{[GraphQLIgnore]} keeps it out of the schema entirely, so the projection
+did not select it, so every \code{Session} the resolver received had
+\code{SpeakerId} left at its default of zero, and no speaker has id zero. The
+projection knows what the client asked for. It does not know what your
+resolvers read.
+
+So tell it. \code{[Parent]} takes an argument for exactly this:
+
+\begin{minted}[highlightlines={10}]{csharp}
+namespace Sessions;
+
+[ObjectType<Session>]
+public static partial class SessionType
+{
+    /// <summary>
+    /// The person giving this session.
+    /// </summary>
+    public static async Task<Speaker?> GetSpeakerAsync(
+        [Parent(nameof(Session.SpeakerId))] Session session,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+        => await speakerById.LoadAsync(session.SpeakerId, ct);
+}
+\end{minted}
+
+\begin{minted}{text}
+-- statement 1
+SELECT "s"."Title", "s"."SpeakerId"
+FROM "Sessions" AS "s"
+ORDER BY "s"."StartsAt"
+\end{minted}
+
+Four columns saved, correct answers, still two statements.
+
+\index{projection!starves a resolver|)}%
+The rule to take away is a dependency rule, not a syntax one. A projection
+narrows the parent to what the client named, and a resolver that reads anything
+else has to declare it or it will read a default. I would rather this failed
+loudly, and it does not, so treat \code{[Parent(...)]} as part of writing any
+resolver that touches the parent's data.
+
+\index{projection!blast radius}%
+Note also which field broke. \code{sessionById} was starved in exactly the same
+way and for the same reason, because it took a \code{QueryContext} of its own
+in the listing above. The defect follows the projection rather than the field,
+so adding one to a query is a change to every resolver on the type it returns,
+including ones somebody else wrote.
+
+\index{paging!cursor}%
+Paging is the last of the three, and after the first two it is almost dull.
+\code{sessions} returns every row in the table and always has. One attribute
+changes that, and it also changes the shape of the field, so it is the largest
+edit in the chapter and the smallest amount of new code:
+
+\begin{minted}[highlightlines={10,12-13,15-17}]{csharp}
+using GreenDonut.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+[QueryType]
+public static class Query
+{
+    /// <summary>
+    /// Sessions on the schedule, earliest first.
+    /// </summary>
+    [UsePaging(DefaultPageSize = 2, MaxPageSize = 10)]
+    public static IQueryable<Session> GetSessions(
+        ConferenceContext db,
+        QueryContext<Session> query)
+        => db.Sessions
+            .OrderBy(s => s.StartsAt)
+            .With(query);
+
+    /// <summary>
+    /// One session by its identifier, or null if no session has it.
+    /// </summary>
+    public static async Task<Session?> GetSessionByIdAsync(
+        int id,
+        ConferenceContext db,
+        QueryContext<Session> query,
+        CancellationToken ct)
+        => await db.Sessions
+            .Where(s => s.Id == id)
+            .With(query)
+            .FirstOrDefaultAsync(ct);
+}
+\end{minted}
+
+\index{IQueryable@\code{IQueryable}!returned unexecuted}%
+The method now returns the query rather than its results, unexecuted and not
+awaited, because the paging middleware has to add the slice before anybody runs
+it. Losing the \code{async} and the \code{CancellationToken} is part of that:
+the middleware awaits on your behalf. \code{GetSessionByIdAsync} keeps both,
+because nothing was added to it.
+
+The summary line changed too, from \enquote{Every session on the schedule} to
+\enquote{Sessions on the schedule}, and that is not tidying. It is now a lie if
+it says every: the field returns a page. A doc comment on a resolver is a
+schema description, so this one is API copy, and
+chapter~\ref{ch:hot-chocolate-zero} is where that stopped being surprising.
+
+A default page of two is absurd for a real service and useful for a book with
+four sessions in it, since it makes the second page exist.
+
+The schema gains the Relay shape, named after the field. The exported file
+carries a description on every field and argument below, plus the
+\code{@listSize} and \code{@cost} directives on \code{sessions}; the
+definitions are quoted here without them, because the shape is the point and
+chapter~\ref{ch:hot-chocolate-zero} already showed what the descriptions look
+like.
+
+\begin{graphqlsdl}
+sessions(
+  first: Int
+  after: String
+  last: Int
+  before: String
+): SessionsConnection
+
+type SessionsConnection {
+  pageInfo: PageInfo!
+  edges: [SessionsEdge!]
+  nodes: [Session!]
+}
+
+type SessionsEdge {
+  cursor: String!
+  node: Session!
+}
+\end{graphqlsdl}
+
+\index{breaking change!introduced by paging}%
+Every query written against this service before now is broken. \code{sessions
+\{ title \}} is no longer legal, because \code{sessions} is not a list any
+more, and the replacement is \code{sessions \{ nodes \{ title \} \}}. That is
+fine here, where the only client is you and the only history is two chapters.
+It is the single most expensive kind of change to make once the graph is
+federated and other teams' clients are on it, and
+chapter~\ref{ch:breaking-changes} is about catching exactly this before it
+ships rather than after.
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:5001
+Content-Type: application/json
+
+{"query":"{ sessions { nodes { title } pageInfo { hasNextPage } } }"}
+\end{minted}
+
+Two sessions come back and \code{hasNextPage} is true, because no \code{first}
+was given and \code{DefaultPageSize} decided.
+
+\begin{minted}{text}
+-- statement 1
+SELECT "s"."Title"
+FROM "Sessions" AS "s"
+ORDER BY "s"."StartsAt"
+LIMIT @p
+\end{minted}
+
+One column this time, because nothing asked for a speaker and so nothing
+needed \code{SpeakerId}. The projection and the page compose without knowing
+about each other.
+
+\index{paging!LIMIT pushed into SQL}%
+\code{LIMIT} is in the statement, which is the thing to check and the thing
+that is easy to get wrong. Paging that happens after the rows arrive has read
+the whole table to show you two rows of it, and it looks identical from
+outside. The way to know is to read the statement.
+
+\begin{onhc14}
+All of this chapter compiles unchanged on Hot Chocolate~14 except the
+projection. \code{[DataLoader]} is there, the generated
+\code{ISpeakerByIdDataLoader} is there and registered the same unasked way,
+\code{[UsePaging]} produces the same \code{SessionsConnection}, and even
+\code{[Parent(nameof(Session.SpeakerId))]} compiles.
+
+\code{QueryContext<Session>} also resolves, which makes the failure confusing.
+What is missing is the \code{IQueryable} overload of \code{With}, so the
+compiler reports the only overload it can see, which takes a DataLoader:
+
+\begin{minted}[fontsize=\footnotesize, breakanywhere]{text}
+error CS0411: The type arguments for method
+'GreenDonutQueryContextDataLoaderExtensions.With<TKey, TValue>(
+IDataLoader<TKey, TValue>, QueryContext<TValue>?)' cannot be inferred from
+the usage. Try specifying the type arguments explicitly.
+\end{minted}
+
+So on 14 the sessions query selects every column and the rest of the chapter
+stands. The counts are the ones this chapter ends on: two statements for a page
+of sessions with their speakers, one without. Batching is not among the things
+you are missing.
+
+Two further differences you will see in the log belong to Entity Framework
+Core rather than to Hot Chocolate, and only appear because 14 does not target
+.NET~10 and so runs an older EF Core. Parameters are named \code{@\_\_p\_0}
+and \code{@\_\_ids\_0} rather than \code{@p} and \code{@ids1}, and the
+DataLoader's key list arrives as a \code{json\_each} subquery rather than a
+plain \code{IN} list. Appendix~\ref{app:hc14} carries the full mapping.
+\end{onhc14}

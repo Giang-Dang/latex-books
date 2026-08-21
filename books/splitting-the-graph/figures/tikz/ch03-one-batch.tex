@@ -1,0 +1,71 @@
+% Four conference sessions, each with a speaker, resolved two ways: once a
+% resolver at a time, once behind a batching data loader.
+%
+% Same idiom as figures/tikz/ch01-one-field.tex and ch02-two-requests.tex:
+% each lane is a timeline read left to right, ticks mark stages, and a brace
+% under the stages that matter carries a one-line label. Lane A and lane B
+% share the same sessions resolver and the same first statement to SQLite,
+% so those sit at the same x in both lanes; only what happens after that
+% diverges. Lane A repeats the speaker resolver, and a database statement,
+% once per session, drawn as four separate ticks rather than an ellipsis, so
+% the interleaving with SQLite reads on the page. Lane B calls the speaker
+% resolver the same four times but only records a key each time; a dashed
+% boundary marks where the engine stops asking, then one statement carries
+% the whole batch. Four sessions have three distinct speakers, so the batch
+% carries three keys, not four; the duplicate collapses before it reaches
+% SQLite.
+%
+% Bare tikzpicture (house style): the figure environment, caption and label
+% live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  axis/.style={draw, line width=0.4pt, -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  tick/.style={draw, line width=0.4pt},
+  event/.style={anchor=south, align=center, text width=22mm, inner sep=1pt},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  lane/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+  boundary/.style={draw, line width=0.4pt, dashed},
+]
+
+% ------------------------------------------------------------------- lane A
+\node[lane] at (0,13) {A. one resolver call per session, each reaching SQLite};
+
+\draw[axis] (0,0) -- (150,0);
+\foreach \x in {15,40,60,80,100,135}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+
+\node[event, text width=24mm] at (15,3)  {sessions resolver:\\stmt 1, 4 sessions};
+\node[event, text width=16mm] at (40,3)  {session 1\\stmt 2};
+\node[event, text width=16mm] at (60,3)  {session 2\\stmt 3};
+\node[event, text width=16mm] at (80,3)  {session 3\\stmt 4};
+\node[event, text width=16mm] at (100,3) {session 4\\stmt 5};
+\node[event, text width=20mm] at (135,3) {response\\assembled};
+
+\draw[span] (32,-4) -- (32,-7) -- (108,-7) -- (108,-4);
+\node[spanlabel] at (70,-8) {speaker resolver, once per session:\\statements 2 to 5};
+
+% ------------------------------------------------------------------- lane B
+\begin{scope}[shift={(0,-46)}]
+  \node[lane] at (0,13) {B. the same four calls, one batched statement};
+
+  \draw[axis] (0,0) -- (150,0);
+  \foreach \x in {15,108,135}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+  \foreach \x in {40,46,52,58}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+  \draw[boundary] (84,-3) -- (84,6);
+
+  \node[event, text width=24mm] at (15,3)  {sessions resolver:\\stmt 1, 4 sessions};
+  \node[event, text width=32mm] at (49,3)  {speaker resolver x4:\\records key, no query};
+  \node[event, text width=22mm] at (108,3) {one statement:\\3 distinct keys};
+  \node[event, text width=27mm] at (134,3) {promises completed:\\response assembled};
+
+  \draw[span] (36,-4) -- (36,-7) -- (62,-7) -- (62,-4);
+  \node[spanlabel] at (49,-8) {no statement issued};
+
+  \node[spanlabel] at (84,-8) {batch boundary:\\engine stops asking};
+
+  \draw[span] (100,-4) -- (100,-7) -- (116,-7) -- (116,-4);
+  \node[spanlabel] at (108,-8) {1 statement,\\3 distinct keys};
+\end{scope}
+
+\end{tikzpicture}

@@ -1,0 +1,155 @@
+\section{The Batch That Fixes It}
+\label{sec:ch03-the-batch-that-fixes-it}
+
+\index{DataLoader!source-generated|(}%
+A DataLoader in Hot Chocolate is a method with an attribute on it. Here is the
+whole of \code{SpeakerDataLoader.cs}:
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+public static class SpeakerDataLoader
+{
+    /// <summary>
+    /// Every speaker a batch of sessions asked for, keyed by identifier.
+    /// </summary>
+    [DataLoader]
+    public static async Task<Dictionary<int, Speaker>>
+        GetSpeakerByIdAsync(
+            IReadOnlyList<int> ids,
+            ConferenceContext db,
+            CancellationToken ct)
+        => await db.Speakers
+            .Where(s => ids.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, ct);
+}
+\end{minted}
+
+\index{DataLoader!signature}%
+Every part of that signature is doing something. It takes a list of keys and
+returns a dictionary from key to value, which is how the engine hands over the
+whole batch and gets back something it can take apart again.
+\code{ConferenceContext} is an ordinary service parameter, resolved the same
+way it is on a resolver. And the method is a plain static function: it does not
+know what a session is, it is not attached to a type, and it would be just as
+happy loading speakers for something else.
+
+\index{DataLoader!generated name}%
+The name is not decoration either. Strip \code{Get} from the front and
+\code{Async} from the end of \code{GetSpeakerByIdAsync}, and what is left is
+what the generator calls the thing it writes. Below are the two declarations it
+emits, lifted out of their namespace and separated from the doc comment and the
+fetch body that sit between them in the real file:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+public interface ISpeakerByIdDataLoader
+    : global::GreenDonut.IDataLoader<int, global::Sessions.Speaker>
+{
+}
+
+public sealed partial class SpeakerByIdDataLoader
+    : global::GreenDonut.DataLoaderBase<int, global::Sessions.Speaker>
+    , ISpeakerByIdDataLoader
+\end{minted}
+
+That is the same naming rule chapter~\ref{ch:hot-chocolate-zero} met on
+\code{AddSessionsTypes}, applied to a different input, and it has the same
+consequence: the type you are about to reference does not exist until you
+build, and its name came from a method name rather than from anything you
+declared.
+
+\index{resolver!consuming a DataLoader}%
+\code{SessionType.cs} changes by one parameter and one line of body. The
+context goes, the loader arrives, and the query becomes a load:
+
+\begin{minted}[highlightlines={11,13}]{csharp}
+namespace Sessions;
+
+[ObjectType<Session>]
+public static partial class SessionType
+{
+    /// <summary>
+    /// The person giving this session.
+    /// </summary>
+    public static async Task<Speaker?> GetSpeakerAsync(
+        [Parent] Session session,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+        => await speakerById.LoadAsync(session.SpeakerId, ct);
+}
+\end{minted}
+
+\index{using directive!not needed for a DataLoader}%
+The \code{using Microsoft.EntityFrameworkCore;} at the top is gone, because
+this file no longer knows there is a database. That is worth more than it
+looks: the resolver's job is now to say which speaker it wants, and where
+speakers come from is somewhere else entirely. When
+chapter~\ref{ch:first-subgraph} turns this service into a subgraph, that
+separation is what lets the same resolver shape answer a router.
+
+\index{AddSessionsTypes@\code{AddSessionsTypes}!registers the DataLoader}%
+Now the part the documentation and the compiler disagree about.
+\code{Program.cs} does not change. The documentation says it should: it
+describes registration as declaring a module for your assembly, after which
+\enquote{the source generator then emits a registration extension method named
+after the module}~\autocite{chillicreamdataloader}, which you then call. Do
+none of that, build, and read what the generator wrote into the method
+chapter~\ref{ch:hot-chocolate-zero} already calls. Its enclosing namespace and
+class are dropped here, and three statements that did not change are replaced
+by the comments naming them:
+
+\begin{minted}[fontsize=\footnotesize, breakanywhere]{csharp}
+public static IRequestExecutorBuilder AddSessionsTypes(this IRequestExecutorBuilder builder)
+{
+    builder.AddTypeExtension(typeof(global::Sessions.Query));
+    // the SessionType descriptor registration
+    builder.AddDataLoader<global::Sessions.ISpeakerByIdDataLoader, global::Sessions.SpeakerByIdDataLoader>();
+    // the root Query type, and the Session object type
+    return builder;
+}
+\end{minted}
+
+\code{AddSessionsTypes} registered it, unasked. The attribute is the whole of
+the wiring, exactly as \code{[QueryType]} was in
+chapter~\ref{ch:hot-chocolate-zero}, and the module attribute is something you
+would need if you wanted the registrations somewhere else. I would rather find
+this out from the generated file than from a page, which is the argument for
+reading generated code at least once per library.
+
+\index{statement count!with a DataLoader}%
+Delete the database, restart, send the same request as
+section~\ref{sec:ch03-what-one-query-costs}:
+
+\begin{minted}[fontsize=\footnotesize, breakanywhere]{text}
+-- statement 1
+SELECT "s"."Id", "s"."Abstract", "s"."DurationMinutes", "s"."SpeakerId", "s"."StartsAt", "s"."Title"
+FROM "Sessions" AS "s"
+ORDER BY "s"."StartsAt"
+-- statement 2
+SELECT "s"."Id", "s"."Bio", "s"."Name"
+FROM "Speakers" AS "s"
+WHERE "s"."Id" IN (@ids1, @ids2, @ids3)
+\end{minted}
+
+\index{DataLoader!deduplicates keys}%
+Two statements instead of five, and the interesting number is not the two. It
+is the three parameters in that \code{IN} list, for four sessions. Ada Fischer
+gives two of them, both calls asked for speaker~1, and the loader asked SQLite
+once. Nothing in \code{SessionType.cs} knows that happened.
+
+\index{DataLoader!missing key resolves to null}%
+One behavior to know before you rely on it. The dictionary you return does not
+have to contain every key you were given, and a key you leave out resolves to
+null rather than to an error. That is the right default for
+\code{speaker: Speaker}, a field the schema already permits to be null. It is
+the wrong default to discover by accident on a non-null field, and
+chapter~\ref{ch:null-blast-radius} is about what happens then.
+
+The count has stopped tracking the size of the list. A longer schedule makes
+the second statement's \code{IN} list longer rather than making a third
+statement, which is the property the chapter was after and the one
+chapter~\ref{ch:router-n-plus-1} has to rebuild from scratch once the speakers
+live in another service.
+\index{DataLoader!source-generated|)}%
