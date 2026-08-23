@@ -1,0 +1,28 @@
+\begin{chaptersummary}
+  \item Your service already performs the join federation performs. The
+        difference is that three integers which lived inside one process now
+        have to be serialized, which makes them fields, which makes them part
+        of a contract two teams have to agree on. Everything in the model
+        follows from that one crossing.
+  \item A subgraph is an ordinary GraphQL service that also applies
+        \code{@link} to its schema, defines the federation directives, and
+        resolves \code{\_service} and \code{\_entities}. A supergraph is what a
+        composer makes of several of them, and it is not a document anybody
+        writes or owns. Only the first of those two words has a specification
+        behind it.
+  \item Composition and execution are different times with different failures.
+        A field that has not worked since the deployment, for anybody, is
+        composition. A field that works for some requests and not others is
+        execution. They have separate tooling and separate people to ask.
+  \item An entity is a type with a \code{@key}, and the key is a selection set
+        written as a string. Declaring it forces every subgraph that touches
+        the type to publish the key fields and to compute the same value for
+        the same object, which nothing checks. \code{\_entities} takes those
+        keys as untyped JSON and must answer in the order it was asked, because
+        position is the only thing connecting an answer to its question.
+  \item A field belongs to the subgraph that owns its data, and the composer
+        enforces that as a claim rather than a convention: two subgraphs
+        declaring one field fail composition unless both call it
+        \code{@shareable}. Global object identification has already bought this
+        book one of those, on \code{Query.node}.
+\end{chaptersummary}

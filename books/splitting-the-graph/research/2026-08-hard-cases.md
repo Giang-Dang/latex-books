@@ -84,8 +84,14 @@ has something to check against. **None has been verified for this book.**
   16 is a rewrite on the GraphQL Composite Schemas specification. This is the
   basis of SPEC decision 6.
 - Fusion 16.5 added Apollo Federation support in the gateway core.
-- Apollo Router Core and the Federation 2.x libraries are Elastic License v2.
-  Basis of SPEC decision 7.
+- Apollo Router Core is Elastic License v2. **Verified 2026-08-23** while
+  drafting chapter 5: the clause is in the router repository's own `LICENSE`
+  and forbids providing the software "to third parties as a hosted or managed
+  service". The rest of this line, that the Federation 2.x libraries are
+  Elastic as a family, is **false**: Apollo's `subgraph-js` carries an MIT
+  license of its own, and it is the router, gateway and composition tier that
+  is Elastic. SPEC decision 7 records the narrowing; nothing may print the
+  family-wide version.
 - Cosmo Router is Apache-2.0 and speaks Federation v1 and v2.
 
 ## Claims checked and found false

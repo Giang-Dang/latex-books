@@ -1,0 +1,101 @@
+\section{Who Owns a Field}
+\label{sec:ch05-who-owns-a-field}
+
+\index{ownership!the rule|(}%
+The rule is one sentence. A field belongs to the subgraph that owns the data
+behind it, and no other subgraph declares it.
+
+\index{ownership!an edge and its target are owned separately}%
+Apply it to \code{Session.speaker} and it splits in a way that is easy to get
+backwards. The field is on \code{Session}, and which speaker gives a session is
+a fact the Sessions service stores, in a column, next to the row. So Sessions
+owns \code{speaker}. What Sessions does not own is the speaker: the name, the
+biography, everything the field's type promises. Sessions declares the field,
+produces the key, and stops there. The edge and its target have different
+owners, and the seam runs between them rather than through either.
+
+\index{ownership!a subgraph contributing to a type it does not own}%
+The second arrangement is the one that makes federation more than remote
+procedure calls. The Ratings service stores nobody's sessions and nobody's
+speakers, and it is nevertheless the right place for a session's ratings to
+live. So it declares \code{Session} too, carrying the key and the two fields it
+owns:
+
+\begin{graphqlsdl}
+type Session @key(fields: "id") {
+  id: ID!
+  ratings: [Rating!]!
+  averageScore: Float
+}
+\end{graphqlsdl}
+
+\index{Session@\code{Session}!assembled from two services}%
+Compose that with the Sessions subgraph and a client sees one \code{Session}
+carrying eight fields, two of which come from a service that stores no
+sessions, and nothing in the schema says which came from where. A client asking
+for a title and an average score has asked one question of one endpoint. That
+is what the architecture is for, and it is delivered by a type appearing twice
+with different fields on it.
+
+\index{ownership!is a claim the composer enforces}%
+Which is why ownership is not a convention here. It is a claim each subgraph
+makes in its schema, and the composer checks the claims against each other
+before anything runs. Chapter~\ref{ch:do-you-need-this} argued that federation
+does not remove coordination between teams but moves it into what a program
+checks. This is that program, and these are the checks.
+
+\subsection{When Two Subgraphs Claim the Same Field}
+
+\index{shareable@\code{"@shareable}!declares a field may be duplicated}%
+Declare a field in two subgraphs and composition fails. Not with a warning, not
+with a last-one-wins: it fails, and the message names the field and every
+subgraph that declared it, and says that none of them declared it
+\code{@shareable}. The composer's position is that a field defined twice is
+either a mistake or a decision, and it declines to guess which.
+
+\index{shareable@\code{"@shareable}!is a promise about the value}%
+\code{@shareable} is how you say it was a decision. It means the field may be
+resolved by more than one subgraph and that each of them will return the same
+value for the same object, which is a promise about your data and not a
+compiler flag. Where that promise holds, the router gains a choice: it can get
+the field from whichever subgraph it was already talking to and save a hop.
+Where it does not hold, you have built a graph that returns different answers
+depending on a routing decision no client can see.
+
+\index{node@\code{node}!collides across subgraphs}%
+This book has already bought itself one of these, and the place to meet it is
+here rather than in the middle of chapter~\ref{ch:first-subgraph}.
+Chapter~\ref{ch:schema-design} turned on global object identification, which
+puts \code{node} and \code{nodes} on \code{Query}. Every subgraph in this book
+will therefore export both. Two subgraphs, two \code{Query.node} fields, and
+composition stops with exactly the error above. The fix is to declare them
+shareable in both, and the interesting part is that the promise is real: any
+subgraph handed a global node id has to answer with the same object, which is
+the promise chapter~\ref{ch:schema-design}'s id format already makes.
+
+\subsection{Moving a Field Between Owners}
+
+\index{override@\code{"@override}!moves a field}%
+Ownership changes. A field that started in the service that had the data ends
+up in the service that grew up around it, and the change has to happen without
+a coordinated deployment, because avoiding coordinated deployments is why you
+federated. \code{@override(from:)} is the mechanism: the receiving subgraph
+declares the field and names the subgraph it is taking it from, composition
+gives it the field, and the old subgraph keeps its copy until somebody deletes
+it.
+
+\index{override@\code{"@override}!two deployments, either order}%
+That ordering is the point. Both subgraphs carry the field for as long as you
+like, so the two deployments happen on two teams' calendars in either order,
+and the graph is answerable throughout. It is the same problem
+chapter~\ref{ch:schema-design} solved for a field a client depends on, one level
+up, with services in the place of clients.
+
+\index{ownership!the part no directive settles}%
+None of which decides who should own a field, and that is not an oversight in
+the specification. \code{@shareable} lets two teams both be right;
+\code{@override} lets one take a field from another; neither has an opinion
+about whether they should. Chapter~\ref{ch:ownership} is the chapter about the
+part that stays a conversation, and I put it in part~III with the failures
+rather than here with the mechanisms because that is where I think it belongs.
+\index{ownership!the rule|)}%

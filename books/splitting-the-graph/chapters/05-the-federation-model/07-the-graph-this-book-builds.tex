@@ -1,0 +1,144 @@
+\section{The Graph This Book Builds}
+\label{sec:ch05-the-graph-this-book-builds}
+
+\index{conference example!split into three|(}%
+Three services, and the split is the obvious one: whoever stores the rows owns
+the type. Sessions keeps what chapter~\ref{ch:schema-design} left it. Speakers
+takes the other table. Ratings is new, and it exists because a service that
+contributes to a type it does not own is the arrangement this model is for, and
+a two-service example never shows it.
+
+\index{Sessions subgraph!what it declares}%
+Here is the Sessions subgraph, elided as in
+chapter~\ref{ch:schema-design} down to what the seam touches. Gone from it:
+the \code{Query} and \code{Mutation} types and their fields, the paging types,
+the \code{Node} interface, and the descriptions and \code{@cost} directives the
+export writes on everything.
+
+\begin{graphqlsdl}
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.6"
+    import: ["@key", "@tag", "FieldSet"]
+  ) {
+  query: Query
+}
+
+type Session @key(fields: "id") {
+  id: ID!
+  title: String!
+  abstract: String
+  startsAt: DateTime!
+  durationMinutes: Int!
+  speaker: Speaker
+}
+
+type Speaker @key(fields: "id") {
+  id: ID!
+}
+\end{graphqlsdl}
+
+\index{link@\code{"@link}!the library writes it}%
+The header is the library's work rather than yours, and you read it once and
+then stop seeing it. It names the version of the vocabulary this document is written in, and
+it imports what the document uses. The last type in the document is the whole
+cost of the seam on this side: one field, so that the key has somewhere to
+live.
+
+\index{Speakers subgraph!what it declares}%
+The Speakers subgraph opens with the same header and declares the same type,
+and means it:
+
+\begin{graphqlsdl}
+type Speaker @key(fields: "id") {
+  id: ID!
+  name: String!
+  bio: String
+}
+\end{graphqlsdl}
+
+\index{Ratings subgraph!contributes to a type it does not own}%
+And Ratings declares a type it owns and a type it does not:
+
+\begin{graphqlsdl}
+type Rating @key(fields: "id") {
+  id: ID!
+  score: Int!
+  comment: String
+  session: Session!
+}
+
+type Session @key(fields: "id") {
+  id: ID!
+  ratings: [Rating!]!
+  averageScore: Float
+}
+\end{graphqlsdl}
+
+\index{Session@\code{Session}!declared twice}%
+\code{Session} now appears in two of the three documents and \code{Speaker} in
+two, and in each pair one declaration is the type and the other is the key. Read
+down the three and you can see the whole graph: two seams, both of them at a
+\code{@key(fields: "id")}, and Sessions sitting on both.
+
+\subsection{What the Client Gets}
+
+\index{supergraph!hides which service answered}%
+Compose the three and \code{Session} arrives as one type:
+
+\begin{graphqlsdl}
+type Session {
+  id: ID!
+  title: String!
+  abstract: String
+  startsAt: DateTime!
+  durationMinutes: Int!
+  speaker: Speaker
+  ratings: [Rating!]!
+  averageScore: Float
+}
+\end{graphqlsdl}
+
+\index{supergraph!carries no federation directives}%
+No \code{@key}. No second declaration. Nothing saying that two of those fields
+are answered by a service which has never heard of a conference schedule. The
+directives did their work at composition and are gone from what the client
+reads, which is the correct outcome and the reason
+chapter~\ref{ch:blame-routing} exists: a client that cannot see the seam cannot
+tell you which side of it went wrong.
+
+\index{seam!is a design decision, not a discovery}%
+Look at where the two seams are, because you chose them and you could have
+chosen otherwise. Sessions could have kept a speaker's name and saved a hop.
+Ratings could have been a field on the Sessions service and saved a service. In
+both cases the reason not to is the one chapter~\ref{ch:do-you-need-this}
+started with: a seam is where one team stops needing another team's permission,
+and a seam drawn anywhere else is a network call bought for nothing.
+
+\index{seam!the bill for this one}%
+The bill for this particular decomposition arrives in
+chapter~\ref{ch:cross-seam-paging}. Sorting the schedule by average score is
+an obvious thing for a client to ask and there is no service that can answer
+it: Sessions owns the ordering and knows no scores, Ratings owns the scores
+and knows no schedule, and no directive in
+section~\ref{sec:ch05-the-directives} closes that gap. I chose this example
+partly because that problem is unavoidable in it rather than contrived.
+
+\subsection{What Part II Does With It}
+
+\index{Part II!the four chapters that build this}%
+Chapter~\ref{ch:first-subgraph} turns the service you already have into the
+first of those three documents: the package, the key, the reference resolver,
+and the two fields the contract adds to \code{Query}. It ships one subgraph and
+composes nothing, because a graph of one is still a graph and it is the smallest
+thing that can be checked.
+
+Chapter~\ref{ch:composition} composes, which means meeting the composer's
+opinions about the schema you wrote, including the one
+section~\ref{sec:ch05-who-owns-a-field} promised you about \code{Query.node}.
+Chapter~\ref{ch:enter-the-router} puts a router in front and answers the first
+query that crosses a seam. Chapter~\ref{ch:second-third-subgraph} adds the other
+two services and the directives in
+section~\ref{sec:ch05-the-directives}'s seam group, and ends with the graph
+part~III spends nine chapters breaking.
+\index{conference example!split into three|)}%

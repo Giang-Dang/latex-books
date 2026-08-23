@@ -1,0 +1,146 @@
+\section{An Entity Is a Type With a Key}
+\label{sec:ch05-an-entity-is-a-type-with-a-key}
+
+\index{entity!definition|(}%
+Section~\ref{sec:ch05-the-join-you-cannot-see} left three integers stranded on
+the wrong side of a boundary. An entity is the schema construct that gets them
+across, and Apollo defines it in terms a reader of
+chapter~\ref{ch:data-without-n-plus-1} will recognize~\autocite{apolloentities}:
+
+\begin{quote}
+Entities are objects that can be fetched with one or more unique key fields.
+Like a row in a database table, an entity contains fields of various types, and
+it can be uniquely identified by a key field or set of fields.
+\end{quote}
+
+\index{entity!requires a key}%
+The clause about key fields is the one that does the work, and the same page
+makes it a requirement rather than a description: \enquote{Because an entity is
+keyed, an entity type's definition must have a \code{@key}
+directive}~\autocite{apolloentities}. A type with no key is an ordinary object
+type. It can appear in one subgraph's schema and be perfectly useful there, and
+no second subgraph can say anything about it.
+
+\begin{graphqlsdl}
+directive @key(fields: FieldSet!, resolvable: Boolean = true)
+  repeatable on OBJECT | INTERFACE
+\end{graphqlsdl}
+
+\index{FieldSet@\code{FieldSet}!is a selection set as a string}%
+\code{FieldSet} is a scalar and the specification's description of it is the
+best two lines in the document: \enquote{Grammatically, a \code{FieldSet} is a
+selection set minus the outermost curly
+braces}~\autocite{apollosubgraphspec}. So the key is written the way you would
+write the query that fetches it. \code{"id"} is a key. So is
+\code{"username region"}, two fields that are unique together and neither of
+which is unique alone. So is \code{"name organization \{ id \}"}, which reaches
+into a nested object~\autocite{apollodirectives}. A type may carry more than
+one \code{@key}, which says there are two different ways to name the same
+object, and the directive is \code{repeatable} for exactly that reason.
+
+\subsection{What the Key Costs You}
+
+\index{key!must be a field}%
+Read the definition again for what it forces. A key names fields, and a field
+is a thing in a schema. So every subgraph that declares the type has to declare
+the key fields on it, in public, whether or not that subgraph has any use for
+them.
+
+\index{Speaker@\code{Speaker}!appears in a subgraph that knows nothing about speakers}%
+For the conference example that means the Sessions subgraph, which owns no
+speaker data and never will, declares a \code{Speaker} type anyway:
+
+\begin{graphqlsdl}
+type Speaker @key(fields: "id") {
+  id: ID!
+}
+\end{graphqlsdl}
+
+\index{stub!a type declared for its key alone}%
+One field, and it is there so that the value can be written down. This is the
+thing section~\ref{sec:ch05-the-join-you-cannot-see} predicted: the key stops
+being an integer in a call stack and becomes a field with a name, a type and a
+promise attached. Chapter~\ref{ch:data-without-n-plus-1} took a foreign key out
+of the schema, and the model has just put one back, in a different shape and for
+a reason that did not exist then.
+
+\index{key!both sides must produce the same value}%
+And both subgraphs have to produce the same string for the same speaker. Not an
+equivalent one, not one that maps to it: the same bytes. The router matches on
+that value and has no other way to know that Sessions' speaker one and Speakers'
+speaker one are the same person. Nothing in the schema checks this and no
+composition error catches it, because both sides declare \code{id: ID!} and
+both are telling the truth about the type. Chapter~\ref{ch:representation-order}
+is about a different way to get the wrong entity back, and this is the way that
+is entirely yours.
+
+\index{global object identification!is why the key already exists}%
+The good news arrives from a chapter that was not thinking about federation at
+all. Chapter~\ref{ch:schema-design} gave every entity a global node id, derived
+from the type name and the primary key by a rule both services can run.
+\code{U3BlYWtlcjox} is \code{Speaker:1} in every process that computes it the
+same way. The book already has its keys.
+
+\subsection{The Route the Key Opens}
+
+\index{entities@\code{\_entities}!takes representations}%
+A key is half a mechanism. It lets the router write down which object it means;
+it does not yet let anyone turn that back into an object. The other half is the
+entity route, and it is one root field:
+
+\begin{graphqlsdl}
+extend type Query {
+  _entities(representations: [_Any!]!): [_Entity]!
+  _service: _Service!
+}
+\end{graphqlsdl}
+
+\index{Any@\code{\_Any}!is a JSON object}%
+\code{\_Any} is deliberately shapeless. The specification says each item is
+\enquote{serialized as a generic JSON object, which enables the graph router to
+include representations of different entities in the same query, all of which
+can have a different shape}~\autocite{apollosubgraphspec}. A representation is
+the type name plus the key fields, and nothing else:
+
+\begin{minted}{json}
+{"__typename": "Speaker", "id": "U3BlYWtlcjox"}
+\end{minted}
+
+\index{Entity@\code{\_Entity}!is generated from the keys}%
+\code{\_Entity} is a union the library generates for you, holding every type in
+the schema that carries a resolvable key. It has to be a union because one call
+can carry representations of several types at once, which is also why the router
+can collect a whole level of a query into a single request.
+
+\index{reference resolver!is the inverse of the key}%
+What you write is one function per entity, and its shape is the inverse of the
+key: the key turns an object into a set of values, and this turns that set of
+values back into the object. Hot Chocolate calls it a reference resolver and
+chapter~\ref{ch:first-subgraph} is where you write the first one. Note now what
+it is not. It is not a resolver for a field, it does not know which client
+asked, and it does not know which field of which query caused it to run. It is
+handed a key and asked for the object.
+
+\index{entities@\code{\_entities}!answers in order}%
+One rule about it belongs here rather than there, because it is a property of
+the contract rather than of any implementation. The specification requires that
+\code{\_entities} \enquote{return a list of entity objects that correspond to
+the provided representations, in the exact same order}, and permits nulls in
+that list \enquote{if no entity exists for a provided
+representation}~\autocite{apollosubgraphspec}. Position is the only thing
+connecting an answer to its question. There is no identifier in the reply, no
+echo of the representation, nothing to match on. Get the order wrong and every
+answer is still well typed, still non-null where the schema promised, and
+attached to the wrong object. Chapter~\ref{ch:representation-order} is that
+chapter.
+
+\index{key@\code{"@key}!resolvable argument}%
+Which leaves \code{resolvable}. Set it to false and you are declaring a key
+without promising to answer for it: the specification's words are that the
+subgraph \enquote{doesn't define a reference resolver for this entity}, so the
+router's plans cannot route into this subgraph to fetch the type's
+fields~\autocite{apollodirectives}. That is the right setting for a type you
+only ever point at, and the wrong setting for a type you own. It is also the
+one argument on \code{@key} whose default, \code{true}, is a promise you make
+by saying nothing.
+\index{entity!definition|)}%

@@ -1,0 +1,68 @@
+% The same join, performed twice: once inside one process, once across a seam.
+%
+% Same idiom as figures/tikz/ch01-one-field.tex, ch02-two-requests.tex and
+% ch03-one-batch.tex: each lane is a timeline read left to right, ticks mark
+% stages, a dashed vertical marks a boundary the work crosses, and a brace
+% under the stages that matter carries a one-line label. Lane A is the
+% arrangement chapter 3 finished with; lane B is the same join with a router
+% in the middle. The four ticks sit at the same x in both lanes, because the
+% argument of the figure is that the two arrangements do the same work in the
+% same order and differ only in what the keys have to travel through, so any
+% horizontal offset between the lanes would be saying something false.
+%
+% This figure fixes two visuals SPEC decision 33 says are reused. The seam is
+% a dashed vertical rule; one round trip out and back crosses it twice, so
+% lane B carries two rules and not four. The router is drawn as the actor
+% whose lane it is, named in the tick labels, rather than as a box, because a
+% box would make it look like a fourth service rather than the thing holding
+% the plan.
+%
+% Bare tikzpicture (house style): the figure environment, caption and label
+% live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  axis/.style={draw, line width=0.4pt, -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  tick/.style={draw, line width=0.4pt},
+  event/.style={anchor=south, align=center, text width=24mm, inner sep=1pt},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  lane/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+  boundary/.style={draw, line width=0.4pt, dashed},
+]
+
+% ------------------------------------------------------------------- lane A
+\node[lane] at (0,14) {A. one service, one process: the join you have now};
+
+\draw[axis] (0,0) -- (150,0);
+\foreach \x in {16,58,100,138}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+
+\node[event, text width=26mm] at (16,3)  {sessions resolver:\\statement 1, 4 sessions};
+\node[event, text width=26mm] at (58,3)  {speaker resolver x4:\\3 distinct keys held};
+\node[event, text width=26mm] at (100,3) {statement 2: the 3\\keys in one IN list};
+\node[event, text width=20mm] at (138,3) {one response\\assembled};
+
+\draw[span] (50,-4) -- (50,-7) -- (108,-7) -- (108,-4);
+\node[spanlabel] at (79,-8) {three integers, held in memory,\\named in no schema anywhere};
+
+% ------------------------------------------------------------------- lane B
+\begin{scope}[shift={(0,-50)}]
+  \node[lane] at (0,14) {B. two subgraphs and a router: the same join, the same order};
+
+  \draw[axis] (0,0) -- (150,0);
+  \foreach \x in {16,58,100,138}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+  \foreach \x in {37,119}{
+    \draw[boundary] (\x,-2) -- (\x,8);
+    \node[spanlabel, inner sep=1pt] at (\x,-2) {seam};
+  }
+
+  \node[event, text width=26mm] at (16,3)  {router asks sessions\\for the page};
+  \node[event, text width=26mm] at (58,3)  {sessions answers: a\\speaker key per session};
+  \node[event, text width=26mm] at (100,3) {router asks speakers,\\the 3 keys in one call};
+  \node[event, text width=20mm] at (138,3) {router merges,\\one response};
+
+  \draw[span] (50,-6) -- (50,-9) -- (108,-9) -- (108,-6);
+  \node[spanlabel] at (79,-10) {the same three keys, serialized, through\\a field both services have to declare};
+\end{scope}
+
+\end{tikzpicture}

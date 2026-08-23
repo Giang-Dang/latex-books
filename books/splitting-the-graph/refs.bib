@@ -197,3 +197,103 @@
               approach was argued first is recorded in the research note; that post
               could not be fetched and nothing from it is used}
 }
+
+%--------------------------------------------------------------------------
+% Chapter 5 - The Federation Model
+%
+% Provenance in research/ch05-the-federation-model.md. Four Apollo pages,
+% cited under decision 39 as the specification's publisher defining its own
+% specification and as the normative list of what that specification requires
+% of an implementation; one bylined ChilliCream post, which the vendor rule
+% does not reach; one specification draft; and one working group meeting
+% summary whose own disclaimer the chapter repeats in the prose. Nothing here
+% is cited for a claim about a third party.
+%
+% The ChilliCream documentation page for HotChocolate.ApolloFederation on v16
+% is deliberately absent. It does not exist: the versioned path redirects to
+% an unversioned one that returns 404, and the site's sitemap carries no
+% Apollo Federation subgraph page. Every claim the chapter makes about that
+% package was measured from the package instead, and the research note
+% records how.
+%--------------------------------------------------------------------------
+
+@online{apollofederatedschemas,
+  author       = {{Apollo GraphQL}},
+  title        = {Introduction to {Apollo} {Federation}},
+  organization = {Apollo GraphQL Docs},
+  url          = {https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/federation},
+  urldate      = {2026-08-23},
+  addendum     = {No byline. Cited only for the two terms it defines under a heading
+                  announcing them as terminology; the chapter says in the prose that
+                  this is where {\enquote{supergraph}} comes from and that the
+                  subgraph specification does not define it}
+}
+
+@online{apolloentities,
+  author       = {{Apollo GraphQL}},
+  title        = {Introduction to Entities},
+  organization = {Apollo GraphQL Docs},
+  url          = {https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/entities/intro},
+  urldate      = {2026-08-23},
+  addendum     = {No byline. Cited for the definition of an entity and for the
+                  requirement that an entity type carry a key directive, both of
+                  which restate what the subgraph specification requires and can be
+                  checked against a running subgraph}
+}
+
+@online{apollodirectives,
+  author       = {{Apollo GraphQL}},
+  title        = {{Apollo} {Federation} Directives},
+  organization = {Apollo GraphQL Docs},
+  url          = {https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/reference/directives},
+  urldate      = {2026-08-23},
+  addendum     = {No byline: the reference listing of the directives the
+                  specification defines. Cited for the three worked examples of a
+                  legal key field set and for what a non-resolvable key means. Two of
+                  its directive definitions disagree with the subgraph specification
+                  page on locations and repeatability; the disagreements are recorded
+                  in the research note and the chapter rests on neither}
+}
+
+@online{compositeschemasspec,
+  author       = {{GraphQL Foundation}},
+  title        = {{GraphQL} Composite Schemas Spec},
+  organization = {graphql.github.io},
+  url          = {https://graphql.github.io/composite-schemas-spec/draft/},
+  urldate      = {2026-08-23},
+  addendum     = {The only edition that exists is labeled a Working Draft, dated
+                  2026-08-07 on the index page, and the project as a whole is marked
+                  Prerelease. Cited for its own status and for two directive
+                  definitions that differ from Apollo's. Its repository's README and
+                  ROADMAP disagree with the rendered spec and with each other about
+                  which stage the work is at; the chapter says only what the
+                  published document says about itself}
+}
+
+@online{staib2026fusion16,
+  author       = {Staib, Michael},
+  title        = {What's new in {Fusion} 16},
+  organization = {ChilliCream Blog},
+  date         = {2026-05-15},
+  url          = {https://chillicream.com/blog/2026-05-15-fusion-16},
+  urldate      = {2026-08-23},
+  addendum     = {Bylined by ChilliCream's founder, on ChilliCream's own blog, about
+                  ChilliCream's own product, so the named-engineer rule is satisfied.
+                  Cited for the word {\enquote{rewrite}} and for which specification
+                  Fusion 16 implements. The same post makes comparative claims about
+                  other vendors' gateways; none of those is used}
+}
+
+@online{compositeschemaswg202608,
+  author       = {{GraphQL Composite Schemas Working Group}},
+  title        = {Meeting Summary},
+  organization = {GitHub},
+  date         = {2026-08-06},
+  url          = {https://github.com/graphql/composite-schemas-wg/blob/main/notes/2026/summary-2026-08-06.md},
+  urldate      = {2026-08-23},
+  addendum     = {A standards body's record of its own working group, which decision
+                  39 admits unsigned. It carries its own disclaimer, that the summary
+                  was auto-generated and may be inaccurate, and the chapter repeats
+                  that caveat in the prose rather than hiding it here. Names in it
+                  are first names only, so no individual is attributed a position}
+}
