@@ -753,11 +753,18 @@ if ($policy.Numbers.Enabled -or $policy.Verbatim.Enabled -or
     }
 }
 
-# The same notes, whitespace-collapsed. The verbatim check matches a listing
-# line against this rather than against lines, so that a capture re-wrapped for
-# the page still traces to the note it came from. Built once; rebuilding it per
-# line would dominate the run.
-$researchBlob = if ($researchText) { $researchText -replace '\s+', ' ' } else { '' }
+# The same notes with every run of whitespace removed, not collapsed to a
+# space. Two families match a listing line against this rather than against
+# lines, so that a capture wrapped in one place and not the other still traces
+# to the note it came from. Wrapping happens in both directions and the
+# distinction matters: collapsing to a space handles the page wrapping a note's
+# single line, because each page fragment is still a substring of it, and fails
+# the other way round, because a note that wraps a long capture for readability
+# turns its own newline into a space the page's unwrapped line does not have.
+# Removing the whitespace outright is symmetric and strictly more permissive
+# than collapsing, so no book gains a finding from it. Built once; rebuilding
+# it per line would dominate the run.
+$researchBlob = if ($researchText) { $researchText -replace '\s+', '' } else { '' }
 
 # --- bibliography keys
 $bibKeys = [System.Collections.Generic.HashSet[string]]::new()
@@ -1137,10 +1144,14 @@ function Test-VerbatimClaim {
 
     $missed = @()
     foreach ($line in $lines) {
+        # Two forms of the same line. The collapsed one carries the length
+        # threshold and the finding message, because that is what a reader has
+        # to recognise; the dense one is what is looked up, because the blob
+        # has had its whitespace removed rather than collapsed.
         $n = ($line.Trim() -replace '\s+', ' ')
         if ($n.Length -lt $minLength) { continue }
         if ($n -notmatch '[A-Za-z0-9]') { continue }
-        if (-not $blob.Contains($n)) { $missed += $n }
+        if (-not $blob.Contains(($n -replace '\s+', ''))) { $missed += $n }
     }
 
     if ($missed.Count -eq 0) { return }
@@ -1296,7 +1307,9 @@ function Get-CapturedLineNumbers {
         $normalised = ($line.Trim() -replace '\s+', ' ')
         if ($normalised.Length -lt $minLength) { continue }
         if ($normalised -notmatch '[A-Za-z0-9]') { continue }
-        if ($researchBlob.Contains($normalised)) { [void]$forgiven.Add($lineNo) }
+        # Looked up dense, for the reason the blob is built that way: a note
+        # that wrapped this capture must still forgive the character in it.
+        if ($researchBlob.Contains(($normalised -replace '\s+', ''))) { [void]$forgiven.Add($lineNo) }
     }
 
     return , $forgiven

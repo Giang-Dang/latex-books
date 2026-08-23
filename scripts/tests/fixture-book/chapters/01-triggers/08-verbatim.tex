@@ -5,8 +5,13 @@ Here is what the tool printed, in full:
 
 \begin{minted}{text}
 this line was really captured
+{"errors":[{"message":"no such field","line":14}]}
 this line was never captured anywhere
 \end{minted}
 
-The first line is in the research note and must pass. The second is in no note
-and is the finding.
+The first line is in the research note and must pass. The second is in the note
+too, folded across two lines there and printed on one here, and must also pass:
+a note that wraps a long capture for readability has still recorded it. Note
+where the note folds, which is mid-token and not at a space, because that is
+what makes the difference between removing whitespace and collapsing it. The
+third line is in no note and is the finding.
