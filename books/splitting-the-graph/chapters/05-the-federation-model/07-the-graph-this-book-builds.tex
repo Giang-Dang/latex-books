@@ -127,11 +127,13 @@ partly because that problem is unavoidable in it rather than contrived.
 \subsection{What Part II Does With It}
 
 \index{Part II!the four chapters that build this}%
-Chapter~\ref{ch:first-subgraph} turns the service you already have into the
-first of those three documents: the package, the key, the reference resolver,
-and the two fields the contract adds to \code{Query}. It ships one subgraph and
-composes nothing, because a graph of one is still a graph and it is the smallest
-thing that can be checked.
+Chapter~\ref{ch:first-subgraph} makes the service you already have into a
+subgraph: the package, the key, the reference resolver, and the two fields the
+contract adds to \code{Query}. It gets most of the way to the first of those
+three documents and stops short of one thing. Sessions still stores the
+speakers, so its \code{Speaker} is the whole type rather than the stub above,
+and it stays that way until there is a service to move the rows to. That
+chapter ships one subgraph and composes nothing.
 
 Chapter~\ref{ch:composition} composes, which means meeting the composer's
 opinions about the schema you wrote, including the one

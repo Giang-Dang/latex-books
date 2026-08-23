@@ -1,0 +1,95 @@
+\section{The Schema, as a String}
+\label{sec:ch06-the-schema-as-a-string}
+
+\index{service@\code{\_service}!what it answers|(}%
+The first of the two new fields returns your schema. Ask for it the way you
+would ask for anything:
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:5001
+Content-Type: application/json
+
+{"query":"{ _service { sdl } }"}
+\end{minted}
+
+\index{service@\code{\_service}!returns the exported document}%
+What comes back is the whole schema inside one JSON string. Undo the escaping,
+normalize the line endings, and you have the file \code{schema export} writes,
+byte for byte. It is the same document rather than a federation-only view of
+one, descriptions and \code{@cost} directives and all.
+
+\index{service@\code{\_service}!costs no statement}%
+It also costs nothing to serve. Zero statements: the schema is in memory and no
+table is touched. That matters more than it sounds, because of who asks and how
+often.
+
+\subsection{Who Reads It}
+
+\index{service@\code{\_service}!is for a router at startup}%
+Apollo's specification puts \code{\_service} under a heading that answers the
+question: \enquote{Enhanced introspection with \code{Query.\_service}}. The
+reader it has in mind is a router working out a supergraph for
+itself~\autocite{apollosubgraphspec}:
+
+\begin{quote}
+Some federated graph routers can compose their supergraph schema dynamically at
+runtime. To do so, a graph router first executes the following enhanced
+introspection query on each of its subgraphs to obtain all subgraph schemas:
+\end{quote}
+
+\index{composition!dynamic composition is discouraged}%
+And then, unusually, argues against the use case it has just described. Dynamic
+composition \enquote{can cause unexpected downtime if composition fails on
+router startup}, so Apollo \enquote{strongly recommends against} it, while
+holding that \enquote{supporting this use case is still a requirement for
+subgraph libraries}~\autocite{apollosubgraphspec}. Chapter~\ref{ch:composition}
+composes ahead of time with a command-line tool for exactly that reason, and
+this field is still required to exist.
+
+\index{sdl@\code{sdl}!what the string must contain}%
+What the string must contain is one clause with a condition on it. It
+\enquote{must include all uses of all federation-specific directives, such as
+\code{@key}}, and whether the library's own additions may appear depends on
+whether that library still supports Federation~1: one that does must leave them
+out, and one that supports only Federation~2 \enquote{can include these
+definitions}~\autocite{apollosubgraphspec}. So how much of the document you get
+back is a property of the library rather than of the specification, and reading
+it off a running service is the only way to know. This one includes everything.
+
+\index{sdl@\code{sdl}!the description disagrees with the field}%
+Which produces a contradiction a reader who introspects this type will meet.
+The generated description on \code{\_Service} says the returned document
+\enquote{does not include the additions of the federation spec}. It does.
+\code{\_service}, \code{\_entities}, \code{\_Any}, \code{\_Entity} and the
+directive definitions are all in the string this service hands back. I take the
+string over the sentence describing it, here and generally: the description was
+written once and the string is produced on every request.
+
+\subsection{The Field Nobody Meant You to Have}
+
+\index{service@\code{\_service}!is not hidden}%
+Beside the sentences about routers, the specification adds a note. The field
+\enquote{is not included in the composed supergraph schema}, and \enquote{for
+security reasons, it's intended solely for use by the graph
+router}~\autocite{apollosubgraphspec}.
+
+\index{service@\code{\_service}!is visible to introspection}%
+Read that against what you can see from outside. Ask this service for the fields
+on \code{Query} and it lists \code{node}, \code{nodes}, \code{sessions},
+\code{\_service} and \code{\_entities}. No authorization, no separate port, no
+header. \code{sessionById} is missing from that list and the two underscore
+fields are not. Read that pairing again: the field this book deprecated in
+chapter~\ref{ch:schema-design} is hidden from a default introspection query, and
+the two fields the specification calls internal are not.
+
+\index{service@\code{\_service}!intent is not a control}%
+\enquote{Intended solely for} is a statement about intent, and a subgraph has no
+mechanism behind it. What the sentence accurately describes is the supergraph:
+the composed document a client reads does not carry the field, so a client
+talking to the router cannot select it. A client talking to your service can, and
+in chapter~\ref{ch:enter-the-router} your service is still on a port. Whether
+anything else can reach that port is your deployment's answer and not the
+specification's, and chapter~\ref{ch:entities-authorization} is the chapter about
+assuming otherwise.
+\index{service@\code{\_service}!what it answers|)}%

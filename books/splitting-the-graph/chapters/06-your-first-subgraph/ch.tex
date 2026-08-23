@@ -2,12 +2,19 @@
 \chapter{Your First Subgraph}
 \label{ch:first-subgraph}
 
-\emph{Not yet drafted.}
+Becoming a subgraph adds a second way into every object your service owns, and
+it is not the one you spent chapter~\ref{ch:schema-design} designing.
 
-% Chapter skeleton, SPEC decision 13. Five beats, this order:
-%   1. The one sentence  - what this chapter establishes, stated first.
-%   2. Show it          - the thing running, or in Part III the thing failing.
-%   3. Why it does that - the mechanism. All theory lives here (decision 14).
-%   4. Do it properly   - the complete, correct implementation.
-%   5. Summary box      - decision 21.
-% Section files are \input from here, numbered 01-, 02-, ... from the book root.
+Three edits do it. A package, one line in \code{Program.cs}, and two attributes
+per entity. What comes back is a schema with fields you did not write, a route
+that reaches your rows without going through any field a client can see, and a
+resolver that is handed less than every other resolver in this book and asked
+for the same thing.
+
+\input{chapters/06-your-first-subgraph/01-three-edits}
+\input{chapters/06-your-first-subgraph/02-the-schema-as-a-string}
+\input{chapters/06-your-first-subgraph/03-the-key-arrives-as-a-string}
+\input{chapters/06-your-first-subgraph/04-what-the-entity-route-costs}
+\input{chapters/06-your-first-subgraph/05-a-key-you-did-not-produce}
+\input{chapters/06-your-first-subgraph/06-one-bill-paid-one-left}
+\input{chapters/06-your-first-subgraph/07-summary}

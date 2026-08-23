@@ -1,0 +1,322 @@
+\section{The Key Arrives as a String}
+\label{sec:ch06-the-key-arrives-as-a-string}
+
+\index{reference resolver!what it is handed|(}%
+\code{\_entities} is the other new field, and behind it is the method
+section~\ref{sec:ch06-three-edits} named and did not write. Read how little of
+the work it is before writing it. The specification gives the whole resolver as
+three steps: make an array, walk the representations, return the array. The walk
+has three substeps of its own, and exactly one of
+them is yours~\autocite{apollosubgraphspec}:
+
+\begin{quote}
+Pass the full representation object to whatever mechanism the library provides
+the subgraph developer for fetching entities of the corresponding
+\code{\_\_typename}.
+\end{quote}
+
+\index{reference resolver!is one step and nothing else}%
+The substeps on either side of it read the \code{\_\_typename} off the
+representation and put what came back into the array, and the second of those
+carries the rule chapter~\ref{ch:federation-model} already quoted: the objects
+must be listed in the order their representations were. So the loop, the
+ordering, the array and the dispatch on type name all belong to the package.
+Apollo states the division rather than leaving it to be inferred: the subgraph
+library is responsible \enquote{for providing the mechanism that developers use
+to specify this logic, and for automatically hooking into this
+mechanism}~\autocite{apollosubgraphspec}. The method you write answers one
+representation and knows nothing about the others.
+
+\subsection{Not the Key You Expect}
+
+\index{reference resolver!receives the undecoded node id}%
+Here is the thing that catches everyone who has read
+chapter~\ref{ch:schema-design} first. The key field is \code{id}, and since
+chapter~\ref{ch:schema-design} every \code{id} in this schema is a global node
+id: the type name, a colon and the primary key, base64 encoded. The router sends
+that string, and the reference resolver is handed the string.
+
+\begin{minted}{json}
+{"__typename": "Speaker", "id": "U3BlYWtlcjox"}
+\end{minted}
+
+\index{node resolver!is handed the decoded key}%
+The node resolver next door is handed the integer~1. That decoding happens in
+front of it, which is why chapter~\ref{ch:schema-design} could say the method
+never sees an id it has to parse. On the entity route nothing decodes anything,
+and the parameter that arrives is \code{U3BlYWtlcjox}.
+
+\index{ID@\code{[ID<T>]}!does not decode here}%
+The attribute that decodes an id everywhere else in this book does not decode
+this one. Write the parameter as \code{[ID<Speaker>] int id} and the file
+compiles, the schema is unchanged, and the resolver runs with \code{id} set
+to~0. Nothing throws. The entity comes back null, which reads exactly like a key
+that matched no row, and the only sign that anything is wrong is that it
+happens for every key. That is a bad failure to debug and a worse one to deploy,
+so take the string.
+
+\index{INodeIdSerializer@\code{INodeIdSerializer}!does the decoding}%
+Decoding it is one call on \code{INodeIdSerializer}, which you ask for by naming
+it in the parameter list like any other service. Its \code{Parse} method takes
+the string and the type of the key inside it, and the second argument is the one
+to get right: it is the type of the key, not the type of the entity.
+\code{typeof(int)}, because the primary key is an \code{int}. Pass
+\code{typeof(Session)} instead and the call throws \code{The node ID string has
+an invalid format.}, which is the message chapter~\ref{ch:schema-design} met
+from a malformed id and which here means something else entirely.
+
+\index{NodeId@\code{NodeId}!carries the type name and the key}%
+What comes back has two parts. \code{nodeId.InternalId} is the integer, which is
+what the resolver came for. \code{nodeId.TypeName} is the string
+\code{Speaker}, read out of the same base64. The resolvers below spend the first
+and ignore the second, which is the ordinary thing to do and which
+section~\ref{sec:ch06-a-key-you-did-not-produce} is about.
+
+\subsection{The Projection Does Not Come With You}
+
+\index{QueryContext@\code{QueryContext<T>}!cannot be injected here}%
+One more parameter does not work, and it is the one every other resolver in this
+book takes. A \code{QueryContext} cannot be injected into a reference resolver.
+Adding it compiles, the schema builds, the service starts, and the first
+\code{\_entities} request comes back as an unexpected execution error with no
+exception in any log to explain it. I am describing that response rather than
+printing it, because a service in that state is not a state this book ships and
+nothing here can reproduce it for you.
+
+\index{projection!is absent from the entity route}%
+So the entity route runs without the projection
+chapter~\ref{ch:data-without-n-plus-1} put in, and
+section~\ref{sec:ch06-what-the-entity-route-costs} measures the difference. The
+resolver below does not have one, and the comment in it says why rather than
+leaving a later reader to wonder whether it was forgotten.
+
+\index{key@\code{[Key]}!on the record instead is silent}%
+One more placement is worth knowing before you copy the attributes onto a type
+of your own. \code{[Key("id")]} on the \code{Speaker} record rather than on
+\code{SpeakerType} also compiles, and produces a schema with no key in it at
+all. The attribute is read off the class the source generator is building the
+type from, and a positional record is not that class. The union in
+section~\ref{sec:ch06-three-edits} is where you would notice.
+
+\subsection{Both Resolvers}
+
+\index{SpeakerType@\code{SpeakerType}!gains a reference resolver}%
+\code{SpeakerType.cs} in full, with everything chapter~\ref{ch:schema-design}
+did not have marked. The reference resolver borrows the same DataLoader the node
+resolver above it uses, which is a one-line decision with a measurable
+consequence in the next section:
+
+\begin{minted}[highlightlines={1-3,8-10,23-41}]{csharp}
+using HotChocolate.ApolloFederation.Resolvers;
+using HotChocolate.ApolloFederation.Types;
+using HotChocolate.Types.Relay;
+
+namespace Sessions;
+
+[ObjectType<Speaker>]
+[Key("id")]
+[ReferenceResolver(
+    EntityResolver = nameof(ResolveSpeakerReferenceAsync))]
+public static partial class SpeakerType
+{
+    /// <summary>
+    /// Loads one speaker by the identifier inside a global node id.
+    /// </summary>
+    [NodeResolver]
+    public static async Task<Speaker?> GetSpeakerAsync(
+        int id,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+        => await speakerById.LoadAsync(id, ct);
+
+    /// <summary>
+    /// Answers one representation from the entity route. The key
+    /// arrives as the undecoded node id string, where the node
+    /// resolver above is handed the integer already. Going through the
+    /// same DataLoader is what makes a batch of representations cost
+    /// one statement rather than one each.
+    /// </summary>
+    [GraphQLIgnore]
+    public static async Task<Speaker?> ResolveSpeakerReferenceAsync(
+        string id,
+        INodeIdSerializer serializer,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+    {
+        var nodeId = serializer.Parse(id, typeof(int));
+
+        return await speakerById.LoadAsync(
+            (int)nodeId.InternalId!, ct);
+    }
+}
+\end{minted}
+
+\index{GraphQLIgnore@\code{[GraphQLIgnore]}!keeps the resolver out of the schema}%
+\code{[GraphQLIgnore]} is load-bearing. Without it the source generator sees a
+public method on a type class and does what it does with public methods on type
+classes: publishes it as a field. \code{Speaker} would gain a field taking an id
+and returning a different \code{Speaker}, which is not a thing anyone meant to
+put in an API.
+
+\index{SessionType@\code{SessionType}!gains a reference resolver}%
+\code{SessionType.cs} takes the same shape and differs in the two ways this
+section has already named. It goes to the table directly rather than through a
+loader, because that is what its node resolver does, and it has no
+\code{QueryContext} because it cannot have one:
+
+\begin{minted}[highlightlines={2-4,10-12,38-59}]{csharp}
+using GreenDonut.Data;
+using HotChocolate.ApolloFederation.Resolvers;
+using HotChocolate.ApolloFederation.Types;
+using HotChocolate.Types.Relay;
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+[ObjectType<Session>]
+[Key("id")]
+[ReferenceResolver(
+    EntityResolver = nameof(ResolveSessionReferenceAsync))]
+public static partial class SessionType
+{
+    /// <summary>
+    /// The person giving this session.
+    /// </summary>
+    public static async Task<Speaker?> GetSpeakerAsync(
+        [Parent(nameof(Session.SpeakerId))] Session session,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+        => await speakerById.LoadAsync(session.SpeakerId, ct);
+
+    /// <summary>
+    /// Loads one session by the identifier inside a global node id.
+    /// </summary>
+    [NodeResolver]
+    public static async Task<Session?> GetSessionAsync(
+        int id,
+        ConferenceContext db,
+        QueryContext<Session> query,
+        CancellationToken ct)
+        => await db.Sessions
+            .Where(s => s.Id == id)
+            .With(query)
+            .FirstOrDefaultAsync(ct);
+
+    /// <summary>
+    /// Answers one representation from the entity route. Two things
+    /// differ from the node resolver above, and neither is a choice.
+    /// The key arrives as the undecoded node id string, so this method
+    /// decodes it. And a QueryContext cannot be injected here, so there
+    /// is no projection and every column is selected. One statement per
+    /// representation is what chapter 10 measures and then fixes.
+    /// </summary>
+    [GraphQLIgnore]
+    public static async Task<Session?> ResolveSessionReferenceAsync(
+        string id,
+        INodeIdSerializer serializer,
+        ConferenceContext db,
+        CancellationToken ct)
+    {
+        var nodeId = serializer.Parse(id, typeof(int));
+        var key = (int)nodeId.InternalId!;
+
+        return await db.Sessions
+            .Where(s => s.Id == key)
+            .FirstOrDefaultAsync(ct);
+    }
+}
+\end{minted}
+
+\index{entities@\code{\_entities}!answering}%
+That compiles, and the entity route answers. The operation is one line and the
+chapter uses it several times, so it stands on its own here:
+
+\begin{minted}{graphql}
+query E($r: [_Any!]!) {
+  _entities(representations: $r) {
+    __typename
+    ... on Session { title }
+  }
+}
+\end{minted}
+
+\index{entities@\code{\_entities}!on the wire}%
+On the wire, with the operation text standing in for the block above and the
+body wrapped between tokens to fit the page:
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:5001
+Content-Type: application/json
+
+{"query":"<the operation above>","variables":
+{"r":[{"__typename":"Session","id":"U2Vzc2lvbjox"}]}}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"_entities":[{"__typename":"Session","title":"Schemas That Outlive Their Authors"}]}}
+\end{minted}
+
+\index{entities@\code{\_entities}!order is the only correspondence}%
+Send three representations and three objects come back in that order. Mix the
+types and they still come back in that order, which is what the union is for and
+what the substep after yours requires. Send a key that matches no row and that
+position is \code{null} while its neighbors are unaffected, which is the
+specification permitting exactly one thing to go wrong per representation.
+Chapter~\ref{ch:representation-order} is about what a subgraph that gets the
+ordering wrong looks like from outside, and the short version is that it looks
+fine.
+
+\begin{onhc14}
+The package exists on Hot Chocolate~14 and restores without complaint, and
+\code{AddApolloFederation()} is there and does something. \code{\_service},
+\code{\_Service}, \code{\_Any}, \code{FieldSet}, the \code{@link} line and
+\code{@shareable} on the paging type all arrive exactly as they do on~16.
+
+What does not arrive is the entity half. \code{[Key]} and
+\code{[ReferenceResolver]} on the type class compile without a warning and
+reach the schema not at all: no \code{@key} on any type, no \code{\_entities}
+on \code{Query}, no \code{\_Entity} union. The 14 source generator has no
+mechanism for applying an arbitrary descriptor attribute declared on a type
+class, so it never reads them. The failure is silent in the worst place: a
+composer asking \code{\_service} gets a subgraph it cannot route into, rather
+than an error.
+
+It is also not inert. The method \code{[ReferenceResolver]} names is published
+as a field, \code{[GraphQLIgnore]} and all, so \code{Speaker} gains
+\code{resolveSpeakerReference(id: String!): Speaker} with the doc comment as
+its description.
+
+A federated entity on 14 has to leave the generator. Declare the type as a
+code-first \code{ObjectType<Speaker>} and both directives apply, because the
+descriptor calls are made rather than discovered. This is the whole of its
+\code{Configure}:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+protected override void Configure(
+    IObjectTypeDescriptor<Speaker> descriptor)
+{
+    descriptor
+        .ImplementsNode()
+        .ResolveNodeWith(
+            typeof(SpeakerType).GetMethod(
+                nameof(ResolveByKeyAsync))!);
+
+    descriptor
+        .Key("id")
+        .ResolveReferenceWith(
+            _ => ResolveReferenceAsync(default!, default!));
+}
+\end{minted}
+
+The two methods it points at decode the key exactly as the ones above do: the
+same undecoded string arrives and \code{Parse} is the same call. Only the
+attachment differs. The cost is the class itself, because
+\code{[ObjectType<Speaker>]} and \code{ObjectType<Speaker>} are two
+declarations of one type and collide, so a federated entity on 14 cannot be
+written in the idiom the rest of this book uses. One further trap sits in the
+listing: \code{ResolveNodeWith} takes a \code{MethodInfo} where
+\code{ResolveReferenceWith} two lines below it takes an expression.
+Appendix~\ref{app:hc14} carries the class in full.
+\end{onhc14}
+\index{reference resolver!what it is handed|)}%

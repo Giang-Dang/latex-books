@@ -1,0 +1,169 @@
+\section{Three Edits}
+\label{sec:ch06-three-edits}
+
+\index{HotChocolate.ApolloFederation@\code{HotChocolate.ApolloFederation}!the package|(}%
+One package reference goes into \code{Sessions.csproj}, on the same version as
+the rest of the family:
+
+\begin{minted}[highlightlines={12},fontsize=\footnotesize]{xml}
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HotChocolate.ApolloFederation" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.Data.EntityFramework" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.Types.Analyzers" Version="16.6.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+  </ItemGroup>
+
+</Project>
+\end{minted}
+
+\index{AddApolloFederation@\code{AddApolloFederation}}%
+One call goes on the end of the builder chain in \code{Program.cs}. The line
+above it gives up its semicolon and nothing else in the file moves:
+
+\begin{minted}[highlightlines={34}]{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Sessions;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<ConferenceContext>(options =>
+{
+    options.UseSqlite("Data Source=conference.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+builder
+    .AddGraphQL()
+    .AddSessionsTypes()
+    .RegisterDbContextFactory<ConferenceContext>()
+    .AddQueryContext()
+    .AddPagingArguments()
+    .AddGlobalObjectIdentification()
+    .AddMutationConventions()
+    .AddApolloFederation();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<ConferenceContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{key@\code{[Key]}!goes on the type class}%
+\index{ReferenceResolver@\code{[ReferenceResolver]}!goes on the type class}%
+Then two attributes on each type that is to become an entity. Both go on the
+type class, the one carrying \code{[ObjectType<T>]}, and neither goes on a
+method. \code{[Key]} names the field or fields that identify one of these,
+written as
+chapter~\ref{ch:federation-model} described a \code{FieldSet}.
+\code{[ReferenceResolver]} names the method that will turn such a key back into
+an object. Section~\ref{sec:ch06-the-key-arrives-as-a-string} prints both type
+classes with both attributes on them, and writes the method the second one
+names, which is where the chapter's work actually is.
+
+\subsection{What the Schema Became}
+
+\index{schema!what the package adds}%
+Write the missing method, build, and export. Chapter~\ref{ch:federation-model}
+said a subgraph is your service with four additions and named them; here they
+are, as the difference between this exported schema and the one
+chapter~\ref{ch:schema-design} left. Everything below was written by the
+package. Nothing was typed into a schema file, because this book has no schema
+file. As in chapters~\ref{ch:data-without-n-plus-1}
+and~\ref{ch:schema-design}, the descriptions and \code{@cost} directives the
+export writes are dropped here, and the fields of the two entity types are
+elided, because what changed about them is on the first line:
+
+\begin{graphqlsdl}
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.6"
+    import: ["@key", "@shareable", "@tag", "FieldSet"]
+  ) {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  ...
+  _service: _Service!
+  _entities(representations: [_Any!]!): [_Entity]!
+}
+
+type _Service {
+  sdl: String!
+}
+
+type Session implements Node @key(fields: "id") { ... }
+type Speaker implements Node @key(fields: "id") { ... }
+
+union _Entity = Session | Speaker
+
+scalar _Any
+scalar FieldSet
+\end{graphqlsdl}
+
+\index{link@\code{"@link}!the version is not chosen}%
+The \code{@link} line is the opt-in. The url ends in a version, as
+chapter~\ref{ch:federation-model} said it would, and that version is a default
+rather than a decision: the package emits the one it emits unless you go looking
+for the setting, and appendix~\ref{app:toolchain} is where the number lives. The
+import list beside it holds the names the document actually uses, which is why
+\code{@key} appears there the moment a type carries one.
+
+\index{Entity@\code{\_Entity}!is generated from the keys}%
+\code{\_Entity} is the union chapter~\ref{ch:federation-model} promised, and it
+is generated rather than declared: two types carry a key, so two types are in
+it, and a third key would put a third type in it. That is worth knowing because
+it makes the union a readout. If a type you expected to be an entity is missing
+from it, the key did not take, and the schema is telling you so in a line nobody
+wrote.
+
+\index{directives!the definitions travel with the schema}%
+Below that, and elided here for length, the export also carries the definitions
+of \code{@key}, \code{@link} and \code{@shareable}, written out in full with
+their locations and their default arguments. A composer that reads this document
+and nothing else knows what every directive in it means, which is
+section~\ref{sec:ch06-the-schema-as-a-string}'s subject.
+\index{HotChocolate.ApolloFederation@\code{HotChocolate.ApolloFederation}!the package|)}%

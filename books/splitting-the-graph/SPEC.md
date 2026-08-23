@@ -11,20 +11,27 @@ Author: Giang Dang
 ## Status
 
 Settled 2026-08-19 through a seven-round requirements interview. Chapters 1 to
-5 are drafted. The verification repo at `F:/repo/splitting-the-graph-graph`
+6 are drafted. The verification repo at `F:/repo/splitting-the-graph-graph`
 carries tags `ch02`, `ch02-hc14`, `ch03`, `ch03-naive`, `ch03-starved`,
-`ch03-hc14`, `ch04`, `ch04-orphan`, `ch04-hc14`, `ch05` and `ch05-hc14`, with
-`verify.ps1` passing on each. The single-service baseline chapter 10 measures
+`ch03-hc14`, `ch04`, `ch04-orphan`, `ch04-hc14`, `ch05`, `ch05-hc14`, `ch06`,
+`ch06-unguarded`, `ch06-hc14-ignored` and `ch06-hc14`, with `verify.ps1`
+passing on each. The single-service baseline chapter 10 measures
 against is settled: **five statements naive, two batched**, for four sessions
 and three distinct speakers. Chapter 4 put every entity behind a global node
 id, so from `ch04` onward an id in a response is `U2Vzc2lvbjox` and not `1`.
 Chapter 5 confirmed decision 31's `graphqlsdl` environment against real
 federation SDL: `@key`, `@link`, `FieldSet!`, `repeatable on OBJECT |
 INTERFACE` and a `@link` url all tokenize without a single error box.
-Next action: chapter 6, the first chapter to write federation C#, which
-inherits two bills chapter 5 identified and did not pay: `Query.node` needs
-`@shareable` the moment there are two subgraphs, and both sides of every seam
-have to compute the same key string.
+
+Chapter 6 made the Sessions service a subgraph and paid one of the two bills
+chapter 5 named: both sides of a seam still have to compute the same key
+string, and the receiving side now checks the type name inside the key before
+spending it (decision 68). The other bill is still open. `Query.node` needs
+`@shareable` the moment there are two subgraphs, and chapter 6 measured that
+the package writes that directive onto `PageInfo` unasked and not onto `node`
+(decision 72), which is chapter 7's to pay.
+Next action: chapter 7, composition. Re-confirm the `wgc` version first; it was
+pinned at 0.129.7 while drafting chapter 5 and nothing has run it since.
 
 **Why this book exists.** It is the second book in this library on federated
 GraphQL in .NET, and it exists because the first one,
@@ -122,6 +129,12 @@ and why, in the row.
 | 64 | Chapter 5 issues no HotChocolate 14 callout, deliberately | Decision 47 says the `hc14` branch carries whatever the live callouts quote, so a chapter that emits none adds nothing to it. Chapter 5 ships no C# and prints no API surface, and the one version difference it met is not its own: the batched speaker lookup reads `IN (@ids1, @ids2, @ids3)` on `main` and `FROM json_each(@__ids_0)` on `hc14`, which is EF Core 9 rather than Hot Chocolate 14, and chapter 3's callout already reports it. Recorded so that the absence reads as a decision rather than as an oversight, which is the same reason decision 46 exists for screenshots. |
 | 65 | A composition failure no tagged state produces is described, not quoted | Decision 53 settled this for a *response*, on the reasoning that decision 48 lets the book quote only what `verify.ps1` asserts. Chapter 5 reproduced two composition errors with `wgc` against hand-written SDL in a scratch directory: two subgraphs both declaring `Query.node`, and an entity referenced without a `@key`. Neither is produced by any tagged state of the verification repo, because the repo has one service and no composition step. Both are therefore stated in prose as facts and recorded verbatim in the chapter's research note. Revisit when chapter 7 puts composition into `verify.ps1`, at which point the error text becomes quotable the ordinary way. |
 | 66 | A chapter that ships no code still gets a tag | `ch05` is the first tag in the verification repo on an unchanged tree: `git diff ch04..ch05` over `src/` is empty. It exists because decision 48 is about requests rather than about source, and chapter 5 opens on a request nothing asserted before. The tag marks the state its eight assertions were run against. Rejected: skipping the tag, which would leave the chapter's opening listing the only unproved one in the book, and inventing a code change to justify one. |
+| 67 | The key this book federates on is the global node id, and that is my judgment rather than Apollo's | Chapter 4 put every entity behind a global node id and chapter 5 argued from it that the book already has its keys. Searched Apollo's documentation for guidance on using a Relay global object identification id as a `@key` and found **none**, including on the entity key design page that would carry it. So decision 38 applies: the claim is stated as my judgment, citing nobody. Recorded because the reasoning is load-bearing for chapters 6 and 9 and an audit reading cold cannot tell a considered call from an oversight. The consequence is decision 68. |
+| 68 | A reference resolver decodes its own key, and checks the type name inside it before spending the integer | Measured 2026-08-23. The key arrives at a reference resolver as the undecoded node id **string**, where the node resolver beside it is handed the decoded `int`. `[ID<T>]` on the parameter does not decode it: it yields 0 and the entity answers null with no error at HTTP 200, which reads exactly like a key that matched no row. The decode is `INodeIdSerializer.Parse(id, typeof(int))`, whose second argument is the CLR type of the key and not of the entity. `Parse` returns both the integer and the type name that produced it, and **spending the integer without reading the type name answers with the wrong object**: a `Speaker` node id under a `Session` type name returns the session with that number, correctly typed, at 200, with no error key. Both resolvers therefore compare `nodeId.TypeName` and return null on a mismatch, which is what the specification permits for a representation naming no entity. `ch06-unguarded` proves the failure. This is a different mechanism from chapter 11's, which is about order, and the chapter says so. |
+| 69 | `QueryContext<T>` cannot be injected into a reference resolver, so the entity route has no projection | Measured 2026-08-23: it compiles, builds a schema, starts the service, and answers the first `_entities` request with `Unexpected Execution Error` and no exception in any log. So the projection chapter 3 built does not reach the entity route, and the same request for one field costs six columns there against one through `node(id:)`. Both statements are asserted by text rather than by count, because the counts are equal and the columns are the point. Chapter 6 states this and does not work around it; whether it can be worked around is an open item. |
+| 70 | The `hc14` branch may carry more than one tag for one chapter | Settled by chapter 6, whose callout has two halves that cannot both be true of one tree: that the attribute idiom compiles and does nothing on 14.3.1, and that a code-first `ObjectType<T>` works. Decision 11 says a callout may only state what the branch compiled, so both states are built and tagged, `ch06-hc14-ignored` and `ch06-hc14`. Rejected: describing one half under decision 65, which would have made the more useful half the unproved one. The same mechanism decisions 51 and 53 set up for `main`, reaching `hc14` for the first time. |
+| 71 | A federated entity on 14 leaves the source generator, and the book says so rather than porting the idiom | On 14.3.1 the generator has no mechanism for applying an arbitrary descriptor attribute declared on a type class, so `[Key]` and `[ReferenceResolver]` are never read. Worse than inert: the method `[ReferenceResolver]` names is published as a field despite `[GraphQLIgnore]`, landing on `Speaker` as `resolveSpeakerReference(id: String!): Speaker` with its doc comment as the description. The only route that works is a code-first `ObjectType<Speaker>`, which collides with `[ObjectType<Speaker>]` and so costs the type its place in the generator. The callout states the trade rather than pretending the idiom ports, and appendix B carries the class. |
+| 72 | `AddApolloFederation()` pays one shareable bill and not the other, and the chapter prints the contrast | Measured 2026-08-23: the package writes `@shareable` onto all four fields of the generated `PageInfo` type without being asked, and adds it to the `@link` import list. It does not write it onto `Query.node` or `Query.nodes`. Both halves are asserted, because the paragraph rests on the contrast. The reason is where the two features live: paging and federation ship together and `PageInfo` is generated by code that knows federation is loaded, while `node` comes from global object identification, which has never heard of it. This is the concrete form of the debt decision 65's neighbourhood recorded, and chapter 7 pays it. |
 
 ## Version baseline
 
@@ -141,7 +154,8 @@ and this section is what appendix A is built from.
 | HotChocolate.Data.EntityFramework (`main`) | 16.6.1 | verified 2026-08-19, chapter 3 note; same version sequence as the rest of the family |
 | Microsoft.EntityFrameworkCore.Sqlite (`main`) | 10.0.11 | verified 2026-08-19, chapter 3 note; 10.x targets `net10.0` only |
 | Microsoft.EntityFrameworkCore.Sqlite (`hc14` branch) | 9.0.19 | verified 2026-08-19, chapter 3 note: the latest 9.x, chosen because EF Core 10 cannot run on `net8.0` |
-| `HotChocolate.ApolloFederation` (`main`) | 16.6.1 | verified 2026-08-23, chapter 5 note; models Federation up to v2.7 and defaults to v2.6, read out of the shipped assembly |
+| `HotChocolate.ApolloFederation` (`main`) | 16.6.1 | verified 2026-08-23, chapter 5 note; models Federation up to v2.7 and defaults to v2.6, read out of the shipped assembly. Added to `Sessions.csproj` by chapter 6, and still the newest stable on that date, though a `16.6.2-p.6` prerelease exists above it |
+| `HotChocolate.ApolloFederation` (`hc14`) | 14.3.1 | verified 2026-08-23, chapter 6 note. Restores and runs, and its `[Key]` and `[ReferenceResolver]` attributes are never read by the 14 source generator; see decision 71 |
 | Apollo Federation, as the subgraphs declare it | v2.6 | verified 2026-08-23, chapter 5 note; the `@link` url the package emits with nothing pinned. Decision 63 |
 | WunderGraph Cosmo Router | unpinned | to verify before chapter 8 |
 | `wgc` (Cosmo CLI) | 0.129.7 | verified 2026-08-23, chapter 5 note: composed the three-subgraph map and reproduced two composition errors. Re-confirm before chapter 7, which is the chapter that owns the tool |
@@ -210,8 +224,8 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 03 | drafted | Note at `research/ch03-data-without-the-n-plus-1.md`. Four tags, `verify.ps1` PASS on each: `ch03` (main), `ch03-naive` and `ch03-starved` (the two states the chapter argues against, decision 51), `ch03-hc14`. The single-service baseline chapter 10 measures against is **5 statements naive, 2 batched**, for four sessions and three distinct speakers. Settled decisions 51 to 55. Turned `sessions` into a Relay connection, the first change to break an earlier chapter's printed requests. |
 | 04 | drafted | Note at `research/ch04-schema-design-that-survives-change.md`. Three tags, `verify.ps1` PASS on each: `ch04` (main, 96 assertions), `ch04-orphan` (the non-null state the chapter argues against, decision 51), `ch04-hc14` (the same 96 assertions from the same script). Global object identification on both types, `sessionById` deprecated, and the book's first mutation, whose conventions generate the first union and the second interface. The nullability groundwork chapter 14 collects on is section 4.5. Settled decisions 56 to 62. The audit's findings and the two it raised that were rejected are recorded at the end of the research note. |
 | 05 | drafted | Note at `research/ch05-the-federation-model.md`. No C#: `git diff ch04..ch05` over `src/` is empty, and `ch05` is the book's first tag on an unchanged tree (decision 66). `verify.ps1` gained eight assertions for the request the chapter opens on and prints, 104 total, PASS on `main` and `hc14`. Confirmed decision 31's `graphqlsdl` environment against real federation SDL, which was this chapter's stated job. Paid chapter 1's debt on why Apollo Federation v2 rather than the Composite Schemas draft, and corrected two factual clauses in decisions 6 and 7 in the process. Settled decisions 63 to 66. |
-| 06 | not-started | |
-| 07 | not-started | Verify the `wgc` version first. |
+| 06 | drafted | Note at `research/ch06-your-first-subgraph.md`. Four tags, `verify.ps1` PASS on each: `ch06` (main, 148 assertions), `ch06-unguarded` (9, the reference resolver that does not read the type name inside the key), `ch06-hc14-ignored` (125, the attribute idiom compiling and doing nothing on 14.3.1) and `ch06-hc14` (128, the code-first route that works there). The book's first federation C#, and its first version difference that is not a difference in output but in whether the code works at all. Settled decisions 67 to 72. |
+| 07 | not-started | Verify the `wgc` version first. Owns the `Query.node` shareable bill, which chapter 6 measured and did not pay: the package writes `@shareable` onto `PageInfo` unasked and not onto `node`. |
 | 08 | not-started | Verify the Cosmo Router version first. |
 | 09 | not-started | End of the zero-to-hero movement: the graph Part III uses. |
 | 10 | not-started | |
@@ -376,9 +390,35 @@ An unresolved question, and the condition that unblocks it.
   subgraphs that both do fail composition. Reproduced with `wgc` while drafting
   chapter 5, along with the fix: declare the field shareable in both and import
   the directive in both `@link` lists. Chapter 5 states the bill and does not
-  pay it. Unblocked by chapter 6 or chapter 9 deciding whether the shareable
-  declaration is written per subgraph or generated, at which point the answer
-  is a listing rather than a sentence.
+  pay it. **Narrowed by chapter 6**, which measured that the package applies
+  `@shareable` to all four `PageInfo` fields of its own accord and to neither
+  `node` nor `nodes` (decision 72), so the declaration is not generated and has
+  to be written. What is still open is only where: an attribute on the type
+  class, or a schema-building call in `Program.cs`. Unblocked by chapter 7,
+  which is the first chapter to run a composer and so the first to be stopped
+  by it.
+- **Whether the entity route can be given a projection.** Chapter 6 measured
+  that `QueryContext<T>` cannot be injected into a reference resolver
+  (decision 69), so the entity route selects every column where the node route
+  beside it selects one. What was **not** established is whether any other
+  route to a projection exists there: a `QueryContext` built by hand, a
+  `Selection`-derived shape, or a package-level option. No chapter claims the
+  entity route cannot be projected, only that this parameter cannot be
+  injected. Unblocked by finding a shape that compiles and narrows the SELECT,
+  which matters to chapter 10, since a fix for the statement count and a fix for
+  the column count may be the same fix.
+- **Apollo recommends `resolvable: false` on an entity stub and chapter 5's
+  printed map does not carry it.** Found while drafting chapter 6 and recorded
+  in that chapter's note. Apollo's own term is a "stub definition", and its
+  documentation pairs it with `resolvable: false` to say the subgraph defines
+  no reference resolver for the type. Chapter 5 prints the Sessions subgraph's
+  `Speaker` as `@key(fields: "id")` with no such argument, and that map did
+  compose, so the two do not conflict about what is legal. Which of the map's
+  declarations actually wants the argument has a real answer: Sessions never
+  resolves a `Speaker` and wants it; Ratings contributes two fields to
+  `Session` and must stay resolvable. Chapter 6 ships no stub and is unaffected.
+  Unblocked by chapter 9, which writes the first one, at which point chapter 5's
+  printed map may need a matching edit.
 - **Whether `@link(as:)` is unsupported by `HotChocolate.ApolloFederation` or
   merely unemitted.** Measured 2026-08-23: the `@link` definition the package
   writes into an exported schema has neither `as` nor `for`, and types `import`

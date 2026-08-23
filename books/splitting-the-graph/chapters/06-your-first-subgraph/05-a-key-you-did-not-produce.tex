@@ -1,0 +1,176 @@
+\section{A Key You Did Not Produce}
+\label{sec:ch06-a-key-you-did-not-produce}
+
+\index{key!arrives from outside|(}%
+Every other resolver in this book is handed a value the schema has already
+checked. An \code{Int!} argument is an integer by the time the method runs, a
+\code{DateTime} has been coerced, and an input object was validated field by
+field. The reference resolver is handed a JSON object typed \code{\_Any}, which
+chapter~\ref{ch:federation-model} described as deliberately shapeless, and
+shapeless means unchecked.
+
+\index{representation!naming one type with another type key}%
+So send the subgraph a representation that names a \code{Session} and carries a
+\code{Speaker}'s node id. \code{U3BlYWtlcjox} is the node id
+chapter~\ref{ch:schema-design} printed for the first speaker, and the operation
+is section~\ref{sec:ch06-the-key-arrives-as-a-string}'s, unchanged:
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:5001
+Content-Type: application/json
+
+{"query":"<the same operation>","variables":
+{"r":[{"__typename":"Session","id":"U3BlYWtlcjox"}]}}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"_entities":[{"__typename":"Session","title":"Schemas That Outlive Their Authors"}]}}
+\end{minted}
+
+\index{entities@\code{\_entities}!answers the wrong object}%
+HTTP 200. No \code{errors} key. The \code{\_\_typename} is the one the caller
+asked for, the fragment matched, the field is populated, and every part of that
+response is well formed. It is also a session nobody asked for.
+\code{U3BlYWtlcjox} decodes to \code{Speaker:1}, and the only reason a session
+came back at all is that speaker one and session one share the number~1.
+
+\index{key!decodes to an integer whatever it names}%
+The mechanism is duller than the result. \code{Parse} was asked for an
+\code{int}, and there is an \code{int} in that string, so it returned one.
+Nothing was malformed. The base64 decoded cleanly, the integer was real, and the
+resolver spent it. A schema check cannot see this, composition cannot see it,
+and the type system agrees with every line.
+
+\index{key!both sides must agree, and one side must check}%
+Chapter~\ref{ch:federation-model} said both sides of a seam have to compute the
+same string for the same object, and that nothing checks it. This is the other
+half of that sentence and it is the half you can act on. The side sending a key
+cannot be made to send the right one. The side receiving one can look at what it
+was given.
+
+\subsection{Reading the Other Half}
+
+\index{NodeId@\code{NodeId}!the type name was there all along}%
+The information needed to refuse that request was in the resolver's hand the
+whole time. \code{Parse} returned a \code{NodeId} carrying two parts, and
+section~\ref{sec:ch06-the-key-arrives-as-a-string} spent one of them. Here is
+the session's type class again, using both:
+
+\begin{minted}[highlightlines={54-64}]{csharp}
+using GreenDonut.Data;
+using HotChocolate.ApolloFederation.Resolvers;
+using HotChocolate.ApolloFederation.Types;
+using HotChocolate.Types.Relay;
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+[ObjectType<Session>]
+[Key("id")]
+[ReferenceResolver(
+    EntityResolver = nameof(ResolveSessionReferenceAsync))]
+public static partial class SessionType
+{
+    /// <summary>
+    /// The person giving this session.
+    /// </summary>
+    public static async Task<Speaker?> GetSpeakerAsync(
+        [Parent(nameof(Session.SpeakerId))] Session session,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+        => await speakerById.LoadAsync(session.SpeakerId, ct);
+
+    /// <summary>
+    /// Loads one session by the identifier inside a global node id.
+    /// </summary>
+    [NodeResolver]
+    public static async Task<Session?> GetSessionAsync(
+        int id,
+        ConferenceContext db,
+        QueryContext<Session> query,
+        CancellationToken ct)
+        => await db.Sessions
+            .Where(s => s.Id == id)
+            .With(query)
+            .FirstOrDefaultAsync(ct);
+
+    /// <summary>
+    /// Answers one representation from the entity route. Two things
+    /// differ from the node resolver above, and neither is a choice.
+    /// The key arrives as the undecoded node id string, so this method
+    /// decodes it. And a QueryContext cannot be injected here, so there
+    /// is no projection and every column is selected. One statement per
+    /// representation is what chapter 10 measures and then fixes.
+    /// </summary>
+    [GraphQLIgnore]
+    public static async Task<Session?> ResolveSessionReferenceAsync(
+        string id,
+        INodeIdSerializer serializer,
+        ConferenceContext db,
+        CancellationToken ct)
+    {
+        var nodeId = serializer.Parse(id, typeof(int));
+
+        // Nothing has checked what is inside this string, and the
+        // router is not the only caller the entity route has. A
+        // Speaker's node id decodes to a perfectly good integer;
+        // without this line it would answer with the session that
+        // happens to carry it.
+        if (nodeId.TypeName != nameof(Session))
+        {
+            return null;
+        }
+
+        var key = (int)nodeId.InternalId!;
+
+        return await db.Sessions
+            .Where(s => s.Id == key)
+            .FirstOrDefaultAsync(ct);
+    }
+}
+\end{minted}
+
+\index{SpeakerType@\code{SpeakerType}!takes the same guard}%
+The same block goes in the same place in \code{SpeakerType.cs}, between the
+\code{Parse} and the load, comparing against \code{nameof(Speaker)} instead. The
+two nouns in the comment swap with it: there it is a \code{Session}'s node id
+that would otherwise answer with a speaker. Appendix~\ref{app:source} carries
+both files in their final state.
+
+\index{entities@\code{\_entities}!null is the specification's answer}%
+Null is the correct answer here rather than a convenient one. The specification
+says entries in the returned list \enquote{can be null if no entity exists for a
+provided representation}~\autocite{apollosubgraphspec}, and a representation
+naming a \code{Session} with a \code{Speaker}'s key names no session. The same
+request now answers \code{\{"data":\{"\_entities":[null]\}\}}, and it does so
+without issuing a statement, because the resolver refuses before it reaches the
+table.
+
+\index{node@\code{node}!reads the type name already}%
+Note who was doing this all along. \code{node(id: "U3BlYWtlcjox")} against the
+same service answers with a \code{Speaker}, because the machinery
+chapter~\ref{ch:schema-design} turned on reads the type name out of the id and
+dispatches on it. Global object identification never had this problem. The
+entity route walked past the part of the mechanism that solved it and took the
+integer without the name.
+
+\subsection{Which Is Not the Ordering Failure}
+
+\index{representation order!is a different failure}%
+Two chapters of this book are about a subgraph answering with the wrong object,
+and they are not the same failure. Chapter~\ref{ch:representation-order} is
+about order: every object in the list is correct and the list is in the wrong
+sequence, so each answer is attached to somebody else's question. This one is
+about the key: the list is in the right order and one of the objects in it was
+never asked for.
+
+\index{failure!invisible to every gate so far}%
+What they share is the shape of the symptom, which is the shape most of
+part~III has: a 200 carrying well-typed data, no error key, and nothing in any
+log. Neither is caught by a schema check, by composition, by the compiler or by
+a client. Both are caught by the resolver being written correctly the first
+time, which is the argument for reading the key rather than trusting it, and
+the reason I would rather spend two lines here than a morning in
+chapter~\ref{ch:blame-routing}'s territory later.
+\index{key!arrives from outside|)}%

@@ -1,0 +1,31 @@
+\begin{chaptersummary}
+  \item A subgraph is a package reference, one call on the builder, and two
+        attributes per entity. Everything else the contract asks for is
+        generated: \code{@link}, the directive definitions, \code{\_service},
+        \code{\_entities}, the \code{\_Entity} union and \code{\_Any} are all
+        written into the exported schema by the package, and the union grows
+        and shrinks with the number of types carrying a key.
+  \item \code{\_service} hands back the schema as a string, and it is the same
+        document \code{schema export} writes rather than a federation-only view
+        of it. The specification says the field is intended solely for the
+        router; it is nonetheless on \code{Query}, it introspects, and anything
+        that can reach the service can ask for it.
+  \item A reference resolver is one substep of the specification's algorithm and
+        nothing else: the package owns the loop, the ordering and the dispatch
+        on \code{\_\_typename}. What it hands you is the representation as it
+        arrived, which for this book means the global node id as an undecoded
+        string. \code{[ID<T>]} does not decode it and does not complain; it
+        yields zero and the entity comes back null.
+  \item The entity route is not \code{node(id:)} with a different spelling. It
+        takes a different argument, it cannot be given a
+        \code{QueryContext<T>}, and without one the projection is gone: six
+        columns come back where the node route asked for one. Whether a batch
+        of representations costs one statement or one each is decided by what
+        is behind your resolver, which is the whole of
+        chapter~\ref{ch:router-n-plus-1} arriving early.
+  \item A key is a value another service produced, and the only thing that
+        checks it is the code you write. A node id naming one type resolves
+        perfectly well against another, because both decode to an integer, and
+        the answer is well typed, correctly shaped, HTTP 200 and wrong. Compare
+        the type name inside the key before spending the integer.
+\end{chaptersummary}

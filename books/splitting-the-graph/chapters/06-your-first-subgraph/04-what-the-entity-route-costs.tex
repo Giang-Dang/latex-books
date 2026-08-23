@@ -1,0 +1,81 @@
+\section{What the Entity Route Costs}
+\label{sec:ch06-what-the-entity-route-costs}
+
+\index{entity route!compared with the node route|(}%
+Two routes now reach the same row. Ask for one session's title through
+\code{node(id:)} and through \code{\_entities}, and compare what SQLite is sent.
+
+\begin{minted}{text}
+-- the node route, selecting title
+SELECT "s"."Title"
+FROM "Sessions" AS "s"
+WHERE "s"."Id" = @id
+LIMIT 1
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{text}
+-- the entity route, selecting title
+SELECT "s"."Id", "s"."Abstract", "s"."DurationMinutes", "s"."SpeakerId", "s"."StartsAt", "s"."Title"
+FROM "Sessions" AS "s"
+WHERE "s"."Id" = @key
+LIMIT 1
+\end{minted}
+
+\index{projection!absent from the entity route}%
+One column against six, for the same field of the same row. Nothing about the
+query differed. What differed is the parameter list:
+section~\ref{sec:ch06-the-key-arrives-as-a-string} could not give the reference
+resolver a \code{QueryContext}, so the projection
+chapter~\ref{ch:data-without-n-plus-1} built has no way to reach it. Six columns
+is the whole row of a small table. On a wide one it is every column you have,
+fetched to answer a question about one of them.
+
+\index{statement count!per representation}%
+Then the counts, which chapter~\ref{ch:router-n-plus-1} spends a chapter on and
+which are small enough here to read in one line each.
+
+\begin{minted}{text}
+3 Session representations  ->  3 statements
+3 Speaker representations  ->  1 statement
+\end{minted}
+
+\index{DataLoader!behind a reference resolver}%
+Same field, same call, same number of keys. The difference is one line in each
+resolver: \code{SessionType} goes to the table and \code{SpeakerType} goes
+through the DataLoader chapter~\ref{ch:data-without-n-plus-1} already had. A
+loader behind a reference resolver batches a whole call into one statement,
+because the package resolves the representations together and the loader
+collects them, exactly as it does for a list of sibling fields.
+
+\index{entities@\code{\_entities}!batches its representations}%
+Which is the fact chapter~\ref{ch:router-n-plus-1} is built on, and it is
+already true of a subgraph with nothing in front of it. The entity route is a
+batching interface. A router uses it that way on purpose, collecting a whole
+level of a query plan into one call rather than asking once per object, and
+whether that batch costs one statement or one per representation is decided
+inside the method you wrote before any router exists to send it. Both of this
+chapter's are correct as written.
+
+\index{figure!the two routes}%
+Figure~\ref{fig:ch06-two-routes} is the pair of routes drawn against each other.
+
+\begin{figure}
+  \centering
+  \input{figures/tikz/ch06-two-routes}
+  \caption{The same row, reached twice. The stages line up because the two
+  routes do the same work in the same order; what differs is what each resolver
+  is handed. Lane~A is given a decoded integer and a projection, and asks for
+  one column. Lane~B is given a string, decodes it itself, has no projection to
+  be given, and asks for six. The braces mark where the decoding happens, and
+  they sit under different stages on purpose: that shift is the only structural
+  difference between the lanes, and the source of both others.}
+  \label{fig:ch06-two-routes}
+\end{figure}
+
+\index{entity route!is not the node route}%
+It is tempting to read the entity route as \code{node(id:)} with a different
+spelling, since both take a global id and return the object it names. They are
+different code with different properties, and this chapter has now found three
+differences: what the resolver is handed, what it may inject, and what it costs.
+Chapter~\ref{ch:entities-authorization} finds the fourth and most expensive one.
+\index{entity route!compared with the node route|)}%
