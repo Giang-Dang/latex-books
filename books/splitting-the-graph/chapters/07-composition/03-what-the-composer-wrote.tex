@@ -1,0 +1,133 @@
+\section{What the Composer Wrote}
+\label{sec:ch07-what-the-composer-wrote}
+
+\index{router execution config!what the command produces|(}%
+Compose again and the tool says what it made:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+Router execution config successfully written to ".../graph/router.json".
+\end{minted}
+
+\index{router execution config!is WunderGraph's term}%
+Note the noun, because it is not the one
+chapter~\ref{ch:federation-model} used. That chapter called the composed
+result a supergraph, which is Apollo's word for it. WunderGraph's own reference
+for this command calls the output a router execution
+config~\autocite{cosmocompose}, and the word supergraph does not appear on
+that page at all. The two names are for different things and both are in play:
+a supergraph is the arrangement, and this file is one composer's compiled form
+of it, for one router.
+
+\index{router execution config!no user documentation defines it}%
+What is in the file is not documented anywhere I could find. There is no
+reference page for its shape, no JSON schema published beside it. What defines
+it is a Protocol Buffers message in the Cosmo source tree, and that message is
+short enough to read~\autocite{cosmonodeproto}:
+
+\begin{minted}{text}
+message RouterConfig {
+  EngineConfiguration engine_config = 1;
+  string version = 2;
+  repeated Subgraph subgraphs = 3;
+  optional FeatureFlagRouterExecutionConfigs feature_flag_configs = 4;
+  string compatibility_version = 5;
+}
+\end{minted}
+
+\index{router execution config!five keys}%
+Five fields, and the file this graph produced has exactly five keys with those
+names. That is worth doing once for any artifact a tool hands you and expects
+you to deploy. Seventeen kilobytes of JSON for a single-service graph looks
+opaque and is not.
+
+\subsection{The Three Small Ones}
+
+\index{compatibilityVersion@\code{compatibilityVersion}!names the composer}%
+\code{compatibilityVersion} is \code{1:0.63.3}, and the second half of that
+string is a version number of something you never installed. It matches the
+version of the composition package inside the tool, which I checked against
+that package's own manifest. So the config appears to record which composer
+produced it, and that is the only place it is recorded, which matters the day
+somebody hands you a config and asks why the router will not load it.
+
+\index{version@\code{version}!is nil without a control plane}%
+\code{version} is a nil uuid, thirty-two zeroes. Composing locally is the mode
+this book uses and the mode WunderGraph's own page recommends against for
+production, in favor of fetching a config from their platform. What a config
+fetched from that platform carries in this field, I have not seen. This one
+carries nothing.
+
+\index{subgraphs@\code{subgraphs}!carries the routing url}%
+\code{subgraphs} is the list, and it holds what \code{graph.yaml} said: a
+generated id, the name, and the routing url the composer never called. Here is
+where that url ends up, and the router is the thing that will use it.
+
+\subsection{Two Schemas, Not One}
+
+\index{graphqlSchema@\code{graphqlSchema}!is what a client reads}%
+\code{engineConfig} holds the rest, and the first interesting thing in it is
+\code{graphqlSchema}. That is the document a client gets, and
+chapter~\ref{ch:federation-model} promised what it would look like: the
+directives do their work at composition and are gone from what the client
+reads. They are. No \code{@key}, no \code{@shareable}, no \code{@link}, no
+\code{\_entities}, no \code{\_service}, no \code{\_Any} and no \code{\_Entity}.
+A client reading this schema cannot tell that federation was involved.
+
+\index{FieldSet@\code{FieldSet}!survives into the client schema}%
+Almost. One line survives that I would not have predicted:
+
+\begin{graphqlsdl}
+scalar FieldSet
+\end{graphqlsdl}
+
+\index{FieldSet@\code{FieldSet}!nothing references it}%
+\code{FieldSet} is the scalar that \code{@key}'s argument is typed with, and
+the directive that needed it is gone. The name appears exactly once in the
+whole client schema, which is that declaration, so nothing refers to it. It is
+a scalar a client can neither produce nor receive, left standing because
+nothing swept up after the directive it belonged to. Harmless, and a good
+reminder that the composed document is generated rather than curated.
+
+\index{serviceSdl@\code{serviceSdl}!the subgraph document is kept whole}%
+Then read one level down, into the datasource entry, and the seam is back.
+Inside \code{customGraphql} there is a \code{federation} block, and inside that
+a \code{serviceSdl} string holding your subgraph's own document, whole. The
+\code{@key} on both types, the \code{@shareable} on both root fields,
+\code{\_entities} and the \code{@link} header are all still in it. So the config holds
+both views at once: the schema the client is allowed to see, and the schema the
+router needs in order to serve it. Chapter~\ref{ch:blame-routing} is about what
+it means that only one of those two ever reaches the outside.
+
+\subsection{The Seam, Compiled}
+
+\index{keys@\code{keys}!the key directives as a table}%
+The last piece is the one that makes the whole file legible. Beside that
+subgraph document, the composer writes out what it worked out from it:
+
+\begin{minted}{json}
+"keys": [
+  {"typeName": "Session", "selectionSet": "id"},
+  {"typeName": "Speaker", "selectionSet": "id"}
+]
+\end{minted}
+
+\index{keys@\code{keys}!is a readout of which types are entities}%
+Two \code{@key} directives, compiled into a lookup table. This is the same
+readout chapter~\ref{ch:first-subgraph} found in the \code{\_Entity} union, in
+the form the router actually consumes: a type name and the fields that identify
+one of them. A type missing from this table is a type the router has no way
+into, and later in this chapter that stops being an abstract worry.
+
+\index{rootNodes@\code{rootNodes}!which fields this service can answer}%
+Above it sit \code{rootNodes} and \code{childNodes}, which between them say
+which fields this datasource can answer. Four types are root nodes, each with
+its field list: \code{Query}, \code{Mutation}, \code{Session} and
+\code{Speaker}. Eight are child nodes, reachable only underneath something
+else, and they are every other type in the schema: \code{PageInfo}, the two
+connection types, the mutation payload, the two error types, the \code{Error}
+interface and \code{Node}. With one subgraph that partition is not telling you
+much. With three it
+is the map the router plans against, and
+section~\ref{sec:ch07-the-walk} is about what the composer does with it before
+it hands it over.
+\index{router execution config!what the command produces|)}%

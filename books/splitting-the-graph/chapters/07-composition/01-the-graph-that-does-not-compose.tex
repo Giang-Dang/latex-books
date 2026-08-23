@@ -1,0 +1,99 @@
+\section{The Graph That Does Not Compose}
+\label{sec:ch07-the-graph-that-does-not-compose}
+
+\index{composition!what the composer reads|(}%
+The composer is a command-line tool and it takes one input file. Here is the
+whole of it, for a graph with one subgraph in it:
+
+\begin{minted}{yaml}
+version: 1
+subgraphs:
+  - name: sessions
+    routing_url: http://localhost:5001/graphql
+    schema:
+      file: ../src/Sessions/schema.graphql
+\end{minted}
+
+\index{wgc@\code{wgc}!reads files, not services}%
+Read what that file names. A schema on disk, and a url the composer does not
+call. \code{routing\_url} is not where the composer goes to find your schema;
+it is what the composer writes into its output so that a router knows where to
+send a request later. Nothing here talks to a running service, and your service
+does not have to be running. That is the first fact about composition and most
+of what follows depends on it.
+
+\index{wgc@\code{wgc}!the compose command}%
+Then the command, from the directory holding that file:
+
+\begin{minted}{text}
+wgc router compose -i graph.yaml -o router.json
+\end{minted}
+
+\index{composition!the first run fails}%
+One subgraph. The one this book has been building since
+chapter~\ref{ch:hot-chocolate-zero}, exported by the service itself, with the
+federation additions chapter~\ref{ch:first-subgraph} put in and nothing else
+changed. It does not compose:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+The subgraph "sessions" could not be federated for the following reasons:
+The 1st instance of the directive "@cost" declared on coordinates "Query.node" is invalid for the following reason:
+ The value ""10"" provided to argument "@cost(weight: ...)" is not a valid "Int!" type.
+The 1st instance of the directive "@cost" declared on coordinates "Query.nodes" is invalid for the following reason:
+ The value ""10"" provided to argument "@cost(weight: ...)" is not a valid "Int!" type.
+The 1st instance of the directive "@listSize" declared on coordinates "Query.sessions" is invalid for the following
+reason:
+ The definition for "@listSize" does not define the following argument that is provided: "slicingArgumentDefaultValue…
+The 1st instance of the directive "@cost" declared on coordinates "Query.sessions" is invalid for the following
+reason:
+ The value ""10"" provided to argument "@cost(weight: ...)" is not a valid "Int!" type.
+The 1st instance of the directive "@cost" declared on coordinates "Query.sessionById" is invalid for the following
+reason:
+ The value ""10"" provided to argument "@cost(weight: ...)" is not a valid "Int!" type.
+The 1st instance of the directive "@cost" declared on coordinates "Mutation.rescheduleSession" is invalid for the
+following reason:
+ The value ""10"" provided to argument "@cost(weight: ...)" is not a valid "Int!" type.
+The 1st instance of the directive "@cost" declared on coordinates "Session.speaker" is invalid for the following
+reason:
+ The value ""10"" provided to argument "@cost(weight: ...)" is not a valid "Int!" type.
+\end{minted}
+
+\index{composition!errors name a coordinate}%
+Three things about that block before anything about why. The doubled quotes in
+\code{""10""} are the composer quoting a value that is itself a quoted string,
+not a typo. The line about \code{@listSize} stops mid-word because the tool
+draws a fixed-width box around its errors and truncates to fit, so the argument
+name really does arrive cut off. And every error names a schema coordinate
+rather than a line number, which is the right choice for a document nobody
+wrote by hand.
+
+\index{composition!nothing here is about federation}%
+Now read the vocabulary. No key, no entity, no seam, no subgraph but your own.
+Six rejected cost weights and one rejected argument, seven refusals over one
+service, and not one of them is about the thing this part of the book is for. I
+had expected the first composition of this graph to fail. I had not expected it
+to fail without mentioning federation.
+
+\subsection{Nobody Wrote Either Directive}
+
+\index{cost@\code{"@cost}!nobody configured it}%
+Go back and look at where \code{@cost} came from. It has been in this schema
+since chapter~\ref{ch:hot-chocolate-zero}, where it appeared on both fields
+\code{Query} had at the time and was named as something nobody asked for. Hot
+Chocolate applies a default cost weight with no configuration at all, to the
+fields that have a resolver behind them. Six of them are in this schema now,
+and the six are exactly the six the composer rejected.
+
+\index{listSize@\code{"@listSize}!comes from the paging convention}%
+\code{@listSize} arrived with paging in
+chapter~\ref{ch:data-without-n-plus-1}. It carries the two numbers that
+chapter's \code{[UsePaging]} attribute set, and it carries them because the
+same cost analyzer wants to know how big a page can get.
+
+\index{composition!rejects what the library generated}%
+So the schema that fails to compose contains, in the places that fail, nothing
+you typed. Chapter~\ref{ch:first-subgraph} ended on the observation that the
+package writes directives into your public API without asking and that you
+should read the exported file after switching federation on. This is the same
+lesson arriving with a bill attached, and from a different library.
+\index{composition!what the composer reads|)}%

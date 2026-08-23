@@ -297,3 +297,62 @@
                   that caveat in the prose rather than hiding it here. Names in it
                   are first names only, so no individual is attributed a position}
 }
+
+%--------------------------------------------------------------------------
+% Chapter 7 - Composition
+% Three sources, all of them artifacts rather than arguments, which is the
+% basis decision 39 admits unsigned. Two are WunderGraph documenting its own
+% product surface: the reference for the command the chapter runs, and the
+% Protocol Buffers message that is the only definition of the file that
+% command writes. One is Apollo's normative error reference, cited on the same
+% footing as its subgraph specification. Nothing here is a vendor arguing a
+% result, and no page comparing one vendor's product with another's is used.
+%
+% The two error messages the chapter quotes are Cosmo's own text and are
+% attributed to the tool rather than to any specification, because
+% @wundergraph/composition depends on no Apollo package and calls the check
+% resolvability where Apollo calls it satisfiability. The research note
+% records how that was established.
+%--------------------------------------------------------------------------
+
+@online{cosmocompose,
+  author       = {{WunderGraph}},
+  title        = {{\ttfamily wgc router compose}},
+  organization = {WunderGraph Cosmo Docs},
+  url          = {https://cosmo-docs.wundergraph.com/cli/router/compose},
+  urldate      = {2026-08-23},
+  addendum     = {No byline: the vendor's own command-line reference for its own
+                  tool, which is the artifact rather than a claim about one.
+                  Cited for the name of the output, {\enquote{router execution
+                  config}}, and for the documented flags. The word supergraph
+                  does not appear on the page, which the chapter relies on and
+                  the research note records the check for}
+}
+
+@online{cosmonodeproto,
+  author       = {{WunderGraph}},
+  title        = {{\ttfamily node.proto}},
+  organization = {GitHub, wundergraph/cosmo},
+  url          = {https://raw.githubusercontent.com/wundergraph/cosmo/main/proto/wg/cosmo/node/v1/node.proto},
+  urldate      = {2026-08-23},
+  addendum     = {The source of record for the router execution config's shape,
+                  cited because no user-facing documentation of that shape was
+                  found. Read from the main branch on the access date; the file
+                  was last changed 2026-06-23. The five field names in the
+                  RouterConfig message are the five keys the generated file
+                  carries, which the chapter's own run confirms}
+}
+
+@online{apollofederationerrors,
+  author       = {{Apollo GraphQL}},
+  title        = {{Apollo} {Federation} Error Codes},
+  organization = {Apollo GraphQL Docs},
+  url          = {https://www.apollographql.com/docs/federation/errors},
+  urldate      = {2026-08-23},
+  addendum     = {No byline: the normative list of what Apollo's own composer
+                  reports, on the same basis as the subgraph specification.
+                  Cited only for Apollo's word for the check and its
+                  one-sentence description of it. The composer this book runs is
+                  WunderGraph's and shares neither the code nor the vocabulary,
+                  which the chapter says out loud}
+}

@@ -1,0 +1,339 @@
+\section{The Second Document}
+\label{sec:ch07-the-second-document}
+
+\index{composition!a graph of one hides everything|(}%
+A graph of one subgraph composes, and that is the problem with it. Every
+question composition exists to answer is a question about two services
+disagreeing, so a graph with nothing to disagree with passes by having nothing
+to check. The config in
+section~\ref{sec:ch07-what-the-composer-wrote} is real and a router will serve
+it, and it tells you nothing about whether this subgraph can live beside
+another one.
+
+\index{composition!reads documents, not services}%
+Which you can find out now, because of the first fact in this chapter. The
+composer reads files. It does not care whether a service exists behind one, so
+a second document is enough to ask the question, and a second document is
+cheaper than a second service by about a chapter.
+
+\index{speakers.graphql@\code{speakers.graphql}!is written by hand}%
+Here is the one this book uses. It is not exported by anything. Nobody is
+running a Speakers service and chapter~\ref{ch:second-third-subgraph} is where
+one gets built; this is a schema I wrote by hand to find out what will happen
+when it does:
+
+\begin{graphqlsdl}
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.6"
+    import: ["@key", "@shareable", "FieldSet"]
+  ) {
+  query: Query
+}
+
+type Query {
+  node(id: ID!): Node @shareable
+  nodes(ids: [ID!]!): [Node]! @shareable
+}
+
+interface Node {
+  id: ID!
+}
+
+type Speaker implements Node @key(fields: "id") {
+  id: ID!
+  name: String!
+  bio: String
+}
+
+scalar FieldSet
+\end{graphqlsdl}
+
+\index{speakers.graphql@\code{speakers.graphql}!why it declares node}%
+Twenty-four lines, and two of them are doing all the work.
+Chapter~\ref{ch:schema-design} switched global object identification on, and
+every Hot Chocolate service this book builds will have it on for the same
+reason this one does. So every subgraph in this graph exports \code{node} and
+\code{nodes}, and this document says so. Everything else in it is the Speakers
+subgraph as chapter~\ref{ch:federation-model} drew it.
+
+\index{graph.yaml@\code{graph.yaml}!a second graph file}%
+A second input file names both:
+
+\begin{minted}{yaml}
+version: 1
+subgraphs:
+  - name: sessions
+    routing_url: http://localhost:5001/graphql
+    schema:
+      file: ../src/Sessions/schema.graphql
+  - name: speakers
+    routing_url: http://localhost:5002/graphql
+    schema:
+      file: ./speakers.graphql
+\end{minted}
+
+\subsection{The Bill, Presented}
+
+\index{composition!the collision arrives}%
+Compose that and the answer is the one chapter~\ref{ch:federation-model} said
+was coming:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+The Object "Query" defines the same fields in multiple subgraphs without the "@shareable" directive:
+ The field "node" is defined and declared "@shareable" in the following subgraph: "speakers".
+ However, it is not declared "@shareable" in the following subgraph: "sessions".
+ The field "nodes" is defined and declared "@shareable" in the following subgraph: "speakers".
+ However, it is not declared "@shareable" in the following subgraph: "sessions".
+The Object "Speaker" defines the same fields in multiple subgraphs without the "@shareable" directive:
+ The field "name" is defined in the following subgraphs: "sessions", "speakers".
+ However, it is not declared "@shareable" in any of them.
+ The field "bio" is defined in the following subgraphs: "sessions", "speakers".
+ However, it is not declared "@shareable" in any of them.
+\end{minted}
+
+\index{shareable@\code{"@shareable}!two forms of one message}%
+Read the two halves against each other, because the message takes a different
+shape in each and the difference is useful. For \code{Query} it names the
+subgraph that is missing the directive, because the other one has it. For
+\code{Speaker} it says neither of them has it. Same rule, two reports, and the
+first is the one you want: it tells you where to go.
+
+\index{ownership!two collisions, opposite fixes}%
+What the composer cannot tell you is that these two collisions want opposite
+answers. \code{node} is a field two services genuinely both resolve, and every
+service in this graph will resolve it, so the fix is to say so in both.
+\code{Speaker.name} is a field two services both claim and only one should own.
+Sessions still stores the speakers, which chapter~\ref{ch:federation-model}
+said would stay true until there was somewhere to move the rows to, and moving
+them is chapter~\ref{ch:second-third-subgraph}'s work.
+
+\index{composition!says what collides, not who should yield}%
+That distinction is not in the error and could not be. Composition can see that
+two documents claim one field. Which of the two ought to give it up is a
+question about who owns the data, and chapter~\ref{ch:ownership} is a whole
+chapter on how badly that question goes when nobody answers it deliberately.
+
+\subsection{Where the Declaration Goes}
+
+\index{shareable@\code{"@shareable}!there is no method to put it on}%
+So \code{Query.node} needs \code{@shareable} on this side. The obvious move is
+an attribute, and the obvious place is the method the field comes from. There
+is no method. \code{node} and \code{nodes} are generated by
+\code{AddGlobalObjectIdentification()}, and no class in this service declares
+either of them. That rules out the idiom the rest of this book uses before the
+question is properly asked.
+
+\index{Shareable@\code{[Shareable]}!on the Query class}%
+The attribute does have somewhere to go, one level up. \code{[Shareable]} is
+legal on a class, and \code{Query} is a class, so putting it there compiles and
+exports this:
+
+\begin{graphqlsdl}
+type Query @shareable {
+\end{graphqlsdl}
+
+\index{shareable@\code{"@shareable}!on an object means every field}%
+That clears the collision. It also clears things that were not collisions.
+\code{@shareable} on an object means every field of that object, so
+\code{sessions} and \code{sessionById} are declared shareable now as well, and
+what that permits is worth measuring rather than imagining. So I measured it:
+against a subgraph whose \code{Query} is shareable as a type, a second document
+that declares its own \code{sessionById} composes. Not with a softer warning.
+Exit zero, a router execution config written, nothing said. A field only this
+service can answer is now a field any subgraph may claim, and the composer has
+been told not to mind.
+
+\index{ownership!a check switched off is not a check that warns}%
+In a book with a chapter on the subgraph that broke everyone and another on who
+owns what, that is the wrong thing to switch off to save some lines.
+
+\index{ObjectTypeExtension@\code{ObjectTypeExtension}!does not merge here}%
+\code{ObjectTypeExtension} is the schema-building route, and it cannot reach
+these fields at all. One naming \code{Query} and configuring
+\code{Field("node")} does not merge with the generated field; it declares a
+second field with the same name. Without an explicit type the schema fails to
+build with an error about not being able to infer the type of
+\code{Query.node}, and with the type supplied it fails with an error about
+\code{node} and \code{nodes} being declared multiple times on \code{Query}. I
+am describing those rather than printing them, because a service in either
+state does not start and neither is a state this book ships.
+
+\index{TypeInterceptor@\code{TypeInterceptor}!reaches a generated field}%
+What does reach exactly the two fields is a type interceptor. It runs while the
+schema is being built, sees the configuration of each type before that type is
+finished, and can change it. This one is the whole file:
+
+\begin{minted}{csharp}
+using HotChocolate.Configuration;
+using HotChocolate.Language;
+using HotChocolate.Types.Descriptors.Configurations;
+
+namespace Sessions;
+
+/// <summary>
+/// Applies @shareable to the two fields global object identification
+/// generates, and to nothing else.
+/// </summary>
+internal sealed class ShareNodeFields : TypeInterceptor
+{
+    public override void OnBeforeCompleteType(
+        ITypeCompletionContext context,
+        TypeSystemConfiguration configuration)
+    {
+        if (configuration is not ObjectTypeConfiguration type
+            || type.Name != "Query")
+        {
+            return;
+        }
+
+        foreach (var field in type.Fields)
+        {
+            if (field.Name is "node" or "nodes")
+            {
+                field.Directives.Add(
+                    new DirectiveConfiguration(
+                        new DirectiveNode("shareable")));
+            }
+        }
+    }
+}
+\end{minted}
+
+\index{TryAddTypeInterceptor@\code{TryAddTypeInterceptor}!registers it}%
+Registering it is one more line on the builder, below the cost option from
+section~\ref{sec:ch07-whose-directive-is-it}. Here is \code{Program.cs} in its
+final state for this chapter, with both of the chapter's lines marked:
+
+\begin{minted}[highlightlines={35,36}]{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Sessions;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<ConferenceContext>(options =>
+{
+    options.UseSqlite("Data Source=conference.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+builder
+    .AddGraphQL()
+    .AddSessionsTypes()
+    .RegisterDbContextFactory<ConferenceContext>()
+    .AddQueryContext()
+    .AddPagingArguments()
+    .AddGlobalObjectIdentification()
+    .AddMutationConventions()
+    .AddApolloFederation()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false)
+    .TryAddTypeInterceptor<ShareNodeFields>();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<ConferenceContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{shareable@\code{"@shareable}!on two fields and nothing else}%
+And the export says what it should:
+
+\begin{graphqlsdl}
+type Query {
+  node("ID of the object." id: ID!): Node @shareable
+  nodes("The list of node IDs." ids: [ID!]!): [Node]! @shareable
+  ...
+}
+\end{graphqlsdl}
+
+\index{TypeInterceptor@\code{TypeInterceptor}!is the right size for this}%
+Thirty-three lines against one attribute is a bad trade on every measure except
+the one that decides it, which is what the schema then says. The attribute
+makes a promise about four fields in order to buy a promise about two. This
+makes the promise about two. I would spend the lines again, and I would rather
+Hot Chocolate made the question unnecessary by declaring these two the way it
+already declares \code{PageInfo}.
+
+\index{composition!what remains after the fix}%
+Compose the two documents now and \code{Query} is gone from the error
+entirely. What is left is \code{Speaker}, alone, which is the seam.
+
+\begin{onhc14}
+Everything in this chapter happens on~14 as well, and the failure comes first.
+A 14.3.1 subgraph exports the same \code{@cost(weight: "10")} and the same
+\code{@listSize} carrying a \code{slicingArgumentDefaultValue}, so it does not
+compose either, and for a reason that is no more federation's there than here.
+
+The first fix ports unchanged. \code{ModifyCostOptions} is on 14.3.1 under that
+name, \code{CostOptions} carries the same nine properties, and
+\code{ApplyCostDefaults} set false removes both directives exactly as it does
+on~16.
+
+The second ports after four renames, all of them names~16 changed rather than
+mechanisms it added. The class body is otherwise the same file:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+On 16.6.1 & On 14.3.1 \\
+\midrule
+\code{TypeSystemConfiguration} & \code{DefinitionBase} \\
+\code{ObjectTypeConfiguration} & \code{ObjectTypeDefinition} \\
+\code{DirectiveConfiguration} & \code{DirectiveDefinition} \\
+\code{Descriptors.Configurations} & \code{Descriptors.Definitions} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+So the override reads:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+public override void OnBeforeCompleteType(
+    ITypeCompletionContext context,
+    DefinitionBase definition)
+\end{minted}
+
+and everything below it, including the \code{DirectiveNode("shareable")} the
+directive is built from, is character for character what~16 uses.
+Appendix~\ref{app:hc14} carries the class.
+
+One difference is not this chapter's. The key table in the router execution
+config has one row on this branch where~16 has two, because
+chapter~\ref{ch:first-subgraph} established that \code{Session} never becomes
+an entity here. That has a consequence worth knowing: run this chapter's
+unreachable-field experiment against a 14 subgraph and you never reach the
+resolvability pass at all. \code{Session} is not an entity, so both documents
+merely declare \code{Session.id}, and the merge fails on shareability before
+anything walks anywhere.
+\end{onhc14}
+\index{composition!a graph of one hides everything|)}%

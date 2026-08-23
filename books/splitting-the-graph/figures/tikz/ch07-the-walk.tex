@@ -1,0 +1,83 @@
+% The composer's resolvability walk from Query.node to Session.averageScore,
+% as wgc 0.129.9 actually reports it: two steps answered inside subgraph
+% sessions, then a third that needs subgraph ratings and has no resolvable
+% key to get there on.
+%
+% Same idiom as figures/tikz/ch01-one-field.tex and
+% figures/tikz/ch06-two-routes.tex: a timeline read left to right, ticks
+% mark stages, event nodes sit above the axis, and a brace under the
+% stage that matters carries a one-line label. This figure has one lane,
+% not two, because there is one walk here, not two routes compared
+% against each other; the two-lane layout of the earlier figures does not
+% apply to a single path that simply stops.
+%
+% Two things are added to the idiom, both carrying meaning by shape and
+% by dashed-versus-solid rather than by colour, per house style:
+%
+% 1. The axis is solid from tick 1 to tick 2 (the walk stays inside
+%    subgraph sessions) and dashed from tick 2 to tick 3 (the step it
+%    cannot take). The arrowhead lands on tick 3 and the axis stops
+%    there rather than running past it, echoing the composer's own
+%    printed diagnostic, which marks the unreachable field with an arrow
+%    drawn as <--; this figure does not reproduce that literal arrow but
+%    borrows its idea, an arrow that stops at the field it cannot reach.
+% 2. Tick 3 is drawn as a cross, not a vertical stroke, marking the point
+%    the walk cannot pass, in the manner of a buffer stop.
+%
+% The brace sits under the dashed segment, at the crossing that does not
+% exist, and names the reason: ratings declares the key with
+% resolvable: false, so the key is there to be matched against and not to
+% be entered by. That argument is the difference between a seam and a
+% dead end, and it is why the figure labels the key rather than the type.
+%
+% No quotation marks anywhere in this file, including this comment block.
+% SPEC decision 30 puts the book in strict Ascii mode and the prose gate
+% reads a literal quote character as a quotation mark on sight, while the
+% escaped form is LaTeX's diaeresis accent and fails to compile inside a
+% node. Identifiers are written bare.
+%
+% Bare tikzpicture (house style): the figure environment, caption and
+% label live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  axis/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  trunk/.style={draw, line width=0.4pt},
+  tick/.style={draw, line width=0.4pt},
+  event/.style={anchor=south, align=center, inner sep=1pt},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  lane/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+]
+
+\node[lane] at (0,20)
+  {the composer's walk, root field to unreachable field};
+
+% ------------------------------------------------------------ the axis
+% Solid while the walk stays inside subgraph sessions; dashed, with the
+% arrowhead, for the step it cannot take.
+\draw[trunk] (0,0) -- (75,0);
+\draw[axis, dashed] (75,0) -- (130,0);
+
+% Ticks 1 and 2: an ordinary stage mark. Tick 3: a cross, not a stroke,
+% because the walk does not pass this point.
+\foreach \x in {18,75}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+\draw[tick] (128.8,-1.5) -- (131.2,1.5);
+\draw[tick] (128.8,1.5) -- (131.2,-1.5);
+
+% ----------------------------------------------------------- the steps
+\node[event, text width=30mm] at (18,3)
+  {Query.node\\answered by sessions};
+\node[event, text width=30mm] at (75,3)
+  {... on Session\\still sessions, which\\owns the type};
+\node[event, text width=32mm] at (130,3)
+  {averageScore\\defined only in ratings};
+
+% ------------------------------------------- the crossing that does not exist
+\draw[span] (75,-4) -- (75,-7) -- (130,-7) -- (130,-4);
+\node[spanlabel] at (102.5,-8)
+  {ratings declares Session with\\resolvable: false, so its key can be\\matched
+   against but not entered by:\\no accessible target entity, no route};
+
+\end{tikzpicture}

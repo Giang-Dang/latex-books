@@ -1,0 +1,171 @@
+\section{The Walk}
+\label{sec:ch07-the-walk}
+
+\index{resolvability!is a second pass|(}%
+Everything the composer has refused so far it refused while merging the
+documents: two claims on one field, decided by reading both declarations. There
+is a second pass after that one, and it asks whether the schema the documents
+agree on can actually be served.
+
+\index{Ratings subgraph!a third document}%
+Here is a third document to ask it with, written by hand like the last one and
+exported by nothing. It is the Ratings subgraph
+chapter~\ref{ch:federation-model} put on the map, reduced to the two fields
+that matter, given a root field of its own so that it is a subgraph rather than
+a fragment, and carrying one deliberate mistake:
+
+\begin{graphqlsdl}
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.6"
+    import: ["@key", "FieldSet"]
+  ) {
+  query: Query
+}
+
+type Query {
+  ratingCount: Int!
+}
+
+type Session @key(fields: "id", resolvable: false) {
+  id: ID!
+  averageScore: Float
+}
+
+scalar FieldSet
+\end{graphqlsdl}
+
+\index{resolvable@\code{resolvable: false}!says do not come in here}%
+Ratings owns \code{averageScore} and contributes it to a \code{Session} it does
+not own, which is the arrangement chapter~\ref{ch:federation-model} said this
+example exists to show. The mistake is the argument on the key.
+\code{resolvable: false} tells the composer that this subgraph declares the key
+so that its own fields can hang off the type, and that nothing should try to
+enter through it. Ratings also exports no \code{node} field, so there is no
+other door.
+
+\index{composition!merging succeeds and serving would not}%
+Merge those two documents and nothing collides. \code{Session} gains a field,
+which is exactly what a contributing subgraph is for, and every field in the
+result has one owner. The merged schema is fine. It is also unservable, and the
+second pass is what says so:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+The field "averageScore" is unresolvable at the following path:
+ query {
+  node {
+   ... on Session {
+    averageScore <--
+   }
+  }
+ }
+This is because:
+ - The root type field "Query.node" is defined in the following subgraph: "sessions".
+ - The field "Session.averageScore" is defined in the following subgraph: "ratings".
+ - The entity ancestor "Session" in subgraph "sessions" has no accessible target entities (resolvable @key directives)
+in the subgraphs where "Session.averageScore" is defined.
+ - The type "Session" is not a descendant of any other entity ancestors that can provide a shared route to access
+"averageScore".
+\end{minted}
+
+\index{resolvability!the error prints the path}%
+Read what that error is: a path, printed as a query, with an arrow at the step
+the composer could not take. The tool walked from a root field into the schema, kept a record of where
+it had got to and which subgraph it was in, and stopped at the first field it
+could not reach from there. Then it printed the route it had taken to get
+stuck.
+
+\index{figure!the walk}%
+Figure~\ref{fig:ch07-the-walk} is that route with the boundary drawn in.
+
+\begin{figure}
+  \centering
+  \input{figures/tikz/ch07-the-walk}
+  \caption{Three steps, and the third does not happen. The first two are
+  answered by the same subgraph, which is why the line is unbroken, and the
+  third field lives somewhere the composer could find no crossing to. What is
+  missing is not a key, since ratings declares one; it is a key the composer is
+  allowed to enter through, which is the difference between a seam and a dead
+  end and is one argument on one directive.}
+  \label{fig:ch07-the-walk}
+\end{figure}
+
+\index{resolvability!the reasons are the walk's own record}%
+The four reasons underneath the path are the walk's own working, in order: this
+is where I started, this is where the field lives, here is why I could not get
+from the first to the second, and here is why no other way round exists either.
+The third of them is the one that names the fix, and it names it in the
+composer's own vocabulary rather than yours: an accessible target entity is a
+type with a key you are allowed to enter through.
+
+\subsection{Two Passes, and the Flag That Proves It}
+
+\index{disable-resolvability-validation@\code{--disable-resolvability-validation}!separates the passes}%
+The command has an option I would not use and am glad exists:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+wgc router compose -i graph-with-ratings.yaml -o router.json --disable-resolvability-validation
+\end{minted}
+
+\index{resolvability!can be switched off, and merging cannot}%
+The same two documents, and now they compose. A config is written and a router
+would load it. Point the same flag at the shareability collision from
+section~\ref{sec:ch07-the-second-document} and it changes nothing at all: that
+one still fails, because it was never resolvability's to raise.
+
+\index{composition!is two checks with different powers}%
+So composition is two checks, and the flag is the seam between them. Merging is
+structural and not optional; a schema whose documents contradict each other is
+not a schema. Resolvability is a question about whether a plan exists for every
+field, and it can be waived, which is a considerable thing to be able to do by
+accident. \code{wgc}'s own help says not to use the flag unless you are
+troubleshooting. A graph composed with it is a graph where some field answers at
+runtime with an error that no composition ever warned about, and
+chapter~\ref{ch:blame-routing} is about how long that takes to trace.
+
+\subsection{Whose Word This Is}
+
+\index{satisfiability!is Apollo's word}%
+Apollo calls this satisfiability. Its error reference names a
+\code{SATISFIABILITY\_ERROR} and describes it as subgraphs that merge into a
+supergraph with \enquote{queries that cannot be satisfied by those
+subgraphs}~\autocite{apollofederationerrors}. The Composite Schemas
+specification, which chapter~\ref{ch:federation-model} declined to build on,
+has a normative section named Validate Satisfiability with an error code of
+\code{UNSATISFIABLE\_QUERY\_PATH}, and it writes the check out as an explicit
+algorithm over a stack of paths~\autocite{compositeschemasspec}.
+
+\index{resolvability!is Cosmo's word}%
+Cosmo uses a different word. Its composition library is its own, with no Apollo
+package behind it, and what it calls this check is resolvability: that is the
+name on the flag you just read, and it is the name on the source directory and
+the error function behind that message. I have not read every page WunderGraph
+publishes, so I will not tell you the other word appears nowhere; I will tell
+you it appears in none of the places I looked, and that the message on your
+screen does not use it.
+
+\index{terminology!the same check under two names}%
+Which is worth knowing for the practical reason rather than the pedantic one.
+Search for satisfiability after a Cosmo composition has failed and you will
+land on Apollo's documentation for a check Apollo's composer runs, described in
+terms your error does not use. The idea is the same in both. The words came
+from the tool you ran.
+
+\index{resolvability!a walk is my description, not a citation}%
+As for calling it a walk: that is my description, and I cite nobody for it
+because nobody publishes it in those words. What is published is the algorithm.
+The Composite Schemas section above does not describe the check in prose, it
+writes it out: start with a stack of one-element paths, take one off, extend
+it, push the extensions back, and stop when the stack is
+empty~\autocite{compositeschemasspec}. That is a walk whatever anybody calls
+it, and it is what the message on the page is a trace of. I would not rest the
+claim on the class names in either composer's source, tempting as they are: an
+identifier is evidence that somebody once meant something by it and no more
+than that.
+
+\index{satisfiability!chapter 15 is the one about reading these}%
+One clean failure is all this chapter wants from it.
+Chapter~\ref{ch:satisfiability} is the chapter about reading these properly,
+including the case that makes them hard: a field reachable four ways, none of
+which work, and a composer that blames one of the four.
+\index{resolvability!is a second pass|)}%
