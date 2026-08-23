@@ -178,7 +178,12 @@ $Expected = @(
     "chapters/01-triggers/05-language.tex:7: [spelling] 'center' -> centre(s)"
     "chapters/01-triggers/05-language.tex:7: [spelling] 'gray' -> grey"
     "chapters/01-triggers/05-language.tex:9: [spelling] 'neighbor' -> neighbour(s)"
-    # Lines 15-17 of the same file are a \begin{quote} block holding a
+    # Line 11 fires twice, in table order, not text order; "surprise" on the
+    # same line and "exercise"/"expertise" on line 12 are invariant -ise words
+    # and must not, which is why they are on lines the exact comparison reads.
+    "chapters/01-triggers/05-language.tex:11: [spelling] 'optimize' -> optimise"
+    "chapters/01-triggers/05-language.tex:11: [spelling] 'tokenizer' -> tokenise"
+    # Lines 18-20 of the same file are a \begin{quote} block holding a
     # contraction and two en-US spellings, and nothing is expected from them:
     # a displayed quotation is somebody else's words. Exact comparison makes
     # their silence a test rather than an absence.
