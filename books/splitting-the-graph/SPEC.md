@@ -32,9 +32,9 @@ releases stale and is re-pinned at 0.129.9.
 
 Next action: chapter 8, the router. Verify the Cosmo Router version first;
 0.341.0 was read off the GitHub release and the GHCR manifest on 2026-08-23 and
-nothing has run it. **Read the open item about chapters 8 and 9 before
-outlining either**: the TOC gives chapter 8 a query across two subgraphs and
-chapter 9 the building of the second one, and those two cannot both be right.
+nothing has run it. Chapter 8 serves the one subgraph that exists and the
+first cross-seam query is chapter 9's, settled as decision 79 after chapter 7
+found the TOC promising it a service that does not exist yet.
 
 **Why this book exists.** It is the second book in this library on federated
 GraphQL in .NET, and it exists because the first one,
@@ -146,6 +146,8 @@ and why, in the row.
 
 | 78 | A version string a generated artifact carries may be quoted, and the gate holds it | The third case in the family decisions 42 and 63 opened, and it needed a row because neither of theirs covers it. Decision 35 keeps versions out of sentences so that bumping the toolchain is one edit; decision 42 exempted a `.csproj` printed in full and decision 63 an SDL document's `@link` url, both on the reasoning that a document printed under decision 15 carries its own pins and a reader typing it needs them. Chapter 7 quotes `1:0.63.3` out of the router execution config, in prose rather than in a listing, because the whole point of the paragraph is that this is the only place a config records which composer produced it. What makes that safe is not the carve-out but the gate: `verify.ps1` asserts the string, so upgrading `wgc` fails a run and the chapter is corrected rather than ageing quietly, which is the protection appendix A was giving. The rule reads: a version a chapter states about the toolchain goes in appendix A; a version a chapter reads back out of an artifact it just produced may be quoted, provided the verification script asserts it. |
 
+| 79 | Chapter 8's cross-seam clause moves to chapter 9, and the router arrives over a graph of one | The TOC gave chapter 8 "the first query answered across two subgraphs" and chapter 9 the building of the second subgraph, so the service chapter 8 queried across did not exist until the chapter after it. Settled while closing out chapter 7, which had already assumed this resolution in prose without the TOC catching up. The clause moves to chapter 9 and chapter 8 shows the router over the one subgraph that exists. **The reason is decision 14, not tidiness.** A reader who meets the router and the first seam in one chapter cannot tell which of the two caused what they are looking at; a reader who has already watched a router serve a graph with no seam in it can attribute everything chapter 9 adds to the seam. **Rejected: giving chapter 8 a minimal Speakers subgraph**, which sounds smaller and is not. Such a subgraph either duplicates `Speaker.name` and `bio` while Sessions still owns the rows, which cannot compose without declaring shareable exactly the field chapter 7 closes by teaching the reader never to declare shareable, or it moves the rows properly, which is chapter 9's content arriving inside a chapter about the router and a second full service printed under decision 15. Also rejected: swapping the two chapters, which leaves chapter 8 with two services and no router to show them working through. Chapter 9 becomes the largest chapter in part II and that is accepted; if outlining it finds it is genuinely two chapters, it splits there, which this resolution keeps available and the rejected one would have foreclosed. |
+
 
 ## Version baseline
 
@@ -196,8 +198,8 @@ session. Chapter folders in `chapters/` carry the same scope lines.
 5. **The Federation Model** - supergraph and subgraphs, entity ownership, keys, the Apollo Federation v2 directive tour, and why this book builds on that specification rather than on the Composite Schemas draft
 6. **Your First Subgraph** - `HotChocolate.ApolloFederation`, `@key`, reference resolvers, and what `_service` and `_entities` expose
 7. **Composition** - `wgc router compose`, the two directives that stop it before federation does, what a router execution config actually contains, and resolvability as a walk over the graph
-8. **Enter the Router** - Cosmo Router locally, what it loads and what it serves, and the first query answered across two subgraphs
-9. **The Second and Third Subgraph** - the seams, `@external`, `@requires` and `@provides`, and the graph the rest of the book uses
+8. **Enter the Router** - Cosmo Router locally, what it loads and what it serves, the subgraph still on its own port behind it, and a query plan with no seam in it yet
+9. **The Second and Third Subgraph** - the seams, `@external`, `@requires` and `@provides`, the first query answered across two subgraphs, and the graph the rest of the book uses
 
 ### Part III - The Problems
 
@@ -493,19 +495,14 @@ An unresolved question, and the condition that unblocks it.
   node resolver taking a `QueryContext` can be routed through a loader without
   losing the projection, at which point chapter 10's neighbourhood is worth
   re-reading, since the router's `_entities` has the same shape.
-- **Chapters 8 and 9 cannot both have the TOC line they have.** Chapter 8's
-  line promises "the first query answered across two subgraphs" and chapter 9
-  is titled *The Second and Third Subgraph*, so the service chapter 8 queries
-  across does not exist until the chapter after it. Chapter 5's own prose has
-  the same split, saying chapter 8 answers the first query that crosses a seam
-  and chapter 9 adds the other two services. Chapter 7 did not need it resolved,
-  because composition reads documents and a document is enough, and it is
-  recorded here rather than quietly fixed because it is a change to two approved
-  TOC lines. Three ways out, in the order I would consider them: chapter 8
-  stands up a minimal Speakers service and chapter 9 becomes the seams plus
-  Ratings; chapter 8 runs the router over one subgraph and its line loses the
-  cross-seam promise; or chapters 8 and 9 swap. Unblocked by outlining chapter 8,
-  which is the next chapter drafted.
+- **Whether chapter 9 is one chapter or two.** Decision 79 moved the first
+  cross-seam query into it, so it now carries the Speakers extraction, the
+  Ratings service, the seam directives and that query. Two services printed in
+  full under decision 15 is a lot of page for one chapter. The split, if it is
+  needed, is along the seam each service makes: Speakers is a plain entity
+  reference and Ratings is a subgraph contributing fields to a type it does not
+  own. Unblocked by outlining chapter 9, and nothing about chapter 8 depends on
+  the answer.
 - **Which of Hot Chocolate and Cosmo is right about `@cost(weight:)`.** Hot
   Chocolate emits `weight: String!`, Cosmo's composer demands `Int!`, and
   decision 73 turns the defaults off rather than adjudicating. The
