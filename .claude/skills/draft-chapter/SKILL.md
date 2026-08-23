@@ -176,7 +176,11 @@ The sequence matters more than any individual step.
    item into exactly one of these:
 
    - A machine-checkable mistake **any book would want caught** becomes a
-     proposed new check in `scripts/check-chapter.ps1`.
+     proposed new check in `scripts/check-chapter.ps1`. A new check defaults
+     off, so the proposal is a pair: the check, and the psd1 setting plus SPEC
+     rule that turn it on for this book. Other books adopt it when their
+     authors choose. A fix to a check that already exists is different: it
+     reaches every book, and the pre-commit hook runs them all to prove it.
    - A machine-checkable mistake **only this book cares about** becomes a
      proposed setting in `books/<name>/check-chapter.psd1`, plus the rule it
      enforces in the SPEC's writing-rules section. The two go together: a

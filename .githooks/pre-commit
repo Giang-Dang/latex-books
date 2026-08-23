@@ -1,6 +1,9 @@
 #!/bin/sh
 # Local build gate (this repo has no CI): build every book touched by the
 # staged changes, run the prose checks, and abort the commit if either fails.
+# When the prose gate's own files are staged, also run its tests and the gate
+# on every book, because a change to the shared script is a change to every
+# book's commit and used to be the one kind of commit nothing checked.
 # One-time setup per clone: git config core.hooksPath .githooks
 
 set -e
@@ -8,6 +11,33 @@ set -e
 targets=$(git diff --cached --name-only |
     sed -n -e 's|^\(books/[^/]*\)/.*|\1|p' -e 's|^template/.*|template|p' |
     sort -u)
+
+# The gate's own files: the script, its tests, its fixtures. A check added for
+# one book first failed another book weeks later, on an unrelated chapter,
+# because a scripts-only commit ran nothing. So: the test suite, then the gate
+# on every book and the template. No builds, which is why this is seconds: a
+# missing or stale build/main.log is a warning in the Log check, not a failure,
+# and an old log with real overfull lines was a real finding before this ran.
+gate=$(git diff --cached --name-only |
+    grep -E '^scripts/(check-chapter\.ps1|check-chapter\.tests\.ps1|tests/)' | head -1)
+if [ -n "$gate" ]; then
+    echo "pre-commit: the prose gate changed; running scripts/check-chapter.tests.ps1"
+    if ! pwsh scripts/check-chapter.tests.ps1; then
+        echo "pre-commit: the gate's tests failed; commit aborted."
+        exit 1
+    fi
+    for b in books/*/ template/; do
+        b=${b%/}
+        [ -f "$b/main.tex" ] || continue
+        echo "pre-commit: checking $b against the changed gate"
+        if ! pwsh scripts/check-chapter.ps1 "$b"; then
+            echo "pre-commit: $b fails the changed gate; commit aborted."
+            echo "pre-commit: fix $b in this commit, make the new check default off,"
+            echo "pre-commit: or rebuild $b if the finding is [log]: the sweep reads its last build log as is."
+            exit 1
+        fi
+    done
+fi
 
 [ -z "$targets" ] && exit 0
 

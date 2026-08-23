@@ -12,6 +12,18 @@
 # and the resolved policy is printed on every run so a weakened gate is visible
 # rather than silent.
 #
+# This script is shared by every book, and it grows by about one check per
+# chapter drafted. So a check added from here on is OFF until a book asks for
+# it: either Enabled = $false, or the shape Spelling.Preset, Listings.MaxLineLength
+# and Gloss.Glossary already use, on but inert until the book names a value. A
+# book turns it on in its psd1 and writes the rule in its SPEC; the other books
+# meet it when their authors choose, not when it merges. The tests pin the
+# policy line a brand-new book prints, so making a new check default-on is an
+# edit to that literal rather than a surprise in another book's next commit.
+# A fix to an existing check still reaches every book at once, which is what
+# sharing is for, and .githooks/pre-commit runs the tests and every book when
+# this file changes.
+#
 # Usage: pwsh scripts/check-chapter.ps1 books/<name> [-Chapter NN]
 # Tests: pwsh scripts/check-chapter.tests.ps1
 
@@ -42,6 +54,12 @@ if (-not (Test-Path (Join-Path $bookPath 'main.tex'))) {
 # The defaults, and the schema a book's file is validated against. Anything not
 # named here cannot be set by a book, which is what makes a typo an error
 # instead of a silently disabled check.
+#
+# Adding a family or a switch: it defaults off. Follow Contractions (Enabled =
+# $false) or the inert-until-named shape of Spelling.Preset = '',
+# Listings.MaxLineLength = 0 and Gloss.Glossary = ''. The tests pin the policy
+# line the template prints, so a default that is live here fails the suite until
+# that literal is changed on purpose.
 function Get-DefaultPolicy {
     [ordered]@{
         # Which trees are read. Characters is separate from Prose because a
@@ -404,6 +422,28 @@ function Get-SpellingTable {
                 'analyz(?:e|es|ed|ing|er|ers)'      = 'analyse'
                 'authoriz(?:e|es|ed|ing|ation|ations)' = 'authorise'
                 'modeling'                          = 'modelling'
+                # The -our family, and the doubled-l past tenses. Added after
+                # one en-GB word in an en-US book walked through this gate and
+                # was caught by a reader. Each stem is listed on its own rather
+                # than as a generic -or/-our rule, because "error" and "author"
+                # are not in the family and a pattern broad enough to take
+                # "neighbor" takes those too.
+                'neighbors?'                        = 'neighbour(s)'
+                'neighboring'                       = 'neighbouring'
+                'neighborhoods?'                    = 'neighbourhood(s)'
+                'favors?'                           = 'favour(s)'
+                'favor(?:ed|ing|able)'              = 'favoured'
+                'honors?'                           = 'honour(s)'
+                'honored'                           = 'honoured'
+                'humor'                             = 'humour'
+                'flavors?'                          = 'flavour(s)'
+                'flavored'                          = 'flavoured'
+                'harbors?'                          = 'harbour(s)'
+                'defenses?'                         = 'defence(s)'
+                'travel(?:ed|ing)'                  = 'travelled'
+                'cancel(?:ed|ing)'                  = 'cancelled'
+                'signal(?:ed|ing)'                  = 'signalled'
+                'modeled'                           = 'modelled'
             }
         }
         'en-US' {
@@ -426,6 +466,23 @@ function Get-SpellingTable {
                 'analys(?:e|es|ed|ing|er|ers)'         = 'analyze'
                 'authoris(?:e|es|ed|ing|ation|ations)' = 'authorize'
                 'modelling'                            = 'modeling'
+                # The mirror of the en-GB additions above.
+                'neighbours?'                          = 'neighbor(s)'
+                'neighbouring'                         = 'neighboring'
+                'neighbourhoods?'                      = 'neighborhood(s)'
+                'favours?'                             = 'favor(s)'
+                'favour(?:ed|ing|able)'                = 'favored'
+                'honours?'                             = 'honor(s)'
+                'honoured'                             = 'honored'
+                'humour'                               = 'humor'
+                'flavours?'                            = 'flavor(s)'
+                'flavoured'                            = 'flavored'
+                'harbours?'                            = 'harbor(s)'
+                'defences?'                            = 'defense(s)'
+                'travell(?:ed|ing)'                    = 'traveled'
+                'cancell(?:ed|ing)'                    = 'canceled'
+                'signall(?:ed|ing)'                    = 'signaled'
+                'modelled'                             = 'modeled'
             }
         }
         default {
@@ -646,6 +703,15 @@ $charFiles = if ($policy.Paths.Characters -join '|' -eq ($policy.Paths.Prose -jo
 # list after a starred name and nothing else - after a bare \begin{minted} they
 # hold the language.
 $verbatimEnvs = @('minted', 'verbatim', 'verbatim*', 'Verbatim', 'Verbatim*')
+
+# --- displayed quotations. Inside one of these the words are somebody else's,
+# exactly as they are inside \enquote{}, which Macros.Quoted already masks. The
+# contraction and spelling checks stand down for the lines between \begin and
+# \end; nothing else does, because a -- in a quotation still sets an en dash in
+# this book and a literal " in one is still not how this book quotes. Hard-coded
+# like the stock verbatim list above: these are LaTeX and csquotes facts, not a
+# book's choice.
+$quoteEnvs = @('quote', 'quotation', 'displayquote')
 $starredAliases = @()
 # The unstarred names on their own, which is what the AliasAsLexer check
 # compares a \begin{minted}{...} argument against.
@@ -1333,6 +1399,8 @@ foreach ($f in $texFiles) {
 
     $rawLines = @(Get-Content $f.FullName)
     $inVerb = $null
+    # The displayed quotation the current line is inside, if any.
+    $inQuoteEnv = $null
     $maskState = @{}
 
     # listing-width state: whether the open block waived the check by carrying
@@ -1483,8 +1551,26 @@ foreach ($f in $texFiles) {
         $noCode = Remove-MacroSpanList $stripped $policy.Macros.Code $maskState 'prose'
         $prose = Remove-MacroSpanList $noCode $policy.Macros.Quoted $maskState 'prose-quoted'
 
-        # words: prose minus tokens that are identifiers, not English
-        $words = $prose -replace $identifierRe, ' '
+        # words: prose minus tokens that are identifiers, not English. Blank on
+        # the lines between \begin and \end of a displayed quotation, so the
+        # contraction and spelling checks read the author's words only. The
+        # \begin line is read as usual; the \end line is masked with the body,
+        # since it may carry the last quoted words before the \end. A quotation
+        # opened and closed on one line is not masked at all: that shape is
+        # what \enquote{} is for.
+        if ($inQuoteEnv) {
+            if ($stripped -match ('\\end\{' + [regex]::Escape($inQuoteEnv) + '\}')) {
+                $inQuoteEnv = $null
+            }
+            $words = ''
+        } else {
+            $words = $prose -replace $identifierRe, ' '
+            $qm = [regex]::Match($stripped, '\\begin\{([A-Za-z]+)\}')
+            if ($qm.Success -and $quoteEnvs -contains $qm.Groups[1].Value -and
+                $stripped -notmatch ('\\end\{' + [regex]::Escape($qm.Groups[1].Value) + '\}')) {
+                $inQuoteEnv = $qm.Groups[1].Value
+            }
+        }
 
         # 2. tilde-cite
         if ($policy.Citations.Enabled -and $policy.Citations.RequireTie) {

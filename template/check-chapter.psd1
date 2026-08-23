@@ -13,6 +13,13 @@
     # setting only when this book has a reason to differ, and write that reason
     # down beside it.
     #
+    # Inheriting is safe because the library grows in one direction. A check
+    # added to check-chapter.ps1 after this book started is off until this file
+    # turns it on, so a later improvement can fix a check this book already runs
+    # but cannot start reporting something new without this book's author
+    # uncommenting the setting and writing the rule in SPEC.md. The new checks
+    # are listed below like the old ones, with their default shown as off.
+    #
     # The commented block is also the schema. Every key check-chapter.ps1
     # accepts appears below, in the sections and the order the script defines
     # them, showing the default it resolves to. A name that is not listed here

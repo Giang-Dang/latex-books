@@ -17,13 +17,15 @@
     quote.
 
     Both live under scripts/ rather than books/ because .githooks/pre-commit
-    builds only books/* and template. Nothing here is compiled and nothing here
-    costs anything at commit time.
+    builds only books/* and template. Nothing here is compiled, and the hook
+    runs this suite only when the gate's own files are staged.
 
     Add a check to check-chapter.ps1 and you add a trigger to a fixture, a line
     to $Expected, and a row to $WiringCases. That is the point: until these
     existed there was no cost to hardcoding one book's policy into the shared
-    script, because nothing else exercised it.
+    script, because nothing else exercised it. And the check defaults off, so
+    the policy line this suite pins for a brand-new book does not move; if it
+    has to, the literal below is edited on purpose and the commit says why.
 
 .EXAMPLE
     pwsh scripts/check-chapter.tests.ps1
@@ -41,6 +43,7 @@ $ErrorActionPreference = 'Stop'
 $checker  = Join-Path $PSScriptRoot 'check-chapter.ps1'
 $bookFix  = Join-Path $PSScriptRoot 'tests' 'fixture-book'
 $punctFix = Join-Path $PSScriptRoot 'tests' 'fixture-punctuation'
+$repoRoot = Split-Path -Parent $PSScriptRoot
 
 $failed = $false
 
@@ -174,6 +177,11 @@ $Expected = @(
     "chapters/01-triggers/05-language.tex:7: [spelling] 'color' -> colour(s)"
     "chapters/01-triggers/05-language.tex:7: [spelling] 'center' -> centre(s)"
     "chapters/01-triggers/05-language.tex:7: [spelling] 'gray' -> grey"
+    "chapters/01-triggers/05-language.tex:9: [spelling] 'neighbor' -> neighbour(s)"
+    # Lines 15-17 of the same file are a \begin{quote} block holding a
+    # contraction and two en-US spellings, and nothing is expected from them:
+    # a displayed quotation is somebody else's words. Exact comparison makes
+    # their silence a test rather than an absence.
     "chapters/01-triggers/06-dashes.tex:4: [dash] en/em dash ligature in prose; reword or use ASCII punctuation"
     "chapters/01-triggers/07-numbers.tex:7: [number] '9.99' is in no research/ note; measure it, or record where it came from"
     # 3.14 appears only in research/README.md, which documents the folder and is
@@ -272,14 +280,57 @@ if (Compare-Findings 'fixture-book with every check on' $Expected $actual) {
 # letters of any script pass, spelling has no variety to enforce, whether
 # contractions belong in the voice is left to the book, and no column budget has
 # been declared, so the listing-width check does not run either.
-$DefaultIds = @('cite-key', 'dash', 'index-pct', 'json', 'log', 'number', 'quote', 'tikz', 'tikz-dash', 'tilde-cite', 'verbatim')
-$defaultIds = Get-FindingIds (Invoke-BookFixture -NoPolicy)
-if (($defaultIds -join ',') -ne ($DefaultIds -join ',')) {
+#
+# Expected and actual carry different names, not different cases. PowerShell
+# variable names are case-insensitive, and this block once read $DefaultIds
+# against $defaultIds, which is one variable assigned twice: the comparison
+# could never fail, and the gate's defaults went unpinned for as long as it
+# said they were pinned. Found when the pinned policy line below was written
+# the same way and passed a deliberately broken default.
+#
+# minted-alias is in the list because Listings.AliasAsLexer defaults on, and
+# has since fe64dfc; the broken comparison is why its arrival never moved this
+# line. It stays on: the check reports a build failure, not a style.
+$ExpectedDefaultIds = @('cite-key', 'dash', 'index-pct', 'json', 'log', 'minted-alias', 'number', 'quote', 'tikz', 'tikz-dash', 'tilde-cite', 'verbatim')
+$actualDefaultIds = Get-FindingIds (Invoke-BookFixture -NoPolicy)
+if (($actualDefaultIds -join ',') -ne ($ExpectedDefaultIds -join ',')) {
     Write-Fail 'the library defaults are not the expected reduced set'
-    Write-Host "    expected: $($DefaultIds -join ', ')"
-    Write-Host "    actual:   $($defaultIds -join ', ')"
+    Write-Host "    expected: $($ExpectedDefaultIds -join ', ')"
+    Write-Host "    actual:   $($actualDefaultIds -join ', ')"
 } else {
     Write-Host '[ok]   defaults: ascii, contraction and spelling are off until a book asks'
+}
+
+# ---------------------------------------------------------------------------
+# The policy line a brand-new book prints is pinned
+# ---------------------------------------------------------------------------
+
+# $DefaultIds above says which checks fire on the fixture with no psd1. This
+# says which are live at all, read off the policy line the template prints:
+# template/check-chapter.psd1 is a live, empty @{}, so the line is
+# Get-DefaultPolicy as a new book resolves it. A check added to the script
+# defaults off, and this literal is how that rule is enforced rather than
+# remembered: a new family or switch that shows up here as anything but off was
+# made default-on for every book at once, and the only way past this test is
+# to edit the literal on purpose, in the same commit, with the reason in the
+# message.
+#
+# Two bits encode the template's contents rather than a default:
+# numbers=...(no notes) and verbatim=off both follow from template/research/
+# holding only its README. A research note added to the template would move
+# them, and should.
+$ExpectedTemplatePolicy = 'chars=Punctuation cite=autocite(tie,keys) quotes=on index=on dashes=on ' +
+    'contractions=off spelling=off numbers=research/*.md(no notes) verbatim=off ' +
+    'json=minted:json listings=off+alias gloss=off figures=7 reserved keys+node text log=0/0'
+$templateRun = Invoke-CheckerRaw (Join-Path $repoRoot 'template')
+$actualTemplatePolicy = [string](@($templateRun.Lines | Where-Object { $_ -like '==> policy: *' } |
+    Select-Object -First 1) -replace '^==> policy: ', '')
+if ($actualTemplatePolicy -ne $ExpectedTemplatePolicy) {
+    Write-Fail 'the policy line a brand-new book prints has moved; a new check defaults off, or this literal is edited on purpose'
+    Write-Host "    expected: $ExpectedTemplatePolicy"
+    Write-Host "    actual:   $actualTemplatePolicy"
+} else {
+    Write-Host '[ok]   defaults: a new book''s policy line is the one the tests pin'
 }
 
 # ---------------------------------------------------------------------------
@@ -584,8 +635,6 @@ function Get-DocumentedSchema {
     }
     return [pscustomobject]@{ Order = $order; Keys = $keys }
 }
-
-$repoRoot = Split-Path -Parent $PSScriptRoot
 
 $t = $null; $e = $null
 $scriptAst = [System.Management.Automation.Language.Parser]::ParseFile($checker, [ref]$t, [ref]$e)

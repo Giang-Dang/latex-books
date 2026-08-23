@@ -59,5 +59,8 @@ release build.
 ## Build gate
 
 There is no CI. The pre-commit hook in `.githooks/` compiles every book
-touched by the staged changes and aborts the commit on a broken build. The
+touched by the staged changes, runs `scripts/check-chapter.ps1` on it, and
+aborts the commit if either fails. When that script, its tests or its fixtures
+are staged, the hook also runs the tests and the script against every book, so
+a change to the shared gate is proved against all of them before it lands. The
 committed PDFs in `dist/` are only refreshed locally via `scripts/release.ps1`.

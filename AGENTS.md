@@ -13,7 +13,9 @@ preamble code; repo-wide consistency is structural only.
   prose gate), and the tests beside the last two (PowerShell 7+)
 - .githooks/ - every hook this repo runs, because setup.ps1 points
   core.hooksPath here and git then reads nothing from .git/hooks. pre-commit is
-  the local build gate: it compiles every staged book before a commit. The
+  the local build gate: it compiles and prose-checks every staged book before
+  a commit, and when the prose gate's own files are staged it also runs their
+  tests and the gate on every book and the template, without building. The
   other four are Git LFS's own hooks, kept byte-for-byte as git lfs install
   writes them - tracked so that redirecting core.hooksPath cannot quietly
   disable LFS and leave dist/ pushed as pointers with no content behind them,
@@ -106,6 +108,12 @@ check-chapter.ps1 prints the policy it resolved on every run, so a gate that
 has been weakened says so rather than passing quietly. Keep the two halves in
 step: a setting with no rule behind it is a rule nobody agreed to, and a rule
 with no setting is a rule nothing enforces.
+
+The script is shared and keeps growing, so a check added to it defaults off.
+A book that wants it turns it on in its check-chapter.psd1 and writes the rule
+in its SPEC; the other books meet it when their authors choose, not when it
+merges. A fix to a check a book already runs reaches every book at once, and
+the pre-commit hook runs every book against the changed script to prove it.
 
 ## Writing defaults (all books)
 
