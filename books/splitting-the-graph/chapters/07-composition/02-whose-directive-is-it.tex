@@ -1,0 +1,191 @@
+\section{Whose Directive Is It}
+\label{sec:ch07-whose-directive-is-it}
+
+\index{composition!the composer holds its own definitions|(}%
+The exported schema declares \code{@cost} in full.
+Chapter~\ref{ch:hot-chocolate-zero} printed the definition and it is still
+there, at the bottom of the file with the other directive definitions, saying
+what the argument is. Its two descriptions are dropped here as everywhere else
+in the book, and nothing else is:
+
+\begin{graphqlsdl}
+directive @cost(
+  weight: String!
+) on
+  | SCALAR
+  | OBJECT
+  | FIELD_DEFINITION
+  | ARGUMENT_DEFINITION
+  | ENUM
+  | INPUT_FIELD_DEFINITION
+\end{graphqlsdl}
+
+\index{cost@\code{"@cost}!two definitions of one directive}%
+\code{weight: String!}, and the value on every field is the string
+\code{"10"}. The composer says that value is not a valid \code{Int!}. It is not
+reading the definition in front of it. It has one of its own, and where a
+directive is one it knows, its own wins.
+
+\index{listSize@\code{"@listSize}!the arity differs}%
+The second error says the same thing in the other direction. The document's
+\code{@listSize} takes five arguments, one of which the composer's definition
+does not have, so an argument that is legal in the schema the service exported
+is an unknown argument by the time it is read. I did not read the composer's
+definition in full and do not know its arity; what the error establishes is
+which argument is missing from it. Two libraries, one directive name, two
+definitions:
+
+% \raggedright in the last column, and so \tabularnewline rather than \\:
+% the identifier in the bottom cell is 27 characters with no break point, and
+% justified it opens gaps across the two lines above it.
+\begin{center}
+\begin{tabular}{l p{24mm} p{66mm}}
+\toprule
+Directive & Hot Chocolate emits & \raggedright the composer expects
+  \tabularnewline
+\midrule
+\code{@cost} & \code{weight: String!} & \raggedright \code{weight: Int!}
+  \tabularnewline
+\addlinespace
+\code{@listSize} & five arguments & \raggedright a definition with no
+  \code{slicingArgumentDefaultValue} in it \tabularnewline
+\bottomrule
+\end{tabular}
+\end{center}
+
+\index{cost@\code{"@cost}!is not a federation directive}%
+Neither directive belongs to federation, which is why neither vendor is obliged
+to follow the other. Both come from the cost-analysis work that a client-facing
+GraphQL server does to decide how much a query may ask for, and
+chapter~\ref{ch:federation-model} already put them in that category: documented
+by Apollo alongside the federation directives, implemented by Hot Chocolate in
+its core rather than in the federation package, and about how much work a
+client may ask for rather than about a seam. Two implementations of an idea
+that is still moving have drifted apart, and the drift is invisible until
+something reads both.
+
+\index{composition!which side is right was not established}%
+I am not going to tell you which of them is right, because I did not establish
+it. The disagreement is the fact, and the direction of it is the fact: Hot
+Chocolate says string, the composer says integer, and your subgraph is the
+place the two meet.
+
+\subsection{One Line}
+
+\index{ModifyCostOptions@\code{ModifyCostOptions}!turns the defaults off}%
+The weight's type is the library's and I found nothing that changes it, which
+is fine, because the directives were never configured in the first place. Stop
+emitting them. That is one call on the builder:
+
+\begin{minted}[highlightlines={35}]{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Sessions;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<ConferenceContext>(options =>
+{
+    options.UseSqlite("Data Source=conference.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+builder
+    .AddGraphQL()
+    .AddSessionsTypes()
+    .RegisterDbContextFactory<ConferenceContext>()
+    .AddQueryContext()
+    .AddPagingArguments()
+    .AddGlobalObjectIdentification()
+    .AddMutationConventions()
+    .AddApolloFederation()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false);
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<ConferenceContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{ApplyCostDefaults@\code{ApplyCostDefaults}!removes both directives}%
+\code{ApplyCostDefaults} removes both directives, uses and definitions
+together, and the exported schema goes from 201 lines to 165.
+
+\index{ApplyCostDefaults@\code{ApplyCostDefaults}!the option beside it is not the fix}%
+\code{ApplySlicingArgumentDefaultValue} is the option next to it, and it looks
+like the one for the \code{@listSize} half. It is not. Setting it false drops a
+single argument from a directive the composer would reject for another reason
+anyway, so the graph still does not compose, and once the defaults are off it
+changes nothing at all. One option, one line.
+
+\index{schema export@\code{schema export}!has no filter for this}%
+The other place you might look for a fix is the export, and it is not there.
+\code{schema export} takes an output path, a schema name and a flag about
+semantic nullability, and nothing that drops a directive on the way out. That
+is the right design. The exported document is what the service serves from
+\code{\_service}, and a switch that made the two differ would be a worse
+problem than this one.
+
+\subsection{What That Costs, and What It Does Not}
+
+\index{listSize@\code{"@listSize}!its numbers were chapter 3's}%
+Chapter~\ref{ch:data-without-n-plus-1} set a default page of two and a maximum
+of ten, and said that the exported file carries those numbers inside
+\code{@listSize}. It no longer does, because the directive is gone. Worth being
+precise about what that means, because it sounds like a chapter losing a
+feature.
+
+\index{paging!the limits still hold}%
+The limits still hold. Ask for the schedule with no arguments and two sessions
+come back with a next page waiting. Ask for eleven and the request is refused:
+
+\begin{minted}{text}
+The maximum allowed items per page were exceeded.
+\end{minted}
+
+\index{cost analysis!the directive was a description, not a control}%
+Ask for ten, which is the maximum, and all four sessions arrive. So
+\code{[UsePaging]} governs paging exactly as it did, and the directive that
+disappeared was never what enforced it. It was the cost analyzer's description
+of a limit that lives somewhere else. Losing the description costs the schema a
+statement about itself and costs a running service nothing.
+
+\index{cost analysis!what turning the defaults off gives up}%
+What you do give up is the default weights, which is a real thing to give up if
+you were relying on them. A schema with no \code{@cost} anywhere is a schema
+where every field costs whatever the analyzer's fallback is rather than what
+the library guessed, and a service that wants complexity limits under a
+federated router has to say what it wants rather than accept a default.
+Chapter~\ref{ch:operations} is where that becomes a decision rather than a
+side effect. For now the trade is: a graph that composes, in exchange for
+weights nobody chose.
+\index{composition!the composer holds its own definitions|)}%

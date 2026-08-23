@@ -1,0 +1,55 @@
+\section{What Is Left}
+\label{sec:ch07-what-is-left}
+
+\index{composition!the state this chapter ends in|(}%
+Two files and one command, and the graph as it stands composes. There is still
+one subgraph in it. A router execution config for a single service is a real
+artifact and chapter~\ref{ch:enter-the-router} will serve from it, and it
+proves nothing about the graph this book is heading for, because every check
+composition performs is a check on a disagreement and one document disagrees
+with nobody.
+
+\index{composition!what the second document settled}%
+The second and third documents are what did the proving, and two of the three
+answers they asked for are in. \code{Query.node} needed \code{@shareable} and
+has it. The cost directives needed to stop being emitted and have stopped.
+Compose Sessions against a Speakers subgraph now and exactly one thing is
+wrong:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+The Object "Speaker" defines the same fields in multiple subgraphs without the "@shareable" directive:
+ The field "name" is defined in the following subgraphs: "sessions", "speakers".
+ However, it is not declared "@shareable" in any of them.
+ The field "bio" is defined in the following subgraphs: "sessions", "speakers".
+ However, it is not declared "@shareable" in any of them.
+\end{minted}
+
+\index{Speaker@\code{Speaker}!is owned twice, deliberately}%
+One object, two fields, and no fix belongs in this chapter. The error is
+correct, both schemas are correct, and the arrangement is what is wrong.
+
+\index{shareable@\code{"@shareable}!would compose and would be a lie}%
+It is also fixable in thirty seconds the wrong way, which is the part worth
+carrying out of this chapter. Write \code{@shareable} on \code{Speaker.name} in
+both documents and the graph composes, silently. What you would have declared
+is that either service can answer for a speaker's name and a client may be
+served whichever, when only one of them has the table. The first time somebody
+edits a name, the graph starts returning whichever copy the query plan reached
+first.
+
+\index{composition!a passing composition is not a correct graph}%
+That is the shape of every remaining use of this directive, including the one
+this chapter shipped: \code{@shareable} tells the composer to stop reporting
+something, and whether it should have been reported is a question about who
+owns the data. Chapter~\ref{ch:ownership} is the version of that question at
+organizational scale, where the directive that silences the warning gets added
+in a hurry by whoever is on call.
+
+\index{Part II!what the next two chapters do}%
+Two chapters left in this part. Chapter~\ref{ch:enter-the-router} takes the
+config this chapter produced, puts a router in front of it and finds out what
+it does with each of the pieces section~\ref{sec:ch07-what-the-composer-wrote}
+read out of the file. Chapter~\ref{ch:second-third-subgraph} moves the speaker
+rows to a service that owns them, which is the last error above going away for
+the right reason, and adds the third subgraph that makes the seam worth having.
+\index{composition!the state this chapter ends in|)}%

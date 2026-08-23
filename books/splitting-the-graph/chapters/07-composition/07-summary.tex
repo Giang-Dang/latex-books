@@ -1,0 +1,36 @@
+\begin{chaptersummary}
+  \item Composition reads schema files and never calls a service. That is why
+        a subgraph does not have to be running to be composed, why a document
+        no service exports can still be composed against yours, and why the
+        \code{routing\_url} in the input file is written into the output rather
+        than fetched from.
+  \item The first thing that stopped this graph was not federation. Hot
+        Chocolate applies \code{@cost} to every field and \code{@listSize} to a
+        paged one with no configuration at all, and the composer holds its own
+        definitions of both, so six weights and one argument were rejected
+        before anything about a seam was reached.
+        \code{ApplyCostDefaults = false} is the whole fix, and what it removes
+        was a description of a paging limit rather than the limit itself.
+  \item A router execution config is not a supergraph schema; it contains one.
+        Its shape is defined by a protobuf in the Cosmo source and by no
+        documentation, and it is worth opening once. Inside \code{engineConfig}
+        are two schemas rather than one: the client's, with every federation
+        directive gone, and each subgraph's own document with them all still
+        there, next to the keys compiled into a lookup table. The top level
+        carries the version of the composition library that produced the file,
+        which is the only record of that anywhere.
+  \item \code{Query.node} needed \code{@shareable} and there was no method to
+        put it on. The attribute on the \code{Query} class works and declares
+        every root field shareable to do it, which switches off the check that
+        stops another subgraph claiming \code{sessionById}. A type interceptor
+        is thirty-three lines and reaches exactly the two generated fields,
+        and those lines are what the narrower promise costs.
+  \item Composition is two passes with different powers. Merging decides
+        whether the documents contradict each other and cannot be skipped.
+        Resolvability walks out from each root field asking whether a plan
+        exists for every field it reaches, prints the path it got stuck on, and
+        can be switched off with a flag. A graph that composes has no
+        contradiction the composer can see, which is not the same as being
+        right: \code{@shareable} on a field only one service owns composes
+        cleanly and is a lie.
+\end{chaptersummary}
