@@ -1,0 +1,90 @@
+\section{One Endpoint, Many Owners}
+\label{sec:ch05-one-endpoint-many-owners}
+
+\index{subgraph!is an ordinary service|(}%
+A subgraph is your service with four additions. It still serves its own schema
+at its own address, it still answers ordinary queries from anyone who asks, and
+you can still open it in an IDE and browse it as chapter~\ref{ch:hot-chocolate-zero}
+did. Chapter~\ref{ch:do-you-need-this} counted the four as a cost, and they are;
+here is what each one buys.
+
+\index{link@\code{"@link}!opts a schema into federation}%
+\index{service@\code{\_service}!publishes the schema}%
+\index{entities@\code{\_entities}!the entity route}%
+The schema applies \code{@link} to itself, which is the opt-in: it says which
+version of the federation vocabulary this schema is written in and which
+directives it uses. It defines those directives, so that a composer reading the
+schema alone knows what they mean. It resolves \code{\_service}, a field whose
+one job is to hand back the schema as a string, so the composer can ask the
+running service what it now looks like instead of being sent a file. And it
+resolves \code{\_entities}, which is the entity route: a root field that takes
+keys and returns the objects those keys name.
+
+\index{subgraph!the additions are public}%
+None of those four is hidden. They are fields on \code{Query} and directives in
+the schema, visible to anybody who introspects the service. That is the fact
+chapter~\ref{ch:entities-authorization} is built on.
+
+\subsection{The Schema Nobody Writes}
+
+\index{supergraph!is a composed result}%
+Take three subgraph schemas and run them through a composer, and what comes out
+is one schema in which \code{Session} carries the fields Sessions declared and
+the fields Ratings declared, as though a single service had always had them.
+That result is the supergraph. It is not a file anyone maintains, it is not
+checked into a repository as a source document, and no team owns it, because it
+is derived from the three that are owned.
+
+\index{supergraph!is not a specification term}%
+It is also not a word the specification defines. The Apollo Federation subgraph
+specification regulates exactly one thing, the subgraph: what it must expose,
+what those fields must return, and what the directives mean~\autocite{apollosubgraphspec}.
+\enquote{Supergraph} appears in Apollo's own conceptual documentation, under a
+heading that introduces it as terminology to learn, defined as \enquote{the
+single, federated graph} you get \enquote{when combining multiple GraphQL
+APIs}~\autocite{apollofederatedschemas}. That is a useful word and I use it
+throughout this book. Which of the two has normative text behind it matters
+when two implementations disagree, because the subgraph contract is the only
+one of them you can hold anybody to.
+
+\index{router!serves the supergraph}%
+The router serves the supergraph, and it is the only address a client has. A
+client sends it an ordinary GraphQL operation against an ordinary-looking
+schema and gets an ordinary response. Nothing in that response says which
+service produced which field, and no part of the protocol offers to tell the
+client. That is the design working. It is also
+chapter~\ref{ch:blame-routing}'s entire problem, arriving early.
+
+\subsection{Two Different Times, Two Different Failures}
+
+\index{composition!happens before any request}%
+The join in figure~\ref{fig:ch05-the-join-moves} needs somebody to have worked
+out, in advance, that a session's speaker is answered by asking the Speakers
+service for an entity. Working that out is composition, and it happens before a
+single request has been served. It reads the three schemas, checks that every field is
+reachable from the root through some sequence of services, and produces
+something the router can execute against.
+
+\index{composition!fails on somebody else's change}%
+Composition fails on schemas, not on data. It fails after everyone has merged,
+it fails for the graph rather than for one service, and it can fail because of
+a change you did not make. Chapter~\ref{ch:composition} is where you run it,
+chapter~\ref{ch:satisfiability} is about the errors that are genuinely hard to
+read, and appendix~\ref{app:comperrors} decodes the rest.
+
+\index{execution!happens per request}%
+Execution is the other time. A query arrives, the router works out which
+services to ask in which order, asks them, and merges what comes back. Its
+failures are the ones any distributed system has: a service that is slow, a
+service that is down, a field that resolves to null and takes a branch of the
+response with it. Part~III is almost entirely
+about those.
+
+\index{failure!which time it belongs to}%
+Sorting a failure into the right one of those two is, in my experience, most of
+debugging a federated graph, and the sort is cheap once you think to make it. A
+field that has not worked since the deployment, for anyone, is composition. A
+field that works for some requests and not others, or worked an hour ago, is
+execution. The two have separate tooling, separate logs and separate people to
+ask, so the cost of guessing wrong is an afternoon.
+\index{subgraph!is an ordinary service|)}%

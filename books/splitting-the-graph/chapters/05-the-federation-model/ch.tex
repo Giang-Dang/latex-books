@@ -1,13 +1,22 @@
-% Scope (SPEC.md, Table of contents): supergraph and subgraphs, entity ownership, keys, and the Apollo Federation v2 directive tour
+% Scope (SPEC.md, Table of contents): supergraph and subgraphs, entity ownership, keys, the Apollo Federation v2 directive tour, and why this book builds on that specification rather than on the Composite Schemas draft
 \chapter{The Federation Model}
 \label{ch:federation-model}
 
-\emph{Not yet drafted.}
+Federation is a join performed by something that owns neither side, and it
+works only because every type that crosses a seam publishes a key both sides
+agree on.
 
-% Chapter skeleton, SPEC decision 13. Five beats, this order:
-%   1. The one sentence  - what this chapter establishes, stated first.
-%   2. Show it          - the thing running, or in Part III the thing failing.
-%   3. Why it does that - the mechanism. All theory lives here (decision 14).
-%   4. Do it properly   - the complete, correct implementation.
-%   5. Summary box      - decision 21.
-% Section files are \input from here, numbered 01-, 02-, ... from the book root.
+Your service already performs that join. Chapter~\ref{ch:data-without-n-plus-1}
+made it cheap and chapter~\ref{ch:schema-design} gave both ends of it a name,
+and in neither chapter did the key ever leave the process. This chapter draws
+the line the key has to cross, and everything the model asks of you follows
+from that one crossing.
+
+\input{chapters/05-the-federation-model/01-the-join-you-cannot-see}
+\input{chapters/05-the-federation-model/02-one-endpoint-many-owners}
+\input{chapters/05-the-federation-model/03-which-federation-and-why}
+\input{chapters/05-the-federation-model/04-an-entity-is-a-type-with-a-key}
+\input{chapters/05-the-federation-model/05-who-owns-a-field}
+\input{chapters/05-the-federation-model/06-the-directives}
+\input{chapters/05-the-federation-model/07-the-graph-this-book-builds}
+\input{chapters/05-the-federation-model/08-summary}

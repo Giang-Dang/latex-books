@@ -1,0 +1,106 @@
+\section{The Join You Cannot See}
+\label{sec:ch05-the-join-you-cannot-see}
+
+\index{join!inside one process|(}%
+Start the service and ask for the schedule with its speakers.
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:5001
+Content-Type: application/json
+
+{"query":"{ sessions(first: 10) { nodes { title speaker { name } } } }"}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"sessions":{"nodes":[
+  {"title":"Schemas That Outlive Their Authors","speaker":{"name":"Ada Fischer"}},
+  {"title":"Reading a Query Plan","speaker":{"name":"Ada Fischer"}},
+  {"title":"Paging Without Offsets","speaker":{"name":"Bruno Kaminski"}},
+  {"title":"The Bank That Split Its Graph","speaker":{"name":"Chidi Okafor"}}]}}}
+\end{minted}
+
+\index{statement count!the seam query}%
+Two statements, as chapter~\ref{ch:data-without-n-plus-1} left it. The second
+one is the one to look at.
+
+\begin{minted}{text}
+-- statement 2
+SELECT "s"."Id", "s"."Bio", "s"."Name"
+FROM "Speakers" AS "s"
+WHERE "s"."Id" IN (@ids1, @ids2, @ids3)
+\end{minted}
+
+\index{key!carried by the foreign key}%
+Three parameters for four sessions, because Ada Fischer gives two of them.
+Those three values are the join. They came off the \code{SpeakerId} column of
+the four rows the first statement returned, went into a DataLoader, and came
+back out as a set. Every one of them is an integer that lived for the length of
+one request inside one process.
+
+\index{response!carries no key}%
+Now read the response again and look for them. They are not there. Neither is
+anything else that ties a speaker to a session: no \code{speakerId}, no
+\code{sessionId}, no key of any kind. The nesting is the whole record of the
+join, and a client that flattened this document into two lists would destroy
+information it could not recover.
+
+\index{SpeakerId@\code{SpeakerId}!absent from the schema by design}%
+That is not an accident of what this query asked for. There is no field
+anywhere on \code{Session} that would return it.
+Chapter~\ref{ch:data-without-n-plus-1} put \code{[GraphQLIgnore]} on
+\code{Session.SpeakerId} on purpose, and chapter~\ref{ch:schema-design} took
+the other integer key out of the schema as well. A reader who typed this
+service out of the book has, deliberately, no way to ask it which speaker
+belongs to which session except by asking for the speaker.
+
+\index{join!is a private implementation detail}%
+So the join is real, it is cheap, and it is invisible from outside. It is also,
+right now, a private matter between \code{SessionType.cs} and a table. Nothing
+in the schema commits you to performing it, nothing in the schema describes
+how, and you could swap the DataLoader for a dictionary this afternoon without
+telling anyone.
+
+\index{seam!where the line goes}%
+Draw the line. Speakers belong to another team now: another repository, another
+deployment, another database that your process cannot open a connection to.
+The first statement is still yours. The second one is not, and the resolver
+that would have issued it is holding three integers with nothing to do.
+
+\index{join!has to move outward}%
+There are only three places that join can go. It can go into every client,
+which is the answer chapter~\ref{ch:do-you-need-this} spent a chapter arguing
+against, and which the schema you have just built cannot even support. It can
+stay in your service, which means your service calls theirs, which is a single
+GraphQL service with extra steps and the same coordination problem underneath
+it. Or it can move outward, into something in front of both services that
+belongs to neither.
+
+Figure~\ref{fig:ch05-the-join-moves} is the third answer, drawn beside the
+arrangement you have now.
+
+\begin{figure}
+  \centering
+  \input{figures/tikz/ch05-the-join-moves}
+  \caption{The same join, twice. Lane A is the service as
+  chapter~\ref{ch:data-without-n-plus-1} left it: the three keys are collected
+  and spent without ever being named in a schema. Lane B does the same work in
+  the same order, with two round trips through the middle of it. Nothing about
+  the join changed, and that is the argument: what changed is that the keys now
+  have to be serialized, which means they have to be fields, which means both
+  services have to agree on what they are called and what is in them.}
+  \label{fig:ch05-the-join-moves}
+\end{figure}
+
+\index{key!has to become public}%
+Read the two lanes for what is different, which is not the number of steps. In
+lane A three integers move between two lines of C\# in the same call stack. In
+lane B the same three values have to survive being written to JSON, sent over a
+network, parsed by a service that has never seen your database, and matched
+against rows in a table you do not own. A value that has to do all of that is
+not an implementation detail any more. It is an API.
+
+\index{key!is the whole of the model}%
+So the rest of this chapter is about who is allowed to be on each side of that
+boundary, and what each of them has to declare before the value may cross.
+\index{join!inside one process|)}%

@@ -1,0 +1,151 @@
+\section{The Directives, and What Each One Is For}
+\label{sec:ch05-the-directives}
+
+\index{directives!the vocabulary|(}%
+Federation v2 hands every subgraph library a block of sixteen directive
+definitions to add to your schema for you, plus one more for libraries that
+cannot write GraphQL's own \code{extend}
+keyword~\autocite{apollosubgraphspec}. Four of the sixteen carry the model.
+The rest get a paragraph each so that you recognize one in somebody else's
+schema, and appendix~\ref{app:directives} carries the definitions in full.
+
+\subsection{The Opt-In}
+
+\index{link@\code{"@link}!is the version declaration}%
+\code{@link} comes first because nothing else exists without it. It goes on the
+schema itself and says which version of the vocabulary this document is written
+in and which of its names the document uses:
+
+\begin{graphqlsdl}
+directive @link(url: String!, as: String, for: link__Purpose,
+                import: [link__Import]) repeatable on SCHEMA
+\end{graphqlsdl}
+
+\index{link@\code{"@link}!the import list}%
+The url ends in a version, and a subgraph that names an older one gets the
+vocabulary of that older one, which is how a graph composes while its services
+are on different versions. The import list does the other job: a directive you
+did not import is not available under its bare name. In practice the library
+writes this line for you from what your schema actually uses, and the first
+time you will care is the day you reach for a directive your version does not
+have and get an error about an unknown name rather than about a version.
+
+\index{link@\code{"@link}!Hot Chocolate ships a narrower one}%
+One caution. The definition above is the specification's. The one Hot
+Chocolate's federation package writes into an exported schema has neither
+\code{as} nor \code{for}, and types \code{import} as a plain list of strings, so
+the namespacing \code{as} exists for is not available to you here. Nothing in
+this book needs it, and I say so because reading the specification and
+then reaching for that argument is a natural thing to do.
+
+\subsection{The Seam}
+
+\index{directives!the four that describe a seam}%
+Four directives describe what crosses a boundary, and
+section~\ref{sec:ch05-an-entity-is-a-type-with-a-key} has already spent itself
+on the first. \code{@key} makes a type an entity. The other three qualify what
+a subgraph may say about an entity it does not own:
+
+\begin{graphqlsdl}
+directive @external on FIELD_DEFINITION | OBJECT
+directive @requires(fields: FieldSet!) on FIELD_DEFINITION
+directive @provides(fields: FieldSet!) on FIELD_DEFINITION
+\end{graphqlsdl}
+
+\index{external@\code{"@external}!declares a field this subgraph does not own}%
+\code{@external} marks a field that appears in this subgraph's schema but is
+owned somewhere else. It is a declaration of borrowing: the field is here so
+that something in this schema can refer to it, and this service does not
+resolve it.
+
+\index{requires@\code{"@requires}!asks the router for data first}%
+\code{@requires} is what borrowing is usually for. A field you own can need a
+value you do not have, and \code{@requires} names that value as a field set, so
+the router fetches it from its owner and hands it to your resolver before your
+resolver runs. It turns one fetch into two that must happen in order, and that
+ordering is the price of the convenience.
+
+\index{provides@\code{"@provides}!offers a field the router would otherwise fetch}%
+\code{@provides} runs the other way. It says that along this particular field,
+this subgraph can already supply some of the target entity's fields, so the
+router may skip a hop it was going to make. It is an optimization with a
+promise attached, and the promise is the same one \code{@shareable} makes: the
+value has to match what the owner would have said.
+
+Chapter~\ref{ch:second-third-subgraph} is where all three get used on a real
+seam, and chapter~\ref{ch:satisfiability} is where getting them wrong produces
+the composition errors that are hardest to read.
+
+\subsection{Overlap and Visibility}
+
+\index{directives!the four that manage overlap}%
+\code{@shareable} and \code{@override} are
+section~\ref{sec:ch05-who-owns-a-field}'s, and two more belong beside them
+because they also change what the supergraph shows rather than what a subgraph
+computes.
+
+\index{inaccessible@\code{"@inaccessible}!hides a field from clients}%
+\code{@inaccessible} takes a field out of the client's reach without taking it
+out of the graph. Apollo is precise about the distinction and it is one to
+hold on to: the field \enquote{is not omitted from the supergraph schema, so
+the router still knows it exists (but clients can't include it in
+operations)}~\autocite{apollodirectives}. Other subgraphs may still reference
+it. It is the way to add a field to one service before the others are ready to
+have it exist, and the way to take one off the public graph without taking it
+out of the code.
+
+\index{tag@\code{"@tag}!labels a field for tooling}%
+\code{@tag} \enquote{applies arbitrary string metadata to a schema
+location}~\autocite{apollodirectives} and means nothing by itself. What reads
+the tags is whatever you point at the graph: a tool that builds a restricted
+view of the supergraph for one audience, a policy check, a report. It is a
+hook, and the value comes from what you hang on it.
+
+\subsection{Access Control}
+
+\index{directives!the three that carry authorization}%
+\code{@authenticated}, \code{@requiresScopes} and \code{@policy} let a subgraph
+state a requirement in its schema instead of in its resolvers, so the router
+can refuse a request before any subgraph is asked. Chapter~\ref{ch:entities-authorization}
+is about the reason to care, which is not the one people expect: the entity
+route is a second door into every object in your graph, and a guard written on
+the field a client normally uses does not stand in front of it.
+
+\subsection{The Rest}
+
+\index{interfaceObject@\code{"@interfaceObject}!contributes to every implementation}%
+\code{@interfaceObject} lets a subgraph add a field to every type implementing
+an interface without knowing what those types are. Apollo describes the
+subgraph's declaration as \enquote{an abstraction of another subgraph's entity
+interface}~\autocite{apollodirectives}: you declare an object type carrying the
+interface's name and its key, and composition distributes the field to each
+implementation.
+
+\index{composeDirective@\code{"@composeDirective}!carries a custom directive through}%
+\code{@composeDirective} names one of your own directives and asks the composer
+to carry it into the supergraph. It is needed because \enquote{by default,
+composition omits most directives from the supergraph
+schema}~\autocite{apollodirectives}, which is the right default and an awkward
+surprise the first time a directive of yours vanishes.
+
+\index{extends@\code{"@extends}!for libraries without the keyword}%
+\code{@extends} is the seventeenth, and it exists only for libraries that
+cannot write GraphQL's own \code{extend} keyword. Hot Chocolate can, so this
+book never uses it, and it is here because you will meet it in schemas written
+by libraries that cannot.
+
+\index{directives!what this package does not ship}%
+Two of the sixteen are not in the package this book uses. \code{@context} and
+\code{@fromContext}, which pass a value down from an ancestor field into a
+resolver's argument, have no attribute and no directive type in
+\code{HotChocolate.ApolloFederation}, so no chapter here claims anything about
+them.
+
+\index{cost@\code{"@cost}!arrives from elsewhere}%
+\code{@cost} and \code{@listSize} are a different case again. Apollo documents
+both alongside the sixteen, as controls on how much work a client may ask
+for rather than as anything to do with a seam, and Hot Chocolate implements
+them in its core rather than in the federation package. Which is why
+chapter~\ref{ch:data-without-n-plus-1}'s exported schema was already carrying
+both before this book had said the word subgraph.
+\index{directives!the vocabulary|)}%

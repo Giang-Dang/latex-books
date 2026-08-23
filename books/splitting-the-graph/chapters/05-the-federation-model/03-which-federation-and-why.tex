@@ -1,0 +1,78 @@
+\section{Which Federation, and Why}
+\label{sec:ch05-which-federation-and-why}
+
+\index{Composite Schemas specification|(}%
+Chapter~\ref{ch:do-you-need-this} said that federation had outgrown the company
+that named it, and that the GraphQL Specification Working Group had a
+subcommittee producing a common specification for it. It then said this book
+builds on Apollo Federation v2 anyway. Here is the reasoning, because a reader
+about to spend the rest of a book on one directive vocabulary is owed it.
+
+\index{Composite Schemas specification!has no finished edition}%
+The first reason is that there is nothing finished to build on. The GraphQL
+Composite Schemas Spec publishes exactly one edition, labeled \enquote{Working
+Draft}, and the project as a whole is marked \enquote{Prerelease}. There is no
+numbered release and never has been~\autocite{compositeschemasspec}. That is not
+a criticism of the work. It is a statement about what a book can responsibly
+teach: a draft that may change is a fine thing to follow and a poor thing to
+print several hundred pages against.
+
+\index{Composite Schemas specification!is not a renaming}%
+The second reason is that it is not Apollo Federation v2 with the serial
+numbers filed off, so the choice is real rather than cosmetic. Two differences
+are enough to make the point. Apollo's key is a \code{FieldSet}; the draft's is
+a \code{FieldSelectionSet}, a different scalar with its own grammar. And where
+Apollo puts a reserved root field on every subgraph, the draft marks an ordinary
+field:
+
+\begin{graphqlsdl}
+directive @lookup on FIELD_DEFINITION
+\end{graphqlsdl}
+
+\index{entities@\code{\_entities}!absent from the draft}%
+There is no \code{\_entities} in that document at all. A subgraph written to the
+draft says \enquote{this existing field can be used to look an entity up}, where
+a subgraph written to Apollo Federation says \enquote{here is a reserved field
+that takes representations}. Those are different designs with different failure
+modes, and half of part~III of this book is about the failure modes of the
+second one.
+
+\index{Fusion!cannot span both versions}%
+The third reason is the one that actually decided it. The .NET implementation
+of the draft is Fusion, and Fusion 16 is a rewrite rather than an upgrade.
+Michael Staib, who founded ChilliCream, puts it plainly on their blog:
+\enquote{When we set out to rewrite Fusion, we had three main goals: remove the
+constraints imposed by Hot Chocolate, achieve top-tier performance with .NET,
+and make the gateway feel like a natural extension of your ASP.NET Core app,
+rather than a black box configured with YAML}~\autocite{staib2026fusion16}. The
+same post says Fusion 16 implements the current version of the Composite Schema
+Specification.
+
+\index{HotChocolate.ApolloFederation@\code{HotChocolate.ApolloFederation}!spans three majors}%
+A reader still on Hot Chocolate~14 cannot follow any of that, because the
+Fusion that shipped in the 14 era is a different product that stopped receiving
+releases and was replaced by differently named packages. \code{HotChocolate.ApolloFederation}
+was not. It has an unbroken release line across all three major versions this
+book could have covered, which makes Apollo Federation v2 the only federation
+contract a reader on either of the two it does cover can write to. That is the
+decision, and it is one about readers rather than about the merits of two
+specifications.
+
+\index{Composite Schemas specification!extends rather than replaces}%
+None of which is a bet against the draft. The working group's own summary of its
+August 2026 meeting records two things: that the specification's
+final name will be the GraphQL Federation Specification, and that it
+\enquote{would extend Apollo Federation rather than replace
+it}~\autocite{compositeschemaswg202608}. I attach a caveat to that source rather
+than to the claim, because the document carries one itself: it is an
+automatically generated meeting summary and says so at the top. The rename had
+not reached the specification when I checked on 23 August 2026: the published
+document still called itself the Composite Schemas Spec.
+
+\index{Apollo Federation!is the thing to learn either way}%
+So the vocabulary in this chapter is worth learning on either outcome. If the
+draft lands as an extension of what Apollo published, the model you are about to
+read is the base it extends. If it diverges further, you will have run a
+federated graph in production and will be in a position to judge the difference,
+which is more than you can do from either specification's text.
+\index{Composite Schemas specification|)}%

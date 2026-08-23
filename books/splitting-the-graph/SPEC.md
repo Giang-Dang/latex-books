@@ -10,17 +10,21 @@ Author: Giang Dang
 
 ## Status
 
-Settled 2026-08-19 through a seven-round requirements interview. Chapters 1, 2,
-3 and 4 are drafted. The verification repo at `F:/repo/splitting-the-graph-graph`
+Settled 2026-08-19 through a seven-round requirements interview. Chapters 1 to
+5 are drafted. The verification repo at `F:/repo/splitting-the-graph-graph`
 carries tags `ch02`, `ch02-hc14`, `ch03`, `ch03-naive`, `ch03-starved`,
-`ch03-hc14`, `ch04`, `ch04-orphan` and `ch04-hc14`, with `verify.ps1` passing
-on each. The single-service baseline chapter 10 measures
+`ch03-hc14`, `ch04`, `ch04-orphan`, `ch04-hc14`, `ch05` and `ch05-hc14`, with
+`verify.ps1` passing on each. The single-service baseline chapter 10 measures
 against is settled: **five statements naive, two batched**, for four sessions
 and three distinct speakers. Chapter 4 put every entity behind a global node
 id, so from `ch04` onward an id in a response is `U2Vzc2lvbjox` and not `1`.
-Next action: chapter 5, the first chapter to print federation SDL and therefore
-the first test of decision 31's `graphqlsdl` environment against the real
-thing.
+Chapter 5 confirmed decision 31's `graphqlsdl` environment against real
+federation SDL: `@key`, `@link`, `FieldSet!`, `repeatable on OBJECT |
+INTERFACE` and a `@link` url all tokenize without a single error box.
+Next action: chapter 6, the first chapter to write federation C#, which
+inherits two bills chapter 5 identified and did not pay: `Query.node` needs
+`@shareable` the moment there are two subgraphs, and both sides of every seam
+have to compute the same key string.
 
 **Why this book exists.** It is the second book in this library on federated
 GraphQL in .NET, and it exists because the first one,
@@ -57,8 +61,8 @@ and why, in the row.
 | 3 | Title and slug | *Splitting the Graph*, subtitle *Federated GraphQL with Hot Chocolate and Cosmo on .NET*, folder `splitting-the-graph`. The other book holds *Federated GraphQL on .NET* and the two must not be confusable in a `books/` listing. |
 | 4 | Language | English. Considered and rejected: Vietnamese, and Vietnamese prose with English technical terms. The difficulty being fixed is structural, not lexical. |
 | 5 | Spine | Apollo Federation v2 subgraphs built with `HotChocolate.ApolloFederation`, composed with `wgc` and served by the WunderGraph Cosmo Router. |
-| 6 | Why not Fusion | Fusion cannot span the two versions this book covers. The Fusion v1 line (Hot Chocolate 13 and 14 era, `fusion compose` CLI, pre-spec directives) ended at 15.1.17 on 2026-06-16, and Fusion 16 is a complete rewrite on the GraphQL Composite Schemas specification, composed with Nitro CLI. They are different products, and a reader on 14 could not follow a Fusion 16 chapter at all. `HotChocolate.ApolloFederation` shipped in the 14 era and still ships in lockstep with 16, which makes Apollo Federation v2 the only subgraph contract reaching both. |
-| 7 | Why Cosmo and not Apollo Router | Cosmo Router is Apache-2.0, self-hostable, and speaks Federation v1 and v2, so it composes subgraphs regardless of which Hot Chocolate produced them. Apollo Router Core is Elastic License v2, which forbids offering it as a managed service - an awkward thing to teach in a book about running your own graph. Hive Router was considered and is the strongest alternative; rejected only because a book with no reader-facing repo cannot afford to teach two gateways shallowly. |
+| 6 | Why not Fusion | Fusion cannot span the two versions this book covers. The Fusion v1 line (Hot Chocolate 13 and 14 era, pre-spec directives) ended at 15.1.17 on 2026-06-16, and Fusion 16 is a complete rewrite on the GraphQL Composite Schemas specification. They are different products, and a reader on 14 could not follow a Fusion 16 chapter at all. `HotChocolate.ApolloFederation` shipped in the 14 era and still ships in lockstep with 16, which makes it the only *federation subgraph contract* with unbroken releases across both. **Two clauses corrected 2026-08-23** while drafting chapter 5, from primary sources recorded in that chapter's research note. First, "composed with Nitro CLI" was too narrow: Michael Staib's own post on Fusion 16 says it "no longer depends on command-line tools for composition" and describes an Aspire-driven path, so the CLI is one option rather than the mechanism. Second, "the only subgraph contract reaching both" overreached, since the base library trivially reaches both too; the claim that survives is the one about federation tooling specifically, and it is the one chapter 5 prints. The two dates and the version were checked against NuGet registration metadata and both hold exactly. |
+| 7 | Why Cosmo and not Apollo Router | Cosmo Router is Apache-2.0, self-hostable, and speaks Federation v1 and v2, so it composes subgraphs regardless of which Hot Chocolate produced them. Apollo Router Core is Elastic License v2, which forbids offering it as a managed service - an awkward thing to teach in a book about running your own graph. Hive Router was considered and is the strongest alternative; rejected only because a book with no reader-facing repo cannot afford to teach two gateways shallowly. **Verified and narrowed 2026-08-23** while drafting chapter 5. The Elastic License clause holds and is quoted in that chapter's research note: Apollo Router's own `LICENSE` carries it, and it forbids providing the software "to third parties as a hosted or managed service". What does **not** hold is the broader form of the claim carried in `research/2026-08-hard-cases.md`, that the Federation 2.x libraries are Elastic as a family. Apollo's `subgraph-js`, the JavaScript counterpart of the package this book uses, is MIT; it is the router, gateway and composition tier that is Elastic. The decision is unchanged, because that tier is exactly the one Cosmo replaces, but the reason has to be stated at the right altitude and no chapter may print the family-wide version. Hive Router was also re-checked: The Guild, MIT, Rust, Federation v2 only. |
 | 8 | Versions covered | Hot Chocolate 16 is the spine. Hot Chocolate 14 appears as inline boxed callouts where the API difference changes the reader's code, plus appendix B in full. HC 14 is out of support - the platform's SECURITY.md lists only 16.x and 15.x - and the preface says so plainly: 14 coverage exists to get a reader off 14, not to endorse staying. |
 | 9 | Companion repo | **None that a reader ever hears about.** No URL, no tags, no checkout instructions, nothing in the preface. See decision 10 for what exists instead, and decision 15 for what replaces it on the page. |
 | 10 | The verification repo | One local repository at `F:/repo/splitting-the-graph-graph`, never pushed and never mentioned in the book. `main` carries the conference example on .NET 10 and Hot Chocolate 16. A long-lived `hc14` branch carries only the files an HC 14 callout quotes, pinned to Hot Chocolate 14.3.1 on `net8.0`, because 14 does not target .NET 10. |
@@ -114,6 +118,10 @@ and why, in the row.
 | 60 | The mutation's overlap test runs in memory, and the book says so in the listing | Decision 23's `StartsAt` goes through chapter 3's value converter, so EF Core cannot translate arithmetic over that column and the first version of `rescheduleSession` answered `Unexpected Execution Error` rather than either declared error. The shipped version loads one speaker's other sessions and tests in C\#, and the comment explaining why is in the printed file rather than in the prose, because a reader typing the listing out needs the reason at the line. |
 | 61 | A quotation long enough to display uses `\begin{quote}`, and `\enquote{}` stays for everything else | Decision 37 names `\enquote{}` and chapters 1 to 3 never needed anything else, because they quoted phrases. Chapter 4 quotes four normative passages from two specifications, each two or three sentences, and an inline `\enquote{}` around a passage that long stops reading as a quotation halfway through. A displayed quote carries its `~\autocite{}` on the sentence that introduces it, so the source is still attached to the claim rather than to the block. Rejected: paraphrasing the normative text, which is exactly the thing a reader would want to check word for word. |
 | 62 | A chapter may take more than one subject through beats 2 to 4 | Decision 13 fixes the order of the five beats and says nothing about how many subjects a chapter may run through them. Chapter 3's fifth section already restarted at beat 2 for projection and again for paging, and chapter 4 does it three times: identity, errors, nullability. The one-sentence rule in decision 13 is what stops this from becoming three chapters in a trench coat, and chapter 4's one sentence covers all three. Recorded because a cold audit raised it as a possible skeleton violation, and the answer should not have to be re-derived every chapter. |
+| 63 | An SDL document printed in full carries its own `@link` version | Decision 42 settled this for a `.csproj` and the reasoning is identical here: decision 35 keeps versions out of *sentences*, and a schema document printed under decision 15 necessarily opens with a `@link` url ending in a version. The version the book prints is **v2.6**, and it is not a preference. Measured 2026-08-23 from the shipped `HotChocolate.ApolloFederation` 16.6.1 assembly: `FederationVersion` runs to `Federation27` and `Default` is `Federation26`, so v2.6 is what a reader's own subgraph emits unless they go looking for a setting. The three-subgraph map composes identically at v2.6 and v2.7, checked with `wgc router compose`. Appendix A stays the one place a version table lives. |
+| 64 | Chapter 5 issues no HotChocolate 14 callout, deliberately | Decision 47 says the `hc14` branch carries whatever the live callouts quote, so a chapter that emits none adds nothing to it. Chapter 5 ships no C# and prints no API surface, and the one version difference it met is not its own: the batched speaker lookup reads `IN (@ids1, @ids2, @ids3)` on `main` and `FROM json_each(@__ids_0)` on `hc14`, which is EF Core 9 rather than Hot Chocolate 14, and chapter 3's callout already reports it. Recorded so that the absence reads as a decision rather than as an oversight, which is the same reason decision 46 exists for screenshots. |
+| 65 | A composition failure no tagged state produces is described, not quoted | Decision 53 settled this for a *response*, on the reasoning that decision 48 lets the book quote only what `verify.ps1` asserts. Chapter 5 reproduced two composition errors with `wgc` against hand-written SDL in a scratch directory: two subgraphs both declaring `Query.node`, and an entity referenced without a `@key`. Neither is produced by any tagged state of the verification repo, because the repo has one service and no composition step. Both are therefore stated in prose as facts and recorded verbatim in the chapter's research note. Revisit when chapter 7 puts composition into `verify.ps1`, at which point the error text becomes quotable the ordinary way. |
+| 66 | A chapter that ships no code still gets a tag | `ch05` is the first tag in the verification repo on an unchanged tree: `git diff ch04..ch05` over `src/` is empty. It exists because decision 48 is about requests rather than about source, and chapter 5 opens on a request nothing asserted before. The tag marks the state its eight assertions were run against. Rejected: skipping the tag, which would leave the chapter's opening listing the only unproved one in the book, and inventing a code change to justify one. |
 
 ## Version baseline
 
@@ -133,8 +141,10 @@ and this section is what appendix A is built from.
 | HotChocolate.Data.EntityFramework (`main`) | 16.6.1 | verified 2026-08-19, chapter 3 note; same version sequence as the rest of the family |
 | Microsoft.EntityFrameworkCore.Sqlite (`main`) | 10.0.11 | verified 2026-08-19, chapter 3 note; 10.x targets `net10.0` only |
 | Microsoft.EntityFrameworkCore.Sqlite (`hc14` branch) | 9.0.19 | verified 2026-08-19, chapter 3 note: the latest 9.x, chosen because EF Core 10 cannot run on `net8.0` |
+| `HotChocolate.ApolloFederation` (`main`) | 16.6.1 | verified 2026-08-23, chapter 5 note; models Federation up to v2.7 and defaults to v2.6, read out of the shipped assembly |
+| Apollo Federation, as the subgraphs declare it | v2.6 | verified 2026-08-23, chapter 5 note; the `@link` url the package emits with nothing pinned. Decision 63 |
 | WunderGraph Cosmo Router | unpinned | to verify before chapter 8 |
-| `wgc` (Cosmo CLI) | unpinned | to verify before chapter 7 |
+| `wgc` (Cosmo CLI) | 0.129.7 | verified 2026-08-23, chapter 5 note: composed the three-subgraph map and reproduced two composition errors. Re-confirm before chapter 7, which is the chapter that owns the tool |
 | Pygments | 2.19.2 | verified 2026-08-19 on this machine; see decision 31 |
 
 Two things the interview assumed and the measurement corrected. The version is
@@ -157,7 +167,7 @@ session. Chapter folders in `chapters/` carry the same scope lines.
 
 ### Part II - Federation End to End
 
-5. **The Federation Model** - supergraph and subgraphs, entity ownership, keys, and the Apollo Federation v2 directive tour
+5. **The Federation Model** - supergraph and subgraphs, entity ownership, keys, the Apollo Federation v2 directive tour, and why this book builds on that specification rather than on the Composite Schemas draft
 6. **Your First Subgraph** - `HotChocolate.ApolloFederation`, `@key`, reference resolvers, and what `_service` and `_entities` expose
 7. **Composition** - `wgc router compose`, what a router execution config actually contains, and satisfiability as a graph walk
 8. **Enter the Router** - Cosmo Router locally, what it loads and what it serves, and the first query answered across two subgraphs
@@ -199,7 +209,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 02 | drafted | Note at `research/ch02-hot-chocolate-from-zero.md`. Stood up the verification repo, tags `ch02` and `ch02-hc14`, `verify.ps1` PASS on both. Emitted the first callout, which fixed the `hc14` file set (decision 47) and settled decisions 42 to 46. Measured the listing column budget at 73. |
 | 03 | drafted | Note at `research/ch03-data-without-the-n-plus-1.md`. Four tags, `verify.ps1` PASS on each: `ch03` (main), `ch03-naive` and `ch03-starved` (the two states the chapter argues against, decision 51), `ch03-hc14`. The single-service baseline chapter 10 measures against is **5 statements naive, 2 batched**, for four sessions and three distinct speakers. Settled decisions 51 to 55. Turned `sessions` into a Relay connection, the first change to break an earlier chapter's printed requests. |
 | 04 | drafted | Note at `research/ch04-schema-design-that-survives-change.md`. Three tags, `verify.ps1` PASS on each: `ch04` (main, 96 assertions), `ch04-orphan` (the non-null state the chapter argues against, decision 51), `ch04-hc14` (the same 96 assertions from the same script). Global object identification on both types, `sessionById` deprecated, and the book's first mutation, whose conventions generate the first union and the second interface. The nullability groundwork chapter 14 collects on is section 4.5. Settled decisions 56 to 62. The audit's findings and the two it raised that were rejected are recorded at the end of the research note. |
-| 05 | not-started | First SDL. Confirms decision 31's `graphqlsdl` environment against real federation SDL. |
+| 05 | drafted | Note at `research/ch05-the-federation-model.md`. No C#: `git diff ch04..ch05` over `src/` is empty, and `ch05` is the book's first tag on an unchanged tree (decision 66). `verify.ps1` gained eight assertions for the request the chapter opens on and prints, 104 total, PASS on `main` and `hc14`. Confirmed decision 31's `graphqlsdl` environment against real federation SDL, which was this chapter's stated job. Paid chapter 1's debt on why Apollo Federation v2 rather than the Composite Schemas draft, and corrected two factual clauses in decisions 6 and 7 in the process. Settled decisions 63 to 66. |
 | 06 | not-started | |
 | 07 | not-started | Verify the `wgc` version first. |
 | 08 | not-started | Verify the Cosmo Router version first. |
@@ -358,8 +368,52 @@ An unresolved question, and the condition that unblocks it.
   a dedicated search domain with its own index. Whether that domain is built as
   a fourth service or described without being built decides how much of
   decision 23 survives. Unblocked by outlining chapter 13.
-- **Cosmo Router and `wgc` versions are unpinned.** Unblocked by running the
-  toolchain, which chapters 7 and 8 require anyway.
+- **The Cosmo Router version is unpinned.** `wgc` was pinned while drafting
+  chapter 5. Unblocked by running the router, which chapter 8 requires anyway.
+- **`Query.node` needs `@shareable` from the second subgraph onward, and
+  nobody has decided where that goes.** Chapter 4 turned on global object
+  identification, so every subgraph exports `node` and `nodes`, and two
+  subgraphs that both do fail composition. Reproduced with `wgc` while drafting
+  chapter 5, along with the fix: declare the field shareable in both and import
+  the directive in both `@link` lists. Chapter 5 states the bill and does not
+  pay it. Unblocked by chapter 6 or chapter 9 deciding whether the shareable
+  declaration is written per subgraph or generated, at which point the answer
+  is a listing rather than a sentence.
+- **Whether `@link(as:)` is unsupported by `HotChocolate.ApolloFederation` or
+  merely unemitted.** Measured 2026-08-23: the `@link` definition the package
+  writes into an exported schema has neither `as` nor `for`, and types `import`
+  as `[String!]` rather than the specification's `link__Import`. That is what
+  the package *prints*; whether the runtime would honour an `as` written by
+  hand was not tested. Chapter 5 says only what was measured, that the
+  namespacing is not available there. Unblocked by writing a schema that uses
+  it and seeing what happens, which matters only if a chapter ever needs two
+  specifications' directives under one name.
+- **Two Apollo documentation pages disagree with each other about `@tag` and
+  `@context`.** The subgraph specification page and the directives reference
+  give different locations for `@tag` (one includes `SCHEMA`, the other does
+  not) and disagree about whether `@context` is `repeatable`. Recorded in the
+  chapter 5 note. No chapter rests on either, and appendix C will have to,
+  which is where this gets settled. Unblocked by checking both against a
+  composer that accepts each form.
+- **The specification chapter 5 declines to build on is being renamed.** The
+  Composite Schemas working group's summary of its 2026-08-06 meeting records
+  the final name as the GraphQL Federation Specification, and records that it
+  extends Apollo Federation rather than replacing it. The rename has not
+  reached the published document, which still calls itself the Composite
+  Schemas Spec. Chapter 5 says both halves and attaches the source's own
+  auto-generation disclaimer to it. Unblocked by the rename landing in the
+  specification, at which point chapter 1's and chapter 5's wording both move
+  in one edit.
+- **A public benchmark puts Cosmo Router behind two alternatives on Apollo
+  Federation compatibility.** Michael Staib's post on Fusion 16.5 reports a
+  federation-gateway-audit table scoring Fusion and Hive Router at 100 percent,
+  Apollo Router below that, and Cosmo Router lower still. Nothing from it is
+  printed: it is a signed vendor post making a claim about competitors, which
+  the Sources rule admits for the vendor's own product and not for anyone
+  else's. It is recorded because decision 7 chose Cosmo on license and version
+  coverage and never on an audit score, and if that score is right it is worth
+  knowing before part III leans on the router. Unblocked by running the audit
+  here, which is chapter 8's toolchain anyway.
 - **Whether the Nitro IDE works with no network at all.** Decision 45 pins the
   embedded serve mode and gives reproducibility as the reason, which is
   measured. The stronger reason, that the default cannot work offline, is
