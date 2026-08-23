@@ -444,6 +444,44 @@ function Get-SpellingTable {
                 'cancel(?:ed|ing)'                  = 'cancelled'
                 'signal(?:ed|ing)'                  = 'signalled'
                 'modeled'                           = 'modelled'
+                # The -ize/-ise verbs, the Greek-origin family this house style
+                # spells -ise. initializ, organiz, authoriz and analyz are above,
+                # from earlier chapters; the rest are here. Each stem is spelled
+                # out, and each suffix group is closed, because a generic \w+ize
+                # rule takes "size", "prize" and "capsize", and dropping the
+                # suffix takes the invariant nouns: "analysis" is analys+is and
+                # "emphasis" is emphasis with nothing after, so neither closes
+                # one of these alternations and neither is flagged.
+                'realiz(?:e|es|ed|ing)'             = 'realise'
+                'recogniz(?:e|es|ed|ing)'           = 'recognise'
+                'normaliz(?:e|es|ed|ing|ation|ations)' = 'normalise'
+                'serializ(?:e|es|ed|ing|ation|ations|er|ers)' = 'serialise'
+                'deserializ(?:e|es|ed|ing|ation|ations|er|ers)' = 'deserialise'
+                'customiz(?:e|es|ed|ing|ation|ations)' = 'customise'
+                'minimiz(?:e|es|ed|ing|ation|ations)' = 'minimise'
+                'maximiz(?:e|es|ed|ing|ation|ations)' = 'maximise'
+                'summariz(?:e|es|ed|ing|ation|ations)' = 'summarise'
+                'visualiz(?:e|es|ed|ing|ation|ations)' = 'visualise'
+                'synchroniz(?:e|es|ed|ing|ation|ations)' = 'synchronise'
+                'prioritiz(?:e|es|ed|ing|ation|ations)' = 'prioritise'
+                'standardiz(?:e|es|ed|ing|ation|ations)' = 'standardise'
+                'specializ(?:e|es|ed|ing|ation|ations)' = 'specialise'
+                'materializ(?:e|es|ed|ing)'         = 'materialise'
+                'finaliz(?:e|es|ed|ing)'            = 'finalise'
+                'centraliz(?:e|es|ed|ing|ation|ations)' = 'centralise'
+                'generaliz(?:e|es|ed|ing|ation|ations)' = 'generalise'
+                'emphasiz(?:e|es|ed|ing)'           = 'emphasise'
+                'categoriz(?:e|es|ed|ing|ation|ations)' = 'categorise'
+                'characteriz(?:e|es|ed|ing|ation|ations)' = 'characterise'
+                'criticiz(?:e|es|ed|ing)'           = 'criticise'
+                'optimiz(?:e|es|ed|ing|ation|ations|er|ers)' = 'optimise'
+                'utiliz(?:e|es|ed|ing|ation|ations)' = 'utilise'
+                'capitaliz(?:e|es|ed|ing|ation|ations)' = 'capitalise'
+                'tokeniz(?:e|es|ed|ing|ation|ations|er|ers)' = 'tokenise'
+                'parameteriz(?:e|es|ed|ing|ation|ations)' = 'parameterise'
+                'modulariz(?:e|es|ed|ing|ation|ations)' = 'modularise'
+                'localiz(?:e|es|ed|ing|ation|ations)' = 'localise'
+                'stabiliz(?:e|es|ed|ing|ation|ations)' = 'stabilise'
             }
         }
         'en-US' {
@@ -483,6 +521,41 @@ function Get-SpellingTable {
                 'cancell(?:ed|ing)'                    = 'canceled'
                 'signall(?:ed|ing)'                    = 'signaled'
                 'modelled'                             = 'modeled'
+                # The mirror: the -ise verbs flagged toward -ize. The stems are
+                # the same variable Greek-origin family, so the same two guards
+                # hold - "surprise", "exercise", "advise" and the like are other
+                # stems and are not listed, and "analysis"/"emphasis" carry no
+                # closing suffix and are not matched.
+                'realis(?:e|es|ed|ing)'                = 'realize'
+                'recognis(?:e|es|ed|ing)'              = 'recognize'
+                'normalis(?:e|es|ed|ing|ation|ations)' = 'normalize'
+                'serialis(?:e|es|ed|ing|ation|ations|er|ers)' = 'serialize'
+                'deserialis(?:e|es|ed|ing|ation|ations|er|ers)' = 'deserialize'
+                'customis(?:e|es|ed|ing|ation|ations)' = 'customize'
+                'minimis(?:e|es|ed|ing|ation|ations)'  = 'minimize'
+                'maximis(?:e|es|ed|ing|ation|ations)'  = 'maximize'
+                'summaris(?:e|es|ed|ing|ation|ations)' = 'summarize'
+                'visualis(?:e|es|ed|ing|ation|ations)' = 'visualize'
+                'synchronis(?:e|es|ed|ing|ation|ations)' = 'synchronize'
+                'prioritis(?:e|es|ed|ing|ation|ations)' = 'prioritize'
+                'standardis(?:e|es|ed|ing|ation|ations)' = 'standardize'
+                'specialis(?:e|es|ed|ing|ation|ations)' = 'specialize'
+                'materialis(?:e|es|ed|ing)'            = 'materialize'
+                'finalis(?:e|es|ed|ing)'               = 'finalize'
+                'centralis(?:e|es|ed|ing|ation|ations)' = 'centralize'
+                'generalis(?:e|es|ed|ing|ation|ations)' = 'generalize'
+                'emphasis(?:e|es|ed|ing)'              = 'emphasize'
+                'categoris(?:e|es|ed|ing|ation|ations)' = 'categorize'
+                'characteris(?:e|es|ed|ing|ation|ations)' = 'characterize'
+                'criticis(?:e|es|ed|ing)'              = 'criticize'
+                'optimis(?:e|es|ed|ing|ation|ations|er|ers)' = 'optimize'
+                'utilis(?:e|es|ed|ing|ation|ations)'   = 'utilize'
+                'capitalis(?:e|es|ed|ing|ation|ations)' = 'capitalize'
+                'tokenis(?:e|es|ed|ing|ation|ations|er|ers)' = 'tokenize'
+                'parameteris(?:e|es|ed|ing|ation|ations)' = 'parameterize'
+                'modularis(?:e|es|ed|ing|ation|ations)' = 'modularize'
+                'localis(?:e|es|ed|ing|ation|ations)'  = 'localize'
+                'stabilis(?:e|es|ed|ing|ation|ations)' = 'stabilize'
             }
         }
         default {
