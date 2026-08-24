@@ -1,0 +1,68 @@
+\section{Điều các họ chỉ số chưa giải quyết}
+\label{sec:ch08-dieu-chua-giai-quyet}
+
+\index{độ trung thực!kiểm định chỉ số}%
+\index{chỉ số đánh giá!bốn nhóm}%
+Bốn nhóm ở các mục trên được xếp theo ba ô của
+hình~\ref{fig:ch08-vong-lap-do}, tức theo cách sách này đọc chúng. Bài báo neo
+của cuốn sách cũng xếp các chỉ số thành nhóm, độc lập với cách xếp ấy, và kết
+quả gần trùng nhau đủ để đáng ghi lại. Gur-Arieh và cộng sự chia các chỉ số họ
+đánh giá thành bốn nhóm theo đúng câu hỏi \enquote{chỉ số này can thiệp vào
+cái gì}: nhóm dựa trên mức quan trọng, nhóm dựa trên tham số, nhóm dựa trên
+attribution, và nhóm dựa trên
+\tn{tính hữu dụng ngữ nghĩa}{semantic utility}~\autocite{p21metrics}.
+
+Trước khi dùng cách chia ấy, phải nói rõ một điều về phạm vi, vì bỏ qua nó sẽ
+làm hỏng cách đọc cả Phần~IV. Đối tượng của bài báo neo không phải attribution
+đặc trưng, mà là \tn{chuỗi suy luận}{chain-of-thought} của
+\tn{mô hình ngôn ngữ lớn}{large language model}:
+nó hỏi lời kể lại các bước suy luận có phản ánh đúng phép tính đã dẫn tới câu
+trả lời hay không. Không tên chỉ số nào của họ xóa dần và họ tiên đề xuất hiện trong bài báo đó, và
+ngược lại, tám chỉ số mà nó đánh giá đều được thiết kế riêng cho chuỗi suy
+luận~\autocite{p21metrics}. Hai bên đo hai đối tượng khác nhau bằng hai bộ
+công cụ khác nhau.
+
+Cái đi qua được ranh giới ấy là cấu trúc, không phải kết quả. Nhóm dựa trên mức
+quan trọng làm đúng việc mà mục~\ref{sec:ch08-ho-xoa-dan} đã mô tả: nó nhiễu một
+phần của lời giải thích rồi xem câu trả lời có đổi không. Nhóm dựa trên tham số
+can thiệp vào trọng số của mô hình thay vì vào đầu vào. Trong bốn mục trên, chỉ
+phép thử thứ nhất ở mục~\ref{sec:ch08-dieu-kien-can} động tới trọng số, mà nó
+là điều kiện cần chứ không phải một chỉ số, nên ở phía attribution nhóm này
+chưa có đại diện thực sự. Nhóm dựa trên attribution dùng lại chính SHAP của
+chương~\ref{ch:shap} làm dụng cụ đo. Nhóm thứ tư thì đo thứ khác hẳn: lời giải
+thích có đủ dùng cho một mô hình yếu hơn tái lập được câu trả lời hay
+không~\autocite{p21metrics}.
+
+Chẩn đoán mà bài báo đưa ra cho hai nhóm lớn nhất là chỗ đáng mang về nhất, vì
+nó nói đúng cái mà chương này đi tìm: giả định nào đã lẻn vào. Với nhóm dựa trên
+mức quan trọng, các tác giả cho rằng chúng đồng nhất mức quan trọng với độ trung
+thực, nên có thể gán nhãn không trung thực cho một bước vốn trung thực mà chỉ vì
+nó không thiết yếu với câu trả lời cuối~\autocite{p21metrics}. Đó chính là phép
+đồng nhất mà cả họ xóa dần đứng trên: bỏ đi một đặc trưng mà đầu ra không đổi
+được đọc thành đặc trưng ấy không được mô hình dùng, trong khi nó chỉ có nghĩa
+là đặc trưng ấy không quyết định một mình. Với nhóm dựa trên tính hữu dụng ngữ
+nghĩa, chẩn đoán ngược lại: một lời biện minh nghe hợp lý nhưng bịa đặt vẫn đủ
+để một mô hình yếu hơn tái lập câu trả lời~\autocite{p21metrics}. Đây là sự lẫn
+lộn giữa độ trung thực và \tn{tính hợp lý}{plausibility} mà
+mục~\ref{sec:ch01-do-trung-thuc-va-tinh-hop-ly} đã tách ra, lần này nằm ngay
+trong dụng cụ đo.
+
+Còn lại một câu hỏi mà không mục nào trong chương trả lời được, và nó là câu hỏi
+của cả Phần~IV. Mỗi họ chỉ số ở trên được đề xuất kèm một lập luận vì sao con số
+của nó đáng tin, và không họ nào được đối chiếu với ground truth lấy từ bên
+ngoài chính nó. Bài báo neo nói thẳng tình trạng ấy: phần lớn công trình đề xuất
+chỉ số chỉ báo cáo điểm số tuyệt đối hoặc so với các chỉ số trước, còn số ít bộ
+đánh giá đã có thì dựa vào những đại lượng thay thế như tính hợp lý hoặc mức
+quan trọng, vốn là các tính chất trực giao với độ trung thực~\autocite{p21metrics}.
+
+Nói theo phép so sánh của mục~\ref{sec:ch08-chi-so-nhu-mot-dung-cu}: cả một tủ
+dụng cụ đo đã được chế tạo, được hiệu chỉnh lẫn nhau, và được dùng để xếp hạng
+các phương pháp, mà chưa cái nào được đưa ra đối chiếu với ground truth. Các
+tác giả của bài báo neo cũng nêu lý do, và lý do ấy không phải sự cẩu thả:
+ground truth ở đây đòi biết mô hình thật sự đã dùng gì, mà nội dung tính toán
+bên trong mô hình thì không quan sát trực tiếp được~\autocite{p21metrics}.
+
+Muốn thoát khỏi vòng ấy thì phải dựng lấy ground truth, bằng cách chọn những
+bài toán mà đầu ra của chúng để lộ phép tính đã sinh ra nó.
+Chương~\ref{ch:chi-so-khong-do-do-trung-thuc} đọc kỹ công trình đã làm đúng việc
+đó, và đọc luôn kết quả mà nó thu được khi đem các chỉ số ra đối chiếu.
