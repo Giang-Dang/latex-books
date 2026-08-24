@@ -5,7 +5,7 @@
 ]
   \node[box] (application) {Đánh giá trong ứng dụng\\Người dùng thật, nhiệm vụ thật};
   \node[box, below=7mm of application] (human) {Đánh giá với người dùng\\Người dùng thật, nhiệm vụ rút gọn};
-  \node[box, below=7mm of human] (functional) {Đánh giá theo chức năng\\Không có người dùng, dùng proxy};
+  \node[box, below=7mm of human] (functional) {Đánh giá theo chức năng\\Không có người dùng,\\dùng đại lượng thay thế};
 
   \draw[arrow] (application.south) -- (human.north);
   \draw[arrow] (human.south) -- (functional.north);
@@ -13,5 +13,5 @@
   \node[align=left, anchor=west] at ([xshift=8mm]application.east)
     {Bằng chứng gần\\mục tiêu triển khai hơn};
   \node[align=left, anchor=west] at ([xshift=8mm]functional.east)
-    {Dễ chạy hơn,\\cần biện minh cho proxy};
+    {Dễ chạy hơn, cần biện minh\\cho đại lượng thay thế};
 \end{tikzpicture}

@@ -3,20 +3,19 @@
 
 Mục~\ref{sec:ch01-khi-du-doan-chua-du} đã cho thấy mỗi mục đích đòi một việc
 kiểm tra riêng. Nếu mục đích quyết định thước đo thì không thể đánh giá mọi
-lời giải thích bằng một con số hoặc một đại lượng thay thế (proxy) mang tính
-cấu trúc. Doshi-Velez và Kim đề xuất ba cách đặt bài toán đánh giá, khác nhau
-ở người tham gia và nhiệm vụ được dùng~\autocite{p14rigorous}.
-Hình~\ref{fig:ch01-ba-cach-danh-gia} đặt ba cách ấy trên cùng một trục.
+lời giải thích bằng một con số hoặc một \tn{đại lượng thay thế}{proxy} mang
+tính cấu trúc. Doshi-Velez và Kim đề xuất ba cách đặt bài toán đánh giá, khác
+nhau ở người tham gia và nhiệm vụ được dùng~\autocite{p14rigorous}.
+Hình~\ref{fig:ch01-ba-cach-danh-gia} xếp ba cách ấy theo bằng chứng mà mỗi
+cách đòi hỏi.
 
 \begin{figure}[htbp]
   \centering
   \input{figures/tikz/ch01-ba-cach-danh-gia}
-  \caption{Ba cách đánh giá khác nhau ở bằng chứng mà chúng đòi hỏi. Đánh giá
-  trong ứng dụng dùng người dùng và nhiệm vụ thực nên gần mục tiêu triển khai
-  nhất. Đánh giá với người dùng rút gọn nhiệm vụ để cô lập một giả thuyết.
-  Đánh giá theo chức năng dùng proxy, rẻ hơn nhưng phải biện minh vì sao proxy
-  có liên hệ với điều người dùng cần. Sự tiện lợi của cách rẻ hơn không chuyển
-  thành bằng chứng cho cách gần mục tiêu hơn.}
+  \caption{Ba cách đánh giá khác nhau ở bằng chứng mà chúng đòi hỏi. Trục dọc
+  đi từ bằng chứng đắt và gần mục tiêu triển khai xuống bằng chứng rẻ và gián
+  tiếp; nó không phải là một thang chất lượng. Sự tiện lợi của cách rẻ hơn
+  không chuyển thành bằng chứng cho cách gần mục tiêu hơn.}
   \label{fig:ch01-ba-cach-danh-gia}
 \end{figure}
 
@@ -26,16 +25,20 @@ một tín hiệu không phù hợp. Đây là cách đánh giá gần với m�
 nhất, nhưng cũng tốn kém và khó kiểm soát các yếu tố nhiễu.
 
 \paragraph{Đánh giá với người dùng.} Người tham gia vẫn là con người, nhưng
-nhiệm vụ được giản lược; chẳng hạn, ta có thể yêu cầu họ chọn lời giải thích
-nào giúp họ dự đoán hành vi mô hình tốt hơn. Thiết kế này không tái tạo toàn
+nhiệm vụ được giản lược. Bài báo nêu hai thiết kế tách rời nhau: đưa từng cặp
+lời giải thích và yêu cầu người tham gia chọn cái mà họ thấy có chất lượng cao
+hơn, hoặc đưa một lời giải thích cùng một đầu vào và yêu cầu họ dự đoán đúng
+đầu ra của mô hình~\autocite{p14rigorous}. Thiết kế này không tái tạo toàn
 bộ công việc thực tế, nhưng cho phép kiểm tra một thuộc tính xác định trong
 cách trình bày lời giải thích mà không phải dựng cả ứng dụng.
 
-\paragraph{Đánh giá theo chức năng.} Cách thứ ba không cần người tham gia:
-nghiên cứu đo một proxy như độ thưa của mô hình, độ ngắn của quy tắc, hay khả
-năng dự đoán một nhãn thay thế. Cách làm này phù hợp khi proxy đã có cơ sở,
-nhưng proxy không phải bản thân mục tiêu. Nghiên cứu so sánh các mô hình dễ
-diễn giải gần đây cũng phải chọn proxy cấu trúc để có thể so sánh trên quy mô
+\paragraph{Đánh giá theo chức năng.} Cách thứ ba không cần người tham gia.
+Bài báo nêu hai ví dụ: cho thấy một mô hình vốn đã được chứng minh là dễ diễn
+giải đạt hiệu năng dự đoán tốt hơn, hoặc cho thấy phương pháp của mình tốt hơn
+theo một điều kiện chuẩn hóa nào đó, chẳng hạn thưa hơn~\autocite{p14rigorous}.
+Cách làm này phù hợp khi đại lượng thay thế đã có cơ sở, nhưng nó không phải
+là bản thân mục tiêu. Nghiên cứu so sánh các mô hình dễ diễn giải gần đây cũng
+phải chọn một đại lượng thay thế mang tính cấu trúc để so sánh trên quy mô
 lớn, và thừa nhận giới hạn của lựa chọn ấy~\autocite{p15microscope}.
 
 Như vậy, ba cách trên không phải là ba nhãn chất lượng cho cùng một đại

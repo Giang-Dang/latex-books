@@ -1,10 +1,11 @@
 \section{Integrated Gradients trên một đường đi}
 \label{sec:ch05-integrated-gradients}
 
-Hai tiên đề dẫn tới Integrated Gradients. Cho $x_0$ là baseline và $x$ là đầu
+\index{Integrated Gradients|(}%
+Hai tiên đề dẫn tới Integrated Gradients~\autocite{p11ig}. Cho $x_0$ là baseline và $x$ là đầu
 vào cần giải thích. Phương pháp chọn đoạn thẳng $x_0+\alpha(x-x_0)$ khi
 $\alpha$ chạy từ không tới một, lấy gradient tại mọi điểm trên đoạn ấy, rồi
-tích theo từng tọa độ:
+lấy tích phân theo từng tọa độ:
 
 \begin{equation}
 \label{eq:ch05-integrated-gradients}
@@ -15,32 +16,39 @@ tích theo từng tọa độ:
 
 Thừa số $x_i-x_{0i}$ biến độ dốc thành phần thay đổi theo tọa độ. Vì thế,
 phương trình~\ref{eq:ch05-integrated-gradients} không đọc riêng độ dốc ở $x$;
-nó cộng các độ dốc gặp trên cả hành trình từ $x_0$ đến $x$. Hình~\ref{fig:ch05-hai-phep-tich}
-đặt hành trình đó cạnh phép tổng hợp không gian mà Grad-CAM sẽ dùng.
+nó cộng các độ dốc gặp trên cả hành trình từ $x_0$ đến $x$.
 
+\index{tính đầy đủ}%
 \begin{proposition}
 \label{prop:ch05-tinh-day-du}
-Nếu $F$ liên tục trên đoạn từ $x_0$ đến $x$, khả vi hầu khắp nơi và các đạo
-hàm riêng của nó khả tích trên đoạn, tổng các attribution Integrated Gradients
-bằng chênh lệch đầu ra:
+Đặt $g(\alpha)=F\bigl(x_0+\alpha(x-x_0)\bigr)$. Nếu $g$ liên tục tuyệt đối
+trên $[0,1]$, thì tổng các attribution Integrated Gradients bằng chênh lệch
+đầu ra:
 \begin{equation}
 \sum_i \operatorname{IG}_i(x;x_0)=F(x)-F(x_0).
 \end{equation}
 \end{proposition}
 
 Mệnh đề~\ref{prop:ch05-tinh-day-du} là \tn{tính đầy đủ}{completeness}. Nó là
-định lý cơ bản của giải tích áp cho đường đi trong không gian đầu vào. Khi chỉ
-một tọa độ thay đổi, tổng trên chỉ còn tọa độ ấy; do đó tính đầy đủ kéo theo \tn{độ
-nhạy}{sensitivity} của mục~\ref{sec:ch05-hai-tien-de}. Mệnh đề không nói từng phần đóng góp
-là duy nhất. Những đường đi khác giữa cùng hai điểm cũng có thể thỏa tính đầy
-đủ, nhưng chia chênh lệch cho các tọa độ theo cách khác.
+định lý cơ bản của giải tích Lebesgue áp cho đường đi trong không gian đầu
+vào, và liên tục tuyệt đối là điều kiện cần và đủ để định lý ấy dùng được.
+Bài báo gốc phát biểu điều kiện yếu hơn, rằng $F$ khả vi hầu khắp nơi, cùng
+một chú thích rằng $F$ liên tục và các đạo hàm riêng khả tích~\autocite{p11ig};
+bộ điều kiện ấy chưa đủ, vì hàm Cantor thỏa cả ba mà tích phân của đạo hàm
+vẫn bằng không trong khi chênh lệch đầu ra bằng một. Với các mạng mà bài báo
+nhắm tới, hợp thành hữu hạn của ánh xạ affine, ReLU, sigmoid và phép gộp cực
+đại, hàm $g$ Lipschitz địa phương nên liên tục tuyệt đối, và mệnh đề áp được.
+
+Từ tính đầy đủ suy ra hai điều, và chỉ hai điều. Khi chỉ một tọa độ thay đổi,
+tổng trên chỉ còn tọa độ ấy; do đó tính đầy đủ kéo theo
+\tn{độ nhạy}{sensitivity} của mục~\ref{sec:ch05-hai-tien-de}. Nhưng mệnh đề
+không nói từng phần đóng góp là duy nhất: những đường đi khác giữa cùng hai
+điểm cũng có thể thỏa tính đầy đủ mà chia chênh lệch cho các tọa độ theo cách
+khác.
 
 Trong máy tính, tích phân được xấp xỉ bằng tổng gradient tại nhiều điểm trên
 đoạn thẳng. Sai số xấp xỉ phải được kiểm tra bằng chênh lệch giữa tổng
 attribution và $F(x)-F(x_0)$, thay vì mặc định rằng một số bước bất kỳ là đủ.
-Đó là một kiểm tra số học của phép tính, không phải xác nhận rằng baseline đã
-đại diện cho sự vắng mặt của tín hiệu.
+Đó là một kiểm tra số học của phép tính, không phải là xác nhận rằng baseline
+đã đại diện cho sự vắng mặt của tín hiệu.
 
-\index{Integrated Gradients|(}%
-\index{tích phân đường}%
-\index{tính đầy đủ}%

@@ -1,17 +1,19 @@
 \section{Sinh lân cận bằng phép nhiễu}
 \label{sec:ch03-sinh-lan-can}
 
+\index{phép nhiễu}%
 Sau khi đã chọn $x'$, LIME phải tạo dữ liệu để học $g$. Nó sinh các
 \tn{phép nhiễu}{perturbation} $z'$ quanh $x'$, dựng lại đầu vào gốc tương ứng
 $z$, rồi lấy $f(z)$ làm nhãn để khớp mô hình thay thế. Trong mô tả của bài báo,
 với một $x'$ nhị phân, LIME lấy ngẫu nhiên các phần tử đang có mặt để tạo
-$z'$; số phần tử được lấy cũng thay đổi giữa các lần sinh mẫu
-~\autocite{p09lime}.
+$z'$; số phần tử được lấy cũng thay đổi giữa các lần sinh
+mẫu~\autocite{p09lime}.
 
 Hình~\ref{fig:ch03-quy-trinh-lime} tách những bước này ra. Mũi tên từ $z'$ sang
 $z$ là nơi một bit vắng mặt trở thành một can thiệp cụ thể: bỏ từ trong văn
 bản, làm mờ vùng ảnh, hoặc một cách tái tạo khác. Mũi tên từ $z$ sang $f(z)$
-không mở mô hình hộp đen; nó chỉ hỏi mô hình đã phản ứng thế nào với đầu vào
+không mở mô hình \tn{hộp đen}{black box}; nó chỉ hỏi mô hình đã phản ứng thế
+nào với đầu vào
 đã dựng lại.
 
 \begin{figure}[htbp]
@@ -20,8 +22,8 @@ không mở mô hình hộp đen; nó chỉ hỏi mô hình đã phản ứng th
   \caption{Quy trình LIME quanh đầu vào $x$. Biểu diễn $x'$ quyết định những
   thành phần có thể bật hoặc tắt; các mẫu $z'$ được dựng lại thành đầu vào $z$
   trước khi mô hình hộp đen trả $f(z)$. Trọng số lân cận và phép khớp tạo ra
-  mô hình thay thế $g$, chứ không truy xuất cơ chế bên trong của $f$
-  ~\autocite{p09lime}.}
+  mô hình thay thế $g$, chứ không truy xuất cơ chế bên trong của
+  $f$~\autocite{p09lime}.}
   \label{fig:ch03-quy-trinh-lime}
 \end{figure}
 
@@ -31,4 +33,3 @@ phân phối dữ liệu mà mô hình từng gặp. Vì LIME học từ chính 
 phân phối phép nhiễu là một phần của lời giải thích, không phải chi tiết cài
 đặt có thể bỏ qua.
 
-\index{phép nhiễu}%

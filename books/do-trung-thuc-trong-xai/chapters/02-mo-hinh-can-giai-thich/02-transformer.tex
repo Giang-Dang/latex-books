@@ -1,15 +1,17 @@
 \section{Transformer tạo biểu diễn theo ngữ cảnh}
 \label{sec:ch02-transformer}
 
-Từ sự phân biệt giữa đầu vào, trạng thái và đầu ra ở mục
-\ref{sec:ch02-doi-tuong-can-giai-thich}, ta có thể nhìn transformer như cơ
+\index{transformer|(}%
+\index{cơ chế chú ý}%
+Từ sự phân biệt giữa đầu vào, trạng thái và đầu ra ở mục~\ref{sec:ch02-doi-tuong-can-giai-thich},
+ta có thể nhìn transformer như cơ
 chế biến một dãy token thành các biểu diễn phụ thuộc ngữ cảnh. Bài báo gốc
 giới thiệu transformer như một kiến trúc dựa hoàn toàn vào
-\tn{cơ chế chú ý}{attention mechanism}, không dùng recurrence hay convolution;
-cấu trúc encoder-decoder của nó ghép self-attention với các lớp feed-forward
-theo từng vị trí~\autocite{p01attention}.
+\tn{cơ chế chú ý}{attention mechanism}, không dùng đệ quy hay tích chập; cấu
+trúc encoder-decoder của nó ghép \tn{tự chú ý}{self-attention} với các lớp
+truyền thẳng theo từng vị trí~\autocite{p01attention}.
 
-Trong self-attention, biểu diễn tại một vị trí tạo truy vấn, khóa và giá trị.
+Trong tự chú ý, biểu diễn tại một vị trí tạo truy vấn, khóa và giá trị.
 Truy vấn so với các khóa để lấy trọng số, rồi các giá trị được trộn theo những
 trọng số ấy. Nhờ vậy, một token có thể lấy thông tin từ các token khác trong
 ngữ cảnh thay vì chỉ nhận trạng thái từ vị trí liền trước. Multi-head attention
@@ -25,7 +27,6 @@ nêu can thiệp nào được thực hiện và kiểm tra đầu ra đổi ra 
 thế dùng attention để gọi tên một vị trí trong cơ chế, không dùng nó thay cho
 một cách đánh giá.
 
-\index{transformer|(}%
 Các biểu diễn cũng thay đổi qua các lớp. Một token ở lớp đầu có thể giữ nhiều
 thông tin bề mặt, trong khi biểu diễn ở lớp sau chịu ảnh hưởng của toàn bộ
 ngữ cảnh mà kiến trúc cho phép nó truy cập. Khi một phương pháp hậu nghiệm ở

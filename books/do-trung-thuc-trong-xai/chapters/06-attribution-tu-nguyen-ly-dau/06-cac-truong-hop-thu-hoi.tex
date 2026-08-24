@@ -4,20 +4,24 @@
 \index{mạng ReLU}%
 \index{partial dependence plot}%
 Độ đo làm rõ giả định, đồng thời cho thấy khung không đứng tách khỏi các công
-cụ quen thuộc. Bài báo biểu diễn các attribution dựa trên feature removal,
-trường hợp giả định độc lập và partial dependence plot bằng những họ độ đo
-khác nhau~\autocite{p17firstprinciples}. Điểm chung là chúng đều viết được như
+cụ quen thuộc. Bài báo biểu diễn các attribution dựa trên
+\tn{loại bỏ đặc trưng}{feature removal}, trường hợp giả định độc lập và
+partial dependence plot bằng những họ độ đo khác nhau~\autocite{p17firstprinciples}. Điểm chung là chúng đều viết được như
 kỳ vọng của đầu ra mô hình dưới một cách lấy trung bình đã chọn.
 
 Với hàm từng đoạn affine, bài báo còn đưa attribution về tổng trên các vùng
 tuyến tính. Mạng ReLU sâu thuộc lớp hàm này: trên mỗi vùng kích hoạt cố định,
 mạng là một hàm affine; các hệ số của vùng có thể biểu diễn từ trọng số mạng.
-Vì vậy, công thức tổng quát có một dạng đóng cho mạng ReLU sau khi phân hoạch
-không gian đầu vào theo các vùng đó~\autocite{p17firstprinciples}.
+Vì vậy, dạng tổng quát thu về một dạng đóng cho mạng ReLU sau khi phân hoạch
+không gian đầu vào theo các vùng đó. Hệ quả này hẹp hơn phương
+trình~\ref{eq:ch06-attribution-do-do} một bậc: nó đòi hỏi họ độ đo là dương
+chứ không chỉ có dấu, và attribution nguyên tử nhận giá trị không
+âm~\autocite{p17firstprinciples}.
 
 Từ đây không nên suy ra rằng mọi attribution thực hành đều đã có một thuật
-toán rẻ. Với mô hình có số chiều lớn, bài báo nêu hai cách xấp xỉ tích phân: Monte Carlo với
-bộ lấy mẫu, hoặc tổng Riemann được vector hóa. Cả hai vẫn phụ thuộc vào độ đo
+toán rẻ. Bài báo nêu hai cách xấp xỉ tích phân: Monte Carlo với một bộ lấy mẫu, dành
+cho mô hình có số chiều lớn, hoặc tổng Riemann cổ điển được vector hóa trên
+GPU. Cả hai vẫn phụ thuộc vào độ đo
 đã chọn, số mẫu hoặc độ mịn của phân hoạch. Khung cho phép so những quyết định
-ấy trong cùng một ký pháp; nó không làm chi phí tính toán và sai lệch xấp xỉ
+ấy trong cùng một bộ ký hiệu; nó không làm chi phí tính toán và sai lệch xấp xỉ
 biến mất.

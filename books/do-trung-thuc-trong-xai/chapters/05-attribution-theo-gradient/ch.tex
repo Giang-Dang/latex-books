@@ -12,11 +12,12 @@ hỏi này hấp dẫn với mạng sâu vì gradient đã có sẵn trong phép
 Tuy nhiên, gradient tại đúng một điểm chỉ mô tả độ dốc ở lân cận vô cùng nhỏ;
 nó có thể bằng không dù đầu ra đã đổi trên một quãng dài.
 
-Integrated Gradients tích các gradient trên đoạn nối một baseline với đầu vào.
-Grad-CAM lại gộp gradient theo không gian của một lớp tích chập để tạo bản đồ
-vị trí cho một quyết định. Hai phép tích này phục vụ hai kiểu đầu vào khác
-nhau, nhưng cùng buộc ta nêu rõ đối tượng đang được so sánh. Với Integrated
-Gradients, đó là baseline; với Grad-CAM, đó là lớp biểu diễn và lớp mục tiêu.
+Integrated Gradients lấy tích phân các gradient trên đoạn nối một baseline với
+đầu vào. Grad-CAM lại gộp gradient theo không gian của một tầng tích chập để
+tạo một bản đồ nhiệt cho một quyết định. Hai phép gộp này phục vụ hai kiểu đầu
+vào khác nhau, nhưng cùng buộc ta nêu rõ đối tượng đang được so sánh. Với
+Integrated Gradients, đó là baseline; với Grad-CAM, đó là tầng biểu diễn và
+lớp mục tiêu.
 
 \input{chapters/05-attribution-theo-gradient/01-gradient-tai-mot-diem}
 \input{chapters/05-attribution-theo-gradient/02-hai-tien-de}

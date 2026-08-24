@@ -1,16 +1,23 @@
 \section{Câu hỏi trước phương pháp}
 \label{sec:ch06-cau-hoi-truoc-phuong-phap}
 
-\index{attribution!cơ sở lý thuyết}%
+\index{attribution}%
 Mục cuối của chương~\ref{ch:attribution-theo-gradient} đã tách bảo đảm hình
 thức khỏi kết luận về độ trung thực. Sự tách này cũng áp dụng khi so các họ
-phương pháp. Một attribution tại đầu vào $x$ cho mô hình $f$ là một vectơ
-$\varphi(x,f)$, trong đó thành phần $\varphi_j(x,f)$ được diễn giải là đóng góp
-của đặc trưng $j$. Định nghĩa tối giản ấy chưa nói điểm số được lấy bằng phép
-so sánh, phép trung bình hay đạo hàm nào.
+phương pháp. Bài báo bắt đầu từ một định nghĩa tối giản.
+
+\begin{definition}[Attribution đặc trưng]
+\label{def:ch06-attribution}
+Một attribution tại đầu vào $x$ cho mô hình $f$ là một vector
+$\varphi(x,f)$, trong đó thành phần $\varphi_j(x,f)$ được diễn giải là đóng
+góp của đặc trưng $j$~\autocite{p17firstprinciples}.
+\end{definition}
+
+Định nghĩa~\ref{def:ch06-attribution} chưa nói điểm số được lấy bằng phép so
+sánh, phép trung bình hay đạo hàm nào.
 
 LIME, SHAP và Integrated Gradients đã cho ba câu trả lời khác nhau cho khoảng
-trống đó. LIME chọn lân cận và trọng số cho các mẫu nhiễu. SHAP chọn giá trị
+trống đó. LIME chọn lân cận và trọng số cho các mẫu đã nhiễu. SHAP chọn giá trị
 của liên minh và một phân phối nền. Integrated Gradients chọn baseline cùng
 đường đi tới đầu vào. Vì vậy, việc hai phương pháp trả các điểm số khác nhau
 không tự chứng minh phương pháp nào sai. Trước hết, chúng có thể đang trả lời

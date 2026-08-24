@@ -1,13 +1,15 @@
 \section{Một lời giải thích chỉ đúng trong một lân cận}
 \label{sec:ch03-mot-loi-giai-thich-cuc-bo}
 
+\index{LIME|(}%
+\index{mô hình thay thế cục bộ}%
 Chương trước kết thúc bằng câu hỏi về một can thiệp trên đầu vào. LIME trả lời
 câu hỏi ấy bằng một \tn{mô hình thay thế cục bộ}{local surrogate}: thay vì cố
 mô tả toàn bộ $f$, nó học một mô hình đơn giản $g$ cho vùng quanh một đầu vào
 $x$. Ribeiro, Singh và Guestrin gọi cách làm này là local interpretable
 model-agnostic explanations, hay LIME~\autocite{p09lime}.
 
-Từ \emph{model-agnostic} có nghĩa hẹp. LIME không cần biết kiến trúc, trọng số
+Từ \enquote{model-agnostic} có nghĩa hẹp. LIME không cần biết kiến trúc, trọng số
 hay gradient của $f$; nó chỉ cần đưa một đầu vào hợp lệ vào $f$ và nhận lại đầu
 ra. Do đó, cùng một khung có thể áp dụng cho bộ phân loại văn bản, bộ phân loại
 ảnh hoặc một mô hình mà người giải thích không được mở bên trong. Tuy nhiên,
@@ -16,8 +18,8 @@ cách tạo đầu vào đã thay đổi và cách đo khoảng cách từ mẫu
 
 \begin{definition}[Mô hình thay thế cục bộ]
 \label{def:ch03-mo-hinh-thay-the-cuc-bo}
-Cho mô hình cần giải thích $f$ và đầu vào $x$. Mô hình thay thế cục bộ là một
-mô hình dễ đọc $g$ được khớp từ các đầu vào đã nhiễu quanh $x$, với mục tiêu
+Cho mô hình cần giải thích $f$ và đầu vào $x$. Mô hình thay thế cục bộ là
+mô hình dễ đọc $g$ được khớp từ các mẫu đã nhiễu quanh $x$, với mục tiêu
 xấp xỉ hành vi của $f$ trong lân cận đã chọn, không phải trên mọi đầu vào.
 \end{definition}
 
@@ -28,5 +30,3 @@ dự đoán. Nhưng một mô hình $g$ khớp tốt ở đầu vào này không
 vào khác. Vì vậy, nhiều lời giải thích LIME không tự ghép thành một lời giải
 thích toàn cục cho $f$.
 
-\index{LIME|(}%
-\index{mô hình thay thế cục bộ}%

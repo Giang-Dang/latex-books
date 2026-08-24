@@ -7,11 +7,11 @@
 ]
   \node[box] (base) {Mô hình tiền huấn luyện};
   \node[data, right=11mm of base] (demos) {Lời đáp mẫu};
-  \node[box, below=8mm of base] (sft) {Fine-tune có giám sát};
+  \node[box, below=8mm of base] (sft) {Tinh chỉnh có giám sát};
   \node[data, right=11mm of sft] (rankings) {Xếp hạng của người gán nhãn};
-  \node[box, below=8mm of sft] (reward) {Reward model};
-  \node[box, below=8mm of reward] (rl) {Tối ưu bằng reinforcement learning};
-  \node[box, below=8mm of rl] (chat) {Mô hình hội thoại};
+  \node[box, below=8mm of sft] (reward) {Mô hình thưởng};
+  \node[box, below=8mm of reward] (rl) {Tối ưu bằng học tăng cường};
+  \node[box, below=8mm of rl] (chat) {Mô hình làm theo chỉ dẫn};
 
   \draw[arrow] (base.south) -- (sft.north);
   \draw[arrow] (demos.west) -- (sft.east);

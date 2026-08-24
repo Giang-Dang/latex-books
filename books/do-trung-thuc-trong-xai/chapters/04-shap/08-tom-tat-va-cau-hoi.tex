@@ -6,16 +6,21 @@
   \tn{tính vắng mặt}{missingness} và \tn{tính nhất quán}{consistency} xác định duy nhất cách phân bổ SHAP khi cách ánh xạ đã cố định.
   \item Hàm giá trị của liên minh phụ thuộc \tn{phân phối nền}{background distribution} và quy tắc hoàn thiện
   đặc trưng còn thiếu; đây là giả định về dữ liệu, không phải hệ quả tiên đề.
+  \item Với mô hình cây, quy hoạch động trên các đường đi tính cùng những giá
+  trị ấy nhanh hơn. Đó là một lợi ích tính toán, không phải một định nghĩa mới
+  về đóng góp.
+  \item Một phát biểu toàn cục dựng từ các giá trị SHAP cục bộ phải mang theo
+  bất định lấy mẫu và bất định do ước lượng đường cong SHAP.
 \end{itemize}
 \end{tomtat}
 
 \cauhoi
 \begin{cauhoids}
   \item Với ba đặc trưng $a$, $b$, $c$, hãy liệt kê các liên minh đứng trước
-  $a$ trong công thức Shapley. Vì sao mỗi liên minh không có cùng trọng số?
+  $a$ trong phương trình Shapley. Vì sao mỗi liên minh không có cùng trọng số?
   \item Với thu nhập và số năm học có tương quan, hãy so sánh việc hoàn thiện
   thu nhập theo phân phối có điều kiện với việc lấy mẫu biên độc lập.
   \item Đọc \enquote{A Unified Approach to Interpreting Model Predictions} của
-  Lundberg và Lee~\autocite{p10shap}. Ba lựa chọn nào của LIME KernelSHAP phải
-  thay đổi để thu được giá trị Shapley?
+  Lundberg và Lee~\autocite{p10shap}. Ba lựa chọn nào của LIME mà KernelSHAP
+  phải thay đổi để thu được giá trị Shapley?
 \end{cauhoids}

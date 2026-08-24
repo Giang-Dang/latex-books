@@ -4,10 +4,11 @@
   và hành vi đầu ra mà người dùng quan sát được.
   \item Transformer dùng \tn{cơ chế chú ý}{attention mechanism} để tạo biểu diễn theo ngữ cảnh, nhưng
   attention quan sát được không tự là bằng chứng nhân quả cho một token đầu ra.
-  \item \tn{Tiền huấn luyện}{pretraining}, \tn{lời nhắc}{prompt} và huấn luyện theo phản hồi của con người
-  đều có thể làm thay đổi hành vi cần được giải thích.
-  \item \tn{Chuỗi suy luận}{chain-of-thought} là văn bản mô hình sinh ra trong một điều kiện prompting;
-  nó chưa tự chứng minh sự tương ứng với cơ chế nội tại.
+  \item \tn{Tiền huấn luyện}{pretraining}, \tn{lời nhắc}{prompt} và RLHF đều có thể
+  làm thay đổi hành vi cần được giải thích.
+  \item \tn{Chuỗi suy luận}{chain-of-thought} là văn bản mô hình sinh ra dưới một
+  lời nhắc đã chọn; sự tương ứng của nó với cơ chế nội tại vẫn phải được chứng
+  minh riêng.
   \item Một cách đánh giá lời giải thích phải nêu rõ checkpoint, đầu vào và
   can thiệp, rồi mới diễn giải thay đổi ở đầu ra.
 \end{itemize}
@@ -15,16 +16,17 @@
 
 \cauhoi
 \begin{cauhoids}
-  \item Một prompt có hai ví dụ few-shot và một chỉ dẫn. Nếu thay một ví dụ
+  \item Một lời nhắc có hai ví dụ few-shot và một chỉ dẫn. Nếu thay một ví dụ
   làm câu trả lời đổi, phát biểu nào về hành vi đầu ra được hỗ trợ, và phát
   biểu nào về trọng số mô hình chưa được hỗ trợ?
   \item Đọc bài \enquote{Attention Is All You Need}~\autocite{p01attention}.
-  Hãy mô tả self-attention như một phép tính trên biểu diễn, rồi nêu can thiệp
+  Hãy mô tả \tn{tự chú ý}{self-attention} như một phép tính trên biểu diễn, rồi nêu can thiệp
   nào cần có trước khi gọi một trọng số attention là nguyên nhân của đầu ra.
   \item Đọc bài InstructGPT~\autocite{p04instructgpt}. Hãy chỉ ra dữ liệu nào
-  đi vào fine-tune có giám sát, dữ liệu nào đi vào reward model, và vì sao hai
+  đi vào tinh chỉnh có giám sát, dữ liệu nào đi vào \tn{mô hình thưởng}{reward model},
+  và vì sao hai
   nguồn dữ liệu này không tạo thành lời giải thích cho từng câu trả lời.
-  \item Một hệ thống trả lời đúng hơn khi được yêu cầu viết CoT.
-  Dựa trên bài về chain-of-thought~\autocite{p06cot}, hãy phân biệt kết quả
+  \item Một hệ thống trả lời đúng hơn khi được yêu cầu viết chuỗi suy luận.
+  Dựa trên bài về chuỗi suy luận~\autocite{p06cot}, hãy phân biệt kết quả
   thực nghiệm đó với một kết luận về độ trung thực của chuỗi đã in ra.
 \end{cauhoids}

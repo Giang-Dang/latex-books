@@ -6,7 +6,7 @@
   arrow/.style={-{Stealth[length=2mm]}, draw=black!65, thick}
 ]
   \node[data] (input) {Đầu vào $x$ và biểu diễn $x'$};
-  \node[box, below=8mm of input] (sample) {Sinh các mẫu nhiễu $z'$};
+  \node[box, below=8mm of input] (sample) {Sinh các mẫu đã nhiễu $z'$};
   \node[box, below=8mm of sample] (restore) {Dựng lại đầu vào $z$};
   \node[box, below=8mm of restore] (blackbox) {Mô hình hộp đen trả $f(z)$};
   \node[data, right=14mm of blackbox] (weight) {Trọng số\\ lân cận $\pi_x(z)$};
