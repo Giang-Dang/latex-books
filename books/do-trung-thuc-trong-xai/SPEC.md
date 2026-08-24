@@ -61,6 +61,8 @@ settled row is re-opened only by recording what changed and why, in the row.
 | 23 | Chapter 02 source pins and terminology | Chapter 02 reads arXiv:1706.03762v7, 2005.14165v4, 2203.02155v1, 2201.11903v6 and 2606.11470v2; each pin and the claim class read are recorded in refs.bib. It prints no measurement, so research/ remains empty under decision 19. Its settled Vietnamese terms are the Chapter 02 block in appendix B; transformer remains English. |
 | 24 | Chapter 03 scope and notation | The initialized TOC said LIME's free parameters were unvalidated, but paper 09 documents the procedure rather than establishing that claim. Chapter 03 therefore states the parameters and their interpretive consequences, and the TOC and scope comment now say so. The session also settles the shared notation: x is the model-space input, x-prime the interpretable representation, z-prime a perturbed representation, z its reconstructed input, f the model, g the local surrogate, pi-x the locality kernel, and Z the sample set. |
 | 25 | Chapter 04 sources and terminology | Chapter 04 reads arXiv:1705.07874v2 and arXiv:2602.10532v1. Its terms added to appendix B are giá trị Shapley, lời giải thích cộng tính, phân phối nền, hàm nhân Shapley, độ chính xác cục bộ, tính vắng mặt, and tính nhất quán; KernelSHAP and TreeSHAP stay in English. Appendix A now maps the shared notation to SHAP as well as LIME. |
+| 26 | Chapter 06 source, scope and notation | Chapter 06 reads arXiv:2505.24729v1. It treats completeness, sensitivity and linearity as constraints, then develops the paper's indicator-function construction and its measure-theoretic form, without claiming that the construction picks an application-appropriate measure or proves faithfulness. The chapter prints no paper-reported decimal, so research/ remains empty under decision 19. It adds hàm chỉ báo and độ đo Borel hữu hạn có dấu to appendix B and $\varphi_j(x,f)$ with $\mu_{j,x}$ to appendix A. |
+| 27 | Ownership of tính tuyến tính | Chapter 04 had introduced tính tuyến tính with SHAP's axioms but omitted it from appendix B. Chapter 06's glossary sweep exposed the omission. The term belongs to Chapter 04, where it is now glossed; Chapter 06 borrows it, so the full-book Gloss gate has one owner and both chapters meet their cadence. |
 
 ## Version baseline
 
@@ -138,7 +140,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 03 | reviewed | Audited against arXiv:1602.04938v3; audit fixes unified the hàm nhân terminology and corrected the TOC scope. The unified notation is seeded in appendix A and Chapter 03 terms in appendix B. Full LuaLaTeX build is clean (69 pages), the full prose gate is clean, and the rendered Chapter 3 pages were inspected. |
 | 04 | reviewed | Audited against arXiv:1705.07874v2 and 2602.10532v1. Audit fixes added section transitions, corrected a cross-reference tie, and settled the three translated SHAP axioms in appendix B. Full LuaLaTeX build clean (71 pages); mechanical prose gate clean; the rendered chapter pages were inspected. |
 | 05 | reviewed | Drafted and audited 2026-08-24 from arXiv:1703.01365v2 and arXiv:1610.02391v4. Seven sections plus summary and questions; one TikZ mechanism diagram. The chapter defines sensitivity, implementation invariance, Integrated Gradients, completeness, baseline selection, and Grad-CAM, then carries the baseline and representation-choice question into chapter 06. No paper-reported decimal is printed, so research/ remains empty under decision 19. Full LuaLaTeX build clean (75 pages); mechanical prose gate clean; rendered chapter pages inspected. |
-| 06 | not-started | Orientation note dead; draft from the PDF (decision 13). |
+| 06 | drafted | Read arXiv:2505.24729v1 directly because its orientation note is unavailable. Seven sections plus summary and questions; one TikZ diagram. It separates attribution constraints from the choice of measure, recovers conditional, independent and partial-dependence forms, and carries the question of validating the chosen measure into chapters 07 and 08. No paper-reported decimal is printed, so research/ remains empty under decision 19. Prose gate is clean; full LuaLaTeX build awaits a host TeX distribution. |
 | 07 | not-started | Paper 20's orientation note dead; draft from the PDF. |
 | 08 | not-started | Likely the chapter that first prints a paper-reported number and crosses the research/ cliff (decision 20). |
 | 09 | not-started | The anchor chapter. |
@@ -251,9 +253,10 @@ keep the two in step.
   critique. Unblocked by a decision-log row before outlining chapter 17:
   either extend the corpus (add the paper to refs.bib and appendix D, read
   the PDF) or scope the chapter to the transfer argument alone.
-- **Seven orientation notes are dead locally** (papers 02, 07, 17, 20, 26,
-  30, 31). Costs nothing to correctness - notes are never citable - but
-  slows drafting of chapters 02, 06, 07, 13 and 15. Unblocked if
+- **Six orientation notes are dead locally** (papers 02, 07, 20, 26, 30,
+  31). Costs nothing to correctness - notes are never citable - but slows
+  drafting of chapters 02, 07, 13 and 15. Chapter 06 read paper 17 from its
+  PDF; this item is unblocked if
   `computer-science-news` restores them; otherwise those chapters draft from
   the PDFs alone and this item closes when the last of them is drafted.
 - **The limitation-statement log for chapter 18.** Each Part IV drafting

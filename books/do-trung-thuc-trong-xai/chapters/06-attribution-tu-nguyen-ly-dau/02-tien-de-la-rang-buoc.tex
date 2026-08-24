@@ -1,0 +1,24 @@
+\section{Tiên đề là ràng buộc, không phải xuất phát điểm}
+\label{sec:ch06-tien-de}
+
+\index{tiên đề}%
+\index{tính tuyến tính}%
+Câu hỏi trước phương pháp cho thấy một tiên đề chỉ có ý nghĩa sau khi ta biết
+nó đang cấm điều gì. Bài báo xét ba điều kiện quen thuộc: tính đầy đủ với một
+baseline cố định, độ nhạy và \tn{tính tuyến tính}{linearity}~\autocite{p17firstprinciples}.
+Chúng hấp dẫn vì mỗi điều kiện loại một lỗi rõ ràng: bỏ sót chênh lệch đầu ra,
+gán điểm cho đặc trưng không ảnh hưởng, hoặc xử lý tổng hai mô hình khác với
+tổng hai lời giải thích.
+
+Tuy vậy, ba điều kiện cùng lúc rất mạnh. Với mô hình đủ trơn, bài báo cho thấy
+mọi attribution thỏa chúng có dạng Gradient$\mathbin{\times}$Input cộng với
+một phần dư do độ cong của mô hình chi phối. Khi mô hình tuyến tính, phần dư
+biến mất. Với mạng ReLU, bài báo nêu con đường xấp xỉ qua các hàm trơn để nối
+kết quả này với lớp mô hình từng đoạn tuyến tính~\autocite{p17firstprinciples}.
+
+Kết quả không nói Gradient$\mathbin{\times}$Input là một phương pháp tồi. Nó
+nói bộ tiên đề này để lại ít tự do hơn trực giác ban đầu gợi ra. Nếu mục tiêu
+là mô tả một khái niệm attribution rộng hơn, việc thêm hoặc sửa một tiên đề có
+thể chỉ chuyển mâu thuẫn sang chỗ khác. Do đó, chương này không cố tìm thêm
+một danh sách tiên đề. Nó đổi hướng sang một đối tượng mà attribution có thể
+được định nghĩa trực tiếp.

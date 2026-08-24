@@ -1,0 +1,29 @@
+\section{Hàm chỉ báo là viên gạch đầu tiên}
+\label{sec:ch06-ham-chi-bao}
+
+\index{hàm chỉ báo}%
+Các tiên đề đã cho thấy ràng buộc một công thức từ bên ngoài có thể quá chặt.
+Ta chuyển sang trường hợp đơn giản nhất: mô hình chỉ trả lời một vùng $R$ của
+không gian đầu vào có được kích hoạt hay không. \tn{Hàm chỉ báo}{indicator function}
+của $R$ được viết
+
+\begin{equation}
+\label{eq:ch06-ham-chi-bao}
+\mathbf{1}_R(y)=
+\begin{cases}
+1, & y\in R,\\
+0, & y\notin R.
+\end{cases}
+\end{equation}
+
+Với mô hình trong phương trình~\ref{eq:ch06-ham-chi-bao}, câu hỏi attribution
+cụ thể hơn nhiều. Ở đầu vào $x$, đặc trưng $j$ quan trọng cho việc kích hoạt
+$R$ theo nghĩa nào? Một câu trả lời có thể chỉ kiểm tra tọa độ $j$ của $x$ có
+nằm trong khoảng tương ứng của $R$ hay không. Một câu trả lời khác có thể cân
+theo kích thước các khoảng còn lại. Bài báo không coi hai lựa chọn đó là cùng
+một attribution; chúng là hai quy tắc nguyên tử khác nhau~\autocite{p17firstprinciples}.
+
+Điểm cần giữ lại là thứ tự lập luận. Ta không bắt đầu bằng mô hình sâu rồi cố
+ép một lời giải thích vào nó. Ta quy định attribution cho hàm chỉ báo trước,
+sau đó hỏi quy định ấy mở rộng được tới lớp hàm nào. Chính quy tắc nguyên tử
+này sẽ trở thành độ đo trong công thức tổng quát.

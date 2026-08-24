@@ -1,0 +1,15 @@
+\begin{tikzpicture}[
+  every node/.style={font=\small, align=center},
+  stage/.style={draw=black!65, rounded corners=2pt, fill=black!6,
+    minimum width=31mm, minimum height=13mm},
+  flow/.style={-{Stealth[length=2mm]}, thick, black!70}
+]
+  \node[stage] (atom) {Quy tắc attribution\\cho hàm chỉ báo $\mathbf{1}_R$};
+  \node[stage, right=11mm of atom] (measure) {Độ đo\\$\mu_{j,x}$};
+  \node[stage, right=11mm of measure] (sum) {Xấp xỉ $f$ bằng tổng\\trên các vùng $R$};
+  \node[stage, below=11mm of sum] (integral) {Giới hạn:\\$\varphi_j(x,f)=\int f\,\mathrm{d}\mu_{j,x}$};
+
+  \draw[flow] (atom) -- (measure);
+  \draw[flow] (measure) -- (sum);
+  \draw[flow] (sum) -- (integral);
+\end{tikzpicture}

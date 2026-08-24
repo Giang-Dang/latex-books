@@ -1,0 +1,24 @@
+\section{Độ đo là giả thuyết}
+\label{sec:ch06-do-do-la-gia-thuyet}
+
+\index{phân phối nền}%
+\index{baseline}%
+Công thức tích phân đã đặt giả định mà các chương trước thường gặp dưới tên
+khác vào đúng vị trí của nó: độ đo $\mu_{j,x}$. Nếu độ đo giữ tọa độ $j$ ở
+$x_j$ rồi lấy trung bình các tọa độ còn lại theo phân phối dữ liệu, attribution
+trở thành một kỳ vọng có điều kiện. Nếu nó giữ $x_j$ và lấy trung bình phần còn
+lại theo phân phối biên, ta nhận một biến thể giả định độc lập. Một lựa chọn
+khác cho biểu thức của partial dependence plot~\autocite{p17firstprinciples}.
+
+Ba trường hợp không chỉ khác kỹ thuật lấy mẫu. Chúng gán trọng lượng cho các
+đầu vào khác nhau, nên chúng trả lời những câu hỏi khác nhau về mô hình. Chẳng
+hạn, phân phối biên có thể ghép giá trị của các đặc trưng theo cách dữ liệu
+thật không có. Phân phối có điều kiện tránh một số tổ hợp như vậy, nhưng đưa
+cấu trúc phụ thuộc của dữ liệu vào lời giải thích. Không có lựa chọn nào được
+hợp thức hóa chỉ vì tích phân trong phương trình~\ref{eq:ch06-attribution-do-do}
+được tính chính xác.
+
+Điều này nối trực tiếp với chương~\ref{ch:shap} và chương~\ref{ch:attribution-theo-gradient}.
+Phân phối nền của SHAP và baseline của Integrated Gradients đều là cách chọn
+đối chiếu. Khung độ đo không xóa sự lựa chọn ấy. Nó cho một ngôn ngữ chung để
+nói rằng lựa chọn nằm trong attribution, không ở bên ngoài attribution.
