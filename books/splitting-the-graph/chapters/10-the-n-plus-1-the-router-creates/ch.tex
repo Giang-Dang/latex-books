@@ -1,13 +1,18 @@
-% Scope (SPEC.md, Table of contents): the router batches representations and a naive reference resolver does not; what a DataLoader behind one is worth
+% Scope (SPEC.md, Table of contents): the router de-duplicates and batches representations and a naive reference resolver does not; what a DataLoader behind one is worth, and why it cannot also project
 \chapter{The N+1 the Router Creates}
 \label{ch:router-n-plus-1}
 
-\emph{Not yet drafted.}
+A reference resolver is handed a list and called once for every entry in it.
+Everything in this chapter follows from that sentence, and none of it is
+visible outside the service where it happens.
 
-% Chapter skeleton, SPEC decision 13. Five beats, this order:
-%   1. The one sentence  - what this chapter establishes, stated first.
-%   2. Show it          - the thing running, or in Part III the thing failing.
-%   3. Why it does that - the mechanism. All theory lives here (decision 14).
-%   4. Do it properly   - the complete, correct implementation.
-%   5. Summary box      - decision 21.
-% Section files are \input from here, numbered 01-, 02-, ... from the book root.
+The cost lands on whichever subgraph the router asks, and one of them in this
+graph has been paying it since chapter~\ref{ch:first-subgraph}, with a comment
+in the code saying so and naming this chapter as the place it gets fixed.
+
+\input{chapters/10-the-n-plus-1-the-router-creates/01-the-page-that-costs-four}
+\input{chapters/10-the-n-plus-1-the-router-creates/02-three-representations-not-four}
+\input{chapters/10-the-n-plus-1-the-router-creates/03-why-it-runs-once-per-representation}
+\input{chapters/10-the-n-plus-1-the-router-creates/04-the-loader-behind-the-resolver}
+\input{chapters/10-the-n-plus-1-the-router-creates/05-what-the-loader-does-not-fix}
+\input{chapters/10-the-n-plus-1-the-router-creates/06-summary}

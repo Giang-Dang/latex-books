@@ -1,0 +1,105 @@
+\section{Three Representations, Not Four}
+\label{sec:ch10-three-representations-not-four}
+
+\index{representations!the router de-duplicates them|(}%
+Four sessions, three statements. The arithmetic is wrong for an N+1, and where
+the missing one went is the rest of this section.
+
+\index{representations!what the router actually sends}%
+The place to look is the wire, and getting at it means putting something in
+front of the Speakers service that writes down each request body as it arrives.
+That is an instrument rather than part of the program, so this book does not
+print what it saw; the chapter's research note carries the bodies and the
+procedure. What they show is that the fetch carries \emph{three} representations
+for a list of four sessions, holding the node ids of Ada Fischer, Bruno
+Kaminski and Chidi Okafor, in the order the sessions first named them. Two of
+those sessions are Ada Fischer's and her identifier is in the list once.
+
+\index{representations!a page of one speaker is one representation}%
+Narrow the page to the two sessions that share a speaker and the point is
+sharper:
+
+\begin{minted}{graphql}
+{ sessions(first: 2) { nodes { title speaker { name } } } }
+\end{minted}
+
+\index{representations!one entry, two positions in the answer}%
+One representation. Two sessions come back in the response, both carrying a
+speaker, and the router asked for her once and put the answer in both places.
+
+\subsection{Which of Them Did That}
+
+\index{DataLoader!both halves look the same from outside}%
+There are two candidates and only one experiment separates them. A DataLoader
+de-duplicates keys, which is the second thing
+chapter~\ref{ch:data-without-n-plus-1} said about it, so a service with one
+behind its resolver would show a batch of three whether it had been sent three
+or four. The observation above is consistent with either.
+
+\index{representations!the de-duplication survives the loader's removal}%
+The version with no loader in it settles it. Three statements, not four, for
+four sessions; one statement, not two, for the page of two. There is nothing in
+that service keeping track of anything, so whatever collapsed the duplicate
+did it before the request was sent.
+
+\index{representations!the resolver de-duplicates nothing}%
+And the mirror image, which is the assertion I would want if I were reading
+this. Send the loaderless service the same representation three times by hand,
+with no router in the path:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{graphql}
+query E($r: [_Any!]!) {
+  _entities(representations: $r) { __typename ... on Speaker { name } }
+}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"r":[{"__typename":"Speaker","id":"U3BlYWtlcjox"},
+      {"__typename":"Speaker","id":"U3BlYWtlcjox"},
+      {"__typename":"Speaker","id":"U3BlYWtlcjox"}]}
+\end{minted}
+
+\index{statement count!three for one row}%
+Three statements for one row, and three copies of Ada Fischer in the answer.
+The de-duplication is the router's and belongs to the router's entity fetch.
+It is not a property of \code{\_entities}, and nothing else calling that route
+gets any of it.
+
+\subsection{Where It Happens, and What It Hashes}
+
+\index{graphql-go-tools@\code{graphql-go-tools}!hashes the rendered representation}%
+The router's planner and executor are \code{graphql-go-tools}, which the binary
+names in its own version output, and the entity fetch it builds is one function.
+It hashes each rendered representation, keeps a map from that hash to a position
+in the batch it is assembling, and when a hash repeats it appends the original
+item to the position already there rather than adding an entry. One answer,
+fanned back out to every position that asked for it.
+
+\index{sources!the vendor describing its own router}%
+WunderGraph says as much in its own words. Jens Neuse, who co-founded the
+company, writes on its blog that the entity route
+\enquote{supports a list of representations as input} and that this
+\enquote{allows you to batch requests by default}, and, of the router's
+algorithm, that \enquote{if there are duplicate representations, we will
+deduplicate them before building the variables
+object}~\autocite{neuse2023dataloader}. The same post argues against the fix the
+rest of this chapter is about, on benchmarks of its own that I have not
+reproduced; the two statements above are what this book takes from it.
+
+\index{representations!the hash covers the whole representation}%
+The detail worth carrying forward is what goes into the hash: the rendered
+representation, not the key inside it. Every representation in this chapter is a
+type name and an \code{id} and nothing else, so equal keys mean equal bytes. Two
+representations carrying the same key and different \code{@requires} fields
+would not be equal bytes. Whether they collapse is unmeasured here, and this
+graph has one requiring field, so no query in the book produces the case.
+
+\index{N+1@N+1!N is distinct entities, not rows}%
+That fixes the shape of the problem. The N is not the number of rows in the
+parent list. It is the number of \emph{distinct} entities in it, which for a
+conference schedule where speakers give two talks each is half the rows, and for
+a list of orders each belonging to a different customer is all of them. The
+router has already done the deduplicating half of what a DataLoader does. The
+half it has not done, and cannot do from where it stands, is turn one list into
+one query, and that is the half the statements are.
+\index{representations!the router de-duplicates them|)}%

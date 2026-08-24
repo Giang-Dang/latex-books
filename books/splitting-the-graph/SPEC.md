@@ -11,13 +11,12 @@ Author: Giang Dang
 ## Status
 
 Settled 2026-08-19 through a seven-round requirements interview. Chapters 1 to
-6 are drafted. The verification repo at `F:/repo/splitting-the-graph-graph`
-carries tags `ch02`, `ch02-hc14`, `ch03`, `ch03-naive`, `ch03-starved`,
-`ch03-hc14`, `ch04`, `ch04-orphan`, `ch04-hc14`, `ch05`, `ch05-hc14`, `ch06`,
-`ch06-unguarded`, `ch06-hc14-ignored` and `ch06-hc14`, with `verify.ps1`
-passing on each. The single-service baseline chapter 10 measures
-against is settled: **five statements naive, two batched**, for four sessions
-and three distinct speakers. Chapter 4 put every entity behind a global node
+10 are drafted. The verification repo at `F:/repo/splitting-the-graph-graph`
+carries a tag per chapter plus one per state the book argues against, with
+`verify.ps1` passing on each; the full table is that repo's `README.md`. The
+single-service baseline chapter 10 measured against was settled by chapter 3:
+**five statements naive, two batched**, for four sessions and three distinct
+speakers. Chapter 4 put every entity behind a global node
 id, so from `ch04` onward an id in a response is `U2Vzc2lvbjox` and not `1`.
 Chapter 5 confirmed decision 31's `graphqlsdl` environment against real
 federation SDL: `@key`, `@link`, `FieldSet!`, `repeatable on OBJECT |
@@ -59,9 +58,23 @@ node ids it is handed (decision 86). Both are consequences of decision 67,
 which federated this book on the global node id as my judgment rather than on
 Apollo's guidance.
 
-Next action: chapter 10, the N+1 the router creates. It has everything it
-needs: a graph with a seam, a `BatchEntity` fetch crossing it, and a reference
-resolver with a DataLoader behind it to take out and measure.
+Chapter 10 opened part III and found two things bigger than itself. The router
+**de-duplicates** representations before it sends them, so the N in this book's
+N+1 counts distinct entities rather than rows, and the router has already done
+half of what a DataLoader does (decision 95). And decision 69 is wrong: a
+`QueryContext<T>` does inject into a reference resolver and does project
+(decision 96), which means chapter 6 printed a false claim in prose and in a
+code comment, and chapter 10 corrects both. What replaces it is sharper anyway:
+the entity route can be batched or projected and not both, because the selector
+defaults the key and a batching loader is keyed on it, and the combination is
+correct only when the caller happens to ask for the key (decision 97). The
+book batches. `verify.ps1` is at 342 assertions on `main`.
+
+Next action: chapter 11, right data, wrong entity. It has what it needs.
+Representation order is now asserted at `ch10` in four shapes, including an
+out-of-key-order list and a batch with a hole in it, so the chapter starts from
+a proved contract rather than from a claim, and decision 51's mechanism is ready
+for the deliberately broken listing the TOC says it owes.
 
 **Why this book exists.** It is the second book in this library on federated
 GraphQL in .NET, and it exists because the first one,
@@ -192,6 +205,11 @@ and why, in the row.
 | 93 | The index may not name this book's own machinery | `Index.ForbidPattern` set to `\\index\{decision\b`. The printed index is the reader's vocabulary and `SPEC.md` never ships, so an entry naming a numbered row of this decision log would print a term no reader has seen and none can look up. A chapter 9 draft indexed `decision 43` and the machine gate had nothing to say about it, because the entry was terminated correctly and every other index check passed. The pattern carries a word boundary on purpose: an entry about how this book records a decision is a legitimate reader-facing subject and stays silent. |
 | 94 | A chapter that adds a service re-prints the shared inputs that name services | Settled by chapter 9's audit, which found `graph.yaml` printed with two subgraphs while the file carried three, so a reader typing the system out of the book ended with a graph that could not answer anything from section 5 onward. Decision 15 already required it and decision 16 already said how; what was missing was a trigger, because a file printed correctly in one section goes stale three sections later without anybody touching it. The trigger is: adding a service to `src/` means re-printing every shared input that names services before the chapter ends. There are two that the book prints, `graph/graph.yaml` and `router/config.yaml`, and chapter 9 re-prints the first with its new entry highlighted under decision 16. No check can find this - the file was right in the repository and stale on the page - so it is a rule rather than a setting, and chapter 13 will need it again if it builds a fourth subgraph. |
 
+| 95 | The router de-duplicates representations, so N counts distinct entities rather than rows | Measured 2026-08-24 off the wire, with a request-logging middleware in front of the Speakers service. Four sessions naming three distinct speakers produce a `BatchEntity` fetch carrying **three** representations, in first-appearance order, and a page whose two sessions share a speaker produces **one**. Corroborated in the router's own executor, `graphql-go-tools` v2.16.0 (the version `router@0.341.0` pins), which hashes each rendered representation with xxhash64 and appends duplicates to the position already in the batch; and stated in WunderGraph's own words by Jens Neuse, bylined, which is what makes it citable under the Sources rule. **What proves it is the `ch10-naive` tag rather than the measurement on `main`**, because a DataLoader given equal keys collapses them too and both are in play there; with no loader behind that resolver the counts are still three and one. The consequence is that this book's N+1 chapter is about distinct entities, and that the router has already done the de-duplicating half of what a DataLoader does. **Not established:** whether the list has any cap, and whether two representations carrying the same key and different `@requires` fields collapse; the hash is over the whole rendered representation, which suggests not. No chapter claims either. |
+| 96 | Decision 69 is wrong: a `QueryContext<T>` does inject into a reference resolver, and does project | Measured 2026-08-24 in both services, on the same 16.6.1, on a tree whose `Program.cs` calls `AddQueryContext()` exactly as it did at tag `ch06`. The selector arrives correctly built from the inline fragment inside `_entities` and narrows the `SELECT` to the fields asked for. Recorded here as a correction rather than smoothed over, because chapter 6 printed the claim in prose and in a code comment a reader types out, and chapter 10 corrects both. What produced the original `Unexpected Execution Error` was **not** re-derived: the book states what is true now. One thing decision 69 turned up that survives and explains the surprise: the `ISelection` a reference resolver is handed is the root `_entities` field, declared on `Query` and typed `[_Entity]!`, so anything reading the selection by hand gets the union while the injected `QueryContext` gets the entity. The consequence is decision 97. **A residual defect is left standing on purpose, and it is the author's call rather than a drafting session's.** Chapter 6 carries the false claim in three places: a paragraph of prose, its summary box, and a comment inside a listing it prints. The prose and the box could be corrected in an afternoon. The comment could not: chapter 6 prints the file as it stands at tag `ch06`, and that comment sits in `src/Sessions/SessionType.cs` from `ch06` through `ch09`, so putting it right in print means amending five historical tags and re-verifying each. Chapter 10 therefore corrects the claim in the text rather than silently, and re-prints the file with the comment fixed under decision 16, which is the mechanism this book already has for a file that changes. Whether to go back and amend chapter 6 as well is open. |
+| 97 | The entity route batches or projects, never both, and this book batches | The projection decision 96 found cannot be combined with a batching loader. The selector defaults every property nobody asked for, the key included, so a loader keyed on that property receives rows all carrying zero and `ToDictionary` raises `An item with the same key has already been added. Key: 0`. Measured 2026-08-24, and it **works** when the client happens to select the key, which is worse than failing: correctness conditional on the caller, and invisible in review because the request you test with is the one carrying the id. GreenDonut ships the API for exactly this, a `Select` overload taking a key selector, and all three routes to it fail: the builder overload and the expression overload both throw `Type does not have a default constructor` from `Expression.New`, which is decision 55's wall in a second API and closes the whole selector-builder family to a domain modeled in positional records, and merging a key-preserving expression into a `DefaultSelectorBuilder` by hand silently discards it. So the book takes the batch: the statement count grows with another service's page size and the column count does not. The trade is stated in the chapter rather than hidden, along with when it would go the other way. |
+| 98 | Chapter 10 issues no HotChocolate 14 callout, deliberately | The third chapter to do this, after decisions 64 and 91, and the reasoning is its own. Chapter 6's callout already showed a reference resolver on 14 going through a DataLoader and `verify.ps1` already asserts it there at one statement, because the only route that federates a type on 14 is a code-first `ObjectType<T>` and the book's copy of it takes the loader. So a chapter 10 callout would restate a claim the `hc14` branch already carries and already proves. `Session` is not an entity on that branch at all (decision 71), so the one source change this chapter makes has no counterpart there, and every assertion it adds to the shared script sits behind `SessionKeyed` or `SpeakerExtracted`, both false there. `ch10-hc14` tags an unchanged tree with an unchanged 214, on the same footing as `ch05`, `ch08` and `ch09-hc14` (decision 66). |
+
 
 ## Version baseline
 
@@ -248,7 +266,7 @@ session. Chapter folders in `chapters/` carry the same scope lines.
 
 ### Part III - The Problems
 
-10. **The N+1 the Router Creates** - the router batches representations and a naive reference resolver does not; what a DataLoader behind one is worth
+10. **The N+1 the Router Creates** - the router de-duplicates and batches representations and a naive reference resolver does not; what a DataLoader behind one is worth, and why it cannot also project. **Updated 2026-08-24 while drafting**, from a line that said only that the router batches: it does both, and which half it does not do is the chapter's argument (decision 95). The projection clause is decisions 96 and 97, which correct decision 69.
 11. **Right Data, Wrong Entity** - `_entities` must answer in representation order, and what silently wrong data looks like when it does not
 12. **`_entities` Never Asks Who You Are** - the guard on the root field that the entity route walks straight past
 13. **The Page You Cannot Ask For** - filtering, sorting and paginating across a seam; why no directive fixes it, and the dedicated search domain as the escape
@@ -287,7 +305,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 07 | drafted | Note at `research/ch07-composition.md`. Five tags, `verify.ps1` PASS on each: `ch07` (main, 195 assertions), `ch07-costly` (14, chapter 6's subgraph unchanged, which does not compose), `ch07-unshared` (12, the cost fix in and the shareable fix out), `ch07-typelevel` (12, the one-line fix and the ownership check it switches off) and `ch07-hc14` (174). The book's first non-.NET tool, its first artifact defined only by a protobuf, and its first failure caused by two vendors disagreeing rather than by anybody's mistake. Paid the `Query.node` bill and re-pinned `wgc` to 0.129.9. Settled decisions 73 to 78. The audit found fifteen things worth fixing, including two claims the research note itself had marked as not established; they are listed in the pull request. |
 | 08 | drafted | Note at `research/ch08-enter-the-router.md`. Three tags, `verify.ps1` PASS on each: `ch08` (main, 241 assertions), `ch08-noplan` (12, the config that serves the graph and hides the query plan, decision 51) and `ch08-hc14` (214). The book's first long-running process that is not ours, and its first component that is a downloaded binary rather than a package. `git diff ch07..ch08` over `src/` is empty, so this is the second tag on an unchanged tree after `ch05` (decision 66). Settled decisions 80 to 84, and closed the two open items on the router version and the gateway audit. |
 | 09 | drafted | Note at `research/ch09-the-second-and-third-subgraph.md`. Three tags, `verify.ps1` PASS on each: `ch09` (main, 328 assertions), `ch09-hc14` (214, an unchanged tree with the shared script branched so it still passes) and `ch09-noserializer` (20, the Ratings service without `AddDefaultNodeIdSerializer()`, which builds, starts and answers its own root field while the entity route alone fails in silence, decision 51). The graph becomes three services on three databases. Speaker leaves Sessions for a stub with `resolvable: false`; Speakers owns the rows; Ratings contributes three fields to a type it does not own, one of them behind `@requires`. The first query answered across two subgraphs costs the two statements chapter 3 measured inside one process. Settled decisions 85 to 91, and closed four open items. The retro added three more: decisions 92 and 93 turn on two new gate checks this chapter's audit argued for, and 94 is the rule no check can enforce. 30 pages, the longest in part II, and one chapter (decision 89). |
-| 10 | not-started | |
+| 10 | drafted | Note at `research/ch10-the-n-plus-1-the-router-creates.md`. Three tags, `verify.ps1` PASS on each: `ch10` (main, 342 assertions), `ch10-naive` (33, the Speakers reference resolver with the DataLoader taken out from behind it, decision 51) and `ch10-hc14` (214, an unchanged tree). The first chapter of part III. Its one source change is a DataLoader behind the Sessions reference resolver, which is the debt chapter 6 left in a comment. Two findings are larger than the chapter: the router de-duplicates representations before it sends them (decision 95), and decision 69 is wrong, which decision 96 records and corrects. Settled decisions 95 to 98, closed one open item and narrowed two. 10 pages, the shortest chapter since 5, and it stayed short because the audit moved seven verbatim captures out of the prose: they came from scratch states no tag produces, which decisions 48, 53 and 65 do not allow the book to quote. That triage is recorded at the end of the note. |
 | 11 | not-started | Carries a deliberately broken listing under decision 22's carve-out. |
 | 12 | not-started | |
 | 13 | not-started | **Open item:** may need a fourth subgraph. See Open items. |
@@ -453,16 +471,19 @@ An unresolved question, and the condition that unblocks it.
   a dedicated search domain with its own index. Whether that domain is built as
   a fourth service or described without being built decides how much of
   decision 23 survives. Unblocked by outlining chapter 13.
-- **Whether the entity route can be given a projection.** Chapter 6 measured
-  that `QueryContext<T>` cannot be injected into a reference resolver
-  (decision 69), so the entity route selects every column where the node route
-  beside it selects one. What was **not** established is whether any other
-  route to a projection exists there: a `QueryContext` built by hand, a
-  `Selection`-derived shape, or a package-level option. No chapter claims the
-  entity route cannot be projected, only that this parameter cannot be
-  injected. Unblocked by finding a shape that compiles and narrows the SELECT,
-  which matters to chapter 10, since a fix for the statement count and a fix for
-  the column count may be the same fix.
+- **Whether a key-preserving projection can be built for a type with no
+  parameterless constructor.** This is what is left of the entity-route
+  projection item chapter 6 opened, which chapter 10 closed: the route can be
+  projected (decision 96) and cannot be projected and batched at once, because
+  the selector defaults the key (decision 97). The narrower question is whether
+  any shape survives both. Three were tried and recorded in the chapter 10 note:
+  two throw `Expression.New` on a positional record, and merging into a
+  `DefaultSelectorBuilder` by hand raises nothing and **silently discards the
+  added expression**, which was not explained either. Unblocked by finding a
+  shape that compiles, keeps the key and narrows the SELECT, at which point
+  decisions 55 and 97 are both worth re-reading. A book whose domain was classes
+  with settable properties would not have this problem at all, and that is worth
+  saying in whichever chapter picks this up.
 - **Whether `@link(as:)` is unsupported by `HotChocolate.ApolloFederation` or
   merely unemitted.** Measured 2026-08-23: the `@link` definition the package
   writes into an exported schema has neither `as` nor `for`, and types `import`
@@ -522,10 +543,17 @@ An unresolved question, and the condition that unblocks it.
   id on its own. A node resolver that goes through a DataLoader gets batching
   anyway, which is why `SpeakerType`'s does and `SessionType`'s does not. The
   chapter states the count and does not claim the plural field cannot be made
-  to batch, because that was not established. Unblocked by finding whether a
-  node resolver taking a `QueryContext` can be routed through a loader without
-  losing the projection, at which point chapter 10's neighbourhood is worth
-  re-reading, since the router's `_entities` has the same shape.
+  to batch, because that was not established. **Half of this is now answered and
+  the answer is no.** The item used to be unblocked by finding whether a node
+  resolver taking a `QueryContext` can be routed through a loader without losing
+  the projection; chapter 10 measured that it cannot, for any type in this book,
+  because the projection defaults the key and a loader is keyed on it
+  (decision 97). So `nodes` can be made to batch or to project and the open
+  question is only whether the plural field can be made to batch **at all**,
+  which is a question about how that field resolves its list rather than about
+  projection. Unblocked by measuring `nodes` against a node resolver that goes
+  through a loader and no `QueryContext`, which is what `SpeakerType`'s already
+  does.
 - **Which of Hot Chocolate and Cosmo is right about `@cost(weight:)`.** Hot
   Chocolate emits `weight: String!`, Cosmo's composer demands `Int!`, and
   decision 73 turns the defaults off rather than adjudicating. The
@@ -611,6 +639,24 @@ An unresolved question, and the condition that unblocks it.
   so in the prose rather than guessing, and whether it is file order, subgraph
   id or something in `graphql-go-tools` decides whether the failure is stable
   or depends on how `graph.yaml` happens to be written.
+- **Whether the router caps the number of representations in one entity
+  fetch.** Decision 95 established that the router de-duplicates them and says
+  nothing about a ceiling, because none was found: not in `loader.go` or
+  `loader_multi_entity.go` at the pinned commit, not in a repo-wide search for a
+  maximum-representations constant, and not in Cosmo's hardening or cost-control
+  documentation. Absence of documentation is not a measurement, and this book's
+  seed of four sessions cannot produce a list long enough to find one, so
+  **chapter 10 does not claim the list is unbounded**; it claims the thing it
+  measured, that the length is the owning service's page size. Unblocked by a
+  seed large enough to test, or by WunderGraph documenting a limit. A trap for
+  whoever picks this up: Cosmo's `max_entries_per_batch` is a client-operation
+  batching setting and has nothing to do with entity representations.
+- **Whether two representations with the same key and different `@requires`
+  fields collapse.** The router hashes the whole rendered representation rather
+  than the key inside it (decision 95), which suggests they do not, but the
+  graph has one `@requires` field and no query produces the case. Chapter 10
+  states the hashing and declines the inference. Unblocked by a second requiring
+  field on the same type, which chapter 13 may need anyway.
 - **Whether Pygments gains an SDL lexer.** Decision 31 is a workaround with a
   measured justification, not a preference. Unblocked by a Pygments release
   whose `graphql` lexer handles type definitions, `!` and directives; at that

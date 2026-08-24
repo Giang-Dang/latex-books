@@ -1,0 +1,228 @@
+\section{A Loader Behind the Reference Resolver}
+\label{sec:ch10-the-loader-behind-the-resolver}
+
+\index{DataLoader!behind a reference resolver|(}%
+The fix is chapter~\ref{ch:data-without-n-plus-1}'s, in a different method.
+Here is \code{SessionDataLoader.cs} in full, new in the Sessions service:
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+public static class SessionDataLoader
+{
+    /// <summary>
+    /// Every session one batch of representations asked for, keyed by
+    /// identifier. The router sends this service a list rather than
+    /// one key at a time, so the loader behind the reference resolver
+    /// is what decides whether that list costs one statement or one
+    /// statement each.
+    /// </summary>
+    // No projection here, and that is a decision rather than an
+    // oversight. A QueryContext<Session> can be injected and does
+    // narrow the SELECT, but the selector it builds fills every
+    // property nobody asked for with a default, and Id is a property
+    // nobody asks for. This dictionary is keyed on Id. Chapter 10
+    // measures both halves and takes the columns rather than the risk.
+    [DataLoader]
+    public static async Task<Dictionary<int, Session>>
+        GetSessionByIdAsync(
+            IReadOnlyList<int> ids,
+            ConferenceContext db,
+            CancellationToken ct)
+        => await db.Sessions
+            .Where(s => ids.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, ct);
+}
+\end{minted}
+
+\index{DataLoader!the same file, in a third service}%
+That is \code{SpeakerDataLoader.cs} from
+chapter~\ref{ch:data-without-n-plus-1} with a different table and a different
+context. All three services in the graph now carry one, which is what
+chapter~\ref{ch:second-third-subgraph}'s rule about sharing no code between
+them costs and buys. The comment in the middle is
+section~\ref{sec:ch10-what-the-loader-does-not-fix}'s subject and can wait.
+
+\index{reference resolver!takes the loader, not the context}%
+\code{SessionType.cs} changes by one parameter, one line of body and a doc
+comment that had been wrong since chapter~\ref{ch:first-subgraph}:
+
+\begin{minted}[highlightlines={2-8,14,29,30}]{csharp}
+    /// <summary>
+    /// Answers one representation from the entity route. Two things
+    /// differ from the node resolver above. The key arrives as the
+    /// undecoded node id string, so this method decodes it. And the
+    /// router hands this route a whole list rather than one key at a
+    /// time, so the lookup goes through a DataLoader where the one
+    /// above projects instead; SessionDataLoader says why it cannot
+    /// do both.
+    /// </summary>
+    [GraphQLIgnore]
+    public static async Task<Session?> ResolveSessionReferenceAsync(
+        string id,
+        INodeIdSerializer serializer,
+        ISessionByIdDataLoader sessionById,
+        CancellationToken ct)
+    {
+        var nodeId = serializer.Parse(id, typeof(int));
+
+        // Nothing has checked what is inside this string, and the
+        // router is not the only caller the entity route has. A
+        // Speaker's node id decodes to a perfectly good integer;
+        // without this line it would answer with the session that
+        // happens to carry it.
+        if (nodeId.TypeName != nameof(Session))
+        {
+            return null;
+        }
+
+        return await sessionById.LoadAsync(
+            (int)nodeId.InternalId!, ct);
+    }
+\end{minted}
+
+\index{DbContext@\code{DbContext}!the resolver stops knowing about one}%
+The \code{ConferenceContext} parameter is gone and the method no longer knows
+there is a database, which is the same thing that happened to
+\code{SessionType.GetSpeakerAsync} in
+chapter~\ref{ch:data-without-n-plus-1} and is worth as much here. What the
+method does now is say which session it wants and check that it was asked a
+question about a session.
+
+\index{statement count!three representations, one statement}%
+Send the three representations again, on the Sessions service's own port so
+that no router is involved:
+
+\begin{minted}{text}
+-- statement 1
+SELECT "s"."Id", "s"."Abstract", "s"."DurationMinutes",
+       "s"."SpeakerId", "s"."StartsAt", "s"."Title"
+FROM "Sessions" AS "s"
+WHERE "s"."Id" IN (@ids1, @ids2, @ids3)
+\end{minted}
+
+\index{statement count!the whole graph is back to two}%
+One. And through the router, the page that opened this chapter is back to the
+two statements chapter~\ref{ch:second-third-subgraph} measured, one in each
+service, with the Speakers half being the loader that was there all along.
+
+\subsection{Four Things That Have to Survive}
+
+\index{entities@\code{\_entities}!batching must not disturb the contract}%
+A fix that quietly broke the entity route's contract would be worse than the
+N+1, and three of the four things below are that contract. A dictionary is a
+very different object from a row, and what puts each row back where its
+representation was is somebody else's code, so none of the four is safe to
+assume.
+
+\index{entities@\code{\_entities}!order survives batching}%
+Order is the first requirement of the specification and the one a batch is most
+likely to lose, because a dictionary has no order at all. Ask for three
+sessions in an order that is not key order:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"r":[{"__typename":"Session","id":"U2Vzc2lvbjoz"},
+      {"__typename":"Session","id":"U2Vzc2lvbjox"},
+      {"__typename":"Session","id":"U2Vzc2lvbjoy"}]}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"_entities":[
+  {"__typename":"Session","title":"Paging Without Offsets"},
+  {"__typename":"Session","title":"Schemas That Outlive Their Authors"},
+  {"__typename":"Session","title":"Reading a Query Plan"}]}}
+\end{minted}
+
+The order asked for, not the order the database found them in, and still one
+statement. The engine keeps each representation's position and fills it from the
+dictionary the loader returned. Chapter~\ref{ch:representation-order} is the
+chapter about what a response looks like when that does not hold, and it is
+worth knowing before you read it that a DataLoader is not how it breaks.
+
+\index{entities@\code{\_entities}!a missing row is still a null}%
+A key that matches no row is the second. Chapter~\ref{ch:first-subgraph}
+established that it is a null in the list and not an error, which is what the
+specification permits. Put one between two that do match, by sending session
+one, session ninety-nine and session two:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"_entities":[
+  {"__typename":"Session","title":"Schemas That Outlive Their Authors"},
+  null,
+  {"__typename":"Session","title":"Reading a Query Plan"}]}}
+\end{minted}
+
+Still a null, still no error, still one statement.
+Chapter~\ref{ch:data-without-n-plus-1} noted that the dictionary a loader
+returns does not have to contain every key it was given and that a key left out
+resolves to null, and this is where that default earns its keep: the key the
+loader leaves out is exactly the entry the specification wants nulled.
+
+\index{DataLoader!de-duplicates for every caller, not just the router}%
+De-duplication is the third, and it now reaches callers that are not the
+router. Section~\ref{sec:ch10-three-representations-not-four} sent the same
+representation three times and got three statements. Now it is one, carrying
+one key, and three identical answers come back. The router had been
+de-duplicating on its own behalf; the loader does it for anybody.
+
+\index{reference resolver!the guard runs before the batch}%
+The guard is the fourth. Chapter~\ref{ch:first-subgraph} put a type-name check
+in front of the key, and showed what the entity route answers without one.
+Batching could plausibly have moved it: if keys were collected first and
+checked later, a rejected one would still cost a lookup. It does not. Send a
+\code{Speaker} node id under a \code{Session} type name in the middle of two
+good ones and the statement reads:
+
+\begin{minted}{text}
+WHERE "s"."Id" IN (@ids1, @ids2)
+\end{minted}
+
+Two keys for three representations, and a null in the middle position. The
+resolver runs per representation, decides per representation, and only the ones
+that get as far as \code{LoadAsync} are in the batch. The guard still costs
+nothing.
+
+\subsection{The Third Shape, Which Needs None of This}
+
+\index{Ratings service!a reference resolver with no table behind it}%
+Before you go and put a loader behind every reference resolver you own, the
+Ratings service is the counter-example and it is in this graph.
+Chapter~\ref{ch:second-third-subgraph} printed that service's reference
+resolver in full, and the shape of the method is the whole argument: it is not
+async, it takes no \code{DbContext} and no loader, and it issues no statement.
+
+\index{Ratings service!answers out of the representation}%
+It builds a \code{Session}
+out of the representation it was handed, which is why
+chapter~\ref{ch:second-third-subgraph} measured \code{feedbackUrl} at zero
+statements in that service. A reference resolver that touches no table has no
+N+1 to have, and a DataLoader in front of it would be a cache with nothing
+behind it.
+
+\index{DataLoader!the request cache, not the batch}%
+The Ratings service does use a loader, and for the other of the two things a
+loader does. \code{averageScore} and \code{ratingCount} are ordinary field
+resolvers on the entity, and both call \code{LoadAsync} with the same key. Four
+sessions, two fields, eight loads, one statement. The batch explains the first
+factor and the request-scoped cache explains the second, and the two have been
+separate since the original library, whose README says both: it
+\enquote{will coalesce all individual loads which occur within a single frame of
+execution} and, of the second, that
+\enquote{subsequent calls to .load() with the same key will result in that key
+not appearing in the keys provided to your batch
+function}~\autocite{dataloaderjs}. Keep them apart in your head, because only
+the first is what this chapter is about.
+
+\index{sources!who publishes this advice, and who does not}%
+So the rule I would give you is narrower than the one Apollo gives. Apollo's
+documentation says a reference resolver
+\enquote{might be called many times to resolve a single query} and that it is
+\enquote{crucial that reference resolvers account for \enquote{N+1} issues
+(typically via data loaders)}, and then generalizes to using one
+\enquote{in every resolver}~\autocite{apolloentities, apollonplusone}. The
+narrow half is right and I have just measured it. The general half I would not
+write: put a loader where a list of keys meets a store, and leave it out where
+there is no store.
+\index{DataLoader!behind a reference resolver|)}%
