@@ -1,22 +1,23 @@
 \section{TreeSHAP và cấu trúc của mô hình cây}
 \label{sec:ch04-treeshap}
 
+\index{TreeSHAP}%
 KernelSHAP vẫn phải gọi mô hình cho nhiều liên minh, nên nó phù hợp khi chỉ có
-quyền truy cập hộp đen. Với mô hình cây, cấu trúc các nút tách cho phép tính
-đóng góp bằng quy hoạch động trên các đường đi của cây, thay vì liệt kê từng
-liên minh. Dòng thuật toán này thường được gọi là TreeSHAP. Các công trình sau
+quyền truy cập \tn{hộp đen}{black box}. Với mô hình cây, cấu trúc các nút tách
+cho phép tính đóng góp bằng quy hoạch động trên các đường đi của cây, thay vì
+liệt kê từng liên minh. Tên TreeSHAP gắn với dòng thuật toán ấy trong thực
+hành; bài báo gốc của SHAP không đặt tên này, mà đặt tên cho Kernel SHAP,
+Linear SHAP, Low-Order SHAP, Max SHAP và Deep SHAP~\autocite{p10shap}. Các công trình sau
 SHAP gốc mô tả các thuật toán quy hoạch động hiệu quả cho giá trị SHAP của mô
 hình cây~\autocite{p19shapinference}.
 
-Lợi ích ở đây là tính toán, không phải một định nghĩa mới về đóng góp. Nếu hai
-phương pháp dùng cùng hàm giá trị $v$, chúng phải nhắm tới cùng
-\tn{giá trị Shapley}{Shapley value}. Điều TreeSHAP tận dụng là việc một đường đi chỉ kiểm tra một số đặc
-trưng và việc nhiều liên minh có chung tiền tố trên cây.
+Lợi ích ở đây là tính toán, không phải là một định nghĩa mới về đóng góp. Nếu
+hai phương pháp dùng cùng hàm giá trị $v$, chúng phải nhắm tới cùng
+\tn{giá trị Shapley}{Shapley value}. Điều làm phép tính rẻ đi là cấu trúc cây: một đường đi chỉ kiểm tra một số đặc
+trưng, và nhiều liên minh có chung tiền tố.
 
-Tuy nhiên, tốc độ không giải quyết lựa chọn về đặc trưng chưa được biết. Một cây có
-thể đi theo nhánh nào khi một đặc trưng chưa được biết, và câu trả lời vẫn cần
-một quy tắc nền. Vì vậy, khi đọc một lời giải thích từ mô hình cây, cần tách
+Tuy nhiên, tốc độ không giải quyết lựa chọn về đặc trưng còn thiếu. Cây phải
+đi theo nhánh nào khi một đặc trưng còn thiếu? Câu trả lời vẫn cần một quy tắc
+hoàn thiện. Vì vậy, khi đọc một lời giải thích từ mô hình cây, cần tách
 hai câu hỏi: thuật toán đã tính các liên minh hiệu quả đến đâu, và các liên
 minh đó đã được gán nghĩa theo phân phối nào.
-
-\index{TreeSHAP}%

@@ -1,17 +1,19 @@
 \section{Tiền huấn luyện và lời nhắc}
 \label{sec:ch02-tien-huan-luyen-va-loi-nhac}
 
+\index{tiền huấn luyện}%
 Kiến trúc chỉ mô tả cách các token có thể tương tác; nó chưa cho biết mô hình
 đã học những quy luật nào. Trong giai đoạn \tn{tiền huấn luyện}{pretraining},
 một mô hình sinh tự hồi quy được tối ưu để dự đoán token tiếp theo trên một
 tập văn bản lớn. Kết quả là cùng một kiến trúc có thể tạo ra hành vi rất khác
 nhau khi trọng số được học từ dữ liệu khác nhau.
 
+\index{lời nhắc}%
 Sau tiền huấn luyện, \tn{lời nhắc}{prompt} trở thành một phần của điều kiện
 đặt lên mô hình tại thời điểm dùng. GPT-3 khảo sát thiết lập few-shot, trong
 đó mô tả nhiệm vụ và các ví dụ nằm trong văn bản đầu vào; mô hình được dùng
-cho nhiệm vụ đó mà không cập nhật gradient hoặc fine-tune riêng cho nó
-~\autocite{p03gpt3}. Vì vậy, thay một ví dụ trong lời nhắc có thể làm đổi câu
+cho nhiệm vụ đó mà không cập nhật gradient hoặc tinh chỉnh riêng cho
+nó~\autocite{p03gpt3}. Vì vậy, thay một ví dụ trong lời nhắc có thể làm đổi câu
 trả lời mà không hề thay đổi trọng số.
 
 Điều này tạo ra hai câu hỏi giải thích khác nhau. Câu hỏi thứ nhất là token
@@ -21,5 +23,3 @@ Phần~II thường tiếp cận câu hỏi thứ nhất vì ta có thể can th
 đầu vào. Câu hỏi thứ hai đòi hỏi bằng chứng về biểu diễn và cơ chế, nên không
 nên được trả lời bằng một thay đổi đầu ra đơn lẻ.
 
-\index{tiền huấn luyện}%
-\index{lời nhắc}%

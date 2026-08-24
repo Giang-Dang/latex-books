@@ -2,17 +2,20 @@
 \chapter{LIME: mô hình thay thế cục bộ}
 \label{ch:lime}
 
-Chương~\ref{ch:mo-hinh-can-giai-thich} đã xác định một \tn{giải thích hậu
-nghiệm}{post-hoc explanation} là phát biểu về hành vi của mô hình dưới một can
-thiệp đã nêu rõ. LIME
-biến nguyên tắc đó thành một quy trình cụ thể: thay đổi từng phần của đầu vào,
-hỏi lại mô hình hộp đen, rồi khớp một mô hình nhỏ quanh đúng dự đoán đang xét.
-Vì mô hình nhỏ chỉ được học trên các mẫu đã tạo, lời giải thích của LIME luôn
+Định nghĩa~\ref{def:ch01-do-trung-thuc} buộc một lời giải thích phải nêu rõ
+hành vi nào đang được giải thích và tập can thiệp nào được phép, còn
+chương~\ref{ch:mo-hinh-can-giai-thich} đã cho thấy hai thứ ấy phải được khai
+báo chứ không suy ra được từ kiến trúc. LIME là phương pháp hậu nghiệm đầu tiên cuốn sách đọc kỹ, và nó biến yêu cầu
+đó thành một quy trình cụ thể: thay đổi từng phần của đầu vào,
+hỏi lại mô hình hộp đen, rồi khớp một \tn{mô hình thay thế cục bộ}{local surrogate} quanh đúng dự đoán
+đang xét.
+Vì mô hình ấy chỉ được học trên các mẫu đã nhiễu, lời giải thích của LIME luôn
 gắn với cách tạo mẫu và cách gọi hai mẫu là gần nhau.
 
 Đây là chương đầu của Phần~II nên nó cũng cố định ký hiệu dùng khi so sánh
 LIME với SHAP và attribution theo gradient. Phụ lục~\ref{app:ky-hieu} dùng
-$x$ cho đầu vào gốc, $x'$ cho biểu diễn người đọc được và $f$ cho mô hình cần
+$x$ cho đầu vào gốc, $x'$ cho \tn{biểu diễn có thể diễn giải}{interpretable representation}
+và $f$ cho mô hình cần
 giải thích. Ký hiệu này tách điều mô hình thật nhận khỏi điều lời giải thích
 hiển thị; nếu gộp chúng lại, ta sẽ bỏ sót chính giả định quan trọng nhất của
 LIME.

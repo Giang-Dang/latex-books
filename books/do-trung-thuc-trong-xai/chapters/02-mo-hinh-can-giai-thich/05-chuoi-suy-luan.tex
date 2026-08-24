@@ -1,26 +1,27 @@
 \section{Chuỗi suy luận là hành vi quan sát được}
 \label{sec:ch02-chuoi-suy-luan}
 
+\index{chuỗi suy luận}%
 Các mục trước đã cho thấy đầu ra phụ thuộc cả vào trọng số lẫn điều kiện sử
 dụng. \tn{Chuỗi suy luận}{chain-of-thought} đặt sự phụ thuộc đó ngay trong
 văn bản đầu ra: \tn{lời nhắc}{prompt} chứa các ví dụ có bước trung gian để gợi mô hình sinh
-một chuỗi bước trước khi nêu đáp án. Wei và cộng sự báo cáo rằng cách prompting
+một chuỗi bước trước khi nêu đáp án. Wei và cộng sự báo cáo rằng cách nhắc
 này có thể cải thiện các bài toán suy luận nhiều bước trên những mô hình đủ
 lớn~\autocite{p06cot}.
 
 Tuy nhiên, một chuỗi bước được sinh ra vẫn trước hết là hành vi cần quan sát.
-Nó cho thấy mô hình đã in những token nào trong điều kiện prompting đã chọn;
+Nó cho thấy mô hình đã in những token nào dưới lời nhắc đã chọn;
 nó không tự cho thấy token nào trong chuỗi là nguyên nhân của đáp án, hay
-chuỗi ấy có khớp với phép tính tạo ra đáp án không. Ngay trong nghiên cứu gốc,
-các chuỗi sai vẫn có thể trôi chảy, và hiệu quả không chuyển nguyên vẹn giữa
-mô hình với nhiệm vụ~\autocite{p06cot}.
+chuỗi ấy có khớp với phép tính tạo ra đáp án không. Ngay bài báo gốc cũng ghi rằng không có gì bảo đảm đường suy luận là đúng,
+nên một chuỗi được sinh ra có thể dẫn tới đáp án đúng lẫn đáp án
+sai~\autocite{p06cot}.
 
-Khảo sát về reasoning của LLM vì thế không xem reasoning như một năng lực đơn
-nhất. Nó đặt hành vi này trong quan hệ với quy mô mô hình, cấu trúc nhiệm vụ,
-lời nhắc, công cụ hoặc bộ nhớ ngoài, giám sát và giao thức đánh giá
-~\autocite{p08periodic}. Cách nhìn đó có ích cho cuốn sách: khi một hệ thống
+Khảo sát về suy luận của các mô hình này để ngỏ chính câu hỏi liệu suy
+luận có phải là một năng lực đơn nhất hay là hợp thành của nhiều quá trình
+tách rời được. Khảo sát ấy đặt hành vi này trong quan hệ với quy mô mô hình,
+cấu trúc nhiệm vụ, lời nhắc, công cụ hoặc bộ nhớ ngoài, giám sát và giao thức
+đánh giá~\autocite{p08periodic}. Cách nhìn đó có ích cho cuốn sách: khi một hệ thống
 trả lời tốt hơn sau khi được yêu cầu trình bày bước trung gian, ta có bằng
-chứng về một thay đổi hành vi dưới prompt ấy. Ta chưa có bằng chứng rằng văn
+chứng về một thay đổi hành vi dưới lời nhắc ấy. Ta chưa có bằng chứng rằng văn
 bản trung gian là lời giải thích trung thực về cơ chế bên trong.
 
-\index{chuỗi suy luận}%

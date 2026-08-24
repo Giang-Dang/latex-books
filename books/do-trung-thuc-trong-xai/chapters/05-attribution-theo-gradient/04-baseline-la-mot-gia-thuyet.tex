@@ -1,29 +1,28 @@
 \section{Baseline là một giả thuyết}
 \label{sec:ch05-baseline}
 
+\index{baseline}%
 \tn{Tính đầy đủ}{completeness} đã làm phép tính khép kín, nhưng vế phải của nó vẫn là
 $F(x)-F(x_0)$. Nói cách khác, Integrated Gradients giải thích phần đầu ra khác
 so với baseline, không giải thích toàn bộ đầu ra theo nghĩa tuyệt đối. Vì vậy,
-\tn{điểm nền}{baseline} không phải một chi tiết để điền trước khi chạy hàm;
+baseline không phải là một chi tiết để điền trước khi chạy hàm;
 nó xác định câu hỏi phản thực mà attribution đang trả lời.
 
-Với ảnh, bài báo gốc dùng ảnh đen như một ví dụ về tín hiệu vắng mặt. Với văn
-bản, bài báo nêu vector embedding toàn không. Hai lựa chọn có lý do thực dụng,
-nhưng chúng không tương đương với một định nghĩa phổ quát về việc đặc trưng
-không có mặt. Một vector embedding toàn không còn có thể không phải văn bản
-hợp lệ. Một ảnh đen cũng có thể khác rất xa phân phối ảnh mô hình đã gặp khi
+Với ảnh, bài báo gốc nêu ảnh đen như một ví dụ về tín hiệu vắng mặt; với văn
+bản, nó nêu vector embedding toàn không~\autocite{p11ig}. Hai lựa chọn có lý
+do thực dụng, nhưng chúng không tương đương với một định nghĩa phổ quát về
+việc đặc trưng không có mặt. Một vector embedding toàn không còn có thể không
+phải là văn bản hợp lệ. Một ảnh đen cũng có thể khác rất xa phân phối ảnh mô hình đã gặp khi
 huấn luyện.
 
-Hình~\ref{fig:ch05-hai-phep-tich} cho thấy baseline nằm ở đầu của đường đi,
-nhưng ảnh hưởng của nó không chỉ ở một đầu mũi tên. Đổi $x_0$ đổi mọi điểm
+Baseline nằm ở đầu của đường đi, nhưng ảnh hưởng của nó không dừng ở đó. Đổi $x_0$ đổi mọi điểm
 trung gian, đổi gradient được tích, và đổi cả chênh lệch mà tính đầy đủ phải
-phân bổ. Đây là cùng cấu trúc vấn đề mà chương~\ref{ch:shap} đã gặp với \tn{phân phối nền}{background distribution}: công thức có thể chặt chẽ trong khi đối tượng được đưa vào công thức
-vẫn là một lựa chọn về miền ứng dụng.
+phân bổ. Đây là cùng cấu trúc vấn đề mà chương~\ref{ch:shap} đã gặp với
+\tn{phân phối nền}{background distribution}: phương trình có thể chặt chẽ
+trong khi đối tượng được đưa vào nó vẫn là một lựa chọn về miền ứng dụng.
 
 Vì vậy, một báo cáo dùng Integrated Gradients cần nói baseline là gì và vì sao
 nó biểu thị đối chiếu đang cần. Chỉ nói phương pháp thỏa tiên đề là chưa đủ.
 Hai tiên đề kiểm tra attribution sau khi hai điểm đã được chọn; chúng không
 kiểm tra ý nghĩa của hai điểm ấy.
 
-\index{điểm nền}%
-\index{Integrated Gradients|)}%

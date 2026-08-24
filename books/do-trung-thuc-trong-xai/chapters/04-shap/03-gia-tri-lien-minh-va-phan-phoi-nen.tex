@@ -1,30 +1,30 @@
 \section{Giá trị của liên minh không tự có}
 \label{sec:ch04-gia-tri-lien-minh-va-phan-phoi-nen}
 
+\index{phân phối nền}%
+\index{đặc trưng phụ thuộc}%
 Mục trước đã cố định cách chia khi $v(S)$ đã biết. Với một mô hình dự đoán,
 việc khó hơn là gán nghĩa cho liên minh $S$: đầu vào chỉ giữ các đặc trưng trong
 $S$ thì mô hình sẽ trả gì? Hầu hết mô hình không nhận một đầu vào bị khuyết
-tùy ý, nên công thức SHAP gốc thay giá trị đó bằng kỳ vọng có điều kiện của đầu
+tùy ý, nên bài báo SHAP gốc thay giá trị đó bằng kỳ vọng có điều kiện của đầu
 ra mô hình khi biết các đặc trưng trong $S$~\autocite{p10shap}.
 
 Nói cách khác, mỗi liên minh được đánh giá trên một \tn{phân phối nền}{background
-distribution}. Phân phối nền trả lời câu hỏi những phần còn thiếu nên trông
+distribution}. Phân phối nền trả lời câu hỏi những đặc trưng còn thiếu nên trông
 như thế nào. Nếu giữ tuổi và bỏ thu nhập trong một hồ sơ khách hàng, ta có thể
 lấy trung bình trên các mức thu nhập từng đi cùng độ tuổi đó. Đây là một mệnh
 đề về dữ liệu, không phải hệ quả của các tiên đề Shapley.
 
 Bài báo gốc cũng nêu một xấp xỉ rẻ hơn: thay kỳ vọng có điều kiện bằng kỳ vọng
-không điều kiện, tức coi các đặc trưng độc lập khi hoàn thiện phần còn thiếu.
+biên, tức lấy các đặc trưng còn thiếu từ phân phối biên của chúng thay vì từ
+phân phối có điều kiện trên phần đã biết.
 Xấp xỉ này có thể tạo các tổ hợp mà dữ liệu thật hiếm khi hoặc không bao giờ
 có. Vì vậy, khi hai đặc trưng phụ thuộc nhau, một thanh SHAP không tự cho biết
 liệu nó đang mô tả quan hệ dữ liệu quan sát được hay một can thiệp giả định.
 
 Các công trình sau đó phân biệt rõ cách nhìn có điều kiện và cách nhìn biên.
-Trong cách nhìn biên, các đặc trưng chưa có được lấy từ phân phối biên; bài báo
+Trong cách nhìn biên, các đặc trưng còn thiếu được lấy từ phân phối biên; bài báo
 về suy luận thống kê cho SHAP lưu ý rằng các phần mềm thường dùng cách này và
 rằng hai cách nhìn có những diễn giải khác nhau~\autocite{p19shapinference}.
 Vì vậy, một biểu đồ SHAP cần đi cùng câu trả lời về phân phối nền và quy tắc
 hoàn thiện, chứ không chỉ danh sách các $\phi_i$.
-
-\index{phân phối nền}%
-\index{đặc trưng phụ thuộc}%

@@ -1,37 +1,36 @@
 \section{KernelSHAP: hồi quy để tính giá trị Shapley}
 \label{sec:ch04-kernelshap}
 
-Sau khi đã chọn cách gán giá trị cho liên minh, ta vẫn phải tính các giá trị
-\tn{giá trị Shapley}{Shapley value} đó. Khi có $M$ đặc trưng, công thức~\ref{eq:ch04-gia-tri-shapley} đòi hỏi xem nhiều
-liên minh. KernelSHAP viết cùng bài toán dưới dạng hồi quy có trọng số trên các
+\index{KernelSHAP}%
+Sau khi đã chọn cách gán giá trị cho liên minh, ta vẫn phải tính các
+\tn{giá trị Shapley}{Shapley value} đó. Khi có $M$ đặc trưng,
+phương trình~\ref{eq:ch04-gia-tri-shapley} đòi hỏi xem nhiều
+liên minh. KernelSHAP viết cùng bài toán ấy dưới dạng hồi quy có trọng số trên các
 vector $z'$ biểu thị liên minh. Mô hình hồi quy vẫn là
 phương trình~\ref{eq:ch04-mo-hinh-cong-tinh}, nhưng trọng số của một liên minh
 phụ thuộc số đặc trưng nó chứa. Các liên minh rất nhỏ và rất lớn được nhấn
-mạnh để ràng buộc giá trị nền và tổng các đóng góp.
+mạnh để ràng buộc giá trị nền và tổng các đóng góp~\autocite{p10shap}.
 
-Hình~\ref{fig:ch04-kernelshap} cho thấy phần hồi quy chỉ là lớp tính toán. Mỗi
-hàng đầu vào của nó trước hết phải được đánh giá bằng quy tắc hoàn thiện đặc
-trưng ở mục~\ref{sec:ch04-gia-tri-lien-minh-va-phan-phoi-nen}. Vì vậy,
+\index{hàm nhân Shapley}%
+Hình~\ref{fig:ch04-kernelshap} cho thấy phép hồi quy chỉ là lớp tính toán. Mỗi
+liên minh đưa vào hồi quy trước hết phải được gán giá trị bằng quy tắc hoàn
+thiện đặc trưng ở mục~\ref{sec:ch04-gia-tri-lien-minh-va-phan-phoi-nen}. Vì vậy,
 KernelSHAP không loại bỏ giả định về dữ liệu; nó dùng một \tn{hàm nhân Shapley}{Shapley
 kernel} để làm hồi quy trả về cách chia mà các tiên đề đã chọn.
 
 \begin{figure}[htbp]
   \centering
   \input{figures/tikz/ch04-kernelshap}
-  \caption{KernelSHAP đi từ các liên minh đặc trưng tới một hồi quy có trọng số.
-  Giá trị của mỗi liên minh phụ thuộc quy tắc hoàn thiện phần đặc trưng còn
-  thiếu; kernel Shapley chỉ quyết định cách các liên minh ấy ràng buộc các hệ
-  số $\phi_i$. Cách viết hồi quy này bắt nguồn từ Lundberg và Lee
-  ~\autocite{p10shap}.}
+  \caption{Giả định về dữ liệu và phép tính nằm ở hai chỗ khác nhau trong sơ
+  đồ: nó vào ở bước gán giá trị cho liên minh, không ở bước hồi quy. Cách viết
+  hồi quy này bắt nguồn từ Lundberg và Lee~\autocite{p10shap}.}
   \label{fig:ch04-kernelshap}
 \end{figure}
 
 Điểm này nối thẳng với LIME. Cả hai đều có mô hình cộng tính và có thể dùng
-hồi quy bình phương tối thiểu. Tuy nhiên, LIME chọn kernel lân cận và độ thưa
-theo heuristic, còn KernelSHAP chọn kernel, hàm mất mát và ràng buộc để nghiệm
-thỏa \tn{độ chính xác cục bộ}{local accuracy}, \tn{tính vắng mặt}{missingness} và
+hồi quy bình phương tối thiểu. Tuy nhiên, LIME chọn \tn{hàm nhân}{kernel} lân
+cận và độ thưa theo kinh nghiệm, còn KernelSHAP chọn hàm nhân, hàm mất mát và ràng buộc
+để nghiệm thỏa \tn{độ chính xác cục bộ}{local accuracy},
+\tn{tính vắng mặt}{missingness} và
 \tn{tính nhất quán}{consistency}~\autocite{p10shap}. Sự khác
 biệt nằm ở bài toán được giải, không nằm ở việc cả hai đều dùng hồi quy.
-
-\index{KernelSHAP}%
-\index{hàm nhân Shapley}%

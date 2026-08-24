@@ -1,6 +1,7 @@
 \section{Khớp mô hình thay thế thưa}
 \label{sec:ch03-khop-mo-hinh-thay-the}
 
+\index{hàm nhân}%
 Các mẫu đã nhiễu không đóng góp ngang nhau. LIME dùng một \tn{hàm nhân}{kernel}
 $\pi_x(z)$ để gán trọng số lớn hơn cho mẫu gần $x$. Với lớp mô hình tuyến tính,
 bài báo dùng hàm mất mát bình phương có trọng số cục bộ và hàm nhân mũ theo một
@@ -9,27 +10,34 @@ hàm khoảng cách $D$ cùng độ rộng $\sigma$~\autocite{p09lime}:
 \begin{equation}
 \label{eq:ch03-mat-mat-cuc-bo}
 \mathcal{L}(f,g,\pi_x)=
-\sum_{(z,z') \in \mathcal{Z}} \pi_x(z)\bigl(f(z)-g(z')\bigr)^2,
+\sum_{(z,z',\,f(z),\,\pi_x(z)) \in \mathcal{Z}}
+\pi_x(z)\bigl(f(z)-g(z')\bigr)^2,
 \qquad
 \pi_x(z)=\exp\left(-\frac{D(x,z)^2}{\sigma^2}\right).
 \end{equation}
 
-Ở đây $\mathcal{Z}$ là tập các mẫu đã sinh. Một mẫu xa vẫn có thể xuất hiện
-trong phép khớp, nhưng trọng số của nó nhỏ hơn. Cách chọn $D$ phụ thuộc miền:
+Ở đây $\mathcal{Z}$ là tập mẫu mà thuật toán dựng: mỗi phần tử mang đầu vào
+$z$ đã được dựng lại, biểu diễn đã nhiễu $z'$ sinh ra nó, đầu ra $f(z)$ và
+trọng số $\pi_x(z)$. Một mẫu xa vẫn có thể xuất hiện trong phép khớp, nhưng trọng
+số của nó nhỏ hơn. Cách chọn $D$ phụ thuộc miền:
 bài báo nêu khoảng cách cosine cho văn bản và khoảng cách Euclid cho ảnh. Như
-vậy, từ \emph{cục bộ} không chỉ là trực giác hình học. Nó được thực hiện bằng
+vậy, từ \enquote{cục bộ} không chỉ là trực giác hình học. Nó được thực hiện bằng
 một hàm khoảng cách, một hàm nhân và một độ rộng cụ thể.
 
+\index{K-LASSO}%
 Để mô hình còn đọc được, LIME giới hạn số hệ số khác không của $g$. Bài báo
 chọn trước số lượng $K$ thành phần, dùng Lasso theo regularization path để
 chọn chúng, rồi khớp lại các trọng số bằng bình phương tối thiểu. Quy trình đó
 được bài báo gọi là K-LASSO~\autocite{p09lime}. Thuật toán~\ref{alg:ch03-lime}
-viết lại quy trình này dưới dạng pseudo-code; nó mô tả thuật toán của bài báo,
-không phải mã đã chạy trong cuốn sách.
+viết lại quy trình này dưới dạng pseudo-code. Nó gộp thuật toán được đánh số
+của bài báo với hai bước mà phần văn xuôi quanh đó mô tả, là việc dựng lại
+đầu vào và việc trả về mô hình tuyến tính; nó không phải mã đã chạy trong
+cuốn sách.
 
 \begin{algorithm}[htbp]
-  \caption{Pseudo-code cho lời giải thích LIME thưa, theo Ribeiro, Singh và
-  Guestrin~\autocite{p09lime}}
+  \caption{Pseudo-code cho lời giải thích LIME thưa, dựng theo thuật toán
+  được đánh số của Ribeiro, Singh và Guestrin cùng phần văn xuôi mô tả quy
+  trình quanh nó~\autocite{p09lime}}
   \label{alg:ch03-lime}
   \begin{algorithmic}[1]
     \Require mô hình hộp đen $f$, đầu vào $x$, biểu diễn $x'$, hàm nhân $\pi_x$,
@@ -46,5 +54,3 @@ không phải mã đã chạy trong cuốn sách.
   \end{algorithmic}
 \end{algorithm}
 
-\index{hàm nhân}%
-\index{K-LASSO}%

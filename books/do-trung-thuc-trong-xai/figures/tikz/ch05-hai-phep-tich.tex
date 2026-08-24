@@ -4,12 +4,12 @@
   data/.style={draw=black!65, rounded corners=2pt, align=center,
     minimum width=3.1cm, minimum height=0.85cm, fill=black!15},
   arrow/.style={-{Stealth[length=2mm]}, draw=black!65, thick},
-  dashedarrow/.style={-{Stealth[length=2mm]}, draw=black!55, thick, dashed}
+  dashedarrow/.style={-{Stealth[length=2mm]}, draw=black!65, thick, dashed}
 ]
   \node[data] (base) {$x_0$: baseline};
   \node[box, right=10mm of base] (path) {Các điểm trên\\đoạn thẳng};
   \node[data, right=10mm of path] (input) {$x$: đầu vào};
-  \node[box, below=9mm of path] (ig) {Tích gradient theo đường đi\\và phân bổ $F(x)-F(x_0)$};
+  \node[box, below=9mm of path] (ig) {Lấy tích phân gradient\\rồi phân bổ $F(x)-F(x_0)$};
   \draw[arrow] (base) -- (path);
   \draw[arrow] (path) -- (input);
   \draw[dashedarrow] (path) -- (ig);

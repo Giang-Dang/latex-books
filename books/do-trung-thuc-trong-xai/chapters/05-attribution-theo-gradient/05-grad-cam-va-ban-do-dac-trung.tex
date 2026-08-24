@@ -1,24 +1,28 @@
 \section{Grad-CAM và bản đồ đặc trưng}
 \label{sec:ch05-grad-cam}
 
-Baseline làm Integrated Gradients phù hợp với attribution trên các tọa độ đầu
-vào. Với một ảnh, hàng triệu tọa độ pixel thường quá chi tiết để trả lời câu
-hỏi mô hình nhìn vào vùng nào. Grad-CAM chuyển điểm đặt attribution vào lớp tích
-chập cuối còn giữ cấu trúc không gian. Mỗi \tn{bản đồ đặc trưng}{feature map}
-$A^k$ cho biết một mẫu đã xuất hiện mạnh đến đâu tại từng vị trí, còn các lớp
-sau biến tập bản đồ ấy thành điểm số $y^c$ cho lớp mục tiêu $c$.
+\index{Grad-CAM|(}%
+\index{bản đồ đặc trưng}%
+Mục trước cho thấy baseline quyết định câu hỏi phản thực, chứ không quyết
+định nơi attribution được đặt. Integrated Gradients đặt nó trên từng tọa độ
+đầu vào, và với một ảnh ba kênh màu cỡ $224\times224$ thì hơn một trăm nghìn
+tọa độ đầu vào là quá mịn để trả lời câu hỏi mô hình nhìn vào vùng nào. Grad-CAM đổi chính
+chỗ đặt ấy: nó chuyển attribution vào tầng tích chập cuối, nơi còn giữ cấu
+trúc không gian. Mỗi \tn{bản đồ đặc trưng}{feature map}
+$A^k$ cho biết một mẫu đã xuất hiện mạnh đến đâu tại từng vị trí, còn các tầng
+sau biến tập bản đồ ấy thành điểm số $y^c$ của lớp mục tiêu $c$, lấy trước
+phép softmax. Selvaraju và cộng sự đặt tên Grad-CAM cho cách làm
+này~\autocite{p12gradcam}.
 
-Chọn lớp tích chập là một đánh đổi. Lớp sâu chứa các mẫu ngữ nghĩa hơn, nhưng
-lưới không gian đã thô. Lớp nông giữ chi tiết vị trí hơn, nhưng các bản đồ của
-nó chưa gắn chặt với khái niệm mà lớp $c$ biểu thị. Grad-CAM thường dùng lớp
-tích chập cuối vì đó là nơi hai yêu cầu này gặp nhau, chứ không vì phép tính
-buộc phải dùng đúng lớp ấy~\autocite{p12gradcam}.
+Chọn tầng tích chập nào là một đánh đổi. Tầng sâu chứa các mẫu ngữ nghĩa hơn,
+nhưng lưới không gian đã thô. Tầng nông giữ chi tiết vị trí hơn, nhưng các
+bản đồ đặc trưng của nó chưa gắn chặt với khái niệm mà lớp $c$ biểu thị.
+Grad-CAM thường dùng tầng tích chập cuối vì đó là nơi hai yêu cầu này gặp
+nhau, chứ không vì phép tính buộc phải dùng đúng tầng ấy~\autocite{p12gradcam}.
 
 Khác với Integrated Gradients, Grad-CAM không so ảnh với một ảnh nền. Nó hỏi
 một câu có điều kiện khác: với lớp $c$ đã chọn, bản đồ đặc trưng nào đang nâng
-điểm số đó? Câu hỏi phụ thuộc cả đầu ra mục tiêu. Cùng một ảnh có thể cho hai
-bản đồ khác nhau khi ta lần lượt giải thích hai lớp, và đó là thuộc tính cần có
-của một lời giải thích phân biệt theo lớp.
+điểm số đó? Câu hỏi vì thế phụ thuộc vào cả ảnh lẫn lớp mục tiêu. Cùng một
+ảnh có thể cho hai bản đồ nhiệt khác nhau khi ta lần lượt giải thích hai lớp,
+và đó là thuộc tính cần có của một lời giải thích phân biệt theo lớp.
 
-\index{Grad-CAM|(}%
-\index{bản đồ đặc trưng}%

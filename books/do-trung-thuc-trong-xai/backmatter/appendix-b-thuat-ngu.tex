@@ -18,6 +18,8 @@ giải thích hậu nghiệm & post-hoc explanation \\
 độ trung thực & faithfulness \\
 tính hợp lý & plausibility \\
 bản đồ nhiệt & heatmap \\
+đại lượng thay thế & proxy \\
+hộp đen & black box \\
 \bottomrule
 \end{tabular}
 
@@ -35,6 +37,8 @@ tiền huấn luyện & pretraining \\
 lời nhắc & prompt \\
 học tăng cường từ phản hồi của con người & reinforcement learning from human feedback \\
 chuỗi suy luận & chain-of-thought \\
+tự chú ý & self-attention \\
+mô hình thưởng & reward model \\
 \bottomrule
 \end{tabular}
 
@@ -51,6 +55,7 @@ biểu diễn có thể diễn giải & interpretable representation \\
 đặc trưng & feature \\
 phép nhiễu & perturbation \\
 hàm nhân & kernel \\
+siêu tham số & hyperparameter \\
 \bottomrule
 \end{tabular}
 
@@ -83,9 +88,7 @@ Thuật ngữ & Tiếng Anh \\
 \midrule
 độ nhạy & sensitivity \\
 bất biến theo cài đặt & implementation invariance \\
-tích phân đường & path integral \\
 tính đầy đủ & completeness \\
-điểm nền & baseline \\
 bản đồ đặc trưng & feature map \\
 \bottomrule
 \end{tabular}
@@ -100,6 +103,7 @@ Thuật ngữ & Tiếng Anh \\
 \midrule
 hàm chỉ báo & indicator function \\
 độ đo Borel hữu hạn có dấu & finite signed Borel measure \\
+loại bỏ đặc trưng & feature removal \\
 \bottomrule
 \end{tabular}
 
@@ -177,6 +181,11 @@ sparsity & Giữ nguyên; tên một đại lượng của đánh giá phản th
 attribution patching & Giữ nguyên; tên phương pháp xấp xỉ phép vá bằng gradient \\
 checkpoint & Giữ nguyên; bản lưu tham số giữa chừng quá trình huấn luyện \\
 multi-armed bandit & Giữ nguyên; tên lớp thuật toán phân bổ lượt thử \\
+baseline & Giữ nguyên; điểm đối chiếu mà attribution so đầu vào với nó (quyết định 38) \\
+embedding & Giữ nguyên; biểu diễn vector của một token hay một đơn vị đầu vào \\
+few-shot & Giữ nguyên; chế độ đặt vài ví dụ vào lời nhắc \\
+super-pixel & Giữ nguyên; một vùng ảnh liền kề mà LIME coi là một thành phần \\
+partial dependence plot & Giữ nguyên; tên một dạng biểu đồ phụ thuộc trung bình \\
 deletion & Giữ nguyên; tên đường cong đo xác suất giảm khi lần lượt bỏ các phần tử điểm cao \\
 insertion & Giữ nguyên; tên đường cong đối của deletion, đo xác suất tăng khi lần lượt đưa vào \\
 comprehensiveness & Giữ nguyên; tên chỉ số đo độ tự tin tụt sau khi bỏ phần được đánh dấu \\

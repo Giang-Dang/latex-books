@@ -1,10 +1,11 @@
 \section{Điều SHAP chưa giải quyết}
 \label{sec:ch04-dieu-shap-chua-giai-quyet}
 
-Bất định thống kê của phép tổng hợp không phải điều duy nhất còn lại. Các tiên đề làm rõ cách chia một chênh lệch đã được định nghĩa, nhưng không
+Bất định thống kê của phép tổng hợp không phải là điều duy nhất còn lại. Các
+tiên đề làm rõ cách chia một chênh lệch đã được định nghĩa, nhưng không
 chọn thay người dùng chênh lệch nào đáng chia. Giá trị nền, quy tắc hoàn thiện
-đặc trưng thiếu và việc dùng kỳ vọng có điều kiện hay biên đều nằm trước công
-thức Shapley. Nếu những lựa chọn ấy không hợp với câu hỏi miền, một lời giải
+đặc trưng còn thiếu và việc dùng kỳ vọng có điều kiện hay biên đều nằm trước
+phương trình Shapley. Nếu những lựa chọn ấy không hợp với câu hỏi miền, một lời giải
 thích vẫn có thể thỏa tiên đề mà không mô tả can thiệp người đọc quan tâm.
 
 Sự phân biệt này đặc biệt quan trọng với \tn{giá trị Shapley}{Shapley value}
@@ -14,10 +15,10 @@ liệu. Các tiên đề bảo đảm \tn{tính nhất quán}{consistency} của
 chọn; chúng không xác nhận hàm giá trị ấy là mô hình nhân quả hoặc là thước đo
 \tn{độ trung thực}{faithfulness}.
 
-Vì vậy, SHAP là bước tiến so với việc chọn kernel LIME tùy ý, nhưng chưa phải
-điểm kết thúc của lập luận. Chương~\ref{ch:attribution-theo-gradient} chuyển
-sang attribution theo gradient, nơi đường đi từ baseline tới đầu vào thật lại
-đưa một lựa chọn nền khác vào công thức. Qua các phương pháp, câu hỏi giữ
+Vì vậy, SHAP là bước tiến so với việc chọn hàm nhân của LIME theo kinh nghiệm, nhưng chưa
+phải là điểm kết thúc của lập luận. Chương~\ref{ch:attribution-theo-gradient}
+chuyển sang attribution theo gradient, nơi đường đi từ baseline tới đầu vào
+thật lại đưa một lựa chọn nền khác vào phương trình. Qua các phương pháp, câu hỏi giữ
 nguyên: thành phần vắng mặt đã được thay bằng điều gì, và vì sao sự thay thế đó
 đại diện cho thay đổi có nghĩa?
 

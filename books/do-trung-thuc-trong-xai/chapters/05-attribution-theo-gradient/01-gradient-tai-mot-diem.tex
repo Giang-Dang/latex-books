@@ -5,18 +5,21 @@ Chương~\ref{ch:shap} đã tách một chênh lệch đầu ra thành các ph�
 Với mạng khả vi, gradient gợi một phép tách trực tiếp hơn. Gọi $F$ là điểm số
 của lớp hoặc đầu ra ta muốn giải thích. Tại đầu vào $x$, đạo hàm riêng
 $\partial F(x)/\partial x_i$ cho biết một thay đổi rất nhỏ ở tọa độ $i$ làm
-điểm số đổi theo hướng nào và với tốc độ nào. Vì vậy, gradient là một mô tả
-cục bộ của hàm $F$, không phải bản thân đóng góp của một \tn{đặc trưng}{feature} $x_i$.
+điểm số đổi theo hướng nào và với tốc độ nào. Vì vậy, gradient là một mô tả cục bộ của hàm $F$, không phải là bản thân
+đóng góp của một \tn{đặc trưng}{feature} $x_i$.
 
 Nếu chỉ tô màu đạo hàm, một đặc trưng có biên độ lớn nhưng nằm ở vùng phẳng có
-thể biến mất khỏi lời giải thích. Nhân gradient với $x_i$ khắc phục một phần
-vấn đề về đơn vị đo, nhưng vẫn chỉ đọc độ dốc tại điểm cuối. Một đơn vị ReLU có
+thể biến mất khỏi lời giải thích. Nhân gradient với $x_i$, một cách làm quen thuộc trong thực hành mà
+chương~\ref{ch:attribution-tu-nguyen-ly-dau} sẽ gặp lại dưới tên
+Gradient$\mathbin{\times}$Input, khắc
+phục một phần vấn đề về đơn vị đo, nhưng vẫn chỉ đọc độ dốc tại điểm cuối. Một đơn vị ReLU có
 thể đã thay đổi đầu ra trên đường đi tới $x$, rồi bão hòa ở $x$ và cho gradient
-bằng không. Khi đó, lời giải thích chỉ nhìn điểm đến bỏ mất sự thay đổi đã xảy
-ra trên đường tới đó.
+bằng không~\autocite{p11ig}. Khi đó, một lời giải thích chỉ nhìn điểm đến sẽ bỏ mất sự thay đổi đã xảy ra
+trên đường tới đó.
 
 Đây không phải là lời phản đối việc dùng đạo hàm. Đạo hàm bảo toàn một thuộc
-tính quan trọng: hai mạng tính cùng một hàm có cùng gradient gần như mọi nơi.
+tính quan trọng mà bài báo về Integrated Gradients dựa vào: hai mạng tính cùng
+một hàm có cùng gradient gần như mọi nơi~\autocite{p11ig}.
 Vấn đề là một gradient tức thời không tự trả lời câu hỏi attribution, bởi câu
 hỏi ấy luôn ngầm so đầu vào hiện tại với một trạng thái khác. Integrated
 Gradients làm trạng thái kia thành một đối tượng tường minh.

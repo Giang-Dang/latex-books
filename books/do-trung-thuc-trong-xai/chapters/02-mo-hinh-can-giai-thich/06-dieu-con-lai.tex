@@ -1,11 +1,11 @@
 \section{Điều nền tảng này chưa giải quyết}
 \label{sec:ch02-dieu-con-lai}
 
-Như vậy, transformer cho biết nơi biểu diễn được tính, \tn{tiền huấn luyện}{pretraining} và
-\tn{lời nhắc}{prompt} cho biết vì sao cùng kiến trúc có thể đổi hành vi, còn RLHF cho biết
-thêm một nguồn tín hiệu đã định hình mô hình hội thoại. \tn{Chuỗi suy luận}{chain-of-thought} mở
-thêm một kênh quan sát bằng ngôn ngữ tự nhiên. Không thành phần nào trong số
-đó tự xác nhận rằng một \tn{giải thích hậu nghiệm}{post-hoc explanation} bám đúng vào cơ chế.
+Các mục từ~\ref{sec:ch02-transformer} đến~\ref{sec:ch02-chuoi-suy-luan} cùng
+dựng một đối tượng: kiến trúc, dữ liệu, tín hiệu thưởng, điều kiện sử dụng và
+văn bản trung gian đều là những chỗ mà một
+\tn{giải thích hậu nghiệm}{post-hoc explanation} có thể bám vào. Điều không
+mục nào cho ta là bằng chứng rằng nó đã bám đúng.
 
 Khoảng cách còn lại có dạng rất cụ thể. Ta có thể che một token, đổi một ví
 dụ few-shot hoặc so sánh hai câu trả lời, nhưng mỗi thao tác đều đưa vào một
@@ -15,7 +15,7 @@ trong phạm vi mà can thiệp ấy còn đại diện cho điều ta muốn h�
 hỏi cách kiểm tra chúng ở Phần~IV.
 
 Chương~\ref{ch:lime} sẽ mở đầu phần phương pháp bằng LIME, một \tn{mô hình thay
-thế cục bộ}{local surrogate} được khớp từ các đầu vào đã nhiễu. Khi dùng LIME cho một LLM, ta sẽ
+thế cục bộ}{local surrogate} được khớp từ các đầu vào đã nhiễu. Khi dùng LIME cho một mô hình như thế, ta sẽ
 gặp lại toàn bộ các lựa chọn của chương này: đơn vị nào được coi là đặc trưng,
-cách nhiễu lời nhắc nào còn có nghĩa, và thay đổi đầu ra nào thực sự trả lời
+cách nhiễu \tn{lời nhắc}{prompt} nào còn có nghĩa, và thay đổi đầu ra nào thực sự trả lời
 câu hỏi đang đặt ra.

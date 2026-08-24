@@ -1,0 +1,26 @@
+\section{Từ lời giải thích cục bộ đến một kết luận toàn cục}
+\label{sec:ch04-tu-cuc-bo-den-toan-cuc}
+
+\index{suy luận thống kê}%
+Vì TreeSHAP chỉ làm phép tính cục bộ nhanh hơn, một kết luận toàn cục vẫn phải
+được xây từ nhiều đầu vào. Với đặc trưng $i$ cố định, $\phi_i(x)$ là một hàm
+theo $x$: nó cho phần đóng góp của $i$ tại từng điểm. Trong thực hành, người
+ta thường lấy trung bình độ lớn hoặc bình phương của hàm này trên một
+tập dữ liệu để xếp hạng đặc trưng. Phép tổng hợp ấy chuyển một lời giải thích
+cục bộ thành một phát biểu toàn cục, nên nó cần một câu hỏi mới: độ bất định
+của con số tổng hợp là bao nhiêu?
+
+Whitehouse, Sawarni và Syrgkanis gọi hàm $\phi_i(\cdot)$ ấy là đường cong
+SHAP, và xét các lũy thừa bậc $p$ của nó; trung bình trị tuyệt đối ứng với
+$p=1$ và trung bình bình phương ứng với $p=2$. Họ coi đường cong SHAP là một
+hàm phụ phải ước lượng từ dữ liệu, nên thay một mô hình đã học vào rồi lấy
+trung bình thì chưa đủ để có suy luận tiệm cận chuẩn. Bài báo xây dựng các ước
+lượng đã khử chệch để lập khoảng tin cậy cho các đại lượng
+đó~\autocite{p19shapinference}.
+
+\index{lời giải thích cục bộ}%
+Kết quả này không biến một giá trị SHAP cục bộ thành bằng chứng về cơ chế của
+mô hình. Nó làm một việc khác: nếu ta đã chọn hàm giá trị và dữ liệu đánh giá,
+thì phát biểu toàn cục dựa trên các giá trị SHAP phải mang theo bất định lấy
+mẫu và bất định do ước lượng. Đây là nền tảng thống kê mà một biểu đồ xếp hạng
+đặc trưng thường chưa thể hiện.

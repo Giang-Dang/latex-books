@@ -1,22 +1,24 @@
 \section{Các tham số tự do của lời giải thích}
 \label{sec:ch03-cac-tham-so-tu-do}
 
-Mục trước cho một công thức, nhưng công thức chưa tự xác định một lời giải
-thích. Trước hết, người dùng phải quyết định biểu diễn $x'$ và phép dựng lại
+\index{tham số của LIME}%
+Mục trước cho một phương trình, nhưng phương trình chưa tự xác định một lời
+giải thích. Trước hết, người dùng phải quyết định biểu diễn $x'$ và phép dựng lại
 $z$. Hai lựa chọn ấy quyết định thành phần nào được gọi tên và đầu vào nào
 được đưa vào mô hình. Sau đó, phải chọn phân phối sinh nhiễu, hàm khoảng cách
-$D$, độ rộng của \tn{hàm nhân}{kernel}, số mẫu $N$ và độ dài $K$ của lời giải thích.
+$D$, độ rộng của \tn{hàm nhân}{kernel}, số mẫu $N$ và độ dài $K$ của lời giải
+thích. Cả năm đều là tham số mà bài báo để người dùng đặt~\autocite{p09lime}.
 
-Mỗi tham số thay một mệnh đề về hành vi của $f$. Nếu $\sigma$ nhỏ, phép khớp
-ưu tiên các mẫu rất gần $x$; nếu $\sigma$ lớn, các mẫu xa có tiếng nói nhiều
-hơn. Nếu $K$ nhỏ, lời giải thích dễ đọc hơn nhưng có thể bỏ mất tương tác cần
-thiết. Nếu tăng $N$, ta thay dữ liệu dùng để ước lượng $g$, chứ không làm cho
+Mỗi tham số đứng thay cho một mệnh đề về hành vi của $f$. Trước hết là độ
+rộng: nếu $\sigma$ nhỏ, phép khớp ưu tiên các mẫu rất gần $x$, còn nếu
+$\sigma$ lớn, các mẫu xa cũng góp trọng số đáng kể. Tiếp đó là độ dài: nếu $K$
+nhỏ, lời giải thích dễ đọc hơn nhưng có thể bỏ mất tương tác cần thiết. Cuối
+cùng, nếu tăng $N$, ta thay dữ liệu dùng để ước lượng $g$, chứ không làm cho
 $g$ tự nhiên trở thành cơ chế thật của $f$.
 
-Vì vậy, không nên gọi các lựa chọn này là siêu tham số thuần túy rồi để chúng
-ở ngoài phần diễn giải. Khi một báo cáo nói một từ, một super-pixel hay một
+Vì vậy, không nên gọi các lựa chọn này là \tn{siêu tham số}{hyperparameter}
+thuần túy rồi để chúng ở ngoài phần diễn giải. Khi một báo cáo nói một từ, một super-pixel hay một
 \tn{đặc trưng}{feature} quan trọng, người đọc cần biết lời giải thích đã cho phép những can
 thiệp nào, đã coi mẫu nào là gần, và đã ép mô hình thay thế chỉ giữ bao nhiêu
 thành phần. Các lựa chọn ấy là điều kiện để phát biểu về trọng số có nghĩa.
 
-\index{tham số của LIME}%
