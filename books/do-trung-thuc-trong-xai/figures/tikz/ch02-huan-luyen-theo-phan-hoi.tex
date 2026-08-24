@@ -1,0 +1,22 @@
+\begin{tikzpicture}[
+  box/.style={draw=black!65, rounded corners=2pt, align=center,
+    minimum width=4.4cm, minimum height=1.05cm, fill=black!5},
+  data/.style={draw=black!65, rounded corners=2pt, align=center,
+    minimum width=4.4cm, minimum height=0.9cm, fill=black!15},
+  arrow/.style={-{Stealth[length=2mm]}, draw=black!65, thick}
+]
+  \node[box] (base) {Mô hình tiền huấn luyện};
+  \node[data, right=11mm of base] (demos) {Lời đáp mẫu};
+  \node[box, below=8mm of base] (sft) {Fine-tune có giám sát};
+  \node[data, right=11mm of sft] (rankings) {Xếp hạng của người gán nhãn};
+  \node[box, below=8mm of sft] (reward) {Reward model};
+  \node[box, below=8mm of reward] (rl) {Tối ưu bằng reinforcement learning};
+  \node[box, below=8mm of rl] (chat) {Mô hình hội thoại};
+
+  \draw[arrow] (base.south) -- (sft.north);
+  \draw[arrow] (demos.west) -- (sft.east);
+  \draw[arrow] (rankings.west) -- (reward.east);
+  \draw[arrow] (sft.south) -- (reward.north);
+  \draw[arrow] (reward.south) -- (rl.north);
+  \draw[arrow] (rl.south) -- (chat.north);
+\end{tikzpicture}

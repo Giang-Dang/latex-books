@@ -1,0 +1,36 @@
+\section{Huấn luyện theo phản hồi của con người}
+\label{sec:ch02-huan-luyen-theo-phan-hoi}
+
+Việc \tn{lời nhắc}{prompt} ảnh hưởng đến đầu ra không giải thích vì sao nhiều mô hình hội
+thoại ưu tiên làm theo chỉ dẫn. Một quy trình phổ biến sau \tn{tiền huấn luyện}{pretraining} là
+\tn{học tăng cường từ phản hồi của con người}{reinforcement learning from human feedback}.
+Trong InstructGPT, quá trình này bắt đầu bằng fine-tune có giám sát trên lời
+đáp mẫu, tiếp tục huấn luyện reward model từ các xếp hạng của người gán nhãn,
+rồi tối ưu mô hình theo reward model bằng reinforcement learning
+~\autocite{p04instructgpt}.
+
+Hình~\ref{fig:ch02-huan-luyen-theo-phan-hoi} tách các dữ liệu và mô hình trong
+quy trình đó. Sự tách biệt giúp tránh một suy luận quá mạnh: reward model ghi
+lại một tín hiệu ưu tiên đã được học từ các xếp hạng, chứ không biến mọi câu
+trả lời sau tối ưu thành đúng sự thật hoặc trung thực với một cơ chế bên trong.
+Bài báo cũng ghi nhận các mô hình vẫn có thể không làm theo chỉ dẫn hoặc bịa
+sự kiện~\autocite{p04instructgpt}.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch02-huan-luyen-theo-phan-hoi}
+  \caption{Sơ đồ khái niệm của quy trình InstructGPT. Lời đáp mẫu tạo dữ liệu
+  fine-tune có giám sát; các xếp hạng của người gán nhãn tạo dữ liệu cho reward
+  model; tín hiệu thưởng ấy được dùng trong bước tối ưu tiếp theo. Sơ đồ nêu
+  đường đi của tín hiệu huấn luyện, không khẳng định rằng một điểm thưởng là
+  lời giải thích cho từng token đầu ra~\autocite{p04instructgpt}.}
+  \label{fig:ch02-huan-luyen-theo-phan-hoi}
+\end{figure}
+
+Đối với XAI, hệ quả là đối tượng cần kiểm tra có thể là mô hình sau toàn bộ
+quy trình, không chỉ checkpoint tiền huấn luyện. Nếu một lời giải thích nói
+rằng mô hình từ chối hay tuân theo một chỉ dẫn vì một đặc trưng của đầu vào,
+ta cần nêu rõ checkpoint, mẫu lời nhắc và cách sinh đầu ra. Nếu không, hai
+thí nghiệm có vẻ giống nhau có thể đang giải thích hai hành vi khác nhau.
+
+\index{học tăng cường từ phản hồi của con người}%

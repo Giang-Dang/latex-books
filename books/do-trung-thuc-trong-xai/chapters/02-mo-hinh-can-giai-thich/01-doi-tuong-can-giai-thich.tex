@@ -1,0 +1,25 @@
+\section{Đối tượng cần giải thích}
+\label{sec:ch02-doi-tuong-can-giai-thich}
+
+\index{mô hình ngôn ngữ lớn}%
+Chương trước đã nêu rằng \tn{độ trung thực}{faithfulness} luôn phải gắn với một hành vi và một
+loại can thiệp xác định. Với \tn{mô hình ngôn ngữ lớn}{large language model},
+hành vi dễ thấy nhất là sự tiếp nối: sau một dãy token đầu vào, mô hình phân
+bố khả năng cho token kế tiếp rồi lặp lại quá trình ấy để sinh câu trả lời.
+Tuy nhiên, người dùng thường không đặt một token rời rạc vào mô hình. Họ đưa
+vào một \tn{lời nhắc}{prompt} có chỉ dẫn, dữ kiện, ví dụ, quy ước hội thoại
+và đôi khi cả những ràng buộc về định dạng đầu ra.
+
+Vì vậy, một câu trả lời có ít nhất ba lớp cần phân biệt. Lớp thứ nhất là đầu
+vào thực tế, gồm các token và thứ tự của chúng. Lớp thứ hai là trạng thái tính
+toán do kiến trúc transformer tạo ra khi các token tương tác với nhau. Lớp thứ
+ba là hành vi quan sát được, chẳng hạn câu trả lời có làm theo chỉ dẫn hay có
+trình bày các bước trung gian hay không. Một lời giải thích ở một lớp không tự
+chuyển sang lời giải thích ở lớp khác.
+
+Sự phân biệt này đặc biệt cần thiết khi đọc một giao diện hội thoại. Giao diện
+có thể cho thấy một câu trả lời mạch lạc và một chuỗi bước nghe hợp lý, nhưng
+nó không hiển thị trực tiếp trọng số, biểu diễn trung gian hay quan hệ nhân quả
+giữa chúng với token đầu ra. Do đó, khi các phương pháp ở Phần~II che một phần đầu vào
+hoặc thay đổi một đặc trưng, chúng đang kiểm tra hành vi đầu ra dưới một can
+thiệp đã chọn, chứ chưa mở được toàn bộ cơ chế bên trong.

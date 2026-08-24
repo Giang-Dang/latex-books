@@ -1,3 +1,23 @@
 % Scope (SPEC table of contents): Compressed LLM foundations: transformer, pretraining and prompting, RLHF, chain-of-thought as behavior. Papers 01, 03, 04, 06, 08.
 \chapter{Các mô hình cần được giải thích}
 \label{ch:mo-hinh-can-giai-thich}
+
+Chương~\ref{ch:giai-thich-de-lam-gi} đã tách sự hữu ích của một lời giải
+thích đối với người đọc khỏi câu hỏi nó có bám vào cơ chế của mô hình hay
+không. Để giữ sự phân biệt đó, trước hết cần xác định đối tượng được giải
+thích. Với các \tn{mô hình ngôn ngữ lớn}{large language model}, đối tượng ấy không chỉ là một hàm nhận
+văn bản và trả lời văn bản, mà còn là một chuỗi quyết định được định hình bởi
+kiến trúc, dữ liệu huấn luyện và cách dùng sau đó.
+
+Chương này chỉ dựng phần nền cần cho các chương về phương pháp hậu nghiệm. Nó
+không xem attention, điểm thưởng hay các bước trung gian được in ra là lời giải thích tự thân.
+Thay vào đó, chương nêu rõ mỗi thành phần cho phép ta quan sát điều gì, và để
+lại điều gì chưa được biết về cơ chế đã tạo ra một câu trả lời cụ thể.
+
+\input{chapters/02-mo-hinh-can-giai-thich/01-doi-tuong-can-giai-thich}
+\input{chapters/02-mo-hinh-can-giai-thich/02-transformer}
+\input{chapters/02-mo-hinh-can-giai-thich/03-tien-huan-luyen-va-loi-nhac}
+\input{chapters/02-mo-hinh-can-giai-thich/04-huan-luyen-theo-phan-hoi}
+\input{chapters/02-mo-hinh-can-giai-thich/05-chuoi-suy-luan}
+\input{chapters/02-mo-hinh-can-giai-thich/06-dieu-con-lai}
+\input{chapters/02-mo-hinh-can-giai-thich/07-tom-tat-va-cau-hoi}
