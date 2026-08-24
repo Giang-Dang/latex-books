@@ -18,8 +18,8 @@ English, so a mixed-language log would be the odd one out and harder to scan.
 Initialized 2026-08-24. The skeleton builds clean: 18 chapter stubs in five
 parts, four appendix stubs (appendix D, the corpus table, written in full),
 refs.bib seeded with all 32 corpus papers, prose gate armed (Spelling en-US
-with the tone-mark table, Gloss against appendix B). Next action: draft
-chapter 01.
+with the tone-mark table, Gloss against appendix B). Chapters 01 and 02 are
+reviewed. Next action: draft chapter 03.
 
 The paper corpus lives outside this repo at `F:\repo\thesis-xai-faithfulness`
 (32 arXiv PDFs in six tier folders; its README.md holds the reading ladder
@@ -57,6 +57,7 @@ settled row is re-opened only by recording what changed and why, in the row.
 | 20 | Paper-reported numbers | The session that first prints one (expected: chapter 08 or 09, the AUROC results of paper 21) creates that chapter's research note recording the number, the bib key, the arXiv ID and revision, the page/table/figure anchor in the PDF, and the surrounding quote - verified against the PDF, never against an orientation note. That arms the Numbers check for the whole book; the same session retro-sweeps any earlier decimals into notes. One note per chapter thereafter. |
 | 21 | Listing measure | `Listings.MaxLineLength` stays 0 at init: the book admits no minted environments, so there is nothing to measure. The day one is admitted, the measure is established on a built page (expect about 73 columns at `\small` under the template geometry and fonts, but measured, not borrowed - tu-rnn-den-transformer's method) and set in the same session. |
 | 22 | Chapter 01 voice review | A 2026-08-24 review found the drafted prose running at the humanizer's `chặt` economy with the connective tissue cut - juxtaposed clipped sentences, sections opening cold, English calques, synonym rotation - against the textbook voice decision 2 set. Fixed chapter-wide in the same session. The Cohesion writing rule below records the standard for later chapters, and humanizer-vi's tone-giao-trinh.md gained a Liên kết section plus three tells (vendored copy refreshed this session). Prose-only enforcement: the author declined a machine check, so no psd1 setting backs it. |
+| 23 | Chapter 02 source pins and terminology | Chapter 02 reads arXiv:1706.03762v7, 2005.14165v4, 2203.02155v1, 2201.11903v6 and 2606.11470v2; each pin and the claim class read are recorded in refs.bib. It prints no measurement, so research/ remains empty under decision 19. Its settled Vietnamese terms are the Chapter 02 block in appendix B; transformer remains English. |
 
 ## Version baseline
 
@@ -130,7 +131,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 |---------|--------|-------|
 | Preface | not-started | Written last, after the chapters exist. |
 | 01 | reviewed | Audited against arXiv:1606.03490v3, 1702.08608v2 and 2601.00428v2; the audit finding was fixed. Voice revision 2026-08-24 for cohesion per tone-giao-trinh (decision 22); that session also cleared the pending build: latexmk exits 0 (65 pages) and the full gate is clean. |
-| 02 | not-started | |
+| 02 | reviewed | Audited against the five pinned foundation papers in refs.bib. Audit fixes: named the Part II forward reference, made the LLM index entry a plain entry, and recorded transformer in appendix B. Full LuaLaTeX build clean (67 pages); mechanical prose gate clean. |
 | 03 | not-started | First Part II chapter; its session settles the unified notation question (open item on appendix A). |
 | 04 | not-started | |
 | 05 | not-started | |
@@ -190,7 +191,10 @@ keep the two in step.
   far: "lời giải thích" (the artifact; "giải thích" only as the act),
   "phương pháp hậu nghiệm" (never "mô hình hậu nghiệm"), "cách đánh giá" (the
   Doshi-Velez and Kim taxonomy; never "tầng" or "phép thử"). A chapter that
-  settles a new term appends it here in the same session. Verbless punchline
+  settles a new term appends it here in the same session. Chapter 02 adds
+  "mô hình ngôn ngữ lớn", "cơ chế chú ý", "tiền huấn luyện", "lời nhắc",
+  "học tăng cường từ phản hồi của con người" and "chuỗi suy luận"; transformer
+  stays English. Verbless punchline
   fragments are out, and a forward reference names its target explicitly
   (`Phần~II`, `chương~\ref{...}`), never "phần tiếp theo". Prose-only rule
   with no psd1 setting behind it (decision 22); the gate cannot see cohesion,
