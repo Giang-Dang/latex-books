@@ -110,7 +110,19 @@ function Get-DefaultPolicy {
         }
 
         Quotes       = [ordered]@{ Enabled = $true }
-        Index        = [ordered]@{ Enabled = $true; RangeMarkers = $true }
+        # ForbidPattern is off until a book names one, the same shape as
+        # Spelling.Preset = ''. What it exists for: the printed index is the
+        # reader's vocabulary, and a book with internal machinery it refers to
+        # by name in its own prose and commit messages can index that machinery
+        # by accident. One book indexed a numbered row of its own decision log,
+        # which would have printed a term the reader has never seen and cannot
+        # look up. The pattern is matched against the whole \index line, so a
+        # book can forbid a term, a prefix, or a shape.
+        Index        = [ordered]@{
+            Enabled      = $true
+            RangeMarkers = $true
+            ForbidPattern = ''
+        }
         Dashes       = [ordered]@{ Enabled = $true }
 
         # A JSON string literal opened on one line and not closed on it. JSON
@@ -146,11 +158,21 @@ function Get-DefaultPolicy {
         # Preset is a name, not a boolean: turning this on for a new book
         # should be one word, not fourteen hand-written regexes. '' means no
         # variety chosen and the check does not run.
+        # Variants adds a second table to the preset's, off by default. The
+        # base table is the pairs where the two varieties differ in a rule -
+        # -our/-or, -ise/-ize, doubled l - and it is deliberately short, because
+        # a table that guesses is a table that fires on a product name. The
+        # variant table is the leftovers: individual words whose two spellings
+        # follow no rule, which is exactly why the base table cannot generate
+        # them and why a draft can carry one past a clean run. A book that has
+        # already chosen a Preset has no reason not to want these; it is off
+        # only because every check added here is.
         Spelling     = [ordered]@{
-            Enabled = $true
-            Preset  = ''
-            Exempt  = @()
-            Extra   = @{}
+            Enabled  = $true
+            Preset   = ''
+            Variants = $false
+            Exempt   = @()
+            Extra    = @{}
         }
 
         Numbers      = [ordered]@{
@@ -491,6 +513,65 @@ function Get-SpellingTable {
     }
 }
 
+# The second spelling table, merged into the preset's when Spelling.Variants
+# is on. Everything here is a word whose two spellings differ by no rule the
+# base table could express, so each one has to be listed or missed. Added after
+# a chapter shipped `programme` and three of `judgement` through a clean en-US
+# run and a cold reader found all four.
+#
+# The two directions are deliberately not mirror images, which is the whole
+# difficulty with this class of word and the reason it is a second table rather
+# than more rows in the first. Several of these pairs are one-way: British
+# English accepts both spellings and American English accepts one, so the
+# American table can flag the British form while the British table must stay
+# silent on the American one. `program` is the clearest case - it is the
+# correct British spelling for something a computer runs, and `programme` is
+# the one for a television schedule, so a book about software written in en-GB
+# wants `program` and must not be told otherwise. `judgment` is standard in
+# British legal writing, `licence` and `license` are a noun and a verb in
+# en-GB and no regex can tell which is meant, and `draft` and `draught` are
+# different words in both varieties. All of them are therefore flagged in one
+# direction only, or in neither.
+#
+# The bar for a row: the word is common in technical prose, the spelling being
+# flagged is wrong rather than merely unusual in the variety being checked, and
+# it is not a proper noun.
+function Get-SpellingVariants {
+    param([string]$Preset)
+
+    switch ($Preset) {
+        'en-GB' {
+            # Short on purpose. Only the words where the American spelling is
+            # actually wrong in British English, rather than one of two
+            # accepted forms.
+            return [ordered]@{
+                'practicing'                    = 'practising'
+                'skillful'                      = 'skilful'
+                'enroll(?:ed|ing|ment|ments)?'  = 'enrol, enrolled, enrolment'
+                'fulfill(?:ed|ing|ment|ments)?' = 'fulfil, fulfilled, fulfilment'
+                'installments?'                 = 'instalment(s)'
+            }
+        }
+        'en-US' {
+            return [ordered]@{
+                'programmes?'                    = 'program(s)'
+                'judgements?'                    = 'judgment(s)'
+                'acknowledgements?'              = 'acknowledgment(s)'
+                'practising'                     = 'practicing'
+                'practise'                       = 'practice'
+                'licence'                        = 'license'
+                'enrol(?:led|ling|ment|ments)'   = 'enroll, enrolled, enrollment'
+                'fulfil(?:led|ling|ment|ments)'  = 'fulfill, fulfilled, fulfillment'
+                'skilful'                        = 'skillful'
+                'instalments?'                   = 'installment(s)'
+            }
+        }
+        default {
+            Write-Error "check-chapter.psd1: Spelling.Preset '$Preset' is not one of: en-GB, en-US"
+        }
+    }
+}
+
 # Unicode characters that look like ASCII punctuation and are not. Letters of
 # any script are deliberately absent: this list is about punctuation, which is
 # what the repo rule actually bans.
@@ -551,6 +632,15 @@ if ($charMode -eq 'Punctuation') {
 }
 
 $contractionRe = $null
+# Compiled once rather than per line, and validated here so that a bad regex is
+# an error naming the setting instead of a stack trace a thousand lines later.
+$indexForbidRe = ''
+if ($policy.Index.Enabled -and $policy.Index.ForbidPattern) {
+    $indexForbidRe = $policy.Index.ForbidPattern
+    try { [void][regex]::new($indexForbidRe) }
+    catch { Write-Error "check-chapter.psd1: Index.ForbidPattern is not a valid regex: $indexForbidRe" }
+}
+
 if ($policy.Contractions.Enabled) {
     $list = @(Get-ContractionList $policy.Contractions.Preset |
         Where-Object { $policy.Contractions.Allow -notcontains $_ })
@@ -563,6 +653,11 @@ $spellings = [ordered]@{}
 $spellingExemptRe = $null
 if ($policy.Spelling.Enabled -and $policy.Spelling.Preset) {
     $spellings = Get-SpellingTable $policy.Spelling.Preset
+    # Variants first, so a book's own Extra can still override one of them.
+    if ($policy.Spelling.Variants) {
+        $variants = Get-SpellingVariants $policy.Spelling.Preset
+        foreach ($k in $variants.Keys) { $spellings[$k] = $variants[$k] }
+    }
     foreach ($k in ($policy.Spelling.Extra.Keys | Sort-Object)) {
         $spellings[$k] = $policy.Spelling.Extra[$k]
     }
@@ -1206,13 +1301,21 @@ function Format-Policy {
     } else { $bits += 'cite=off' }
 
     $bits += "quotes=$(if ($policy.Quotes.Enabled) { 'on' } else { 'off' })"
-    $bits += "index=$(if ($policy.Index.Enabled) { 'on' } else { 'off' })"
+    # +forbid rather than the pattern itself: a regex in a status line is
+    # unreadable, and what a reader of the line needs to know is whether the
+    # check ran.
+    $indexBit = if ($policy.Index.Enabled) { 'on' } else { 'off' }
+    if ($indexForbidRe) { $indexBit += '+forbid' }
+    $bits += "index=$indexBit"
     $bits += "dashes=$(if ($policy.Dashes.Enabled) { 'on' } else { 'off' })"
     $bits += "contractions=$(if ($contractionRe) { $policy.Contractions.Preset } else { 'off' })"
 
     if ($spellings.Count -gt 0) {
         $ex = $policy.Spelling.Exempt.Count
-        $bits += "spelling=$($policy.Spelling.Preset)$(if ($ex) { "($ex exempt)" })"
+        $spellingBit = $policy.Spelling.Preset
+        if ($policy.Spelling.Variants) { $spellingBit += '+variants' }
+        if ($ex) { $spellingBit += "($ex exempt)" }
+        $bits += "spelling=$spellingBit"
     } else { $bits += 'spelling=off' }
 
     if ($policy.Numbers.Enabled) {
@@ -1626,6 +1729,13 @@ foreach ($f in $texFiles) {
             $ranged = $policy.Index.RangeMarkers -and $raw -match '\\index\{[^{}]*\|[()]\}\s*$'
             if (-not ($raw -match '%\s*$' -or $ranged)) {
                 Add-Finding $f.FullName $lineNo 'index-pct' '\index{...} line must end with %'
+            }
+
+            # index-forbid: the printed index is the reader's vocabulary, and a
+            # term they have never met cannot be looked up. Matched on the raw
+            # line so that a book can forbid a shape as well as a word.
+            if ($indexForbidRe -and $raw -match $indexForbidRe) {
+                Add-Finding $f.FullName $lineNo 'index-forbid' "index entry matches Index.ForbidPattern: $($Matches[0])"
             }
         }
 

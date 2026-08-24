@@ -4,3 +4,13 @@
 \index{fixture!unterminated}
 This paragraph follows an index entry whose line does not end with a percent
 sign, so a spurious space would enter the typeset text.
+
+\index{decision 12@\code{decision 12}!internal machinery}%
+That entry names something only the book's own decision log knows about, which
+is what Index.ForbidPattern is for. The line is terminated correctly, so it is
+reported once and not twice.
+
+\index{decisions!how this book records one}%
+This one is a real reader-facing term that merely starts with the same six
+letters, and it must stay silent: a pattern wide enough to take it is a pattern
+that has stopped being about the machinery.
