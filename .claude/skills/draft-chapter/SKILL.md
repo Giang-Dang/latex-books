@@ -249,6 +249,26 @@ Bash tool), then from the repo root:
 pwsh scripts/check-chapter.ps1 books/<name>
 ```
 
+### Host-terminal LuaLaTeX build
+
+A restricted PATH that cannot find `latexmk` is not a build failure. First run
+the build yourself through the runtime's authorized host-visible terminal and
+an installed Bash shell. Resolve `latexmk` from that host at runtime; if it is
+not on the shell's `PATH`, use host command discovery to locate it and add its
+parent directory only to that build invocation. Do not record a machine-specific
+installation path in this skill. Then build from the book directory in the
+worktree:
+
+```bash
+cd <worktree>/books/<book-name>
+latexmk -C && latexmk
+```
+
+Use the authorized host-terminal route before asking the author to build.
+Request an author-side build only when host-visible command execution is
+genuinely unavailable. Do not improvise another TeX engine or modify
+`.latexmkrc`.
+
 Add `-Chapter NN` to lint one chapter while iterating. The script owns the
 mechanical checks, and it owns them as families: characters, citations, quoting,
 index termination, contractions, spelling, dashes, measured-number provenance,
