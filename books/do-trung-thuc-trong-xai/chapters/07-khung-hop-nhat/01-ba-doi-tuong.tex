@@ -1,0 +1,47 @@
+\section{Ba đối tượng của cùng một câu hỏi}
+\label{sec:ch07-ba-doi-tuong}
+
+\index{attribution!ba loại}%
+\index{hàm attribution}%
+Câu hỏi mở đầu chương cần một cách phát biểu đủ rộng để cả ba nhánh cùng nằm
+trong. Zhang và cộng sự viết nó dưới dạng một \tn{hàm attribution}{attribution function}:
+cho một mô hình $f$ đã huấn luyện và đầu ra $f(x)$ tại một đầu vào kiểm tra $x$,
+hàm ấy gán một điểm số cho từng phần tử của một tập đối tượng đã
+chọn~\autocite{p18unified}. Chọn tập nào chính là chỗ ba nhánh tách nhau; phần
+còn lại của định nghĩa thì giống nhau.
+
+\begin{definition}[Hàm attribution]
+\label{def:ch07-ham-attribution}
+Cho mô hình $f$, đầu vào kiểm tra $x$ và một tập đối tượng $E$. Một hàm
+attribution $g$ gán cho mỗi phần tử $e \in E$ một số thực, được diễn giải là
+mức đóng góp của $e$ vào đầu ra $f(x)$.
+\end{definition}
+
+Ba cách chọn $E$ dẫn tới ba nhánh. Khi $E$ là tập các đặc trưng của đầu vào, ta
+có attribution đặc trưng, đối tượng của cả Phần~II và
+chương~\ref{ch:attribution-tu-nguyen-ly-dau}, với điểm số $\varphi_j(x,f)$ cho
+đặc trưng thứ $j$. Khi $E$ là tập dữ liệu huấn luyện
+$\mathcal{D}_{\mathrm{train}}$, ta có \tn{attribution dữ liệu}{data attribution},
+với điểm số $\psi_i(x)$ đo ảnh hưởng của điểm huấn luyện thứ $i$ lên đầu ra tại
+$x$. Khi $E$ là tập các thành phần bên trong mô hình, chẳng hạn một nơ-ron, một
+lớp hay một đầu chú ý, ta có \tn{attribution thành phần}{component attribution},
+với điểm số $\gamma_k(x)$ cho thành phần $c_k$~\autocite{p18unified}.
+
+Ba ký hiệu này giữ nguyên chữ cái mà bài báo dùng, nhưng chỉ số thì theo quy ước
+của sách: $\varphi_j$ đã được chương~\ref{ch:attribution-tu-nguyen-ly-dau} gắn
+với đặc trưng $j$, nên điểm dữ liệu nhận chỉ số $i$ và thành phần nhận chỉ số
+$k$. Phụ lục~\ref{app:ky-hieu} ghi cả ba dòng cùng ký hiệu gốc trong bài báo.
+
+Ba nhánh ấy phát triển trong ba cộng đồng khác nhau. Attribution đặc trưng thuộc
+XAI, attribution dữ liệu thuộc nhánh lấy dữ liệu làm trung tâm, còn attribution
+thành phần thuộc \tn{diễn giải cơ chế}{mechanistic interpretability}, hướng tìm
+cách dựng lại cơ chế bên trong mô hình dưới dạng con người đọc
+được~\autocite{p18unified}. Vì mỗi cộng đồng có hội nghị, khảo sát và thuật ngữ
+riêng, một người đọc quen với LIME có thể không nhận ra rằng phương pháp
+leave-one-out trong attribution dữ liệu đang dùng đúng \tn{phép nhiễu}{perturbation}
+mà mình đã biết, chỉ khác là nó bỏ đi một điểm huấn luyện thay vì một đặc trưng.
+
+Đây là một bài báo quan điểm, và các tác giả nói rõ như vậy: họ đề xuất một góc
+nhìn, chứ không chứng minh một định lý hợp nhất~\autocite{p18unified}. Phần lớn
+lập luận nằm ở chỗ chỉ ra cùng một kỹ thuật xuất hiện lại trong cả ba nhánh, nên
+những kỹ thuật ấy là chỗ phải xem xét trước.

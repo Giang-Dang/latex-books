@@ -1,0 +1,59 @@
+\section{Bản đồ của một khảo sát}
+\label{sec:ch07-ban-do}
+
+\index{XAI!phân loại}%
+\index{lời giải thích!toàn cục}%
+Khung ở mục trước sắp xếp các phương pháp attribution với nhau. Nó không nói
+attribution nằm ở đâu trong toàn bộ lĩnh vực XAI, mà đó lại là câu hỏi Phần~IV
+cần trả lời trước khi phê phán. Long và cộng sự khảo sát lĩnh vực ấy và tổ chức
+nó theo hai trục~\autocite{p20trends}.
+
+Trục thứ nhất là phạm vi. Một lời giải thích toàn cục mô tả logic của cả mô
+hình, chẳng hạn bằng cách rút ra một cây quyết định thay cho mạng; một lời giải
+thích cục bộ chỉ nói về một dự đoán. Các tác giả ghi nhận rằng lời giải thích
+toàn cục khó đạt trong thực tế, và rằng lời giải thích cục bộ là cách phổ biến
+nhất để giải thích một mạng nơ-ron sâu~\autocite{p20trends}. LIME và SHAP là hai
+ví dụ mà Phần~II đã đọc kỹ.
+
+Trục thứ hai là thời điểm. Khảo sát chia vòng đời mô hình thành ba giai đoạn và
+xếp mỗi cách diễn giải vào giai đoạn nó can thiệp. Diễn giải trước khi dựng mô
+hình nằm ở khâu thu thập và phân loại dữ liệu, cùng với việc thiết kế bài toán
+sao cho mô hình dễ đọc ngay từ đầu. Diễn giải trong lúc dựng mô hình gồm các họ
+mô hình tự nó đã dễ đọc và các kiến trúc tự diễn giải bằng trọng số chú ý. Diễn
+giải sau khi dựng mô hình có nhiều phương pháp nhất, gồm trực quan hóa bằng mô
+hình thay thế, rút luật, chưng cất mô hình, các phương pháp đo mức tác động, và
+lời giải thích phản thực~\autocite{p20trends}.
+
+Khảo sát không gộp hai trục vào một bảng duy nhất. Nó dành cho mỗi giai đoạn một
+bảng riêng, và trong từng bảng, cột phạm vi chia tiếp các phương pháp thành toàn
+cục với cục bộ~\autocite{p20trends}. Đọc ba bảng ấy theo cách phân loại của mục
+trước, cả ba nhánh attribution đều thuộc giai đoạn sau khi dựng mô hình, vì cả
+ba đều chấm điểm một mô hình đã huấn luyện xong; khảo sát không tự nói điều này,
+nó chỉ xếp riêng các phương pháp attribution đặc trưng vào giai đoạn đó. Điều
+đáng chú ý hơn là không bảng nào có cột cho câu hỏi lời giải thích có đúng hay
+không. Các cột của khảo sát ghi điều kiện áp dụng và tình huống sử dụng của từng
+phương pháp, chẳng hạn LIME cho thí nghiệm khoa học dữ liệu hay SHAP cho dự báo
+khí hậu, chứ không ghi bằng chứng rằng phương pháp ấy phản ánh đúng mô
+hình~\autocite{p20trends}. Khảo sát cũng nói rõ nó không phân biệt
+\tn{khả năng diễn giải}{interpretability} với
+\tn{khả năng giải thích}{explainability}, vì mục tiêu của nó là điểm lại công cụ
+chứ không phải chốt định nghĩa.
+
+Phần cuối của khảo sát nêu ba hướng mới. Hướng thứ nhất là
+\tn{siêu suy luận}{meta-reasoning}, mà các tác giả gọi bằng một cụm ba chữ,
+\enquote{reason the reasoning}, nghĩa là suy luận về chính quá trình suy luận.
+Thay vì giải thích từng bước tính toán ở tầng đối tượng, hệ thống được quan sát
+và điều khiển ở tầng trên, nơi nó quyết định suy luận bao nhiêu và theo cách
+nào~\autocite{p20trends}. Hướng thứ hai đưa
+\tn{hệ tự hành đáng tin cậy}{trustworthy autonomous systems} và
+\tn{ngẫu nhiên hóa miền}{domain randomization} vào bài toán, để lời giải thích
+bám vào phần thưởng do môi trường sinh ra thay vì vào toàn bộ không gian trạng
+thái. Hướng thứ ba là dùng chính
+\tn{mô hình ngôn ngữ lớn}{large language model} làm bộ máy giải thích, qua
+\tn{chuỗi suy luận}{chain-of-thought} và các lối nhắc mở rộng từ nó.
+
+Hướng thứ ba là hướng cuốn sách này phải quay lại. Khảo sát ghi nhận rằng các
+lối nhắc kiểu chuỗi suy luận chưa đạt hiệu năng ổn định qua các tác vụ khác
+nhau~\autocite{p20trends}, tức là chúng đang được đề xuất làm công cụ giải thích
+trước khi có ai kiểm chứng chúng giải thích đúng.
+Chương~\ref{ch:do-trung-thuc-chuoi-suy-luan} nhận lại câu hỏi ấy ở cuối sách.

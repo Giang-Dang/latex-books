@@ -1,0 +1,56 @@
+\section{Attribution thành phần}
+\label{sec:ch07-attribution-thanh-phan}
+
+\index{attribution thành phần}%
+\index{vá kích hoạt}%
+\index{diễn giải cơ chế}%
+\tn{Attribution dữ liệu}{data attribution} truy về giai đoạn huấn luyện, còn
+\tn{attribution thành phần}{component attribution} ở lại trong một lượt suy diễn
+và nhìn vào bên trong mô hình. Đối tượng ở đây là các bộ phận của chính mạng: một nơ-ron, một
+lớp, một đầu chú ý, hoặc một mạch, tức một mạng con nối các bộ phận ấy lại thành
+một đường xử lý~\autocite{p18unified}. Đây là nhánh mà
+\tn{diễn giải cơ chế}{mechanistic interpretability} coi là trung tâm, vì nó hứa
+một câu trả lời về cơ chế chứ không chỉ về mối liên hệ giữa đầu vào và đầu ra.
+
+Phép nhiễu ở nhánh này mang tên
+\tn{phân tích trung gian nhân quả}{causal mediation analysis}, và nó chạy trên
+ba lượt. Lượt thứ nhất là lượt sạch, không can thiệp gì. Lượt thứ hai làm hỏng
+các thành phần, thường bằng cách làm hỏng đầu vào để sinh ra kích hoạt sai. Lượt
+thứ ba giữ nguyên tình huống đã hỏng nhưng chép giá trị kích hoạt của một thành
+phần từ lượt sạch trở lại, rồi đo xem đầu ra hồi phục được bao
+nhiêu~\autocite{p18unified}. Thao tác ở lượt thứ ba được gọi là
+\tn{vá kích hoạt}{activation patching}; khi nó áp lên các đường nối giữa nhiều
+thành phần thay vì lên một thành phần đơn lẻ thì tên gọi là
+\tn{vá theo đường}{path patching}.
+
+Chỗ hở của thủ tục nằm ở chữ \enquote{làm hỏng}. Bài báo liệt kê ít nhất năm cách: đặt
+kích hoạt về không, thay bằng trung bình, thêm nhiễu Gauss đã làm trơn, tráo
+kích hoạt từ một đầu vào khác, hoặc học một phép cắt bỏ. Bộ dữ liệu dùng để sinh
+kích hoạt cũng phải được chọn sao cho nó thật sự gợi ra hành vi cần xét, kèm một
+chỉ số đo hành vi ấy~\autocite{p18unified}. Không có cách nào trong số đó tự
+chứng minh mình là cách đúng, nên lựa chọn lại rơi vào tay người làm thí nghiệm,
+đúng như \tn{điểm nền}{baseline} trong chương~\ref{ch:attribution-theo-gradient}
+và độ đo trong chương~\ref{ch:attribution-tu-nguyen-ly-dau}.
+
+Hai kỹ thuật còn lại cũng có mặt. Neuron Shapley mang giá trị Shapley vào nhánh
+này, với phép lấy mẫu và một thuật toán multi-armed bandit để khoanh nhanh những
+nơ-ron điểm cao. Về phía gradient, attribution patching xấp xỉ thay đổi cục bộ
+của một lần vá bằng hai lượt truyền xuôi và một lượt truyền ngược, thay vì chạy
+lại mô hình cho từng thành phần; bản mở rộng cho mọi cạnh của đồ thị tính toán
+chấm điểm tất cả
+rồi giữ lại $k$ cạnh cao nhất làm mạch~\autocite{p18unified}. Về phía
+\tn{xấp xỉ tuyến tính}{linear approximation}, COAR khớp một mô hình tuyến tính
+dự đoán tác động phản thực của việc cắt bỏ từng thành phần, rồi cộng điểm số để
+ước lượng tác động của cả một nhóm.
+
+Một ranh giới trong bài báo đáng ghi lại, vì Phần~V sẽ quay lại nó. Sparse
+autoencoder được huấn luyện để dựng lại kích hoạt của mô hình dưới ràng buộc
+thưa, và các tác giả không xếp nó vào attribution thành phần: nó học ra thành
+phần mới thay vì gán điểm cho thành phần đã có. Vai trò của nó là tìm ra những
+thành phần dễ diễn giải, sau đó mới đưa vào một phương pháp
+attribution~\autocite{p18unified}. Chương~\ref{ch:nut-that-khai-niem} đọc kỹ họ
+mô hình này khi bàn về nút thắt khái niệm.
+
+Đến đây ba nhánh đã có đủ ví dụ cho cả ba kỹ thuật. Nhưng lặp lại kỹ thuật mới
+là quan sát, chưa phải một khung, nên bước tiếp theo là khung hình thức duy nhất
+mà bài báo viện đến.

@@ -1,0 +1,61 @@
+\section{Xấp xỉ hàm cục bộ}
+\label{sec:ch07-xap-xi-ham-cuc-bo}
+
+\index{xấp xỉ hàm cục bộ}%
+\index{hàm attribution}%
+Ba mục vừa rồi cho thấy một bộ kỹ thuật đi qua cả ba nhánh, nhưng quan sát đó
+chưa cho ai tính được gì. Khung hình thức duy nhất mà bài báo viện đến chỉ phủ
+một nhánh: nó hợp nhất các phương pháp attribution đặc trưng dưới tên
+\tn{xấp xỉ hàm cục bộ}{local function approximation}~\autocite{p18unified}.
+
+Khung này đặt bài toán như sau. Quanh đầu vào $x$ có một lân cận $\mathcal{N}_x$
+mà ta lấy mẫu nhiễu $\xi$ từ đó; có một lớp mô hình dễ đọc $\mathcal{G}$, thường
+là các hàm tuyến tính; và có một hàm mất mát $\ell$ đo mức lệch giữa mô hình gốc
+với mô hình dễ đọc trên các mẫu ấy. Lời giải thích là nghiệm của
+
+\begin{equation}
+\label{eq:ch07-lfa}
+g^{*} = \operatorname*{arg\,min}_{g \in \mathcal{G}}\;
+        \mathbb{E}_{\xi \sim \mathcal{N}_x}\,\ell(f, g, x, \xi).
+\end{equation}
+
+Bài báo gốc viết lân cận này là $\mathcal{Z}$; sách đổi sang $\mathcal{N}_x$ vì
+chương~\ref{ch:lime} đã gắn $\mathcal{Z}$ với tập mẫu của LIME, và
+phụ lục~\ref{app:ky-hieu} ghi lại phép đối chiếu đó.
+
+Sức nặng của phương trình~\ref{eq:ch07-lfa} nằm ở số phương pháp mà nó chứa
+được. Tám phương pháp attribution đặc trưng quen thuộc đều là trường hợp
+riêng của nó, gồm Occlusion, KernelSHAP, Vanilla Gradients, Gradient$\mathbin{\times}$Input,
+Integrated Gradients, SmoothGrad, LIME và C-LIME. Chúng dùng chung một lớp mô
+hình tuyến tính $\mathcal{G}$ và chỉ khác nhau ở hai chỗ: lấy mẫu từ lân cận
+nào, và đo sai lệch bằng hàm mất mát nào~\autocite{p18unified}. Occlusion lấy
+mẫu bằng vectơ one-hot ngẫu nhiên và đo bằng sai số bình phương; KernelSHAP
+cũng đo bằng sai số bình phương nhưng lấy mẫu theo \tn{hàm nhân Shapley}{Shapley kernel};
+LIME lấy mẫu theo một \tn{hàm nhân}{kernel} mũ; còn nhóm gradient thì đo bằng phép khớp
+gradient chứ không phải sai số bình phương.
+
+Điều kiện làm cho một hàm mất mát là hợp lệ cũng được nêu tường minh: kỳ vọng
+của $\ell$ bằng không khi và chỉ khi $f$ và $g$ trùng nhau trên mọi mẫu rút từ
+$\mathcal{N}_x$~\autocite{p18unified}. Nói cách khác, hàm mất mát phải phạt đúng
+sự khác biệt giữa hai mô hình trong lân cận đã chọn, chứ không phạt một đại
+lượng thay thế nào khác.
+
+Như vậy khung xấp xỉ hàm cục bộ và khung độ đo của
+chương~\ref{ch:attribution-tu-nguyen-ly-dau} là hai phép hợp nhất khác nhau cho
+cùng một nhánh. Khung độ đo hỏi ta lấy trung bình đầu ra của mô hình theo trọng
+số nào; khung xấp xỉ hàm cục bộ hỏi ta lấy mẫu ở đâu và đo sai lệch bằng gì. Cả
+hai cùng đưa mọi phương pháp về một ký pháp, và cả hai cùng để nguyên lựa chọn
+nằm ở giữa. Một phương pháp không sai vì chọn lân cận này thay vì lân cận kia;
+nó chỉ đang trả lời một câu hỏi phản thực khác, và không khung nào trong hai
+khung nói câu hỏi nào hợp với miền ứng dụng.
+
+Với hai nhánh còn lại, bài báo chỉ nêu một giả thuyết, và giả thuyết ấy không
+đối xứng. Attribution đặc trưng xấp xỉ \emph{dự đoán} của mô hình trên không
+gian các đặc trưng. Theo phỏng đoán của các tác giả,
+\tn{attribution dữ liệu}{data attribution} xấp xỉ \emph{trọng số} của mô hình
+trên không gian các điểm huấn luyện, còn
+\tn{attribution thành phần}{component attribution} lại xấp xỉ dự đoán, lần này
+trên không gian các thành phần~\autocite{p18unified}. Các tác giả viết nó
+ở dạng phỏng đoán và không chứng minh, nên \tn{hàm attribution}{attribution function}
+của định nghĩa~\ref{def:ch07-ham-attribution} vẫn là mẫu số chung duy nhất mà cả
+ba nhánh chắc chắn chia nhau.

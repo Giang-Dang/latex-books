@@ -1,0 +1,51 @@
+\begin{tomtat}
+\begin{itemize}
+  \item Định nghĩa~\ref{def:ch07-ham-attribution} gọi \tn{hàm attribution}{attribution function}
+  là phép gán điểm cho các phần tử của một tập đối tượng đã chọn. Ba nhánh chỉ
+  khác nhau ở tập ấy: đặc trưng của đầu vào, điểm huấn luyện, hoặc thành phần
+  bên trong mô hình.
+  \item \tn{Attribution dữ liệu}{data attribution} và
+  \tn{attribution thành phần}{component attribution} dùng lại đúng ba kỹ thuật
+  của Phần~II là phép nhiễu, gradient và
+  \tn{xấp xỉ tuyến tính}{linear approximation}. Ở nhánh dữ liệu, ba kỹ thuật ấy
+  lần lượt là leave-one-out, \tn{hàm ảnh hưởng}{influence function} và
+  Datamodel; ở nhánh thành phần là \tn{vá kích hoạt}{activation patching},
+  attribution patching và COAR.
+  \item Khung \tn{xấp xỉ hàm cục bộ}{local function approximation} trong phương
+  trình~\ref{eq:ch07-lfa} đưa tám phương pháp attribution đặc trưng về một dạng
+  duy nhất, khác nhau ở lân cận lấy mẫu và hàm mất mát. Việc mở rộng khung này
+  sang hai nhánh còn lại mới là một giả thuyết.
+  \item Khảo sát của Long và cộng sự xếp lĩnh vực theo phạm vi và theo thời điểm
+  can thiệp. Không trục nào trong hai trục ghi lời giải thích có phản ánh đúng
+  mô hình hay không.
+  \item Bài báo ghi nhận ba nhánh dùng chung một bộ chỉ số đánh giá: fidelity,
+  inverse fidelity và sparsity, tất cả đều dựa trên phép so phản thực và đều
+  thiếu ground truth để đối chiếu. Nếu ghi nhận ấy đúng thì một sai sót trong bộ
+  chỉ số cũng lan sang cả ba nhánh.
+\end{itemize}
+\end{tomtat}
+
+\cauhoi
+\begin{cauhoids}
+  \item Hãy nêu tập đối tượng $E$ trong định nghĩa~\ref{def:ch07-ham-attribution}
+  cho từng nhánh, rồi cho biết mỗi nhánh cần truy cập cái gì của quá trình huấn
+  luyện: chỉ mô hình đã huấn luyện, hay cả tập dữ liệu và các checkpoint.
+  \item Phương trình~\ref{eq:ch07-ham-anh-huong} thay việc huấn luyện lại bằng
+  một khai triển Taylor. Khai triển ấy đòi những giả thiết nào, và vì sao học sâu
+  thường không thỏa chúng?
+  \item Trong phương trình~\ref{eq:ch07-lfa}, hai phương pháp có thể dùng chung
+  lớp mô hình $\mathcal{G}$ và chỉ khác nhau ở $\mathcal{N}_x$. Hãy giải thích vì
+  sao khác biệt đó đủ để hai phương pháp cho hai lời giải thích khác nhau cho
+  cùng một dự đoán.
+  \item Vá kích hoạt cần một lượt chạy với đầu vào đã làm hỏng. Hãy chọn hai
+  trong năm cách làm hỏng mà chương nêu, rồi lập luận xem kết luận về một nơ-ron
+  có thể đổi thế nào khi đổi cách làm hỏng.
+  \item Đọc \enquote{Towards Unified Attribution in Explainable AI, Data-Centric
+  AI, and Mechanistic Interpretability} của Zhang và cộng
+  sự~\autocite{p18unified}. Phần bàn về các quan điểm đối lập nêu lý do nào để ba
+  nhánh tiếp tục phát triển riêng, và các tác giả trả lời bằng loại lập luận nào?
+  \item Đọc phần bàn về \tn{siêu suy luận}{meta-reasoning} trong khảo sát của
+  Long và cộng sự~\autocite{p20trends}. Nếu một hệ thống giải thích chính quá trình suy luận
+  của nó, ta cần bằng chứng gì để tin lời giải thích ấy? Hãy đối chiếu câu trả
+  lời với các chỉ số fidelity ở cuối chương.
+\end{cauhoids}

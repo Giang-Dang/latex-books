@@ -8,10 +8,18 @@ tiên: $x$ luôn là đầu vào theo không gian của mô hình, còn $x'$ là
 được dùng để giải thích cho người đọc. Các chương sau mở rộng bảng này thay vì
 đổi nghĩa hai ký hiệu đó.
 
-\begin{tabular}{@{}lp{3.2cm}p{1.25cm}p{1.25cm}p{1.25cm}p{1.25cm}@{}}
+% longtable, not tabular: chapter 07 pushed this table past a page and a plain
+% tabular cannot break, which shows up as an overfull vbox rather than as a
+% table that continues overleaf. Appendix B's keep-as-is block hit the same wall.
+\begin{longtable}{@{}lp{5.2cm}p{1.25cm}p{1.25cm}p{1.25cm}p{1.4cm}@{}}
 \toprule
 Ký hiệu & Nghĩa trong sách & LIME & SHAP & IG & Grad-CAM \\
 \midrule
+\endfirsthead
+\toprule
+Ký hiệu & Nghĩa trong sách & LIME & SHAP & IG & Grad-CAM \\
+\midrule
+\endhead
 $f$ & Mô hình cần giải thích, nhận đầu vào gốc và trả một đầu ra & $f$ & $f$ & - & - \\
 $F$ & Điểm số hoặc hàm đầu ra đang được attribution & - & - & $F$ & - \\
 $x$ & Đầu vào đang được giải thích, trong không gian của mô hình & $x$ & $x$ & $x$ & - \\
@@ -31,7 +39,26 @@ $\alpha_k^c$ & Trọng số của bản đồ $k$ cho lớp $c$ & - & - & - & $\
 $y^c$ & Điểm số của lớp mục tiêu $c$ & - & - & - & $y^c$ \\
 $\varphi_j(x,f)$ & Attribution của đặc trưng $j$ tại đầu vào $x$ cho mô hình $f$ & - & - & - & - \\
 $\mu_{j,x}$ & Độ đo chọn cách lấy trung bình cho đặc trưng $j$ tại $x$ & - & - & - & - \\
+$\mathcal{D}_{\mathrm{train}}$ & Tập dữ liệu huấn luyện & - & - & - & - \\
+$\psi_i(x)$ & Attribution của điểm huấn luyện thứ $i$ tại đầu vào $x$ & - & - & - & - \\
+$c_k$ & Một thành phần bên trong mô hình & - & - & - & - \\
+$\gamma_k(x)$ & Attribution của thành phần $c_k$ tại đầu vào $x$ & - & - & - & - \\
+$\mathcal{I}(x^{(i)},x)$ & Ảnh hưởng của điểm huấn luyện $x^{(i)}$ lên mất mát tại $x$ & - & - & - & - \\
+$\mathcal{N}_x$ & Lân cận quanh $x$ để lấy mẫu trong xấp xỉ hàm cục bộ & - & - & - & - \\
+$\xi$ & Một mẫu rút từ $\mathcal{N}_x$ & - & - & - & - \\
+$\mathcal{G}$ & Lớp mô hình dễ đọc dùng để xấp xỉ $f$ & - & - & - & - \\
+$\ell$ & Hàm mất mát đo lệch giữa $f$ và $g$ trên một mẫu & - & - & - & - \\
+$H_{\theta^{*}}$ & Ma trận Hessian của rủi ro thực nghiệm tại tham số đã hội tụ & - & - & - & - \\
 \bottomrule
-\end{tabular}
+\end{longtable}
 
 Các cột LIME, SHAP, IG và Grad-CAM theo các bài báo gốc~\autocite{p09lime,p10shap,p11ig,p12gradcam}.
+
+Mười hai dòng cuối bảng thuộc chương~\ref{ch:attribution-tu-nguyen-ly-dau} và
+chương~\ref{ch:khung-hop-nhat}, nên bốn cột bên phải để trống. Ký hiệu của
+chương~\ref{ch:khung-hop-nhat} theo bài báo của Zhang và cộng
+sự~\autocite{p18unified}, với hai chỗ đổi. Thứ nhất, chỉ số: bài báo viết
+$\phi_i$, $\psi_j$ và $\gamma_k$, còn sách giữ $j$ cho đặc trưng theo
+chương~\ref{ch:attribution-tu-nguyen-ly-dau} nên điểm dữ liệu nhận chỉ số $i$.
+Thứ hai, lân cận lấy mẫu của khung xấp xỉ hàm cục bộ: bài báo viết $\mathcal{Z}$,
+còn sách viết $\mathcal{N}_x$ vì $\mathcal{Z}$ đã thuộc về tập mẫu của LIME.

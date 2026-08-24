@@ -1,0 +1,68 @@
+\section{Attribution dữ liệu}
+\label{sec:ch07-attribution-du-lieu}
+
+\index{attribution dữ liệu}%
+\index{hàm ảnh hưởng}%
+Lưới ở mục trước đặt ba kỹ thuật cạnh nhánh thứ hai; mục này kiểm lại từng ô của
+cột ấy.
+\tn{Attribution dữ liệu}{data attribution} hỏi mỗi điểm trong tập huấn luyện đã
+đẩy đầu ra tại $x$ đi bao xa, nên nó nhìn vào giai đoạn huấn luyện chứ không
+nhìn vào một lượt suy diễn~\autocite{p18unified}. Điểm số $\psi_i(x)$ vì thế
+không đo đầu vào nào quan trọng, mà đo dữ liệu nào đã tạo ra hành vi đang xét.
+
+Dạng phép nhiễu ở đây là leave-one-out: bỏ điểm huấn luyện thứ $i$, huấn luyện
+lại mô hình, rồi lấy chênh lệch hiệu năng làm điểm số. Ý tưởng có gốc trong
+thống kê từ lâu trước khi có mạng sâu, và nó cho một cách đọc phản thực rất
+sạch. Cái giá là phải huấn luyện lại một lần cho mỗi điểm dữ
+liệu~\autocite{p18unified}. Ngoài ra, bỏ từng điểm một sẽ bỏ sót tương tác: hai
+điểm gần trùng nhau có thể cùng đỡ một dự đoán, nên bỏ riêng từng điểm thì đầu
+ra hầu như không đổi, còn bỏ cả hai thì đổi hẳn.
+
+Data Shapley xử lý đúng chỗ hở đó bằng cách gọi lại lý thuyết trò chơi hợp tác:
+điểm số của một điểm huấn luyện là đóng góp biên trung bình của nó trên mọi tập
+con của tập huấn luyện~\autocite{p18unified}. Bài toán tổ hợp cũng lặp lại theo:
+với $n$ điểm dữ liệu có $2^n$ tập con, nên các biến thể thực dụng đều là phép
+xấp xỉ, cắt bớt số hoán vị được lấy mẫu, thay mô hình gốc bằng một mô hình thay
+thế rẻ hơn, hoặc đổi trọng số của các tập con theo kích thước.
+
+Kỹ thuật gradient vào nhánh này qua \tn{hàm ảnh hưởng}{influence function}. Thay
+vì huấn luyện lại khi bỏ một điểm, ta hỏi tham số tối ưu dịch chuyển thế nào khi
+tăng nhẹ trọng số của điểm đó, rồi khai triển Taylor quanh tham số $\theta^{*}$
+đã hội tụ. Ảnh hưởng của điểm huấn luyện $x^{(i)}$ lên mất mát tại đầu vào kiểm
+tra $x$ khi ấy viết được thành
+
+\begin{equation}
+\label{eq:ch07-ham-anh-huong}
+\mathcal{I}(x^{(i)}, x)
+= -\,\nabla_{\theta}\mathcal{L}(x,\theta^{*})^{\top}
+   H_{\theta^{*}}^{-1}\,
+   \nabla_{\theta}\mathcal{L}(x^{(i)},\theta^{*}),
+\end{equation}
+
+trong đó $H_{\theta^{*}}$ là ma trận Hessian của rủi ro thực nghiệm tại
+$\theta^{*}$; điểm attribution dữ liệu là số đối của đại lượng
+này~\autocite{p18unified}.
+
+Phương trình~\ref{eq:ch07-ham-anh-huong} rẻ hơn leave-one-out, và chi phí giảm
+đi đó được đánh đổi bằng giả thiết. Khai triển cần hàm mất mát khả vi hai lần và
+lồi chặt, hai điều kiện mà học sâu thường không thỏa. Hessian cũng có thể không
+xác định dương, nên phải thêm một lượng giảm chấn, và lượng ấy tác động lên độ
+chính xác của ước lượng ảnh hưởng~\autocite{p18unified}. Ta gặp lại đúng cấu
+trúc của vấn đề mà chương~\ref{ch:attribution-tu-nguyen-ly-dau} đã nêu dưới tên
+độ đo: một lựa chọn nằm bên trong phép tính, được biện minh bằng tính khả thi
+chứ không bằng miền ứng dụng.
+
+Hai lối đi còn lại nhắm vào cùng hai điểm yếu ấy. Nhóm thứ nhất theo dõi cả
+đường huấn luyện thay vì chỉ tham số cuối: TracIn cộng tích vô hướng giữa
+gradient của điểm huấn luyện và gradient của điểm kiểm tra qua từng bước cập
+nhật, nhờ vậy hai điểm trùng nhau không còn nhận cùng một điểm số, đổi lại phải
+lưu các checkpoint trung gian~\autocite{p18unified}. Nhóm thứ hai dùng
+\tn{xấp xỉ tuyến tính}{linear approximation}: Datamodel khớp một mô hình tuyến
+tính $n$ hệ số nhận vectơ nhị phân
+đánh dấu tập con huấn luyện làm đầu vào và dự đoán $f(x)$ làm đầu ra, rồi đọc hệ
+số làm điểm số; TRAK ước lượng Datamodel trong một không gian đã biến đổi để bài
+toán trở nên lồi~\autocite{p18unified}.
+
+Ba kỹ thuật đã lặp lại đủ, và cùng với chúng là cả ba loại lựa chọn tự do: lấy
+mẫu bao nhiêu tập con, xấp xỉ Hessian ra sao, lưu bao nhiêu checkpoint. Nhánh
+thứ ba đưa cùng bộ kỹ thuật ấy vào bên trong mô hình.

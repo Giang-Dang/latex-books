@@ -1,0 +1,51 @@
+\section{Ba kỹ thuật dùng chung}
+\label{sec:ch07-ba-ky-thuat}
+
+\index{phép nhiễu}%
+\index{xấp xỉ tuyến tính}%
+Mục trước đã tách ba nhánh theo đối tượng mà chúng gán điểm. Zhang và cộng sự
+chồng lên đó một trục thứ hai, là kỹ thuật dùng để tính điểm, và trục này chỉ có
+ba giá trị cho cả ba nhánh~\autocite{p18unified}.
+
+Kỹ thuật thứ nhất là phép nhiễu. Ta thay đổi hoặc bỏ hẳn một đối tượng, chạy lại
+mô hình, rồi lấy chênh lệch đầu ra làm điểm số. Chương~\ref{ch:shap} đã gặp dạng
+tinh vi của nó khi \tn{giá trị Shapley}{Shapley value} lấy trung bình đóng góp
+biên trên mọi liên minh đặc trưng. Kỹ thuật thứ hai là gradient. Thay vì thử
+từng thay đổi, ta lấy đạo hàm của đầu ra theo đối tượng cần chấm điểm, nên chi
+phí giảm xuống còn vài lượt truyền xuôi và ngược; đây là con đường của
+chương~\ref{ch:attribution-theo-gradient}. Kỹ thuật thứ ba là \tn{xấp xỉ tuyến
+tính}{linear approximation}. Ta khớp một mô hình tuyến tính vào hành vi của $f$
+quanh điểm cần giải thích, rồi đọc hệ số của mô hình ấy làm điểm số, đúng như
+LIME đã làm trong chương~\ref{ch:lime}.
+
+Bảng phân loại của bài báo xếp các phương pháp tiêu biểu theo hai chiều: ba đối
+tượng theo cột, ba kỹ thuật theo dòng, và mỗi kỹ thuật còn chia tiếp thành vài
+biến thể~\autocite{p18unified}. Hình~\ref{fig:ch07-ba-doi-tuong} nén bảng ấy về
+đúng ba dòng, mỗi ô giữ lại một hoặc hai phương pháp đại diện. Ở mức nén này cả
+chín ô đều có tên phương pháp trong đó, và ba cột cho thấy vì sao: mỗi kỹ thuật
+đã được thử trên cả ba đối tượng.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch07-ba-doi-tuong}
+  \caption{Ba kỹ thuật theo dòng, ba đối tượng theo cột, và một phương pháp đại
+  diện trong mỗi ô. Lưới là bản nén của sách, gộp tám dòng chi tiết trong bảng
+  phân loại của bài báo về ba kỹ thuật~\autocite{p18unified}; các phương pháp
+  trong ô lấy từ bảng đó.}
+  \label{fig:ch07-ba-doi-tuong}
+\end{figure}
+
+Chỗ trống chỉ lộ ra khi trải bảng về đủ tám dòng, và nó cũng mang thông tin. Giá
+trị Shapley đã được dùng cho cả ba đối tượng, nhưng những khái niệm khác của lý
+thuyết trò chơi hợp tác thì phần lớn còn nằm trong attribution đặc trưng: mới
+một khái niệm sang tới \tn{attribution dữ liệu}{data attribution}, và chưa cái
+nào sang \tn{attribution thành phần}{component attribution}. Ma trận Hessian
+cũng vậy, đã vào attribution đặc trưng qua Integrated Hessians và vào
+attribution dữ liệu qua họ \tn{hàm ảnh hưởng}{influence function}, mà chưa được
+thử cho attribution thành phần. Các tác giả đọc mỗi ô trống như một hướng nghiên
+cứu: một ý tưởng đã kiểm chứng ở nhánh này và chưa ai mang sang nhánh
+kia~\autocite{p18unified}.
+
+Cách đọc ấy chỉ đứng vững nếu các ô thật sự nói cùng một thứ tiếng. Attribution
+dữ liệu và attribution thành phần là hai nhánh Phần~II chưa chạm tới, nên chúng
+được xem xét trước, sau đó mới đến khung hình thức chung.

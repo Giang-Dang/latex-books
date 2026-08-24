@@ -1,3 +1,27 @@
 % Scope (SPEC table of contents): One formalism across feature attribution, data attribution and mechanistic interpretability; the field map before the critique. Papers 18, 20.
 \chapter{Một khung hợp nhất cho attribution}
 \label{ch:khung-hop-nhat}
+
+Chương~\ref{ch:attribution-tu-nguyen-ly-dau} đã dựng attribution cho một đối
+tượng duy nhất là các \tn{đặc trưng}{feature} của đầu vào, rồi kết luận rằng một
+phép phân bổ chặt chẽ vẫn chưa nói gì về \tn{độ trung thực}{faithfulness} của
+lời giải thích. Đầu vào lại không phải chỗ duy nhất mà hành vi của mô hình có
+thể quy về. Một dự đoán sai cũng có thể bắt nguồn từ vài điểm trong tập huấn
+luyện, hoặc từ một nhóm nơ-ron bên trong mạng, và mỗi khả năng ấy đã có một
+cộng đồng nghiên cứu riêng theo đuổi bằng từ vựng riêng.
+
+Chương này đọc bài báo quan điểm của Zhang và cộng sự, vốn cho rằng ba nhánh đó
+dùng chung một bộ kỹ thuật và chỉ khác nhau ở chỗ chúng nhìn vào
+đâu~\autocite{p18unified}. Sau khung ấy, chương đặt attribution vào bản đồ rộng
+hơn mà một khảo sát về XAI vẽ cho cả lĩnh vực~\autocite{p20trends}. Cuối cùng là
+phần cả hai tài liệu đều để ngỏ: đánh giá một lời giải thích thế nào khi không
+có đáp án đúng để đối chiếu. Câu hỏi đó là cửa vào Phần~IV.
+
+\input{chapters/07-khung-hop-nhat/01-ba-doi-tuong}
+\input{chapters/07-khung-hop-nhat/02-ba-ky-thuat-dung-chung}
+\input{chapters/07-khung-hop-nhat/03-attribution-du-lieu}
+\input{chapters/07-khung-hop-nhat/04-attribution-thanh-phan}
+\input{chapters/07-khung-hop-nhat/05-xap-xi-ham-cuc-bo}
+\input{chapters/07-khung-hop-nhat/06-ban-do-cua-mot-khao-sat}
+\input{chapters/07-khung-hop-nhat/07-dieu-ban-do-chua-giai-quyet}
+\input{chapters/07-khung-hop-nhat/08-tom-tat-va-cau-hoi}

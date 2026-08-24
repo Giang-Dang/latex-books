@@ -18,9 +18,11 @@ English, so a mixed-language log would be the odd one out and harder to scan.
 Initialized 2026-08-24. The skeleton builds clean: 18 chapter stubs in five
 parts, four appendix stubs (appendix D, the corpus table, written in full),
 refs.bib seeded with all 32 corpus papers, prose gate armed (Spelling en-US
-with the tone-mark table, Gloss against appendix B). Chapters 01 through 05
-are reviewed. Chapter 05 passed its LuaLaTeX build and full prose gate; its
-rendered pages were inspected before review.
+with the tone-mark table, Gloss against appendix B). Chapters 01 through 05 and
+chapter 07 are reviewed; chapter 06 is drafted and awaits its audit, which is
+the last thing standing between Part III and done. Chapter 07's session built
+the whole book on a host TeX distribution: 87 pages, no overfull boxes, prose
+gate clean, and the rendered chapter pages inspected before review.
 
 The paper corpus lives outside this repo at `F:\repo\thesis-xai-faithfulness`
 (32 arXiv PDFs in six tier folders; its README.md holds the reading ladder
@@ -63,6 +65,11 @@ settled row is re-opened only by recording what changed and why, in the row.
 | 25 | Chapter 04 sources and terminology | Chapter 04 reads arXiv:1705.07874v2 and arXiv:2602.10532v1. Its terms added to appendix B are giá trị Shapley, lời giải thích cộng tính, phân phối nền, hàm nhân Shapley, độ chính xác cục bộ, tính vắng mặt, and tính nhất quán; KernelSHAP and TreeSHAP stay in English. Appendix A now maps the shared notation to SHAP as well as LIME. |
 | 26 | Chapter 06 source, scope and notation | Chapter 06 reads arXiv:2505.24729v1. It treats completeness, sensitivity and linearity as constraints, then develops the paper's indicator-function construction and its measure-theoretic form, without claiming that the construction picks an application-appropriate measure or proves faithfulness. The chapter prints no paper-reported decimal, so research/ remains empty under decision 19. It adds hàm chỉ báo and độ đo Borel hữu hạn có dấu to appendix B and $\varphi_j(x,f)$ with $\mu_{j,x}$ to appendix A. |
 | 27 | Ownership of tính tuyến tính | Chapter 04 had introduced tính tuyến tính with SHAP's axioms but omitted it from appendix B. Chapter 06's glossary sweep exposed the omission. The term belongs to Chapter 04, where it is now glossed; Chapter 06 borrows it, so the full-book Gloss gate has one owner and both chapters meet their cadence. |
+| 28 | Chapter 07 sources, scope and notation | Chapter 07 reads arXiv:2501.18887v3 and arXiv:2505.07005v1, both from the PDFs. Paper 18 is a position paper: it argues the unification rather than proving it, and the only formalism it supplies, local function approximation, covers feature attribution alone, with the extension to data and component attribution stated there as a hypothesis. The TOC line promised "one formalism across feature attribution, data attribution and mechanistic interpretability" and now says what the chapter delivers instead. The chapter prints no paper-reported decimal, so research/ remains empty under decision 19. It adds fourteen terms to appendix B (hàm attribution, attribution dữ liệu, attribution thành phần, diễn giải cơ chế, xấp xỉ tuyến tính, hàm ảnh hưởng, phân tích trung gian nhân quả, vá kích hoạt, vá theo đường, xấp xỉ hàm cục bộ, khả năng giải thích, siêu suy luận, hệ tự hành đáng tin cậy, ngẫu nhiên hóa miền), eight to the keep-in-English block (ground truth, leave-one-out, fidelity, inverse fidelity, sparsity, attribution patching, checkpoint, multi-armed bandit), and $\psi_i(x)$, $\gamma_k(x)$, $\mathcal{D}_{\mathrm{train}}$, $c_k$, $\mathcal{I}(x^{(i)},x)$, $\mathcal{N}_x$, $\xi$, $\mathcal{G}$, $\ell$ and $H_{\theta^{*}}$ to appendix A. |
+| 29 | The local-neighbourhood symbol is $\mathcal{N}_x$, not $\mathcal{Z}$ | Paper 18 writes the local function approximation neighbourhood as $\mathcal{Z}$, but decision 24 already bound $\mathcal{Z}$ to LIME's sample set and the book keeps one name per concept for the whole book. Chapter 07 writes $\mathcal{N}_x$ and appendix A records the mapping, in the same place it records the paper's $\phi_i$, $\psi_j$, $\gamma_k$ index letters against the book's. |
+| 30 | Appendix A is a longtable | Chapter 07's eight new notation rows pushed appendix A past a page, and a plain tabular cannot break: the build reported an overfull vbox of 269pt instead of a table continuing overleaf. Appendix B's keep-as-is block hit the same wall at 43 rows and was already a longtable. Appendix A now is one too, with a repeated header, and its meaning column widened from 3.2cm to 5.2cm because the new rows wrapped one word per line. |
+| 31 | Glossary additions bind chapters already written | Adding chapter 07's terms to appendix B made three earlier passages owe a gloss they did not owe when they were written: xấp xỉ tuyến tính in chapter 05, and attribution dữ liệu with diễn giải cơ chế in chapter 06's closing forward reference. All three were glossed in the same session, on decision 27's precedent. A fourth Gloss finding was a false positive worth recording: chapter 06's figure caption read "cách diễn giải cơ chế của bài báo", where the words are ordinary prose and not the term, so that caption was reworded rather than glossed. Expect this every time a chapter names something an earlier chapter had used loosely. |
+| 32 | Chapter 07's figure is the grid, not the paper's schematic | The first draft of `ch07-ba-doi-tuong` put three aspect boxes on the left, one techniques box in the middle and three score boxes on the right, which is the layout of paper 18's own figure 1, and the audit called it a lift. The Figures rule bans that outright. The figure is now a three-by-three grid, techniques by rows and aspects by columns, with one representative method per cell: it compresses the paper's eight-row classification table rather than restaging its picture, and it is the thing the surrounding prose actually argues from. General rule for later chapters: when a redrawn schematic ends up matching the source's own figure, redraw what the source tabulates instead. |
 
 ## Version baseline
 
@@ -102,7 +109,7 @@ IDs).
 ### Phần III - Lý thuyết attribution
 
 6. **Attribution từ nguyên lý đầu** - what attribution can even mean, rebuilt without reference to any one method; the assumptions Part II's methods share. Paper 17.
-7. **Một khung hợp nhất cho attribution** - one formalism across feature attribution, data attribution and mechanistic interpretability; the field map before the critique. Papers 18, 20.
+7. **Một khung hợp nhất cho attribution** - the three attribution problems (feature, data, component) and the three techniques they share; the local function approximation framework, which unifies feature attribution alone; the field map before the critique. Papers 18, 20.
 
 ### Phần IV - Phê phán độ trung thực
 
@@ -140,8 +147,8 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 03 | reviewed | Audited against arXiv:1602.04938v3; audit fixes unified the hàm nhân terminology and corrected the TOC scope. The unified notation is seeded in appendix A and Chapter 03 terms in appendix B. Full LuaLaTeX build is clean (69 pages), the full prose gate is clean, and the rendered Chapter 3 pages were inspected. |
 | 04 | reviewed | Audited against arXiv:1705.07874v2 and 2602.10532v1. Audit fixes added section transitions, corrected a cross-reference tie, and settled the three translated SHAP axioms in appendix B. Full LuaLaTeX build clean (71 pages); mechanical prose gate clean; the rendered chapter pages were inspected. |
 | 05 | reviewed | Drafted and audited 2026-08-24 from arXiv:1703.01365v2 and arXiv:1610.02391v4. Seven sections plus summary and questions; one TikZ mechanism diagram. The chapter defines sensitivity, implementation invariance, Integrated Gradients, completeness, baseline selection, and Grad-CAM, then carries the baseline and representation-choice question into chapter 06. No paper-reported decimal is printed, so research/ remains empty under decision 19. Full LuaLaTeX build clean (75 pages); mechanical prose gate clean; rendered chapter pages inspected. |
-| 06 | drafted | Read arXiv:2505.24729v1 directly because its orientation note is unavailable. Seven sections plus summary and questions; one TikZ diagram. It separates attribution constraints from the choice of measure, recovers conditional, independent and partial-dependence forms, and carries the question of validating the chosen measure into chapters 07 and 08. No paper-reported decimal is printed, so research/ remains empty under decision 19. Prose gate is clean; full LuaLaTeX build awaits a host TeX distribution. |
-| 07 | not-started | Paper 20's orientation note dead; draft from the PDF. |
+| 06 | drafted | Read arXiv:2505.24729v1 directly because its orientation note is unavailable. Seven sections plus summary and questions; one TikZ diagram. It separates attribution constraints from the choice of measure, recovers conditional, independent and partial-dependence forms, and carries the question of validating the chosen measure into chapters 07 and 08. No paper-reported decimal is printed, so research/ remains empty under decision 19. Prose gate is clean; the full LuaLaTeX build it was waiting on ran clean in chapter 07's session. |
+| 07 | reviewed | Drafted and audited 2026-08-24 from arXiv:2501.18887v3 and arXiv:2505.07005v1, both read as PDFs. Seven sections plus summary and questions; one TikZ diagram; one numbered definition and two equations. It states the attribution function over a chosen set of aspects, walks data and component attribution through the same three techniques Part II used, gives the local function approximation framework its equation, then sets attribution on the survey's range and stage axes. It closes on the shared evaluation vocabulary, fidelity, inverse fidelity and sparsity, which chapter 08 takes up. No paper-reported decimal is printed, so research/ remains empty under decision 19. Full LuaLaTeX build clean (87 pages, no overfull boxes); mechanical prose gate clean; the rendered chapter pages were inspected. |
 | 08 | not-started | Likely the chapter that first prints a paper-reported number and crosses the research/ cliff (decision 20). |
 | 09 | not-started | The anchor chapter. |
 | 10 | not-started | |
@@ -199,7 +206,10 @@ keep the two in step.
   settles a new term appends it here in the same session. Chapter 02 adds
   "mô hình ngôn ngữ lớn", "cơ chế chú ý", "tiền huấn luyện", "lời nhắc",
   "học tăng cường từ phản hồi của con người" and "chuỗi suy luận"; transformer
-  stays English. Verbless punchline
+  stays English. Chapter 07 adds "hàm attribution", "attribution dữ liệu",
+  "attribution thành phần", "diễn giải cơ chế", "xấp xỉ tuyến tính", "hàm ảnh
+  hưởng", "vá kích hoạt" and "xấp xỉ hàm cục bộ"; fidelity, inverse fidelity,
+  sparsity, ground truth and leave-one-out stay English. Verbless punchline
   fragments are out, and a forward reference names its target explicitly
   (`Phần~II`, `chương~\ref{...}`), never "phần tiếp theo". Prose-only rule
   with no psd1 setting behind it (decision 22); the gate cannot see cohesion,
@@ -256,7 +266,8 @@ keep the two in step.
 - **Six orientation notes are dead locally** (papers 02, 07, 20, 26, 30,
   31). Costs nothing to correctness - notes are never citable - but slows
   drafting of chapters 02, 07, 13 and 15. Chapter 06 read paper 17 from its
-  PDF; this item is unblocked if
+  PDF, and chapter 07 read papers 18 and 20 the same way, so chapter 07 no
+  longer depends on this item. This item is unblocked if
   `computer-science-news` restores them; otherwise those chapters draft from
   the PDFs alone and this item closes when the last of them is drafted.
 - **The limitation-statement log for chapter 18.** Each Part IV drafting
