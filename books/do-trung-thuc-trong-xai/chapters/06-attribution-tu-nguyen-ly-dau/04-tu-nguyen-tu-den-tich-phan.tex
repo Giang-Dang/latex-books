@@ -1,0 +1,35 @@
+\section{Từ nguyên tử đến tích phân}
+\label{sec:ch06-tu-nguyen-tu-den-tich-phan}
+
+\index{độ đo}%
+\index{tích phân}%
+\tn{Hàm chỉ báo}{indicator function} giải thích một vùng, trong khi mô hình thực
+tế thay đổi trên nhiều vùng. Bước nối là xấp xỉ một hàm liên tục trên $[0,1]^d$
+bằng tổng có trọng số của các hàm chỉ báo trên một phân hoạch ngày càng mịn. Nếu attribution tuyến
+tính theo mô hình, attribution của tổng bằng tổng các attribution nguyên tử.
+Khi phân hoạch tiến tới giới hạn và attribution ổn định trước hội tụ đều của
+mô hình, tổng đó thành tích phân~\autocite{p17firstprinciples}.
+
+Kết quả của khung là công thức
+
+\begin{equation}
+\label{eq:ch06-attribution-do-do}
+\varphi_j(x,f)=\int_{[0,1]^d} f(y)\,\mathrm{d}\mu_{j,x}(y).
+\end{equation}
+
+Ở đây $\mu_{j,x}$ là một \tn{độ đo Borel hữu hạn có dấu}{finite signed Borel measure}
+gắn với đặc trưng $j$ và đầu vào $x$. Nó không phải dữ liệu phụ để che trong
+cài đặt. Nó quyết định những điểm
+$y$ nào của không gian đầu vào được tính, và chúng được tính với dấu cùng
+trọng số ra sao. Hình~\ref{fig:ch06-xay-attribution} đặt bốn bước này theo
+đúng chiều xây dựng, thay vì đi ngược từ một công thức đã quen.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch06-xay-attribution}
+  \caption{Khung xây attribution của Taimeskhanov và Garreau. Một quy tắc cho
+  hàm chỉ báo xác định độ đo $\mu_{j,x}$; xấp xỉ $f$ bằng các vùng nhỏ và lấy
+  giới hạn đưa attribution về tích phân trong phương trình~\ref{eq:ch06-attribution-do-do}.
+  Sơ đồ là cách diễn giải cơ chế của bài báo~\autocite{p17firstprinciples}.}
+  \label{fig:ch06-xay-attribution}
+\end{figure}

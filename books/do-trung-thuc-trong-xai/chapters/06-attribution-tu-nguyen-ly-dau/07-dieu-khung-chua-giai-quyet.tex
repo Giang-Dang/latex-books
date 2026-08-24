@@ -1,0 +1,23 @@
+\section{Điều khung chưa giải quyết}
+\label{sec:ch06-dieu-chua-giai-quyet}
+
+\index{độ trung thực}%
+\index{ground truth}%
+Các trường hợp thu hồi được cho thấy khung đo được những giả định đã có, nhưng
+không tự chọn giả định đúng cho một miền ứng dụng. Bài báo đề xuất tối ưu độ đo
+theo một chỉ số recall khi biết tập đặc trưng thật của mô hình tuyến tính. Chính
+điều kiện biết ground truth là giới hạn đầu tiên: trong nhiều bài toán XAI, ta
+không có tập đặc trưng chuẩn để tối ưu theo cách đó~\autocite{p17firstprinciples}.
+
+Giới hạn thứ hai nằm ở ý nghĩa của attribution. Một độ đo có thể tạo ra một
+phép tính nhất quán và một xấp xỉ chính xác, nhưng vẫn đặt trọng lượng vào các
+đầu vào không phù hợp với câu hỏi của người dùng hay với phân phối triển khai.
+Vì vậy, khung này củng cố kết luận cuối chương~\ref{ch:attribution-theo-gradient}:
+bảo đảm toán học của phép phân bổ chưa là bằng chứng cho độ trung thực của lời
+giải thích.
+
+Chương~\ref{ch:khung-hop-nhat} sẽ mở rộng câu hỏi từ attribution đặc trưng sang
+một bản đồ có cả attribution dữ liệu và diễn giải cơ chế. Sau đó, chương
+\ref{ch:do-do-trung-thuc} chuyển trọng tâm sang chính các dụng cụ dùng để đánh
+giá lời giải thích. Khi ấy, một chỉ số cũng phải khai báo đối chiếu và giả định
+của nó, giống như một độ đo trong chương này.
