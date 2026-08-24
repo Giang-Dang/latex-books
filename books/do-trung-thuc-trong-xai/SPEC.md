@@ -128,7 +128,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | Chapter | Status | Notes |
 |---------|--------|-------|
 | Preface | not-started | Written last, after the chapters exist. |
-| 01 | not-started | |
+| 01 | reviewed | Audited against arXiv:1606.03490v3, 1702.08608v2 and 2601.00428v2; the audit finding was fixed. LuaLaTeX build and pre-commit remain pending because this runtime has no TeX toolchain. |
 | 02 | not-started | |
 | 03 | not-started | First Part II chapter; its session settles the unified notation question (open item on appendix A). |
 | 04 | not-started | |
