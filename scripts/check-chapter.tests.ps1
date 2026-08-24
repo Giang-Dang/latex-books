@@ -117,7 +117,12 @@ function Compare-Findings {
 $BaseSections = [ordered]@{
     Characters   = "@{ Mode = 'Ascii' }"
     Contractions = "@{ Enabled = `$true; Preset = 'english' }"
-    Spelling     = "@{ Enabled = `$true; Preset = 'en-GB' }"
+    Spelling     = "@{ Enabled = `$true; Preset = 'en-GB'; Variants = `$true }"
+    # ForbidPattern is a book fact, and the fixture stands in for a book that
+    # refers to its own decision log by number in its prose. The word boundary
+    # is the whole point: 04-index.tex carries an entry that must fire and a
+    # longer word starting with the same six letters that must not.
+    Index        = "@{ Enabled = `$true; ForbidPattern = '\\index\{decision\b' }"
     # 60, not any real book's number: the fixture is not typeset and has no
     # measure. It only has to be a budget the trigger clears and the listing in
     # 08-verbatim.tex, whose widest body line is 37, does not.
@@ -173,11 +178,23 @@ $Expected = @(
     "chapters/01-triggers/03-quoting.tex:4: [quote] literal double quote in prose; use \enquote{...}"
     "chapters/01-triggers/03-quoting.tex:11: [quote] literal double quote in prose; use \enquote{...}"
     "chapters/01-triggers/04-index.tex:4: [index-pct] \index{...} line must end with %"
+    # Line 8 fires once and not twice: it is terminated correctly, so only the
+    # forbid check has anything to say about it. Line 13 is the boundary case
+    # and is expected to stay silent, which exact comparison makes a test.
+    "chapters/01-triggers/04-index.tex:8: [index-forbid] index entry matches Index.ForbidPattern: \index{decision"
     "chapters/01-triggers/05-language.tex:4: [contraction] contraction 'It's' in the author's voice"
     "chapters/01-triggers/05-language.tex:7: [spelling] 'color' -> colour(s)"
     "chapters/01-triggers/05-language.tex:7: [spelling] 'center' -> centre(s)"
     "chapters/01-triggers/05-language.tex:7: [spelling] 'gray' -> grey"
     "chapters/01-triggers/05-language.tex:9: [spelling] 'neighbor' -> neighbour(s)"
+    # The variant table: four words the base table cannot generate, on one
+    # line, reported in the order that table lists them. All four are words the
+    # en-GB direction genuinely flags, which is a narrower list than the en-US
+    # one for the reason the table's own comment gives.
+    "chapters/01-triggers/05-language.tex:11: [spelling] 'skillful' -> skilful"
+    "chapters/01-triggers/05-language.tex:11: [spelling] 'enrollment' -> enrol, enrolled, enrolment"
+    "chapters/01-triggers/05-language.tex:11: [spelling] 'fulfilled' -> fulfil, fulfilled, fulfilment"
+    "chapters/01-triggers/05-language.tex:11: [spelling] 'installment' -> instalment(s)"
     # Lines 15-17 of the same file are a \begin{quote} block holding a
     # contraction and two en-US spellings, and nothing is expected from them:
     # a displayed quotation is somebody else's words. Exact comparison makes
@@ -345,7 +362,13 @@ $WiringCases = @(
     @{ Name = 'Characters';   Override = @{ Characters = "@{ Mode = 'Off' }" };            Silences = @('ascii') }
     @{ Name = 'Citations';    Override = @{ Citations = '@{ Enabled = $false }' };         Silences = @('tilde-cite', 'cite-key') }
     @{ Name = 'Quotes';       Override = @{ Quotes = '@{ Enabled = $false }' };            Silences = @('quote') }
-    @{ Name = 'Index';        Override = @{ Index = '@{ Enabled = $false }' };             Silences = @('index-pct') }
+    # Enabled off takes both of the family's checks; ForbidPattern emptied
+    # takes only the second. Two rows, for the reason Listings has two: a row
+    # naming only Enabled would pass even if ForbidPattern were wired to
+    # nothing, because the pattern defaults to empty anyway.
+    @{ Name = 'Index';        Override = @{ Index = '@{ Enabled = $false }' };             Silences = @('index-pct', 'index-forbid') }
+    @{ Name = 'Index.Forbid'; Override = @{ Index = '@{ Enabled = $true; ForbidPattern = '''' }' }
+       Silences = @('index-forbid') }
     @{ Name = 'Dashes';       Override = @{ Dashes = '@{ Enabled = $false }' };            Silences = @('dash') }
     @{ Name = 'Contractions'; Override = @{ Contractions = '@{ Enabled = $false }' };      Silences = @('contraction') }
     @{ Name = 'Spelling';     Override = @{ Spelling = '@{ Enabled = $false }' };          Silences = @('spelling') }
@@ -390,7 +413,7 @@ $WiringCases = @(
     # by its own path, and a family that kept reading files nobody asked it to
     # read would look like it still worked.
     @{ Name = 'Paths.Prose';  Override = @{ Paths = '@{ Prose = @() }' }
-       Silences = @('tilde-cite', 'cite-key', 'quote', 'index-pct', 'contraction',
+       Silences = @('tilde-cite', 'cite-key', 'quote', 'index-pct', 'index-forbid', 'contraction',
                     'spelling', 'dash', 'number', 'verbatim', 'listing', 'minted-alias',
                     'json', 'gloss-borrowed', 'gloss-missing', 'gloss-orphan', 'gloss-repeat') }
     @{ Name = 'Json';         Override = @{ Json = '@{ Enabled = $false }' };            Silences = @('json') }
@@ -408,6 +431,35 @@ foreach ($case in $WiringCases) {
         Write-Host "    expected to remain: $($want -join ', ')"
         Write-Host "    actually remained:  $($got -join ', ')"
     }
+}
+
+# Spelling.Variants cannot be a wiring row: every spelling finding carries the
+# same id, so switching the second table off subtracts findings without
+# subtracting an id and the id-level comparison sees nothing. What it has to
+# prove is the boundary between the two tables - the base one keeps firing, and
+# exactly the three variant words go quiet.
+$variantsOff = Invoke-BookFixture @{
+    Spelling = "@{ Enabled = `$true; Preset = 'en-GB'; Variants = `$false }"
+}
+#
+# Written with .Contains rather than -like on purpose: -like reads [spelling]
+# as a character class, so '*[spelling]*' matches any line holding one of those
+# eight letters, which is every line.
+$variantWords = @('skillful', 'enrollment', 'fulfilled', 'installment')
+$stillThere = @($variantsOff | Where-Object {
+    $line = $_
+    $line.Contains('[spelling]') -and
+        @($variantWords | Where-Object { $line.Contains("'$_'") }).Count -gt 0
+})
+$baseStill = @($variantsOff | Where-Object { $_.Contains("[spelling] 'neighbor'") })
+
+if ($stillThere.Count -ne 0) {
+    Write-Fail 'Spelling.Variants off did not silence the variant table'
+    $stillThere | ForEach-Object { Write-Host "    $_" }
+} elseif ($baseStill.Count -ne 1) {
+    Write-Fail 'Spelling.Variants off took the base table with it'
+} else {
+    Write-Host '[ok]   spelling: Variants adds a second table and removing it leaves the first'
 }
 
 # The masking macros are not a check, so emptying them must ADD findings rather

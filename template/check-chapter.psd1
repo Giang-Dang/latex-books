@@ -130,9 +130,17 @@
     # RangeMarkers - exempt the range forms \index{term|(} and \index{term|)},
     #                which stand alone by convention. Turning it off means
     #                writing % after those too.
+    # ForbidPattern - a regex matched against the whole \index line. Empty means
+    #                the check does not run. The printed index is the reader's
+    #                vocabulary, so a term they have never met cannot be looked
+    #                up; a book that names its own internal machinery in prose
+    #                can index that machinery by accident. One book indexed a
+    #                numbered row of its own decision log, which the reader has
+    #                never seen. Forbid a term, a prefix or a shape.
     # Index = @{
     #     Enabled      = $true
     #     RangeMarkers = $true
+    #     ForbidPattern = ''
     # }
 
     # -- 6. Dashes ------------------------------------------------------------
@@ -197,21 +205,30 @@
     #
     # This is not a spell checker. It is a fixed table of about eighteen word
     # pairs where the two varieties differ, and it fires on the wrong one.
-    # Enabled - a second switch, so a book can keep its Preset on record while
-    #           the check is off. Both have to be set for the check to run.
-    # Exempt  - regexes matched whole against the flagged word, case
-    #           insensitively. For product names and chapter titles that only
-    #           look like the wrong variety. An exemption costs one word; it is
-    #           narrower than turning the check off, and that is the point.
-    # Extra   - book-specific pairs, written as pattern = correction and merged
-    #           into the preset table. The keys are regex fragments, not
-    #           literals, and this map is the one place a book's own keys are
-    #           accepted without schema checking.
+    # Enabled  - a second switch, so a book can keep its Preset on record while
+    #            the check is off. Both have to be set for the check to run.
+    # Variants - adds a second table of about ten more pairs, off by default.
+    #            The base table above holds the differences that follow a rule;
+    #            this one holds the leftovers, words like programme/program and
+    #            judgement/judgment whose two spellings follow none, which is
+    #            why the base table cannot generate them and why a draft can
+    #            carry one past a clean run. A book that has chosen a Preset
+    #            probably wants these too.
+    # Exempt   - regexes matched whole against the flagged word, case
+    #            insensitively. For product names and chapter titles that only
+    #            look like the wrong variety. An exemption costs one word; it is
+    #            narrower than turning the check off, and that is the point.
+    # Extra    - book-specific pairs, written as pattern = correction and merged
+    #            into the preset table, after Variants so a book can override
+    #            one of them. The keys are regex fragments, not literals, and
+    #            this map is the one place a book's own keys are accepted
+    #            without schema checking.
     # Spelling = @{
-    #     Enabled = $true
-    #     Preset  = ''
-    #     Exempt  = @()
-    #     Extra   = @{}
+    #     Enabled  = $true
+    #     Preset   = ''
+    #     Variants = $false
+    #     Exempt   = @()
+    #     Extra    = @{}
     # }
 
     # -- 10. Numbers ----------------------------------------------------------
