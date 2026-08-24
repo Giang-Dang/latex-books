@@ -1,0 +1,36 @@
+\section{Một trò chơi chia đóng góp}
+\label{sec:ch04-tro-choi-chia-gia-tri}
+
+Trước khi xét \tn{phân phối nền}{background distribution} của SHAP, ta cần xác định quy tắc mà nó dùng để
+chia đóng góp. Quy tắc đó bắt đầu từ bài toán gốc của lý thuyết trò chơi hợp
+tác. Gọi $F$ là tập các người chơi và gọi $v(S)$ là giá trị mà liên minh
+$S \subseteq F$ tạo ra.
+Một người chơi không có một đóng góp cố định: lợi ích khi thêm nó vào liên
+minh phụ thuộc những người chơi đã có mặt. \tn{Giá trị Shapley}{Shapley value}
+chia tổng giá trị bằng cách lấy trung bình đóng góp biên của mỗi người chơi
+trên mọi thứ tự tham gia có thể có.
+
+Với một \tn{đặc trưng}{feature} $i$, công thức là
+
+\begin{equation}
+\label{eq:ch04-gia-tri-shapley}
+\phi_i(v)=
+\sum_{S \subseteq F \setminus \{i\}}
+\frac{|S|!(|F|-|S|-1)!}{|F|!}
+\left[v(S\cup\{i\})-v(S)\right].
+\end{equation}
+
+Hệ số phía trước ngoặc vuông là xác suất để, trong một hoán vị ngẫu nhiên của
+$F$, đúng các phần tử của $S$ đứng trước $i$. Vì vậy,
+phương trình~\ref{eq:ch04-gia-tri-shapley} không ưu ái thứ tự nào. Nó chỉ yêu cầu ta biết
+giá trị thay đổi bao nhiêu khi $i$ được thêm vào sau mỗi liên minh có thể có.
+
+Kết quả cổ điển được đặc trưng bằng bốn tiên đề: hiệu quả, đối xứng, người
+chơi rỗng và tính tuyến tính. Hiệu quả yêu cầu tổng phần chia bằng giá trị của
+toàn liên minh trừ giá trị của liên minh rỗng. Đối xứng buộc hai người chơi
+luôn có cùng đóng góp biên phải nhận cùng giá trị. Người chơi rỗng nhận giá
+trị không vì không làm thay đổi liên minh nào. Tính tuyến tính giữ cách chia
+nhất quán khi cộng hoặc nhân các trò chơi với hằng số~\autocite{p19shapinference}.
+
+\index{giá trị Shapley|(}%
+\index{trò chơi hợp tác}%

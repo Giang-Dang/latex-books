@@ -1,0 +1,33 @@
+\section{Từ tiên đề đến lời giải thích cộng tính}
+\label{sec:ch04-tu-tien-de-den-shap}
+
+Trong lời giải thích mô hình, người chơi là các đặc trưng. Lundberg và Lee đặt
+một \tn{lời giải thích cộng tính}{additive explanation} dưới dạng mô hình
+đơn giản trên biểu diễn nhị phân $z'$:
+
+\begin{equation}
+\label{eq:ch04-mo-hinh-cong-tinh}
+g(z')=\phi_0+\sum_{i=1}^{M}\phi_i z'_i.
+\end{equation}
+
+Ở đây $z'_i=1$ nghĩa là đặc trưng $i$ có mặt trong liên minh đang xét. Hệ số
+$\phi_i$ là phần đóng góp được phân cho đặc trưng đó, còn $\phi_0$ là giá trị
+nền. Dạng của phương trình~\ref{eq:ch04-mo-hinh-cong-tinh} giống mô hình
+tuyến tính, nhưng các hệ số không phải trọng số học trực tiếp từ dữ liệu.
+Chúng là kết quả của việc đánh giá các liên minh rồi áp công thức Shapley.
+
+Trong lớp mô hình này, bài báo SHAP dùng ba tính chất gần với các tiên đề trò
+chơi. \tn{Độ chính xác cục bộ}{local accuracy} yêu cầu tổng giá trị nền và các đóng góp khớp
+đúng đầu ra tại $x$. \tn{Tính vắng mặt}{missingness} yêu cầu một đặc trưng không có mặt trong
+biểu diễn không nhận đóng góp. \tn{Tính nhất quán}{consistency} yêu cầu đóng góp của một
+đặc trưng không giảm nếu ảnh hưởng biên của nó không giảm trong mọi liên minh.
+Với một cách ánh xạ biểu diễn đã cố định, ba tính chất ấy xác định duy nhất
+các \tn{giá trị Shapley}{Shapley value}~\autocite{p10shap}.
+
+Do đó, SHAP không nói rằng mọi lời giải thích cộng tính đều trung thực. Nó
+nói một điều hẹp hơn và mạnh hơn: nếu đã chọn mô hình giải thích cộng tính cùng
+quy tắc ánh xạ, thì ba tính chất trên chỉ còn một cách phân chia đóng góp. Câu
+hỏi còn lại là giá trị của một liên minh phải được định nghĩa từ $f$ và dữ liệu
+ra sao.
+
+\index{lời giải thích cộng tính}%

@@ -1,3 +1,26 @@
 % Scope (SPEC table of contents): Shapley axioms, KernelSHAP and TreeSHAP, the feature-independence assumption, the statistical grounding SHAP later acquired. Papers 10, 19.
 \chapter{SHAP và giá trị Shapley}
 \label{ch:shap}
+
+Chương~\ref{ch:lime} đã cho thấy một lời giải thích cục bộ luôn mang theo
+quy tắc tạo lân cận và các tham số của mô hình thay thế. SHAP đổi điểm xuất
+phát: thay vì hỏi mô hình tuyến tính nào khớp tốt quanh $x$, nó hỏi một đặc
+trưng nên được nhận bao nhiêu phần trong chênh lệch giữa một dự đoán và một
+giá trị nền. Câu hỏi này mượn ngôn ngữ của trò chơi hợp tác, nơi các đặc trưng
+tham gia theo những thứ tự khác nhau và đóng góp của một đặc trưng là phần nó
+thêm vào cho liên minh đã có.
+
+Cách đặt vấn đề ấy đưa một tập tiên đề rõ ràng vào attribution, nhưng không
+làm biến mất các lựa chọn thực nghiệm. Muốn biết giá trị của một liên minh,
+ta phải quyết định các đặc trưng chưa có mặt được hoàn thiện như thế nào. Vì
+vậy, SHAP vừa cho một quy tắc chia đóng góp chặt chẽ, vừa buộc người đọc nhìn
+thẳng vào \tn{phân phối nền}{background distribution} đứng sau quy tắc đó.
+
+\input{chapters/04-shap/01-tro-choi-chia-gia-tri}
+\input{chapters/04-shap/02-tu-tien-de-den-shap}
+\input{chapters/04-shap/03-gia-tri-lien-minh-va-phan-phoi-nen}
+\input{chapters/04-shap/04-kernelshap}
+\input{chapters/04-shap/05-treeshap}
+\input{chapters/04-shap/06-nen-tang-thong-ke}
+\input{chapters/04-shap/07-dieu-shap-chua-giai-quyet}
+\input{chapters/04-shap/08-tom-tat-va-cau-hoi}

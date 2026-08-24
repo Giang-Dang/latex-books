@@ -1,0 +1,21 @@
+\begin{tomtat}
+\begin{itemize}
+  \item \tn{Giá trị Shapley}{Shapley value} lấy trung bình đóng góp biên của một đặc trưng trên
+  mọi thứ tự tham gia vào liên minh.
+  \item Trong lớp \tn{lời giải thích cộng tính}{additive explanation}, \tn{độ chính xác cục bộ}{local accuracy},
+  \tn{tính vắng mặt}{missingness} và \tn{tính nhất quán}{consistency} xác định duy nhất cách phân bổ SHAP khi cách ánh xạ đã cố định.
+  \item Hàm giá trị của liên minh phụ thuộc \tn{phân phối nền}{background distribution} và quy tắc hoàn thiện
+  đặc trưng còn thiếu; đây là giả định về dữ liệu, không phải hệ quả tiên đề.
+\end{itemize}
+\end{tomtat}
+
+\cauhoi
+\begin{cauhoids}
+  \item Với ba đặc trưng $a$, $b$, $c$, hãy liệt kê các liên minh đứng trước
+  $a$ trong công thức Shapley. Vì sao mỗi liên minh không có cùng trọng số?
+  \item Với thu nhập và số năm học có tương quan, hãy so sánh việc hoàn thiện
+  thu nhập theo phân phối có điều kiện với việc lấy mẫu biên độc lập.
+  \item Đọc \enquote{A Unified Approach to Interpreting Model Predictions} của
+  Lundberg và Lee~\autocite{p10shap}. Ba lựa chọn nào của LIME KernelSHAP phải
+  thay đổi để thu được giá trị Shapley?
+\end{cauhoids}
