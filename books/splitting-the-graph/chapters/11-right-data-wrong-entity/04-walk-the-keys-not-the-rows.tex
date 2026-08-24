@@ -1,0 +1,178 @@
+\section{Walk the Keys, Not the Rows}
+\label{sec:ch11-walk-the-keys-not-the-rows}
+
+\index{DataLoader!the corrected loop|(}%
+The fix is the loop, rewritten to count the other collection. Here is
+\code{SpeakerDataLoader.cs} again, complete, with what moved marked:
+
+\begin{minted}[highlightlines={13-17,40,42-49}]{csharp}
+using GreenDonut;
+using Microsoft.EntityFrameworkCore;
+
+namespace Speakers;
+
+/// <summary>
+/// What the source-generated loader is underneath: a class deriving
+/// from DataLoaderBase, given the batch of keys and a span to put the
+/// answers in. Written out by hand because a store that is not a
+/// DbContext - a remote service, a cache, a stored procedure - hands
+/// back a list rather than a dictionary, and the generator only
+/// accepts a dictionary.
+///
+/// The whole of the difference between this and the generated one is
+/// which collection the loop walks. FetchAsync's own doc comment says
+/// it: for every provided key must be a result, in the exact same
+/// order the keys were provided.
+/// </summary>
+public interface ISpeakerByIdDataLoader : IDataLoader<int, Speaker>;
+
+public sealed class SpeakerByIdDataLoader(
+    IServiceProvider services,
+    IBatchScheduler batchScheduler,
+    DataLoaderOptions options)
+    : DataLoaderBase<int, Speaker>(batchScheduler, options),
+        ISpeakerByIdDataLoader
+{
+    protected override async ValueTask FetchAsync(
+        IReadOnlyList<int> ids,
+        Memory<Result<Speaker?>> results,
+        DataLoaderFetchContext<Speaker> context,
+        CancellationToken ct)
+    {
+        await using var scope = services.CreateAsyncScope();
+        var db = scope.ServiceProvider
+            .GetRequiredService<SpeakerContext>();
+
+        var rows = await db.Speakers
+            .Where(s => ids.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, ct);
+
+        // Walk the keys, not the rows. The span is positional and the
+        // position that matters is the key's, so every slot is written
+        // exactly once and a key with no row is written as a null
+        // rather than left for the next row to land in.
+        for (var i = 0; i < ids.Count; i++)
+        {
+            results.Span[i] = Result<Speaker?>.Resolve(
+                rows.GetValueOrDefault(ids[i]));
+        }
+    }
+}
+\end{minted}
+
+\index{DataLoader!the loop bound is the tell}%
+\code{ToDictionaryAsync} instead of \code{ToListAsync}, and the loop counts to
+\code{ids.Count} rather than \code{rows.Count}. If you want one thing to look
+for when reading somebody else's loader, that bound is it. A loop over the
+results is a loop that has decided the store's order is the caller's order, and
+it is wrong even when it works.
+
+\index{DataLoader!GetValueOrDefault does the nulls}%
+\code{GetValueOrDefault} is doing the other clause. A key with no row yields a
+null, which lands in that key's own slot, which is the null the specification
+asks for and the one chapter~\ref{ch:router-n-plus-1} showed a missing session
+producing.
+
+\index{DataLoader!indistinguishable from the generated one}%
+With that loop, every request in this chapter answers the way the
+source-generated loader answers it. The two sessions come back carrying their
+own speakers. The out-of-key-order list of three comes back in the order it was
+asked for. The middle key that matches no row is a null in its own position
+rather than an error. Every count in
+chapters~\ref{ch:second-third-subgraph} and~\ref{ch:router-n-plus-1} is the
+number those chapters printed, and the statement is the same batched statement
+with the same three keys in it.
+
+\subsection{The Generator Was Already Doing This}
+
+\index{DataLoader!what the source generator emits}%
+The reason chapters~\ref{ch:data-without-n-plus-1}
+to~\ref{ch:router-n-plus-1} never met this problem is that
+the \code{[DataLoader]} attribute writes that loop for you, and writes it the
+same way every time. Given a method returning a dictionary, the generator emits a
+\code{CopyResults} that walks the keys, calls \code{TryGetValue} on each one,
+and puts a default in the slot when the lookup misses. It cannot do anything
+else, because a dictionary has no order to be tempted by.
+
+\index{DataLoader!a dictionary cannot be misordered}%
+Which turns out to be a better argument for the source generator than
+convenience is. A loader that hands back a dictionary is a loader that cannot
+make this mistake, and the shape of the return type is what rules it out. I
+would not have written that sentence before this chapter; I used
+the attribute because it saved me writing the file.
+
+\index{DataLoader!a list return is not a batch loader}%
+The obvious middle road is closed, and it closes badly. Give a
+\code{[DataLoader]} method the return type \code{Task<IReadOnlyList<Speaker>>},
+expecting the generator to map that list onto the keys, and it does not reject
+the method. It reinterprets it: the key becomes the whole
+\code{IReadOnlyList<int>}, the value becomes the whole list of speakers, and
+what comes out is a cache loader that fetches one at a time. The call site then
+fails to compile, twice, with a message about converting \code{object} to
+\code{Speaker} that mentions none of this. Caught, which is what matters, and
+caught by the type checker rather than by anything that knows what you meant.
+
+\subsection{The Assertion Worth Writing}
+
+\index{testing!ask the entity route for its own key}%
+There is one test for this and it does not depend on knowing anything about
+your data. Ask a subgraph's entity route for the key alongside the fields, in
+an order that is not key order, and check that each entry carries the key its
+own representation named:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"r":[{"__typename":"Speaker","id":"U3BlYWtlcjoz"},
+      {"__typename":"Speaker","id":"U3BlYWtlcjox"},
+      {"__typename":"Speaker","id":"U3BlYWtlcjoy"}]}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"_entities":[
+  {"id":"U3BlYWtlcjoz","name":"Chidi Okafor"},
+  {"id":"U3BlYWtlcjox","name":"Ada Fischer"},
+  {"id":"U3BlYWtlcjoy","name":"Bruno Kaminski"}]}}
+\end{minted}
+
+\index{testing!the answer carries its own evidence}%
+The evidence is inside the answer. Every entry names a key, so a machine can
+compare it with the key that entry's representation carried, and it can do that
+without knowing which speaker is which or what order the store prefers. Against
+the broken loader the same request comes back with the three keys ascending,
+so the first entry says \code{U3BlYWtlcjox} where the representation asked for
+\code{U3BlYWtlcjoz}. Every name is still attached to its own key; what has gone
+wrong is which question each pair is answering, and asking for the key is what
+makes that visible.
+
+\index{testing!the router never asks for the key}%
+That works because you asked for the key, which is exactly what the router does
+not do. There is no way to make the router perform this check, and I would not
+want the column on every entity fetch in production even if there were. It is a
+test, run against the subgraph's own port, and it belongs beside the tests
+chapter~\ref{ch:testing} builds.
+
+\index{testing!an ascending fixture proves nothing}%
+Write the fixture in an order the store will not reproduce, and it is worth
+being deliberate about that rather than lucky. A fixture that happens to list
+its keys ascending passes against both loaders in this chapter and tells you
+nothing at all, which is the same trap the whole graph fell into in
+section~\ref{sec:ch11-why-this-graph-got-away-with-it}, one layer down.
+
+\subsection{And When You Cannot Write One}
+
+\index{DataLoader!the remote store case}%
+The case that got me into this file is worth naming, because it is the one that
+takes people out of the source generator in the first place. A loader that
+calls another service asks for a list of ids over HTTP and is handed a JSON
+array. There is no dictionary, there is nobody's primary key to sort by, and
+the service on the other end has made no promise about sequence. Build the
+dictionary yourself, off whatever the payload calls its identifier, before you
+go anywhere near the span. The loop stays the same loop.
+
+\index{DataLoader!the store that answers a different length}%
+And check the length rather than trusting it. A remote service that drops the
+ids it could not find gives you a shorter array than you asked for, which is
+the first clause of the contract breaking, and the router will refuse the
+answer with a message about the returned entities count not matching. That is
+the good outcome. The bad one is a service that also happens to return them
+sorted, where the count is right and nothing is.
+\index{DataLoader!the corrected loop|)}%

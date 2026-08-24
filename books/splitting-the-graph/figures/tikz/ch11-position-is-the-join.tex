@@ -1,0 +1,189 @@
+% The only thing joining an _entities answer to the question that asked for
+% it is its position in the list, and three separate parties agree to that
+% and none of them checks it: the router that built the representation list,
+% the loader that turned rows back into a list, and the router again when it
+% merges that list into the parent response.
+%
+% This is a positional-correspondence figure, not a timeline, and that is a
+% deliberate departure from every figure since ch01-one-field.tex: the axis,
+% tick, event, span and lane styles those files share all draw order as
+% something that unfolds left to right over one request. Here the subject is
+% not sequence, it is a list index read down four stages, so the picture is
+% four rows of two boxes each, one box per list position, and a reader
+% follows a single column straight down to see where the identity in it
+% stops matching the label on it. The nearest relative in this book is
+% ch04-null-climbs.tex, which is also a shape rather than a timeline; the
+% box style, the link style and the drawn-sample legend are copied from
+% there. What is NOT copied is what solid and dashed mean; see below.
+%
+% The four rows, top to bottom, and the measured data inside them (SPEC:
+% do not alter these facts):
+%   1. what the router asked: the client requested session 4 (The Bank That
+%      Split Its Graph) then session 1 (Schemas That Outlive Their Authors),
+%      so the representation list the router builds is position 0 =
+%      Speaker:3 (Chidi Okafor, the speaker of session 4), position 1 =
+%      Speaker:1 (Ada Fischer, the speaker of session 1).
+%   2. what the store returned: one statement, which as StatementLog prints
+%      it reads WHERE "s"."Id" IN (@ids1, @ids2) and carries keys 3 and 1
+%      in that order, and the store answers in its own row order, ascending
+%      id: row 0 is Ada Fischer (id 1), row 1 is Chidi Okafor (id 3). The
+%      picture names the keys rather than writing SQL, because SQL with
+%      literals in it is not what any capture in this book shows. This is
+%      where the
+%      order the router asked in and the order the store answered in stop
+%      matching, and it is the only place in the whole figure that matters.
+%   3. what the subgraph answered: the loader writes row 0 into slot 0 and
+%      row 1 into slot 1 with no check against which key asked for which
+%      row, so position 0 is now labeled Ada Fischer and position 1 Chidi
+%      Okafor.
+%   4. what the client was told: the router merges answer position 0 into
+%      parent position 0 and answer position 1 into parent position 1, so
+%      The Bank That Split Its Graph comes back credited to Ada Fischer and
+%      Schemas That Outlive Their Authors to Chidi Okafor. Both are real
+%      people in the graph, and the response is HTTP 200 with no error
+%      anywhere in it.
+%
+% Solid, arrowed lines join row 1 to row 2 and are the only lines in the
+% figure that cross: they show where the data for each requested identity
+% actually landed, and the store handed it back in the opposite order from
+% the one the router asked in. Dashed lines join row 2 to row 3 and row 3
+% to row 4, drawn straight down with no crossing at all, because every step
+% after the store answers is a position carried forward unchecked; nobody
+% asks whether the entity in the slot is the one that was asked for.
+%
+% Solid versus dashed is NOT inherited from ch04-null-climbs.tex, and an
+% earlier draft of this header wrongly said it was. There, dashed is a
+% property of a BOX: a position that does not exist in the response at all.
+% Here it is a property of a LINK: a correspondence nobody checked. The two
+% figures are not in conflict, because neither uses the style for the other
+% thing, but they are not the same convention and a later editor should not
+% reconcile them. The legend at the foot of this picture exists precisely
+% because the meaning is local to it. The arrowhead on the solid lines
+% only is deliberate: it puts the one directional claim in the picture on
+% the one relationship the figure is arguing for, and leaves the passive
+% carry-forward lines without one.
+%
+% The row label at the top doubles as the column header: position 0 and
+% position 1 are named once, in row 1, next to the representations that
+% first fill them, rather than repeated in the boxes of every row, so a
+% reader is not re-told the column number four times to learn it once.
+%
+% Span and spanlabel below the fourth row are the brace idiom from
+% ch01-one-field.tex, ch09-two-fetches.tex and ch10-one-fetch-two-costs.tex,
+% reused unchanged, carrying the one sentence the whole figure is building
+% toward: nothing between the store and the client ever compares a returned
+% entity with the representation that asked for it. The two-line legend
+% below that is an idiom ch04-null-climbs.tex already uses, a drawn sample of each
+% link style next to a one-line gloss, because this figure is the first one
+% since ch04 to give solid and dashed a meaning that is not self-evident
+% from an arrowhead and a timeline.
+%
+% Widths: two columns of boxes, centered at x=45 and x=105, each 40mm of text
+% plus 2mm inner sep on either side, so the widest boxes span x=23 to x=67
+% and x=83 to x=127. The bottom brace and its label stay inside x=24 to
+% x=126 and x=18 to x=143 respectively. Row labels were once the widest text
+% here and are not any more: they were cut to short tags because at their
+% original length they ran straight through the crossing lines, and the one
+% detail that had to survive, which keys the statement asked for, moved to
+% its own right-anchored note at x=150. The longest row label is now 43
+% characters, and ch10's own header measures a comparable line at about
+% 1.4mm per character, so it ends near x=60, clear of the left column at
+% x=45 only because the columns start below it rather than beside it.
+% Everything in this figure therefore stays inside the 155mm measure this
+% book's geometry allows (A4, 30mm inner, 25mm outer). Re-check the row
+% labels against the crossing if any of them is ever lengthened again.
+%
+% No timings anywhere, per SPEC decision 19: the vertical position of a row
+% is sequence only, not duration.
+%
+% No quotation marks anywhere in this file. The book's strict Ascii mode
+% (see check-chapter.psd1) makes the prose gate read a literal " as a quote
+% character, while \" is LaTeX's diaeresis accent and fails to compile
+% inside a node. Every identifier below is written bare, and Speaker:3 is
+% typed as it appears in the chapter's prose, not as a quoted string.
+%
+% Bare tikzpicture (house style): the figure environment, caption and label
+% live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  posbox/.style={draw, line width=0.4pt, align=center, text width=40mm,
+    inner sep=2mm, minimum height=20mm},
+  rowlabel/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+  crosslink/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  droplink/.style={draw, line width=0.4pt, dashed},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  note/.style={anchor=west, align=left, inner sep=2pt},
+]
+
+% ------------------------------------------------------------------- row 1
+\node[rowlabel] at (0,16)
+  {1. what the router asked: session 4, then session 1, in that order};
+\node[posbox] (r1c0) at (45,0)  {position 0\\Speaker:3};
+\node[posbox] (r1c1) at (105,0) {position 1\\Speaker:1};
+
+% ------------------------------------------------------------------- row 2
+\node[rowlabel] at (0,-26) {2. what the store returned, in its own order};
+% The statement belongs to the row rather than to either box, and the row
+% label cannot carry it: at this font a label reaching past x=45 runs into
+% the left crossing line. Parked right of x=110 instead, which is clear of
+% both crossing lines and inside the 155mm measure.
+%
+% Named rather than written as SQL on purpose. The book's StatementLog
+% prints parameter placeholders, so every statement chapters 3, 9 and 10
+% print reads IN (@ids1, @ids2); a figure showing IN (3, 1) would be SQL
+% no capture in this book produces. What the figure needs is which keys
+% went out and in what order, and that is what this says.
+\node[note, anchor=east] at (150,-26)
+  {one statement, asking for keys 3 and 1};
+\node[posbox] (r2c0) at (45,-42)  {row 0\\Ada Fischer, id 1};
+\node[posbox] (r2c1) at (105,-42) {row 1\\Chidi Okafor, id 3};
+
+% ------------------------------------------------------------------- row 3
+\node[rowlabel] at (0,-64) {3. what the subgraph answered};
+\node[posbox] (r3c0) at (45,-80)  {position 0\\Ada Fischer};
+\node[posbox] (r3c1) at (105,-80) {position 1\\Chidi Okafor};
+
+% ------------------------------------------------------------------- row 4
+\node[rowlabel] at (0,-102) {4. what the client was told};
+\node[posbox] (r4c0) at (45,-118)
+  {position 0\\The Bank That Split\\Its Graph, by\\Ada Fischer};
+\node[posbox] (r4c1) at (105,-118)
+  {position 1\\Schemas That Outlive\\Their Authors, by\\Chidi Okafor};
+
+% ------------------------------------------------- the crossing: row 1 to 2
+% The whole event. Speaker:3 asked at position 0 is truly answered by row 1
+% (Chidi Okafor), and Speaker:1 asked at position 1 is truly answered by
+% row 0 (Ada Fischer): the ascending-id order of the store is the reverse
+% of the client order the router asked in, so these two lines cross.
+\draw[crosslink] (r1c0.south) -- (r2c1.north);
+\draw[crosslink] (r1c1.south) -- (r2c0.north);
+
+% -------------------------------------------- straight drops: row 2 to 3
+% No crossing from here on: each slot is carried forward by its own
+% position, never by the identity actually sitting in it.
+\draw[droplink] (r2c0.south) -- (r3c0.north);
+\draw[droplink] (r2c1.south) -- (r3c1.north);
+
+% -------------------------------------------- straight drops: row 3 to 4
+\draw[droplink] (r3c0.south) -- (r4c0.north);
+\draw[droplink] (r3c1.south) -- (r4c1.north);
+
+% ------------------------------------------------------------------ brace
+\draw[span] (24,-132) -- (24,-138) -- (126,-138) -- (126,-132);
+\node[spanlabel, text width=115mm] at (75,-140)
+  {nothing between the store and the client compares a returned entity
+   with the representation that asked for it};
+
+% ----------------------------------------------------------------- legend
+\draw[crosslink] (4,-152) -- (14,-152);
+\node[note, text width=100mm] at (18,-152)
+  {the true match: crosses because the store answered in its own order};
+
+\draw[droplink] (4,-160) -- (14,-160);
+\node[note, text width=100mm] at (18,-160)
+  {carried forward by position alone, never checked again};
+
+\end{tikzpicture}
