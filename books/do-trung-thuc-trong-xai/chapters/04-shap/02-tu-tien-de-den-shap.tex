@@ -19,8 +19,7 @@ tuyến tính, nhưng các hệ số không phải là trọng số học trực
 Chúng là kết quả của việc đánh giá các liên minh rồi áp phương trình Shapley.
 
 Trong lớp mô hình này, bài báo SHAP dùng ba tính chất gần với các tiên đề trò
-chơi. Chú ý rằng tính chất thứ ba so hai mô hình với nhau, chứ không nói về
-một mô hình đơn lẻ.
+chơi.
 
 \begin{definition}[Ba tính chất của lời giải thích cộng tính]
 \label{def:ch04-ba-tinh-chat}
@@ -44,7 +43,8 @@ attribution cộng tính, và các hệ số của nó là các
 Do đó, SHAP không nói rằng mọi lời giải thích cộng tính đều trung thực. Định
 lý~\ref{thm:ch04-duy-nhat} nói một điều hẹp hơn và mạnh hơn: nếu đã chọn mô
 hình giải thích cộng tính cùng ánh xạ $h_x$, thì ba tính chất trên chỉ còn một
-cách phân chia đóng góp. Ánh xạ $h_x$ là giả thiết mà định lý đứng trên: nó
-quy định một bit trong $z'$ ứng với can thiệp nào trên $x$, và bài báo không
-chọn nó cho ta. Câu hỏi còn lại là giá trị của một liên minh phải được định
-nghĩa từ $f$ và dữ liệu ra sao.
+cách phân chia đóng góp. Ánh xạ $h_x$ là giả thiết mà định lý đứng trên: nó quy định một bit trong $z'$
+ứng với can thiệp nào trên $x$. Bài báo có nêu một $h_x$ cụ thể, đặt các đặc
+trưng ngoài $S$ về trạng thái vắng mặt~\autocite{p10shap}. Câu hỏi nó để ngỏ
+nằm một bậc sâu hơn: giá trị của một liên minh phải được định nghĩa từ $f$ và
+dữ liệu ra sao.

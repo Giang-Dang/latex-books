@@ -8,16 +8,16 @@ ta có thể nhìn transformer như cơ
 chế biến một dãy token thành các biểu diễn phụ thuộc ngữ cảnh. Bài báo gốc
 giới thiệu transformer như một kiến trúc dựa hoàn toàn vào
 \tn{cơ chế chú ý}{attention mechanism}, không dùng đệ quy hay tích chập; cấu
-trúc encoder-decoder của nó ghép \tn{tự chú ý}{self-attention} với các lớp
+trúc encoder-decoder của nó ghép \tn{tự chú ý}{self-attention} với các tầng
 truyền thẳng theo từng vị trí~\autocite{p01attention}.
 
 Trong tự chú ý, biểu diễn tại một vị trí tạo truy vấn, khóa và giá trị.
 Truy vấn so với các khóa để lấy trọng số, rồi các giá trị được trộn theo những
 trọng số ấy. Nhờ vậy, một token có thể lấy thông tin từ các token khác trong
-ngữ cảnh thay vì chỉ nhận trạng thái từ vị trí liền trước. Multi-head attention
-thực hiện nhiều phép chiếu song song; mỗi head có thể học một kiểu quan hệ, dù
-việc quan sát một head có trọng số lớn chưa chứng minh head ấy là nguyên nhân
-của một token đầu ra.
+ngữ cảnh thay vì chỉ nhận trạng thái từ vị trí liền trước. Cơ chế chú ý nhiều đầu
+thực hiện nhiều phép chiếu song song; mỗi đầu chú ý có thể học một kiểu quan
+hệ, dù việc quan sát một đầu có trọng số lớn chưa chứng minh đầu ấy là nguyên
+nhân của một token đầu ra.
 
 Điểm cuối cùng này nối kiến trúc với vấn đề độ trung thực. Ma trận attention
 là một đại lượng có thể vẽ và so sánh, nên rất dễ bị đọc như một bản đồ của
@@ -27,9 +27,9 @@ nêu can thiệp nào được thực hiện và kiểm tra đầu ra đổi ra 
 thế dùng attention để gọi tên một vị trí trong cơ chế, không dùng nó thay cho
 một cách đánh giá.
 
-Các biểu diễn cũng thay đổi qua các lớp. Một token ở lớp đầu có thể giữ nhiều
-thông tin bề mặt, trong khi biểu diễn ở lớp sau chịu ảnh hưởng của toàn bộ
-ngữ cảnh mà kiến trúc cho phép nó truy cập. Khi một phương pháp hậu nghiệm ở
+Các biểu diễn cũng thay đổi qua các tầng. Một token ở tầng đầu có thể giữ
+nhiều thông tin bề mặt, trong khi biểu diễn ở tầng sau chịu ảnh hưởng của toàn
+bộ ngữ cảnh mà kiến trúc cho phép nó truy cập. Khi một phương pháp hậu nghiệm ở
 chương~\ref{ch:lime} hoặc chương~\ref{ch:shap} chỉ nhìn đầu vào và đầu ra,
 nó không cần giả định rằng đã biết biểu diễn nào giữ một khái niệm. Đổi lại,
 nó phải chịu trách nhiệm về chính can thiệp trên đầu vào mà nó chọn.

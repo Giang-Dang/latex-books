@@ -5,10 +5,11 @@
 Trước khi xét \tn{phân phối nền}{background distribution} của SHAP, ta cần xác
 định quy tắc mà nó dùng để
 chia đóng góp. Quy tắc đó bắt đầu từ bài toán gốc của lý thuyết trò chơi hợp
-tác. Gọi $N$ là tập các người chơi và gọi $v(S)$ là giá trị mà liên minh
-$S \subseteq N$ tạo ra; ký hiệu $F$ được phụ lục~\ref{app:ky-hieu} dành cho
-hàm điểm số đang được attribution, nên trò chơi dùng chữ khác.
-Một người chơi không có một đóng góp cố định: lợi ích khi thêm nó vào liên
+tác. Gọi $\mathcal{P}$ là tập các người chơi và gọi $v(S)$ là giá trị mà liên
+minh $S \subseteq \mathcal{P}$ tạo ra. Bài báo viết $F$ cho tập này, nhưng
+phụ lục~\ref{app:ky-hieu} đã dành $F$ cho hàm điểm số đang được attribution
+và $N$ cho số mẫu của LIME, nên trò chơi dùng chữ thứ ba.
+Một người chơi không có đóng góp cố định: lợi ích khi thêm nó vào liên
 minh phụ thuộc những người chơi đã có mặt. \tn{Giá trị Shapley}{Shapley value}
 chia tổng giá trị bằng cách lấy trung bình đóng góp biên của mỗi người chơi
 trên mọi thứ tự tham gia có thể có.
@@ -18,13 +19,13 @@ Với một \tn{đặc trưng}{feature} $i$, phương trình là
 \begin{equation}
 \label{eq:ch04-gia-tri-shapley}
 \phi_i(v)=
-\sum_{S \subseteq N \setminus \{i\}}
-\frac{|S|!(|N|-|S|-1)!}{|N|!}
+\sum_{S \subseteq \mathcal{P} \setminus \{i\}}
+\frac{|S|!(|\mathcal{P}|-|S|-1)!}{|\mathcal{P}|!}
 \left[v(S\cup\{i\})-v(S)\right].
 \end{equation}
 
 Hệ số phía trước ngoặc vuông là xác suất để, trong một hoán vị ngẫu nhiên của
-$N$, đúng các phần tử của $S$ đứng trước $i$. Vì vậy,
+$\mathcal{P}$, đúng các phần tử của $S$ đứng trước $i$. Vì vậy,
 phương trình~\ref{eq:ch04-gia-tri-shapley} không ưu ái thứ tự nào. Nó chỉ yêu cầu ta biết
 giá trị thay đổi bao nhiêu khi $i$ được thêm vào sau mỗi liên minh có thể có.
 

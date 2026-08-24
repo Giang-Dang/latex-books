@@ -60,7 +60,7 @@ settled row is re-opened only by recording what changed and why, in the row.
 | 20 | Paper-reported numbers | The session that first prints one (expected: chapter 08 or 09, the AUROC results of paper 21) creates that chapter's research note recording the number, the bib key, the arXiv ID and revision, the page/table/figure anchor in the PDF, and the surrounding quote - verified against the PDF, never against an orientation note. That arms the Numbers check for the whole book; the same session retro-sweeps any earlier decimals into notes. One note per chapter thereafter. |
 | 21 | Listing measure | `Listings.MaxLineLength` stays 0 at init: the book admits no minted environments, so there is nothing to measure. The day one is admitted, the measure is established on a built page (expect about 73 columns at `\small` under the template geometry and fonts, but measured, not borrowed - tu-rnn-den-transformer's method) and set in the same session. |
 | 22 | Chapter 01 voice review | A 2026-08-24 review found the drafted prose running at the humanizer's `chặt` economy with the connective tissue cut - juxtaposed clipped sentences, sections opening cold, English calques, synonym rotation - against the textbook voice decision 2 set. Fixed chapter-wide in the same session. The Cohesion writing rule below records the standard for later chapters, and humanizer-vi's tone-giao-trinh.md gained a Liên kết section plus three tells (vendored copy refreshed this session). Prose-only enforcement: the author declined a machine check, so no psd1 setting backs it. |
-| 23 | Chapter 02 source pins and terminology | Chapter 02 reads arXiv:1706.03762v7, 2005.14165v4, 2203.02155v1, 2201.11903v6 and 2606.11470v2; each pin and the claim class read are recorded in refs.bib. It prints no measurement, so research/ remains empty under decision 19. Its settled Vietnamese terms are the Chapter 02 block in appendix B; transformer remains English. |
+| 23 | Chapter 02 source pins and terminology | Chapter 02 reads arXiv:1706.03762v7, 2005.14165v4, 2203.02155v1, 2201.11903v6 and 2606.11470v1; each pin and the claim class read are recorded in refs.bib. It prints no measurement, so research/ remains empty under decision 19. Its settled Vietnamese terms are the Chapter 02 block in appendix B; transformer remains English. |
 | 24 | Chapter 03 scope and notation | The initialized TOC said LIME's free parameters were unvalidated, but paper 09 documents the procedure rather than establishing that claim. Chapter 03 therefore states the parameters and their interpretive consequences, and the TOC and scope comment now say so. The session also settles the shared notation: x is the model-space input, x-prime the interpretable representation, z-prime a perturbed representation, z its reconstructed input, f the model, g the local surrogate, pi-x the locality kernel, and Z the sample set. |
 | 25 | Chapter 04 sources and terminology | Chapter 04 reads arXiv:1705.07874v2 and arXiv:2602.10532v1. Its terms added to appendix B are giá trị Shapley, lời giải thích cộng tính, phân phối nền, hàm nhân Shapley, độ chính xác cục bộ, tính vắng mặt, and tính nhất quán; KernelSHAP and TreeSHAP stay in English. Appendix A now maps the shared notation to SHAP as well as LIME. |
 | 26 | Chapter 06 source, scope and notation | Chapter 06 reads arXiv:2505.24729v1. It treats completeness, sensitivity and linearity as constraints, then develops the paper's indicator-function construction and its measure-theoretic form, without claiming that the construction picks an application-appropriate measure or proves faithfulness. The chapter prints no paper-reported decimal, so research/ remains empty under decision 19. It adds hàm chỉ báo and độ đo Borel hữu hạn có dấu to appendix B and $\varphi_j(x,f)$ with $\mu_{j,x}$ to appendix A. |
@@ -294,6 +294,17 @@ keep the two in step.
 - **`Listings.MaxLineLength` unset.** Unblocked the day the book admits its
   first minted or verbatim environment: measure on a built page (decision 21)
   and set it in the same session.
+- **Five chapter-owned terms sit in no appendix B block.** The 2026-08-24
+  re-audit named "liên minh", "đóng góp biên", "trò chơi hợp tác" and "đường
+  cong SHAP" in chapter 04 and "độ đo" in chapter 06: each is central, each is
+  technical, and none is in the glossary, so the Gloss check cannot see them.
+  Adding them was tried in that session and reverted: they appear in nearly
+  every section of their chapters, so the once-per-section cadence would put
+  about twenty parenthetical glosses on the page. Closing this means either
+  accepting that cost, or adding them together with `Gloss.Exempt` entries and
+  a SPEC rule saying which technical terms the cadence does not bind. "độ đo"
+  is also the ordinary Vietnamese word for a measurement, so it is the first
+  candidate the other open item on `Gloss.Exempt` anticipates.
 - **`Gloss.Exempt` is empty.** Grows one measured term at a time as the gate
   finds ordinary-Vietnamese collisions. "chuỗi" is the likely first, and it
   collides with the subtitle's "chuỗi suy luận" - settle which side owns it

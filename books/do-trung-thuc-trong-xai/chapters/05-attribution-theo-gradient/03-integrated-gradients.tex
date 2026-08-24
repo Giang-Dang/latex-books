@@ -21,8 +21,9 @@ nó cộng các độ dốc gặp trên cả hành trình từ $x_0$ đến $x$.
 \index{tính đầy đủ}%
 \begin{proposition}
 \label{prop:ch05-tinh-day-du}
-Đặt $g(\alpha)=F\bigl(x_0+\alpha(x-x_0)\bigr)$. Nếu $g$ liên tục tuyệt đối
-trên $[0,1]$, thì tổng các attribution Integrated Gradients bằng chênh lệch
+Đặt $g(\alpha)=F\bigl(x_0+\alpha(x-x_0)\bigr)$. Giả sử $F$ khả vi tại
+$x_0+\alpha(x-x_0)$ với hầu hết $\alpha$, và $g$ liên tục tuyệt đối trên
+$[0,1]$. Khi đó tổng các attribution Integrated Gradients bằng chênh lệch
 đầu ra:
 \begin{equation}
 \sum_i \operatorname{IG}_i(x;x_0)=F(x)-F(x_0).
@@ -31,15 +32,18 @@ trên $[0,1]$, thì tổng các attribution Integrated Gradients bằng chênh l
 
 Mệnh đề~\ref{prop:ch05-tinh-day-du} là \tn{tính đầy đủ}{completeness}. Nó là
 định lý cơ bản của giải tích Lebesgue áp cho đường đi trong không gian đầu
-vào, và liên tục tuyệt đối là điều kiện cần và đủ để định lý ấy dùng được.
+vào. Hai giả thiết chia nhau hai việc: tính khả vi hầu khắp nơi cho phép viết
+$g'$ theo các đạo hàm riêng của $F$, còn liên tục tuyệt đối là điều kiện đủ
+để $\int_0^1 g'$ bằng $g(1)-g(0)$.
 Bài báo gốc phát biểu điều kiện yếu hơn, rằng $F$ khả vi hầu khắp nơi, cùng
-một chú thích rằng $F$ liên tục và các đạo hàm riêng khả tích~\autocite{p11ig};
-bộ điều kiện ấy chưa đủ, vì hàm Cantor thỏa cả ba mà tích phân của đạo hàm
-vẫn bằng không trong khi chênh lệch đầu ra bằng một. Với các mạng mà bài báo
-nhắm tới, hợp thành hữu hạn của ánh xạ affine, ReLU, sigmoid và phép gộp cực
-đại, hàm $g$ Lipschitz địa phương nên liên tục tuyệt đối, và mệnh đề áp được.
+một chú thích rằng $F$ liên tục và tập điểm gián đoạn của mỗi đạo hàm riêng
+có độ đo không~\autocite{p11ig}. Bộ điều kiện ấy chưa đủ: hàm Cantor liên
+tục, khả vi hầu khắp nơi với đạo hàm bằng không, mà tích phân của đạo hàm vẫn
+bằng không trong khi chênh lệch đầu ra bằng một. Với các mạng mà bài báo nhắm
+tới, hợp thành hữu hạn của ánh xạ affine, ReLU, sigmoid và các toán tử gộp,
+hàm $g$ Lipschitz địa phương nên liên tục tuyệt đối, và mệnh đề áp được.
 
-Từ tính đầy đủ suy ra hai điều, và chỉ hai điều. Khi chỉ một tọa độ thay đổi,
+Từ tính đầy đủ suy ra một điều, và chỉ một điều. Khi chỉ một tọa độ thay đổi,
 tổng trên chỉ còn tọa độ ấy; do đó tính đầy đủ kéo theo
 \tn{độ nhạy}{sensitivity} của mục~\ref{sec:ch05-hai-tien-de}. Nhưng mệnh đề
 không nói từng phần đóng góp là duy nhất: những đường đi khác giữa cùng hai

@@ -5,13 +5,14 @@
 \index{bản đồ đặc trưng}%
 Mục trước cho thấy baseline quyết định câu hỏi phản thực, chứ không quyết
 định nơi attribution được đặt. Integrated Gradients đặt nó trên từng tọa độ
-đầu vào, và với một ảnh cỡ $224\times224$ thì hơn một trăm nghìn tọa độ pixel
-là quá mịn để trả lời câu hỏi mô hình nhìn vào vùng nào. Grad-CAM đổi chính
-chỗ đặt ấy: nó chuyển attribution vào lớp tích chập cuối, nơi còn giữ cấu
+đầu vào, và với một ảnh ba kênh màu cỡ $224\times224$ thì hơn một trăm nghìn
+tọa độ đầu vào là quá mịn để trả lời câu hỏi mô hình nhìn vào vùng nào. Grad-CAM đổi chính
+chỗ đặt ấy: nó chuyển attribution vào tầng tích chập cuối, nơi còn giữ cấu
 trúc không gian. Mỗi \tn{bản đồ đặc trưng}{feature map}
 $A^k$ cho biết một mẫu đã xuất hiện mạnh đến đâu tại từng vị trí, còn các tầng
 sau biến tập bản đồ ấy thành điểm số $y^c$ của lớp mục tiêu $c$, lấy trước
-phép softmax~\autocite{p12gradcam}.
+phép softmax. Selvaraju và cộng sự đặt tên Grad-CAM cho cách làm
+này~\autocite{p12gradcam}.
 
 Chọn tầng tích chập nào là một đánh đổi. Tầng sâu chứa các mẫu ngữ nghĩa hơn,
 nhưng lưới không gian đã thô. Tầng nông giữ chi tiết vị trí hơn, nhưng các
