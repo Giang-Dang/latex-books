@@ -1,0 +1,32 @@
+\begin{problemsummary}
+{A client gets a well-formed answer in which entities are attached to the wrong
+parents. Every value is real, every type is right, the response is HTTP 200
+with no error key, and no count, log line, metric or dashboard moves. The
+schema, the composition and the query plan are all identical to the healthy
+case. Most requests are unaffected and stay unaffected, because the failure
+appears only where the parent list arrives in an order the child's store will
+not reproduce; a page sorted the same way the child table is keyed answers
+correctly forever.}
+{\code{\_entities} is a positional contract. Apollo's specification says twice
+that the answer must come back in the same order as the representations, and
+says nothing anywhere about checking that a returned entity is the one that was
+asked for. The router merges the answer into the parents by index, and the only
+thing it validates is that the two lists are the same length, which a reordered
+list is. It cannot do better: it never asks for the key, so it has no copy of
+the answer's identity to compare. Hot Chocolate keeps the order by resolving
+each representation into its own slot, and a source-generated DataLoader keeps
+it by looking up every key in the dictionary the batch returned, so the mistake
+requires leaving both, which a store that is not a \code{DbContext} routinely
+does.}
+{In a hand-written \code{DataLoaderBase}, bound the loop by the keys and not by
+the rows: build a dictionary from whatever the store returned, walk the key
+list, and write each slot from a lookup, so a key with no row becomes the null
+the specification asks for instead of shifting its neighbors. Prefer the
+source generator, which writes exactly that loop and accepts only a dictionary,
+so no collection's ordering can reach the answer. Assert it with a request that
+asks the
+entity route for the key alongside the fields, in an order that is not key
+order, and check that each entry carries the key its own representation named;
+a fixture whose keys happen to be ascending passes against a broken subgraph
+and proves nothing.}
+\end{problemsummary}

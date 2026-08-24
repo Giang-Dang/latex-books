@@ -2,12 +2,15 @@
 \chapter{Right Data, Wrong Entity}
 \label{ch:representation-order}
 
-\emph{Not yet drafted.}
+The only thing tying an entity to the question that asked for it is where it
+sits in a list, and nothing between the subgraph and the client checks that it
+is the right thing.
 
-% Chapter skeleton, SPEC decision 13. Five beats, this order:
-%   1. The one sentence  - what this chapter establishes, stated first.
-%   2. Show it          - the thing running, or in Part III the thing failing.
-%   3. Why it does that - the mechanism. All theory lives here (decision 14).
-%   4. Do it properly   - the complete, correct implementation.
-%   5. Summary box      - decision 21.
-% Section files are \input from here, numbered 01-, 02-, ... from the book root.
+Everything in this chapter is one graph, running, answering every request the
+book has printed so far correctly, and lying about two of them.
+
+\input{chapters/11-right-data-wrong-entity/01-two-sessions-each-others-speakers}
+\input{chapters/11-right-data-wrong-entity/02-position-is-the-whole-contract}
+\input{chapters/11-right-data-wrong-entity/03-why-this-graph-got-away-with-it}
+\input{chapters/11-right-data-wrong-entity/04-walk-the-keys-not-the-rows}
+\input{chapters/11-right-data-wrong-entity/05-summary}
