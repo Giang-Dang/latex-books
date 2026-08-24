@@ -30,6 +30,18 @@
         AllowInCapturedListings = @('minted:text')
     }
 
+    # The printed index is the reader's vocabulary. This book refers to its own
+    # decision log by number constantly - in prose comments, in commit
+    # messages, and in the research notes - and a chapter 9 draft indexed
+    # `decision 43`, which would have printed a term no reader has seen and
+    # cannot look up. SPEC.md is internal and never ships. The pattern carries
+    # a word boundary so that an entry about how the book records a decision,
+    # which is a legitimate reader-facing subject, stays silent.
+    # SPEC decision 93.
+    Index = @{
+        ForbidPattern = '\\index\{decision\b'
+    }
+
     # No contractions in the author's own voice; they appear only inside quoted
     # material, which the check already exempts because \enquote{} spans are
     # masked before it runs. Off by default across the library, because whether
@@ -63,6 +75,13 @@
 
     Spelling = @{
         Preset = 'en-US'
+
+        # The second table, on. The preset's own list covers the differences
+        # that follow a rule; this covers the ones that do not, and chapter 9
+        # is why it is on: a draft carried `programme` and three of `judgement`
+        # through a clean run of the base table and a cold reader found all
+        # four. SPEC decision 92.
+        Variants = $true
 
         # Deliberately empty. SPEC decision 29: the exemptions this book will
         # need are British spellings appearing inside captured tool output or a
