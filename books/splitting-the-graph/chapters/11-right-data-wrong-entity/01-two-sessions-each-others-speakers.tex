@@ -1,0 +1,193 @@
+\section{Two Sessions, Each Other's Speakers}
+\label{sec:ch11-two-sessions-each-others-speakers}
+
+\index{representation order!the failure it produces|(}%
+A client asks the graph for two talks by their identifiers, which is the shape
+of every screen that shows a reader the things they bookmarked:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+POST /graphql HTTP/1.1
+Host: localhost:3002
+Content-Type: application/json
+
+{"query":"{ nodes(ids: [\"U2Vzc2lvbjo0\",\"U2Vzc2lvbjox\"]) { ... on Session { title speaker { name } } } }"}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"nodes":[
+  {"title":"The Bank That Split Its Graph",
+   "speaker":{"name":"Ada Fischer"}},
+  {"title":"Schemas That Outlive Their Authors",
+   "speaker":{"name":"Chidi Okafor"}}]}}
+\end{minted}
+
+\index{representation order!both names are real}%
+Both of those are wrong. The bank talk is Chidi Okafor's and the schema talk is
+Ada Fischer's. The graph has told a client otherwise at HTTP 200 with no error
+key, and the two names it used belong to real speakers who really are in the
+database. Nothing is missing and nothing is malformed, so there is no null to
+notice and nothing to catch the eye, and a person reading it cannot tell.
+
+\index{representation order!every other page still right}%
+This is not a graph that is down. Every request this book has printed since
+chapter~\ref{ch:data-without-n-plus-1} still answers correctly against these
+same three services. The page chapter~\ref{ch:router-n-plus-1} opened on:
+
+\begin{minted}{graphql}
+{ sessions(first: 10) { nodes { title speaker { name } } } }
+\end{minted}
+
+\index{statement count!unchanged by the defect}%
+comes back with Ada Fischer twice, then Bruno Kaminski, then Chidi Okafor,
+against the right four titles, at one statement in the Sessions service and one
+in the Speakers service. That is the number
+chapter~\ref{ch:second-third-subgraph} measured and
+chapter~\ref{ch:router-n-plus-1} restored, unchanged. The default page of two
+is right. The graph composes. Each service exports the schema it exported
+before, byte for byte. The query plan for that page is the same
+\code{Sequence} of two steps with the same \code{BatchEntity} at the same field
+path.
+
+\subsection{The File That Did It}
+
+\index{DataLoader!written out by hand}%
+Two files differ from the graph chapter~\ref{ch:router-n-plus-1} left, and the
+first is \code{SpeakerDataLoader.cs}. The Speakers service's DataLoader is no
+longer generated from a \code{[DataLoader]} method; it is written out by hand:
+
+\begin{minted}[highlightlines={37-42}]{csharp}
+using GreenDonut;
+using Microsoft.EntityFrameworkCore;
+
+namespace Speakers;
+
+/// <summary>
+/// What the source-generated loader is underneath: a class deriving
+/// from DataLoaderBase, given the batch of keys and a span to put the
+/// answers in. Written out by hand because a store that is not a
+/// DbContext - a remote service, a cache, a stored procedure - hands
+/// back a list rather than a dictionary, and the generator only
+/// accepts a dictionary.
+/// </summary>
+public interface ISpeakerByIdDataLoader : IDataLoader<int, Speaker>;
+
+public sealed class SpeakerByIdDataLoader(
+    IServiceProvider services,
+    IBatchScheduler batchScheduler,
+    DataLoaderOptions options)
+    : DataLoaderBase<int, Speaker>(batchScheduler, options),
+        ISpeakerByIdDataLoader
+{
+    protected override async ValueTask FetchAsync(
+        IReadOnlyList<int> ids,
+        Memory<Result<Speaker?>> results,
+        DataLoaderFetchContext<Speaker> context,
+        CancellationToken ct)
+    {
+        await using var scope = services.CreateAsyncScope();
+        var db = scope.ServiceProvider
+            .GetRequiredService<SpeakerContext>();
+
+        var rows = await db.Speakers
+            .Where(s => ids.Contains(s.Id))
+            .ToListAsync(ct);
+
+        // One row per key, in the order the keys were given, so the
+        // i-th row is the answer to the i-th key.
+        for (var i = 0; i < rows.Count; i++)
+        {
+            results.Span[i] = Result<Speaker?>.Resolve(rows[i]);
+        }
+    }
+}
+\end{minted}
+
+\index{Program.cs@\code{Program.cs}!registering a loader by hand}%
+The second file is \code{Program.cs}. The source generator does not know the
+loader exists, so it is registered the way anything else is. Four lines go in
+above the builder chain and nothing else in the file that
+chapter~\ref{ch:second-third-subgraph} printed moves:
+
+\begin{minted}[highlightlines={26-30}]{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Speakers;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<SpeakerContext>(options =>
+{
+    options.UseSqlite("Data Source=speakers.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+// A hand-written loader is not found by the source generator, so it
+// is registered here like any other service.
+builder.Services
+    .AddDataLoader<ISpeakerByIdDataLoader, SpeakerByIdDataLoader>();
+
+builder
+    .AddGraphQL()
+    .AddSpeakersTypes()
+    .RegisterDbContextFactory<SpeakerContext>()
+    .AddQueryContext()
+    .AddPagingArguments()
+    .AddGlobalObjectIdentification()
+    .AddApolloFederation()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false)
+    .TryAddTypeInterceptor<ShareNodeFields>();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<SpeakerContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{DataLoader!the comment that is the bug}%
+The highlighted comment and the loop under it are the whole of the defect, and
+the comment is the mistake stated out loud. It says the rows come back in the
+order the keys were given. They do not.
+\code{ids.Contains(s.Id)} becomes an \code{IN} list, and an \code{IN} list is a
+membership test rather than an instruction about order. What comes back is in
+whatever order the store chose, and the store was not told what the caller
+wanted. Every run of this against SQLite handed the rows back by ascending
+primary key, so asking for speakers three and one gets them back as one and
+three.
+
+\index{reference resolver!untouched by the defect}%
+Nothing else in the service moved. \code{SpeakerType.cs} is the file
+chapter~\ref{ch:second-third-subgraph} printed, taking the same
+\code{ISpeakerByIdDataLoader} it always took, decoding the same key and
+checking the same type name inside it before spending it. The reference
+resolver asks for the speaker it was asked about. What comes back from
+\code{LoadAsync} is somebody else.
+\index{representation order!the failure it produces|)}%

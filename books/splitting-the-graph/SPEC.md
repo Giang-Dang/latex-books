@@ -11,7 +11,7 @@ Author: Giang Dang
 ## Status
 
 Settled 2026-08-19 through a seven-round requirements interview. Chapters 1 to
-10 are drafted. The verification repo at `F:/repo/splitting-the-graph-graph`
+11 are drafted. The verification repo at `F:/repo/splitting-the-graph-graph`
 carries a tag per chapter plus one per state the book argues against, with
 `verify.ps1` passing on each; the full table is that repo's `README.md`. The
 single-service baseline chapter 10 measured against was settled by chapter 3:
@@ -70,11 +70,27 @@ defaults the key and a batching loader is keyed on it, and the combination is
 correct only when the caller happens to ask for the key (decision 97). The
 book batches. `verify.ps1` is at 342 assertions on `main`.
 
-Next action: chapter 11, right data, wrong entity. It has what it needs.
-Representation order is now asserted at `ch10` in four shapes, including an
-out-of-key-order list and a batch with a hole in it, so the chapter starts from
-a proved contract rather than from a claim, and decision 51's mechanism is ready
-for the deliberately broken listing the TOC says it owes.
+Chapter 11 prints two complete C# files and puts neither of them on `main`. The
+example was already right, so the chapter's own contribution to `verify.ps1` is
+the request that would have caught it if it were not, and both listings live on
+branches: the broken one the chapter argues against, and the corrected one it
+ends on. Three findings outrank the chapter. The `[DataLoader]` source
+generator makes the order failure unreachable, and reinterprets a list-returning
+method rather than rejecting it, so the broken listing had to be hand-written
+(decision 99). The router checks that an entity answer has as many entries as it
+sent and checks nothing else, and cannot do better because it never asks for the
+key (decision 100). And this book's seed hides the whole failure: with the
+defect deployed, every page printed since chapter 3 still answers correctly,
+because the schedule names speakers in ascending order and ascending is the
+order the rows come back in (decision 101). `verify.ps1` is at 353 assertions on
+`main`.
+
+Next action: chapter 12, `_entities` never asks who you are. Decision 85 already
+recorded what it inherits: `resolvable: false` is advice to the composer rather
+than a guard, and a representation sent straight to a service that declares a
+stub answers `Unexpected Execution Error` rather than a refusal. Chapter 11 adds
+a second thing worth carrying in: nothing on the entity route validates what
+comes back, which is the same absence of checking one layer along.
 
 **Why this book exists.** It is the second book in this library on federated
 GraphQL in .NET, and it exists because the first one,
@@ -210,6 +226,13 @@ and why, in the row.
 | 97 | The entity route batches or projects, never both, and this book batches | The projection decision 96 found cannot be combined with a batching loader. The selector defaults every property nobody asked for, the key included, so a loader keyed on that property receives rows all carrying zero and `ToDictionary` raises `An item with the same key has already been added. Key: 0`. Measured 2026-08-24, and it **works** when the client happens to select the key, which is worse than failing: correctness conditional on the caller, and invisible in review because the request you test with is the one carrying the id. GreenDonut ships the API for exactly this, a `Select` overload taking a key selector, and all three routes to it fail: the builder overload and the expression overload both throw `Type does not have a default constructor` from `Expression.New`, which is decision 55's wall in a second API and closes the whole selector-builder family to a domain modeled in positional records, and merging a key-preserving expression into a `DefaultSelectorBuilder` by hand silently discards it. So the book takes the batch: the statement count grows with another service's page size and the column count does not. The trade is stated in the chapter rather than hidden, along with when it would go the other way. |
 | 98 | Chapter 10 issues no HotChocolate 14 callout, deliberately | The third chapter to do this, after decisions 64 and 91, and the reasoning is its own. Chapter 6's callout already showed a reference resolver on 14 going through a DataLoader and `verify.ps1` already asserts it there at one statement, because the only route that federates a type on 14 is a code-first `ObjectType<T>` and the book's copy of it takes the loader. So a chapter 10 callout would restate a claim the `hc14` branch already carries and already proves. `Session` is not an entity on that branch at all (decision 71), so the one source change this chapter makes has no counterpart there, and every assertion it adds to the shared script sits behind `SessionKeyed` or `SpeakerExtracted`, both false there. `ch10-hc14` tags an unchanged tree with an unchanged 214, on the same footing as `ch05`, `ch08` and `ch09-hc14` (decision 66). |
 
+| 99 | The order contract cannot be broken through the `[DataLoader]` source generator, so chapter 11's broken listing is hand-written | Measured 2026-08-24. The generator classifies a method as a batch loader only if it returns a dictionary shape, and the `CopyResults` it emits walks the **keys** and calls `TryGetValue` on each, so the returned collection's own ordering never reaches the answer. Under that, `_entities` resolves one indexed task per representation. Both layers have to be left behind before order can go wrong. **Also measured, and recorded because it looked like the obvious middle road:** a `[DataLoader]` method returning `Task<IReadOnlyList<Speaker>>` is **not rejected**. The generator silently reinterprets it as a cache loader whose key is the whole `IReadOnlyList<int>` and whose value is the whole list, and the call site then fails to compile with two `CS0266` errors about converting `object` to `Speaker`, neither of which mentions batching. The mistake is caught, by the type checker rather than by a diagnostic that knows what you meant. The consequence for the chapter is that the deliberately broken listing is a hand-written `DataLoaderBase<int, Speaker>`, and the motive for writing one is stated in the prose rather than assumed: a store that is not a `DbContext` hands back a list. |
+| 100 | The router validates the length of an `_entities` answer and nothing else | Read at `graphql-go-tools` v2.16.0, which `router@0.341.0` pins, in `Loader.mergeResult`. **Note the path moved**: chapter 10 read `loader.go` and `loader_multi_entity.go` under `v2/pkg/engine/datasource/graphql_datasource/` and at this version they are under `v2/pkg/engine/resolve/`. The merge pairs `batch[i]` with `items[i]`, and where decision 95's de-duplication applies it merges `batch[batchIndex]` into every target that hashed to that position. One check precedes both loops, that the two counts are equal, failing with `invalidBatchItemCount`. Nothing reads `__typename` or a key field off the returned object; `astjson.MergeValuesWithPath` is a generic deep merge with no identity logic, and the one `__typename` test in the file inspects the **parent** before the request is sent. So a short or long answer is refused and a same-length reordered answer is undetectable. **The router cannot do better**: the entity fetch does not select the key, because asking for a key the router already holds would be a column nobody wanted on every entity fetch in every graph. **Not reproduced:** the length check firing. Hot Chocolate always answers one entry per representation, so no state of the verification repo produces a short or long array, and under decisions 53 and 65 chapter 11 describes the behaviour and quotes no message. |
+| 101 | The order failure is invisible in this book's graph, and that is the chapter rather than a caveat | Measured 2026-08-24 on `ch11-misordered`. With the defect deployed, every request the book has printed since chapter 3 still answers correctly, at unchanged statement counts, with byte-identical exported schemas, a composing graph and an unchanged query plan. The reason is the seed: sessions in schedule order name speakers 1, 1, 2 and 3, the router de-duplicates to `[1, 2, 3]`, and SQLite returns those rows ascending, so the two lists agree. **That is a property of the data.** No paging request in this graph can surface the defect, because `sessions` sorts by `StartsAt` in the resolver and takes no sort argument, and Relay's `last:` still returns its window forwards. `nodes(ids:)` is the only root field where the client chooses the order, and two **aliased** `node(id:)` calls are immune because the planner makes them two `Entity` fetches of one representation each rather than one `BatchEntity`. Recorded as a decision because a later chapter changing the seed, the default sort or the paging surface would silently un-break chapter 11's demonstration and nothing would fail. |
+| 102 | GreenDonut's two clauses fail differently, and chapter 11 is built on the asymmetry | `DataLoaderBase.FetchAsync` carries the contract in its own doc comment, read out of the shipped 16.6.1 assembly: \enquote{For every provided key must be a result returned. Also to be mentioned is, the results must be returned in the exact same order the keys were provided.} Measured 2026-08-24: breaking the first leaves a slot in the span unwritten, and an unresolved `Result` becomes `Unexpected Execution Error` at that position, which is the **fourth** distinct cause of that message in this book after the stub advertising an unresolvable key (decision 85), the Ratings service without its serializer (decision 86), and the dictionary with a duplicate key that chapter 10 closed on (decision 97). Those three are the ones chapter 10 prints; decision 69's original is not among them, because decision 96 records that it was never re-derived. Breaking the second costs nothing and says nothing. The chapter prints both, because which half of a contract fails loudly is what decides whether anyone finds out. Also recorded: de-duplication and decision 68's type-name guard both survive the defect, living in `DataLoaderBase` above `FetchAsync` and in the reference resolver respectively, so a narrow defect is not a safe one. |
+| 103 | Chapter 11 issues no HotChocolate 14 callout, deliberately | The fourth chapter to do this, after decisions 64, 91 and 98. Everything chapter 11 is about lives in GreenDonut rather than in Hot Chocolate: `DataLoaderBase<TKey, TValue>`, its `FetchAsync` and the doc comment stating the order contract are the same API on both versions, so a callout would report no difference. The chapter's demonstration needs more than that, though, and cannot have it: the failure is visible only across a seam, and `hc14` has one subgraph (decision 91), `Session` is not an entity there at all (decision 71), and the Speakers service does not exist on that branch. Building one to host a deliberately broken loader would put a second full service on a branch decision 47 keeps to what a callout quotes, to demonstrate a defect in a library that does not differ between the versions. `ch11-hc14` tags an unchanged tree with an unchanged 214, on the same footing as `ch05`, `ch08`, `ch09-hc14` and `ch10-hc14` (decision 66). |
+| 104 | A second correct implementation gets a tag, on the same reasoning a wrong one does | Chapter 11 prints the corrected hand-written loader as its beat 4, and decision 48 says every listing the book prints is run before it is typeset. `ch11-handwritten` is therefore the first tag in this repository that is neither `main` nor a state the book argues against: an alternative implementation, verified by running `main`'s own `verify.ps1` against it unchanged and unloosened, 353 assertions PASS, the same 353 that pass against the source-generated loader. That equivalence is the chapter's claim, so running the whole script is the proof rather than a spot check. Rejected: describing the corrected loop under decision 65, which would have left the chapter's only constructive listing the unproved one. **One edit both hand-written branches carry:** the override names its list parameter `ids` rather than the base class's `keys`, because EF Core names SQL parameters after the closed-over variable and the book's other two loaders print `@ids1`. A reader typing the file from an IDE's `override` completion gets `keys` and sees `@keys1`; that difference is real, harmless, and recorded here rather than in the prose. |
+
 
 ## Version baseline
 
@@ -267,7 +290,7 @@ session. Chapter folders in `chapters/` carry the same scope lines.
 ### Part III - The Problems
 
 10. **The N+1 the Router Creates** - the router de-duplicates and batches representations and a naive reference resolver does not; what a DataLoader behind one is worth, and why it cannot also project. **Updated 2026-08-24 while drafting**, from a line that said only that the router batches: it does both, and which half it does not do is the chapter's argument (decision 95). The projection clause is decisions 96 and 97, which correct decision 69.
-11. **Right Data, Wrong Entity** - `_entities` must answer in representation order, and what silently wrong data looks like when it does not
+11. **Right Data, Wrong Entity** - `_entities` must answer in representation order, and what silently wrong data looks like when it does not. **Confirmed 2026-08-24 while drafting**, with one clause added rather than changed: the chapter is equally about why nothing catches it, because the router validates only the length of the answer (decision 100) and this book's own seed makes the failure invisible on every page it prints (decision 101).
 12. **`_entities` Never Asks Who You Are** - the guard on the root field that the entity route walks straight past
 13. **The Page You Cannot Ask For** - filtering, sorting and paginating across a seam; why no directive fixes it, and the dedicated search domain as the escape
 14. **One Field Fails and the Response Is Empty** - non-null error propagation, blast radius, designing for partial failure, and `@semanticNonNull`
@@ -306,7 +329,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 08 | drafted | Note at `research/ch08-enter-the-router.md`. Three tags, `verify.ps1` PASS on each: `ch08` (main, 241 assertions), `ch08-noplan` (12, the config that serves the graph and hides the query plan, decision 51) and `ch08-hc14` (214). The book's first long-running process that is not ours, and its first component that is a downloaded binary rather than a package. `git diff ch07..ch08` over `src/` is empty, so this is the second tag on an unchanged tree after `ch05` (decision 66). Settled decisions 80 to 84, and closed the two open items on the router version and the gateway audit. |
 | 09 | drafted | Note at `research/ch09-the-second-and-third-subgraph.md`. Three tags, `verify.ps1` PASS on each: `ch09` (main, 328 assertions), `ch09-hc14` (214, an unchanged tree with the shared script branched so it still passes) and `ch09-noserializer` (20, the Ratings service without `AddDefaultNodeIdSerializer()`, which builds, starts and answers its own root field while the entity route alone fails in silence, decision 51). The graph becomes three services on three databases. Speaker leaves Sessions for a stub with `resolvable: false`; Speakers owns the rows; Ratings contributes three fields to a type it does not own, one of them behind `@requires`. The first query answered across two subgraphs costs the two statements chapter 3 measured inside one process. Settled decisions 85 to 91, and closed four open items. The retro added three more: decisions 92 and 93 turn on two new gate checks this chapter's audit argued for, and 94 is the rule no check can enforce. 30 pages, the longest in part II, and one chapter (decision 89). |
 | 10 | drafted | Note at `research/ch10-the-n-plus-1-the-router-creates.md`. Three tags, `verify.ps1` PASS on each: `ch10` (main, 342 assertions), `ch10-naive` (33, the Speakers reference resolver with the DataLoader taken out from behind it, decision 51) and `ch10-hc14` (214, an unchanged tree). The first chapter of part III. Its one source change is a DataLoader behind the Sessions reference resolver, which is the debt chapter 6 left in a comment. Two findings are larger than the chapter: the router de-duplicates representations before it sends them (decision 95), and decision 69 is wrong, which decision 96 records and corrects. Settled decisions 95 to 98, closed one open item and narrowed two. 10 pages, the shortest chapter since 5, and it stayed short because the audit moved seven verbatim captures out of the prose: they came from scratch states no tag produces, which decisions 48, 53 and 65 do not allow the book to quote. That triage is recorded at the end of the note. |
-| 11 | not-started | Carries a deliberately broken listing under decision 22's carve-out. |
+| 11 | drafted | Note at `research/ch11-right-data-wrong-entity.md`. Four tags, `verify.ps1` PASS on each: `ch11` (main, 353 assertions, unchanged source), `ch11-misordered` (40, the hand-written loader filling the results span by row rather than by key, decision 51), `ch11-handwritten` (353, the corrected hand-written loader run against main's own script, decision 104) and `ch11-hc14` (214, an unchanged tree). The chapter changes no line of the example, because the example was already right; what it adds is the request that would have caught the defect. Carries the deliberately broken listing the TOC owed, under decision 22's carve-out. Three findings are larger than the chapter: the source generator makes this failure unreachable and reinterprets a list return rather than rejecting it (decision 99), the router validates the length of an entity answer and nothing else (decision 100), and this book's seed hides the failure completely, so the chapter is about why every page still looked right (decision 101). Settled decisions 99 to 104 and opened four open items. 12 pages. |
 | 12 | not-started | |
 | 13 | not-started | **Open item:** may need a fourth subgraph. See Open items. |
 | 14 | not-started | |
@@ -657,6 +680,43 @@ An unresolved question, and the condition that unblocks it.
   graph has one `@requires` field and no query produces the case. Chapter 10
   states the hashing and declines the inference. Unblocked by a second requiring
   field on the same type, which chapter 13 may need anyway.
+- **Why the error path on an unwritten `Result` slot sometimes drops the
+  index.** Found while checking a chapter 11 audit finding, and it changed both
+  the chapter and the script. Measured 2026-08-24 over twenty runs, five each
+  across four key orders: nineteen answered `_entities.2`, naming the position
+  that was never filled, and one answered `_entities` alone, with the `data`
+  half byte-identical every time. So the index is real, usual, and not
+  something to assert. `verify.ps1` on `ch11-misordered` now checks the first
+  path segment only, and chapter 11 prints the `data` half and states in prose
+  that the index is not dependable. Unblocked by reading how Hot Chocolate
+  attributes an unresolved `Result` to a list item, which decides whether this
+  is a race, a property of the key order, or something else. A later chapter
+  that wants to print a path from the entity route should settle this first.
+- **Whether the router's length check can be provoked from a Hot Chocolate
+  subgraph.** Decision 100 read the check in the router's source and chapter 11
+  describes it rather than quoting it, because no state of the verification repo
+  produces a short or long `_entities` array: Hot Chocolate answers one entry per
+  representation always, and even the unwritten-slot failure decision 102 records
+  still returns a list of the right length carrying a null. Unblocked by a
+  subgraph that is not Hot Chocolate, or by something in front of one that
+  truncates the array, neither of which is worth a fourth service. Until then the
+  error text stays under decisions 53 and 65.
+- **Whether SQLite guarantees the row order chapter 11 relies on.** Every run
+  returned rows in rowid order for an `IN` list, and the chapter deliberately
+  claims something weaker: that the order is the store's choice rather than the
+  caller's. Nobody read SQLite's documentation on result ordering without an
+  `ORDER BY`, because no claim in the chapter needs it. Unblocked by reading it,
+  and worth doing only if a later chapter wants to state what SQLite does rather
+  than what a store in general may do.
+- **Whether a chapter after 11 will move the seed or the default sort.**
+  Decision 101 depends on four sessions naming speakers 1, 1, 2 and 3 in schedule
+  order, on `sessions` sorting by `StartsAt` with no sort argument, and on the
+  paging surface offering no way to reverse a window. Chapter 13's cross-seam
+  sorting is the chapter most likely to change one of those, and if it does,
+  chapter 11's demonstration quietly stops demonstrating: `ch11-misordered` would
+  start failing a request the book prints as correct. Nothing checks this across
+  chapters. Unblocked by outlining chapter 13, which should read decision 101
+  before it touches the ordering of anything.
 - **Whether Pygments gains an SDL lexer.** Decision 31 is a workaround with a
   measured justification, not a preference. Unblocked by a Pygments release
   whose `graphql` lexer handles type definitions, `!` and directives; at that

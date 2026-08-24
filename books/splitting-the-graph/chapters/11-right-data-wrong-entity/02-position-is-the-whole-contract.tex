@@ -1,0 +1,139 @@
+\section{Position Is the Whole Contract}
+\label{sec:ch11-position-is-the-whole-contract}
+
+\index{entities@\code{\_entities}!the order clause, twice|(}%
+Chapter~\ref{ch:router-n-plus-1} quoted Apollo's subgraph specification saying
+that the entity route
+\enquote{must return a list of entity objects that correspond to the provided
+representations, in the exact same order}, and that
+\enquote{entries in the list can be null if no entity exists for a provided
+representation}~\autocite{apollosubgraphspec}. That was the sentence pair I
+needed there, and I read past a second statement of the same rule that matters
+more here. Further down, the page gives a subgraph library an algorithm for
+answering the field, and the step that puts an entity into the answer reads
+\enquote{add the fetched entity object to the array of entity objects}, followed
+immediately by \enquote{make sure objects are listed in the same order as their
+corresponding representations}~\autocite{apollosubgraphspec}.
+
+\index{entities@\code{\_entities}!stated twice, checked nowhere}%
+Once as a contract on the answer, once as an instruction to the implementer.
+I read the repetition as a warning, and I would rather take it as one than
+find out why it is there.
+
+\index{entities@\code{\_entities}!nothing validates the answer}%
+What the page does not contain is any requirement to check. Its validation
+rules are all about the representation coming in: that it carries
+\code{\_\_typename}, and that it carries every field named in the
+\code{@key} field set. About the answer it says two things, order and
+nullability, and there is no third sentence asking anybody to confirm that the
+entity at position two is the entity representation two named. I went looking
+for one, in the same spirit as chapter~\ref{ch:router-n-plus-1}'s search for a
+sentence about batching, and there is nothing.
+
+\subsection{What the Router Does With the List}
+
+\index{router!merges by position}%
+The router's half of it is one loop, and it is worth being exact about,
+because the shape of the failure follows from it. The executor inside the
+router binary walks the answer array and the list of parent objects together,
+merging each entry of one into the entry of the other that sits at the same
+index. Where
+chapter~\ref{ch:router-n-plus-1}'s de-duplication happened, it walks the map it
+built from representation hash to batch position instead, and merges the answer
+at that position into every parent that hashed to it.
+
+\index{router!checks the length and nothing else}%
+Before either loop it makes one check, and only one: that the number of entries
+it got back equals the number of representations it sent. A short list or a
+long one is refused, and the router renders an error saying the returned
+entities count does not match the count of representation variables. That
+check is why a subgraph cannot quietly drop an entry.
+
+\index{router!a reordered list is not detectable}%
+A list of the right length in the wrong order passes it without comment. There
+is nothing else to catch it. The merge is a JSON deep merge with no notion of
+identity: it does not read \code{\_\_typename} off the returned object, it does
+not compare a key field, and it could not, because it did not ask for the key.
+Look again at the entity fetch the planner wrote for the failing request:
+
+\begin{minted}{graphql}
+query($representations: [_Any!]!) {
+  _entities(representations: $representations) {
+    ... on Speaker { __typename name }
+  }
+}
+\end{minted}
+
+\index{router!never asks for the key it sent}%
+The client asked for \code{name}, so the router asks for \code{name}. The
+\code{id} is in the representation going out and is nowhere in the selection
+set coming back. The router has no copy of the answer's identity to compare
+against, and the reason is not an oversight: asking for a key the router
+already knows would be a column nobody wanted, on every entity fetch in every
+graph, forever.
+
+Figure~\ref{fig:ch11-position-is-the-join} is the whole path.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch11-position-is-the-join}
+  \caption{Where the identity goes. The client's order becomes the router's
+  representation order, and one \code{IN} list later the store has handed the
+  rows back in its own order instead, which is the crossing. Everything below
+  it is faithful: the loader writes the row order straight into the position
+  order, the subgraph preserves that, the router preserves it, and all three
+  are preserving a position that stopped meaning anything two steps earlier.
+  What the client is told at the bottom is well-formed, positionally intact,
+  and about two real people who gave two other talks. Only the crossing is
+  drawn solid, because it is the only link anybody asserted.}
+  \label{fig:ch11-position-is-the-join}
+\end{figure}
+
+\subsection{GreenDonut Says It Too}
+
+\index{GreenDonut!the contract in the method you override}%
+The interesting part is that this graph did not have to go looking for the
+specification to get it right. It was told, in the file the defect is in, by
+the library chapter~\ref{ch:router-n-plus-1} met when it went looking for a
+key-preserving projection. \code{DataLoaderBase.FetchAsync} carries a
+documentation comment, and a reader who types \code{override} in an editor is
+shown it before writing a line:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+A batch loading function which has to be implemented for each
+individual DataLoader. For every provided key must be a result
+returned. Also to be mentioned is, the results must be returned
+in the exact same order the keys were provided.
+\end{minted}
+
+\index{DataLoader!three statements of one rule}%
+The parameter and the return value each carry their own version of the same
+sentence, so the rule is stated three times in one comment. It is the
+specification's requirement restated one layer down, which makes sense: a
+positional span in and a positional span out is the same contract
+\code{\_entities} has, in a method that knows nothing about federation.
+
+\index{DataLoader!the contract has two halves}%
+Read it as two clauses rather than one. \emph{For every provided key must be a
+result returned} is the first, \emph{in the exact same order the keys were
+provided} is the second, and what it costs to break each of them is not the
+same thing twice.
+
+\subsection{This Is Not the Guard on the Key}
+
+\index{reference resolver!two different wrong entities}%
+Chapter~\ref{ch:first-subgraph} put a type-name check in front of the decoded
+key and showed what the entity route answers without one: a \code{Speaker}
+node id under a \code{Session} type name comes back as the session carrying
+that number, correctly typed, at 200, with no error. That is also right data
+and the wrong entity, and it is a different mechanism entirely.
+
+\index{reference resolver!the guard is still running}%
+There, the resolver was handed a question it should have refused and answered
+it anyway. The fix was to read the type name inside the key. Here the resolver
+is handed a question it is entitled to answer, asks for exactly the right
+speaker, and is given the wrong one on the way back. The guard
+chapter~\ref{ch:first-subgraph} wrote is still in the file, still running, and
+still correct, and it is no help at all: it inspects the key going in, and
+nothing in this book inspects what comes out.
+\index{entities@\code{\_entities}!the order clause, twice|)}%

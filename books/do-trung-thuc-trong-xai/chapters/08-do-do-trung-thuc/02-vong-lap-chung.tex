@@ -1,0 +1,58 @@
+\section{Vòng lặp chung của một phép đo phản thực}
+\label{sec:ch08-vong-lap-chung}
+
+\index{đánh giá phản thực}%
+\index{chỉ số đánh giá!ba lựa chọn tự do}%
+Nếu không có bảng nào để chép thì phải đọc từng bài báo, và việc đọc ấy cho một
+kết quả gọn hơn dự kiến. Các chỉ số dưới đây được đề xuất bởi những nhóm khác
+nhau, ở thị giác máy tính và ở xử lý ngôn ngữ, dưới những cái tên không liên
+quan gì nhau, nhưng chúng chạy chung một vòng lặp. Hình~\ref{fig:ch08-vong-lap-do} vẽ vòng lặp ấy.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch08-vong-lap-do}
+  \caption{Vòng lặp mà mọi chỉ số trong chương này đều chạy. Ba ô viền đứt là
+  ba chỗ mỗi chỉ số tự chọn lấy một cách làm; các họ chỉ số ở những mục sau khác
+  nhau đúng ở ba ô đó và giống nhau ở phần còn lại. Đây là bản gộp của sách,
+  dựng từ thủ tục mà từng bài báo mô tả, không phải sơ đồ của bài nào.}
+  \label{fig:ch08-vong-lap-do}
+\end{figure}
+
+Vòng lặp đi như sau. Lời giải thích cho một thứ tự trên các đặc trưng của $x$.
+Ta lấy một tập con theo thứ tự ấy, thay giá trị của các đặc trưng trong tập con
+bằng một giá trị nào đó, chạy lại $f$ trên đầu vào đã sửa, rồi so đầu ra mới với
+đầu ra cũ. Chênh lệch là con số của chỉ số. Lập luận đằng sau nó ngắn và có sức
+thuyết phục: nếu lời giải thích đã chỉ đúng các đặc trưng mà $f$ dựa vào, thì bỏ
+chúng đi phải làm $f$ đổi ý.
+
+Ba ô viền đứt trong hình là ba chỗ vòng lặp không tự quyết định được, và cả
+chương xoay quanh chúng.
+
+\textbf{Chọn tập con nào.} Lấy $k$ đặc trưng điểm cao nhất là một cách; lấy $k$
+đặc trưng điểm thấp nhất là một cách khác và đo một tính chất khác; lấy một tập
+con ngẫu nhiên cỡ $n$ là cách thứ ba.
+
+\textbf{Thay bằng giá trị gì.} Đặt về không, thay bằng trung bình của tập huấn
+luyện, làm mờ, hay lấy mẫu từ một \tn{phân phối nền}{background distribution}. Chương~\ref{ch:shap} đã gặp câu
+hỏi này khi SHAP phải định nghĩa thế nào là một đặc trưng vắng mặt, và
+chương~\ref{ch:attribution-tu-nguyen-ly-dau} đã cho nó một tên tổng quát: chọn
+giá trị thay thế chính là chọn độ đo để lấy trung bình. Ở đây câu hỏi cũ quay
+lại ở một tầng mới. Nó không còn nằm trong phương pháp attribution nữa mà nằm
+trong dụng cụ dùng để chấm điểm phương pháp ấy.
+
+\textbf{So cái gì.} Xác suất của lớp được dự đoán, độ chính xác trên cả tập
+kiểm tra, hay một đại lượng đo sau khi đã huấn luyện lại mô hình.
+
+Ba lựa chọn ấy nhân với nhau, và mỗi tổ hợp là một chỉ số có tên riêng trong
+tài liệu. Đó là lý do bốn mục tiếp theo xếp các chỉ số theo họ chứ không theo
+tên: đọc theo tên thì chúng là một danh sách rời rạc, còn đọc theo ba ô viền đứt
+thì chỉ có vài họ, và sự khác nhau giữa hai họ luôn quy về việc chúng điền gì
+vào ba ô ấy.
+
+Một hệ quả cần ghi ngay, vì nó là hình thức tổng quát của lời phê phán mà cả
+Phần~IV sẽ triển khai. Không ô nào trong ba ô có một cách điền đúng theo nghĩa
+toán học. Mỗi ô là một câu hỏi phản thực khác nhau, và
+chương~\ref{ch:attribution-tu-nguyen-ly-dau} đã cho thấy hai câu hỏi phản thực
+khác nhau có thể cùng hợp lệ mà cho hai kết quả khác nhau. Khi ấy hai chỉ số
+xếp hạng ngược nhau không chứng tỏ một trong hai sai; chúng có thể đang đo hai
+đại lượng khác nhau, cả hai đều được gọi là độ trung thực.

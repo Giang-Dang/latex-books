@@ -277,12 +277,38 @@
     # Allow        - regexes for numbers that are not measurements and should
     #                never have to trace: a version in prose, a fraction in an
     #                instruction. Each entry is a hole, so keep them tight.
+    # Schema, kept for reference now that this key is live below:
     # Numbers = @{
     #     Enabled      = $true
     #     ResearchDir  = 'research'
     #     ResearchGlob = '*.md'
     #     Allow        = @()
     # }
+    #
+    # THIS BOOK: the defaults, plus exactly one hole. Chapter 08's session
+    # crossed the research/ cliff described in research/README.md, which armed
+    # this check over the whole manuscript at once. The sweep it triggered
+    # produced 38 findings and not one of them was a measurement: 32 were the
+    # arXiv identifiers in appendix D's corpus table, and 6 were LaTeX column
+    # widths in appendix A and D.
+    #
+    # The two halves were fixed differently, because only one of them is a
+    # number at all. The column widths were typographic settings that happened
+    # to be written where the gate reads prose, so they moved into
+    # preamble/macros.tex, which Paths.Prose does not scan; no hole was needed
+    # and the check keeps full strength on them. An arXiv identifier is not a
+    # setting and cannot be moved, so it gets the hole below.
+    #
+    # The pattern is anchored at both ends and fixed at four digits, a dot and
+    # four or five, which is the arXiv identifier scheme and nothing else. It
+    # cannot swallow a paper-reported figure: this book's decimals are scores,
+    # proportions and AUROC values, none of which have four digits before the
+    # point. Widening it to \d+\.\d+ would silently exempt every number the
+    # check exists for. The rule this enforces is the Research bullet in
+    # SPEC.md's writing rules.
+    Numbers = @{
+        Allow = @('^\d{4}\.\d{4,5}$')
+    }
 
     # -- 11. Verbatim ---------------------------------------------------------
     # When prose calls a listing a capture, every substantial line of that

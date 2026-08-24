@@ -229,7 +229,7 @@
   eprint       = {2605.25052},
   eprinttype   = {arxiv},
   urldate      = {2026-08-24},
-  note         = {Not yet read for this book; verify against the PDF before citing.},
+  note         = {Read arXiv:2605.25052v1 (2026-05-24), the only revision, all 31 pages, from the PDF, for chapter 08; chapter 09 close-reads it. Preprint, cs.CL, no venue named. Its object is the faithfulness of chuoi suy luan, not of feature attribution: deletion, insertion, comprehensiveness, sufficiency, ROAR, sensitivity-n and infidelity appear nowhere in it, and its eight metrics are Adding Mistakes, Early Answering, Filler Tokens, SCM, FUR, CC-SHAP, Simulatability and Paraphrasing. Chapter 08 takes two things from it: the four-category grouping of metrics by what they perturb (importance-based, parameter-based, attribution-based, semantic-utility), and the paper's stated diagnosis that importance-based metrics conflate importance with faithfulness while semantic-utility metrics are satisfied by a fabricated justification. Its measurements belong to chapter 09 and chapter 08 prints none of them. The paper defines no metric by formula anywhere; all eight are described procedurally.},
 }
 
 % 22 - 3-tier-b-critique-core
@@ -351,4 +351,83 @@
   eprinttype   = {arxiv},
   urldate      = {2026-08-24},
   note         = {Not yet read for this book; verify against the PDF before citing.},
+}
+
+% ---------------------------------------------------------------------------
+% Metric literature outside the 32-paper corpus (decision 33 in SPEC.md).
+% Keys take the prefix m rather than pNN, because a corpus key's number is a
+% position in the reading ladder and these papers hold none; appendix D lists
+% the corpus and does not list these. Chapter 08 needs them because it is the
+% chapter about the faithfulness metric families and no corpus paper defines
+% one. Each note records the revision read and what was taken from it.
+% ---------------------------------------------------------------------------
+
+@online{mrise,
+  author       = {Petsiuk, Vitali and Das, Abir and Saenko, Kate},
+  title        = {{RISE}: Randomized Input Sampling for Explanation of Black-box Models},
+  date         = {2018},
+  eprint       = {1806.07421},
+  eprinttype   = {arxiv},
+  urldate      = {2026-08-24},
+  note         = {Read arXiv:1806.07421v3 (2018-09-25), the latest of three revisions, for chapter 08: the deletion and insertion curves and the area under them, and the stated intuition that removing the cause forces the base model to change its decision. The blurred canvas the insertion metric starts from is the paper's own concession that a replacement value is not neutral. The arXiv record names no venue, so the prose names none.},
+}
+
+@online{meraser,
+  author       = {DeYoung, Jay and Jain, Sarthak and Rajani, Nazneen Fatema and Lehman, Eric and Xiong, Caiming and Socher, Richard and Wallace, Byron C.},
+  title        = {{ERASER}: A Benchmark to Evaluate Rationalized {NLP} Models},
+  date         = {2020},
+  eprint       = {1911.03429},
+  eprinttype   = {arxiv},
+  urldate      = {2026-08-24},
+  note         = {Read arXiv:1911.03429v2 (2020-04-24), accepted as a long paper at ACL 2020, for chapter 08: comprehensiveness and sufficiency as differences in predicted-class confidence, and the authors' own hedge that how best to measure rationale faithfulness is an open question and that these are simple metrics motivated by prior work. The paper does not raise the out-of-distribution objection against them; mood does.},
+}
+
+@online{mroar,
+  author       = {Hooker, Sara and Erhan, Dumitru and Kindermans, Pieter-Jan and Kim, Been},
+  title        = {A Benchmark for Interpretability Methods in Deep Neural Networks},
+  date         = {2019},
+  eprint       = {1806.10758},
+  eprinttype   = {arxiv},
+  urldate      = {2026-08-24},
+  note         = {Read arXiv:1806.10758v3 (2019-11-05), NeurIPS 2019, for chapter 08: the RemOve And Retrain procedure, and the reason for retraining in the paper's own words, that samples with a subset of features removed come from a different distribution, and that without retraining it is unclear whether the drop comes from artifacts outside the training distribution or from information genuinely removed.},
+}
+
+@online{msensn,
+  author       = {Ancona, Marco and Ceolini, Enea and {\"O}ztireli, Cengiz and Gross, Markus},
+  title        = {Towards Better Understanding of Gradient-based Attribution Methods for Deep Neural Networks},
+  date         = {2018},
+  eprint       = {1711.06104},
+  eprinttype   = {arxiv},
+  urldate      = {2026-08-24},
+  note         = {Read arXiv:1711.06104v4 (2018-03-07), ICLR 2018, for chapter 08: the definition of Sensitivity-n, that the attributions over any feature subset of size n sum to the output change caused by removing that subset. The research note records that no assumption sentence for the metric was found in the paper's own text, so chapter 08 states none on its behalf.},
+}
+
+@online{minfid,
+  author       = {Yeh, Chih-Kuan and Hsieh, Cheng-Yu and Suggala, Arun Sai and Inouye, David I. and Ravikumar, Pradeep},
+  title        = {On the (In)fidelity and Sensitivity for Explanations},
+  date         = {2019},
+  eprint       = {1901.09392},
+  eprinttype   = {arxiv},
+  urldate      = {2026-08-24},
+  note         = {Read arXiv:1901.09392v4 (2019-11-03), the NeurIPS 2019 camera-ready revision, for chapter 08: definition 2.1, infidelity as the expected squared error between the output change the attribution predicts and the one the model actually shows over a perturbation distribution, and definition 3.1, max-sensitivity over a ball of radius r. The perturbation distribution is described only as meaningful perturbations of interest and is left to whoever runs the metric, which is the free choice chapter 08 reads it for.},
+}
+
+@online{mood,
+  author       = {Hase, Peter and Xie, Harry and Bansal, Mohit},
+  title        = {The Out-of-Distribution Problem in Explainability and Search Methods for Feature Importance Explanations},
+  date         = {2021},
+  eprint       = {2106.00786},
+  eprinttype   = {arxiv},
+  urldate      = {2026-08-24},
+  note         = {Read arXiv:2106.00786v2 (2021-10-27), NeurIPS 2021, for chapter 08: the argument that counterfactual inputs with features removed are out of distribution to the model, and that the model prior and the random weight initialisation therefore reach the explanations and the explanation metrics. The abstract names ERASER's sufficiency metric directly, which is why chapter 08 attaches the objection to a named metric rather than to a family in general.},
+}
+
+@online{msanity,
+  author       = {Adebayo, Julius and Gilmer, Justin and Muelly, Michael and Goodfellow, Ian and Hardt, Moritz and Kim, Been},
+  title        = {Sanity Checks for Saliency Maps},
+  date         = {2020},
+  eprint       = {1810.03292},
+  eprinttype   = {arxiv},
+  urldate      = {2026-08-24},
+  note         = {Read arXiv:1810.03292v3 (2020-11-06), the revision that corrected a Guided Backprop bug and left the conclusions standing, for chapter 08: the model parameter randomization test and the data randomization test, and the framing that a method failing them is incapable of supporting tasks that require faithfulness. That is a necessary condition rather than a degree, and chapter 08 turns on the distinction.},
 }

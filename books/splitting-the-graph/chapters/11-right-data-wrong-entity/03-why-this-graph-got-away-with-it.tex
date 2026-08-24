@@ -1,0 +1,138 @@
+\section{Why This Graph Got Away With It}
+\label{sec:ch11-why-this-graph-got-away-with-it}
+
+\index{representation order!the ascending coincidence|(}%
+The pages that still answer correctly are the conference schedule's doing, and
+nothing else.
+\code{sessions} comes back in start-time order, and the four sessions in that
+order belong to speakers one, one, two and three.
+Chapter~\ref{ch:router-n-plus-1} established that the router de-duplicates
+before it sends, so the representation list is speakers one, two and three.
+SQLite, asked for exactly those three by primary key, hands the rows back
+ascending: one, two, three. The list the subgraph was asked about and the list
+the store returned are the same list, so pairing them by position happens to
+be right.
+
+\index{representation order!a property of the data, not of the code}%
+That is a property of the seed data. It is not a property of the code, nobody
+chose it, and it survives no change at all: move one talk to a slot that puts
+its speaker out of turn and the answers start disagreeing with the questions.
+
+\index{representation order!no page in this graph can catch it}%
+It also means no paging request in this graph can find the defect. The parent
+list has to arrive in an order the subgraph's store will not reproduce, and
+\code{sessions} sorts by \code{StartsAt} inside the resolver and takes no sort
+argument, so the only orders a client can ask for are windows of that one
+order. Relay's \code{last:} does not help either: it selects the final entries
+and still hands them back forwards. The request that finds it is the one where
+the client supplies the list, which in this schema is \code{nodes(ids:)}, and
+that is why the chapter opened on a field a smoke test rarely touches.
+
+\index{representation order!aliased node calls are immune}%
+Two aliased \code{node(id:)} calls, which look like the same request written
+differently, are immune. The planner treats them as two separate entity
+fetches, each carrying one representation, and a batch of one cannot be out of
+order. Both come back correct on this graph. So the failing request and the
+passing request differ only in whether the client wrote one root field or two.
+
+\subsection{Your Graph Is Probably Less Lucky}
+
+\index{representation order!when the orders will not agree}%
+Two shapes make the coincidence go away, and between them they cover most of
+what a federated graph is for.
+
+\index{representation order!a parent list sorted by something else}%
+The parent list is sorted by something that is not the child's key. A feed by
+date, search results by relevance, a leaderboard by score: every one of them
+produces entity keys in an order the child's own store has never heard of. This
+is the normal case, and this book's schedule is only outside it because the
+speakers were seeded in the order they speak.
+
+\index{representation order!a store with no natural order}%
+The child store has no order to be ascending in. A key-value cache, a document
+database, a search index, a service behind HTTP that answers a list of ids: none
+of these promises anything about sequence, and several of them will return the
+cheapest order rather than a stable one. The moment a loader talks to one of
+those, the code that looked fine against SQLite is answering a coin toss.
+
+\subsection{One Half Is Loud and the Other Is Silent}
+
+\index{DataLoader!breaking the first clause}%
+The loader in section~\ref{sec:ch11-two-sessions-each-others-speakers} breaks
+both of \code{FetchAsync}'s clauses, and the graph reports one of them.
+
+Send it three representations where the middle key matches nothing, on the
+service's own port so that no router is involved, and ask for the key back
+alongside the name:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{graphql}
+query E($r: [_Any!]!) {
+  _entities(representations: $r) { ... on Speaker { id name } }
+}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"r":[{"__typename":"Speaker","id":"U3BlYWtlcjox"},
+      {"__typename":"Speaker","id":"U3BlYWtlcjo5OQ=="},
+      {"__typename":"Speaker","id":"U3BlYWtlcjoy"}]}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"_entities":[
+   {"id":"U3BlYWtlcjox","name":"Ada Fischer"},
+   {"id":"U3BlYWtlcjoy","name":"Bruno Kaminski"},
+   null]}}
+\end{minted}
+
+\index{DataLoader!an unwritten slot is an error}%
+That is the data half. Beside it the response carries an \code{errors} array,
+and the message in it is the one this book keeps meeting:
+\code{Unexpected Execution Error}, on the entity route. Whether the path also
+names the position that was never filled is not something to build on. Most
+runs give the index and some do not, and I have no account of why.
+
+\index{DataLoader!an unresolved result is not a null}%
+Two rows came back for three keys, the loop ran twice, and
+\code{results.Span[2]} was never written at all. An unwritten slot is not a
+null: it is a \code{Result} that was never resolved, and the engine turns it
+into an execution error rather than into the null the specification asks for.
+Which is the fourth distinct cause of \code{Unexpected Execution Error} in this
+book, after a stub advertising a key it cannot resolve, a service missing its
+node id serializer, and the dictionary with a duplicate key in it that
+chapter~\ref{ch:router-n-plus-1} ended on. The message still never says which.
+
+\index{DataLoader!the loud half is the survivable one}%
+Loud is a relative word here. The service writes nothing while this happens:
+no exception, no stack trace, nothing on standard output or standard error but
+the statement chapter~\ref{ch:data-without-n-plus-1}'s interceptor prints. What
+makes it survivable is that it reaches the client, which means it reaches
+whatever the client reports, and an error a caller can see is an error somebody
+eventually raises. The wrong-order half does not even do that. It will sit in a
+graph until a person notices that a talk has the wrong speaker's name on it and
+is believed.
+
+\subsection{What the Defect Did Not Reach}
+
+\index{DataLoader!de-duplication is above the defect}%
+Two properties of the entity route survive this loader untouched, and they are
+part of why the file reads correctly.
+
+De-duplication still works. Send the same representation three times and one
+key goes into the \code{WHERE} clause, and three correct copies of the same
+speaker come back. That is because the de-duplication lives in
+\code{DataLoaderBase} above \code{FetchAsync}, in the part nobody replaced, and
+a batch of one identical key cannot be out of order.
+
+\index{reference resolver!the guard is above the defect too}%
+The type-name guard still works. Send a \code{Session} node id under a
+\code{Speaker} type name in the middle of two good keys and the middle entry is
+null, two keys reach the batch, and the neighbors are untouched. That guard is
+in the reference resolver, which is the file it always was.
+
+\index{representation order!narrow is not the same as safe}%
+So the defect is narrow. It touches one method, it leaves every other property
+of the entity route intact, and the file it lives in reads correctly. Narrow is
+not the same as safe: this is the smallest change I
+know of that makes a federated graph lie to a client and keep every one of its
+instruments green.
+\index{representation order!the ascending coincidence|)}%

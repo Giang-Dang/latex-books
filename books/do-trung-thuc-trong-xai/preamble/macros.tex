@@ -50,6 +50,22 @@
 \floatname{algorithm}{Thuật toán}
 
 % ---------------------------------------------------------------------------
+% Appendix table column widths
+% ---------------------------------------------------------------------------
+% These are typographic settings, not measurements, but written inline in a
+% column spec they are decimals sitting in a file the prose gate scans, so the
+% Numbers check reads p{5.2cm} as a printed number that owes a research note.
+% Naming them here moves them into preamble/, which Paths.Prose does not read,
+% and leaves the check at full strength on every decimal that really is one.
+% Change a width here rather than in the appendix.
+\newcommand{\kyhieuw}{5.2cm}      % appendix A, meaning column
+\newcommand{\kyhieuwmap}{1.25cm}  % appendix A, one per-paper mapping column
+\newcommand{\kyhieuwlast}{1.4cm}  % appendix A, Grad-CAM column
+\newcommand{\danhmucwch}{1.8cm}   % appendix D, owning-chapter column
+% Appendix B's columns are whole centimetres and raise no finding, so they stay
+% written where they are read.
+
+% ---------------------------------------------------------------------------
 % Chapter apparatus
 % ---------------------------------------------------------------------------
 % Grey and rules only, no colour: these books are likely to be read in mono.

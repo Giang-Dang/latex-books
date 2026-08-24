@@ -1,0 +1,54 @@
+\section{Chỉ số như một dụng cụ đo}
+\label{sec:ch08-chi-so-nhu-mot-dung-cu}
+
+\index{chỉ số đánh giá}%
+\index{đánh giá theo chức năng}%
+Ba đại lượng mà chương trước để lại đều có cùng một dạng: chúng chấm điểm một
+lời giải thích mà không hỏi ai cả. Doshi-Velez và Kim đã xếp sẵn dạng ấy vào một
+trong ba cách đánh giá của họ. Mục~\ref{sec:ch01-danh-gia-giai-thich} đã đọc cả
+ba; cách thứ ba, đánh giá theo chức năng, được các tác giả mô tả là không có
+người tham gia và làm việc trên nhiệm vụ thay thế~\autocite{p14rigorous}. Mọi
+chỉ số trong chương này thuộc cách ấy.
+
+Điều đó không làm chúng kém giá trị. Một phép đo tự động chạy được hàng nghìn
+lần, trên hàng nghìn đầu vào, với chi phí mà một nghiên cứu có người tham gia
+không bao giờ chịu nổi, nên nếu không có nhóm chỉ số này thì phần lớn công trình
+so sánh các phương pháp attribution đã không thể tồn tại. Cái giá nằm ở chỗ
+khác, và Doshi-Velez và Kim nêu nó ngay trong mục định nghĩa cách thứ ba. Họ viết
+rằng đánh giá theo chức năng thích hợp nhất khi lớp mô hình hoặc bộ điều chuẩn
+đang xét đã được kiểm chứng từ trước, chẳng hạn bằng các thí nghiệm có người
+tham gia~\autocite{p14rigorous}. Điều kiện ấy đặt cách thứ ba vào thế phụ thuộc:
+nó rẻ được là vì đã có ai đó trả giá đắt trước. Còn chọn \tn{đại lượng thay thế}{proxy} nào
+thì chính các tác giả để ngỏ, và họ xếp câu hỏi ấy vào danh sách vấn đề mở ở
+cuối bài~\autocite{p14rigorous}.
+
+Ta gọi tên điều kiện đó bằng một phép so sánh sẽ theo suốt chương. Một \tn{chỉ số trung thực}{faithfulness metric}
+là một dụng cụ đo, và một dụng cụ đo có hai phẩm chất tách rời nhau.
+Thứ nhất là nó cho ra số ổn định, lặp lại được, rẻ. Thứ hai là số ấy tương ứng
+với đại lượng ghi trên mặt đồng hồ. Một nhiệt kế hỏng vẫn có thể rất ổn định.
+Với các chỉ số trong chương này, phẩm chất thứ nhất được báo cáo thường xuyên,
+còn phẩm chất thứ hai thì hầu như không, và bài báo neo của cuốn sách nói thẳng
+điều đó: phần lớn công trình đề xuất chỉ số chỉ báo cáo điểm số tuyệt đối hoặc
+so sánh với các chỉ số trước, chứ không đối chiếu với đáp án
+đúng~\autocite{p21metrics}.
+
+\begin{definition}[Chỉ số trung thực]
+\label{def:ch08-chi-so-trung-thuc}
+Cho mô hình $f$, đầu vào $x$ và một lời giải thích gán điểm cho các
+\tn{đặc trưng}{feature} của $x$. Một chỉ số trung thực là một thủ tục nhận ba thứ ấy và trả về một số
+thực, kèm quy ước rằng số càng cao thì lời giải thích càng phản ánh đúng sự phụ
+thuộc của $f(x)$ vào các đặc trưng.
+\end{definition}
+
+Định nghĩa~\ref{def:ch08-chi-so-trung-thuc} cố tình để hở đúng chỗ đang bàn.
+Nó mô tả thủ tục và quy ước đọc kết quả, nhưng không đòi hỏi bằng chứng nào cho
+quy ước ấy. Từ mục~\ref{sec:ch08-ho-xoa-dan} trở đi, mỗi họ chỉ số được kiểm lại
+xem chỗ hở đó được lấp bằng gì.
+
+Còn một khả năng nữa cần loại trừ trước, vì nó có vẻ là lối ra rẻ nhất. Một
+khảo sát về XAI có thể đã chốt sẵn cách đo cho cả lĩnh vực, và khi ấy chương này
+chỉ việc chép lại. Khảo sát của Long và cộng sự, mà
+mục~\ref{sec:ch07-ban-do} đã đọc, không làm việc đó: nó điểm lại công cụ theo
+phạm vi và theo thời điểm can thiệp, và không định nghĩa một chỉ số trung thực
+nào~\autocite{p20trends}. Không có bảng nào để chép, nên các họ chỉ số phải được
+dựng lại từ chính các bài báo đã đề xuất chúng.
