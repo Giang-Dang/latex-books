@@ -1,0 +1,130 @@
+\section{What the Loader Does Not Fix}
+\label{sec:ch10-what-the-loader-does-not-fix}
+
+\index{projection!the entity route has none|(}%
+Look at that batched statement again, next to what the node resolver in the
+same file emits for a request asking for the same one field:
+
+\begin{minted}{text}
+-- the entity route, asked for title
+SELECT "s"."Id", "s"."Abstract", "s"."DurationMinutes",
+       "s"."SpeakerId", "s"."StartsAt", "s"."Title"
+FROM "Sessions" AS "s"
+WHERE "s"."Id" IN (@ids1, @ids2, @ids3)
+
+-- the node route, asked for title
+SELECT "s"."Title"
+FROM "Sessions" AS "s"
+WHERE "s"."Id" = @id
+LIMIT 1
+\end{minted}
+
+\index{projection!six columns against one}%
+Six columns against one. The loader fixed the number of statements and did
+nothing at all about the width of them, and the entity route is the route the
+router uses for every cross-seam field in the graph. So this is the more common
+of the two paths taking the worse of the two shapes.
+
+\index{projection!chapter 6 said it was impossible here}%
+Chapter~\ref{ch:first-subgraph} said this was not fixable, and printed a comment
+in \code{SessionType.cs} saying a \code{QueryContext} could not be injected into
+a reference resolver. That is wrong. It can, and the comment in the file has
+changed accordingly, which is the version section~\ref{sec:ch10-the-loader-behind-the-resolver}
+prints.
+
+\subsection{The Projection That Works}
+
+\index{QueryContext@\code{QueryContext<T>}!does inject into a reference resolver}%
+Take the reference resolver as chapter~\ref{ch:first-subgraph} left it, add a
+\code{QueryContext<Session>} parameter, and put chapter~\ref{ch:data-without-n-plus-1}'s
+\code{.With(query)} back on the query. It builds, it starts, and it answers,
+and the statement it sends selects one column rather than six: the same
+\code{SELECT "s"."Title"} the node route beside it emits. Ask for two fields and
+it widens to two. Nothing here is a state this book ships, so I am describing
+these runs rather than printing them; what each one issued is recorded in the
+chapter's research note.
+
+\index{QueryContext@\code{QueryContext<T>}!the selector it carries}%
+The selector Hot Chocolate handed that resolver is exactly right. It constructs
+a \code{Session} taking \code{Title} from the row and defaulting the other five
+properties, which is what a projection for a query asking only for the title
+should look like.
+
+\index{ISelection@\code{ISelection}!at the entity route is \code{\_entities}}%
+Which is more surprising than it looks, because the selection the resolver is
+standing in is not the one that selector describes. Ask the resolver what field
+it is resolving and it says \code{\_entities}, declared on \code{Query},
+returning \code{[\_Entity]!}, whose named type is a union. The engine built the
+selector from the inline fragment inside that field while telling the resolver
+it is resolving the root. Anything that reads the selection by hand gets the
+union; the injected \code{QueryContext} gets what you wanted.
+
+\subsection{And Why the Book Does Not Ship It}
+
+\index{projection!the selector defaults the key}%
+Read that selector once more, at its first argument. Nobody asked for \code{id},
+so the projection fills it with \code{default(Int32)}, and the object that comes
+back has \code{Id} zero. For a resolver returning one row that costs nothing:
+the row is used for the fields that were asked for and the key was only ever the
+thing in the \code{WHERE} clause.
+
+\index{DataLoader!a dictionary keyed on a column the projection dropped}%
+For a loader it is fatal. Put the projection inside the loader and the query
+that goes out is everything you wanted: one statement, one column, and the
+three keys in an \code{IN} list. Then look at what comes back. Three
+\code{Speaker} records with the right names on them and \code{Id} zero on all
+three, and a dictionary keyed on \code{Id} being built out of them, which ends
+where you would expect: an argument exception saying an item with that key has
+already been added, naming the key as zero.
+
+\index{DataLoader!keyed on a column the projection dropped}%
+The service answers \code{Unexpected Execution Error} for every representation.
+Chapter~\ref{ch:second-third-subgraph} got that same message out of a stub that
+advertises a key it cannot resolve, and out of a service missing a serializer
+registration. Here it is a dictionary with a duplicate key in it. Three
+unrelated faults, one sentence, and it never says which.
+
+\index{projection!correct only if the client asked for the key}%
+Here is the part that decides it. Add \code{id} to the client's selection set
+and the same code works perfectly. The selector picks the key up because
+somebody asked for it, the statement gains a column, the dictionary is keyed 1,
+2 and 3, and the answer is correct. A subgraph that is right when the caller
+asks for the key and throws when it does not is not a subgraph I am willing to
+print, and it is not a failure anybody would catch in review, because the
+request you test with is the one that has the id in it.
+
+\index{records!positional records block the API built for this}%
+GreenDonut has an API for exactly this problem, a \code{Select} overload whose
+first argument is a key selector precisely so that the key survives the
+projection. There are two of them, one taking a builder and one taking an
+expression, and neither runs here: both reach a rewrite that calls
+\code{Expression.New} on the entity type, and both raise an argument exception
+saying \code{Speaker} has no default constructor.
+
+\index{records!the projection wall, twice}%
+Which is chapter~\ref{ch:data-without-n-plus-1}'s wall again. That chapter could
+not use \code{[UseProjection]}, because it builds its projected row the same
+way and a positional record has no parameterless constructor. It is the same
+rewrite failing for the same reason, which closes the whole selector-builder
+family to a domain modeled in records, and this book's domain has been records
+since chapter~\ref{ch:hot-chocolate-zero}. There is a third route, merging a
+key-preserving expression into the builder by hand, and it is worse than a
+failure: it raises nothing and drops the expression, and I cannot tell you why.
+
+\index{projection!batch or narrow, not both}%
+So the entity route can be batched, always, and it can be projected, at the cost
+of the batch. It cannot be both, and given the choice I take the batch: the
+number of statements grows with somebody else's page size and the number of
+columns does not. That is what the comment in \code{SessionDataLoader.cs} is
+recording, and it is there rather than in this paragraph because a reader typing
+the file out needs the reason at the line.
+
+\index{nullability!a wide select is not free forever}%
+One honest caveat about the trade. Six narrow columns on a SQLite table is not a
+cost anybody can measure, and I am not going to pretend it is. It becomes one
+when a row is wide, when a column is a blob nobody asked for, or when the
+projection would have let the database answer from an index instead of the
+table. If that is your shape, the entity route is where to look, and the answer
+this book could not find is still worth looking for.
+\index{projection!the entity route has none|)}%
+\index{N+1@N+1!at the entity route|)}%

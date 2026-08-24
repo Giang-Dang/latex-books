@@ -1,0 +1,162 @@
+% One fetch, two costs. The client asks the router for four sessions and
+% each session's speaker name. The router makes two fetches: one statement
+% to the Sessions service for the four sessions, then one HTTP request to
+% the Speakers service carrying representations for the speakers those
+% sessions name. Four sessions name three distinct speakers (Ada Fischer
+% speaks twice), and the router itself collapses the four down to three
+% before it ever sends the request: the POST to localhost:5002 carries
+% three representations, not four. Everything up to and including that one
+% POST is identical in both lanes below, and the shared prefix sits at the
+% same four x positions in both, the same discipline ch09-two-fetches.tex
+% uses for its own shared stages. A brace under lane A names that whole
+% prefix explicitly: one request, three representations, deduplicated by
+% the router, so a reader cannot mistake what follows for a difference the
+% router caused.
+%
+% What differs is only what the Speakers service does once that request
+% lands, and this is where the figure repeats the shape of
+% ch03-one-batch.tex with the router standing in for the execution engine
+% and a page from another service standing in for the local list ch03
+% resolved in memory. Lane A has no DataLoader behind the speaker resolver:
+% it is called once per representation, three times, and each call reaches
+% SQLite on its own, drawn as three separate ticks rather than an ellipsis,
+% exactly as ch03's lane A draws its four. A second brace under those three
+% ticks names what N actually is here: one statement per distinct speaker
+% on the page, and the page is the Sessions service's. That is the whole
+% point of the label, so it has to be the right way round: the Speakers
+% service can neither see nor set the length of the list it was handed.
+% Lane B sends the resolver through a DataLoader: the same three calls each
+% record a key and issue no statement, a dashed batch boundary marks where
+% the engine stops asking, and one statement carries all three keys. That
+% dashed boundary style is copied unchanged from ch03-one-batch.tex, where
+% it carries exactly this meaning: the engine has stopped asking and is
+% about to batch what it collected. This figure does not also use it for
+% the seam between the router and the Speakers process that
+% ch09-two-fetches.tex marks with the same dashed style; that crossing is
+% already this book's established idiom from ch09 and is not the argument
+% here, and reusing one dashed style for two different meanings in one
+% picture would blur the one meaning this figure needs. One more difference
+% from ch03 worth naming: there, the DataLoader's batch is what collapses
+% four keys to three. Here that collapse already happened one hop upstream,
+% inside the router, before either lane's three calls even begin; by the
+% time the Speakers service sees the request, in both lanes, there are only
+% three keys to resolve, so lane B's batched statement carries three keys
+% rather than three deduplicated out of four.
+%
+% Two stages that an earlier draft of this figure drew are deliberately not
+% here, and both were cut for width rather than for taste: the router's
+% planning step, which is chapter 8's and chapter 9's subject and not this
+% figure's, and a closing response-assembled tick, which ch09-two-fetches.tex
+% also does without. The measure is 155mm at this book's geometry (A4, 30mm
+% inner, 25mm outer) and every coordinate below is millimetres, so the
+% rightmost label has to land inside 155 or the page gains a silent
+% overhang. Re-check that if a label here is ever widened.
+%
+% Same idiom as figures/tikz/ch01-one-field.tex and ch03-one-batch.tex:
+% each lane is a timeline read left to right, ticks mark stages, and a
+% brace under the stages that matter carries a one-line label. Axis, tick,
+% event, span, spanlabel, lane and boundary styles are copied from
+% ch09-two-fetches.tex unchanged.
+%
+% No timings. SPEC decision 19 puts no milliseconds in this book: the
+% horizontal axis is sequence only, and no gap below is sized to suggest
+% one stage took longer than another. Lane A shows more ticks than lane B
+% because it has more distinct stages, not because it is slower; both
+% lanes end in the same response to the client.
+%
+% No quotation marks anywhere in this file. The book's strict Ascii mode
+% (see check-chapter.psd1) makes the prose gate read a literal " as a quote
+% character, while \" is LaTeX's diaeresis accent and fails to compile
+% inside a node. Every identifier below is written bare.
+%
+% Bare tikzpicture (house style): the figure environment, caption and
+% label live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  axis/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  tick/.style={draw, line width=0.4pt},
+  event/.style={anchor=south, align=center, text width=20mm,
+    inner sep=1pt},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  lane/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+  boundary/.style={draw, line width=0.4pt, dashed},
+]
+
+% ------------------------------------------------------------------- lane A
+% At y=20, not 16. The four-line node at x=80 reaches y=15 and this title
+% runs to about x=85, so a lower title lands on top of it. ch09-two-fetches.tex
+% raises its own lane A title for exactly this reason.
+\node[lane] at (0,20)
+  {A. one resolver call per representation, each reaching SQLite};
+
+\draw[axis] (0,0) -- (145,0);
+\foreach \x in {12,34,56,80,100,116,132}{
+  \draw[tick] (\x,-1.5) -- (\x,1.5);
+}
+
+\node[event, text width=20mm] at (12,3)
+  {client posts to\\localhost:3002\\/graphql};
+\node[event, text width=22mm] at (34,3)
+  {router posts to\\localhost:5001\\/graphql};
+\node[event, text width=20mm] at (56,3)
+  {1 statement\\to SQLite:\\4 sessions};
+\node[event, text width=26mm] at (80,3)
+  {router posts to\\localhost:5002\\/graphql:\\3 representations};
+\node[event, text width=14mm] at (100,3)  {rep 1\\stmt 2};
+\node[event, text width=14mm] at (116,3)  {rep 2\\stmt 3};
+\node[event, text width=14mm] at (132,3)  {rep 3\\stmt 4};
+
+\draw[span] (12,-4) -- (12,-7) -- (80,-7) -- (80,-4);
+\node[spanlabel, text width=58mm] at (46,-8)
+  {identical in both lanes: one POST to\\localhost:5002, carrying 3
+   representations,\\deduplicated from 4 by the router};
+
+\draw[span] (94,-4) -- (94,-7) -- (138,-7) -- (138,-4);
+\node[spanlabel, text width=42mm] at (116,-8)
+  {3 statements: one per distinct\\speaker on the page, and the\\page is
+   the Sessions service's};
+
+% ------------------------------------------------------------------- lane B
+\begin{scope}[shift={(0,-48)}]
+  \node[lane] at (0,20)
+    {B. the same three calls, one batched statement};
+
+  \draw[axis] (0,0) -- (145,0);
+  \foreach \x in {12,34,56,80,134}{
+    \draw[tick] (\x,-1.5) -- (\x,1.5);
+  }
+  \foreach \x in {98,103,108}{
+    \draw[tick] (\x,-1.5) -- (\x,1.5);
+  }
+  \draw[boundary] (120,-3) -- (120,6);
+
+  \node[event, text width=20mm] at (12,3)
+    {client posts to\\localhost:3002\\/graphql};
+  \node[event, text width=22mm] at (34,3)
+    {router posts to\\localhost:5001\\/graphql};
+  \node[event, text width=20mm] at (56,3)
+    {1 statement\\to SQLite:\\4 sessions};
+  \node[event, text width=26mm] at (80,3)
+    {router posts to\\localhost:5002\\/graphql:\\3 representations};
+  % Raised to y=7 so that its box clears the four-line node at x=80, and
+  % centred at 107 rather than over its own tick cluster so that 24mm of
+  % width fits without the two boxes touching. 22mm would fit over the
+  % cluster and hyphenates the word resolver, which reads badly.
+  \node[event, text width=24mm] at (107,7)
+    {speaker resolver x3:\\records key, no query};
+  \node[event, text width=18mm] at (134,3)
+    {1 statement:\\3 keys};
+
+  % One label below this lane's axis and no more. An earlier layout put
+  % three there, and at this spacing their boxes overlapped into an
+  % unreadable run: the three stages lane B annotates sit inside 40mm,
+  % where ch03-one-batch.tex had 70mm for two. The two labels dropped said
+  % what the event nodes above the axis already say.
+  \node[spanlabel, text width=28mm] at (120,-8)
+    {batch boundary:\\engine stops asking};
+\end{scope}
+
+\end{tikzpicture}

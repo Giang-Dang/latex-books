@@ -1,0 +1,94 @@
+\section{Why It Runs Once Per Representation}
+\label{sec:ch10-why-it-runs-once-per-representation}
+
+\index{entities@\code{\_entities}!the specification says nothing about how|(}%
+Apollo's subgraph specification defines the field this whole chapter is about
+in one line:
+
+\begin{graphqlsdl}
+_entities(representations: [_Any!]!): [_Entity]!
+\end{graphqlsdl}
+
+\index{entities@\code{\_entities}!two normative sentences about the answer}%
+and says two things about what comes back. The list
+\enquote{must return a list of entity objects that correspond to the provided
+representations, in the exact same order}, and
+\enquote{entries in the list can be null if no entity exists for a provided
+representation}~\autocite{apollosubgraphspec}. Both are about the answer.
+
+\index{entities@\code{\_entities}!nothing normative about resolution}%
+There is no third sentence. I read the page looking for one, and there is
+nothing anywhere in it about whether a subgraph should answer the list one entry
+at a time, all at once, or in any particular order of work. The contract is a
+list in, a list out, positionally aligned. How you get from one to the other is
+entirely yours.
+
+\index{entities@\code{\_entities}!Hot Chocolate answers it one at a time}%
+Hot Chocolate's answer is the one chapter~\ref{ch:data-without-n-plus-1}
+already spent a section on, and it is not special to the entity route. A
+resolver is a function from one parent to one value. Given three
+representations there is one thing the engine can do without knowing anything
+about your method, and it does it three times.
+
+\subsection{The Same Mechanism, One Layer Out}
+
+\index{N+1@N+1!chapter 3's shape with a router in it}%
+Read that against what chapter~\ref{ch:data-without-n-plus-1} measured and the
+two pictures are the same picture. There, the engine resolved \code{sessions},
+got four objects, and called the speaker resolver once per object. Here, the
+router resolves \code{sessions} against one service, gets four objects, works
+out which keys it needs, and calls the entity route of another service with
+three of them, whose engine then calls the reference resolver once per entry.
+Figure~\ref{fig:ch10-one-fetch-two-costs} is the two costs beside each other.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch10-one-fetch-two-costs}
+  \caption{The same entity fetch, answered two ways. Everything up to the
+  fourth tick is identical: the router gets four sessions from the Sessions
+  service in one statement, then posts one request to the Speakers service
+  carrying three representations, having dropped the duplicate itself. What
+  that service does with the list after it lands is the whole of the
+  difference, and lane A's three statements are one per distinct speaker on a
+  page the Sessions service chose. This is
+  figure~\ref{fig:ch03-one-batch} with a router where the execution engine was.}
+  \label{fig:ch10-one-fetch-two-costs}
+\end{figure}
+
+\index{N+1@N+1!the unit of repetition changes}%
+What changed between the two chapters is the unit and who controls it. In
+chapter~\ref{ch:data-without-n-plus-1} the repeated statement went to a database
+in the same process, over a list that same process had just produced, and
+\code{[UsePaging]} on that field capped it. Here the list arrives from a service
+this one does not own, and the cap on its length is a paging decision made in
+the Sessions codebase. A subgraph author cannot bound N by reading their own
+code.
+
+\index{N+1@N+1!what the wire hides}%
+There is a second difference and it runs the other way, which is the only
+reason this is not worse than chapter~\ref{ch:data-without-n-plus-1}'s version.
+The repetition stops at the process boundary. One HTTP request carried the
+whole list, so the network cost is one round trip whatever the resolver does
+with it, and the fan-out lands entirely on the database behind the subgraph.
+That is genuinely better than a gateway that made one call per row, and it is
+also exactly why nobody notices: the expensive thing is now one layer below the
+place anyone is watching.
+
+\subsection{Two Things That Do Not Make It Better}
+
+\index{N+1@N+1!not fixed by the router}%
+The router will not save you, and it is worth being precise about why rather
+than hoping. It de-duplicates, as section~\ref{sec:ch10-three-representations-not-four}
+showed, and that is the whole of what it can do from outside. Collapsing three
+lookups into one query requires knowing that all three go to the same table,
+that the table can be queried by a set of keys, and that the results can be put
+back in order. None of that is visible over HTTP. The router has a list of
+opaque identifiers and a schema.
+
+\index{N+1@N+1!not fixed by the entity route being one field}%
+And the fact that \code{\_entities} is a single field with a list argument, which
+looks like a batching API and is one, does not batch anything by itself. It gets
+the list to your door. What happens after that is a property of the code you
+wrote, which is the whole reason this chapter exists rather than being a
+paragraph in chapter~\ref{ch:first-subgraph}.
+\index{entities@\code{\_entities}!the specification says nothing about how|)}%

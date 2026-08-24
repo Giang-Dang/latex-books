@@ -1,0 +1,121 @@
+\section{The Page That Costs Four Statements}
+\label{sec:ch10-the-page-that-costs-four}
+
+\index{N+1@N+1!at the entity route|(}%
+Here is the request chapter~\ref{ch:data-without-n-plus-1} has been sending
+since the graph was one service, going through the router at the graph
+chapter~\ref{ch:second-third-subgraph} finished building:
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:3002
+Content-Type: application/json
+
+{"query":"{ sessions(first: 10) { nodes { title speaker { name } } } }"}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"sessions":{"nodes":[
+  {"title":"Schemas That Outlive Their Authors",
+   "speaker":{"name":"Ada Fischer"}},
+  {"title":"Reading a Query Plan",
+   "speaker":{"name":"Ada Fischer"}},
+  {"title":"Paging Without Offsets",
+   "speaker":{"name":"Bruno Kaminski"}},
+  {"title":"The Bank That Split Its Graph",
+   "speaker":{"name":"Chidi Okafor"}}]}}}
+\end{minted}
+
+\index{statement count!the seam costs two more than it should}%
+Correct, complete, HTTP 200, and no error key.
+Chapter~\ref{ch:second-third-subgraph} measured this exact request at two
+statements, one in each of two services, and made a point of the two being
+chapter~\ref{ch:data-without-n-plus-1}'s number surviving a seam. Change one
+parameter and the body beneath it, in one method, and it is four:
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Service & Chapter~\ref{ch:second-third-subgraph} & Now \\
+\midrule
+Sessions, on 5001 & 1 & 1 \\
+Speakers, on 5002 & 1 & 3 \\
+Ratings, on 5003 & 0 & 0 \\
+\midrule
+Total & 2 & 4 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\index{reference resolver!the naive form}%
+What changed is the DataLoader behind the Speakers service's reference
+resolver. Chapter~\ref{ch:first-subgraph} put one there when it wrote this
+book's first entity route, and measured what it was worth against three
+representations sent by hand;
+chapter~\ref{ch:second-third-subgraph} moved the file to the service that owns
+the rows now and left it as it was. This is the version without it, which is
+what a reference resolver looks like when you write the obvious thing:
+
+\begin{minted}[highlightlines={5,17,18,19}]{csharp}
+    [GraphQLIgnore]
+    public static async Task<Speaker?> ResolveSpeakerReferenceAsync(
+        string id,
+        INodeIdSerializer serializer,
+        SpeakerContext db,
+        CancellationToken ct)
+    {
+        var nodeId = serializer.Parse(id, typeof(int));
+
+        if (nodeId.TypeName != nameof(Speaker))
+        {
+            return null;
+        }
+
+        var key = (int)nodeId.InternalId!;
+
+        return await db.Speakers
+            .Where(s => s.Id == key)
+            .FirstOrDefaultAsync(ct);
+    }
+\end{minted}
+
+\index{reference resolver!decodes a key and fetches a row}%
+Nothing about that is careless. It decodes the key the way
+chapter~\ref{ch:first-subgraph} established, it checks the type name inside the
+key before spending the integer, and it fetches one row for one key, which is
+what the method signature says it is for. Every resolver in
+chapter~\ref{ch:hot-chocolate-zero} was written like this and every one of them
+was right to be.
+
+\subsection{What Else Changed}
+
+\index{N+1@N+1!leaves no trace outside the service}%
+Nothing else changed. That is the part worth sitting with, because it is what
+makes this failure different from every other one this book has shown you.
+
+\index{schema!the omission does not reach it}%
+The Speakers service exports the same schema, byte for byte. The graph
+composes, with no message. The router serves the same types and the same root
+fields. The query plan is the same \code{Sequence} of two steps with the same
+\code{BatchEntity} fetch naming the same field path. The router makes the same
+number of HTTP requests it made before, which is one. And the response, as you
+have just seen, is identical.
+
+\index{observability!the router cannot see this}%
+So there is no vantage point outside the Speakers service from which this is
+visible at all. From where the router stands the graph answered one query with
+two subgraph calls, and that is true. The only instrument that can see the rest
+is the one inside the process doing the work, and in this book that is
+chapter~\ref{ch:data-without-n-plus-1}'s statement log.
+Chapter~\ref{ch:blame-routing} is the chapter about finding out which subgraph
+is slow, and this is the failure mode it will be hunting: a service that is
+correct, is not erroring, is not timing out, and is doing four times the work
+somebody thinks it is.
+
+\index{N+1@N+1!the count is somebody else's page size}%
+One more property before the mechanism, because it changes how alarming the
+four is. Three of those statements are one per speaker on the page, and the
+page is the Sessions service's. Nothing in the Speakers service chose it, and
+nothing in the Speakers service can see it: this service was handed a list and
+the list is as long as another team's default page size, or as long as whatever
+a client asked that team for.

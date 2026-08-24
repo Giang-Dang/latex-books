@@ -400,3 +400,71 @@
                   the entity union and writes disableEntityResolver into the
                   router execution config; the chapter prints both}
 }
+
+%--------------------------------------------------------------------------
+% Chapter 10 - The N+1 the Router Creates
+%
+% Provenance in research/ch10-the-n-plus-1-the-router-creates.md. One
+% specification page, one vendor guide, one bylined vendor post and one
+% project README.
+%
+% The sourcing result worth recording here is a negative one. Neither
+% WunderGraph nor ChilliCream publishes guidance telling a subgraph author to
+% put a batch loader behind a reference resolver, and ChilliCream currently
+% publishes nothing at all about HotChocolate.ApolloFederation's reference
+% resolver. Apollo does, unsigned, and generally rather than for this stack.
+% So the chapter's recommendation is stated as my own judgment under decision
+% 38, with the two Apollo pages cited as corroboration rather than as
+% instruction, and the narrower rule the chapter gives is explicitly not
+% Apollo's broader one.
+%
+% The router's de-duplication is cited to neither of these. It was measured
+% off the wire, and graphql-go-tools is named in the prose as the component
+% rather than as a citation, because an identifier in a source tree is not a
+% source under this book's rules.
+%--------------------------------------------------------------------------
+
+@online{apollonplusone,
+  author       = {{Apollo GraphQL}},
+  title        = {Handling the N+1 Problem},
+  organization = {Apollo GraphQL Docs},
+  url          = {https://www.apollographql.com/docs/graphos/schema-design/guides/handling-n-plus-one},
+  urldate      = {2026-08-24},
+  addendum     = {No byline, no version and no date on the page. Cited for one
+                  clause, that the answer to the problem is the DataLoader
+                  pattern, which is a publisher describing the recommended use
+                  of its own specification's entity route rather than arguing a
+                  result. The chapter measures the claim rather than resting on
+                  it, and declines the page's broader recommendation to use a
+                  loader in every resolver}
+}
+
+@online{neuse2023dataloader,
+  author       = {Neuse, Jens},
+  title        = {{DataLoader} 3.0: Breadth-First Data Loading},
+  organization = {WunderGraph},
+  url          = {https://wundergraph.com/blog/dataloader_3_0_breadth_first_data_loading},
+  urldate      = {2026-08-24},
+  addendum     = {Bylined by WunderGraph's chief executive and co-founder, so
+                  the named-engineer rule is met and the chapter says whose
+                  post it is. Cited only for two statements about mechanism:
+                  that the entity route's list argument is what makes batching
+                  possible, and that the router de-duplicates representations
+                  before building its variables, which was measured
+                  independently here. The post's own benchmark claims about the
+                  DataLoader pattern's concurrency cost are not reproduced and
+                  are used nowhere}
+}
+
+@online{dataloaderjs,
+  author       = {{GraphQL Foundation}},
+  title        = {{DataLoader}},
+  organization = {GitHub},
+  url          = {https://github.com/graphql/dataloader},
+  urldate      = {2026-08-24},
+  addendum     = {README at version 2.2.3, cited as the artifact under decision
+                  39. Note for any chapter that describes the pattern's origin:
+                  the README credits it to Nicholas Schrock at Facebook in 2010,
+                  not to Lee Byron, who is the repository's maintainer and
+                  first-listed contributor}
+}

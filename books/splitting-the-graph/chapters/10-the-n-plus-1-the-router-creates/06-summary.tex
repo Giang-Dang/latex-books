@@ -1,0 +1,26 @@
+\begin{problemsummary}
+{One subgraph issues one database statement per distinct entity on a page that
+another subgraph produced. Nothing outside that service shows it: the schema,
+the composition, the query plan, the single HTTP request the router makes and
+the response the client receives are all identical to the healthy case, and the
+service is neither erroring nor slow enough to notice. The count is the number
+you would see if you had a statement log, and the page size setting it belongs
+to another team.}
+{\code{\_entities} takes a list of representations, and Apollo's specification
+says only that the answer must come back in the same order and may carry nulls.
+It says nothing about how to produce it, so Hot Chocolate treats it the way it
+treats any resolver over a list and calls the reference resolver once for each
+entry. The router de-duplicates the representations before sending them, which
+is half of what a DataLoader does and the half that costs nothing; collapsing
+the remaining lookups into one query needs knowledge of the store that the
+router does not have and cannot get.}
+{Put a source-generated DataLoader behind the reference resolver, taking
+\code{IReadOnlyList<int>} and returning a dictionary, exactly as
+chapter~\ref{ch:data-without-n-plus-1} did for a field resolver. Order, nulls
+for unmatched keys and the type-name guard all survive it, and the guard still
+runs before the batch is assembled. Leave the loader out of a reference resolver
+that answers from the representation and touches no table. Do not reach for the
+projection as well: a \code{QueryContext} does inject here and does narrow the
+\code{SELECT}, but it defaults the key, and a loader keyed on that column then
+answers correctly only when the caller happens to have asked for it.}
+\end{problemsummary}
