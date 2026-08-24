@@ -1,0 +1,64 @@
+\section{Họ tiên đề: Sensitivity-n và infidelity}
+\label{sec:ch08-ho-tien-de}
+
+\index{Sensitivity-n}%
+\index{infidelity}%
+Hướng còn lại ở ô thứ nhất là không xếp hạng gì cả. Thay vì lấy $k$ đặc trưng
+điểm cao nhất, ta lấy \emph{mọi} tập con cỡ $n$, hoặc lấy mẫu ngẫu nhiên trong
+số đó, rồi đòi một đẳng thức đúng trên tất cả. Cách đặt vấn đề này đến từ lý
+thuyết chứ không từ thực nghiệm, và nó lặp lại kiểu lập luận mà
+chương~\ref{ch:shap} và chương~\ref{ch:attribution-theo-gradient} đã dùng khi
+phát biểu các tiên đề của SHAP và của Integrated Gradients.
+
+Ancona và cộng sự phát biểu điều kiện dưới tên Sensitivity-n: một phương pháp
+attribution thỏa Sensitivity-n khi tổng các attribution trên một tập con đặc
+trưng cỡ $n$ bất kỳ bằng đúng biến thiên của đầu ra do việc bỏ tập con ấy gây
+ra~\autocite{msensn}. Với $n$ bằng tổng số đặc trưng, điều kiện này trở thành
+\tn{tính đầy đủ}{completeness} mà chương~\ref{ch:attribution-theo-gradient} đã
+gặp ở Integrated Gradients; Sensitivity-n là dạng tổng quát của nó cho mọi cỡ tập con.
+
+Yeh và cộng sự viết một điều kiện gần như vậy dưới dạng một sai số cần cực
+tiểu hóa. Infidelity của một lời giải thích $\Phi$ là kỳ vọng bình phương độ
+lệch giữa biến thiên mà lời giải thích tiên đoán và biến thiên mà mô hình thật
+sự cho, lấy trên một phân phối \tn{phép nhiễu}{perturbation}:
+
+\begin{equation}
+\label{eq:ch08-infidelity}
+\mathrm{INFD}(\Phi, f, x)
+= \mathbb{E}_{I \sim \mu_I}
+  \left[
+    \left(
+      I^{\top}\Phi(f,x) - \bigl(f(x) - f(x - I)\bigr)
+    \right)^{2}
+  \right],
+\end{equation}
+
+trong đó $I$ là một biến ngẫu nhiên mà các tác giả mô tả là các phép nhiễu đáng
+quan tâm quanh $x$~\autocite{minfid}. Cùng bài báo còn định nghĩa max-sensitivity,
+đo lời giải thích thay đổi nhiều nhất bao nhiêu khi đầu vào xê dịch trong một
+quả cầu bán kính $r$~\autocite{minfid}. Đại lượng thứ hai này đo tính ổn định
+của lời giải thích, không đo quan hệ của nó với mô hình, nên nó không thuộc
+định nghĩa~\ref{def:ch08-chi-so-trung-thuc}.
+
+Họ này mạnh hơn họ xóa dần ở một điểm và yếu đi ở một điểm khác. Nó mạnh hơn vì
+điều kiện phải đúng trên nhiều tập con chứ không chỉ trên một thứ tự, nên một
+phương pháp không thể qua được bằng cách xếp hạng khéo. Chỗ yếu đi thì tinh hơn: điều kiện được
+kiểm giữa lời giải thích và \emph{phản ứng của mô hình trước phép nhiễu}, chứ
+không phải giữa lời giải thích và cơ chế mà mô hình thật sự dùng. Nếu phép nhiễu đưa mô hình ra
+ngoài phân phối thì $f(x - I)$ trong phương trình~\ref{eq:ch08-infidelity} chính
+là đại lượng mà mục trước vừa cho thấy là không đọc được, và một phương pháp
+attribution khớp thật khít với nó sẽ đạt infidelity thấp.
+
+Ở đây phân phối $\mu_I$ nhận lại vai trò của độ đo trong
+chương~\ref{ch:attribution-tu-nguyen-ly-dau}. Các tác giả mô tả nó là các phép
+nhiễu đáng quan tâm và để người dùng chọn~\autocite{minfid}; bài báo không biện
+minh một lựa chọn cụ thể nào. Với Sensitivity-n thì ô thứ hai được chốt cứng
+bằng cách đặt các đặc trưng bị bỏ về không~\autocite{msensn}, tức là chọn sẵn
+một giá trị thay thế mà mục~\ref{sec:ch08-huan-luyen-lai} vừa cho thấy là không
+trung lập.
+
+Một điều cần nói rõ vì sự vắng mặt của nó cũng là dữ kiện. Bài báo của Ancona và
+cộng sự không có câu nào phát biểu giả định mà Sensitivity-n dựa vào để con số
+của nó có nghĩa là độ trung thực. Chương này vì thế không gán cho các tác giả
+một giả định nào. Điều ghi nhận được là điều kiện ấy được đề xuất như một tính
+chất đáng có, và nó chưa từng được đối chiếu với ground truth độc lập.

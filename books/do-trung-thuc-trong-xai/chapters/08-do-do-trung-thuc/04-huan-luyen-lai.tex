@@ -1,0 +1,51 @@
+\section{Huấn luyện lại để cứu phép đo}
+\label{sec:ch08-huan-luyen-lai}
+
+\index{ROAR}%
+\index{đầu vào ngoài phân phối}%
+Hooker và cộng sự đặt tên cho vấn đề mà mục trước dừng lại, và họ đặt nó bằng
+ngôn ngữ của học máy chứ không bằng ngôn ngữ của XAI. Mẫu bị bỏ đi một phần đặc
+trưng đến từ một phân phối khác, nên dùng nó để đánh giá là vi phạm đúng giả
+thiết nền của học máy, rằng dữ liệu huấn luyện và dữ liệu đánh giá cùng một
+phân phối~\autocite{mroar}.
+
+Hệ quả của việc vi phạm ấy được các tác giả phát biểu ở dạng một câu hỏi không
+trả lời được. Nếu không huấn luyện lại thì không rõ hiệu năng giảm là vì ta đã
+đưa vào các dấu vết lạ nằm ngoài phân phối huấn luyện, hay vì ta thật sự đã lấy
+đi thông tin~\autocite{mroar}. Hai nguyên nhân ấy cho cùng một con số, và chỉ số
+không phân biệt được chúng, nên con số không đọc được.
+
+Cách sửa mà họ đề xuất, RemOve And Retrain, can thiệp vào ô thứ ba của
+hình~\ref{fig:ch08-vong-lap-do}. Bỏ $k$ đặc trưng điểm cao nhất, thay bằng một
+giá trị không mang thông tin, rồi \emph{huấn luyện lại} mô hình trên dữ liệu đã
+sửa, và chỉ khi đó mới đo độ chính xác~\autocite{mroar}. Lập luận cho phép huấn
+luyện lại nằm ở chính chữ \enquote{không mang thông tin}: một giá trị chỉ có thể
+coi là không mang thông tin nếu mô hình đã được huấn luyện để hiểu nó như
+vậy~\autocite{mroar}.
+
+Phép sửa này đắt và nó thay đổi đại lượng được đo. Mỗi mức $k$ đòi một lần huấn
+luyện lại, nên chi phí của một đường cong bằng chi phí huấn luyện nhân với số
+điểm trên đường cong. Quan trọng hơn, mô hình sau khi huấn luyện lại không còn
+là mô hình mà ta muốn giải thích. ROAR đo xem sau khi bỏ $k$ đặc trưng ấy đi thì
+\emph{một mô hình mới} còn học được bao nhiêu, tức là đo lượng thông tin nằm
+trong tập đặc trưng đó đối với bài toán. Đó là một đại lượng có ý nghĩa, nhưng
+nó không phải quan hệ mà định nghĩa~\ref{def:ch01-do-trung-thuc} đặt ra, vốn nói
+về một hành vi của một mô hình đã cho.
+
+Hase và cộng sự sau đó siết lập luận và nói rõ nó ăn tới đâu. Họ gọi thứ mà
+ROAR mô tả bằng đúng một cái tên, \tn{đầu vào ngoài phân phối}{out-of-distribution input},
+và vì các đầu vào phản thực là như vậy, tiên nghiệm của mô hình và cả cách
+khởi tạo trọng số ngẫu nhiên đều lọt được vào lời giải thích và vào chính các
+chỉ số đánh giá lời giải thích~\autocite{mood}. Câu ấy nặng hơn câu của ROAR
+một bậc. ROAR nói ta không đọc được con số; Hase và cộng sự nói con số có mang
+thông tin, nhưng một phần thông tin ấy đến từ những thứ chẳng liên quan gì đến
+lời giải thích lẫn mô hình đã huấn luyện.
+
+Bài báo cũng gọi thẳng tên chỉ số mà nó nhắm vào: sufficiency của ERASER, ở
+dạng chỉ giữ lại $k$ đơn vị điểm cao nhất~\autocite{mood}. Nhờ vậy lời phê phán
+này không dừng ở mức một nhận xét chung về họ xóa dần, mà gắn được vào một chỉ
+số cụ thể đang được dùng trong một bộ đánh giá cụ thể.
+
+Như vậy ô thứ hai và ô thứ ba của vòng lặp đã lộ ra là những chỗ không có lựa
+chọn trung lập. Ô thứ nhất, việc chọn tập con, còn lại một hướng chưa xét, và
+hướng ấy dẫn tới một họ chỉ số được xây theo tinh thần khác hẳn.

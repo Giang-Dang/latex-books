@@ -1,0 +1,28 @@
+\begin{tikzpicture}[
+  every node/.style={font=\footnotesize, align=center},
+  box/.style={draw=black!65, rounded corners=2pt, fill=black!5,
+    minimum width=22mm, minimum height=10mm},
+  freebox/.style={box, dashed},
+  flow/.style={-{Stealth[length=2mm]}, thick, black!70},
+  note/.style={font=\scriptsize, align=center, black!55, text width=24mm}
+]
+  \node[box, minimum width=27mm] (model) {Mô hình $f$,\\đầu vào $x$};
+  \node[box, right=5mm of model] (rank) {Xếp hạng\\đặc trưng};
+
+  \node[freebox, below=14mm of rank] (subset) {Chọn tập con};
+  \node[freebox, right=5mm of subset] (replace) {Thay giá trị};
+  \node[box, right=5mm of replace] (rerun) {Chạy lại\\mô hình};
+  \node[freebox, right=5mm of rerun] (compare) {So sánh\\đầu ra};
+
+  \draw[flow] (model) -- (rank);
+  \draw[flow] (rank) -- (subset);
+  \draw[flow] (subset) -- (replace);
+  \draw[flow] (replace) -- (rerun);
+  \draw[flow] (rerun) -- (compare);
+
+  \node[note, below=2mm of subset, text width=28mm]
+    {$k$ điểm cao nhất, $k$ thấp nhất,\\hay ngẫu nhiên cỡ $n$};
+  \node[note, below=2mm of replace] {số 0, trung bình,\\làm mờ, hay lấy mẫu};
+  \node[note, below=2mm of compare, text width=34mm]
+    {xác suất, độ chính xác,\\hay sau khi huấn luyện lại};
+\end{tikzpicture}

@@ -1,0 +1,44 @@
+\section{Phép thử điều kiện cần}
+\label{sec:ch08-dieu-kien-can}
+
+\index{sanity check}%
+\index{ngẫu nhiên hóa trọng số}%
+Ba mục vừa rồi đều đi tìm một con số để xếp hạng các phương pháp. Adebayo và
+cộng sự đi hướng ngược lại: thay vì hỏi phương pháp nào tốt hơn, họ hỏi phương
+pháp nào đáng bị loại ngay, và họ trả lời bằng hai phép thử mà một lời giải
+thích trung thực bắt buộc phải qua~\autocite{msanity}.
+
+Cả hai đều là \tn{phép thử ngẫu nhiên hóa}{randomization test}, khác nhau ở chỗ
+cái gì bị ngẫu nhiên hóa. Phép thử thứ nhất ngẫu nhiên hóa tham số mô hình: chạy phương pháp trên mô hình
+đã huấn luyện, rồi chạy lại đúng phương pháp ấy trên một mạng cùng kiến trúc
+nhưng khởi tạo ngẫu nhiên và chưa huấn luyện, và so hai kết quả. Phép thử thứ
+hai ngẫu nhiên hóa dữ liệu: so kết quả trên mô hình huấn luyện với dữ liệu có
+nhãn đúng, với kết quả trên cùng kiến trúc ấy huấn luyện trên một bản sao của dữ
+liệu đã hoán vị ngẫu nhiên toàn bộ nhãn~\autocite{msanity}.
+
+Lập luận đứng trên một quan hệ đơn giản. Một lời giải thích được cho là mô tả
+điều mô hình đã học; nếu nó cho ra gần như cùng một bản đồ khi mô hình chưa học gì,
+hoặc khi mô hình đã học một tương ứng ngẫu nhiên, thì nó đang mô tả một thứ
+khác, nhiều khả năng là cấu trúc của chính đầu vào.
+
+Điều hai phép thử ấy \emph{không} nói mới là chỗ quyết định cách đọc chúng, và
+các tác giả phát biểu nó chính xác: một phương pháp trượt các phép thử này thì không đủ
+sức phục vụ những nhiệm vụ đòi lời giải thích trung thực với mô hình hoặc với
+quá trình sinh dữ liệu~\autocite{msanity}. Câu đó nói về chiều trượt, và chỉ
+chiều trượt. Nó không nói rằng phương pháp qua được là trung thực, cũng không
+cho một thang để xếp hai phương pháp cùng qua.
+
+Vì vậy hai phép thử này không phải chỉ số theo
+định nghĩa~\ref{def:ch08-chi-so-trung-thuc}: chúng không trả về một số mà quy
+ước đọc là mức độ trung thực, mà trả về một phán quyết loại bỏ. Sự phân biệt
+giữa điều kiện cần và mức độ nghe như chuyện thuật ngữ, nhưng nó đổi hẳn cách
+đọc kết quả. Một phương pháp qua cả hai phép thử vẫn có thể sai hoàn toàn về cơ
+chế, và không có gì trong công trình này ngăn điều đó.
+
+Đặt cạnh nhau, bốn mục vừa rồi cho một bức tranh có hình dạng rõ. Họ xóa dần cho
+số nhưng số ấy lẫn với phản ứng của mô hình trước đầu vào lạ. Huấn luyện lại gỡ
+được chỗ lẫn ấy nhưng đổi luôn đại lượng được đo. Họ tiên đề đòi một đẳng thức
+chặt hơn nhưng vẫn kiểm nó qua chính phép nhiễu đang bị nghi ngờ. Còn phép thử
+điều kiện cần thì không đưa ra thang đo nào. Không có ai trong bốn nhóm ấy đối
+chiếu con số của mình với ground truth độc lập, vì không ai có sẵn ground truth
+như thế.

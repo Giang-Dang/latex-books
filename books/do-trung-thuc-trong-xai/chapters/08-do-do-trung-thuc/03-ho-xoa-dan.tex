@@ -1,0 +1,59 @@
+\section{Họ xóa dần}
+\label{sec:ch08-ho-xoa-dan}
+
+\index{deletion}%
+\index{insertion}%
+\index{comprehensiveness}%
+\index{sufficiency}%
+Họ đầu tiên điền vào ô thứ nhất bằng cách tự nhiên nhất: không chọn một tập con
+cố định, mà chạy hết mọi tập con theo thứ tự điểm và vẽ ra một đường cong.
+Petsiuk và cộng sự đặt tên cho hai đường cong ấy khi giới thiệu phương pháp
+RISE~\autocite{mrise}.
+
+Đường cong thứ nhất, deletion, đo xác suất của lớp được dự đoán giảm đi thế nào
+khi các điểm ảnh quan trọng lần lượt bị bỏ; các tác giả viết rằng một cú giảm
+dốc, tức diện tích dưới đường cong nhỏ, nghĩa là lời giải thích tốt. Đường cong
+thứ hai, insertion, làm ngược lại: nó đo xác suất tăng lên thế nào khi các điểm
+ảnh lần lượt được đưa vào, và ở đây diện tích lớn mới là tốt~\autocite{mrise}.
+Trực giác đằng sau deletion được nêu thẳng trong bài: bỏ đi \enquote{nguyên
+nhân} thì sẽ buộc mô hình gốc đổi quyết định~\autocite{mrise}.
+
+Cùng ý tưởng ấy xuất hiện lại ở xử lý ngôn ngữ dưới hai cái tên khác, trong bộ
+đánh giá ERASER của DeYoung và cộng sự. Ở đó lời giải thích là một tập đoạn văn
+bản được đánh dấu, và hai chỉ số so độ tự tin của mô hình trước và sau khi động
+vào tập ấy. Comprehensiveness lấy hiệu giữa độ tự tin trên đầu vào đầy đủ và độ
+tự tin sau khi bỏ đi phần được đánh dấu, theo lập luận rằng mô hình phải bớt tự
+tin khi phần ấy biến mất. Sufficiency lấy hiệu giữa độ tự tin trên đầu vào đầy
+đủ và độ tự tin khi chỉ giữ lại phần được đánh dấu, tức đo phần ấy một mình đã
+đủ cho một dự đoán hay chưa~\autocite{meraser}.
+
+Bốn cái tên ấy đến từ hai bài báo ở hai lĩnh vực, nhưng chúng chạy cùng một
+vòng lặp. So với
+hình~\ref{fig:ch08-vong-lap-do}, deletion và comprehensiveness cùng chọn tập
+đặc trưng điểm cao rồi bỏ đi, còn insertion và sufficiency cùng chọn tập điểm
+cao rồi giữ lại một mình nó. Hai cách ấy đúng là hai đại lượng mà
+chương~\ref{ch:khung-hop-nhat} đã nhận từ bài báo quan điểm, lần này có tên
+riêng và có bài báo gốc đứng sau: giữ lại phần điểm cao là đo tính đủ, tức
+fidelity, còn bỏ phần điểm cao đi là đo tính cần, tức inverse fidelity. Vậy
+insertion và sufficiency thuộc về fidelity, deletion và comprehensiveness thuộc
+về inverse fidelity.
+
+Ô thứ hai, giá trị thay thế, là chỗ họ này để lộ vấn đề của nó, và điều đáng
+chú ý là chính các tác giả đã chạm vào chỗ ấy mà không đặt tên cho nó. RISE
+không bắt đầu insertion từ một ảnh trống mà từ một ảnh đã làm mờ, với lý do được
+nêu rõ: làm mờ lấy đi phần lớn chi tiết nhỏ mà không tạo ra các cạnh
+sắc~\autocite{mrise}. Nói cách khác, các tác giả biết rằng một giá trị thay thế
+vụng về sẽ tự nó sinh ra tín hiệu, nên họ chọn một giá trị ít sinh tín hiệu hơn.
+Việc chọn ấy không được biện minh bằng gì ngoài chính nhận xét đó.
+
+ERASER nêu giới hạn của mình ở một chỗ khác. Các tác giả viết rằng đo độ trung
+thực của một đoạn được đánh dấu thế nào cho đúng vẫn là một câu hỏi mở, và rằng
+trong phiên bản đầu tiên của bộ đánh giá này họ đề xuất những chỉ số đơn giản,
+lấy cảm hứng từ công trình trước~\autocite{meraser}. Câu ấy đặt hai chỉ số vào
+đúng vị trí của chúng: một điểm khởi đầu hợp lý, chứ không phải một dụng cụ đã
+kiểm định.
+
+Còn một điều mà cả bốn chỉ số đều không kiểm tra, và nó không nằm ở ô nào trong
+ba ô. Đầu vào đã bị bỏ bớt đặc trưng là một đầu vào mà mô hình chưa từng thấy
+khi huấn luyện. Mục~\ref{sec:ch08-huan-luyen-lai} đọc một bài báo đặt đúng vấn
+đề đó và đề xuất một cách sửa.

@@ -11,7 +11,7 @@ tiên: $x$ luôn là đầu vào theo không gian của mô hình, còn $x'$ là
 % longtable, not tabular: chapter 07 pushed this table past a page and a plain
 % tabular cannot break, which shows up as an overfull vbox rather than as a
 % table that continues overleaf. Appendix B's keep-as-is block hit the same wall.
-\begin{longtable}{@{}lp{5.2cm}p{1.25cm}p{1.25cm}p{1.25cm}p{1.4cm}@{}}
+\begin{longtable}{@{}lp{\kyhieuw}p{\kyhieuwmap}p{\kyhieuwmap}p{\kyhieuwmap}p{\kyhieuwlast}@{}}
 \toprule
 Ký hiệu & Nghĩa trong sách & LIME & SHAP & IG & Grad-CAM \\
 \midrule
@@ -49,13 +49,22 @@ $\xi$ & Một mẫu rút từ $\mathcal{N}_x$ & - & - & - & - \\
 $\mathcal{G}$ & Lớp mô hình dễ đọc dùng để xấp xỉ $f$ & - & - & - & - \\
 $\ell$ & Hàm mất mát đo lệch giữa $f$ và $g$ trên một mẫu & - & - & - & - \\
 $H_{\theta^{*}}$ & Ma trận Hessian của rủi ro thực nghiệm tại tham số đã hội tụ & - & - & - & - \\
+$\Phi$ & Lời giải thích xét như một hàm, dùng khi một chỉ số chấm điểm chính nó & - & - & - & - \\
+$I$ & Một phép nhiễu cộng vào đầu vào trong định nghĩa infidelity & - & - & - & - \\
+$\mu_I$ & Phân phối sinh ra $I$, do người dùng chỉ số chọn & - & - & - & - \\
+$n$ & Cỡ tập con đặc trưng trong điều kiện Sensitivity-n & - & - & - & - \\
+$k$ & Số phần tử điểm cao nhất được giữ lại hoặc bỏ đi trong họ xóa dần & - & - & - & - \\
 \bottomrule
 \end{longtable}
 
 Các cột LIME, SHAP, IG và Grad-CAM theo các bài báo gốc~\autocite{p09lime,p10shap,p11ig,p12gradcam}.
 
-Mười hai dòng cuối bảng thuộc chương~\ref{ch:attribution-tu-nguyen-ly-dau} và
-chương~\ref{ch:khung-hop-nhat}, nên bốn cột bên phải để trống. Ký hiệu của
+Các dòng cuối bảng thuộc chương~\ref{ch:attribution-tu-nguyen-ly-dau},
+chương~\ref{ch:khung-hop-nhat} và chương~\ref{ch:do-do-trung-thuc}, nên bốn cột
+bên phải để trống. Năm dòng của chương~\ref{ch:do-do-trung-thuc} khác các dòng
+trên ở một điểm: chúng không thuộc một phương pháp attribution nào mà thuộc
+dụng cụ dùng để chấm điểm các phương pháp ấy, nên $\Phi$ ở đó nhận cả một lời
+giải thích làm đối số. Ký hiệu của
 chương~\ref{ch:khung-hop-nhat} theo bài báo của Zhang và cộng
 sự~\autocite{p18unified}, với hai chỗ đổi. Thứ nhất, chỉ số: bài báo viết
 $\phi_i$, $\psi_j$ và $\gamma_k$, còn sách giữ $j$ cho đặc trưng theo

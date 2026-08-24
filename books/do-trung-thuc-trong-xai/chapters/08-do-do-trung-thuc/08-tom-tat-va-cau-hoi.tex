@@ -1,0 +1,71 @@
+\begin{tomtat}
+\begin{itemize}
+  \item Định nghĩa~\ref{def:ch08-chi-so-trung-thuc} gọi
+  \tn{chỉ số trung thực}{faithfulness metric} là một thủ tục trả về một số kèm
+  quy ước đọc số ấy là mức độ trung thực. Định nghĩa
+  không đòi bằng chứng nào cho quy ước, và chương này đi tìm xem từng họ chỉ số
+  lấp chỗ hở đó bằng gì. Mọi chỉ số ở đây thuộc ô đánh giá theo chức năng của
+  Doshi-Velez và Kim, mà hai tác giả nói là thích hợp nhất khi đối tượng đem đo
+  đã được kiểm chứng từ trước bằng thí nghiệm có người tham gia.
+  \item Hình~\ref{fig:ch08-vong-lap-do} rút mọi chỉ số về một vòng lặp với ba
+  lựa chọn tự do: chọn tập con nào theo thứ tự điểm, thay các đặc trưng bị bỏ
+  bằng giá trị gì, và so đại lượng nào. Các họ chỉ số khác nhau đúng ở ba chỗ
+  ấy.
+  \item Họ xóa dần gồm deletion và insertion của RISE, comprehensiveness và
+  sufficiency của ERASER. Bốn chỉ số ấy rơi vào hai đại lượng mà
+  chương~\ref{ch:khung-hop-nhat} đã nhận: insertion và sufficiency giữ lại phần
+  điểm cao nên đo fidelity, còn deletion và comprehensiveness bỏ phần điểm cao
+  nên đo inverse fidelity. RISE chọn ảnh làm mờ thay cho ảnh
+  trống, và ERASER tự ghi rằng đây là những chỉ số đơn giản cho một câu hỏi còn
+  mở.
+  \item ROAR chỉ ra rằng đầu vào đã bỏ bớt đặc trưng nằm ngoài phân phối huấn
+  luyện, nên không phân biệt được hiệu năng giảm vì mất thông tin hay vì dấu vết
+  lạ, và nó huấn luyện lại mô hình để gỡ chỗ lẫn ấy. Cái giá là đại lượng được
+  đo đổi sang một mô hình khác. Hase và cộng sự siết thêm: tiên nghiệm của mô
+  hình và cách khởi tạo trọng số lọt được vào chính các chỉ số.
+  \item Sensitivity-n và infidelity ở phương trình~\ref{eq:ch08-infidelity} đòi
+  một đẳng thức trên nhiều tập con thay vì một thứ tự, nhưng vẫn kiểm nó qua
+  phản ứng của mô hình trước phép nhiễu, và phân phối nhiễu vẫn do người dùng
+  chọn. Hai \tn{phép thử ngẫu nhiên hóa}{randomization test} của Adebayo và cộng
+  sự là điều kiện cần chứ không phải thang đo: trượt thì bị loại, qua thì chưa kết luận gì.
+  \item Bài báo neo chia các chỉ số thành bốn nhóm theo chỗ chúng can thiệp, và
+  chẩn đoán rằng nhóm dựa trên mức quan trọng đồng nhất mức quan trọng với độ
+  trung thực, còn nhóm dựa trên \tn{tính hữu dụng ngữ nghĩa}{semantic utility}
+  bị một lời biện minh bịa đặt qua mặt. Đối tượng của bài báo ấy là chuỗi suy luận chứ không phải
+  attribution đặc trưng, nên cái đi qua được ranh giới là cấu trúc của lập luận,
+  không phải kết quả đo.
+\end{itemize}
+\end{tomtat}
+
+\cauhoi
+\begin{cauhoids}
+  \item Với mỗi họ chỉ số trong chương, hãy điền ba ô viền đứt của
+  hình~\ref{fig:ch08-vong-lap-do}: tập con được chọn thế nào, giá trị thay thế
+  là gì, và đại lượng nào được so. Hai họ nào trùng nhau ở hai ô và chỉ khác một
+  ô?
+  \item Deletion và comprehensiveness được đề xuất ở hai lĩnh vực khác nhau, cho
+  hai loại dữ liệu khác nhau, dưới hai cái tên không gợi gì đến nhau. Hãy lập
+  luận vì sao chúng vẫn đo cùng một thứ, và nêu một trường hợp mà hai chỉ số ấy
+  cho kết luận ngược nhau.
+  \item ROAR huấn luyện lại mô hình trước khi đo. Hãy chỉ ra chỗ mà việc huấn
+  luyện lại làm đại lượng được đo lệch khỏi
+  định nghĩa~\ref{def:ch01-do-trung-thuc}, rồi cho biết vì sao lệch như vậy vẫn
+  có thể là đánh đổi đáng giá.
+  \item Một phương pháp attribution đạt infidelity rất thấp theo
+  phương trình~\ref{eq:ch08-infidelity} với một phân phối $\mu_I$ do chính người
+  đề xuất phương pháp ấy chọn. Hãy nêu điều kết quả đó chứng minh và điều nó
+  không chứng minh.
+  \item Hai phép thử ngẫu nhiên hóa là điều kiện cần. Hãy dựng một ví dụ về một
+  phương pháp qua cả hai phép thử mà vẫn sai hoàn toàn về cơ chế, và cho biết
+  loại bằng chứng nào mới loại được nó.
+  \item Đọc \enquote{A Benchmark for Interpretability Methods in Deep Neural
+  Networks} của Hooker và cộng sự~\autocite{mroar}. Các tác giả nêu lý do nào
+  cho việc phải huấn luyện lại, và lý do ấy có áp dụng được cho một mô hình mà
+  ta không có quyền huấn luyện lại hay không?
+  \item Đọc \enquote{Faithfulness Metrics Don't Measure Faithfulness: A
+  Meta-Evaluation with Ground Truth} của Gur-Arieh và cộng
+  sự~\autocite{p21metrics}, phần mô tả bốn nhóm chỉ số. Hãy xếp bốn họ trong
+  chương này vào bốn nhóm ấy, chỉ ra nhóm nào của bài báo không có đại diện
+  trong chương, và giải thích vì sao đối tượng khác nhau lại dẫn tới chỗ trống
+  đó.
+\end{cauhoids}
