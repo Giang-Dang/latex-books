@@ -1,0 +1,105 @@
+\section{When the Subgraph Is Not There}
+\label{sec:ch08-when-the-subgraph-is-not-there}
+
+\index{router!what a dead subgraph looks like|(}%
+Stop the Sessions service, leave the router running, and send the router a
+query it can no longer answer:
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:3002
+Content-Type: application/json
+
+{"query":"{ sessions { nodes { id title } } }"}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+HTTP/1.1 200 OK
+Cache-Control: no-store, no-cache, must-revalidate
+Content-Type: application/json; charset=utf-8
+Content-Length: 93
+Vary: Accept-Encoding
+
+{"errors":[{"message":"Failed to fetch from Subgraph 'sessions'."}],"data":{"sessions":null}}
+\end{minted}
+
+\index{router!answers 200 for a service that is not running}%
+Two hundred. The service behind this graph is not running, nothing on the
+machine can answer the query, and the response is a successful one. If anything
+you own watches status codes to decide whether the graph is healthy, it saw a
+success. This is not the router being careless: GraphQL puts errors in the body
+and a transport-level code would be the wrong place for it. It is still the
+thing that surprises people, and better met on a laptop than in production.
+
+\index{router!names the subgraph and nothing else}%
+Now read what it did say. \enquote{Failed to fetch from Subgraph 'sessions'.} That
+is the whole error. Which of your services failed, and not one word about why:
+no url, no status code, no connection error, no timeout. With one subgraph the
+sentence is nearly redundant, because there is only one thing it could have
+been. With three it is the first useful thing you get, and it is still only the
+first, which is the problem chapter~\ref{ch:blame-routing} is about.
+
+\index{null!the failure stopped at the nullable field}%
+And look at where the null landed. \code{data.sessions} is null, not
+\code{data} itself. The failure went as far up as the first nullable thing and
+stopped there, which is exactly the mechanism
+chapter~\ref{ch:schema-design} built the nullability rules around.
+Chapter~\ref{ch:null-blast-radius} is what the same failure looks like when the
+field it hits is not nullable, and the short version is that this response is
+the good case.
+
+\subsection{The Router Is Fine, Thank You}
+
+\index{health check!passes while the graph cannot answer}%
+While all that was true, both health endpoints answered:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Request & Status & Body \\
+\midrule
+\code{GET /health} & 200 & \code{OK} \\
+\code{GET /health/ready} & 200 & \code{OK} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\index{health check!is about the process, not the graph}%
+Ready, by the router's account, with a graph that cannot answer a query. That is
+not a bug and I would not want it changed: the router is up, it holds a valid
+execution config, and it will serve the moment something answers on 5001. The
+readiness of a process and the health of a graph are different questions and
+this endpoint answers the first one.
+
+\index{health check!what a real one would have to do}%
+The alternative costs more than it looks, and
+\enquote{the health check should check the subgraphs} sounds obviously right for
+about ten seconds. A router that reported unready whenever any subgraph was down
+would take itself out of a load balancer during a deployment of any one of your
+services, which is the moment you most want the rest of the graph served. The
+partial-failure behavior above is the better answer, and the price of it is
+that health is not the signal you want to alert on.
+
+\index{observability!what this chapter hands chapter 20}%
+So the question chapter~\ref{ch:operations} inherits is not
+\enquote{why does the health check lie}. It is what you watch instead, given
+that the router will report 200 at the transport, OK at the health endpoint, and
+a named subgraph in an error body, all at once, for a service that is simply not
+running.
+
+\subsection{What Is Left}
+
+\index{Part II!what the last chapter of it does}%
+A binary, a config file, and a composed graph, and the endpoint a client talks
+to is not one of your services any more. The subgraph is still on 5001 with its
+entity route open, the router is on 3002 with two fewer fields and a plan for
+every query, and the plan has one fetch in it because there is one place to
+fetch from.
+
+\index{Part II!the graph the rest of the book uses}%
+Chapter~\ref{ch:second-third-subgraph} moves the speaker rows to a service that
+owns them and adds the third subgraph, which is the last composition error
+chapter~\ref{ch:composition} left going away for the right reason. It is also
+the chapter where the plan grows a second step, and everything this one showed
+you how to read starts being worth reading.
+\index{router!what a dead subgraph looks like|)}%

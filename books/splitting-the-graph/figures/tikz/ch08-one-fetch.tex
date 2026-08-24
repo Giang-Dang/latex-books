@@ -1,0 +1,106 @@
+% One request, with and without the router: this figure fixes the book's
+% router idiom the way ch01-one-field.tex fixed the timeline idiom itself.
+% Every later chapter that draws the router copies what lane B draws here.
+%
+% Same idiom as figures/tikz/ch01-one-field.tex and
+% figures/tikz/ch06-two-routes.tex: each lane is a timeline read left to
+% right, ticks mark stages, and a brace under the stage that matters carries
+% a one-line label. Axis, tick, event, span and spanlabel styles are copied
+% from those two files unchanged.
+%
+% Ticks are not evenly spaced by rule; they are placed so that lane B's
+% first tick (client posts to the router, port 3002) and last tick (2
+% statements to SQLite) sit at the same x as lane A's first tick (client
+% posts straight to Sessions, port 5001) and last tick, so the eye reads
+% both rows as the same request. Lane A needs only 4 ticks and so gets wide,
+% even gaps; lane B needs 6 ticks in the same span, so its gaps are tighter
+% and every event label is pre-broken by hand (never left to automatic
+% wrapping or hyphenation) to fit its column, the same discipline the two
+% reference files use for every multi-line label.
+%
+% The asymmetry the figure argues: lane B's ticks 2 and 3, normalize and
+% plan, do not exist in lane A at all. A brace under exactly those two ticks
+% names them as the only work the router adds. A second, shorter brace
+% under ticks 4 to 6 marks that from there on, lane B is doing the whole of
+% lane A: post to Sessions, run resolvers, run the same 2 statements. The
+% two braces sit side by side with a small gap between them and never
+% overlap horizontally, so the figure carries both claims without crowding.
+%
+% No timing appears anywhere, by design: SPEC decision 19 prints no
+% milliseconds in this book, so the horizontal axis is sequence only, and
+% no lane is drawn narrower or wider in a way that would read as faster or
+% slower.
+%
+% No quotation marks anywhere in this file. The book's strict Ascii mode
+% (see check-chapter.psd1) makes the prose gate read a literal " as a quote
+% character, while \" is LaTeX's diaeresis accent and fails to compile
+% inside a node. Every identifier below is written bare, and the URL paths
+% are broken onto their own line by hand rather than quoted or wrapped.
+%
+% Bare tikzpicture (house style): the figure environment, caption and label
+% live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  axis/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  tick/.style={draw, line width=0.4pt},
+  event/.style={anchor=south, align=center, text width=24mm,
+    inner sep=1pt},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  lane/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+]
+
+% ------------------------------------------------------------- lane A
+\node[lane] at (0,13)
+  {A. straight to Sessions, the way every earlier request went};
+
+\draw[axis] (0,0) -- (150,0);
+\foreach \x in {16,58,100,138}{
+  \draw[tick] (\x,-1.5) -- (\x,1.5);
+}
+
+\node[event, text width=34mm] at (16,3)
+  {client posts to\\localhost:5001/graphql};
+\node[event, text width=28mm] at (58,3)
+  {Sessions parses it,\\with no subgraph\\to choose};
+\node[event, text width=22mm] at (100,3)
+  {resolvers run};
+\node[event, text width=24mm] at (138,3)
+  {2 statements\\to SQLite};
+
+% ------------------------------------------------------------- lane B
+\begin{scope}[shift={(0,-40)}]
+  \node[lane] at (0,20)
+    {B. the same request, through the router};
+
+  \draw[axis] (0,0) -- (150,0);
+  \foreach \x in {16,42,69,94,116,138}{
+    \draw[tick] (\x,-1.5) -- (\x,1.5);
+  }
+
+  \node[event, text width=24mm] at (16,3)
+    {client posts to\\localhost:3002\\/graphql};
+  \node[event, text width=26mm] at (42,3)
+    {router normalizes\\the operation};
+  \node[event, text width=25mm] at (69,3)
+    {router plans:\\one fetch,\\subgraph sessions};
+  \node[event, text width=22mm] at (94,3)
+    {router posts to\\localhost:5001\\/graphql};
+  \node[event, text width=20mm] at (116,3)
+    {resolvers run};
+  \node[event, text width=18mm] at (138,3)
+    {2 statements\\to SQLite};
+
+  \draw[span] (29,-4) -- (29,-7) -- (82,-7) -- (82,-4);
+  \node[spanlabel] at (55,-8)
+    {the only work the router adds,\\and it is the same two\\statements
+     at the end};
+
+  \draw[span] (84,-4) -- (84,-7) -- (147,-7) -- (147,-4);
+  \node[spanlabel] at (115,-8)
+    {this span is\\lane A, entire};
+\end{scope}
+
+\end{tikzpicture}

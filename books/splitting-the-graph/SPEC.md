@@ -30,11 +30,22 @@ writes `@cost` and `@listSize` onto fields nobody configured and Cosmo's
 composer holds different definitions of both (decision 73). `wgc` was two patch
 releases stale and is re-pinned at 0.129.9.
 
-Next action: chapter 8, the router. Verify the Cosmo Router version first;
-0.341.0 was read off the GitHub release and the GHCR manifest on 2026-08-23 and
-nothing has run it. Chapter 8 serves the one subgraph that exists and the
-first cross-seam query is chapter 9's, settled as decision 79 after chapter 7
-found the TOC promising it a service that does not exist yet.
+Chapter 8 started the router. It is the book's first long-running process that
+is not ours and its first component that arrives as a downloaded binary rather
+than a package, and it needed no container: the release ships standalone builds
+for seven platform and architecture pairs, which is what keeps decision 23's
+containerless example intact. The router serves the one subgraph that exists,
+hides exactly `_entities` and `_service` from it, and plans every query as a
+sequence holding one fetch. The Cosmo Router is now verified by running it
+rather than by reading a release page, and the gateway audit that had been an
+open item since chapter 5 was run rather than cited (decision 84).
+
+Next action: chapter 9, the second and third subgraph. It is the largest
+chapter in part II and may be two; decision 79 kept that split available and
+the open item naming the seam it would split along is still open. Chapter 8
+raised one thing chapter 9 should settle before it teaches `@provides`: two of
+the three suites Cosmo Router fails in the gateway audit are about that
+directive.
 
 **Why this book exists.** It is the second book in this library on federated
 GraphQL in .NET, and it exists because the first one,
@@ -148,6 +159,12 @@ and why, in the row.
 
 | 79 | Chapter 8's cross-seam clause moves to chapter 9, and the router arrives over a graph of one | The TOC gave chapter 8 "the first query answered across two subgraphs" and chapter 9 the building of the second subgraph, so the service chapter 8 queried across did not exist until the chapter after it. Settled while closing out chapter 7, which had already assumed this resolution in prose without the TOC catching up. The clause moves to chapter 9 and chapter 8 shows the router over the one subgraph that exists. **The reason is decision 14, not tidiness.** A reader who meets the router and the first seam in one chapter cannot tell which of the two caused what they are looking at; a reader who has already watched a router serve a graph with no seam in it can attribute everything chapter 9 adds to the seam. **Rejected: giving chapter 8 a minimal Speakers subgraph**, which sounds smaller and is not. Such a subgraph either duplicates `Speaker.name` and `bio` while Sessions still owns the rows, which cannot compose without declaring shareable exactly the field chapter 7 closes by teaching the reader never to declare shareable, or it moves the rows properly, which is chapter 9's content arriving inside a chapter about the router and a second full service printed under decision 15. Also rejected: swapping the two chapters, which leaves chapter 8 with two services and no router to show them working through. Chapter 9 becomes the largest chapter in part II and that is accepted; if outlining it finds it is genuinely two chapters, it splits there, which this resolution keeps available and the rejected one would have foreclosed. |
 
+| 80 | The router's port is 3002, which is its own default, and `config.yaml` does not name it | The last piece decision 44 left open. The three services are pinned at 5001 to 5003 in their own `launchSettings.json` because `dotnet new web` picks a port at random and a book printing raw HTTP under decision 34 would otherwise print fiction. The router has no such problem: measured 2026-08-24, it announces `localhost:3002` in its startup log with no configuration present at all, and does so even on the run where it then refuses to start. A `listen_addr` line would therefore be a line that can drift out of step with the log beside it and buys nothing. Rejected: pinning 4000 or 5000 for symmetry with the services, which trades a number the router will tell you for a number you have to remember. |
+| 81 | The router arrives as a downloaded binary and no chapter says `docker run` | Decision 23 fixed an example with no container in it, and most published material about this router opens with a container image. Measured 2026-08-24: release `router@0.341.0` ships fourteen assets, standalone binaries for darwin, linux and windows on amd64 and arm64 plus linux 386, each with a published md5 beside it, and the Windows archive holds exactly two files, the binary and its Apache-2.0 license. Every measurement in chapter 8 was taken with the Docker daemon not running, so the claim is proved rather than assumed. The verification repo keeps the binary in a gitignored `tools/` and `verify.ps1` falls back to PATH, because 93 MB of another project's release artifact is not something to commit. |
+| 82 | A file the reader writes may carry a version pin the same way a generated one does, and `config.yaml` does not need one | The fourth case in the family decisions 42, 63 and 78 opened, and it resolves the other way, which is why it is worth a row. `config.yaml` has a `version: "1"` key and it is a real key rather than something the router tolerates: measured 2026-08-24, the router validates the file against a JSON schema and refuses to start on an unknown property, naming the schema by url in the refusal, so a key that survives validation is one the schema declares. But that `1` is the config format's version and not a toolchain version, so decision 35 is not engaged at all and appendix A gains no row. Recorded because the previous three rows in this family all went the other way and a later session should not have to re-derive that this one is different. |
+| 83 | `dev_mode` ships in the book's `config.yaml`, and the chapter shows the state without it first | The query plan is the chapter's subject and it is an Advanced Request Tracing option, which is one of the five Cosmo Cloud features the router disables when it finds no graph token. Measured 2026-08-24: without `dev_mode` the `X-WG-Include-Query-Plan` header is ignored **in silence**, and the response is byte for byte the response sent without it. No error, no warning, nothing in the log. With `dev_mode` on, the router removes ART from the disabled list and logs that it has done so. So the book ships the switch and section 8.2 prints the config without it, which under decision 51 gets its own branch and tag, `ch08-noplan`, asserting the silence. Rejected: printing the final config once and explaining `dev_mode` before the reader has met the silence, which inverts decision 14. Also rejected: `ENGINE_FORCE_UNAUTHENTICATED_REQUEST_TRACING`, whose own schema description opens "UNSAFE - DO NOT ENABLE IN PRODUCTION"; it is named in the research note and in no chapter. |
+| 84 | The gateway audit was run, and no chapter prints a score from it | The open item chapters 5 and 7 carried, closed by running it rather than by citing it. Measured 2026-08-24 against `graphql-hive/federation-gateway-audit` at commit `7956ca1`: Cosmo Router 0.341.0 scores **194 of 199 test cases and 43 of 46 suites**, where the audit publishes 183 and 37 for it. Better, not worse, so the worry that prompted the item does not survive it. No chapter prints either number, for four reasons recorded in full in the chapter 8 note: the harness pins router 0.321.2 as a Linux binary and had to be modified in five places to run 0.341.0 at all; the controlled A/B against 0.321.2 was impossible on this machine; the audit's own repository disagrees with itself, its committed per-gateway results being from an older 189-case run while its README is a 199-case run and its live site lists a gateway its committed data does not; and its maintainer, The Guild, ships the two gateways ranked first and second in it. Decision 7 is unchanged, having chosen Cosmo on license and version coverage and never on a score. |
+
 
 ## Version baseline
 
@@ -171,9 +188,10 @@ and this section is what appendix A is built from.
 | `HotChocolate.ApolloFederation` (`main`) | 16.6.1 | verified 2026-08-23, chapter 5 note; models Federation up to v2.7 and defaults to v2.6, read out of the shipped assembly. Added to `Sessions.csproj` by chapter 6, and still the newest stable on that date, though a `16.6.2-p.6` prerelease exists above it |
 | `HotChocolate.ApolloFederation` (`hc14`) | 14.3.1 | verified 2026-08-23, chapter 6 note. Restores and runs, and its `[Key]` and `[ReferenceResolver]` attributes are never read by the 14 source generator; see decision 71 |
 | Apollo Federation, as the subgraphs declare it | v2.6 | verified 2026-08-23, chapter 5 note; the `@link` url the package emits with nothing pinned. Decision 63 |
-| WunderGraph Cosmo Router | 0.341.0 | **not verified by running it.** Read 2026-08-23, chapter 7 note, from the GitHub release list and confirmed as a published GHCR tag. Chapter 8 runs it and pins it properly |
+| WunderGraph Cosmo Router | 0.341.0 | verified 2026-08-24, chapter 8 note, **by running it**: `router -version` reports 0.341.0 on go1.26.6, built 2026-08-18, matching the release's own timestamp. Still the newest stable on that date. The Windows archive's md5 matches the one published beside it, and the Apache-2.0 license was read out of the archive rather than out of the repository. `verify.ps1` asserts the version |
 | `wgc` (Cosmo CLI) | 0.129.9 | verified 2026-08-23, chapter 7 note. Re-pinned from 0.129.7, which was two patch releases stale by then; every chapter 7 measurement is on 0.129.9 and `verify.ps1` asserts the version rather than accepting what is installed, because the chapter quotes the tool's error text |
 | Pygments | 2.19.2 | verified 2026-08-19 on this machine; see decision 31 |
+| Go, as the router reports it | go1.26.6 | verified 2026-08-24, chapter 8 note. Not a thing this book installs: it is what the router binary was built with, and it is in the table because `router -version` prints it and a reader will see it |
 
 Two things the interview assumed and the measurement corrected. The version is
 16.6.1 rather than 16.6.0. And Hot Chocolate 16 targets `net8.0`, `net9.0`,
@@ -240,7 +258,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 05 | drafted | Note at `research/ch05-the-federation-model.md`. No C#: `git diff ch04..ch05` over `src/` is empty, and `ch05` is the book's first tag on an unchanged tree (decision 66). `verify.ps1` gained eight assertions for the request the chapter opens on and prints, 104 total, PASS on `main` and `hc14`. Confirmed decision 31's `graphqlsdl` environment against real federation SDL, which was this chapter's stated job. Paid chapter 1's debt on why Apollo Federation v2 rather than the Composite Schemas draft, and corrected two factual clauses in decisions 6 and 7 in the process. Settled decisions 63 to 66. |
 | 06 | drafted | Note at `research/ch06-your-first-subgraph.md`. Four tags, `verify.ps1` PASS on each: `ch06` (main, 148 assertions), `ch06-unguarded` (9, the reference resolver that does not read the type name inside the key), `ch06-hc14-ignored` (125, the attribute idiom compiling and doing nothing on 14.3.1) and `ch06-hc14` (128, the code-first route that works there). The book's first federation C#, and its first version difference that is not a difference in output but in whether the code works at all. Settled decisions 67 to 72. |
 | 07 | drafted | Note at `research/ch07-composition.md`. Five tags, `verify.ps1` PASS on each: `ch07` (main, 195 assertions), `ch07-costly` (14, chapter 6's subgraph unchanged, which does not compose), `ch07-unshared` (12, the cost fix in and the shareable fix out), `ch07-typelevel` (12, the one-line fix and the ownership check it switches off) and `ch07-hc14` (174). The book's first non-.NET tool, its first artifact defined only by a protobuf, and its first failure caused by two vendors disagreeing rather than by anybody's mistake. Paid the `Query.node` bill and re-pinned `wgc` to 0.129.9. Settled decisions 73 to 78. The audit found fifteen things worth fixing, including two claims the research note itself had marked as not established; they are listed in the pull request. |
-| 08 | not-started | Verify the Cosmo Router version first. |
+| 08 | drafted | Note at `research/ch08-enter-the-router.md`. Three tags, `verify.ps1` PASS on each: `ch08` (main, 241 assertions), `ch08-noplan` (12, the config that serves the graph and hides the query plan, decision 51) and `ch08-hc14` (214). The book's first long-running process that is not ours, and its first component that is a downloaded binary rather than a package. `git diff ch07..ch08` over `src/` is empty, so this is the second tag on an unchanged tree after `ch05` (decision 66). Settled decisions 80 to 84, and closed the two open items on the router version and the gateway audit. |
 | 09 | not-started | End of the zero-to-hero movement: the graph Part III uses. |
 | 10 | not-started | |
 | 11 | not-started | Carries a deliberately broken listing under decision 22's carve-out. |
@@ -396,10 +414,6 @@ An unresolved question, and the condition that unblocks it.
   a dedicated search domain with its own index. Whether that domain is built as
   a fourth service or described without being built decides how much of
   decision 23 survives. Unblocked by outlining chapter 13.
-- **The Cosmo Router version is read but not run.** 0.341.0, from the GitHub
-  release list and a GHCR manifest on 2026-08-23, recorded in the chapter 7
-  note and in the version baseline. Nothing has started it. Unblocked by
-  chapter 8, which has to.
 - **Whether the entity route can be given a projection.** Chapter 6 measured
   that `QueryContext<T>` cannot be injected into a reference resolver
   (decision 69), so the entity route selects every column where the node route
@@ -447,16 +461,6 @@ An unresolved question, and the condition that unblocks it.
   auto-generation disclaimer to it. Unblocked by the rename landing in the
   specification, at which point chapter 1's and chapter 5's wording both move
   in one edit.
-- **A public benchmark puts Cosmo Router behind two alternatives on Apollo
-  Federation compatibility.** Michael Staib's post on Fusion 16.5 reports a
-  federation-gateway-audit table scoring Fusion and Hive Router at 100 percent,
-  Apollo Router below that, and Cosmo Router lower still. Nothing from it is
-  printed: it is a signed vendor post making a claim about competitors, which
-  the Sources rule admits for the vendor's own product and not for anyone
-  else's. It is recorded because decision 7 chose Cosmo on license and version
-  coverage and never on an audit score, and if that score is right it is worth
-  knowing before part III leans on the router. Unblocked by running the audit
-  here, which is chapter 8's toolchain anyway.
 - **Whether the Nitro IDE works with no network at all.** Decision 45 pins the
   embedded serve mode and gives reproducibility as the reason, which is
   measured. The stronger reason, that the default cannot work offline, is
@@ -526,6 +530,33 @@ An unresolved question, and the condition that unblocks it.
   evidence, so no chapter claims anything either way; the book's own documents
   import it because that is what Hot Chocolate emits. Unblocked by finding the
   normative statement, which is appendix C's territory.
+- **Whether `ROUTER_CONFIG_PATH` or `EXECUTION_CONFIG_FILE_PATH` is the current
+  field.** Both exist in the router's source at tag `router@0.341.0` and both
+  start and serve the graph on this machine, measured 2026-08-24. No fetched
+  documentation page reconciles them. One piece of indirect evidence turned up
+  while running the gateway audit: that harness's committed config uses
+  `router_config_path` and starts the router with no flag at all, which 0.341.0
+  refuses, so what demonstrably changed is that the router no longer auto-loads
+  a bare `config.yaml`. Chapter 8 names only the structured
+  `execution_config.file.path` form and claims nothing about the other.
+  Unblocked by WunderGraph documenting a deprecation, or by one of the two
+  disappearing from a release.
+- **What the router's normalization is for.** Measured 2026-08-24: the router
+  rewrites literal arguments into variables before forwarding an operation, so
+  `node(id: "U3BlYWtlcjox")` reaches the subgraph as `query($a: ID!)`, and
+  `normalizedQuery` in the plan is its record of that. Whether it is for the
+  subgraph's plan cache, the router's own, or something else was not
+  established. Chapter 8 states the behaviour and gives no reason for it.
+  Unblocked by reading `graphql-go-tools`, which is where the planner lives and
+  which the router names in its own `-version` output.
+- **What the three suites Cosmo Router fails in the gateway audit have in
+  common.** Decision 84 recorded the run: 194 of 199, failing
+  `complex-entity-call`, `provides-on-interface` and `provides-on-union`. Two of
+  the three are about `@provides`, which chapter 9's scope line names. Whether
+  those failures touch anything this book's example does was not investigated,
+  and neither was whether they are known and tracked upstream. Unblocked by
+  outlining chapter 9, which is the first chapter with a seam for `@provides` to
+  cross, and which should know before it teaches the directive.
 - **Whether Pygments gains an SDL lexer.** Decision 31 is a workaround with a
   measured justification, not a preference. Unblocked by a Pygments release
   whose `graphql` lexer handles type definitions, `!` and directives; at that
