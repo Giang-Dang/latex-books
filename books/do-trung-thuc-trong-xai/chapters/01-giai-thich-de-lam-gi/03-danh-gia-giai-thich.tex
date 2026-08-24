@@ -1,0 +1,42 @@
+\section{Đánh giá một lời giải thích}
+\label{sec:ch01-danh-gia-giai-thich}
+
+Nếu mục đích quyết định thước đo, không thể đánh giá mọi giải thích bằng một
+con số hoặc một proxy cấu trúc. Doshi-Velez và Kim đề xuất ba cách đặt bài toán
+đánh giá, khác nhau ở người tham gia và nhiệm vụ được dùng~\autocite{p14rigorous}.
+Hình~\ref{fig:ch01-ba-cach-danh-gia} đặt chúng trên cùng một trục.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch01-ba-cach-danh-gia}
+  \caption{Ba cách đánh giá khác nhau ở bằng chứng mà chúng đòi hỏi. Đánh giá
+  trong ứng dụng dùng người dùng và nhiệm vụ thực nên gần mục tiêu triển khai
+  nhất. Đánh giá với người dùng rút gọn nhiệm vụ để cô lập một giả thuyết.
+  Đánh giá theo chức năng dùng proxy, rẻ hơn nhưng phải biện minh vì sao proxy
+  có liên hệ với điều người dùng cần. Sự tiện của tầng dưới không chuyển thành
+  bằng chứng cho tầng trên.}
+  \label{fig:ch01-ba-cach-danh-gia}
+\end{figure}
+
+\paragraph{Đánh giá trong ứng dụng.} Người dùng thật thực hiện nhiệm vụ thật.
+Ví dụ, một bác sĩ dùng giải thích để phát hiện khi mô hình dự báo dựa vào một
+tín hiệu không phù hợp. Đây là phép thử gần với mục đích triển khai nhất, đồng
+thời tốn kém và khó kiểm soát các yếu tố nhiễu.
+
+\paragraph{Đánh giá với người dùng.} Người tham gia vẫn là con người, nhưng
+nhiệm vụ được giản lược. Ta có thể yêu cầu họ chọn lời giải thích nào giúp họ
+dự đoán hành vi mô hình tốt hơn. Thiết kế này không tái tạo toàn bộ công việc
+thực tế, nhưng nó có thể kiểm tra một thuộc tính xác định của giao diện giải
+thích mà không phải dựng cả ứng dụng.
+
+\paragraph{Đánh giá theo chức năng.} Không dùng người tham gia; thay vào đó,
+nghiên cứu đo một proxy như độ thưa của mô hình, độ ngắn của quy tắc, hay khả
+năng dự đoán một nhãn thay thế. Cách làm này phù hợp khi proxy đã có cơ sở,
+nhưng proxy không phải bản thân mục tiêu. Nghiên cứu so sánh các mô hình dễ
+diễn giải gần đây cũng phải chọn proxy cấu trúc để có thể so sánh trên quy mô
+lớn, đồng thời thừa nhận giới hạn của lựa chọn ấy~\autocite{p15microscope}.
+
+Ba cách trên không là ba nhãn chất lượng cho cùng một đại lượng. Chúng trả lời
+ba câu hỏi thực nghiệm khác nhau. Một kết quả tốt ở tầng theo chức năng có thể
+là lý do để làm nghiên cứu tiếp, không phải giấy chứng nhận rằng người dùng sẽ
+hiểu đúng hoặc rằng lời giải thích đã trung thực.

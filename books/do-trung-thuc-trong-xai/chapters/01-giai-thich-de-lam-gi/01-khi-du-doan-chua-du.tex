@@ -1,0 +1,32 @@
+\section{Khi dự đoán chưa đủ}
+\label{sec:ch01-khi-du-doan-chua-du}
+
+\index{khả năng diễn giải}%
+Một hệ thống học máy thường được chấm bằng đầu ra: dự đoán có đúng trên dữ
+liệu kiểm tra không, lỗi có chấp nhận được không. Cách chấm này trả lời một
+câu hỏi hẹp về hiệu năng. Nó không tự trả lời liệu hệ thống có dùng một quy
+luật mà ta chấp nhận được, có còn phù hợp khi môi trường đổi, hay có đẩy rủi
+ro sang một nhóm người mà dữ liệu kiểm tra không làm lộ ra.
+
+Đó là nơi nhu cầu về \tn{khả năng diễn giải}{interpretability} xuất hiện.
+Lipton chỉ ra rằng từ này thường được dùng cho nhiều mục đích khác nhau, từ
+kiểm tra cơ chế, tạo niềm tin, đến tìm gợi ý khoa học~\autocite{p13mythos}.
+Gộp các mục đích ấy dưới một nhãn khiến một phương pháp có thể được khen là
+\enquote{dễ hiểu} mà không ai nói rõ ai sẽ dùng nó, để làm việc gì, và bằng tiêu
+chuẩn nào.
+
+Hãy xét một mô hình dự báo nguy cơ cho bệnh nhân. Một điểm số chính xác trên
+tập kiểm tra chưa cho biết mô hình đang dùng tín hiệu bệnh lý hay đang tận dụng
+một dấu vết của quy trình điều trị cũ. Bác sĩ có thể cần một lời giải thích để
+kiểm tra khả năng thứ hai. Nhà nghiên cứu có thể cần nó để nêu một giả thuyết
+về bệnh. Người quản lý có thể cần nó để xem một tiêu chí công bằng đã bị bỏ
+sót hay chưa. Cùng một đầu ra giải thích, ba công việc kiểm tra khác nhau.
+
+Vì vậy, ta không bắt đầu bằng câu hỏi mô hình nào là hộp đen. Ta bắt đầu bằng
+câu hỏi nào còn nằm ngoài hàm mục tiêu và phép đo hiện có. Doshi-Velez và Kim
+gọi tình trạng này là sự không đầy đủ của đặc tả bài toán: điều ta quan tâm
+không thể liệt kê trọn vẹn để tối ưu hoặc để kiểm thử trực tiếp~\autocite{p14rigorous}.
+Giải thích không tự lấp khoảng trống đó. Nó chỉ đưa thêm bằng chứng để con
+người kiểm tra khoảng trống ấy.
+
+\index{khả năng diễn giải|)}%

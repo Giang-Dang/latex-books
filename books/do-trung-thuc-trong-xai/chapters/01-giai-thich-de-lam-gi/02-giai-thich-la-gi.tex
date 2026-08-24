@@ -1,0 +1,32 @@
+\section{Giải thích là gì?}
+\label{sec:ch01-giai-thich-la-gi}
+
+Trong cuốn sách này, một giải thích là thông tin được trình bày để con người
+hiểu một khía cạnh của hành vi mô hình. Định nghĩa này cố ý chưa hứa rằng thông
+tin ấy mô tả đúng cơ chế bên trong. Hứa như vậy quá sớm sẽ trộn lẫn hai việc:
+trình bày cho người đọc và mô tả điều mô hình đã làm.
+
+\begin{definition}[\tn{Khả năng diễn giải}{interpretability}]
+\label{def:ch01-kha-nang-dien-giai}
+Khả năng diễn giải là năng lực trình bày hành vi của một hệ thống học máy bằng
+những thuật ngữ con người có thể hiểu và dùng cho một mục đích đã nêu.
+\end{definition}
+
+Định nghĩa~\ref{def:ch01-kha-nang-dien-giai} có hai phần đáng giữ lại. Thứ
+nhất, người nhận giải thích là một phần của bài toán. Bản đồ nhiệt có thể hữu
+ích cho chuyên gia ảnh y khoa nhưng vô dụng trong một quy trình khi người vận
+hành phải chọn giữa các phương án hành động. Thứ hai, tính hữu ích không đồng
+nghĩa với tính đúng về cơ chế.
+
+Một hướng tiếp cận đặt \tn{minh bạch}{transparency} vào chính mô hình. Với
+một mô hình tuyến tính nhỏ, ta có thể lần theo biến đầu vào, tham số và phép
+tính dẫn đến một dự đoán. Hướng khác tạo \tn{giải thích hậu nghiệm}{post-hoc
+explanation} sau khi mô hình đã được huấn luyện: một danh sách đặc trưng, một
+bản đồ nhiệt, hoặc một mô hình thay thế cục bộ. Lipton đặt hai hướng này cạnh
+nhau vì chúng trả lời những câu hỏi khác nhau~\autocite{p13mythos}.
+
+Không nên biến sự phân biệt này thành một thứ bậc đơn giản. Mô hình minh bạch
+cũng có thể quá lớn để người dùng kiểm tra toàn bộ, còn một giải thích hậu
+nghiệm có thể giúp phát hiện một lỗi cụ thể. Điểm cần giữ là nguồn gốc của
+lời giải thích. Khi nó chỉ xấp xỉ hành vi của mô hình, ta cần một cách kiểm tra
+riêng cho quan hệ giữa xấp xỉ và cơ chế.
