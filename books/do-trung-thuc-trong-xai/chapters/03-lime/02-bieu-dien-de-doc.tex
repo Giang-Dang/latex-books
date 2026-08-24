@@ -1,0 +1,27 @@
+\section{Biểu diễn mà người đọc nhận ra}
+\label{sec:ch03-bieu-dien-de-doc}
+
+Tính cục bộ chỉ có ích khi các thành phần của lời giải thích có nghĩa với người
+đọc. Vì vậy, LIME phân biệt đầu vào gốc $x$ với \tn{biểu diễn có thể diễn
+giải}{interpretable representation} $x'$. Bài báo gốc viết $x \in
+\mathbb{R}^{d}$ và $x' \in \{0,1\}^{d'}$: $x'$ cho biết thành phần nào đang
+có mặt trong cách nhìn dành cho người, còn $x$ vẫn là thứ được đưa vào $f$
+~\autocite{p09lime}. Phụ lục~\ref{app:ky-hieu} giữ sự phân biệt này cho các
+chương sau.
+
+Với văn bản, một \tn{đặc trưng}{feature} có thể là sự có mặt hay vắng mặt của
+một từ. Mô hình thật có thể dùng embedding, vị trí token hoặc những biến đổi
+khác mà bảng từ không bộc lộ. Với ảnh, một thành phần dễ đọc có thể là một
+vùng điểm ảnh liền kề; mô hình thật lại nhận tensor các kênh màu. Do đó, $x'$
+không phải bản sao đơn giản của $x$. Nó là một quyết định về điều người đọc
+được phép gọi tên.
+
+Quyết định này có hậu quả trực tiếp cho \tn{độ trung thực}{faithfulness}. Nếu mô hình phân biệt
+thứ tự từ nhưng $x'$ chỉ giữ túi từ, thì mô hình thay thế không thể biểu diễn
+tác động của thứ tự ấy. Nếu một super-pixel gộp hai vật thể có vai trò khác
+nhau, một trọng số của nó cũng không cho biết vật thể nào đã làm đổi dự đoán.
+LIME vẫn có thể trả một lời giải thích ngắn gọn, nhưng độ ngắn gọn đó đến từ
+biểu diễn đã bỏ bớt thông tin.
+
+\index{biểu diễn có thể diễn giải}%
+\index{đặc trưng}%
