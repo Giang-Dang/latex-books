@@ -1,0 +1,65 @@
+% !TeX program = lualatex
+% Build with: latexmk   (configured by .latexmkrc; output lands in build/main.pdf)
+\documentclass[11pt,a4paper,twoside,openright]{book}
+
+\input{preamble/packages}
+\input{preamble/fonts}
+\input{preamble/macros}
+
+\addbibresource{refs.bib}
+\makeindex[intoc]
+
+% Drafting aid for large books: uncomment to recompile only the listed
+% chapters while keeping page numbers and cross-references intact.
+% Comment it out again before a release build.
+% \includeonly{chapters/01-giai-thich-de-lam-gi/ch}
+
+\begin{document}
+
+\frontmatter
+\input{frontmatter/titlepage}
+\input{frontmatter/copyright}
+\tableofcontents
+\input{frontmatter/preface}
+
+\mainmatter
+
+\part{Nền tảng}
+\include{chapters/01-giai-thich-de-lam-gi/ch}
+\include{chapters/02-mo-hinh-can-giai-thich/ch}
+
+\part{Các phương pháp kinh điển}
+\include{chapters/03-lime/ch}
+\include{chapters/04-shap/ch}
+\include{chapters/05-attribution-theo-gradient/ch}
+
+\part{Lý thuyết attribution}
+\include{chapters/06-attribution-tu-nguyen-ly-dau/ch}
+\include{chapters/07-khung-hop-nhat/ch}
+
+\part{Phê phán độ trung thực}
+\include{chapters/08-do-do-trung-thuc/ch}
+\include{chapters/09-chi-so-khong-do-do-trung-thuc/ch}
+\include{chapters/10-lime-nao-dang-tin/ch}
+\include{chapters/11-tro-choi-attribution/ch}
+\include{chapters/12-con-nguoi-vang-mat/ch}
+\include{chapters/13-gioi-han-ly-thuyet/ch}
+\include{chapters/14-giai-thich-duoi-tan-cong/ch}
+
+\part{Những lối thoát}
+\include{chapters/15-nut-that-khai-niem/ch}
+\include{chapters/16-ground-truth-dung-san/ch}
+\include{chapters/17-do-trung-thuc-chuoi-suy-luan/ch}
+\include{chapters/18-khoang-trong-nghien-cuu/ch}
+
+\appendix
+\include{backmatter/appendix-a-ky-hieu}
+\include{backmatter/appendix-b-thuat-ngu}
+\include{backmatter/appendix-c-viet-tat}
+\include{backmatter/appendix-d-danh-muc-bai-bao}
+
+\backmatter
+\printbibliography[heading=bibintoc]
+\printindex
+
+\end{document}

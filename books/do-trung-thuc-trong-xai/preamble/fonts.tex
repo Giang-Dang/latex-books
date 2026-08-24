@@ -1,0 +1,44 @@
+% Fonts and languages (LuaLaTeX + fontspec).
+%
+% This book is written in Vietnamese. Vietnamese is the main language, so babel
+% supplies the section names (Chương, Mục lục, Phụ lục, Hình, Bảng, Chỉ mục)
+% and the hyphenation patterns from hyph-vi. English stays loaded as a
+% secondary language: every translated term carries its English original in
+% parentheses, and quotations from the 32 corpus papers need English
+% hyphenation to break.
+%
+% Fonts are loaded by FILENAME (texgyre*.otf in the TeX tree), not by display
+% name - filename loading works on every machine without depending on the
+% luaotfload font-name database being up to date. The TeX Gyre fonts already
+% cover the whole Vietnamese repertoire, including the stacked tone-plus-vowel
+% combinations (u+horn+dot-below and friends) that thinner fonts drop.
+
+\usepackage[english]{babel}
+\usepackage{fontspec}
+
+\setmainfont{texgyrepagella}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  BoldFont       = *-bold,
+  ItalicFont     = *-italic,
+  BoldItalicFont = *-bolditalic,
+]
+\setsansfont{texgyreheros}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  BoldFont       = *-bold,
+  ItalicFont     = *-italic,
+  BoldItalicFont = *-bolditalic,
+]
+\setmonofont{texgyrecursor}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  BoldFont       = *-bold,
+  ItalicFont     = *-italic,
+  BoldItalicFont = *-bolditalic,
+]
+
+% Vietnamese, imported from babel's own locale data and made the main language.
+% This must come after fontspec so the language activates against fonts that
+% are already set.
+\babelprovide[import, main]{vietnamese}
