@@ -2,12 +2,21 @@
 \chapter{The Second and Third Subgraph}
 \label{ch:second-third-subgraph}
 
-\emph{Not yet drafted.}
+A seam is a type two services both name and one of them owns. This chapter
+cuts two of them, and they are different shapes: the Speakers service takes a
+whole type away from Sessions, and the Ratings service adds fields to a type it
+will never own a row of.
 
-% Chapter skeleton, SPEC decision 13. Five beats, this order:
-%   1. The one sentence  - what this chapter establishes, stated first.
-%   2. Show it          - the thing running, or in Part III the thing failing.
-%   3. Why it does that - the mechanism. All theory lives here (decision 14).
-%   4. Do it properly   - the complete, correct implementation.
-%   5. Summary box      - decision 21.
-% Section files are \input from here, numbered 01-, 02-, ... from the book root.
+What that costs is a stub on the side giving something up, a reference resolver
+on the side taking it, and one more fetch in every plan that crosses. What it
+buys is the graph the rest of the book uses.
+
+\input{chapters/09-the-second-and-third-subgraph/01-the-collision-that-is-still-there}
+\input{chapters/09-the-second-and-third-subgraph/02-the-service-that-owns-the-speakers}
+\input{chapters/09-the-second-and-third-subgraph/03-what-sessions-keeps}
+\input{chapters/09-the-second-and-third-subgraph/04-the-first-query-across-two}
+\input{chapters/09-the-second-and-third-subgraph/05-a-subgraph-that-owns-nothing}
+\input{chapters/09-the-second-and-third-subgraph/06-a-field-built-from-a-title}
+\input{chapters/09-the-second-and-third-subgraph/07-the-one-i-did-not-use}
+\input{chapters/09-the-second-and-third-subgraph/08-the-bill-for-a-shareable-node}
+\input{chapters/09-the-second-and-third-subgraph/09-summary}

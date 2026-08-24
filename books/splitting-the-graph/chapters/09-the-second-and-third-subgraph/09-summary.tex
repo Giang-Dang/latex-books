@@ -1,0 +1,51 @@
+\begin{chaptersummary}
+  \item A seam is cut by making one service stop claiming what another owns.
+        The Sessions service keeps \code{Speaker} as a stub, one field and a
+        key declared \code{resolvable: false}, and three things read that
+        argument back: \code{implements Node} is gone from the type, the
+        \code{\_Entity} union drops it, and the router execution config writes
+        \code{disableEntityResolver} beside its key. The flag is advice to the
+        composer and not a guard, so the entity route on that service still
+        answers a representation for the stub with an unhandled error.
+  \item Two services, two seams, two shapes. Speakers takes a whole type away
+        and owns it the way any service owns its own; Ratings adds three fields
+        to \code{Session} and will never own a session. The second shape is the
+        awkward one: it cannot call
+        \code{AddGlobalObjectIdentification()}, because that refuses to build a
+        schema with no node type in it, and it therefore has to register
+        \code{AddDefaultNodeIdSerializer()} by hand in order to read the keys
+        it is handed. Leave that line out and the service builds, starts, and
+        answers its own root field correctly, while the entity route alone
+        fails with \code{Unexpected Execution Error} and nothing in any log.
+  \item The first query across two subgraphs costs what it cost inside one.
+        Four sessions and three distinct speakers is two statements, one in
+        each service, and the batched lookup is
+        chapter~\ref{ch:data-without-n-plus-1}'s, reached through a reference
+        resolver rather than through a field. The plan grows a second step: a
+        \code{BatchEntity} fetch naming the field path it fills in, the fetch it
+        waits for, and the representations it will send. The router batches
+        those representations no matter how many rows there are, so what the
+        service does with a list of them is the subgraph author's problem and
+        chapter~\ref{ch:router-n-plus-1}'s subject.
+  \item \code{@external} declares a field as somebody else's, and
+        \code{@requires} makes the router fetch one before it can answer, even
+        when the client never asked for it: \code{feedbackUrl} alone still
+        costs the Sessions service a statement for a title nobody sees. The
+        field set inside \code{@requires} is checked for being a selection set
+        and not for selecting anything, so a misspelled field name reaches the
+        composer intact. \code{@provides} is not in this graph, because its two
+        preconditions mean keeping a copy of a column in a service that does
+        not own it, which is the duplication this chapter's first section
+        removed. This composer does not enforce the second of those
+        preconditions and Apollo's documentation says it should; write the
+        \code{@shareable} anyway, because the stricter of two rules is the one
+        that cannot break you later.
+  \item Federating on the global node id has a bill and it arrives here.
+        \code{@shareable} on \code{node} says any subgraph can answer, and
+        neither can: with two node types in two services, \code{node(id:)}
+        works when the query names the type in a fragment and fails when it
+        names the other one, where a single service answered harmlessly.
+        Nothing is broken in either subgraph. The router cannot route on an
+        opaque identifier, which is the cost of the opacity
+        chapter~\ref{ch:schema-design} was pleased about.
+\end{chaptersummary}

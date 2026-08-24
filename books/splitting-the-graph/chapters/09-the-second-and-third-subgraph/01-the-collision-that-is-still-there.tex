@@ -1,0 +1,58 @@
+\section{The Collision That Is Still There}
+\label{sec:ch09-the-collision-that-is-still-there}
+
+\index{seam!the collision chapter 7 left|(}%
+Chapter~\ref{ch:composition} finished with one error it could not fix.
+Compose the Sessions subgraph against the hand-written Speakers document again
+and it is where it was left:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+The Object "Speaker" defines the same fields in multiple subgraphs without the "@shareable" directive:
+ The field "name" is defined in the following subgraphs: "sessions", "speakers".
+ However, it is not declared "@shareable" in any of them.
+ The field "bio" is defined in the following subgraphs: "sessions", "speakers".
+ However, it is not declared "@shareable" in any of them.
+\end{minted}
+
+\index{seam!has two fixes and only one is right}%
+There are two ways to make that message go away and only one of them is
+federation. Declaring both fields \code{@shareable} tells the composer that
+either service may answer for a speaker's name, which is a promise neither can
+keep and the exact thing chapter~\ref{ch:composition} closed by arguing
+against. The other way is to make it true that one service owns the rows.
+
+\index{ownership!is a decision the composer cannot make}%
+The composer cannot help you choose. It can see that two documents claim one
+field; which of the two should give it up is a question about who owns the
+data, and chapter~\ref{ch:ownership} is a whole chapter on how badly that
+question goes when nobody answers it deliberately. Here the answer is easy,
+because the conference has been running the other way round since
+chapter~\ref{ch:hot-chocolate-zero}: the Sessions service stores speakers only
+because it was the first service there was.
+
+\subsection{What Moves, and What Cannot}
+
+\index{seam!the row moves and the key stays}%
+The rows move. The \code{SpeakerId} column on each session does not, and could
+not: it is how a session says which speaker gives it, and a session is
+Sessions' to describe. So the split runs between the identifier and everything
+the identifier points at. Sessions keeps a number. Speakers gets the name, the
+biography and the table.
+
+\index{seam!the field survives the split}%
+The field a client asks for survives that intact. \code{Session.speaker} still
+exists, still returns a \code{Speaker}, and still answers. What changes is that
+the object it returns is assembled by two processes, and that the router's
+query plan says so out loud.
+
+\index{ownership!two subgraphs share no code}%
+One rule governs everything that follows, and it comes before the first file
+because everything after it depends on the rule: the two services share no code.
+Not a model library, not a \code{Common} project, not a linked file. Where
+both need the same shape, each declares its own copy. These would be separate
+repositories owned by separate teams in any conference big enough to need
+this, and a shared type would make the book demonstrate the opposite of what
+it says. It also costs something real, and the next section is where the
+bill arrives: a DataLoader, an interceptor and a statement log all get typed
+out a second time.
+\index{seam!the collision chapter 7 left|)}%

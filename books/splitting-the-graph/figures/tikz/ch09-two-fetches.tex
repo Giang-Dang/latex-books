@@ -1,0 +1,126 @@
+% The plan grows a second step: chapter 8 answered one query with one fetch;
+% here a second subgraph joins, and the same shape of client request now
+% needs two fetches, the second of which cannot start until the first has
+% come back.
+%
+% Same idiom as figures/tikz/ch01-one-field.tex and ch08-one-fetch.tex: each
+% lane is a timeline read left to right, ticks mark stages, and a brace under
+% the stages that matter carries a one-line label. Axis, tick, event, span
+% and spanlabel styles are copied from those files unchanged.
+%
+% Lane A (sessions { nodes { title } }, answered inside one subgraph) and
+% lane B (the same field plus speaker { name }, the first query this book
+% answers across two subgraphs) share the same first four stages: client
+% posts to the router, the router plans, the router posts to Sessions, and
+% Sessions runs one statement. Those four ticks sit at the same x in both
+% lanes for exactly that reason, so the eye reads the two rows as the same
+% request up to the point where they part company. From there lane A is
+% finished, so its axis simply stops; lane B keeps going for two more ticks,
+% because that is the whole argument of the figure, and a lane that stopped
+% at the same width as lane A would be hiding it. This is a deliberate
+% widening, not a timing claim: SPEC decision 19 puts no milliseconds in
+% this book, the horizontal axis is sequence only, and no gap here is sized
+% to suggest one stage took longer than another.
+%
+% The dashed vertical rule is the seam idiom fixed by
+% figures/tikz/ch05-the-join-moves.tex, reused unchanged: a dashed vertical
+% marks where work crosses from one subgraph's process into another's. It
+% appears once in lane B, between the statement that finishes the Sessions
+% fetch and the tick where the router sends ids onward as representations,
+% because that is the one crossing this request makes. Lane A crosses no
+% seam and carries no dashed rule at all, which is half the figure's point:
+% one lane has a seam to cross, the other does not.
+%
+% Two braces sit under lane B, with a visible gap on either side of the
+% seam so neither brace is mistaken for spanning it, the same discipline
+% ch08-one-fetch.tex uses for its own pair of braces. The shorter brace, under
+% the fetch to Sessions, notes that the router rewrote the selection to ask
+% for the id it will need rather than the name the client asked for. The
+% main brace, under the fetch to Speakers, names the step lane A never
+% takes at all: a fetch that depends on the first one returning, and that
+% costs one more statement rather than one per session.
+%
+% No quotation marks anywhere in this file. The book's strict Ascii mode
+% (see check-chapter.psd1) makes the prose gate read a literal " as a quote
+% character, while \" is LaTeX's diaeresis accent and fails to compile
+% inside a node. Every identifier below is written bare, and URL paths are
+% broken onto their own line by hand rather than quoted or wrapped.
+%
+% Bare tikzpicture (house style): the figure environment, caption and label
+% live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  axis/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  tick/.style={draw, line width=0.4pt},
+  event/.style={anchor=south, align=center, text width=20mm,
+    inner sep=1pt},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  lane/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+  boundary/.style={draw, line width=0.4pt, dashed},
+]
+
+% ------------------------------------------------------------- lane A
+% At y=20, level with lane B's own label. The three-line event at x=36
+% reaches y=13, so the 13 that ch08-one-fetch.tex uses for its lane A
+% would sit on top of it here; that lane's tall labels start further
+% right and its title has ended by then.
+\node[lane] at (0,20) {A. sessions only: one query, one subgraph};
+
+\draw[axis] (0,0) -- (90,0);
+\foreach \x in {14,36,58,82}{
+  \draw[tick] (\x,-1.5) -- (\x,1.5);
+}
+
+\node[event, text width=20mm] at (14,3)
+  {client posts to\\localhost:3002\\/graphql};
+\node[event, text width=22mm] at (36,3)
+  {router plans:\\one fetch,\\subgraph sessions};
+\node[event, text width=22mm] at (58,3)
+  {router posts to\\localhost:5001\\/graphql};
+\node[event, text width=18mm] at (82,3)
+  {1 statement\\to SQLite};
+
+% ------------------------------------------------------------- lane B
+% Lane A carries no braces, so it needs less room beneath it than lane B
+% does. 35mm puts the two lanes the same distance apart as the two in
+% ch08-one-fetch.tex measured from axis to axis.
+\begin{scope}[shift={(0,-35)}]
+  \node[lane] at (0,20)
+    {B. speaker name added: the first query split across two subgraphs};
+
+  \draw[axis] (0,0) -- (150,0);
+  \foreach \x in {14,36,58,82,112,140}{
+    \draw[tick] (\x,-1.5) -- (\x,1.5);
+  }
+
+  \draw[boundary] (97,-2) -- (97,8);
+  \node[spanlabel, inner sep=1pt] at (97,-2) {seam};
+
+  \node[event, text width=20mm] at (14,3)
+    {client posts to\\localhost:3002\\/graphql};
+  \node[event, text width=20mm] at (36,3)
+    {router plans:\\Sequence,\\two steps};
+  \node[event, text width=22mm] at (58,3)
+    {router posts to\\localhost:5001\\/graphql:\\id, not name};
+  \node[event, text width=24mm] at (82,3)
+    {1 statement\\to SQLite,\\Sessions service};
+  \node[event, text width=30mm] at (112,3)
+    {router sends ids\\as representations\\to localhost:5002\\/graphql};
+  \node[event, text width=24mm] at (140,3)
+    {1 statement\\to SQLite,\\Speakers service};
+
+  \draw[span] (58,-4) -- (58,-7) -- (82,-7) -- (82,-4);
+  \node[spanlabel] at (70,-8)
+    {the router rewrote the selection:\\it asks Sessions for the id it\\will
+     need, not the name asked for};
+
+  \draw[span] (112,-4) -- (112,-7) -- (140,-7) -- (140,-4);
+  \node[spanlabel] at (126,-8)
+    {the step lane A never takes:\\a BatchEntity fetch that waits\\on the
+     first fetch, and costs one\\more statement, not one per session};
+\end{scope}
+
+\end{tikzpicture}

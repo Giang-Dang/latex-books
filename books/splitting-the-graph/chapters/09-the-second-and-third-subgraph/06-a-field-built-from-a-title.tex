@@ -1,0 +1,163 @@
+\section{A Field Built From a Title You Do Not Store}
+\label{sec:ch09-a-field-built-from-a-title}
+
+\index{requires@\code{"@requires}!the problem it solves|(}%
+\code{averageScore} and \code{ratingCount} need nothing but the key. A third
+field on the Ratings service needs something the service does not have. The
+url where an attendee leaves a score is built from the session's title, and the
+title is the Sessions service's:
+
+\begin{minted}{csharp}
+    [Requires("title")]
+    public static string GetFeedbackUrl([Parent] Session session)
+        => "https://feedback.example/2026/" + Slug(session.Title);
+\end{minted}
+
+\index{external@\code{"@external}!declares a field you do not resolve}%
+For that to be legal the type has to declare \code{title}, and declare that it
+is somebody else's:
+
+\begin{minted}{csharp}
+    [External]
+    public static string GetTitle([Parent] Session session)
+        => session.Title;
+\end{minted}
+
+\index{external@\code{"@external}!the resolver nobody calls}%
+That method has a body and nothing ever calls it. \code{@external} says this
+field is resolved elsewhere, so the router never routes a request for
+\code{Session.title} here; the resolver exists because C\# wants a member
+behind the field, and it returns whatever the reference resolver put in the
+record. Writing a real body for a field marked external is a small dishonesty
+that the language forces and the schema corrects.
+
+\index{directives!where each attribute is allowed to go}%
+Where the two attributes go is not a preference. \code{[Requires]} and
+\code{[Provides]} derive from a base whose declared usage is methods and
+properties only, so putting either on the type class does not compile:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+error CS0592: Attribute 'Requires' is not valid on this declaration type. It is only valid on 'method, property, indexer' declarations.
+\end{minted}
+
+\index{Key@\code{[Key]}!goes on the class, unlike these two}%
+Which is the opposite of \code{[Key]} and \code{[ReferenceResolver]}, both of
+which go on the class and neither of which is legal on a method.
+\code{[External]} is allowed in both places. There is a rule underneath the
+inconsistency and it is the same one the directives themselves follow: a
+directive that describes a type goes on the type, and a directive that
+describes one field goes on the field.
+
+\subsection{What the Specification Says It Does}
+
+\index{requires@\code{"@requires}!the normative sentence}%
+Apollo's own reference is unusually direct about the mechanism, and the clause
+worth reading twice is the last one. \code{@requires}
+\enquote{tells the router that it needs to fetch the values of those externally
+defined fields first, even if the original client query didn't
+request them}~\autocite{apollodirectives}. It also states the precondition this
+section has already met: a subgraph that requires a field must declare that
+field and mark it external, or composition fails.
+
+\index{requires@\code{"@requires}!fetches a field nobody asked for}%
+That second clause is testable, so test it. Ask for the url and not the title:
+
+\begin{minted}{graphql}
+{ sessions(first: 10) { nodes { feedbackUrl } } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"sessions":{"nodes":[
+  {"feedbackUrl":"https://feedback.example/2026/schemas-that-outlive-their-authors"},
+  {"feedbackUrl":"https://feedback.example/2026/reading-a-query-plan"},
+  {"feedbackUrl":"https://feedback.example/2026/paging-without-offsets"},
+  {"feedbackUrl":"https://feedback.example/2026/the-bank-that-split-its-graph"}]}}}
+\end{minted}
+
+\index{requires@\code{"@requires}!the client pays for a field it never sees}%
+No title anywhere in that response, and the Sessions service was asked for one
+anyway: the request costs it a statement, and the plan's first fetch reads
+\code{\{ sessions \{ nodes \{ title \_\_typename id \} \} \}}. A client asking
+for one field caused a second field to be fetched, transmitted between two
+services, and thrown away. That is the trade \code{@requires} makes, and it is
+worth knowing before you put one on a field whose requirement is expensive.
+
+\index{requires@\code{"@requires}!costs the requiring service nothing here}%
+The Ratings service, meanwhile, issues no statement at all. Everything
+\code{feedbackUrl} needs arrived in the representation.
+
+\subsection{The Representation Grows a Second Entry}
+
+\index{query plan!representations carry more than the key}%
+Section~\ref{sec:ch09-the-first-query-across-two} read a
+\code{representations} array with one entry in it, the key. With a
+\code{@requires} in play there are two:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+"representations": [
+  { "kind": "@requires",
+    "typeName": "Session",
+    "fieldName": "feedbackUrl",
+    "fragment": "fragment Requires_for_feedbackUrl on Session {\n    title\n}" },
+  { "kind": "@key",
+    "typeName": "Session",
+    "fragment": "fragment Key on Session {\n    __typename\n    id\n}" }
+]
+\end{minted}
+
+\index{requires@\code{"@requires}!is attached to a field, not a type}%
+The first entry names the field that caused it, which is the difference between
+this directive and the other two in the chapter. A key is a property of a type
+and \code{@external} marks a field as somebody else's; a requirement belongs to
+one field, and the plan carries it under that field's name.
+
+\index{router.json@\code{router.json}!the compiled form of all three directives}%
+All three of this chapter's directives compile into the execution config, each
+into something small enough to read. The Ratings datasource is the only one
+carrying a \code{requires} array:
+
+\begin{minted}{json}
+{ "typeName": "Session",
+  "fieldName": "feedbackUrl",
+  "selectionSet": "title" }
+\end{minted}
+
+\index{external@\code{"@external}!is a separate list in the config}%
+And \code{@external} is a list beside the fields the subgraph actually
+resolves, on the same datasource:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{ "typeName": "Session",
+  "fieldNames": ["averageScore", "ratingCount", "feedbackUrl", "id"],
+  "externalFieldNames": ["title"] }
+\end{minted}
+
+\index{composition!the directives are gone from what a client reads}%
+Both of those are in the part of the config the router uses to plan. Neither
+appears in the schema a client is served, along with \code{@key},
+\code{@shareable} and the word \code{resolvable}, which is
+chapter~\ref{ch:composition}'s point about composition holding for three new
+directives: they do their work while the documents are merged and are gone from
+what anyone downstream sees.
+
+\subsection{A Field Set Nothing Checks}
+
+\index{requires@\code{"@requires}!its argument is barely validated}%
+One thing to know before you trust that string. The field set inside
+\code{[Requires]} is parsed at schema build, so a syntax error stops the
+service:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+Expected a `Name`-token, but found a `Bang`-token.
+  at HotChocolate.ApolloFederation.Types.FieldSetType.ParseSelectionSet(String s)
+  at HotChocolate.ApolloFederation.Types.RequiresDirective..ctor(String fields)
+\end{minted}
+
+\index{requires@\code{"@requires}!a typo reaches the exported schema}%
+But a field set that parses and names a field that does not exist builds
+cleanly and exports cleanly. \code{[Requires("doesNotExist")]} on a type with no
+such field reaches the schema document as
+\code{@requires(fields: "doesNotExist")}, untouched. The string is checked for
+being a selection set and not for selecting anything, so the first thing that
+notices a misspelled field name is downstream of the service that shipped it.
+\index{requires@\code{"@requires}!the problem it solves|)}%

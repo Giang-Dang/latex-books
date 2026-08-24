@@ -1,0 +1,246 @@
+\section{The First Query Across Two Subgraphs}
+\label{sec:ch09-the-first-query-across-two}
+
+\index{seam!the first query that crosses one|(}%
+\code{graph.yaml} gains an entry, pointing at the schema the new service
+exports rather than at a copy of it:
+
+\begin{minted}[highlightlines={7,8,9,10}]{yaml}
+version: 1
+subgraphs:
+  - name: sessions
+    routing_url: http://localhost:5001/graphql
+    schema:
+      file: ../src/Sessions/schema.graphql
+  - name: speakers
+    routing_url: http://localhost:5002/graphql
+    schema:
+      file: ../src/Speakers/schema.graphql
+\end{minted}
+
+\index{composition!the collision is gone}%
+Compose it. The error section~\ref{sec:ch09-the-collision-that-is-still-there}
+opened on is not there, and nothing replaced it:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+Router execution config successfully written to "router.json".
+\end{minted}
+
+\index{composition!silence is the whole result}%
+That is the entire output. Two services that both name \code{Speaker}, and no
+complaint, because only one of them claims to be able to produce one.
+
+\subsection{The Query}
+
+\index{seam!the query that crosses it}%
+Start both services and the router, and send the request
+chapter~\ref{ch:data-without-n-plus-1} has been sending since it was one
+service:
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:3002
+Content-Type: application/json
+
+{"query":"{ sessions(first: 10) { nodes { title speaker { name } } } }"}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"data":{"sessions":{"nodes":[
+  {"title":"Schemas That Outlive Their Authors",
+   "speaker":{"name":"Ada Fischer"}},
+  {"title":"Reading a Query Plan",
+   "speaker":{"name":"Ada Fischer"}},
+  {"title":"Paging Without Offsets",
+   "speaker":{"name":"Bruno Kaminski"}},
+  {"title":"The Bank That Split Its Graph",
+   "speaker":{"name":"Chidi Okafor"}}]}}}
+\end{minted}
+
+\index{seam!the response is byte for byte the old one}%
+That is the answer chapter~\ref{ch:federation-model} printed, out of a graph
+that did not exist then. Four sessions, four speaker names, each attached to
+the right session, and nothing in the bytes saying that two processes and two
+databases were involved. No identifier a client could use to redo the join for
+itself, which was chapter~\ref{ch:federation-model}'s point about the response
+and is still true of it.
+
+\index{statement count!the seam does not add one}%
+Now the number. Both services are running
+chapter~\ref{ch:data-without-n-plus-1}'s statement log, so the question is
+answerable rather than arguable:
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+Service & Statements \\
+\midrule
+Sessions, on 5001 & 1 \\
+Speakers, on 5002 & 1 \\
+\midrule
+Total & 2 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\index{statement count!chapter 3's two, across a seam}%
+Two. Chapter~\ref{ch:data-without-n-plus-1} measured this exact request at five
+statements with a naive resolver and two with a DataLoader, inside one process,
+and settled two as the baseline chapter~\ref{ch:router-n-plus-1} would measure
+against. It is still two. What changed is that it is one in each of two
+processes, and the second one is this:
+
+\begin{minted}{text}
+-- statement 1
+SELECT "s"."Id", "s"."Bio", "s"."Name"
+FROM "Speakers" AS "s"
+WHERE "s"."Id" IN (@ids1, @ids2, @ids3)
+\end{minted}
+
+\index{DataLoader!the batch survives the move}%
+Three parameters for four sessions, because two of them are Ada Fischer's.
+That is chapter~\ref{ch:data-without-n-plus-1}'s batched lookup, in a different
+process, against a different database, reached through a reference resolver
+rather than through a field. The DataLoader did not stop working when the code
+moved, which is worth saying out loud because the thing on the other side of it
+changed completely: it used to be fed by one resolver running four times, and
+it is now fed by one \code{\_entities} call carrying four representations.
+
+\subsection{Reading the Plan}
+
+\index{query plan!grows a second step}%
+Chapter~\ref{ch:enter-the-router} said that every plan over a graph of one
+subgraph is a \code{Sequence} holding one \code{Single}, and that the moment a
+second name appeared in the subgraph list the plan is where you go to find out
+what the router decided. Ask for it:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{
+  "queryPlan": {
+    "version": "1",
+    "kind": "Sequence",
+    "children": [
+      {
+        "kind": "Single",
+        "fetch": {
+          "kind": "Single",
+          "subgraphName": "sessions",
+          "subgraphId": "0",
+          "fetchId": 0,
+          "query": "{\n    sessions {\n        nodes {\n            title\n            speaker {\n                __typename\n                id\n            }\n        }\n    }\n}"
+        }
+      },
+      {
+        "kind": "Single",
+        "fetch": {
+          "kind": "BatchEntity",
+          "path": "sessions.nodes.@.speaker",
+          "subgraphName": "speakers",
+          "subgraphId": "1",
+          "fetchId": 1,
+          "dependsOnFetchIds": [0],
+          "representations": [
+            {
+              "kind": "@key",
+              "typeName": "Speaker",
+              "fragment": "fragment Key on Speaker {\n    __typename\n    id\n}"
+            }
+          ],
+          "query": "query($representations: [_Any!]!){\n    _entities(representations: $representations){\n        ... on Speaker {\n            __typename\n            name\n        }\n    }\n}"
+        }
+      }
+    ],
+    "normalizedQuery": "{sessions {nodes {title speaker {name}}}}"
+  }
+}
+\end{minted}
+
+\index{query plan!the first fetch asks for a key, not a name}%
+Read the first fetch before the second, because it already contains the
+decision. The client asked for \code{speaker \{ name \}}. Sessions is asked for
+\code{speaker \{ \_\_typename id \}}. The router rewrote the selection, because
+it knows that service cannot answer \code{name} and knows what it will need in
+order to ask somebody who can.
+
+\index{BatchEntity@\code{BatchEntity}!the second word in the vocabulary}%
+The second fetch is a \code{BatchEntity}, which is the seam in one word. Four
+things in it carry the whole mechanism between them:
+
+\begin{itemize}
+  \item \code{path} is \code{sessions.nodes.@.speaker}. That is the field being
+        filled in, with \code{@} standing for every element of the list. The
+        router is not fetching speakers; it is fetching the contents of one
+        field position in a response it has already partly built.
+  \item \code{dependsOnFetchIds} is \code{[0]}. This step cannot start until
+        the first has come back, because the keys it needs are in that answer.
+        Nothing about the seam is parallel.
+  \item \code{representations} is the shape of what will be sent, written as a
+        fragment: a type name and a key, and nothing else.
+  \item \code{query} is the \code{\_entities} call
+        chapter~\ref{ch:first-subgraph} wrote a resolver for and could only
+        exercise by hand. This is the caller it was waiting for.
+\end{itemize}
+
+\index{seam!costs one round trip, not one per row}%
+The word that matters in \code{BatchEntity} is the first one. Four sessions
+produce one fetch carrying four representations, not four fetches, and that is
+the router's doing rather than anything the subgraph asked for.
+Figure~\ref{fig:ch09-two-fetches} is the two shapes beside each other.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch09-two-fetches}
+  \caption{The same request before and after it has to cross a seam. Lane A
+  stays inside one subgraph and the router adds nothing but a plan, which is
+  where chapter~\ref{ch:enter-the-router} left it. Lane B is one field wider
+  and costs a second fetch that cannot begin until the first returns, and the
+  dashed rule is where the work leaves one service for another. Both lanes end
+  in one statement per service, which is the part a DataLoader is responsible
+  for and chapter~\ref{ch:router-n-plus-1} is about.}
+  \label{fig:ch09-two-fetches}
+\end{figure}
+
+\index{router!batches representations, and the resolver may not}%
+Hold on to the batching, because it is doing more work than it looks like.
+The router sends one request per subgraph per step no matter how many rows are
+in the list, so the count on the wire is fixed. What is not fixed is what the
+service does with a list of four representations after it arrives, and
+\code{SpeakerType}'s answer, one statement, is a property of the DataLoader
+behind that resolver rather than of federation. Take the loader out and the
+router's behavior does not change at all while the statement count does.
+That is chapter~\ref{ch:router-n-plus-1}, and it is the first thing the next
+part of the book measures.
+
+\subsection{When One Of Them Is Not There}
+
+\index{partial failure!one subgraph down is not the graph down}%
+Chapter~\ref{ch:enter-the-router} stopped the only service there was and got a
+null and an error. With three services the more useful question is what happens
+when one of them goes and the others do not. Stop Speakers and send the same
+request:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'speakers' at Path 'sessions.nodes.@.speaker'."}],
+ "data":{"sessions":{"nodes":[
+   {"title":"Schemas That Outlive Their Authors","speaker":null},
+   {"title":"Reading a Query Plan","speaker":null},
+   {"title":"Paging Without Offsets","speaker":null},
+   {"title":"The Bank That Split Its Graph","speaker":null}]}}}
+\end{minted}
+
+\index{partial failure!the error carries the path as well as the name}%
+HTTP 200, every title present, every speaker null, and one error naming both
+the subgraph that failed and the path it failed at. That path is new. When
+there was one subgraph the error could only be about the whole request; with a
+seam it can say which field position the hole is in, which is the difference
+between a page that says \enquote{the graph is down} and a page that can render
+the schedule and gray out the names.
+
+\index{partial failure!a query that does not cross is untouched}%
+Ask for something that does not cross the broken seam and there is no error at
+all. Titles, abstracts and start times come back complete while Speakers is
+still stopped, because every one of them routes to a service that is running.
+The blast radius of a dead subgraph is the set of fields that route to it, and
+no larger, provided those fields are nullable.
+Chapter~\ref{ch:null-blast-radius} is what happens when they are not.
+\index{seam!the first query that crosses one|)}%

@@ -1,0 +1,189 @@
+\section{What Sessions Keeps}
+\label{sec:ch09-what-sessions-keeps}
+
+\index{stub!what is left when a type moves out|(}%
+The Sessions service still has to name \code{Speaker}, because
+\code{Session.speaker} still returns one. What it no longer has is anything to
+put in it. \code{Speaker.cs} loses two properties and gains an attribute:
+
+\begin{minted}[highlightlines={14}]{csharp}
+using HotChocolate.Types.Relay;
+
+namespace Sessions;
+
+/// <summary>
+/// A speaker, as far as this service is concerned.
+/// </summary>
+/// <param name="Id">Stable identifier for this speaker.</param>
+// An identifier and nothing else. The name and the bio moved to the
+// Speakers service in chapter 9, so there is no row behind this record
+// and no table to load it from. It is worth declaring anyway, because
+// a client asking a session for its speaker's name needs somewhere to
+// ask, and this type is that somewhere.
+public sealed record Speaker([property: ID<Speaker>] int Id);
+\end{minted}
+
+\index{ID@\code{[ID<T>]}!makes the key a node id on the stub}%
+\code{[ID<Speaker>]} is doing the work the \code{[NodeResolver]} used to do.
+This type is not a \code{Node} here any more, so nothing else would make its
+\code{id} export as \code{ID!} and carry the encoded form, and both of those
+have to be true: the string this service hands out is the key the Speakers
+service will be asked to resolve, so it must be the string the Speakers
+service would have produced.
+
+\index{stub!the type class shrinks to one line}%
+\code{SpeakerType} loses both resolvers and most of itself:
+
+\begin{minted}{csharp}
+using HotChocolate.ApolloFederation.Types;
+
+namespace Sessions;
+
+/// <summary>
+/// The stub. This service names Speaker so that Session.speaker has a
+/// type, declares which field identifies one, and then says it cannot
+/// turn such a key back into anything: resolvable false is the whole
+/// difference between this and the Speakers service's declaration of
+/// the same type. Without it, composition would believe two subgraphs
+/// can both answer for a speaker and route accordingly.
+/// </summary>
+[ObjectType<Speaker>]
+[Key("id", false)]
+public static partial class SpeakerType;
+\end{minted}
+
+\index{Key@\code{[Key]}!its second argument}%
+That second argument is the chapter's first new piece of federation.
+\code{[Key]} has exactly two constructors: one taking nothing, and one taking
+a field set and a boolean that defaults to true. Set it false and the exported
+schema says so.
+
+\index{resolvable@\code{resolvable: false}!what Apollo calls a stub}%
+Chapter~\ref{ch:federation-model} read that argument out of the directive
+definition and said what setting it false declares. Apollo has a name for the
+type you end up with: a \emph{stub
+definition}~\autocite{apollocontributefields}, carrying the key fields of an
+entity and nothing else. That is this file exactly, and it is worth having the
+word for it, because a stub is a thing you will write once per seam for the
+rest of your graph's life.
+
+\subsection{The Resolver That Does No Work}
+
+\index{Session.speaker@\code{Session.speaker}!costs no statement now}%
+\code{Session.speaker} keeps its resolver and loses its body:
+
+\begin{minted}[highlightlines={9,10,11}]{csharp}
+    /// <summary>
+    /// The person giving this session.
+    /// </summary>
+    // Since chapter 9 this service holds the identifier and nothing
+    // else, so the whole of the work is wrapping the foreign key it
+    // already has in the type the schema promises. No statement is
+    // issued and nothing is checked: if no speaker carries this
+    // number, the Speakers service is where that is discovered.
+    public static Speaker? GetSpeaker(
+        [Parent(nameof(Session.SpeakerId))] Session session)
+        => new(session.SpeakerId);
+\end{minted}
+
+\index{DataLoader!the one this service no longer needs}%
+No \code{async}, no DataLoader, no cancellation token. The method is now a
+constructor call over a column the row already carried, and
+\code{SpeakerDataLoader.cs} is deleted from this service, having moved to the
+one with the table in it.
+
+\index{Parent@\code{[Parent]}!still load-bearing, and now silently}%
+The \code{[Parent]} attribute naming \code{SpeakerId} survives, and it got
+more dangerous rather than less.
+Chapter~\ref{ch:data-without-n-plus-1} put it there so the
+projection would keep \code{SpeakerId} in the row when nobody selected it, and
+measured what happens without it: every speaker resolves to null. Drop it now
+and the failure is quieter. The column comes back as the default for its type,
+the record is constructed from a zero, and every session reports a speaker
+whose node id decodes to \code{Speaker:0}. That is a well-formed key for a row
+that does not exist, and the Speakers service will answer it with a null and
+no error at all.
+
+\index{nullability!ownership stops being a judgment call}%
+\code{speaker} stays nullable, and the reason is better than it was.
+Chapter~\ref{ch:schema-design} left it nullable as a judgment about what this
+service could guarantee, and made it stick by measuring what
+\code{speaker: Speaker!} does to a response when one row is missing. It is not
+a judgment any more. This service cannot guarantee a speaker because the
+speakers are in another process, and section~\ref{sec:ch09-the-first-query-across-two}
+shows what arrives when that process is not running.
+
+\subsection{Three Readouts of One Argument}
+
+\index{schema!the stub as exported}%
+Export the schema and the type is four lines and its description:
+
+\begin{graphqlsdl}
+"A speaker, as far as this service is concerned."
+type Speaker @key(fields: "id", resolvable: false) {
+  "Stable identifier for this speaker."
+  id: ID!
+}
+\end{graphqlsdl}
+
+\index{Node@\code{Node}!the stub does not implement it}%
+\code{implements Node} is gone, because there is no node resolver to make it
+true. So is every field except the key. A reader of this document learns that
+a speaker exists, that it is identified by \code{id}, and nothing else, which
+is exactly as much as this service knows.
+
+\index{Entity@\code{\_Entity}!shrinks by one}%
+The second readout is the union chapter~\ref{ch:first-subgraph} called a
+readout:
+
+\begin{graphqlsdl}
+union _Entity = Session
+\end{graphqlsdl}
+
+\index{Entity@\code{\_Entity}!is what resolvable false changes}%
+Two members at the end of chapter~\ref{ch:first-subgraph}, one now. That union
+is generated from the types this service will answer an entity fetch for, and
+\code{resolvable: false} is what took \code{Speaker} out of it. If you make a
+stub and the type is still in the union, the argument did not take.
+
+\index{router.json@\code{router.json}!compiles resolvable false to a flag}%
+The third readout is in the router execution config, and it is the one that
+does the routing. Chapter~\ref{ch:composition} read the \code{@key} directives
+out of that file as a lookup table and called it the seam in the form the
+router consumes. Compose the graph now and the Sessions entry reads:
+
+\begin{minted}{json}
+"keys": [
+  {"typeName": "Session", "selectionSet": "id"},
+  {"typeName": "Speaker", "selectionSet": "id",
+   "disableEntityResolver": true}
+]
+\end{minted}
+
+\index{disableEntityResolver@\code{disableEntityResolver}!is the whole mechanism}%
+The stub is in the key table. It has to be: the router still needs to know the
+shape of a speaker's key, because \code{Session.speaker} hands one back and
+something has to be sent onward. What it also has is one boolean, and that
+boolean is the entire mechanism. The Speakers subgraph's entry for the same
+type carries no such property, because the flag is written only when it is
+false, so its absence there is the positive case.
+
+\index{resolvable@\code{resolvable: false}!is advice to the composer, not a guard}%
+One thing that flag is not is a guard. It tells the composer where not to
+route, and nothing enforces it on the service itself. Send the Sessions
+subgraph a representation naming a \code{Speaker}, on its own port, and it
+does not answer with a polite null:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Unexpected Execution Error","path":["_entities"]}],"data":null}
+\end{minted}
+
+\index{entities@\code{\_entities}!the stub is a hole in it}%
+Not a null in the list, which is what chapter~\ref{ch:first-subgraph} measured
+for a key matching no row. An unhandled error, taking the whole \code{data}
+key with it. Nothing a client can see says this would happen: the type is in
+the schema, it advertises a key, and \code{resolvable: false} lives in a
+directive that ordinary introspection does not show. Chapter~\ref{ch:entities-authorization}
+is about what the entity route hands over when asked politely, and this is one
+more thing it will find waiting.
+\index{stub!what is left when a type moves out|)}%

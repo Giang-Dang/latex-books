@@ -1,0 +1,125 @@
+\section{The Bill for a Shareable \code{node}}
+\label{sec:ch09-the-bill-for-a-shareable-node}
+
+\index{node@\code{node(id:)}!across a seam|(}%
+Chapter~\ref{ch:composition} spent thirty-three lines on a type interceptor so
+that \code{node} and \code{nodes} would carry \code{@shareable} and two
+subgraphs would compose. I said at the time that the trade was worth it,
+because the alternative promised four fields in order to buy a promise about
+two. There is now a second subgraph, and the promise about two comes due.
+
+\index{shareable@\code{"@shareable}!says any subgraph can answer}%
+\code{@shareable} means any subgraph declaring the field can resolve it. Read
+that against what the two services can actually do. Sessions resolves
+\code{node(id:)} for a \code{Session}. Speakers resolves it for a
+\code{Speaker}. Neither can do the other's, and neither says so anywhere,
+because there is nowhere in the schema to say it.
+
+\index{node@\code{node(id:)}!works when the query names the type}%
+Ask the router for a speaker by node id, naming the type in a fragment, and
+everything is fine:
+
+\begin{minted}{graphql}
+{ node(id: "U3BlYWtlcjox") { __typename ... on Speaker { name } } }
+\end{minted}
+
+\begin{minted}{json}
+{"data":{"node":{"__typename":"Speaker","name":"Ada Fischer"}}}
+\end{minted}
+
+\index{node@\code{node(id:)}!the fragment is what routes it}%
+The fragment is what made that work. It is the only thing in the request that
+names a type, and the query went to the service that owns that type; take it
+away, as the next request does, and the query goes somewhere else.
+
+\index{node@\code{node(id:)}!the same id with the wrong fragment fails}%
+Now the same identifier and the same field, with a fragment for the other type:
+
+\begin{minted}{graphql}
+{ node(id: "U3BlYWtlcjox") { __typename ... on Session { title } } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'sessions'.","extensions":{"errors":[{"message":"There is no node resolver registered for type `Speaker`.","path":["node"],"extensions":{"code":"DOWNSTREAM_SERVICE_ERROR"}}],"serviceName":"sessions","statusCode":200}}],"data":{"node":null}}
+\end{minted}
+
+\index{node@\code{node(id:)}!chapter 4's rule does not survive the seam}%
+Chapter~\ref{ch:schema-design} established what this request does in a single
+service, and made a point of it: a well-formed node id of the wrong type is
+\emph{not} an error. The fragment does not match, the client gets an object
+with no fields it asked for, and nothing anywhere is wrong. That was a nice
+property and it does not survive a seam. With no \code{Speaker} named anywhere
+in the request, the planner sent it to Sessions, which does not know what a
+\code{Speaker} is. Why Sessions rather than Speakers I cannot tell you; both
+declare \code{node} and the schema gives the planner nothing to prefer one
+by.
+
+\index{nodes@\code{nodes(ids:)}!half a list}%
+\code{nodes} makes the same point with the failure in the middle rather than at
+the end. Two identifiers, one of each type, which no single subgraph can
+answer:
+
+\begin{minted}{graphql}
+{ nodes(ids: ["U2Vzc2lvbjox", "U3BlYWtlcjox"]) { __typename } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"nodes":[{"__typename":"Session"},null]},"errors":[{"message":"Failed to fetch from Subgraph 'sessions'."}]}
+\end{minted}
+
+\index{nodes@\code{nodes(ids:)}!answers 200 with half the answer}%
+HTTP 200, one type resolved, one null, one error. The list is the shape the
+client asked for and half of it is missing.
+
+\subsection{Whose Fault This Is}
+
+\index{node@\code{node(id:)}!is a routing problem, not a resolver one}%
+Nothing in either service is broken. Ask each of them for its own
+identifiers on its own port and both answer correctly, and the composed
+\code{Node} interface at the router names both types, so the schema is not
+lying about what exists. The router cannot tell, from an opaque
+identifier and no fragment, which of two services to ask.
+
+\index{node id!opacity has a cost after all}%
+Which is the bill for something chapter~\ref{ch:schema-design} was pleased
+about. That chapter said the node id format is not a secret, decoded one on the
+page, and warned against reading opacity as a control. This is the other half:
+the format is not a secret from you, and it \emph{is} a secret from the router,
+because a router that decoded one would be depending on an encoding no
+specification requires.
+
+\index{node@\code{node(id:)}!four fixes, and none of them is good}%
+I looked for a fix and did not find one worth shipping. Four things you might
+try:
+
+\begin{itemize}
+  \item Give every subgraph a node resolver for every type. They do not have
+        the rows. Doing it anyway would be undoing the split.
+  \item Declare \code{node} in one subgraph only, so nothing collides and no
+        \code{@shareable} is needed. Composition passes and the failure is
+        identical, because that one subgraph still owns one type out of two.
+  \item Have the node resolver return null for a type it does not own rather
+        than throwing. That trades a loud failure for a quiet wrong answer,
+        which is the class of defect chapters~\ref{ch:representation-order}
+        and~\ref{ch:entities-authorization} exist to warn about.
+  \item Put \code{@inaccessible} on \code{node} and \code{nodes} everywhere and
+        take the field out of the client schema. Honest, and it costs the
+        reader the whole of chapter~\ref{ch:schema-design}'s refetch story.
+\end{itemize}
+
+\index{node id!what federating on one costs}%
+So the graph ships as measured and I am telling you where the edge is rather
+than papering over it. This book federates on the global node id because that
+is what chapter~\ref{ch:schema-design} already had and no better key was
+available, and I said in chapter~\ref{ch:federation-model} that the choice was
+my judgment and not Apollo's guidance, because Apollo publishes none. This is
+what the judgment costs. A client that always names the type it expects, which
+is what a typed client generated from the schema does, never meets it. A client
+that passes an identifier it was handed and asks what it is, meets it
+immediately.
+
+\index{satisfiability!the router can route only on what the query says}%
+Chapter~\ref{ch:satisfiability} is where this gets picked up, because it is the
+chapter about the composer deciding whether every field can be reached from a
+root field, and \code{node} is the root field that makes that question hardest.
+\index{node@\code{node(id:)}!across a seam|)}%
