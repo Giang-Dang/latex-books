@@ -1,0 +1,75 @@
+% Book-specific commands, environments and metadata.
+
+% Title metadata used by the frontmatter pages.
+\newcommand{\thebooktitle}{Độ trung thực trong XAI}
+\newcommand{\thebooksubtitle}{Từ LIME đến chuỗi suy luận}
+\newcommand{\thebookauthor}{Giang Dang}
+
+% Inline code identifiers (method names, hyperparameters, library symbols).
+% This book ships no code that runs; \code marks a name, never a program.
+\newcommand{\code}[1]{\texttt{#1}}
+
+% ---------------------------------------------------------------------------
+% Glossed terms
+% ---------------------------------------------------------------------------
+% This book is written in Vietnamese for readers who will go on to read the
+% 32 corpus papers in English. A term the book translates carries its English
+% original in parentheses, on the cadence the SPEC's gloss regime sets: a term
+% a chapter owns is glossed once per section, a borrowed term once per chapter.
+%
+%   \tn{độ trung thực}{faithfulness}  ->  độ trung thực (faithfulness)
+%
+% Terms the book keeps in English (attribution, baseline, benchmark and
+% friends) are typed plainly and take no parentheses. Which terms fall on
+% which side is settled once in appendix B and does not drift; the Gloss check
+% in check-chapter.psd1 reads that appendix and enforces the cadence.
+\newcommand{\tn}[2]{#1 (#2)}
+
+% ---------------------------------------------------------------------------
+% Theorem environments
+% ---------------------------------------------------------------------------
+% One shared counter, numbered by chapter, so a later chapter can cite
+% "định nghĩa 1.2" with no ambiguity about which sequence it belongs to.
+% Babel's Vietnamese locale already supplies \proofname as "Chứng minh".
+\theoremstyle{definition}
+\newtheorem{definition}{Định nghĩa}[chapter]
+\newtheorem{example}[definition]{Ví dụ}
+
+\theoremstyle{plain}
+\newtheorem{theorem}[definition]{Định lý}
+\newtheorem{lemma}[definition]{Bổ đề}
+\newtheorem{proposition}[definition]{Mệnh đề}
+\newtheorem{corollary}[definition]{Hệ quả}
+
+\theoremstyle{remark}
+\newtheorem{remark}[definition]{Nhận xét}
+
+% The algorithm float sets its own caption name rather than taking one from
+% babel, so left alone it prints "Algorithm 1" in the middle of a Vietnamese
+% page. Every pseudo-code listing in this book is one of these floats.
+\floatname{algorithm}{Thuật toán}
+
+% ---------------------------------------------------------------------------
+% Chapter apparatus
+% ---------------------------------------------------------------------------
+% Grey and rules only, no colour: these books are likely to be read in mono.
+
+% End-of-chapter summary box: 3 to 6 bullets restating the chapter's claims
+% and definitions, nothing that did not already appear in the body.
+\newtcolorbox{tomtat}{
+  breakable, enhanced, sharp corners,
+  colback = black!3, colframe = black!55,
+  boxrule = 0.4pt, left = 3mm, right = 3mm, top = 2mm, bottom = 2mm,
+  title = {Tóm tắt},
+  fonttitle = \bfseries\small,
+  coltitle = black, colbacktitle = black!12,
+}
+
+% Review questions follow the summary box. Starred heading: nothing
+% cross-references a question, and eighteen chapters of them would otherwise
+% flood the table of contents.
+\newcommand{\cauhoi}{\section*{Câu hỏi ôn tập}}
+
+\newlist{cauhoids}{enumerate}{1}
+\setlist[cauhoids]{label = \arabic*., leftmargin = *, itemsep = 0.4em,
+  topsep = 0.4em}

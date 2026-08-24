@@ -1,0 +1,73 @@
+% Package loads shared by the whole book. Keep hyperref last.
+
+\usepackage{geometry}
+\geometry{a4paper, inner=30mm, outer=25mm, top=25mm, bottom=25mm}
+
+\usepackage{microtype}
+
+% Mathematics. Shapley axioms, the Integrated Gradients path integral and the
+% metric definitions of Part IV are worked in the running text, so amsthm's
+% environments (set up in macros.tex) and amsmath are load-bearing.
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+\usepackage{booktabs}
+% longtable is here for two tables that grow with the chapters and cannot be
+% page-broken as plain tabulars: appendix B's keep-in-English block and
+% appendix D's 32-row corpus table. The rest of the book's tables are short,
+% fixed-size and stay tabular; do not convert them.
+\usepackage{longtable}
+\usepackage{enumitem}
+
+% csquotes ships no style for Vietnamese. Modern Vietnamese typography uses
+% the same curly double quotes as English, so aliasing the two is the correct
+% mapping rather than a workaround; without it \enquote{} falls back to the
+% package default and warns on every run. csquotes must stay before biblatex,
+% which detects it and adjusts its own quoting.
+\usepackage{csquotes}
+\DeclareQuoteAlias{english}{vietnamese}
+
+\usepackage{graphicx}
+\graphicspath{{figures/images/}{figures/tikz/}}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc, fit}
+% TikZ externalization caches compiled figures between runs; enable it when
+% figure-heavy chapters slow the build down:
+%   1. add -shell-escape to $lualatex in .latexmkrc
+%   2. uncomment the two lines below
+% \usetikzlibrary{external}
+% \tikzexternalize[prefix=tikz-cache/]
+
+% Pseudo-code. This book ships no code that runs anywhere: every algorithm
+% (LIME's sampling loop, KernelSHAP, a perturbation metric) is typeset here
+% as pseudo-code, so a reader is never asked to believe an invented listing
+% is real code. There is deliberately no minted load; admitting one is a
+% decision-log row in SPEC.md, not an edit here.
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% The end-of-chapter summary box (tomtat, defined in macros.tex). breakable
+% matters: a summary can straddle a page break.
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{breakable}
+
+\usepackage[style=numeric, backend=biber]{biblatex}
+% biblatex ships no vietnamese.lbx, so it warns and falls back once the main
+% language is Vietnamese. Map it to English on purpose: every entry in
+% refs.bib is an English-language paper, so an English "In:" and "visited on"
+% is what the entries should read anyway.
+\DeclareLanguageMapping{vietnamese}{english}
+
+% biblatex will not break a URL anywhere except after a slash, so one long
+% documentation or engineering-blog URL runs past the measure and the build
+% gate fails on an overfull box in a bibliography nobody edited. These permit a
+% break after a digit, an uppercase letter and a lowercase letter respectively.
+\setcounter{biburlnumpenalty}{9000}
+\setcounter{biburlucpenalty}{9000}
+\setcounter{biburllcpenalty}{9000}
+
+\usepackage{imakeidx}
+
+\usepackage[hidelinks]{hyperref}
