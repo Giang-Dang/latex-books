@@ -1,0 +1,36 @@
+\begin{chaptersummary}
+  \item The router is a downloaded binary, not a package, and its default is to
+        fetch its execution config from WunderGraph's CDN with a graph token.
+        Given none it opens its listeners, announces a playground and a metrics
+        endpoint nobody asked for, and then refuses to start. The refusal names
+        the local alternative, which is one key in one file. The port this book
+        uses, 3002, is the one the router prints on the way down.
+  \item Handed a static execution config the router stops polling anything, and
+        reads the file once: changing the graph means restarting the process. It
+        starts happily with no subgraph running, because loading a config and
+        calling a service are different things, the same way composition reads
+        files and never calls a service. The nil uuid
+        chapter~\ref{ch:composition} found in \code{router.json} comes back out
+        here as \code{config\_version}.
+  \item What the router serves is the subgraph's schema minus exactly the
+        federation route: three types and two \code{Query} fields, including
+        \code{\_entities}. Hidden is not closed. The subgraph still answers
+        \code{\_service} and \code{\_entities} on its own port, so the router's
+        schema describes one of your two surfaces.
+  \item A query plan is an Advanced Request Tracing option, so without a Cosmo
+        Cloud token the header asking for one is ignored in silence rather than
+        refused. \code{dev\_mode: true} turns it on locally and the router then
+        explains that it has. Every plan over this graph is a \code{Sequence}
+        holding one \code{Single} fetch, and the router costs the graph nothing:
+        two statements through it, two statements without it, none at all for a
+        plan asked for with \code{X-WG-Skip-Loader}. Reading a plan also gives
+        away that the router rewrites literal arguments into variables before
+        forwarding, and that it answers introspection itself rather than asking
+        anyone.
+  \item A subgraph that is not running produces HTTP 200, a null at the first
+        nullable field, and an error naming which service failed and nothing
+        about why. Both health endpoints go on answering OK throughout, which is
+        correct, because they report that the router is up rather than that the
+        graph works. Those are different claims and only one of them is being
+        made.
+\end{chaptersummary}

@@ -1,0 +1,229 @@
+\section{The Plan With One Fetch in It}
+\label{sec:ch08-the-plan-with-one-fetch-in-it}
+
+\index{query plan!asking for one|(}%
+Ask the router to show its work by sending a header with the request:
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:3002
+Content-Type: application/json
+X-WG-Include-Query-Plan: true
+
+{"query":"{ sessions { nodes { id title speaker { name } } } }"}
+\end{minted}
+
+\index{ports!3002 is the only thing that changed}%
+Note the \code{Host}. That is the only line separating this request from the
+one chapter~\ref{ch:data-without-n-plus-1} sent to the service directly.
+
+\index{query plan!the header does nothing at first}%
+The response is correct, complete, and has no plan in it. No \code{extensions}
+key, no error, no warning in the router's log. It is byte for byte what comes
+back without the header.
+
+\index{query plan!silence is the failure mode}%
+The failure mode here is silence, and it is the only thing in this chapter that
+behaves that way. A header this router will not honor and a
+header it has never heard of produce the same response as each other, and that
+response is the correct answer to the query you asked. There is nothing to
+notice and nothing to search for.
+
+\index{Advanced Request Tracing!gates the query plan}%
+The reason is back in section~\ref{sec:ch08-a-router-with-nothing-to-serve}, in
+a line I flagged and left. The query plan is an option of Advanced Request
+Tracing, and ART is one of the five features the router listed as disabled when
+it found no graph token. A plan tells the reader which of your internal services
+holds what, and which query the router sent to each, so gating it behind
+something is right. Gating it behind a token from a vendor's platform is a
+choice, and locally it means one more line.
+
+\subsection{The Whole File Again, With the Switch In}
+
+\index{config.yaml@\code{config.yaml}!gains dev\_mode}%
+\begin{minted}[highlightlines={13-17}]{yaml}
+version: "1"
+
+# Without this the router asks Cosmo Cloud for its execution config and
+# refuses to start, because it has no token to ask with. The path is
+# resolved against the directory the router is started in, not against
+# this file, so start it from this folder:
+#
+#   router -config config.yaml
+execution_config:
+  file:
+    path: ../graph/router.json
+
+# A development switch, and what makes the query plan visible at all.
+# The plan is an Advanced Request Tracing option, and outside dev mode
+# the router wants a Cosmo Cloud token before it hands one out. With
+# this off, X-WG-Include-Query-Plan is ignored rather than refused.
+dev_mode: true
+\end{minted}
+
+\index{dev\_mode@\code{dev\_mode}!the router explains itself once it is on}%
+Restart, and the router explains the mechanism to you in its own log without
+being asked. The disabled-feature list drops to four names, Advanced Request
+Tracing having left it, and two lines appear that were not there before:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+WARN  Development mode enabled. This should only be used for testing purposes
+WARN  Advanced Request Tracing (ART) is enabled in development mode but requires a graph token to work in production. For more information see https://cosmo-docs.wundergraph.com/router/advanced-request-tracing-art
+\end{minted}
+
+\index{dev\_mode@\code{dev\_mode}!changes the log format too}%
+Those two are trimmed the way the earlier blocks were, and there is more to
+trim, because dev mode does something else nobody asks it for: the log stops
+being JSON and becomes colored console output, each line gaining a timestamp
+and the file and line in the router's own source that emitted it. Handy at a
+terminal. Worth knowing before you point a log shipper at a router somebody
+switched this on.
+
+\subsection{Reading It}
+
+\index{query plan!what one looks like}%
+Send the same request again and the plan arrives in \code{extensions}:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{
+  "queryPlan": {
+    "version": "1",
+    "kind": "Sequence",
+    "children": [
+      {
+        "kind": "Single",
+        "fetch": {
+          "kind": "Single",
+          "subgraphName": "sessions",
+          "subgraphId": "0",
+          "fetchId": 0,
+          "query": "{\n    sessions {\n        nodes {\n            id\n            title\n            speaker {\n                name\n            }\n        }\n    }\n}"
+        }
+      }
+    ],
+    "normalizedQuery": "{sessions {nodes {id title speaker {name}}}}"
+  }
+}
+\end{minted}
+
+\index{query plan!Sequence and Single}%
+A \code{Sequence} holding one child, which is a \code{Single} fetch. Those two
+nouns are the whole vocabulary you need for now: a sequence is a list of steps
+that happen in order, and a single is one request to one subgraph. This graph
+has one subgraph, so the sequence has one step, and its \code{query} is the
+query you sent.
+
+\index{subgraphId@\code{subgraphId}!is the generated id from router.json}%
+\code{subgraphName} is the name out of \code{graph.yaml}, and
+\code{subgraphId} is \code{"0"}, which is the generated id
+chapter~\ref{ch:composition} read out of the \code{subgraphs} list in the
+execution config. Every piece of that plan traces back to a line in a file you
+wrote or composed.
+
+\index{query plan!has the same shape for every operation here}%
+Try to make that shape change and it does not. I asked for two root
+fields in one operation, for the mutation, and for the deprecated
+\code{sessionById}. Sequence, one Single, one fetch, every time. There is one
+service and nothing to decide, so the planner has no decision to record. What
+chapter~\ref{ch:second-third-subgraph} adds is the second name in that list, and
+from then on the plan is where you go to find out what the router decided to do
+about it.
+
+\subsection{Two Things the Plan Gives Away}
+
+\index{router!rewrites literals into variables}%
+The first was not what I was looking for. Send an inline argument:
+
+\begin{minted}{graphql}
+{ node(id: "U3BlYWtlcjox") { __typename } }
+\end{minted}
+
+and the \code{query} inside the plan is not that:
+
+\begin{minted}{graphql}
+query($a: ID!){
+    node(id: $a){
+        __typename
+    }
+}
+\end{minted}
+
+\index{router!normalization is what normalizedQuery records}%
+The router lifted the literal into a variable before forwarding it. The mutation
+gets the same treatment to its input object, and \code{sessionById(id: 1)}
+arrives as \code{query(\$a: Int!)}. So what your subgraph receives is not what
+your client sent, which matters the first time you read a subgraph's own log
+looking for a query you recognize. \code{normalizedQuery} beside the fetch is
+the router's record of the operation it actually planned. Why it does this I
+cannot tell you; I can tell you that it does.
+
+\index{introspection!is planned against a subgraph that does not exist}%
+The second explains something from two sections ago. Ask for the plan of an
+introspection query and the fetch names a subgraph that does not exist:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{
+  "kind": "Single",
+  "subgraphName": "introspection__schema&__type",
+  "subgraphId": "introspection__schema&__type",
+  "fetchId": 0
+}
+\end{minted}
+
+\index{introspection!is answered by the router itself}%
+No \code{query} key at all, because there is no request to send. The router
+answers introspection out of the schema in its own execution config and never
+asks your service. That is why the router could introspect happily with the
+Sessions process stopped: it was never going to ask it.
+
+\subsection{What the Router Costs This Graph}
+
+\index{statement count!is unchanged by the router}%
+Chapter~\ref{ch:data-without-n-plus-1}'s statement log is still running in the
+service, so the question is answerable rather than arguable. The same query,
+three ways:
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+Request & Statements \\
+\midrule
+Direct to the subgraph on 5001 & 2 \\
+Through the router on 3002 & 2 \\
+Through the router, plan only & 0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\index{X-WG-Skip-Loader@\code{X-WG-Skip-Loader}!plans without executing}%
+The third row is a second header, \code{X-WG-Skip-Loader: true}, which tells the
+router to plan the operation and stop. It answers with \code{data} set to null
+and the plan in \code{extensions}, and the service behind it does no work at
+all. Useful, and a good habit: you can read a plan for an expensive query
+without paying for it.
+
+\index{router!adds nothing but a plan to a graph of one}%
+The first two rows are the chapter's actual claim. A plan with one fetch in it
+means the router does nothing to this graph except plan and forward, and the
+two responses are identical. Figure~\ref{fig:ch08-one-fetch} is the two paths
+beside each other.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch08-one-fetch}
+  \caption{The same query direct and through the router. The router adds two
+  stages that did not exist before, normalizing the operation and planning it,
+  and everything after them is the request chapter~\ref{ch:first-subgraph}
+  already made. Both paths end in the same two statements, which is what a plan
+  with one fetch in it costs.}
+  \label{fig:ch08-one-fetch}
+\end{figure}
+
+\index{router!chapter 10 is where the count changes}%
+Hold on to the number 2, because it is the last time it is free.
+Chapter~\ref{ch:second-third-subgraph} puts a second service behind the same
+router and the plan grows a step that fetches entities in bulk, and
+chapter~\ref{ch:router-n-plus-1} is about what the resolver on the far side of
+that step does with them. That is the difference between 2 and something much
+worse.
+\index{query plan!asking for one|)}%

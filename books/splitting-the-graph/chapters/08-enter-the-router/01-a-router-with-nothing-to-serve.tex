@@ -1,0 +1,127 @@
+\section{A Router With Nothing to Serve}
+\label{sec:ch08-a-router-with-nothing-to-serve}
+
+\index{Cosmo Router!where it comes from|(}%
+The router is not a package. Chapter~\ref{ch:composition} added \code{wgc}
+through npm and chapter~\ref{ch:first-subgraph} added a NuGet reference, and
+this chapter adds neither: the Cosmo Router is a compiled binary published as a
+GitHub release asset, and you download it. It is also published as a container
+image, and this book does not use that one. Seven platform and architecture
+pairs ship as archives with each release, macOS, Linux and Windows on the
+architectures you would expect, so nothing in this chapter needs Docker
+installed.
+
+\index{Cosmo Router!the archive holds two files}%
+The Windows archive holds exactly two files, and one of them is the Apache
+license. The other is the router. The release publishes an md5 beside each
+asset, so check it before you unzip; the version table in
+appendix~\ref{app:toolchain} pins which release this book was written against.
+
+\index{Cosmo Router!what the binary reports about itself}%
+Ask the binary what it is:
+
+\begin{minted}{text}
+router -version
+\end{minted}
+
+\begin{minted}{text}
+Router:
+  Version: 0.341.0
+  Go version: go1.26.6
+  OS: windows
+  Arch: amd64
+  Built: 2026-08-18T12:27:33Z
+  VCS Revision: e7b12b1beac4cde7f80cca8b12fdd250ef50cc63
+  Dependencies:
+    github.com/wundergraph/astjson v1.1.0
+    github.com/wundergraph/graphql-go-tools/v2 v2.16.0
+\end{minted}
+
+\index{Cosmo Router!names its own query engine}%
+Two dependencies, and the second one is the query engine. The planner this
+chapter spends its second half reading is in \code{graphql-go-tools}, which is
+a separate library on its own version, along with the normalizer and the thing
+that answers introspection. Worth noting before you go looking for any of the
+three in the router's own source tree and do not find them.
+
+\subsection{It Gets Most of the Way, Then Stops}
+
+\index{Cosmo Router!refuses to start with no config}%
+Run it in an empty directory with no arguments at all. It does not fail
+immediately, which is the interesting part:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+INFO  Config file watching is disabled, you can still trigger reloads by sending SIGHUP to the router process
+WARN  GOMEMLIMIT was not set. Please set it manually to around 90% of the available memory to prevent OOM kills
+      error="failed to set GOMEMLIMIT: cgroups is not supported on this system"
+WARN  No graph token provided. The following Cosmo Cloud features are disabled. Not recommended for Production.
+      features=["Schema Usage Tracking","Persistent operations","Advanced Request Tracing","Cosmo Cloud Tracing","Cosmo Cloud Metrics"]
+WARN  Net poller is only available on Linux and MacOS. Falling back to less efficient connection handling method.
+      error="epoll/kqueue is not supported on this system"
+INFO  Prometheus metrics enabled
+      listen_addr="127.0.0.1:8088" endpoint="/metrics"
+INFO  Serving GraphQL playground
+      url="http://localhost:3002/"
+ERROR Could not start router
+      error="router start error: failed to start router: failed to bootstrap router: graph token is required to fetch execution config from CDN. Alternatively, configure a custom storage provider or specify a static execution config"
+\end{minted}
+
+\index{Cosmo Router!log lines are newline-delimited json}%
+Those lines arrive as newline-delimited JSON, one object per line, and every
+one of them also carries a hostname, a pid, a service name and a service
+version. The block above is those lines with exactly those four fields removed
+and everything else indented underneath, which is the only change made to it
+and the same change made to every router log this chapter prints.
+
+\index{Cosmo Router!its default source is a CDN}%
+Read the last line first. \enquote{Graph token is required to fetch execution
+config from CDN.} A router given nothing does not look for a file. It goes to
+WunderGraph's CDN, and a graph token is what buys an answer there. The default
+configuration of this binary is a client of the vendor's platform, and running
+it locally is the deviation rather than the baseline. That is a reasonable
+default for a company selling a control plane and it is not the mode this book
+is in, so meet the refusal here rather than under some later error that does
+not explain itself this well.
+
+\index{Cosmo Router!names the local alternative in the refusal}%
+Then read the rest of the same sentence, because it is unusually good error
+text. \enquote{Alternatively, configure a custom storage provider or specify a
+static execution config.} The local path is named in the refusal. This is not a
+tool being worked around, and the next section is one file long.
+
+\subsection{Three Things It Decided Before It Failed}
+
+\index{Cosmo Router!announces its port before failing}%
+\index{ports!the router takes its own default}%
+It announced \code{http://localhost:3002/} on the way down. That is the
+router's own default address, chosen with no configuration present at all, and
+it is the address this book uses. Chapter~\ref{ch:hot-chocolate-zero} had to pin
+5001 in a launch profile because \code{dotnet new web} picks a port at random
+and a book printing raw HTTP would otherwise print fiction. The router has no
+such problem: it prints the same address on every machine, so pinning one in
+\code{config.yaml} would add a line that can go stale against the log beside it
+and buy nothing.
+
+\index{Cosmo Router!serves a playground at the root}%
+That address is the playground, at \code{/}. GraphQL is at \code{/graphql},
+which is the path chapter~\ref{ch:hot-chocolate-zero} put the service on, so
+the two differ by port and by nothing else.
+
+\index{Cosmo Router!Prometheus metrics are on by default}%
+And it opened a second listener, for Prometheus metrics, on loopback port 8088
+at \code{/metrics}. It did that before it had a graph to serve and without
+being asked. That is the third time in three chapters a library has written
+something into a public surface on its own initiative:
+chapter~\ref{ch:first-subgraph} found \code{@shareable} appearing on a generated
+type, chapter~\ref{ch:composition} found \code{@cost} on every field with a
+resolver behind it, and here is a metrics endpoint on a port nobody chose.
+Name it now, because chapter~\ref{ch:operations} has to decide what a subgraph
+behind a router should expose, and the honest starting position is that
+something already is.
+
+\index{Advanced Request Tracing!is in the disabled list}%
+One more line matters later. Five Cosmo Cloud features are named as disabled
+without a token, and the third of them is Advanced Request Tracing. Nothing in
+this chapter needs the other four. That one costs us the query plan, and
+section~\ref{sec:ch08-the-plan-with-one-fetch-in-it} is where the bill arrives.
+\index{Cosmo Router!where it comes from|)}%

@@ -1,0 +1,129 @@
+\section{The File It Was Waiting For}
+\label{sec:ch08-the-file-it-was-waiting-for}
+
+\index{config.yaml@\code{config.yaml}!the whole of it|(}%
+Here is the file, and it is the only one this chapter adds to the project:
+
+\begin{minted}{yaml}
+version: "1"
+
+# Without this the router asks Cosmo Cloud for its execution config and
+# refuses to start, because it has no token to ask with. The path is
+# resolved against the directory the router is started in, not against
+# this file, so start it from this folder:
+#
+#   router -config config.yaml
+execution_config:
+  file:
+    path: ../graph/router.json
+\end{minted}
+
+\index{config.yaml@\code{config.yaml}!is optional}%
+Strictly, even that is more than the router needs. Set
+\code{EXECUTION\_CONFIG\_FILE\_PATH} in the environment and it starts and serves
+the same graph with no configuration file anywhere. I write the file because a
+file is a thing you edit once and keep, and an environment variable is a thing
+you retype in every shell you open. The choice is yours and the router does not
+care.
+
+\index{config.yaml@\code{config.yaml}!path is relative to the working directory}%
+The comment in the middle of that file earns its place. The path is resolved
+against the directory the router is started in, not against the location of
+\code{config.yaml}. Start the router from the folder holding the file and it
+serves; start it one level up and point at \code{router/config.yaml}, byte for
+byte the same file, and it does not.
+
+\subsection{The Router Validates This File and Says So}
+
+\index{config.yaml@\code{config.yaml}!is checked against a json schema}%
+Put a key in there that does not exist and the router refuses to start:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+Could not load config: errors while loading config files: router config validation error for config.yaml: jsonschema validation failed with 'https://raw.githubusercontent.com/wundergraph/cosmo/main/router/pkg/config/config.schema.json#'
+- at '': additional properties 'not_a_real_key' not allowed
+\end{minted}
+
+\index{config.yaml@\code{config.yaml}!the refusal names the schema by url}%
+Two things about that. It is not JSON and has no level on it, unlike every
+other line the router prints, because the config is validated before the
+structured logger exists. And it names the schema it validated against, by url.
+
+\index{router execution config!has no schema, unlike config.yaml}%
+Put that next to what chapter~\ref{ch:composition} found one file away. The
+file the composer writes has no published schema at all and is defined only by
+a protobuf message in a source tree. The file you write by hand has a
+JSON schema, published, and the router checks against it and hands you the
+address when you fail. The generated artifact is the undocumented one. I would
+have guessed the other way round.
+
+\index{config.yaml@\code{config.yaml}!a typo cannot sit there doing nothing}%
+The practical consequence is the one you want: a mistyped key in this file
+cannot sit there quietly doing nothing. There is no silent-default failure mode
+to debug at three in the morning, because there is no silence.
+
+\subsection{Starting It}
+
+\index{Cosmo Router!the startup log, read line by line}%
+Compose first, then start the router from the folder holding
+\code{config.yaml}:
+
+\begin{minted}{text}
+wgc router compose -i graph.yaml -o router.json
+router -config config.yaml
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+INFO  Config file watching is disabled, you can still trigger reloads by sending SIGHUP to the router process
+INFO  Config file provided. Values in the config file have higher priority than environment variables
+      config_file=["config.yaml"]
+WARN  GOMEMLIMIT was not set. Please set it manually to around 90% of the available memory to prevent OOM kills
+      error="failed to set GOMEMLIMIT: cgroups is not supported on this system"
+WARN  No graph token provided. The following Cosmo Cloud features are disabled. Not recommended for Production.
+      features=["Schema Usage Tracking","Persistent operations","Advanced Request Tracing","Cosmo Cloud Tracing","Cosmo Cloud Metrics"]
+WARN  Net poller is only available on Linux and MacOS. Falling back to less efficient connection handling method.
+      error="epoll/kqueue is not supported on this system"
+INFO  Prometheus metrics enabled
+      listen_addr="127.0.0.1:8088" endpoint="/metrics"
+INFO  Serving GraphQL playground
+      url="http://localhost:3002/"
+INFO  Server initialized and ready to serve requests
+      listen_addr="localhost:3002" playground=true introspection=true config_version="00000000-0000-0000-0000-000000000000"
+INFO  Static execution config provided. Polling and watching is disabled. Updating execution config is only possible by restarting the router
+INFO  Router started
+      component="supervisor"
+\end{minted}
+
+\index{Cosmo Router!six lines repeat, four are new}%
+Six of those lines are ones the failed run printed too, unchanged, including
+the same five disabled Cosmo Cloud features: nothing about supplying the config
+locally bought any of them back. Four are new, and three of the four are worth
+reading.
+
+\index{Cosmo Router!stops polling once handed a file}%
+\enquote{Polling and watching is disabled.} Handed a file, the router stops being
+a client of anything. It made no network call to start and it will make none
+while it runs, and the same sentence tells you the price: the config is read
+once, so changing the graph means restarting the process. A router that polls a
+control plane can be updated without one. This one cannot, and for a book that
+is the right trade, because every state it serves is a state you produced.
+
+\index{config\_version@\code{config\_version}!is the nil uuid chapter 7 found}%
+Then look at \code{config\_version}. Thirty-two zeroes.
+Chapter~\ref{ch:composition} opened \code{router.json}, found a \code{version}
+field holding a nil uuid, and said it could not tell you what that field was
+for. This is what it is for. The router reads it back out and logs it as the
+version of the graph it is serving, which means that in a deployment fetching
+configs from a control plane, this line is how you tell which one is loaded.
+Composed locally, it is thirty-two zeroes on every machine, every time, and
+carries nothing. Chapter~\ref{ch:blame-routing} needs the version of that
+sentence where the number is real.
+
+\index{Cosmo Router!starts with the subgraph stopped}%
+One last thing about that log, and it is easiest to see by making it happen.
+Stop the Sessions service and start the router: it reaches \code{Router
+started} exactly as above and answers an introspection query. Nothing on 5001,
+and the router does not mind. Chapter~\ref{ch:composition} made this point about
+the composer, that composition reads schema files and never calls a service, and
+it turns out to be true of the router at boot as well. Neither of the two things
+standing between a client and your data checks that your data is there.
+\index{config.yaml@\code{config.yaml}!the whole of it|)}%

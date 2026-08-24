@@ -1,0 +1,102 @@
+\section{What It Serves, and What It Keeps}
+\label{sec:ch08-what-it-serves-and-what-it-keeps}
+
+\index{router!serves fewer types than the subgraph|(}%
+Introspect the router, then introspect the subgraph behind it, and count the
+types each one names. Discount the ones whose names begin with a double
+underscore, which are introspection's own and belong to no schema. The router
+serves 21. The subgraph serves 24.
+
+\index{router!hides exactly the federation route}%
+The three it does not pass on are these:
+
+\begin{minted}{text}
+_Any
+_Entity
+_Service
+\end{minted}
+
+\index{Query@\code{Query}!loses two fields at the router}%
+And the same subtraction happens to the root. Ask each of them for the fields
+on \code{Query} and the subgraph offers five against the router's three, or six
+against four if you ask for deprecated fields as well. Either way the
+difference is the same two: \code{\_entities} and \code{\_service}.
+Chapter~\ref{ch:first-subgraph} built both, and
+chapter~\ref{ch:composition} predicted from reading \code{graphqlSchema} inside
+the config that they would be gone from what a client reads. They are. A client
+talking to 3002 cannot see that federation is involved at all.
+
+\subsection{Gone Is Not the Same as Closed}
+
+\index{entities@\code{\_entities}!still open on the subgraph's own port}%
+The subgraph did not lose those fields. It still has them, on 5001, and asking
+it for its own schema still works:
+
+\begin{minted}{graphql}
+{ _service { sdl } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+{"data":{"_service":{"sdl":"schema\r\n  @link(\r\n    url: \"https://specs.apollo.dev/federation/v2.6\"\r\n    import: [\"@key\", \"@shareable\", \"@tag\", \"FieldSet\"]\r\n  ) {\r\n  query: Query\r\n ...
+\end{minted}
+
+\index{entities@\code{\_entities}!the router is not a control}%
+That is the first 200 characters of one string, and the string runs to the
+whole subgraph document: the \code{@link} header above, then every type, every
+\code{@key} and the entity route itself, escaped newlines and all. It is
+served to anyone who can reach the port.
+
+\index{entities@\code{\_entities}!hidden is not closed}%
+The router hiding a field is not the router closing it. It is one process
+declining to advertise something that another process is still happy to answer,
+and the only thing between the two is that nobody outside has a route to 5001
+yet. On my laptop both ports are on the same machine and both are open.
+
+I am stating that here and doing nothing about it, because
+chapter~\ref{ch:entities-authorization} is entirely about what the entity route
+will hand over when asked politely. What this chapter contributes is the shape
+of the mistake: reading the router's schema and concluding that it describes
+your attack surface. It describes one of your two attack surfaces.
+
+\subsection{Two Things That Came Through Unchanged}
+
+\index{FieldSet@\code{FieldSet}!is served to clients}%
+Chapter~\ref{ch:composition} noticed a stray line in the composed client
+schema, \code{scalar FieldSet}, left standing after the directive that needed
+it was removed, and called it a generated document's untidiness. It is more than
+a line in a file. Ask the router about it:
+
+\begin{minted}{graphql}
+{ __type(name: "FieldSet") { name kind } }
+\end{minted}
+
+\begin{minted}{json}
+{"data":{"__type":{"name":"FieldSet","kind":"SCALAR"}}}
+\end{minted}
+
+\index{FieldSet@\code{FieldSet}!a scalar with no field of that type}%
+So it is in the 21. Your clients are served a scalar that no field anywhere in
+the schema is typed with, that they cannot send and cannot receive, and whose
+only purpose belonged to a directive they will never see. Harmless. Also a
+useful thing to have met once, for the day you diff two supergraph schemas and
+find a type you cannot account for.
+
+\index{deprecation!survives composition and the router}%
+The other thing that survived is more useful.
+Chapter~\ref{ch:schema-design} deprecated \code{sessionById} and wrote a reason
+on it. Ask the router for its deprecated fields and the reason comes back word
+for word:
+
+\begin{minted}[breaklines]{text}
+Ask for `node(id:)` instead. This field takes the database key, which is
+only unique among sessions.
+\end{minted}
+
+\index{deprecation!is worth writing well because it travels}%
+That sentence was written into a C\# attribute in chapter~\ref{ch:schema-design},
+exported into a schema document, read by a composer, compiled into a router
+execution config, and served to a client by a Go binary, without anybody
+retyping it. Which is a reason to spend a minute on the wording: a deprecation
+reason is one of the few pieces of English in your codebase that reaches your
+consumers directly, and this is the path it takes to get there.
+\index{router!serves fewer types than the subgraph|)}%
