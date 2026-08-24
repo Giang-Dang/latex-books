@@ -1,0 +1,117 @@
+\section{The One I Did Not Use}
+\label{sec:ch09-the-one-i-did-not-use}
+
+\index{provides@\code{"@provides}!what it is for|(}%
+\code{@provides} is the third seam directive and this graph does not carry one.
+That is a decision rather than an omission, and what it turns on is what the
+directive costs to satisfy.
+
+\index{provides@\code{"@provides}!is a routing hint, not a capability}%
+What it does is narrow. A subgraph that returns an entity it does not own can
+say that at this one field, it happens to have some of that entity's data
+already, so the router need not make a second call to fetch it. Apollo's
+reference is careful to describe it as
+\enquote{a set of entity fields that a subgraph can resolve, but only at a
+particular schema path}, and adds that using it
+\enquote{is always an optional optimization}~\autocite{apollodirectives}. It
+buys a round trip. It grants no new capability.
+
+\index{provides@\code{"@provides}!has two preconditions and they are the point}%
+The two preconditions are where the interest is. The providing subgraph must
+declare the field and mark it \code{@external}, which is the same rule
+\code{@requires} follows. And the field must be marked \code{@shareable} in at
+least one other subgraph that defines it, because two services returning the
+same field is exactly what \code{@shareable} exists to
+permit~\autocite{apollodirectives}.
+
+\index{provides@\code{"@provides}!needs the data to be in two places}%
+Read those two together and the cost is plain. To provide \code{Speaker.name}
+from the Sessions service, that service has to have speaker names, and the
+Speakers service has to declare that it does not mind somebody else answering
+for them. Which means keeping a copy of a column in a service that does not own
+it, and writing the declaration that chapter~\ref{ch:composition} closes by
+teaching you never to write.
+
+\index{ownership!a saved round trip is not worth a duplicated column}%
+That is the whole of my reason for not shipping one. This chapter spent its
+first section moving speaker names out of the Sessions service because two
+services claiming one field is the failure federation exists to prevent, and
+\code{@provides} is a directive for the case where you have done it on purpose.
+There are systems where the copy is already there for other reasons, and in
+one of those the directive is free. Putting the copy back to save a fetch is
+paying for a round trip with the thing chapter~\ref{ch:ownership} is about.
+
+\subsection{What the Composer Actually Enforces}
+
+\index{provides@\code{"@provides}!the composer does not check the second rule}%
+Apollo's documentation says that if those preconditions are not met,
+\enquote{a composition error occurs}~\autocite{apollodirectives}. That is
+checkable, and I checked it, because a rule stated in prose and a rule enforced
+by a tool are different things and this book has already met one pair that
+disagreed.
+
+\index{composition!an input written to fail the rule}%
+The input is a hand-written document in the style
+chapter~\ref{ch:composition} established: not a service, and the prose says so.
+It provides \code{Speaker.name} at one field, marks it external locally, and is
+composed against the real Speakers schema, where \code{name} carries no
+\code{@shareable}:
+
+\begin{graphqlsdl}
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.6"
+    import: ["@key", "@external", "@provides", "FieldSet"]
+  ) {
+  query: Query
+}
+
+type Query {
+  scheduleWithSpeakers: [Session!]!
+}
+
+type Session @key(fields: "id") {
+  id: ID!
+  speaker: Speaker @provides(fields: "name")
+}
+
+type Speaker @key(fields: "id") {
+  id: ID!
+  name: String! @external
+}
+
+scalar FieldSet
+\end{graphqlsdl}
+
+\index{composition!the second precondition is not enforced}%
+By the documented rule that is a composition error. It composes:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+Router execution config successfully written to "router.json".
+\end{minted}
+
+\index{composition!vendors disagree about a rule, again}%
+Exit zero, a config written, and nothing anywhere in the output mentioning
+shareable. This is the second time in three chapters that this book has found
+the tool and the specification's own documentation saying different things:
+chapter~\ref{ch:composition} found Hot Chocolate emitting a \code{@cost}
+directive whose argument Cosmo's composer types differently, and here is a rule
+Apollo publishes and this composer does not apply.
+
+\index{sources!which one to believe when they disagree}%
+I am not going to tell you which of them is right, because I do not know and
+the question has a real answer that neither of them states. What I can tell you
+is which one will decide whether your deploy goes out, and it is the one you
+run. Write the \code{@shareable} anyway if you use this directive: the
+documented rule is the stricter of the two, a composer that starts enforcing it
+would break a graph that composed yesterday, and there is no cost to being on
+the safe side of a rule you were going to satisfy anyway.
+
+\index{provides@\code{"@provides}!is weaker on an abstract type}%
+One last thing, about where the weak ground is. Everything above concerns a
+field whose type is an object. Put a \code{@provides} on a field returning an
+interface or a union and you are in territory where implementations differ from
+each other more than they do here, and I would test that case against your own
+router before believing it rather than reasoning from what a plain object field
+does.
+\index{provides@\code{"@provides}!what it is for|)}%

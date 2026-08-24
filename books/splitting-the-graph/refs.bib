@@ -252,7 +252,13 @@
                   legal key field set and for what a non-resolvable key means. Two of
                   its directive definitions disagree with the subgraph specification
                   page on locations and repeatability; the disagreements are recorded
-                  in the research note and the chapter rests on neither}
+                  in the research note and the chapter rests on neither.
+                  Re-fetched 2026-08-24 for chapter 9, which quotes it on what
+                  requires tells the router to fetch and on the two preconditions
+                  of provides. The page is unversioned and now lists directives
+                  postdating v2.6; the three chapter 9 uses carry a Federation
+                  v1.0 minimum-version badge, so their definitions are the ones
+                  in force at the version this book pins}
 }
 
 @online{compositeschemasspec,
@@ -355,4 +361,42 @@
                   one-sentence description of it. The composer this book runs is
                   WunderGraph's and shares neither the code nor the vocabulary,
                   which the chapter says out loud}
+}
+
+%--------------------------------------------------------------------------
+% Chapter 9 - The Second and Third Subgraph
+% One new source, and one already in this file cited again for different
+% passages. Both are Apollo defining its own specification's directives,
+% which decision 39 admits unsigned: they are the normative statement of what
+% a directive means, and every one of them is checked against a running
+% composer in the chapter's research note.
+%
+% The chapter quotes Apollo on the two preconditions of @provides and then
+% shows the composer this book runs accepting a document that breaks the
+% second one. That disagreement is reported as a disagreement. Neither side
+% is called correct, because nothing found says which is, and the chapter
+% recommends satisfying the stricter rule for the practical reason rather
+% than the normative one.
+%
+% ChilliCream's own federation documentation is cited nowhere in this chapter
+% and could not have been: every version of its apollo-federation API
+% reference returned 404 on the access date, and the site's sitemap listed no
+% Hot Chocolate documentation pages at all. Everything the chapter says about
+% the C# surface comes from the shipped assembly, the compiler, or the source
+% at the pinned release tag, all recorded in the research note.
+%--------------------------------------------------------------------------
+
+@online{apollocontributefields,
+  author       = {{Apollo GraphQL}},
+  title        = {Contributing Entity Fields},
+  organization = {Apollo GraphQL Docs},
+  url          = {https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/entities/contribute-fields},
+  urldate      = {2026-08-24},
+  addendum     = {No byline: Apollo defining the stub definition and what
+                  resolvable false declares about a subgraph, which is the
+                  publisher describing its own directive rather than arguing a
+                  result. Cited for one clause. The effect it describes was
+                  checked against a running composer, which drops the type from
+                  the entity union and writes disableEntityResolver into the
+                  router execution config; the chapter prints both}
 }

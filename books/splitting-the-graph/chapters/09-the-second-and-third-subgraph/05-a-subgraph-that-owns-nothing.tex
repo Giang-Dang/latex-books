@@ -1,0 +1,555 @@
+\section{A Subgraph That Owns Nothing}
+\label{sec:ch09-a-subgraph-that-owns-nothing}
+
+\index{Ratings service!the second shape of seam|(}%
+The Speakers service is the easy seam. A type moved, whole, and the service it
+moved to owns it the way the Sessions service owns a session. The Ratings
+service is the other shape, and everything awkward in this chapter is in it: it
+adds fields to \code{Session}, and it will never own a session.
+
+\index{ownership!a service can own a field without owning the type}%
+That is a real arrangement and not a contrivance. Somebody has to store
+the scores attendees leave, nobody wants that table inside the service that
+owns the program, and a client asking for a session's average score should
+not have to know that two systems were involved. Federation's answer is that a
+type is the union of what every subgraph says about it, and this is the first
+time this book has needed the second half of that sentence.
+
+\subsection{The Rows It Does Own}
+
+\index{Ratings service!the project file}%
+The project file is the Speakers one with a different name, and the launch
+profile pins the third port:
+
+\begin{minted}[fontsize=\footnotesize]{xml}
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HotChocolate.ApolloFederation" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.Data.EntityFramework" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.Types.Analyzers" Version="16.6.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+  </ItemGroup>
+
+</Project>
+\end{minted}
+
+\begin{minted}{json}
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5003",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
+\end{minted}
+
+\begin{minted}{csharp}
+namespace Ratings;
+
+/// <summary>
+/// One score somebody left for one session.
+/// </summary>
+/// <param name="Id">Stable identifier for this rating.</param>
+/// <param name="SessionId">
+/// Which session it is for. A number this service stores and cannot
+/// check: the sessions are another service's rows.
+/// </param>
+/// <param name="Score">One to five.</param>
+public sealed record Rating(int Id, int SessionId, int Score);
+\end{minted}
+
+\index{foreign key!across a seam, no database enforces it}%
+\code{SessionId} is a foreign key that no database will ever enforce, and the
+comment says so because a reader typing this out deserves to know it is not an
+oversight. Referential integrity stops at the process boundary. If a session is
+deleted in the other service, these rows point at nothing, and no database
+will tell anybody. Somebody has to.
+
+\begin{minted}{csharp}
+namespace Ratings;
+
+/// <summary>
+/// The scores this service was left with. Session 4 has none, which is
+/// the case worth seeding deliberately: an average over no rows is not
+/// zero, and the schema has to say which.
+/// </summary>
+public static class RatingData
+{
+    public static readonly IReadOnlyList<Rating> Ratings =
+    [
+        new Rating(1, 1, 5),
+        new Rating(2, 1, 4),
+        new Rating(3, 1, 3),
+        new Rating(4, 2, 4),
+        new Rating(5, 2, 5),
+        new Rating(6, 3, 3)
+    ];
+}
+\end{minted}
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Ratings;
+
+/// <summary>
+/// This service's own database. It holds ratings and nothing else: no
+/// session table, no speaker table, and no foreign key that any
+/// database could enforce, because the rows SessionId points at are
+/// three miles away in another process.
+/// </summary>
+public sealed class RatingContext(
+    DbContextOptions<RatingContext> options) : DbContext(options)
+{
+    public DbSet<Rating> Ratings => Set<Rating>();
+
+    protected override void OnModelCreating(ModelBuilder model)
+        => model.Entity<Rating>().HasData(RatingData.Ratings);
+}
+\end{minted}
+
+\index{DataLoader!grouped, because one session has many ratings}%
+The loader groups where the other two key one to one, which is the only structural
+difference from the two the book already has:
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Ratings;
+
+public static class RatingDataLoader
+{
+    /// <summary>
+    /// Every rating left for each session in one batch, grouped by
+    /// session. A session nobody rated is absent from the dictionary
+    /// rather than present with an empty list, which is the difference
+    /// between an average of null and an average of zero.
+    /// </summary>
+    [DataLoader]
+    public static async Task<Dictionary<int, Rating[]>>
+        GetRatingsBySessionIdAsync(
+            IReadOnlyList<int> sessionIds,
+            RatingContext db,
+            CancellationToken ct)
+    {
+        var rows = await db.Ratings
+            .Where(r => sessionIds.Contains(r.SessionId))
+            .ToListAsync(ct);
+
+        return rows
+            .GroupBy(r => r.SessionId)
+            .ToDictionary(g => g.Key, g => g.ToArray());
+    }
+}
+\end{minted}
+
+\index{Query@\code{Query}!a service that mostly answers about somebody else}%
+This service needs a root field for the same reason the last one did, and it
+has almost nothing to put there. Everything interesting it knows is about a
+type it does not own, so what is left for \code{Query} is a total:
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Ratings;
+
+[QueryType]
+public static class Query
+{
+    /// <summary>
+    /// How many scores this service holds, across every session.
+    /// </summary>
+    public static async Task<int> GetRatingCountAsync(
+        RatingContext db,
+        CancellationToken ct)
+        => await db.Ratings.CountAsync(ct);
+}
+\end{minted}
+
+\index{StatementLog@\code{StatementLog}!the third copy}%
+\code{StatementLog} from chapter~\ref{ch:data-without-n-plus-1} is here too,
+identical apart from its namespace and now on its third copy in this book. The
+counts in section~\ref{sec:ch09-the-first-query-across-two} are measured per
+service, and a service with no interceptor of its own would have contributed a
+zero that meant nothing.
+
+\subsection{Declaring Somebody Else's Type}
+
+\index{Session@\code{Session}!declared a second time, with three fields}%
+This service needs a \code{Session} class, and it is not the one the Sessions
+service has. It is three fields, and each of them is there for a different
+reason:
+
+\begin{minted}{csharp}
+using HotChocolate.Types.Relay;
+
+namespace Ratings;
+
+/// <summary>
+/// A session, as far as this service is concerned.
+/// </summary>
+/// <param name="Id">Stable identifier for this session.</param>
+/// <param name="Key">The number inside that identifier.</param>
+/// <param name="Title">The line that goes in the program.</param>
+// Declared here rather than referenced from the Sessions project. Two
+// services that would be separate repositories owned by separate teams
+// do not share a model assembly, and this book would be demonstrating
+// the opposite of what it says if they did.
+//
+// Three fields where the Sessions service has one, and the split is
+// the whole lesson of the seam. Id is the global node id, as a string,
+// because that is what arrives and what has to go back. Key is the
+// integer inside it, which is the only part this service's own tables
+// know about, and it is hidden from the schema because no client has
+// any use for it. Title is never stored here at all.
+public sealed record Session(
+    [property: ID] string Id,
+    [property: GraphQLIgnore] int Key,
+    string Title);
+\end{minted}
+
+\index{node id!arrives as a string and has to be split}%
+A record that carries the same identifier twice looks wrong and is not. The
+key that arrives across the seam is \code{U2Vzc2lvbjox}, and two different
+things need two different halves of it: the schema needs the string back, and
+the \code{Ratings} table is keyed by the integer inside it. Holding both is
+cheaper than decoding twice and safer than storing only the one you happened to
+need first.
+
+\subsection{Two Lines in Program.cs, and Why}
+
+\index{AddGlobalObjectIdentification@\code{AddGlobalObjectIdentification}!cannot be used here}%
+Every service in this book so far has called
+\code{AddGlobalObjectIdentification()}, and this one cannot. Add it and the
+service does not start:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+HotChocolate.SchemaException: For more details look at the `Errors` property.
+
+1. There is no object type implementing interface `Node`. (HotChocolate.Types.Relay.NodeType)
+   at HotChocolate.SchemaBuilder.Setup.CompleteSchema(...)
+\end{minted}
+
+\index{Node@\code{Node}!a subgraph with none cannot switch it on}%
+The call adds \code{node}, \code{nodes} and the \code{Node} interface, and then
+refuses to build a schema in which nothing implements that interface. This
+service owns no node. Its \code{Session} is a contribution, not something it
+can fetch by identifier out of a table it has, and giving it a
+\code{[NodeResolver]} to satisfy the schema builder would be a lie in a
+declaration: it would tell every client that Ratings can answer
+\code{node(id:)} for a session, which it cannot.
+
+\index{INodeIdSerializer@\code{INodeIdSerializer}!is registered by the call it cannot make}%
+Which leaves a problem, because the keys this service is handed are still
+global node ids and it still has to read one. The serializer that reads one is
+registered by exactly the call it cannot make. \code{AddDefaultNodeIdSerializer()}
+registers it and nothing else, and it is the fifth line of the builder chain in
+the file below.
+
+\index{AddDefaultNodeIdSerializer@\code{AddDefaultNodeIdSerializer}!the line that replaces it}%
+Leave it out and nothing tells you. The reference resolver is handed a null
+serializer, the first call on it throws inside a resolver, and the entity route
+answers:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Unexpected Execution Error","path":["_entities"]}],"data":{"_entities":[null]}}
+\end{minted}
+
+\index{Unexpected Execution Error@\code{Unexpected Execution Error}!what it means}%
+The service builds. The schema builds, and is the document you would have
+exported anyway. The process starts, and \code{ratingCount} on its own root
+answers correctly at HTTP 200. A smoke test that does not cross the seam
+reports a healthy service. Only the entity route fails, and there is no stack
+trace, no log line and nothing at startup to say why.
+
+\index{Unexpected Execution Error@\code{Unexpected Execution Error}!means a resolver threw}%
+\code{Unexpected Execution Error} is what Hot Chocolate says when a resolver
+throws and nothing has been configured to tell you more. It is worth learning to
+read as one thing: a resolver asked the container for something and was handed
+a null. Chapter~\ref{ch:first-subgraph} met the same message from the same
+cause, trying to inject a \code{QueryContext} into a reference resolver.
+
+Here is the whole file:
+
+\begin{minted}{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Ratings;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<RatingContext>(options =>
+{
+    options.UseSqlite("Data Source=ratings.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+// Two lines here differ from the other two services, and both follow
+// from the same fact: this service contributes fields to a type it
+// does not own and owns no node of its own.
+//
+// There is no AddGlobalObjectIdentification, because there cannot be.
+// That call refuses to build a schema with no node type in it: "There
+// is no object type implementing interface `Node`." So this service
+// has no node or nodes field, and needs no interceptor to declare
+// them shareable.
+//
+// But the keys it is handed across the seam are still global node ids,
+// and the serializer that reads one is normally registered by the call
+// it cannot make. AddDefaultNodeIdSerializer registers it on its own.
+// Without this line the reference resolver is injected a null and the
+// entity route answers Unexpected Execution Error.
+builder
+    .AddGraphQL()
+    .AddRatingsTypes()
+    .RegisterDbContextFactory<RatingContext>()
+    .AddDefaultNodeIdSerializer()
+    .AddApolloFederation()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false);
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<RatingContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{ShareNodeFields@\code{ShareNodeFields}!not needed here}%
+No \code{ShareNodeFields} either, and for a pleasant reason: with no
+\code{node} and no \code{nodes} there is nothing to declare shareable, so the
+file chapter~\ref{ch:composition} spent a section justifying is not in this
+service at all. Two of the three subgraphs need it and the third does not,
+which is a better argument for keeping it out of a shared library than
+anything I said in section~\ref{sec:ch09-the-service-that-owns-the-speakers}.
+
+\subsection{The Key Nobody Decodes For You}
+
+\index{entity route!does not decode a node id, three ways}%
+The reference resolver here does the same job as the two in
+chapter~\ref{ch:first-subgraph}, and what it cannot delegate needs stating
+precisely. Chapter~\ref{ch:first-subgraph} established that the key
+arrives at a reference resolver as the undecoded node id string, where the node
+resolver beside it is handed the integer, and that \code{[ID<T>]} on the
+parameter does not fix that: it yields zero.
+
+\index{ID@\code{[ID<T>]}!on the property, the same silent zero}%
+The same is true one place over. Put \code{[ID<Session>]} on the property
+rather than on the parameter, and declare the resolver to take an \code{int},
+and it compiles, exports \code{id: ID!}, composes, runs, and hands the resolver
+a zero for every key it is ever given. A session with three ratings answers
+with a count of zero and an average of null, at HTTP 200, with no error key.
+It reads exactly like a session nobody rated.
+
+\index{node id!decoding is the resolver's job}%
+So the decode is the resolver's, here as everywhere. Here is the whole type,
+and the two directives on it are section~\ref{sec:ch09-a-field-built-from-a-title}'s
+subject, not this one's:
+
+\begin{minted}[fontsize=\footnotesize]{csharp}
+using HotChocolate.ApolloFederation.Resolvers;
+using HotChocolate.ApolloFederation.Types;
+using HotChocolate.Types.Relay;
+
+namespace Ratings;
+
+[ObjectType<Session>]
+[Key("id")]
+[ReferenceResolver(
+    EntityResolver = nameof(ResolveSessionReference))]
+public static partial class SessionType
+{
+    /// <summary>
+    /// The line that goes in the program.
+    /// </summary>
+    // Owned by the Sessions service. Declared here only so that
+    // feedbackUrl below has something to require, and resolved by
+    // nobody: the router never asks this service for it.
+    [External]
+    public static string GetTitle([Parent] Session session)
+        => session.Title;
+
+    /// <summary>
+    /// The mean score, or null if nobody has rated this session.
+    /// </summary>
+    public static async Task<double?> GetAverageScoreAsync(
+        [Parent(nameof(Session.Key))] Session session,
+        IRatingsBySessionIdDataLoader ratingsBySessionId,
+        CancellationToken ct)
+    {
+        var ratings = await ratingsBySessionId
+            .LoadAsync(session.Key, ct);
+
+        return ratings is { Length: > 0 }
+            ? ratings.Average(r => (double)r.Score)
+            : null;
+    }
+
+    /// <summary>
+    /// How many scores this session has been left.
+    /// </summary>
+    public static async Task<int> GetRatingCountAsync(
+        [Parent(nameof(Session.Key))] Session session,
+        IRatingsBySessionIdDataLoader ratingsBySessionId,
+        CancellationToken ct)
+        => (await ratingsBySessionId.LoadAsync(session.Key, ct))
+            ?.Length ?? 0;
+
+    /// <summary>
+    /// Where an attendee goes to leave a score for this session.
+    /// </summary>
+    // The url is built from the session's title, and the title belongs
+    // to another service. @requires is what makes the router send it
+    // along with the key, and [External] on GetTitle above is what
+    // makes that declaration legal.
+    [Requires("title")]
+    public static string GetFeedbackUrl([Parent] Session session)
+        => "https://feedback.example/2026/" + Slug(session.Title);
+
+    /// <summary>
+    /// Answers one representation from the entity route.
+    /// </summary>
+    // The key arrives as the undecoded node id string, exactly as it
+    // does in the Sessions service, and for the same reason: nothing
+    // on the entity route decodes one for you. Marking the property
+    // [ID<Session>] does not do it either: it hands this method a zero
+    // rather than raising anything, so the service answers with a
+    // session that has no ratings and never says why.
+    //
+    // title is null on every request that does not ask for
+    // feedbackUrl, because the router only sends a required field when
+    // the field requiring it was asked for.
+    [GraphQLIgnore]
+    public static Session? ResolveSessionReference(
+        string id,
+        string? title,
+        INodeIdSerializer serializer)
+    {
+        var nodeId = serializer.Parse(id, typeof(int));
+
+        if (nodeId.TypeName != nameof(Session))
+        {
+            return null;
+        }
+
+        return new Session(
+            id,
+            (int)nodeId.InternalId!,
+            title ?? string.Empty);
+    }
+
+    private static string Slug(string title)
+        => string.Concat(
+            title.ToLowerInvariant()
+                .Select(c => char.IsLetterOrDigit(c) ? c : '-'));
+}
+\end{minted}
+
+\index{type name guard!in a third service}%
+The guard on \code{nodeId.TypeName} is chapter~\ref{ch:first-subgraph}'s,
+unchanged, in a third service. It matters more here than it did there, because
+this service is now genuinely reachable by a router that handles two types of
+node id, and a \code{Speaker} key arriving under a \code{Session} type name
+would decode to a perfectly good integer and select somebody's ratings.
+
+\index{Parent@\code{[Parent]}!names the hidden key, not the public one}%
+On the two resolvers that touch the database, the \code{[Parent]} attribute
+names \code{Key} rather than \code{Id}, so what they are handed is the integer
+and not the node id. That is the second place in this chapter where the
+attribute is load-bearing and easy to miss.
+
+\index{averageScore@\code{averageScore}!null is not zero}%
+One design decision in \code{GetAverageScoreAsync} is worth defending, because
+the alternative is one character shorter. A session nobody has rated returns
+null and not zero. Zero is a score somebody could have given, and a schema
+that cannot tell \enquote{nobody rated this} from \enquote{everybody hated
+this} has thrown away the difference at the type level, where no client can get
+it back. \code{ratingCount} beside it is a genuine zero, and the pair is what
+lets a client render \enquote{not yet rated} rather than a one-star average.
+
+\index{parameter binding!a resolver reads the representation by name}%
+The second parameter of the reference resolver is
+section~\ref{sec:ch09-a-field-built-from-a-title}'s subject. What it shows here
+is the binding rule: a reference resolver's parameters are matched against the
+fields of the representation by name, so \code{title} arrives if the router
+sent one and is null if it did not.
+
+\subsection{The Third Entry}
+
+\index{graph.yaml@\code{graph.yaml}!reaches its final shape}%
+One more line in the graph file and the example is complete. Here it is again,
+with what chapter~\ref{ch:composition} started, what
+section~\ref{sec:ch09-the-first-query-across-two} added, and what this section
+adds, all three:
+
+\begin{minted}[highlightlines={11,12,13,14}]{yaml}
+version: 1
+subgraphs:
+  - name: sessions
+    routing_url: http://localhost:5001/graphql
+    schema:
+      file: ../src/Sessions/schema.graphql
+  - name: speakers
+    routing_url: http://localhost:5002/graphql
+    schema:
+      file: ../src/Speakers/schema.graphql
+  - name: ratings
+    routing_url: http://localhost:5003/graphql
+    schema:
+      file: ../src/Ratings/schema.graphql
+\end{minted}
+
+\index{subgraphId@\code{subgraphId}!is positional and renumbers}%
+Compose that, and the identifiers chapter~\ref{ch:enter-the-router} taught you
+to read out of a query plan are assigned in the order the file lists them:
+\code{sessions} is 0, \code{speakers} is 1, \code{ratings} is 2. They are
+positional rather than derived from the name, so a subgraph inserted in the
+middle of this file renumbers every one after it, and a plan you saved
+yesterday names different services today. Worth knowing before you sort the
+list alphabetically.
+\index{Ratings service!the second shape of seam|)}%

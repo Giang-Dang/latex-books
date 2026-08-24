@@ -1,0 +1,408 @@
+\section{The Service That Owns the Speakers}
+\label{sec:ch09-the-service-that-owns-the-speakers}
+
+\index{Speakers service!the project file|(}%
+A new folder beside the first one, and a project file that is
+chapter~\ref{ch:first-subgraph}'s with a different name on it:
+
+\begin{minted}[fontsize=\footnotesize]{xml}
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HotChocolate.ApolloFederation" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.Data.EntityFramework" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.Types.Analyzers" Version="16.6.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+  </ItemGroup>
+
+</Project>
+\end{minted}
+
+\index{ports!5002 is pinned in a launch profile}%
+The launch profile pins the port, for the reason
+chapter~\ref{ch:hot-chocolate-zero} pinned 5001: \code{dotnet new web} picks
+one at random, and a book printing raw HTTP would otherwise print fiction.
+
+\begin{minted}{json}
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5002",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
+\end{minted}
+
+\subsection{The Type, and the Table Under It}
+
+\index{Speakers service!declares its own Speaker}%
+\code{Speaker} is the record chapter~\ref{ch:hot-chocolate-zero} wrote, in a
+new namespace and with one sentence added to say which service holds the rows
+now. The three properties are untouched:
+
+\begin{minted}{csharp}
+namespace Speakers;
+
+/// <summary>
+/// A person giving one or more sessions. This service owns the rows;
+/// the Sessions subgraph knows only that a speaker with this id exists.
+/// </summary>
+/// <param name="Id">Stable identifier for this speaker.</param>
+/// <param name="Name">The name to print in the program.</param>
+/// <param name="Bio">A sentence or two, if the speaker sent any.</param>
+public sealed record Speaker(int Id, string Name, string? Bio);
+\end{minted}
+
+\index{Speakers service!its own database file}%
+Its own database, in its own file, seeded from its own data. Three speakers,
+the same three the conference has had since chapter~\ref{ch:hot-chocolate-zero}:
+
+\begin{minted}{csharp}
+namespace Speakers;
+
+/// <summary>
+/// The speaker list, seeded into this service's own database. These are
+/// the rows chapter 3 seeded into the Sessions service; they live here
+/// now, and only here.
+/// </summary>
+public static class SpeakerData
+{
+    public static readonly IReadOnlyList<Speaker> Speakers =
+    [
+        new Speaker(1, "Ada Fischer", "Works on query planners."),
+        new Speaker(2, "Bruno Kaminski", null),
+        new Speaker(3, "Chidi Okafor", "Runs platform engineering.")
+    ];
+}
+\end{minted}
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Speakers;
+
+/// <summary>
+/// This service's own database, in its own file. Nothing here knows
+/// that sessions exist: a speaker does not carry a list of them, and
+/// no query in this service joins across that seam because there is
+/// nothing on the other side of it to join to.
+/// </summary>
+public sealed class SpeakerContext(
+    DbContextOptions<SpeakerContext> options) : DbContext(options)
+{
+    public DbSet<Speaker> Speakers => Set<Speaker>();
+
+    protected override void OnModelCreating(ModelBuilder model)
+        => model.Entity<Speaker>().HasData(SpeakerData.Speakers);
+}
+\end{minted}
+
+\index{seam!a speaker does not know its sessions}%
+Read what is missing from that context, because it is the seam seen from the
+other side. A speaker has no list of sessions. It could not have one: the
+sessions are in a different database in a different process, and no
+\code{DbSet} reaches them. That absence is not a simplification made for the
+book: any query that needs a speaker and a session in the same answer now needs
+two services to produce it, and no amount of care inside this one changes that.
+Chapter~\ref{ch:cross-seam-paging} is a whole chapter about what it costs.
+
+\subsection{Two Files Typed Out Again}
+
+\index{DataLoader!each service declares its own}%
+The loader is chapter~\ref{ch:data-without-n-plus-1}'s, against this service's
+context:
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Speakers;
+
+public static class SpeakerDataLoader
+{
+    /// <summary>
+    /// Every speaker one batch asked for, keyed by identifier. The
+    /// router sends this service a list of representations rather than
+    /// one at a time, so the loader behind the reference resolver is
+    /// what decides whether that list costs one statement or several.
+    /// </summary>
+    [DataLoader]
+    public static async Task<Dictionary<int, Speaker>>
+        GetSpeakerByIdAsync(
+            IReadOnlyList<int> ids,
+            SpeakerContext db,
+            CancellationToken ct)
+        => await db.Speakers
+            .Where(s => ids.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, ct);
+}
+\end{minted}
+
+\index{ShareNodeFields@\code{ShareNodeFields}!declared again in this service}%
+And chapter~\ref{ch:composition}'s type interceptor. Every line from the class
+declaration down is the same as the Sessions copy; only the namespace and the
+comment explaining why there are two of it differ:
+
+\begin{minted}{csharp}
+using HotChocolate.Configuration;
+using HotChocolate.Language;
+using HotChocolate.Types.Descriptors.Configurations;
+
+namespace Speakers;
+
+/// <summary>
+/// Applies @shareable to the two fields global object identification
+/// generates, and to nothing else. This is chapter 7's file, declared
+/// again in this service rather than shared with the Sessions one:
+/// every subgraph in this graph exports node and nodes, so every
+/// subgraph needs this, and a project reference between two services
+/// that would be separate repositories is the thing this book is
+/// arguing against.
+/// </summary>
+internal sealed class ShareNodeFields : TypeInterceptor
+{
+    public override void OnBeforeCompleteType(
+        ITypeCompletionContext context,
+        TypeSystemConfiguration configuration)
+    {
+        if (configuration is not ObjectTypeConfiguration type
+            || type.Name != "Query")
+        {
+            return;
+        }
+
+        foreach (var field in type.Fields)
+        {
+            if (field.Name is "node" or "nodes")
+            {
+                field.Directives.Add(
+                    new DirectiveConfiguration(
+                        new DirectiveNode("shareable")));
+            }
+        }
+    }
+}
+\end{minted}
+
+\index{duplication!is the price of no shared library}%
+That is the second copy of a class in a book that spends a chapter on why
+duplication kills schemas, and I want to be plain about the trade rather than
+let it pass. It exists twice because the alternative is a package or a project
+reference between two services that are meant to be independently deployable. A shared library between subgraphs is a coupling
+that does not show up in the schema, does not show up in composition, and
+shows up the first time two teams need different versions of it on different
+release trains. I would rather type it twice. \code{StatementLog} from
+chapter~\ref{ch:data-without-n-plus-1} is here as well, for the same reason and
+by the same rule, and it is identical apart from its namespace.
+
+\subsection{The Entity, and the Root Field}
+
+\index{Speakers service!carries chapter 6's SpeakerType}%
+\code{SpeakerType} is chapter~\ref{ch:first-subgraph}'s file. It has moved
+service and changed nothing that matters:
+
+\begin{minted}{csharp}
+using HotChocolate.ApolloFederation.Resolvers;
+using HotChocolate.ApolloFederation.Types;
+using HotChocolate.Types.Relay;
+
+namespace Speakers;
+
+[ObjectType<Speaker>]
+[Key("id")]
+[ReferenceResolver(
+    EntityResolver = nameof(ResolveSpeakerReferenceAsync))]
+public static partial class SpeakerType
+{
+    /// <summary>
+    /// Loads one speaker by the identifier inside a global node id.
+    /// </summary>
+    [NodeResolver]
+    public static async Task<Speaker?> GetSpeakerAsync(
+        int id,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+        => await speakerById.LoadAsync(id, ct);
+
+    /// <summary>
+    /// Answers one representation from the entity route. This is the
+    /// method the router reaches every time a client asks a session
+    /// for its speaker's name, so it is the busiest resolver in the
+    /// graph. The key arrives as the undecoded node id string, and the
+    /// type name inside it is checked before the integer is spent.
+    /// </summary>
+    [GraphQLIgnore]
+    public static async Task<Speaker?> ResolveSpeakerReferenceAsync(
+        string id,
+        INodeIdSerializer serializer,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+    {
+        var nodeId = serializer.Parse(id, typeof(int));
+
+        if (nodeId.TypeName != nameof(Speaker))
+        {
+            return null;
+        }
+
+        return await speakerById.LoadAsync(
+            (int)nodeId.InternalId!, ct);
+    }
+}
+\end{minted}
+
+\index{reference resolver!becomes the busiest method in the graph}%
+One comment in it says something chapter~\ref{ch:first-subgraph}'s could not.
+There, this reference resolver was a route nobody used: the entity route
+existed, it answered, and no router asked it anything. From this chapter on it
+is the method every cross-seam request in the book goes through, which makes
+the DataLoader behind it the difference between two statements and a number
+that grows with the page.
+
+\index{Query@\code{Query}!this service gets a root field of its own}%
+A subgraph with no root field of its own is legal and strange, so this one has
+one:
+
+\begin{minted}{csharp}
+using GreenDonut.Data;
+
+namespace Speakers;
+
+[QueryType]
+public static class Query
+{
+    /// <summary>
+    /// Everyone speaking at the conference, in program order.
+    /// </summary>
+    [UsePaging(DefaultPageSize = 2, MaxPageSize = 10)]
+    public static IQueryable<Speaker> GetSpeakers(
+        SpeakerContext db,
+        QueryContext<Speaker> query)
+        => db.Speakers
+            .OrderBy(s => s.Name)
+            .With(query);
+}
+\end{minted}
+
+\index{PageInfo@\code{PageInfo}!two subgraphs now generate it}%
+Paging that field makes this the second subgraph to generate a \code{PageInfo}
+type, and the two would collide on it if the package had not already dealt with
+that. Chapter~\ref{ch:composition} found \code{@shareable} written onto all four
+of that type's fields without being asked, and called it an oddity when one
+service was doing it. Here is what it was for: two services generate the same
+type, both declare every field of it shareable, and the composition nobody
+worried about passes.
+
+\subsection{Program.cs, and What Is Not In It}
+
+\begin{minted}{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Speakers;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<SpeakerContext>(options =>
+{
+    options.UseSqlite("Data Source=speakers.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+builder
+    .AddGraphQL()
+    .AddSpeakersTypes()
+    .RegisterDbContextFactory<SpeakerContext>()
+    .AddQueryContext()
+    .AddPagingArguments()
+    .AddGlobalObjectIdentification()
+    .AddApolloFederation()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false)
+    .TryAddTypeInterceptor<ShareNodeFields>();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<SpeakerContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{AddMutationConventions@\code{AddMutationConventions}!absent here}%
+One line from the Sessions builder is missing and its absence is not an
+oversight. The call to
+\code{AddMutationConventions()}
+generates the union and the error interface around a mutation, and this
+service has no mutation. Nothing else differs: the cost option
+chapter~\ref{ch:composition} needed to get past the composer is here, because
+this service would emit the same unasked-for \code{@cost} weights without it.
+
+\index{Speakers service!answers on its own port}%
+Start it and ask it something, on 5002, with no router involved:
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:5002
+Content-Type: application/json
+
+{"query":"{ speakers { nodes { id name } } }"}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"speakers":{"nodes":[{"id":"U3BlYWtlcjox","name":"Ada Fischer"},{"id":"U3BlYWtlcjoy","name":"Bruno Kaminski"}]}}}
+\end{minted}
+
+Two speakers rather than three. The page size comes from the attribute on
+\code{GetSpeakers} above, set to the same default
+chapter~\ref{ch:data-without-n-plus-1} chose for sessions.
+
+\index{node id!is the same string in both services}%
+The line to read is the first id. \code{U3BlYWtlcjox} is the string chapter~\ref{ch:schema-design} produced
+in the Sessions service for the same speaker, out of a different process
+against a different database, and nothing coordinated the two. Both services
+encode a type name and a primary key the same way because both use the same
+default, and that is the whole reason the seam in the next section works at
+all.
+\index{Speakers service!the project file|)}%

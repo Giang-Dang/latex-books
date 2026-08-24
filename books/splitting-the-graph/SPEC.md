@@ -40,12 +40,28 @@ sequence holding one fetch. The Cosmo Router is now verified by running it
 rather than by reading a release page, and the gateway audit that had been an
 open item since chapter 5 was run rather than cited (decision 84).
 
-Next action: chapter 9, the second and third subgraph. It is the largest
-chapter in part II and may be two; decision 79 kept that split available and
-the open item naming the seam it would split along is still open. Chapter 8
-raised one thing chapter 9 should settle before it teaches `@provides`: two of
-the three suites Cosmo Router fails in the gateway audit are about that
-directive.
+Chapter 9 split the graph. There are now three services on three databases,
+and the two seams are different shapes: Speakers takes a whole type away from
+Sessions, which keeps a stub declared `resolvable: false`, and Ratings
+contributes three fields to a `Session` it will never own a row of. The first
+query answered across two subgraphs costs the same two statements chapter 3
+measured inside one process, one in each service, because the DataLoader
+behind the reference resolver went with the code. `verify.ps1` is at 328
+assertions on `main`.
+
+Two things chapter 9 found are larger than the chapter. `@shareable` on
+`Query.node`, which chapter 7 shipped thirty-three lines to apply, is a promise
+neither subgraph can keep: with two node types in two services, `node(id:)`
+answers correctly only when the query names the type in a fragment (decision
+90). And a subgraph that contributes fields to a type it does not own cannot
+switch on global object identification at all, while still having to read the
+node ids it is handed (decision 86). Both are consequences of decision 67,
+which federated this book on the global node id as my judgment rather than on
+Apollo's guidance.
+
+Next action: chapter 10, the N+1 the router creates. It has everything it
+needs: a graph with a seam, a `BatchEntity` fetch crossing it, and a reference
+resolver with a DataLoader behind it to take out and measure.
 
 **Why this book exists.** It is the second book in this library on federated
 GraphQL in .NET, and it exists because the first one,
@@ -165,6 +181,14 @@ and why, in the row.
 | 83 | `dev_mode` ships in the book's `config.yaml`, and the chapter shows the state without it first | The query plan is the chapter's subject and it is an Advanced Request Tracing option, which is one of the five Cosmo Cloud features the router disables when it finds no graph token. Measured 2026-08-24: without `dev_mode` the `X-WG-Include-Query-Plan` header is ignored **in silence**, and the response is byte for byte the response sent without it. No error, no warning, nothing in the log. With `dev_mode` on, the router removes ART from the disabled list and logs that it has done so. So the book ships the switch and section 8.2 prints the config without it, which under decision 51 gets its own branch and tag, `ch08-noplan`, asserting the silence. Rejected: printing the final config once and explaining `dev_mode` before the reader has met the silence, which inverts decision 14. Also rejected: `ENGINE_FORCE_UNAUTHENTICATED_REQUEST_TRACING`, whose own schema description opens "UNSAFE - DO NOT ENABLE IN PRODUCTION"; it is named in the research note and in no chapter. |
 | 84 | The gateway audit was run, and no chapter prints a score from it | The open item chapters 5 and 7 carried, closed by running it rather than by citing it. Measured 2026-08-24 against `graphql-hive/federation-gateway-audit` at commit `7956ca1`: Cosmo Router 0.341.0 scores **194 of 199 test cases and 43 of 46 suites**, where the audit publishes 183 and 37 for it. Better, not worse, so the worry that prompted the item does not survive it. No chapter prints either number, for four reasons recorded in full in the chapter 8 note: the harness pins router 0.321.2 as a Linux binary and had to be modified in five places to run 0.341.0 at all; the controlled A/B against 0.321.2 was impossible on this machine; the audit's own repository disagrees with itself, its committed per-gateway results being from an older 189-case run while its README is a 199-case run and its live site lists a gateway its committed data does not; and its maintainer, The Guild, ships the two gateways ranked first and second in it. Decision 7 is unchanged, having chosen Cosmo on license and version coverage and never on a score. |
 
+| 85 | An entity stub carries `resolvable: false`, and the argument is not decoration | The open item chapters 5 and 6 left, closed by chapter 9 writing the first stub. Apollo's own documentation pairs a stub definition with the argument to say the subgraph defines no reference resolver, and measurement agrees with it in three places: the type loses `implements Node`, it drops out of that service's `_Entity` union, and the composer writes `disableEntityResolver: true` beside its key in the router execution config. That flag is what stops the router routing an entity fetch for a `Speaker` to Sessions. **Chapter 5's printed map does not need the edit the open item anticipated.** That map shows the Sessions subgraph's `Speaker` as `@key(fields: "id")` with no argument, and it is drawn as the state before the extraction, which is what chapter 5 was describing; the stub is chapter 9's and chapter 9 prints it. What the item was right about is that the two declarations want opposite answers, and they got them. Also recorded: the flag is advice to the composer and not a guard. Send Sessions a representation naming a `Speaker` on its own port and it answers `Unexpected Execution Error` with a null `data`, because the type is in the schema, advertises a key, and nothing a client can introspect says the key cannot be resolved. Chapter 12 inherits that. |
+| 86 | A subgraph that owns no node cannot switch on global object identification, and still has to read node ids | Measured 2026-08-24 while building the Ratings service. `AddGlobalObjectIdentification()` adds `node`, `nodes` and the `Node` interface and then refuses to build: \enquote{There is no object type implementing interface `Node`.} A subgraph contributing fields to a type it does not own has no node of its own, and giving it a `[NodeResolver]` to satisfy the builder would declare that it can answer `node(id:)` for a type it cannot fetch. But the keys it is handed across the seam are still global node ids. `AddDefaultNodeIdSerializer()` registers the serializer alone and is what the book ships; without it the reference resolver is injected a null and the entity route answers `Unexpected Execution Error` with nothing in any log, which is the third distinct cause of that message in this book after decision 69's. **Not established:** whether that serializer produces identical ids to the ones `AddGlobalObjectIdentification()` configures under a non-default `NodeIdSerializerFormat`. It does for this book's types and `verify.ps1` asserts the strings. |
+| 87 | `[ID<T>]` on a key property does not decode the key at the entity route either | Decision 68 recorded that `[ID<T>]` **on the parameter** yields 0 rather than decoding. The same is true of the property: declare the key as `[property: ID<Session>] int Id`, take an `int` in the reference resolver, and every key arrives as 0. The service then answers with a session that has no ratings, at HTTP 200, with no error key, which reads exactly like a session nobody rated. The rule that survives both placements is decision 68's: nothing on the entity route decodes a node id for you, and the resolver takes the undecoded string and calls `INodeIdSerializer.Parse` itself. Recorded separately because decision 68 as written covers only the parameter and a reader could reasonably think the property was the fix. |
+| 88 | `@provides` is taught and not shipped, and this composer does not enforce its second precondition | Apollo states two preconditions: the provided field must be `@external` where it is provided, and `@shareable` in at least one other subgraph that defines it, \enquote{otherwise a composition error occurs}. Measured 2026-08-24 on `wgc` 0.129.9: `graph/provides-unshared.graphql` meets the first and not the second, and composes. Exit zero, a config written, nothing said. That is the second vendor disagreement in three chapters after decision 73's `@cost`, and it is reported as a disagreement: which side is right was not established and no chapter says. `verify.ps1` asserts that it composes, so a `wgc` that starts enforcing the rule fails a run rather than ageing the chapter quietly. The book ships no `@provides` because the preconditions require a copy of a column in a service that does not own it, which is the duplication chapter 9's first section removes and chapter 17's subject; the chapter says that rather than leaving the absence unexplained. The prose recommends writing the `@shareable` anyway, on the practical ground that the stricter of two rules cannot break you later. **Not established:** what the router does at runtime with such a graph, because no service stands behind that input. |
+| 89 | Chapter 9 is one chapter, not two | The open item decision 79 left, closed by outlining and then writing it. It is 30 pages, the longest in part II, and it prints two services in full. It stays one because it makes one argument, which decision 62 already permits across subjects: a seam is a type two services both name, and the two services are the two shapes that takes. Most of the page count is the first service again under another name, and the boilerplate is what a split would have duplicated rather than separated. Rejected: splitting along the seam each service makes, which was the item's own suggested line, because it would put `@external` and `@requires` in a chapter with no `@provides` to contrast them against and would renumber eleven chapters and their labels for a page count the SPEC had already accepted. |
+| 90 | Federating on the global node id breaks `node(id:)` across a seam, and the book states it rather than hiding it | Measured 2026-08-24, and the largest consequence chapter 9 found. `@shareable` on `Query.node`, which chapter 7 shipped a type interceptor to apply, says any subgraph declaring the field can resolve it. Neither can: Sessions resolves it for a `Session`, Speakers for a `Speaker`. Three requests disagree with each other. `node(id:)` with a fragment naming the owning type works, because the fragment is what the planner routes on. The same id with a fragment for the other type fails, where chapter 4 established that a well-formed id of the wrong type is harmlessly unmatched in a single service. `nodes` with one id of each type answers 200 with half the list null. Four fixes were considered and all rejected: a node resolver per type per subgraph undoes the split, declaring `node` in one subgraph only leaves the identical failure, returning null instead of throwing trades a loud failure for a silent wrong answer, and `@inaccessible` on both fields costs the reader the whole of chapter 4's refetch story. The graph ships as measured. This is the cost of decision 67, which chose the node id as the key on my judgment because Apollo publishes no guidance, and it is recorded here rather than as a footnote because chapter 15 should collect on it. |
+| 91 | Chapter 9 issues no HotChocolate 14 callout, deliberately | The second chapter to do this after decision 64, and the reasoning is decision 71's rather than chapter 5's. On 14.3.1 the source generator never reads an arbitrary descriptor attribute declared on a type class, so `[Key]` and `[ReferenceResolver]` compile and do nothing, and every federation attribute chapter 9 introduces (`[External]`, `[Requires]`, and the second argument of `[Key]`) is inert there for exactly the same reason chapter 6 already recorded and appendix B already carries. A chapter 9 callout would restate chapter 6's: the only route on 14 is a code-first `ObjectType<T>`, which costs the type its place in the generator. What it would add is the code-first spelling of two directives the book uses once each, and buying that means porting two whole services onto a branch decision 47 keeps to what a callout quotes. Rejected on that trade. **The consequence is that `hc14` carries no chapter 9 service and its `graph.yaml` still names one subgraph**, so everything chapter 9 changed in `verify.ps1` is branched on a new `SpeakerExtracted` expectation rather than on `SessionKeyed`, which is about whether `Session` is an entity and is a different question. `ch09-hc14` tags an unchanged tree with a passing script, on the same footing as `ch05` and `ch08` (decision 66). |
+
 
 ## Version baseline
 
@@ -217,7 +241,7 @@ session. Chapter folders in `chapters/` carry the same scope lines.
 6. **Your First Subgraph** - `HotChocolate.ApolloFederation`, `@key`, reference resolvers, and what `_service` and `_entities` expose
 7. **Composition** - `wgc router compose`, the two directives that stop it before federation does, what a router execution config actually contains, and resolvability as a walk over the graph
 8. **Enter the Router** - Cosmo Router locally, what it loads and what it serves, the subgraph still on its own port behind it, and a query plan with no seam in it yet
-9. **The Second and Third Subgraph** - the seams, `@external`, `@requires` and `@provides`, the first query answered across two subgraphs, and the graph the rest of the book uses
+9. **The Second and Third Subgraph** - the seams, `@external`, `@requires` and `@provides`, the first query answered across two subgraphs, what a shareable `node` costs once two subgraphs own different node types, and the graph the rest of the book uses
 
 ### Part III - The Problems
 
@@ -259,7 +283,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 06 | drafted | Note at `research/ch06-your-first-subgraph.md`. Four tags, `verify.ps1` PASS on each: `ch06` (main, 148 assertions), `ch06-unguarded` (9, the reference resolver that does not read the type name inside the key), `ch06-hc14-ignored` (125, the attribute idiom compiling and doing nothing on 14.3.1) and `ch06-hc14` (128, the code-first route that works there). The book's first federation C#, and its first version difference that is not a difference in output but in whether the code works at all. Settled decisions 67 to 72. |
 | 07 | drafted | Note at `research/ch07-composition.md`. Five tags, `verify.ps1` PASS on each: `ch07` (main, 195 assertions), `ch07-costly` (14, chapter 6's subgraph unchanged, which does not compose), `ch07-unshared` (12, the cost fix in and the shareable fix out), `ch07-typelevel` (12, the one-line fix and the ownership check it switches off) and `ch07-hc14` (174). The book's first non-.NET tool, its first artifact defined only by a protobuf, and its first failure caused by two vendors disagreeing rather than by anybody's mistake. Paid the `Query.node` bill and re-pinned `wgc` to 0.129.9. Settled decisions 73 to 78. The audit found fifteen things worth fixing, including two claims the research note itself had marked as not established; they are listed in the pull request. |
 | 08 | drafted | Note at `research/ch08-enter-the-router.md`. Three tags, `verify.ps1` PASS on each: `ch08` (main, 241 assertions), `ch08-noplan` (12, the config that serves the graph and hides the query plan, decision 51) and `ch08-hc14` (214). The book's first long-running process that is not ours, and its first component that is a downloaded binary rather than a package. `git diff ch07..ch08` over `src/` is empty, so this is the second tag on an unchanged tree after `ch05` (decision 66). Settled decisions 80 to 84, and closed the two open items on the router version and the gateway audit. |
-| 09 | not-started | End of the zero-to-hero movement: the graph Part III uses. |
+| 09 | drafted | Note at `research/ch09-the-second-and-third-subgraph.md`. Three tags, `verify.ps1` PASS on each: `ch09` (main, 328 assertions), `ch09-hc14` (214, an unchanged tree with the shared script branched so it still passes) and `ch09-noserializer` (20, the Ratings service without `AddDefaultNodeIdSerializer()`, which builds, starts and answers its own root field while the entity route alone fails in silence, decision 51). The graph becomes three services on three databases. Speaker leaves Sessions for a stub with `resolvable: false`; Speakers owns the rows; Ratings contributes three fields to a type it does not own, one of them behind `@requires`. The first query answered across two subgraphs costs the two statements chapter 3 measured inside one process. Settled decisions 85 to 91, and closed four open items. 30 pages, the longest in part II, and one chapter (decision 89). |
 | 10 | not-started | |
 | 11 | not-started | Carries a deliberately broken listing under decision 22's carve-out. |
 | 12 | not-started | |
@@ -424,18 +448,6 @@ An unresolved question, and the condition that unblocks it.
   injected. Unblocked by finding a shape that compiles and narrows the SELECT,
   which matters to chapter 10, since a fix for the statement count and a fix for
   the column count may be the same fix.
-- **Apollo recommends `resolvable: false` on an entity stub and chapter 5's
-  printed map does not carry it.** Found while drafting chapter 6 and recorded
-  in that chapter's note. Apollo's own term is a "stub definition", and its
-  documentation pairs it with `resolvable: false` to say the subgraph defines
-  no reference resolver for the type. Chapter 5 prints the Sessions subgraph's
-  `Speaker` as `@key(fields: "id")` with no such argument, and that map did
-  compose, so the two do not conflict about what is legal. Which of the map's
-  declarations actually wants the argument has a real answer: Sessions never
-  resolves a `Speaker` and wants it; Ratings contributes two fields to
-  `Session` and must stay resolvable. Chapter 6 ships no stub and is unaffected.
-  Unblocked by chapter 9, which writes the first one, at which point chapter 5's
-  printed map may need a matching edit.
 - **Whether `@link(as:)` is unsupported by `HotChocolate.ApolloFederation` or
   merely unemitted.** Measured 2026-08-23: the `@link` definition the package
   writes into an exported schema has neither `as` nor `for`, and types `import`
@@ -499,14 +511,6 @@ An unresolved question, and the condition that unblocks it.
   node resolver taking a `QueryContext` can be routed through a loader without
   losing the projection, at which point chapter 10's neighbourhood is worth
   re-reading, since the router's `_entities` has the same shape.
-- **Whether chapter 9 is one chapter or two.** Decision 79 moved the first
-  cross-seam query into it, so it now carries the Speakers extraction, the
-  Ratings service, the seam directives and that query. Two services printed in
-  full under decision 15 is a lot of page for one chapter. The split, if it is
-  needed, is along the seam each service makes: Speakers is a plain entity
-  reference and Ratings is a subgraph contributing fields to a type it does not
-  own. Unblocked by outlining chapter 9, and nothing about chapter 8 depends on
-  the answer.
 - **Which of Hot Chocolate and Cosmo is right about `@cost(weight:)`.** Hot
   Chocolate emits `weight: String!`, Cosmo's composer demands `Int!`, and
   decision 73 turns the defaults off rather than adjudicating. The
@@ -549,14 +553,49 @@ An unresolved question, and the condition that unblocks it.
   established. Chapter 8 states the behaviour and gives no reason for it.
   Unblocked by reading `graphql-go-tools`, which is where the planner lives and
   which the router names in its own `-version` output.
-- **What the three suites Cosmo Router fails in the gateway audit have in
-  common.** Decision 84 recorded the run: 194 of 199, failing
-  `complex-entity-call`, `provides-on-interface` and `provides-on-union`. Two of
-  the three are about `@provides`, which chapter 9's scope line names. Whether
-  those failures touch anything this book's example does was not investigated,
-  and neither was whether they are known and tracked upstream. Unblocked by
-  outlining chapter 9, which is the first chapter with a seam for `@provides` to
-  cross, and which should know before it teaches the directive.
+- **Whether the two `provides-*` audit suites still fail at router 0.341.0.**
+  What the three failing suites have in common was settled while drafting
+  chapter 9 by reading their source: `provides-on-interface` and
+  `provides-on-union` are both `@provides` on an abstract type, and
+  `complex-entity-call` is about compound and nested `@key` field sets and
+  contains no `@provides` at all. So nothing this book's example does is in the
+  territory either failure covers, and chapter 9 says so. What is **not**
+  settled is whether they still fail. Two merged upstream pull requests suggest
+  the abstract-type handling was fixed before 0.341.0: `wundergraph/cosmo`
+  #3043, shipped in router 0.326.3, and #3026, shipped in
+  `@wundergraph/composition` 0.63.0, below the 0.63.3 this book pins. That is in
+  tension with decision 84's local run, which recorded both suites failing at
+  0.341.0. Unblocked by re-running the audit, which was out of chapter 9's
+  scope. No chapter prints any of it.
+- **Whether the two node id serializers agree under a non-default format.**
+  Decision 86 has the Ratings service registering
+  `AddDefaultNodeIdSerializer()` because it cannot call
+  `AddGlobalObjectIdentification()`. The ids round-trip across all three
+  services and `verify.ps1` asserts the strings, so they agree at the default.
+  `NodeIdSerializerOptions` and `NodeIdSerializerFormat` were not explored, and
+  a book pinning a non-default format would have to check that the service
+  which cannot configure the feature still produces what the two that can do.
+  No chapter claims anything about it. Unblocked by setting a non-default format
+  in one service and seeing whether the seam survives.
+- **What the router does with a `@provides` whose preconditions are unmet.**
+  Decision 88 measured that this composer accepts one where Apollo's
+  documentation says composition should fail. What happens at run time was not
+  measured, because the input that demonstrates it is a hand-written document
+  with no service behind it (decision 76). Unblocked by standing a fourth
+  service behind that document, which is a real cost for a question no chapter
+  currently asks.
+- **Whether anything can make `node(id:)` route correctly across a seam.**
+  Decision 90 rejected four approaches, and only the first of them is certain:
+  a node resolver per type per subgraph is impossible because the rows are not
+  there. The other three were rejected on reasoning rather than measurement,
+  and `@interfaceObject` was not investigated at all, because this book's
+  example has no federated interface. Unblocked by measuring one of the three,
+  at which point chapter 15's neighbourhood is worth re-reading. Part of the
+  same question: **why the planner picks Sessions** for a bare `node(id:)` when
+  both subgraphs declare the field was not established either. The chapter says
+  so in the prose rather than guessing, and whether it is file order, subgraph
+  id or something in `graphql-go-tools` decides whether the failure is stable
+  or depends on how `graph.yaml` happens to be written.
 - **Whether Pygments gains an SDL lexer.** Decision 31 is a workaround with a
   measured justification, not a preference. Unblocked by a Pygments release
   whose `graphql` lexer handles type definitions, `!` and directives; at that
