@@ -3,5 +3,24 @@
 \label{app:ky-hieu}
 
 Phụ lục này ghi một bộ ký hiệu thống nhất cho cả cuốn sách và đối chiếu nó
-với ký hiệu gốc trong từng bài báo. Nội dung được bổ sung khi chương đầu
-tiên của phần II được viết.
+với ký hiệu gốc trong từng bài báo. Chương~\ref{ch:lime} đặt bộ ký hiệu đầu
+tiên: $x$ luôn là đầu vào theo không gian của mô hình, còn $x'$ là biểu diễn
+được dùng để giải thích cho người đọc. Các chương sau mở rộng bảng này thay vì
+đổi nghĩa hai ký hiệu đó.
+
+\begin{tabular}{@{}lp{5.4cm}p{4.1cm}@{}}
+\toprule
+Ký hiệu & Nghĩa trong sách & Ký hiệu trong LIME \\
+\midrule
+$f$ & Mô hình cần giải thích, nhận đầu vào gốc và trả một đầu ra & $f$ \\
+$x$ & Đầu vào đang được giải thích, trong không gian của mô hình & $x$ \\
+$x'$ & Biểu diễn có thể diễn giải của $x$ & $x'$ \\
+$z'$ & Một biểu diễn đã nhiễu dùng để lấy mẫu & $z'$ \\
+$z$ & Đầu vào gốc được dựng lại từ $z'$ & $z$ \\
+$g$ & Mô hình thay thế cục bộ dễ đọc & $g$ \\
+$\pi_x$ & Kernel cho trọng số theo lân cận của $x$ & $\pi_x$ \\
+$\mathcal{Z}$ & Tập mẫu nhiễu cùng đầu ra và trọng số & $\mathcal{Z}$ \\
+\bottomrule
+\end{tabular}
+
+Ký hiệu và cách ánh xạ này theo bài báo LIME~\autocite{p09lime}.

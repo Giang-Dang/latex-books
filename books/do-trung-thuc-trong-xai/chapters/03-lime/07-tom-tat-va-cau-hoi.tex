@@ -1,0 +1,31 @@
+\begin{tomtat}
+\begin{itemize}
+  \item LIME học một mô hình thay thế đơn giản quanh một đầu vào, nên lời giải
+  thích của nó là cục bộ chứ không phải mô tả toàn cục của mô hình hộp đen.
+  \item Biểu diễn $x'$ dành cho người đọc có thể khác đầu vào $x$ mà mô hình
+  thật nhận; sự khác biệt đó là một giả định của lời giải thích.
+  \item LIME sinh \tn{phép nhiễu}{perturbation}, hỏi $f$ trên các đầu vào đã dựng lại, rồi dùng
+  \tn{hàm nhân}{kernel} theo khoảng cách để trọng số hóa các mẫu trước khi
+  khớp $g$.
+  \item K-LASSO giữ lời giải thích thưa bằng cách giới hạn số thành phần, nhưng
+  sự thưa không chứng minh rằng các thành phần khác không tác động.
+  \item Biểu diễn, phép nhiễu, khoảng cách, độ rộng hàm nhân, số mẫu và độ dài
+  lời giải thích đều là các tham số có thể làm thay đổi kết luận.
+\end{itemize}
+\end{tomtat}
+
+\cauhoi
+\begin{cauhoids}
+  \item Một bộ phân loại văn bản đổi dự đoán khi bỏ một từ phủ định. Hãy nêu
+  $x$, $x'$ và một phép dựng lại $z$ mà LIME có thể dùng; sau đó chỉ ra giả
+  định nào về ngữ pháp của câu đã được đưa vào.
+  \item Đọc bài \enquote{Why Should I Trust You?}~\autocite{p09lime}. Từ
+  phương trình mất mát của bài báo, giải thích vì sao đổi $\sigma$ có thể làm
+  đổi trọng số của cùng một đặc trưng dù mô hình $f$ không đổi.
+  \item Với một mô hình có tương tác giữa hai \tn{đặc trưng}{feature}, hãy mô tả trường hợp
+  $K$ quá nhỏ làm mô hình tuyến tính $g$ gây hiểu lầm. Cần kiểm tra thêm điều
+  gì trên tập mẫu $\mathcal{Z}$?
+  \item So sánh một lời giải thích LIME ở đây với câu hỏi về độ trung thực ở
+  chương~\ref{ch:giai-thich-de-lam-gi}. Phần nào của quy trình LIME là bằng
+  chứng thực nghiệm, và phần nào vẫn là giả định về can thiệp?
+\end{cauhoids}

@@ -1,0 +1,21 @@
+\begin{tikzpicture}[
+  box/.style={draw=black!65, rounded corners=2pt, align=center,
+    minimum width=4.1cm, minimum height=0.95cm, fill=black!5},
+  data/.style={draw=black!65, rounded corners=2pt, align=center,
+    minimum width=4.1cm, minimum height=0.85cm, fill=black!15},
+  arrow/.style={-{Stealth[length=2mm]}, draw=black!65, thick}
+]
+  \node[data] (input) {Đầu vào $x$ và biểu diễn $x'$};
+  \node[box, below=8mm of input] (sample) {Sinh các mẫu nhiễu $z'$};
+  \node[box, below=8mm of sample] (restore) {Dựng lại đầu vào $z$};
+  \node[box, below=8mm of restore] (blackbox) {Mô hình hộp đen trả $f(z)$};
+  \node[data, right=14mm of blackbox] (weight) {Trọng số\\ lân cận $\pi_x(z)$};
+  \node[box, below=10mm of blackbox, xshift=29mm] (surrogate)
+    {Khớp mô hình thay thế thưa $g$};
+
+  \draw[arrow] (input) -- (sample);
+  \draw[arrow] (sample) -- (restore);
+  \draw[arrow] (restore) -- (blackbox);
+  \draw[arrow] (blackbox) -- (surrogate);
+  \draw[arrow] (weight.south) |- (surrogate.east);
+\end{tikzpicture}
