@@ -1,0 +1,51 @@
+\section{Từ trọng số đến bản đồ nhiệt}
+\label{sec:ch05-ban-do-nhiet}
+
+\tn{Bản đồ đặc trưng}{feature map} đưa attribution vào không gian có cấu trúc, nhưng cần một
+cách gộp các bản đồ. Grad-CAM lấy gradient của điểm số $y^c$ theo từng phần tử
+$A^k_{ij}$, rồi trung bình gradient đó trên các vị trí để được trọng số
+$\alpha_k^c$:
+
+\begin{equation}
+\label{eq:ch05-trong-so-grad-cam}
+\alpha_k^c=\frac{1}{Z}\sum_i\sum_j
+\frac{\partial y^c}{\partial A^k_{ij}}.
+\end{equation}
+
+Ở đây $Z$ là số vị trí trong một bản đồ. Trọng số trong
+phương trình~\ref{eq:ch05-trong-so-grad-cam} là xấp xỉ tuyến tính cục bộ của
+ảnh hưởng mà bản đồ $k$ có lên điểm số lớp $c$. Sau đó phương pháp cộng có trọng
+số các bản đồ ở lượt truyền xuôi và giữ lại phần dương:
+
+\begin{equation}
+\label{eq:ch05-ban-do-grad-cam}
+L^c_{\mathrm{Grad\mbox{-}CAM}}=\operatorname{ReLU}
+\left(\sum_k \alpha_k^c A^k\right).
+\end{equation}
+
+\tn{Bản đồ nhiệt}{heatmap} $L^c_{\mathrm{Grad\mbox{-}CAM}}$ có cùng độ phân
+giải với bản đồ đặc trưng, nên nó được nội suy khi đặt lên ảnh gốc. ReLU trong
+phương trình~\ref{eq:ch05-ban-do-grad-cam} không phải bước trang trí. Nó bỏ các
+vùng làm giảm điểm số lớp $c$, vì bản đồ chuẩn của Grad-CAM nhằm chỉ bằng chứng
+ủng hộ lớp đang xét. Nếu câu hỏi là vùng phản đối lớp $c$, cần đổi mục tiêu tính
+toán thay vì diễn giải cùng bản đồ theo chiều ngược lại.
+
+Hình~\ref{fig:ch05-hai-phep-tich} làm rõ hai loại gộp. Integrated Gradients
+tích dọc theo một đường trong không gian đầu vào để chia chênh lệch giữa hai
+điểm. Grad-CAM trung bình gradient theo không gian rồi dùng kết quả để gộp các
+bản đồ đặc trưng. Cả hai đều dùng gradient, nhưng đối tượng được cộng và câu
+hỏi được trả lời không giống nhau.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch05-hai-phep-tich}
+  \caption{Hai phép gộp gradient trong chương này. Integrated Gradients tích
+  gradient trên đoạn từ baseline tới đầu vào và phân bổ chênh lệch đầu ra.
+  Grad-CAM trung bình gradient của một lớp mục tiêu theo không gian, rồi gộp
+  các bản đồ đặc trưng để định vị bằng chứng ủng hộ lớp đó. Sơ đồ diễn giải
+  cơ chế trong hai bài báo gốc~\autocite{p11ig,p12gradcam}.}
+  \label{fig:ch05-hai-phep-tich}
+\end{figure}
+
+\index{bản đồ nhiệt}%
+\index{trọng số tầm quan trọng}%

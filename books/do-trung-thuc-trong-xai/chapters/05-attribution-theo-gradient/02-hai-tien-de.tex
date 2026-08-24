@@ -1,0 +1,25 @@
+\section{Hai tiên đề cho attribution}
+\label{sec:ch05-hai-tien-de}
+
+Gradient tại điểm cuối cho thấy cần một tiêu chuẩn ngoài trực giác trực quan.
+Sundararajan, Taly và Yan bắt đầu bằng hai yêu cầu đối với một lời giải thích
+gán đóng góp cho đầu vào~\autocite{p11ig}. Yêu cầu thứ nhất là \tn{độ nhạy}{sensitivity}:
+nếu đầu vào và baseline chỉ khác ở một đặc trưng mà đầu ra khác nhau, đặc trưng
+đó phải nhận đóng góp khác không. Điều kiện này loại trường hợp hàm đã đổi trên
+đường đi nhưng phẳng tại đầu vào.
+
+Yêu cầu thứ hai là \tn{bất biến theo cài đặt}{implementation invariance}. Hai
+mạng có kiến trúc hoặc tham số trung gian khác nhau nhưng tính đúng cùng một
+hàm phải cho cùng lời giải thích. Attribution nhằm nói về quan hệ giữa đầu vào
+và đầu ra, nên nó không nên thay đổi chỉ vì người triển khai viết lại cùng một
+phép tính. Gradient thường thỏa yêu cầu này nhờ quy tắc dây chuyền; một số quy
+tắc lan truyền ngược đã sửa đổi thì không.
+
+Hai tiên đề không chứng minh một bản đồ là trung thực theo nghĩa nhân quả. Chúng
+chỉ loại những lời giải thích mâu thuẫn với hai trực giác tối thiểu về đóng góp.
+Chúng cũng không chọn baseline. Chính vì thế, phần còn lại của chương tách hai
+việc thường bị gộp lại: phép tính attribution có thỏa các điều kiện hình thức
+hay không, và đối chiếu với baseline có mang nghĩa đúng với bài toán hay không.
+
+\index{độ nhạy}%
+\index{bất biến theo cài đặt}%

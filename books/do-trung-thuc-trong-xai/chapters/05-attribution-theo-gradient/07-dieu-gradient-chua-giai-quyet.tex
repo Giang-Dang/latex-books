@@ -1,0 +1,29 @@
+\section{Điều gradient chưa giải quyết}
+\label{sec:ch05-dieu-gradient-chua-giai-quyet}
+
+Grad-CAM cho một bản đồ có điều kiện theo lớp, nhưng bản đồ ấy không phải chứng
+minh rằng mô hình dùng đúng vùng mà con người mong đợi. Nó là một phép tổng hợp
+từ gradient và biểu diễn của một lớp được chọn. Nếu lưới ở lớp ấy thô, vùng
+được tô cũng thô. Nếu mô hình dựa vào nền ảnh hoặc một tương quan không mong
+muốn, Grad-CAM có thể làm lộ điều đó, nhưng cũng không tự phân biệt tương quan
+với quan hệ nhân quả.
+
+Lý do tương tự áp cho Integrated Gradients. Một phương pháp có thể thỏa \tn{độ nhạy}{sensitivity},
+\tn{bất biến theo cài đặt}{implementation invariance} và \tn{tính đầy đủ}{completeness}, song vẫn trả lời một phản thực vô nghĩa
+nếu baseline không phù hợp. Một lỗi thường gặp là biến các bảo đảm hình thức
+thành kết luận về \tn{độ trung thực}{faithfulness}. Các điều kiện hình thức
+nói attribution nhất quán với hàm trên đường đi đã chọn; kết luận về độ trung
+thực đòi bằng chứng rằng đường đi, điểm nền hoặc lớp biểu diễn tương ứng với
+thay đổi có nghĩa trong miền. Với
+Integrated Gradients, \tn{điểm nền}{baseline} là phần của lựa chọn ấy ngay từ
+lúc xác định câu hỏi.
+
+Hai bài báo vì thế để lại cùng một công việc cho các chương sau. Chương
+\ref{ch:attribution-tu-nguyen-ly-dau} sẽ hỏi attribution nên được xây từ những
+nguyên lý nào trước khi chọn một phương pháp. Từ chương~\ref{ch:do-do-trung-thuc},
+cuốn sách quay sang các chỉ số dùng để đánh giá những lời giải thích ấy. Khi
+đó, ta sẽ không thể chỉ kiểm tra một bản đồ trông hợp lý; chính dụng cụ đo độ
+trung thực cũng phải được kiểm tra.
+
+\index{Grad-CAM|)}%
+\index{độ trung thực}%

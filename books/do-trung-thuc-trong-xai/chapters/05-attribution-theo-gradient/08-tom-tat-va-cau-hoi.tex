@@ -1,0 +1,28 @@
+\begin{tomtat}
+\begin{itemize}
+  \item Gradient tại một đầu vào chỉ mô tả độ dốc cục bộ; nó có thể bỏ sót một
+  thay đổi đã xảy ra qua vùng bão hòa.
+  \item Integrated Gradients tích gradient trên đoạn từ baseline tới đầu vào.
+  \tn{Tính đầy đủ}{completeness} cho biết tổng attribution bằng $F(x)-F(x_0)$.
+  \item Baseline xác định đối chiếu mà Integrated Gradients giải thích. Tiên đề
+  không tự chứng minh đối chiếu đó có nghĩa trong miền ứng dụng.
+  \item Grad-CAM gộp gradient theo không gian của \tn{bản đồ đặc trưng}{feature map} để tạo bản
+  đồ nhiệt cho một lớp mục tiêu. Nó định vị bằng chứng ủng hộ lớp đó ở độ phân
+  giải của lớp tích chập đã chọn.
+\end{itemize}
+\end{tomtat}
+
+\cauhoi
+\begin{cauhoids}
+  \item Với một hàm chỉ thay đổi giữa $x_0$ và $x$ nhưng phẳng tại $x$, vì sao
+  gradient tại $x$ có thể vi phạm \tn{độ nhạy}{sensitivity} còn Integrated Gradients thì không?
+  \item Hãy nêu hai baseline khác nhau cho một bài toán phân loại văn bản. Mỗi
+  baseline trả lời câu hỏi phản thực nào, và điểm nào khiến nó có thể không
+  phải đầu vào tự nhiên?
+  \item Trong phương trình~\ref{eq:ch05-ban-do-grad-cam}, ReLU loại những vùng
+  nào? Nếu mục tiêu là tìm bằng chứng phản đối lớp $c$, vì sao không nên đọc
+  trực tiếp bản đồ chuẩn theo nghĩa đó?
+  \item Đọc \enquote{Axiomatic Attribution for Deep Networks} của Sundararajan,
+  Taly và Yan~\autocite{p11ig}. Tác giả dùng những điều kiện nào để phân biệt
+  các path method với Integrated Gradients trên đoạn thẳng?
+\end{cauhoids}
