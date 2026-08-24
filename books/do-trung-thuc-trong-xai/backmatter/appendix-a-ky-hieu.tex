@@ -8,19 +8,24 @@ tiên: $x$ luôn là đầu vào theo không gian của mô hình, còn $x'$ là
 được dùng để giải thích cho người đọc. Các chương sau mở rộng bảng này thay vì
 đổi nghĩa hai ký hiệu đó.
 
-\begin{tabular}{@{}lp{5.4cm}p{4.1cm}@{}}
+\begin{tabular}{@{}lp{4.3cm}p{2.2cm}p{2.2cm}@{}}
 \toprule
-Ký hiệu & Nghĩa trong sách & Ký hiệu trong LIME \\
+Ký hiệu & Nghĩa trong sách & LIME & SHAP \\
 \midrule
-$f$ & Mô hình cần giải thích, nhận đầu vào gốc và trả một đầu ra & $f$ \\
-$x$ & Đầu vào đang được giải thích, trong không gian của mô hình & $x$ \\
-$x'$ & Biểu diễn có thể diễn giải của $x$ & $x'$ \\
-$z'$ & Một biểu diễn đã nhiễu dùng để lấy mẫu & $z'$ \\
-$z$ & Đầu vào gốc được dựng lại từ $z'$ & $z$ \\
-$g$ & Mô hình thay thế cục bộ dễ đọc & $g$ \\
-$\pi_x$ & Kernel cho trọng số theo lân cận của $x$ & $\pi_x$ \\
-$\mathcal{Z}$ & Tập mẫu nhiễu cùng đầu ra và trọng số & $\mathcal{Z}$ \\
+$f$ & Mô hình cần giải thích, nhận đầu vào gốc và trả một đầu ra & $f$ & $f$ \\
+$x$ & Đầu vào đang được giải thích, trong không gian của mô hình & $x$ & $x$ \\
+$x'$ & Biểu diễn có thể diễn giải của $x$ & $x'$ & $x'$ \\
+$z'$ & Một biểu diễn đã nhiễu dùng để lấy mẫu & $z'$ & Liên minh nhị phân \\
+$z$ & Đầu vào gốc được dựng lại từ $z'$ & $z$ & - \\
+$g$ & Mô hình giải thích dễ đọc & $g$ & $g$ \\
+$\pi_x$ & Kernel cho trọng số & $\pi_x$ & $\pi_{x'}$ \\
+$\mathcal{Z}$ & Tập mẫu cùng đầu ra và trọng số & $\mathcal{Z}$ & $Z$ \\
+$F$ & Tập các đặc trưng & - & $F$ \\
+$S$ & Một liên minh đặc trưng & - & $S$ \\
+$v(S)$ & Giá trị của liên minh $S$ & - & $v(S)$ \\
+$\phi_i$ & Đóng góp phân cho đặc trưng $i$ & - & $\phi_i$ \\
+$\phi_0$ & Giá trị nền của lời giải thích & - & $\phi_0$ \\
 \bottomrule
 \end{tabular}
 
-Ký hiệu và cách ánh xạ này theo bài báo LIME~\autocite{p09lime}.
+Các cột LIME và SHAP theo các bài báo gốc~\autocite{p09lime,p10shap}.

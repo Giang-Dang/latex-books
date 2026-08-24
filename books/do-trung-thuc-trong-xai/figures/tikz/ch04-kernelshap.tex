@@ -1,0 +1,20 @@
+\begin{tikzpicture}[
+  box/.style={draw=black!65, rounded corners=2pt, align=center,
+    minimum width=4.0cm, minimum height=0.9cm, fill=black!5},
+  data/.style={draw=black!65, rounded corners=2pt, align=center,
+    minimum width=4.0cm, minimum height=0.9cm, fill=black!15},
+  arrow/.style={-{Stealth[length=2mm]}, draw=black!65, thick}
+]
+  \node[data] (coalitions) {Liên minh $z'$ của các đặc trưng};
+  \node[box, below=8mm of coalitions] (value) {Hoàn thiện đặc trưng thiếu\\
+và tính $v(S)$};
+  \node[data, right=15mm of value] (kernel) {Hàm nhân Shapley\\
+theo $|S|$};
+  \node[box, below=10mm of value, xshift=28mm] (regression)
+    {Hồi quy có trọng số\\
+để tìm $\phi_0,\ldots,\phi_M$};
+
+  \draw[arrow] (coalitions) -- (value);
+  \draw[arrow] (value) -- (regression);
+  \draw[arrow] (kernel.south) |- (regression.east);
+\end{tikzpicture}
