@@ -1,0 +1,27 @@
+\begin{tikzpicture}[
+  every node/.style={font=\small, align=center},
+  head/.style={font=\small\bfseries, align=center},
+  cell/.style={draw=black!55, rounded corners=2pt, fill=black!4,
+    minimum width=33mm, minimum height=11mm, font=\footnotesize},
+  rowlab/.style={font=\small, align=right, text width=26mm}
+]
+  \node[head] (cfa) at (0,0) {Đặc trưng\\của đầu vào};
+  \node[head, right=4mm of cfa] (cda) {Dữ liệu\\huấn luyện};
+  \node[head, right=4mm of cda] (cca) {Thành phần\\trong mô hình};
+
+  \node[cell, below=6mm of cfa] (p1) {Occlusion, SHAP};
+  \node[cell, right=4mm of p1] (p2) {Leave-one-out,\\Data Shapley};
+  \node[cell, right=4mm of p2] (p3) {Vá kích hoạt};
+
+  \node[cell, below=4mm of p1] (g1) {Integrated Gradients};
+  \node[cell, right=4mm of g1] (g2) {Hàm ảnh hưởng,\\TracIn};
+  \node[cell, right=4mm of g2] (g3) {Attribution patching};
+
+  \node[cell, below=4mm of g1] (l1) {LIME};
+  \node[cell, right=4mm of l1] (l2) {Datamodel, TRAK};
+  \node[cell, right=4mm of l2] (l3) {COAR};
+
+  \node[rowlab, left=4mm of p1.west, anchor=east] {Phép nhiễu};
+  \node[rowlab, left=4mm of g1.west, anchor=east] {Gradient};
+  \node[rowlab, left=4mm of l1.west, anchor=east] {Xấp xỉ\\tuyến tính};
+\end{tikzpicture}
