@@ -1,0 +1,55 @@
+\section{Bốn mươi tám kỹ thuật}
+\label{sec:ch10-vuon-bien-the}
+
+\index{LIME!phân bố các biến thể}%
+Đặt hai trục của hai mục trước cạnh nhau thì được bảng phân loại chính của khảo
+sát, và bảng ấy có 48 dòng: 48 kỹ thuật phái sinh từ LIME, mỗi dòng mang một
+hoặc nhiều chữ cái chỉ nhóm vấn đề, cùng các dấu tích ở những bước mà kỹ thuật
+đó can thiệp~\autocite{p22whichlime}. Cột chữ cái là chỗ đọc được nhiều nhất, vì
+nó cho biết cả lĩnh vực đã dồn công vào đâu.
+
+Đếm theo nhóm vấn đề, với quy ước một kỹ thuật mang hai chữ cái thì được tính
+vào cả hai nhóm: 23 kỹ thuật nhắm vào độ khớp, 20 vào tính ổn định, 13 vào khả
+năng diễn giải, 11 vào tính cục bộ, và 3 vào hiệu năng. Tổng các con số ấy là 70
+lượt gán trên 48 kỹ thuật, vì 20 kỹ thuật mang hai chữ cái và một kỹ thuật mang
+ba; 27 kỹ thuật còn lại mang đúng một~\autocite{p22whichlime}.
+
+Hai con số đầu đáng dừng lại. Độ khớp và tính ổn định gộp lại chiếm 43 trong 70
+lượt gán, và nếu đếm theo kỹ thuật thay vì theo lượt gán thì đúng 32 trong 48 kỹ
+thuật, tức hai phần ba, nhắm vào ít nhất một trong hai nhóm ấy. Hai nhóm ấy là
+\tn{độ trung thực}{faithfulness} của mô hình thay thế và điều kiện cần của nó.
+Nói cách khác, hai phần ba công sức của cả nhánh nghiên cứu đổ vào đúng chỗ mà
+chương~\ref{ch:lime} đã chỉ ra là chưa được xác nhận, nên có thể nói lĩnh vực
+biết LIME có vấn đề ở đó và biết từ lâu.
+
+Con số 3 kỹ thuật nhắm vào hiệu năng thì nói điều ngược lại. Chi phí tính toán
+là nhóm vấn đề duy nhất trong năm nhóm mà ai cũng đo được bằng một chiếc đồng
+hồ, không cần tới dụng cụ đo nào đang tranh cãi, thế mà nó lại là nhóm ít người
+làm nhất. Bốn nhóm đông người làm hơn đều là những nhóm mà việc xác nhận đã sửa
+được hay chưa còn phải chờ một thước đo.
+
+\index{độ trung thực!của mô hình thay thế}%
+Con số 21 kỹ thuật mang từ hai chữ cái trở lên xác nhận điều nói ở cuối
+mục~\ref{sec:ch10-nam-nhom-van-de}, lần này từ phía dữ liệu. Cặp hay gặp nhất là tính ổn
+định đi với độ khớp, 10 kỹ thuật, và điều đó hợp lý theo đúng cơ chế: hai lần
+chạy cho hai mô hình thay thế khác nhau thì hai mô hình ấy không thể cùng là
+lời giải thích đúng cho cùng một quyết định, nên chữa được tính ổn định là điều
+kiện cần để nói gì về độ khớp. Kỹ thuật
+duy nhất mang ba chữ cái là B-LIME, nhắm cùng lúc vào tính ổn định, độ khớp và
+khả năng diễn giải~\autocite{p22whichlime}.
+
+Còn một trục nữa mà bảng ghi lại và mục này không đếm: các dấu tích ở bốn cột
+bước. Chúng đọc được bằng mắt trên trang in nhưng không rút ra được đủ tin cậy
+để in một con số, nên chương này không in con số nào từ chúng. Điều rút được mà
+không cần đếm chính xác thì đã nằm ở mục~\ref{sec:ch10-bon-buoc}: có kỹ thuật
+sửa một bước, có kỹ thuật sửa cả bốn.
+
+Khảo sát còn một bảng thứ hai, xếp cùng 48 kỹ thuật ấy theo kiểu dữ liệu và
+lĩnh vực ứng dụng: văn bản, bảng, ảnh, chuỗi thời gian, âm thanh, đồ thị, và
+cặp ảnh kèm văn bản; bên trong mỗi kiểu lại tách ra những kỹ thuật chỉ được thử
+trong một lĩnh vực hẹp như khảo cổ hay y tế~\autocite{p22whichlime}. Bảng ấy có
+một dòng cuối đáng chép lại nguyên ý, vì nó là chỗ khảo sát bắt đầu quay lại
+chất vấn chính cái nó vừa dựng: các tác giả nói họ không xác định dứt khoát
+được rằng lời khẳng định về tính phổ dụng của từng kỹ thuật có đúng hay không,
+vì không phải kỹ thuật nào cũng có mã nguồn~\autocite{p22whichlime}. Mục sau
+theo đúng chỗ hở đó.

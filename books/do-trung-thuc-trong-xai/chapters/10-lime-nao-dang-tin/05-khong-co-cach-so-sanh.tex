@@ -1,0 +1,67 @@
+\section{Không có cách so sánh}
+\label{sec:ch10-khong-co-cach-so-sanh}
+
+\index{LIME!khả năng dựng lại}%
+Chỗ hở mà mục trước dừng lại được khảo sát mở rộng thành cả một phần thảo luận,
+và phần ấy mở bằng một câu chẩn đoán: dù LIME phổ biến đến thế, một chuẩn thực
+hành cho việc nghiên cứu và đánh giá vẫn chưa được thiết lập, và chính sự thiếu
+chuẩn ấy cản trở tính chặt chẽ khoa học của các kỹ thuật dựa trên
+LIME~\autocite{p22whichlime}. Ba quan sát cụ thể đứng sau câu đó.
+
+Quan sát thứ nhất là về mã nguồn. Các tác giả ghi nhận một sự thiếu vắng mã
+nguồn nghiêm trọng, ở mức 50\%, và nói thẳng rằng nó khiến việc kiểm chứng đóng
+góp của các tác giả trở nên khó khăn~\autocite{p22whichlime}. Con số ấy có hai
+giới hạn cần nêu. Nó là con số của riêng tập kỹ thuật mà khảo sát gom được,
+không phải một cuộc điều tra cả lĩnh vực; và khảo sát dẫn nó về trang web đồng
+hành chứ không về một bảng nào trong bài, nên phần thân không nói rõ 50\% ấy là
+tỉ lệ thiếu hay tỉ lệ có. Đọc theo câu văn của bài, tức đọc \enquote{thiếu vắng
+mã nguồn ở mức 50\%}, thì một nửa số biến thể trong
+mục~\ref{sec:ch10-vuon-bien-the} không ai chạy lại được.
+
+Quan sát thứ hai là hệ quả trực tiếp của quan sát thứ nhất, và nó là quan sát
+nặng nhất. Vì không có mã nguồn để đối chiếu, khảo sát ghi nhận rằng nhiều bài
+mở đầu bằng cách nêu một nhóm vấn đề đã biết của LIME rồi so bản sửa của mình
+với đúng một thứ: bản LIME chuẩn. Khảo sát gọi lối làm ấy là bỏ qua các công
+trình liên quan và nói nó làm giảm chất lượng nghiên cứu. Những bài có so với
+biến thể trước thì thường so với S-LIME hoặc BayLIME, không phải vì hai cái đó
+là mốc đúng, mà vì hai cái đó có mã nguồn~\autocite{p22whichlime}.
+
+Hệ quả của lối làm ấy là một thứ tự bộ phận rỗng. Nếu mỗi biến thể chỉ được so
+với gốc, thì sau 48 kỹ thuật ta biết 48 mệnh đề dạng \enquote{biến thể này
+tốt hơn LIME chuẩn ở nhóm vấn đề kia}, và không biết một mệnh đề nào so hai
+biến thể với nhau. Câu hỏi trong tựa đề khảo sát vì thế vẫn nguyên ở cuối bài,
+và khảo sát không đưa ra đáp án nào cho nó.
+
+Quan sát thứ ba là về thước đo. Khảo sát nêu một vấn đề mà nó gọi là phổ biến,
+và gọi là phổ biến trong cả cộng đồng XAI chứ không riêng nhánh LIME: các thước
+đo dùng để đánh giá được chọn sao cho chúng xác nhận đóng góp đã tuyên
+bố~\autocite{p22whichlime}. Với các đánh giá định tính bằng khảo sát người dùng,
+các tác giả ghi nhận không có thủ tục chuẩn nào, cỡ mẫu khác nhau và nhiệm vụ
+giao cho người tham gia cũng khác nhau.
+
+Ba quan sát ấy khép thành một vòng, và hình~\ref{fig:ch10-vong-bien-the} vẽ nó.
+Nét chấm ở đó có nghĩa là thứ đang thiếu, khác với nét đứt của
+hình~\ref{fig:ch08-vong-lap-do}, vốn đánh dấu một lựa chọn để ngỏ.
+Một nhóm vấn đề được nêu, một biến thể ra đời để sửa nhóm ấy, rồi câu hỏi biến
+thể mới có hơn các biến thể trước hay không cần hai thứ để trả lời: mã nguồn của
+các biến thể trước, và một thước đo mà cả hai bên cùng chấp nhận. Mã nguồn thì
+một nửa không có. Thước đo thì
+mục~\ref{sec:ch10-mot-tu-khong-xuat-hien} và
+chương~\ref{ch:chi-so-khong-do-do-trung-thuc} nói về nó. Vì câu hỏi không trả
+lời được, việc còn lại mà một tác giả làm được là nêu một nhóm vấn đề khác và
+viết biến thể tiếp theo.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch10-vong-bien-the}
+  \caption{Ô viền đậm là chỗ duy nhất trong vòng có thể loại bỏ một biến thể, và
+  nó là ô duy nhất không có đầu vào liền nét. Bản gộp của sách, dựng từ phần
+  thảo luận của khảo sát~\autocite{p22whichlime}.}
+  \label{fig:ch10-vong-bien-the}
+\end{figure}
+
+Vòng ấy chạy được mà không cần ai gian dối, và đó là điều làm nó khó chữa. Mỗi
+bước trong vòng đều hợp lý xét riêng: nêu một hạn chế có thật, đề xuất một cách
+sửa, so với bản gốc để cho thấy cách sửa có tác dụng, rồi công bố. Cái sai nằm ở
+chỗ vòng không có bước nào loại bỏ được một biến thể, nên qua chín năm số biến
+thể chỉ tăng mà chưa cái nào bị loại.

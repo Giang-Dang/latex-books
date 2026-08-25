@@ -1,0 +1,46 @@
+\section{Câu hỏi trong tựa đề}
+\label{sec:ch10-cau-hoi-trong-tua-de}
+
+\index{LIME!biến thể|(}%
+\index{khảo sát tài liệu}%
+Muốn biết lời giải thích của LIME đổi giữa hai lần chạy vì đâu thì trước hết
+phải biết LIME để ngỏ những gì.
+Mục~\ref{sec:ch03-cac-tham-so-tu-do} đã liệt kê những chỗ mà LIME để người dùng
+tự quyết: biểu diễn $x'$, phép dựng lại $z$, phân phối sinh nhiễu, hàm khoảng
+cách $D$, độ rộng $\sigma$ của \tn{hàm nhân}{kernel}, số mẫu $N$ và độ dài $K$.
+Mỗi lựa chọn ấy đứng thay cho một mệnh đề về hành vi của $f$, và không lựa chọn
+nào tự chứng minh mệnh đề của nó.
+
+Lĩnh vực đã phản ứng với danh sách đó, nhưng không phản ứng bằng cách kiểm
+chứng từng lựa chọn, mà bằng cách đề xuất phương pháp mới. Trong chín năm kể
+từ bài báo gốc, số công trình sửa một chỗ nào đó trong LIME đã đủ nhiều để chính
+việc theo dõi chúng trở thành một vấn đề, và khảo sát của Knab và cộng sự ra đời
+để giải quyết đúng vấn đề ấy~\autocite{p22whichlime}.
+
+Quy mô của cái được rà là phần đáng ghi lại. Khảo sát đi theo quy trình rà tài
+liệu có cấu trúc của Webster và cộng sự, tìm quanh bài báo gốc bằng các cụm khóa
+\enquote{LIME issues}, \enquote{LIME improvements} và \enquote{LIME
+advancements}; vòng rà đầu tiên phủ các bài công bố trong khoảng từ 2016 tới
+2025, rồi được mở rộng bằng cách lần theo tài liệu tham khảo của chính các bài
+ấy. Các bản tiền ấn phẩm trên arXiv cũng được nhận nếu chúng có đóng góp mới và
+liên quan~\autocite{p22whichlime}. Riêng bài báo gốc, tính tới ngày 21 tháng 1
+năm 2025, đã được dẫn trong 21\,343 bài trên arXiv, và các tác giả ghi nhận rằng
+họ có thể đã bỏ sót công trình vì phải rà một khối hơn 20\,000
+tài liệu~\autocite{p22whichlime}.
+
+Con số 21\,343 không đo chất lượng của LIME, và khảo sát cũng không dùng nó theo
+nghĩa đó. Nó đo mức phổ biến, tức đo có bao nhiêu người đang đứng trên một
+phương pháp mà chương~\ref{ch:lime} đã cho thấy là chưa được xác nhận. Đó là lý
+do chương này đọc một khảo sát chứ không đọc thêm một phương pháp: cái cần nhìn
+ở đây là hình dạng của cả nhánh nghiên cứu, không phải cơ chế của một phương
+pháp trong nhánh ấy.
+
+Chỗ đứng của khảo sát cũng ràng buộc mọi câu sau đó, nên phải nói rõ trước khi
+vào phân loại. Khảo sát không đo gì cả. Nó không dựng lại một biến thể nào,
+không chạy một phép so nào giữa hai biến thể, và không có mục kết quả. Ba bảng
+của nó phân loại công trình đã công bố: bảng thứ nhất đặt mỗi kỹ thuật vào một
+nhóm vấn đề và một bước của quy trình, bảng thứ hai đặt mỗi kỹ thuật vào một
+kiểu dữ liệu và một lĩnh vực ứng dụng, bảng thứ ba liệt kê các tính chất dùng
+để đánh giá, lấy cấu trúc từ một khung có sẵn~\autocite{p22whichlime}. Vì vậy,
+chỗ nào dưới đây nói LIME không ổn định thì đó là điều khảo sát ghi nhận từ tài
+liệu nó dẫn, chứ không phải điều khảo sát đo được.

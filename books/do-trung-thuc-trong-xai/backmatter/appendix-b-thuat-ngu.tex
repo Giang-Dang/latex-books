@@ -51,6 +51,7 @@ mô hình thưởng & reward model \\
 Thuật ngữ & Tiếng Anh \\
 \midrule
 mô hình thay thế cục bộ & local surrogate \\
+tính cục bộ & locality \\
 biểu diễn có thể diễn giải & interpretable representation \\
 đặc trưng & feature \\
 phép nhiễu & perturbation \\
@@ -145,6 +146,7 @@ chỉ số trung thực & faithfulness metric \\
 phép thử ngẫu nhiên hóa & randomization test \\
 tính hữu dụng ngữ nghĩa & semantic utility \\
 mức quan trọng & importance \\
+tính ổn định & stability \\
 \bottomrule
 \end{tabular}
 
@@ -169,6 +171,21 @@ cam kết trung thực & faithful commitment \\
 gán sai nguồn & misattribution \\
 gọi công cụ & tool call \\
 độ chệch dự đoán & prediction skew \\
+\bottomrule
+\end{tabular}
+
+\medskip
+
+\textbf{Chương 10}
+
+\begin{tabular}{@{}lp{7cm}@{}}
+\toprule
+Thuật ngữ & Tiếng Anh \\
+\midrule
+sinh đặc trưng & feature generation \\
+sinh mẫu & sample generation \\
+biểu diễn lời giải thích & explanation representation \\
+phân đoạn & segmentation \\
 \bottomrule
 \end{tabular}
 
@@ -200,7 +217,7 @@ Integrated Gradients & Giữ nguyên; tên phương pháp attribution tích grad
 Grad-CAM & Giữ nguyên; tên phương pháp định vị theo gradient của lớp mục tiêu \\
 ground truth & Giữ nguyên; đáp án đúng để đối chiếu, không có bản dịch gọn và đúng \\
 leave-one-out & Giữ nguyên; tên thủ tục bỏ một phần tử rồi tính lại \\
-fidelity & Giữ nguyên; tên một đại lượng của đánh giá phản thực, chương 08 đọc kỹ \\
+fidelity & Giữ nguyên; tên một đại lượng của đánh giá phản thực, chương 08 đọc kỹ. Khảo sát biến thể LIME của chương 10 dùng cùng chữ này cho một thứ khác, là việc mô hình thay thế không nắm được hành vi của mô hình gốc; nhóm vấn đề ấy được gọi bằng tiếng Việt là độ khớp, và chữ fidelity trong sách luôn chỉ đại lượng của chương 08 \\
 inverse fidelity & Giữ nguyên; đại lượng đối của fidelity, đo tính cần \\
 sparsity & Giữ nguyên; tên một đại lượng của đánh giá phản thực \\
 attribution patching & Giữ nguyên; tên phương pháp xấp xỉ phép vá bằng gradient \\
@@ -232,5 +249,11 @@ CC-SHAP & Giữ nguyên; tên chỉ số so hai phân bố đóng góp SHAP, m�
 Simulatability & Giữ nguyên; tên chỉ số đo một mô hình yếu hơn có tái lập được câu trả lời từ chuỗi hay không \\
 Paraphrasing & Giữ nguyên; tên chỉ số diễn đạt lại chuỗi rồi xem câu trả lời có giữ nguyên \\
 LM Judge & Giữ nguyên; tên dòng đối chứng dùng một mô hình ngôn ngữ làm giám khảo \\
+S-LIME & Giữ nguyên; tên một biến thể LIME, một trong hai mốc so sánh hay được dùng vì có mã nguồn \\
+BayLIME & Giữ nguyên; tên một biến thể LIME, mốc so sánh còn lại \\
+B-LIME & Giữ nguyên; tên biến thể LIME duy nhất mà khảo sát xếp vào ba nhóm vấn đề cùng lúc \\
+Correctness & Giữ nguyên; tên tính chất đầu tiên trong bảng đánh giá của khảo sát biến thể LIME, mô tả đúng bằng định nghĩa~\ref{def:ch01-do-trung-thuc} \\
+Consistency & Giữ nguyên; tên tính chất hỏi lời giải thích có ổn định qua nhiều điểm tương tự hay không \\
+Continuity & Giữ nguyên; tên tính chất hỏi thay đổi nhỏ ở đầu vào có dẫn tới thay đổi nhỏ ở lời giải thích hay không \\
 \end{longtable}
 \normalsize
