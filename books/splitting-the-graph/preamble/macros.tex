@@ -16,6 +16,13 @@
 % a literal quotation mark. Usage: M\uml{u}ller.
 \newcommand{\uml}[1]{\"{#1}}
 
+% Acute accent, the same decision as \uml one letter along. Chapter 12 cites
+% Tom Houle, whose name carries one, and the reasoning is identical: strict
+% Ascii mode forbids the Unicode letter, respelling him would misspell a real
+% person, and a bare \' in a chapter file is an apostrophe as far as the prose
+% gate's quote check is concerned. Usage: Houl\acu{e}.
+\newcommand{\acu}[1]{\'{#1}}
+
 % The one skin every box in this book wears, so that a callout and a summary
 % read as the same family: square corners, a single 0.4pt stroke, black on
 % white, and a sans-serif title in its own compartment above a rule. That is
