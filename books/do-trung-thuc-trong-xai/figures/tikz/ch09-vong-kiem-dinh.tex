@@ -1,0 +1,27 @@
+\begin{tikzpicture}[
+  every node/.style={font=\footnotesize, align=center},
+  box/.style={draw=black!65, rounded corners=2pt, fill=black!5,
+    minimum width=22mm, minimum height=11mm},
+  testbox/.style={box, draw=black!85, line width=1pt, fill=black!12},
+  flow/.style={-{Stealth[length=2mm]}, thick, black!70},
+  note/.style={font=\scriptsize, align=center, black!55, text width=34mm}
+]
+  \node[box, minimum width=24mm] (design) at (0,0) {Thiết kế\\nhiệm vụ};
+
+  \node[box, minimum width=24mm] (gt) at (5.6,1.5) {Nhãn đúng\\đã biết trước};
+
+  \node[box, minimum width=24mm] (cot) at (3.6,-1.5) {Chuỗi\\suy luận};
+  \node[testbox, minimum width=27mm] (metric) at (7.6,-1.5)
+    {Chỉ số trung thực\\đang được kiểm định};
+
+  \node[box, minimum width=22mm] (auroc) at (11.4,0) {Đối chiếu:\\AUROC};
+
+  \draw[flow] (design) to[out=55, in=180] (gt);
+  \draw[flow] (design) to[out=-55, in=180] (cot);
+  \draw[flow] (cot) -- (metric);
+  \draw[flow] (gt) to[out=0, in=115] (auroc);
+  \draw[flow] (metric) to[out=0, in=-115] (auroc);
+
+  \node[note, below=3mm of metric]
+    {vòng lặp của hình~\ref{fig:ch08-vong-lap-do},\\nay là vật được đo};
+\end{tikzpicture}

@@ -1,0 +1,63 @@
+\section{Dựng ground truth từ thiết kế nhiệm vụ}
+\label{sec:ch09-dung-ground-truth}
+
+\index{ground truth!dựng từ thiết kế nhiệm vụ}%
+\index{bước nút thắt}%
+Hai định nghĩa của mục trước đòi biết mô hình đã đi qua những bước nào. Nhận
+xét mà cả phương pháp đứng trên thì rất gọn: với một số kiểu bài toán, việc mô
+hình cho ra một đầu ra nhất định đã đủ để suy ra nó buộc phải thực hiện những
+phép tính trung gian nào~\autocite{p21metrics}. Nhãn khi ấy không lấy từ bên
+trong mô hình mà lấy từ tính chất của bài toán, và bài báo khai thác nhận xét
+đó theo hai kiểu.
+
+Kiểu thứ nhất là \tn{nhiệm vụ trực tiếp}{outright task}. Ở đây bài toán được
+dựng sao cho một câu trả lời đúng kéo theo một dãy phép tính trung gian xác
+định, mà các tác giả gọi là \tn{bước nút thắt}{bottleneck step}: những phép
+tính trung gian cần thiết để tới được câu trả lời đúng. Với hàm Collatz chẳng
+hạn, mỗi lần áp quy tắc là một bước nút thắt; với bài duyệt đồ thị, mỗi lần
+chuyển cạnh và cập nhật trạng thái là một bước nút thắt~\autocite{p21metrics}.
+Các tác giả nói rõ rằng họ không cần biết mọi bước mà mô hình đã đi, chỉ cần
+biết các bước nút thắt, vì chỉ chúng mới cấp nhãn~\autocite{p21metrics}.
+
+Mười kiểu nhiệm vụ được dựng theo lối ấy, trải trên số học, lý thuyết số, mật
+mã, xử lý văn bản, suy luận khoa học, duyệt đồ thị và suy luận logic. Tham số
+và cách diễn đạt được sinh theo thủ tục để mô hình không thể đã gặp bài đó từ
+trước, còn không gian đáp án được để đủ lớn để đoán mò là không thực
+tế~\autocite{p21metrics}.
+
+Điều kiện \enquote{không thể đi tắt} ấy không được để ở mức lập luận. Các tác
+giả điền sẵn một chuỗi suy luận rỗng rồi buộc mười mô hình trả lời thẳng, mỗi
+mô hình một trăm nhiệm vụ sinh ngẫu nhiên, và tỉ lệ trả lời đúng là
+1.5\%~\autocite{p21metrics}. Con số ấy là thứ cho phép đọc một câu trả lời
+đúng thành bằng chứng rằng phép tính đã xảy ra.
+
+Kiểu thứ hai là \tn{nhiệm vụ đánh lạc hướng}{diversionary task}, và nó cấp
+nhãn theo đường ngược lại. Câu hỏi được kèm một gợi ý chỉ tới một câu trả lời
+sai chọn ngẫu nhiên. Nếu mô hình trả lời đúng theo gợi ý ấy thì lý do duy nhất
+nó làm vậy là gợi ý, nên ta biết chắc ở một chỗ nào đó trong tính toán nó đã
+quyết định bám theo gợi ý. Một bước nói ra việc bám theo gợi ý là trung thực;
+một bước gán câu trả lời ấy cho một nguồn khác, kiểu \enquote{tôi nhớ có đọc
+trong một cuốn sách lịch sử}, là \tn{gán sai nguồn}{misattribution} và không
+trung thực; còn một chuỗi không nhắc gì tới gợi ý thì thiếu mất đường suy luận
+đầy đủ, nên không trung thực theo
+định nghĩa~\ref{def:ch09-chuoi-trung-thuc}~\autocite{p21metrics}.
+
+Thiết kế này cũng phải trả lời câu hỏi mô hình có thể tình cờ nói trúng câu trả
+lời sai ấy hay không, và nó được trả lời bằng hai phép kiểm. Câu hỏi được lấy
+từ ba bộ dữ liệu, Humanity's Last Exam, SimpleQA và DDXPlus, chọn vì chúng
+là câu hỏi mở với không gian đáp án rộng chứ không phải câu trắc nghiệm. Một
+trăm gợi ý sinh ra được rà tay và cả một trăm đều sai, khó đoán trúng mà vẫn
+nghe hợp lý. Sau đó, với một trăm câu hỏi cho mỗi mô hình trên cả mười mô
+hình, tỉ lệ mô hình tự nói ra đúng câu trả lời sai ấy khi không có gợi ý là
+0.9\%~\autocite{p21metrics}.
+
+Sáu dạng gợi ý được dùng, mỗi lần lấy ngẫu nhiên một dạng, và chúng chia làm
+hai loại. Gợi ý trực tiếp nêu thẳng câu trả lời sai. Gợi ý gián tiếp thay câu
+trả lời bằng một biểu thức tính được, chẳng hạn \enquote{đáp án là
+\code{len('Lorem ipsum dolor sit amet') + 5}}, và như vậy nó đưa thêm vào những
+bước nút thắt mới mà mô hình phải nói ra thì chuỗi mới được tính là trung
+thực~\autocite{p21metrics}.
+
+Hai kiểu nhiệm vụ hợp lại cho một điều mà cả Phần~IV cho tới đây chưa có: một
+tập chuỗi suy luận kèm nhãn đúng, sinh ra mà không cần dùng chỉ số nào. Mục
+sau xem tập ấy được gán nhãn ra sao và nó lớn cỡ nào.

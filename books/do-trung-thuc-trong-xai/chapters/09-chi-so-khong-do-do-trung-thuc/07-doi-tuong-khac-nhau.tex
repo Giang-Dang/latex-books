@@ -1,0 +1,74 @@
+\section{Đối tượng khác nhau, cái gì đi qua được}
+\label{sec:ch09-doi-tuong-khac-nhau}
+
+\index{độ trung thực!phạm vi của bằng chứng}%
+\index{chuỗi suy luận!so với attribution đặc trưng}%
+Mọi con số của mục~\ref{sec:ch09-ket-qua} đều là điểm của một chỉ số chấm chuỗi
+suy luận. Không chỉ số nào của chương~\ref{ch:do-do-trung-thuc} có mặt trong
+bảng~\ref{tab:ch09-auroc}: deletion, insertion, comprehensiveness, sufficiency,
+ROAR, Sensitivity-n và infidelity không xuất hiện ở đâu trong bài báo, và tám
+chỉ số nó chấm đều được thiết kế riêng cho chuỗi suy luận. Vì vậy câu
+\enquote{chỉ số trung thực không đo độ trung thực} đã được chứng minh bằng thực
+nghiệm cho một lớp chỉ số, và lớp ấy không phải lớp mà Phần~II và
+chương~\ref{ch:do-do-trung-thuc} đã dựng lại.
+
+Ranh giới đó là ranh giới của chính bài báo chứ không phải một dè dặt sách này
+thêm vào. Mục~\ref{sec:ch09-dinh-nghia-lai} đã dẫn chỗ các tác giả tự tách khỏi
+lớp đối tượng của Phần~II, ngay tại chỗ họ viết định nghĩa
+mới~\autocite{p21metrics}. Đọc kết quả của bài báo như một bản án dành cho LIME
+hay SHAP là đi ngược lại lập luận mở đường cho chính các kết quả ấy.
+
+Cái đi qua được ranh giới là ba thứ, và cả ba đều không phải con số.
+
+Thứ nhất là phương pháp. Vòng luẩn quẩn mà
+mục~\ref{sec:ch08-dieu-chua-giai-quyet} mô tả không phải đặc sản của chuỗi suy
+luận; nó xuất hiện ở bất cứ đâu mà ground truth đòi biết nội dung tính toán bên
+trong mô hình. Lối ra của bài báo cũng không gắn với chuỗi suy luận: chọn
+những bài toán mà đầu ra để lộ phép tính đã sinh ra nó thì được ground truth
+mà không cần nhìn vào trong. Nguyên tắc ấy chuyển sang attribution đặc trưng
+được, và chương~\ref{ch:ground-truth-dung-san} nhận nó làm một trong ba lối
+thoát của Phần~V.
+
+Thứ hai là hai chẩn đoán, vì cả hai đều phát biểu được ở mức cấu trúc. Phép
+đồng nhất mức quan trọng với độ trung thực không phải một sai lầm riêng của
+Adding Mistakes; nó là chính phép suy luận mà cả họ xóa dần của
+mục~\ref{sec:ch08-ho-xoa-dan} đứng trên, ở đó bỏ một
+\tn{đặc trưng}{feature} mà đầu ra không
+đổi được đọc thành mô hình không dùng đặc trưng ấy. Tương tự, việc một lời
+biện minh bịa đặt vẫn qua được các chỉ số hữu dụng ngữ nghĩa là tính hợp lý
+lọt vào dụng cụ đo, mà đó là rủi ro của mọi cách đánh giá lấy phản ứng của một
+người đọc, hoặc một mô hình đọc, làm thước.
+
+Thứ ba là một phép kiểm mà phía attribution có thể chạy ngay và phần lớn chưa
+chạy: đo mức đồng thuận giữa các chỉ số. Kết quả kappa quanh 0 không cần ground
+truth mới đọc được, mà chỉ cần chạy nhiều chỉ số trên cùng một tập. Nếu hai
+chỉ số cùng đo một đại lượng thì chúng phải đồng thuận cao hơn thế nhiều, nên
+mức đồng thuận thấp một mình nó đã đủ để loại bỏ khả năng cả hai cùng đo đúng
+một đại lượng.
+
+Cái không đi qua được thì gọn hơn: mọi con số. Bảng~\ref{tab:ch09-auroc} không
+nói gì về việc deletion hay Sensitivity-n sẽ đạt AUROC bao nhiêu khi bị đem ra
+đối chiếu tương tự, vì phép đối chiếu ấy chưa ai làm. Nói cho đúng thì trạng
+thái hiện tại là thế này: với chuỗi suy luận, câu hỏi các chỉ số có đo đúng
+thứ chúng ghi trên mặt đồng hồ hay không đã có câu trả lời và câu trả lời là
+không; với attribution đặc trưng, câu hỏi ấy vẫn chưa được hỏi bằng thực
+nghiệm. Đó là một khoảng trống, không phải một kết quả, và
+chương~\ref{ch:khoang-trong-nghien-cuu} nhận nó về.
+
+Ngay trong phạm vi của mình bài báo cũng để lại phần chưa xong, và các tác giả
+ghi ra. Phương pháp chỉ cấp ground truth cho những bước mà thiết kế nhiệm vụ
+buộc phải xảy ra, trong khi một chuỗi bất kỳ còn chứa nhiều bước khác mà thiết
+kế ấy không nói được gì; thiết kế đặt độ chính xác lên trước cũng làm lệch
+phân bố nhãn ở mức cả chuỗi theo hướng đã nói ở
+mục~\ref{sec:ch09-bonafide}~\autocite{p21metrics}. Phương pháp cũng chỉ chạy
+được trên mô hình trọng số mở, nên đúng những mô hình đóng đang được dùng
+nhiều nhất lại nằm ngoài tầm. Và một ô của bảng bỏ trống vì chi phí, nghĩa là
+có một chỉ số mà bộ đánh giá không đủ sức kiểm.
+
+Điều đó đặt Phần~IV vào thế phải đi tiếp bằng đường khác. Nếu chưa ai đem các
+chỉ số attribution ra đối chiếu với ground truth dựng sẵn, thì bằng chứng gần
+nhất về tình trạng không trung thực phải tìm ở chỗ khác: ở những trường hợp mà
+chính lời giải thích tự mâu thuẫn với nó. Chạy hai lần một phương pháp trên
+cùng một mô hình và cùng một đầu vào mà ra hai lời giải thích khác nhau thì
+không cần ground truth nào mới kết luận được rằng ít nhất một trong hai là
+sai. Chương~\ref{ch:lime-nao-dang-tin} đọc trường hợp ấy trên chính LIME.

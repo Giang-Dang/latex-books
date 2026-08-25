@@ -1,0 +1,74 @@
+\section{Chẩn đoán: vì sao chúng lệch}
+\label{sec:ch09-chan-doan}
+
+\index{mức quan trọng!bị đồng nhất với độ trung thực}%
+\index{chỉ số trung thực!chẩn đoán}%
+Độ chệch mà mục trước đo được có hai chiều ngược nhau, và bài báo đưa ra hai
+chẩn đoán khác nhau cho hai chiều ấy. Với nhóm dựa trên mức quan trọng, giả
+thuyết thứ nhất là chúng đồng nhất mức quan trọng với độ trung thực, nên có
+thể gán nhãn không trung thực cho một bước vốn trung thực chỉ vì bước ấy không
+thiết yếu với câu trả lời cuối~\autocite{p21metrics}. Đó đúng là chiều lệch mà
+mục~\ref{sec:ch09-dinh-nghia-lai} đã tách ra bằng lý thuyết, nay xuất hiện lại
+dưới dạng một sai số đo được.
+
+Các tác giả không dừng ở giả thuyết mà dựng một phép kiểm cho nó. Lập luận đi như sau: trong
+\tn{nhiệm vụ trực tiếp}{outright task}, một bước
+trung thực cũng đồng thời là bước cần thiết về mặt nhân quả, vì nó là
+\tn{bước nút thắt}{bottleneck step}; trong
+\tn{nhiệm vụ đánh lạc hướng}{diversionary task} thì hai tính chất ấy tách nhau.
+Vậy nếu
+một chỉ số thật sự đang đo mức quan trọng thay vì độ trung thực, nó phải mắc
+ít lỗi hơn hẳn ở nhiệm vụ trực tiếp. Đem đo trên riêng các bước trung thực,
+Filler Tokens gán nhầm 62\% ở nhiệm vụ trực tiếp so với 97\% ở nhiệm vụ đánh
+lạc hướng, và Adding Mistakes gán nhầm 70\% so với 89\%~\autocite{p21metrics}.
+Khoảng cách ấy là bằng chứng đúng hướng cho giả thuyết.
+
+Cùng bảng đó cũng cho thấy giả thuyết này không phủ hết. Early Answering gần
+như không đổi giữa hai kiểu nhiệm vụ, 95\% so với 96\%, và FUR cũng vậy, 72\%
+so với 77\%; còn CC-SHAP thì lệch hẳn theo chiều ngược lại,
+gán nhầm 91\% ở nhiệm vụ trực tiếp so với 51\% ở nhiệm vụ đánh lạc
+hướng~\autocite{p21metrics}. Vậy phép đồng nhất mức quan trọng với
+độ trung thực giải thích được một phần của độ chệch chứ không phải toàn bộ, và
+bài báo trình nó ở dạng giả thuyết chứ không ở dạng kết luận.
+
+Giả thuyết thứ hai giải thích một hiệu ứng khác: vì các chỉ số này nhiễu từng
+bước một rồi đo tác động lên câu trả lời, tín hiệu của chúng có thể yếu dần khi
+chuỗi dài ra và mỗi bước riêng lẻ chiếm một phần nhỏ hơn trong ngữ
+cảnh~\autocite{p21metrics}. Điều này quan trọng vì nó chỉ theo một hướng: chuỗi
+suy luận của các mô hình mới đang dài ra, nên hiệu ứng ấy sẽ mạnh lên chứ không
+yếu đi.
+
+Nhóm dựa trên tính hữu dụng ngữ nghĩa nhận chẩn đoán ngược hẳn. Ngay cả một
+chuỗi không trung thực cũng thường chứa đủ lời lẽ để truyền đạt câu trả lời,
+nên một lời biện minh nghe hợp lý nhưng bịa đặt vẫn đủ để một mô hình yếu hơn
+tái lập được câu trả lời, hoặc để câu trả lời không đổi sau khi diễn đạt
+lại~\autocite{p21metrics}. Đây là chỗ tính hợp lý lọt vào dụng cụ đo, đúng
+kiểu mà chương~\ref{ch:giai-thich-de-lam-gi} đã cảnh báo về mặt khái niệm.
+
+Còn một kết quả nữa cần đọc kỹ vì nó dễ bị hiểu ngược. Trong số các chuỗi
+không trung thực, 48.2\% hỏng chỉ vì thiếu đường suy luận đầy đủ, 37.2\% hỏng
+chỉ vì có chứa bước không trung thực, và 14.6\% hỏng vì cả hai. Tách theo loại
+mô hình thì tỉ lệ đảo chiều: mô hình không suy luận nghiêng về kiểu thiếu sót,
+còn mô hình suy luận nghiêng về kiểu nói ra điều không
+đúng~\autocite{p21metrics}. Hai vế của định nghĩa~\ref{def:ch09-chuoi-trung-thuc}
+vì thế không phải hai cách viết của cùng một điều kiện; chúng bắt hai lỗi khác
+nhau, ở hai lớp mô hình khác nhau.
+
+Hệ quả của việc tách ấy là một đính chính đối với công trình trước. Chen và
+cộng sự đã báo rằng mô hình suy luận và chuỗi dài thì trung thực hơn, và bài
+báo neo tìm thấy điều đó chỉ đúng với kiểu không trung thực do thiếu sót, vốn
+bị kiểu nói sai nguồn lấn át~\autocite{p21metrics}. Một chỉ số chỉ nhìn một trong hai vế
+sẽ báo rằng mô hình mới đang tốt lên, trong khi cái đang xảy ra là kiểu sai
+này thay chỗ cho kiểu sai kia.
+
+Bốn đối chiếu với công trình trước cũng được ghi lại, và chúng cho thấy một
+siêu đánh giá dùng để làm gì. Hai đối chiếu xác nhận: nhóm dựa trên mức quan
+trọng quả thật đánh giá quá mức tình trạng không trung thực, và quan sát rằng
+chất lượng chỉ số không tăng rõ theo cỡ mô hình cũng lặp lại được. Hai đối
+chiếu còn lại thì lệch khỏi tài liệu. Các bộ đánh giá trước báo rằng nhóm dựa
+trên mức quan trọng chạy tốt, còn ở đây chúng nằm trong nhóm yếu nhất. Và
+Shen và cộng sự cho rằng các miền nặng về tri thức làm chỉ số khó phát hiện độ
+trung thực hơn, còn bài báo neo không thấy hiệu ứng ấy~\autocite{p21metrics}.
+
+Chẩn đoán đã xong ở phía chuỗi suy luận. Câu hỏi còn lại là bao nhiêu phần
+trong đó đi được sang phía attribution đặc trưng.

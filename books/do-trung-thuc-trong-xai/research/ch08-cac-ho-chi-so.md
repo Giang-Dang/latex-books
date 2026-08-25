@@ -267,8 +267,14 @@ variant at that level.
 | CC-SHAP | 0.41 +- 0.03 | 0.70 +- 0.04 (best CoT) |
 | Simulatability | not run | 0.50 +- 0.01 |
 | Paraphrasing | not run | 0.61 +- 0.03 |
-| LM Judge, skyline | 0.87 +- 0.02 | 0.82 +- 0.04 |
+| LM Judge, skyline | 0.87 +- 0.01 | 0.82 +- 0.02 |
 | LM Judge, generic baseline | 0.68 +- 0.02 | 0.67 +- 0.04 |
+
+Corrected 2026-08-25 by chapter 09's session, which read figure 2a again from
+the rendered page. The skyline row had been recorded as `+- 0.02` and `+- 0.04`,
+which are the margins of the generic-baseline row below it, copied up one line.
+Chapter 08 prints no decimal, so nothing shipped wrong. See
+`ch09-bai-bao-neo.md`.
 | Random | 0.5 +- 0 | 0.5 +- 0 |
 
 Surrounding text, p. 8: "The strongest performer at the CoT level is CC-SHAP

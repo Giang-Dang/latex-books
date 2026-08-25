@@ -1,3 +1,44 @@
-% Scope (SPEC table of contents): The anchor paper read closely: constructed ground truth via known-mechanism tasks, metrics near chance. Paper 21 (arXiv 2605.25052).
+% Scope (SPEC table of contents): The anchor paper read closely: constructed
+% ground truth via known-mechanism tasks, metrics near chance. Its object is the
+% faithfulness of chuoi suy luan, not of feature attribution (decision 33), and
+% the chapter has to carry that difference rather than let a reader assume the
+% results land on Part II's methods. Paper 21 (arXiv 2605.25052).
+%
+% Every decimal on these pages is recorded in research/ch09-bai-bao-neo.md with
+% its page and table anchor in the PDF. The paper defines no metric by formula
+% anywhere, so this chapter states none on its behalf.
 \chapter{Chỉ số trung thực không đo độ trung thực}
 \label{ch:chi-so-khong-do-do-trung-thuc}
+
+Chương~\ref{ch:do-do-trung-thuc} kết thúc ở một vòng luẩn quẩn. Các chỉ số
+trung thực được hiệu chỉnh lẫn nhau và được dùng để xếp hạng các phương pháp,
+nhưng không chỉ số nào từng được đối chiếu với một đáp án lấy từ bên ngoài
+chính nó, và lý do thì nằm ngay trong bản chất của thứ cần đo: muốn biết một
+lời giải thích có trung thực hay không thì phải biết mô hình thật sự đã dùng
+gì, mà nội dung tính toán bên trong mô hình không quan sát trực tiếp được.
+
+Chương này đọc kỹ công trình đã phá được vòng đó. Gur-Arieh, Marasović và Geva
+không đi tìm cách quan sát bên trong mô hình. Họ chọn hướng ngược lại: dựng
+những nhiệm vụ mà chỉ cần nhìn câu trả lời là đã biết mô hình buộc phải thực
+hiện phép tính nào để có nó, rồi lấy đó làm ground truth để chấm điểm chính
+các chỉ số~\autocite{p21metrics}.
+
+Trước khi đọc kết quả, cần nói rõ một điều về phạm vi mà
+mục~\ref{sec:ch08-dieu-chua-giai-quyet} đã nêu và chương này phải mang suốt.
+Đối tượng của công trình ấy là \tn{chuỗi suy luận}{chain-of-thought} của
+\tn{mô hình ngôn ngữ lớn}{large language model}, không
+phải attribution đặc trưng của Phần~II. Tám chỉ số nó đem ra kiểm định đều là
+chỉ số dành riêng cho chuỗi suy luận, và không chỉ số nào của
+chương~\ref{ch:do-do-trung-thuc} có mặt trong đó. Vì vậy các con số ở
+mục~\ref{sec:ch09-ket-qua} không phải là bản án dành cho LIME hay SHAP, và
+mục~\ref{sec:ch09-doi-tuong-khac-nhau} dành riêng cho câu hỏi cái gì đi qua
+được ranh giới ấy và cái gì thì không.
+
+\input{chapters/09-chi-so-khong-do-do-trung-thuc/01-kiem-dinh-mot-dung-cu-do}
+\input{chapters/09-chi-so-khong-do-do-trung-thuc/02-dinh-nghia-lai-cho-chuoi-suy-luan}
+\input{chapters/09-chi-so-khong-do-do-trung-thuc/03-dung-ground-truth-tu-thiet-ke}
+\input{chapters/09-chi-so-khong-do-do-trung-thuc/04-bonafide}
+\input{chapters/09-chi-so-khong-do-do-trung-thuc/05-ket-qua}
+\input{chapters/09-chi-so-khong-do-do-trung-thuc/06-chan-doan}
+\input{chapters/09-chi-so-khong-do-do-trung-thuc/07-doi-tuong-khac-nhau}
+\input{chapters/09-chi-so-khong-do-do-trung-thuc/08-tom-tat-va-cau-hoi}
