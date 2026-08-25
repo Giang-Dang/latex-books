@@ -1,0 +1,149 @@
+\section{The Guard That Emits Nothing}
+\label{sec:ch12-the-guard-that-emits-nothing}
+
+\index{authorization!the second placement|(}%
+The obvious correction is to guard the method the entity route calls. The
+reference resolver is right there, it is the thing answering, and it takes
+one line:
+
+\begin{minted}[highlightlines={3,32}]{csharp}
+using HotChocolate.ApolloFederation.Resolvers;
+using HotChocolate.ApolloFederation.Types;
+using HotChocolate.Authorization;
+using HotChocolate.Types.Relay;
+
+namespace Speakers;
+
+[ObjectType<Speaker>]
+[Key("id")]
+[ReferenceResolver(
+    EntityResolver = nameof(ResolveSpeakerReferenceAsync))]
+public static partial class SpeakerType
+{
+    /// <summary>
+    /// Loads one speaker by the identifier inside a global node id.
+    /// </summary>
+    [NodeResolver]
+    public static async Task<Speaker?> GetSpeakerAsync(
+        int id,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+        => await speakerById.LoadAsync(id, ct);
+
+    /// <summary>
+    /// Answers one representation from the entity route. This is the
+    /// method the router reaches every time a client asks a session
+    /// for its speaker's name, so it is the busiest resolver in the
+    /// graph. The key arrives as the undecoded node id string, and the
+    /// type name inside it is checked before the integer is spent.
+    /// </summary>
+    [GraphQLIgnore]
+    [Authorize]
+    public static async Task<Speaker?> ResolveSpeakerReferenceAsync(
+        string id,
+        INodeIdSerializer serializer,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+    {
+        var nodeId = serializer.Parse(id, typeof(int));
+
+        if (nodeId.TypeName != nameof(Speaker))
+        {
+            return null;
+        }
+
+        return await speakerById.LoadAsync(
+            (int)nodeId.InternalId!, ct);
+    }
+}
+\end{minted}
+
+\index{authorization!compiles and does nothing}%
+It compiles. It compiles with no warning. It guards nothing at all, and the
+request from section~\ref{sec:ch12-three-doors-one-column} comes back exactly
+as it did before, email and all.
+
+\index{authorization!a caller with a token is told the same thing}%
+That is worth separating from a rule that ran and let the caller through.
+Present a valid token to that service and the answer is byte for byte the
+answer an anonymous caller gets. Nothing is being evaluated. There is no
+rule.
+
+\subsection{Look at What Reached the Schema}
+
+\index{authorization!the directive that is not there}%
+Export the schema and search it for the directive the attribute is supposed
+to write. There are no occurrences. Not on the type, not on a field, and
+there is no \code{directive @authorize} definition in the document either.
+The attribute produced nothing.
+
+\index{authorization!ApplyPolicy@\code{ApplyPolicy} arrives anyway}%
+What did reach the schema is this:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+"Defines when a policy shall be executed."
+enum ApplyPolicy {
+  "Before the resolver was executed."
+  BEFORE_RESOLVER
+  "After the resolver was executed."
+  AFTER_RESOLVER
+  "The policy is applied in the validation step before the execution."
+  VALIDATION
+}
+\end{graphqlsdl}
+
+\index{authorization!an enum that guards nothing}%
+\code{AddAuthorization()} writes that enum whether or not a single field is
+guarded, because it is the argument type of a directive the registration
+declares. So the only visible trace of authorization in this document is a
+type describing when a policy would run, in a schema where no policy runs.
+The state reads as configured. It is not.
+
+\subsection{Why the Attribute Had Nowhere to Land}
+
+\index{authorization!field middleware needs a field}%
+Hot Chocolate's authorization is field middleware. \code{[Authorize]}
+attaches to a field descriptor, and the middleware it installs runs when that
+field resolves. A method with no field descriptor gives it nothing to attach
+to, and the attribute is dropped without complaint.
+
+\index{GraphQLIgnore@\code{[GraphQLIgnore]}!is what makes the guard inert}%
+The reference resolver has no field descriptor, and the attribute directly
+above the one I just added is the reason.
+Chapter~\ref{ch:first-subgraph} put \code{[GraphQLIgnore]} there so that the
+resolver would not be published as a field of \code{Speaker}, which is what
+it would otherwise become. That is still right, and it is still doing its
+job: there is no \code{resolveSpeakerReference} in the exported schema.
+
+\index{GraphQLIgnore@\code{[GraphQLIgnore]}!the two attributes are in tension}%
+So the two attributes on that method want opposite things. One says do not
+make this a field. The other only works on fields. They sit on adjacent lines
+and neither the compiler nor the schema builder says a word about it.
+
+\index{entities@\code{\_entities}!the resolver is not a field}%
+Underneath both of them the reason is the shape of the route. The field being
+resolved is \code{\_entities}, declared on \code{Query} and typed
+\code{[\_Entity]!}, and \code{\_Entity} is a union of every entity type in
+the service. A reference resolver is not a resolver for a field of
+\code{Speaker}; it is a thing the entity route calls per representation on
+its way to filling that union. There is no field there to hang a rule on
+because the only field in sight belongs to the route rather than to the type.
+
+\index{authorization!reported in 2023 and still open}%
+This has been in ChilliCream's issue tracker since September 2023, filed by a
+user who had exactly this problem and tried exactly these
+placements~\autocite{chillicream6546}. It is still open. Michael Staib said
+in November of that year that he would look at it, and pointed a month later
+at a pull request; that pull request was closed without being merged. I am
+not reporting an intention as a fact, and a three-year-old comment is not a
+statement about today. What is checkable is what I have just measured: on
+16.6.1 this placement still emits nothing.
+
+\index{authorization!the issue never tried the placement that works}%
+The useful part of that thread is not the status. It is a comment from
+another user, three weeks after the issue opened, working out that no
+field-level extension reaches a reference resolver \enquote{since the
+resolver itself is not a field}~\autocite{chillicream6546}. That is the
+mechanism, and it is right. What the thread never tries is the placement that
+does work, which is the subject of section~\ref{sec:ch12-guard-the-data}.
+\index{authorization!the second placement|)}%

@@ -1,0 +1,378 @@
+\section{Three Doors, One Column}
+\label{sec:ch12-three-doors-one-column}
+
+\index{authorization!the guard on the root field|(}%
+The speaker list is not public. Every speaker in this conference has an
+address the program committee writes to, it is nobody's business but the
+committee's, and the Speakers service is where it lives. So \code{Speaker}
+gains a column and the service gains a way to tell one caller from another.
+
+\index{authorization!two packages}%
+Two packages, one for each half of that. \code{Speakers.csproj} again, with
+what moved marked:
+
+\begin{minted}[fontsize=\footnotesize,highlightlines={13,18}]{xml}
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HotChocolate.ApolloFederation" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.Data.EntityFramework" Version="16.6.1" />
+    <PackageReference Include="HotChocolate.Types.Analyzers" Version="16.6.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+  </ItemGroup>
+
+</Project>
+\end{minted}
+
+\index{authorization!the development signing key}%
+The token is a JWT signed with a key both this service and, later, the router
+have to hold. A deployment reads that key out of a secret store. This book
+stands one up nowhere, so the key is a constant in a file of its own, which
+is also the honest place for it: a secret with a name like this one is not
+pretending to be a secret.
+
+\begin{minted}{csharp}
+namespace Speakers;
+
+/// <summary>
+/// The symmetric key this service validates tokens with. A real
+/// deployment reads a key from configuration and validates issuer,
+/// audience and lifetime; this one is fixed so that a reader can mint
+/// a token and reproduce every request in the chapter.
+/// </summary>
+public static class SigningKey
+{
+    public const string Value =
+        "splitting-the-graph-development-signing-key-32b";
+}
+\end{minted}
+
+\index{Program.cs@\code{Program.cs}!wiring authentication in}%
+Then \code{Program.cs}, complete, with the four blocks this chapter adds:
+
+\begin{minted}[highlightlines={1,5,28-46,49,52-54,75-76}]{csharp}
+using System.Text;
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Speakers;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<SpeakerContext>(options =>
+{
+    options.UseSqlite("Data Source=speakers.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+// A shared secret rather than a JWKS endpoint, because this book
+// stands up no identity provider and a reader has to be able to mint
+// a token and repeat every request in the chapter. The three
+// Validate flags are off for the same reason and are the three a
+// deployment turns on first. What is not negotiable is that the
+// router validates the same token against the same key: a subgraph
+// that trusts a header the router set, without checking it, has
+// moved the guard back out of the service again.
+builder.Services
+    .AddAuthentication()
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new()
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = false,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(SigningKey.Value))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+builder
+    .AddGraphQL()
+    // Without this the [Authorize] attributes compile, reach the
+    // schema as @authorize, and are never executed.
+    .AddAuthorization()
+    .AddSpeakersTypes()
+    .RegisterDbContextFactory<SpeakerContext>()
+    .AddQueryContext()
+    .AddPagingArguments()
+    .AddGlobalObjectIdentification()
+    .AddApolloFederation()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false)
+    .TryAddTypeInterceptor<ShareNodeFields>();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<SpeakerContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{authorization!the middleware has to be registered}%
+The \code{AddAuthorization()} inside the GraphQL chain is the one to watch.
+Without it the attributes below compile, reach the schema as a directive, and
+are never executed, which is a schema that documents a rule nobody enforces.
+The two \code{app.Use} calls are ASP.NET Core's, and they are what puts a user
+on the request before Hot Chocolate looks for one.
+
+\subsection{The Column, and the Guard}
+
+\index{authorization!the column that is not for the program}%
+Now the data. \code{Speaker.cs} gains a fourth field:
+
+\begin{minted}[highlightlines={10-16}]{csharp}
+namespace Speakers;
+
+/// <summary>
+/// A person giving one or more sessions. This service owns the rows;
+/// the Sessions subgraph knows only that a speaker with this id exists.
+/// </summary>
+/// <param name="Id">Stable identifier for this speaker.</param>
+/// <param name="Name">The name to print in the program.</param>
+/// <param name="Bio">A sentence or two, if the speaker sent any.</param>
+/// <param name="Email">Where the program committee writes. Not for
+/// the printed program.</param>
+public sealed record Speaker(
+    int Id,
+    string Name,
+    string? Bio,
+    string Email);
+\end{minted}
+
+\index{authorization!the seed the responses come from}%
+And \code{SpeakerData.cs} gains three addresses, which are the values every
+response in this chapter comes back with:
+
+\begin{minted}[highlightlines={12-21}]{csharp}
+namespace Speakers;
+
+/// <summary>
+/// The speaker list, seeded into this service's own database. These are
+/// the rows chapter 3 seeded into the Sessions service; they live here
+/// now, and only here.
+/// </summary>
+public static class SpeakerData
+{
+    public static readonly IReadOnlyList<Speaker> Speakers =
+    [
+        new Speaker(
+            1, "Ada Fischer", "Works on query planners.",
+            "ada@example.test"),
+        new Speaker(
+            2, "Bruno Kaminski", null,
+            "bruno@example.test"),
+        new Speaker(
+            3, "Chidi Okafor", "Runs platform engineering.",
+            "chidi@example.test")
+    ];
+}
+\end{minted}
+
+\index{authorization!where the attribute goes first}%
+The requirement was about the speaker list, and \code{speakers} is the field
+that serves the speaker list, so that is where the attribute goes:
+
+\begin{minted}[highlightlines={2,12}]{csharp}
+using GreenDonut.Data;
+using HotChocolate.Authorization;
+
+namespace Speakers;
+
+[QueryType]
+public static class Query
+{
+    /// <summary>
+    /// Everyone speaking at the conference, in program order.
+    /// </summary>
+    [Authorize]
+    [UsePaging(DefaultPageSize = 2, MaxPageSize = 10)]
+    public static IQueryable<Speaker> GetSpeakers(
+        SpeakerContext db,
+        QueryContext<Speaker> query)
+        => db.Speakers
+            .OrderBy(s => s.Name)
+            .With(query);
+}
+\end{minted}
+
+\subsection{It Works}
+
+\index{authorization!the root field is refused}%
+Ask the Speakers service for the list with nothing in the
+\code{Authorization} header, on its own port, and it says no:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+POST /graphql HTTP/1.1
+Host: localhost:5002
+Content-Type: application/json
+
+{"query":"{ speakers(first: 2) { nodes { name email } } }"}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[
+  {"message":"The current user is not authorized to access this resource.",
+   "path":["speakers"],
+   "extensions":{"code":"AUTH_NOT_AUTHENTICATED"}}],
+ "data":{"speakers":null}}
+\end{minted}
+
+\index{statement count!a refusal before the resolver}%
+The refusal is clean and it is cheap. The path names the field, the extension
+gives a code a client can branch on, and
+chapter~\ref{ch:data-without-n-plus-1}'s interceptor prints nothing at all:
+the middleware runs in front of the resolver, so no statement reaches SQLite.
+Nothing was read in order to be refused.
+
+\subsection{And Then It Does Not}
+
+\index{entities@\code{\_entities}!answers the same rows unguarded}%
+Here is the same service, the same process, the same missing header, one
+field along:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{graphql}
+query E($r: [_Any!]!) {
+  _entities(representations: $r) { ... on Speaker { id name email } }
+}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"r":[{"__typename":"Speaker","id":"U3BlYWtlcjox"}]}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"_entities":[{"id":"U3BlYWtlcjox","name":"Ada Fischer",
+ "email":"ada@example.test"}]}}
+\end{minted}
+
+\index{entities@\code{\_entities}!no error key}%
+There is no error key and nothing for a client to branch on. The log shows
+one statement, the same statement the reference resolver has issued since
+chapter~\ref{ch:second-third-subgraph}, and the column the attribute was
+written to protect is in the response.
+
+\index{entities@\code{\_entities}!the whole table in one request}%
+Nor is it one row at a time. The entity route takes a list, which is the
+whole reason chapter~\ref{ch:router-n-plus-1} could batch through it, and a
+list is what it answers:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"r":[{"__typename":"Speaker","id":"U3BlYWtlcjoz"},
+      {"__typename":"Speaker","id":"U3BlYWtlcjox"},
+      {"__typename":"Speaker","id":"U3BlYWtlcjoy"}]}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"_entities":[
+  {"id":"U3BlYWtlcjoz","name":"Chidi Okafor",
+   "email":"chidi@example.test"},
+  {"id":"U3BlYWtlcjox","name":"Ada Fischer",
+   "email":"ada@example.test"},
+  {"id":"U3BlYWtlcjoy","name":"Bruno Kaminski",
+   "email":"bruno@example.test"}]}}
+\end{minted}
+
+\index{node@\code{node(id:)}!the third door}%
+And there is a third door, which chapter~\ref{ch:schema-design} built and
+nobody thought of as a door. \code{node(id:)} takes a global node id and
+returns whatever it identifies:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{graphql}
+{ node(id: "U3BlYWtlcjox") { ... on Speaker { name email } } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"node":{"name":"Ada Fischer","email":"ada@example.test"}}}
+\end{minted}
+
+Figure~\ref{fig:ch12-three-doors} is the shape of it.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch12-three-doors}
+  \caption{One column of data and three fields of \code{Query} that reach it.
+  The attribute went on the route the requirement named, and the requirement
+  was written in terms of a screen rather than in terms of a column. The two
+  open routes are drawn unbroken because nothing interrupts them: the dashed
+  marks are not breaks but the place a check would have to stand to be
+  checking the data instead of one field, and nothing stands there. A guard
+  that has to be repeated once per field is a guard that will be forgotten
+  the next time somebody adds one.}
+  \label{fig:ch12-three-doors}
+\end{figure}
+
+\subsection{None of This Has to Be Guessed}
+
+\index{introspection!the entity route is advertised}%
+The awkward part is not that the entity route exists. It is that the service
+will describe it to anybody who asks. Introspect \code{Query} with no
+credentials:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"__type":{"fields":[{"name":"node"},{"name":"nodes"},
+ {"name":"speakers"},{"name":"_service"},{"name":"_entities"}]}}}
+\end{minted}
+
+\index{introspection!the entity union names the types}%
+Then ask what the route can return, because the schema says that too:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"__type":{"kind":"UNION","possibleTypes":[{"name":"Speaker"}]}}}
+\end{minted}
+
+\index{service@\code{\_service}!hands over the schema}%
+The one thing left to work out is the shape of a representation, and
+\code{\_service} settles it. Chapter~\ref{ch:first-subgraph} used that field
+to read the schema this service exports. So can anyone else, without a token,
+including the \code{@key} that says which field a representation carries.
+
+\index{authorization!the guard is on a door, not on the data}%
+Three fields, one column, one guard on one of them. The attribute is not
+wrong and it is not broken. It is in the wrong place, and the wrong place is
+the one the requirement pointed at.
+\index{authorization!the guard on the root field|)}%

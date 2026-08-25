@@ -1,0 +1,35 @@
+\begin{problemsummary}
+{A field you have guarded comes back in full to a caller with no credentials,
+and the request that gets it does not go through the field you guarded. The
+response is HTTP 200 with no error key and the statement count is the one the
+route always cost, so nothing in a log or on a dashboard moves. The guard
+itself works: the root field it sits on refuses the same caller correctly, and
+a test against that field passes. Through the router everything looks right,
+because the router hides the entity route from clients and the requests that
+reach it are the ones you expected.}
+{\code{\_entities} is a field of \code{Query} on the subgraph, and so is
+\code{node(id:)}, and both end at the same rows as the root field you
+guarded. An attribute on one field of \code{Query} guards one field of
+\code{Query}. Nothing on the entity route asks who is calling: Apollo's
+subgraph specification requires a representation to carry
+\code{\_\_typename} and its key fields and requires nothing about the caller,
+and the route's whole design assumes a router that has already decided. Nor
+does the obvious correction work. \code{[Authorize]} on the reference
+resolver compiles, emits no directive and guards nothing, because Hot
+Chocolate's authorization is field middleware and \code{[GraphQLIgnore]},
+which has been on that method since it was written, is what stops it being a
+field there is any middleware to attach to.}
+{Guard the data rather than a route into it: the attribute goes on the field
+or on the type, and then every route reaches it. A field guard costs the row,
+because the resolver runs and only the value is withheld; a type guard
+refuses before the resolver and costs nothing, and takes every other field of
+that type with it. Then tell the router two things, or the fix reads as an
+outage: propagate \code{Authorization} to subgraphs, which it does not do by
+default, and give it a way to verify a token so it refuses a bad one itself.
+Declare the requirement to the supergraph as well with \code{@authenticated},
+knowing what it is: measured on this router, it is applied after the subgraph
+has answered, so it filters the response and the row is read either way.
+Apollo documents the same order for its own router. It is not a substitute for
+the guard in the service, which is the only one still standing for anything
+that can reach the port.}
+\end{problemsummary}
