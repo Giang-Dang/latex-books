@@ -1,0 +1,97 @@
+\section{Tám chỉ số trước ground truth}
+\label{sec:ch09-ket-qua}
+
+\index{AUROC}%
+\index{chỉ số trung thực!kết quả kiểm định}%
+Tám chỉ số được đem ra chấm, và chúng chính là bốn nhóm mà
+mục~\ref{sec:ch08-dieu-chua-giai-quyet} đã mượn cách chia. Nhóm dựa trên mức
+quan trọng gồm Adding Mistakes, Early Answering, Filler Tokens và SCM; nhóm dựa
+trên \tn{tính hữu dụng ngữ nghĩa}{semantic utility} gồm Paraphrasing và
+Simulatability; nhóm dựa trên
+tham số chỉ có FUR; nhóm dựa trên attribution chỉ có
+CC-SHAP~\autocite{p21metrics}. Cần nói ngay một điều về hình thức trình bày:
+bài báo không viết công thức cho bất kỳ chỉ số nào trong tám chỉ số ấy mà mô tả
+tất cả bằng lời, nên sách cũng không phát biểu công thức nào thay nó.
+
+Hai dòng đối chứng được đưa vào để đọc bảng, và chúng không cùng vai. Random
+gán nhãn theo lối bốc thăm. LM Judge (generic) là một mô hình ngôn ngữ được
+giao vai người giám sát chuỗi suy luận nói chung, không kèm định nghĩa của bài
+báo. Dòng LM Judge còn lại thì được cấp đúng hai định nghĩa của
+mục~\ref{sec:ch09-dinh-nghia-lai}, và các tác giả xếp nó là trần trên chứ không
+phải một chỉ số dự thi, vì bộ dữ liệu này được dựng bằng chính các đường ống
+dùng mô hình ngôn ngữ chạy trên cùng dữ liệu ấy, nên một giám khảo cùng loại
+được hưởng đúng nguồn tín hiệu đã sinh ra nhãn~\autocite{p21metrics}. Đọc con
+số của nó thành bằng chứng rằng mô hình ngôn ngữ giải xong bài toán này là đọc
+ngược lại bài báo.
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \caption{AUROC kèm biên 95\% theo DeLong, chép từ bảng kết quả của bài
+  báo~\autocite{p21metrics}. Cột \enquote{bước} chấm từng bước một, cột
+  \enquote{chuỗi} chấm cả chuỗi; \enquote{không chạy} nghĩa là bài báo không
+  chạy biến thể ấy ở mức đó, chứ không phải chạy rồi bỏ kết quả. Hai dòng cuối
+  là đối chứng, và LM Judge là trần trên chứ không phải chỉ số dự thi.}
+  \label{tab:ch09-auroc}
+  \begin{tabular}{@{}llll@{}}
+    \toprule
+    Nhóm & Chỉ số & Bước & Chuỗi \\
+    \midrule
+    Mức quan trọng & Adding Mistakes & $0.51 \pm 0.02$ & $0.51 \pm 0.04$ \\
+                   & Early Answering & $0.51 \pm 0.01$ & $0.45 \pm 0.03$ \\
+                   & Filler Tokens   & $0.59 \pm 0.01$ & $0.50 \pm 0.02$ \\
+                   & SCM             & không chạy      & $0.38 \pm 0.03$ \\
+    \addlinespace
+    Hữu dụng ngữ nghĩa & Paraphrasing    & không chạy & $0.61 \pm 0.03$ \\
+                       & Simulatability  & không chạy & $0.50 \pm 0.01$ \\
+    \addlinespace
+    Tham số     & FUR     & $0.52 \pm 0.02$ & không chạy \\
+    Attribution & CC-SHAP & $0.41 \pm 0.03$ & $0.70 \pm 0.04$ \\
+    \midrule
+    Trần trên & LM Judge           & $0.87 \pm 0.01$ & $0.82 \pm 0.02$ \\
+    Đối chứng & Random             & $0.5 \pm 0$     & $0.5 \pm 0$ \\
+              & LM Judge (generic) & $0.68 \pm 0.02$ & $0.67 \pm 0.04$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Bảng~\ref{tab:ch09-auroc} là kết quả trung tâm của cả Phần~IV, và cách đọc nó
+chỉ gồm một phép so: cột nào cũng phải đặt cạnh 0.5. Phần lớn các ô nằm
+sát con số ấy. Chỉ số cao nhất ở mức cả chuỗi là CC-SHAP với 0.70, còn ở mức
+từng bước là Filler Tokens với 0.59~\autocite{p21metrics}. Đó là hai thành
+tích tốt nhất mà cả một lĩnh vực đề xuất chỉ số đạt được khi lần đầu bị đem ra
+đối chiếu với ground truth.
+
+Hai thành tích ấy còn không giữ được qua hai mức đo. CC-SHAP tụt xuống 0.41 ở
+mức từng bước, tức là thấp hơn bốc thăm, trong khi Filler Tokens về sát mức
+bốc thăm ở mức cả chuỗi~\autocite{p21metrics}. Một dụng cụ đo tốt ở thang này
+và tệ hơn bốc thăm ở thang kia thì chưa đo được cái nó ghi trên mặt đồng hồ;
+nó đang phản ứng với một thứ khác mà ở một trong hai thang thì thứ đó tình cờ
+tương quan với nhãn.
+
+\index{độ chệch dự đoán}%
+Các con số sát 0.5 ấy không phải là kiểu \enquote{đoán hú họa cân bằng}. Trên
+một mẫu đã cân bằng nhãn, nhóm dựa trên mức quan trọng gán nhãn không trung
+thực cho từ 90\% tới 96\% số trường hợp ở mức cả chuỗi, còn nhóm dựa trên tính
+hữu dụng ngữ nghĩa gán nhãn trung thực cho từ 94\% tới
+96\%~\autocite{p21metrics}. Nói cách khác, mỗi nhóm gần như luôn trả lời một
+đáp án cố định, và AUROC quanh 0.5 là hệ quả của
+\tn{độ chệch dự đoán}{prediction skew} ấy chứ không phải của nhiễu.
+
+Nếu các chỉ số cùng đo một đại lượng thì dù có sai chúng cũng phải sai giống
+nhau, nên mức đồng thuận giữa chúng là một phép kiểm độc lập. Đo bằng kappa
+của Cohen, phần lớn các cặp nằm quanh 0; ở mức cả chuỗi cặp cao nhất đạt 0.35,
+còn ở mức từng bước cặp cao nhất chỉ đạt 0.12. Các tác giả đọc nó đúng như
+vậy: mức đồng thuận trần ở 0.35 cho thấy chúng đo những tính chất khác
+nhau~\autocite{p21metrics}.
+
+Còn một trục nữa mà bảng~\ref{tab:ch09-auroc} không thể hiện, và với người
+định dùng các chỉ số này để giám sát thì nó quyết định. CC-SHAP, tức chỉ số
+tốt nhất ở mức cả chuỗi, tốn tới $10^3$ giây cho mỗi trường hợp. Biến thể mức
+cả chuỗi của FUR thì không được chạy lần nào, vì các tác giả ước tính nó cần
+tới $10^5$ giây cho mỗi chuỗi, tức hơn một ngày~\autocite{p21metrics}. Chỉ số
+đắt nhất trong bảng lại là chỉ số duy nhất nhỉnh hơn hẳn mức bốc thăm, và một
+ô của bảng bỏ trống chỉ vì không ai trả nổi chi phí đo nó.
+
+Bảng cho biết các chỉ số hỏng. Vì sao chúng hỏng theo đúng kiểu chúng hỏng thì
+là việc của mục sau.

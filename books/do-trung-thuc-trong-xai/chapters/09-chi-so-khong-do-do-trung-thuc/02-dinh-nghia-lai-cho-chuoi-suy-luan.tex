@@ -1,0 +1,93 @@
+\section{Định nghĩa lại độ trung thực cho chuỗi suy luận}
+\label{sec:ch09-dinh-nghia-lai}
+
+\index{độ trung thực!của chuỗi suy luận}%
+\index{bước suy luận}%
+Câu hỏi mà mục trước để lại có một lý do kỹ thuật, và các tác giả nêu nó
+thẳng. Định nghĩa được dùng rộng rãi nhất, của Jacovi và Goldberg, nói một lời
+giải thích trung thực là lời giải thích phản ánh đúng quá trình suy luận đằng
+sau tiên đoán của mô hình. Định nghĩa ấy được thiết kế cho những phương pháp
+sinh ra một lời giải thích mạch lạc và khép kín về hành vi của mô hình, mà hai
+ví dụ bài báo nêu là bản đồ chú ý và điểm nổi bật~\autocite{p21metrics}.
+
+Hai ví dụ đó đáng dừng lại, vì chúng chính là đối tượng của Phần~II. Ngay ở
+mục dựng định nghĩa, bài báo neo ghi rằng định nghĩa cũ được thiết kế cho lớp
+đối tượng ấy, rồi lập luận rằng chuỗi suy luận của các mô hình suy luận hiện
+nay không thuộc lớp đó: chuỗi ấy là lời kể dài mà mô hình phát ra trong lúc
+giải bài, và nó có thể chứa nhiều bước không nối trực tiếp với tiên đoán, thậm
+chí không liên quan gì tới tiên đoán~\autocite{p21metrics}. Việc bài báo phải
+viết định nghĩa mới vì thế không phải chuyện hình thức; đó là chỗ nó tự tách
+khỏi đối tượng của Phần~II, và tách bằng lập luận của chính nó.
+
+Trước khi phát biểu định nghĩa, các tác giả phải chọn giữa hai cách đọc chữ
+\enquote{trung thực} khi chủ thể là một mô hình biết nói. Theo
+\tn{cách đọc cơ chế}{mechanistic reading}, một \tn{bước suy luận}{CoT step}
+trung thực khi nó mô tả đúng quá trình đã sinh ra thông tin mà nó đưa ra. Theo
+\tn{cách đọc hiện tượng}{phenomenological reading}, bước ấy vẫn được coi là
+trung thực chừng nào mô hình không cố tình nói dối, nghĩa là nó thành thật báo
+cáo điều nó \enquote{tin}~\autocite{p21metrics}.
+
+Bài báo chọn cách đọc thứ nhất và nêu ba lý do, cả ba đều đáng mang sang phần
+còn lại của cuốn sách. Thứ nhất, cách đọc hiện tượng gần như không thể bác bỏ:
+mọi phát biểu mà ta biết là sai đều có thể được biện hộ rằng mô hình thật lòng
+tin như vậy. Thứ hai, xét từ góc an toàn, một mô tả sai về quá trình bên trong
+vẫn nguy hiểm và vẫn phụ lòng tin của người dùng, dù nó chân thành đến đâu.
+Thứ ba, lựa chọn ấy song song với chuẩn trong tâm lý học nhận thức, nơi những
+lời giải thích sai bị coi là không trung thực với quá trình suy luận thật ngay
+cả khi người nói tin vào chúng~\autocite{p21metrics}.
+
+\begin{definition}[Bước suy luận trung thực]
+\label{def:ch09-buoc-trung-thuc}
+Một bước suy luận là trung thực khi và chỉ khi nó mô tả đúng một quá trình đã
+diễn ra ở một thời điểm nào đó trong mô hình~\autocite{p21metrics}.
+\end{definition}
+
+Hai chỗ trong định nghĩa~\ref{def:ch09-buoc-trung-thuc} được các tác giả nới
+ra có chủ ý. Bước ấy không buộc phải mô tả phép tính diễn ra trong chính lượt
+sinh ra nó, mà chỉ cần mô tả một phép tính đã diễn ra ở đâu đó: một phép tính
+có thể xảy ra gọn trong một lượt truyền xuôi rồi được kể ra rải rác qua nhiều
+câu sau đó. Và định nghĩa chỉ áp cho những bước có mô tả một quá trình; những
+câu khẳng định trần trụi nằm ngoài phạm vi, còn những
+\tn{bước trơ}{inert step} kiểu \enquote{Hmm.} thì không mang thông tin nào và
+không đánh giá được theo hướng nào cả~\autocite{p21metrics}.
+
+Nhãn cho từng bước chưa đủ để nói cả chuỗi có trung thực hay không, và các tác
+giả nêu hai lý do. Một chuỗi mà mọi bước đều trung thực khi xét riêng vẫn có
+thể xuyên tạc cách mô hình suy luận, chẳng hạn khi mô hình đi theo một gợi ý
+mà không bước nào nhắc tới gợi ý ấy. Ngoài ra câu hỏi cuối cùng mà người dùng
+quan tâm được đặt ở mức cả chuỗi: chuỗi suy luận này có tin được
+không~\autocite{p21metrics}.
+
+\begin{definition}[Chuỗi suy luận trung thực]
+\label{def:ch09-chuoi-trung-thuc}
+Một chuỗi suy luận là trung thực khi và chỉ khi nó chứa trọn một đường suy
+luận mà mô hình đã đi để tới câu trả lời, và nó không chứa bước nào không
+trung thực~\autocite{p21metrics}.
+\end{definition}
+
+Định nghĩa~\ref{def:ch09-chuoi-trung-thuc} đòi hai điều cùng lúc, và về sau
+mục~\ref{sec:ch09-chan-doan} cho thấy hai điều ấy hỏng theo hai kiểu khác nhau
+và ở hai loại mô hình khác nhau.
+
+Phần cuối của mục này tách \tn{độ trung thực}{faithfulness} khỏi hai tính chất
+hay bị lẫn với nó.
+Với \tn{tính hợp lý}{plausibility} thì chương~\ref{ch:giai-thich-de-lam-gi} đã
+tách rồi, và bài
+báo chỉ siết thêm một câu: một lời biện minh hậu nghiệm có sức thuyết phục thì
+theo định nghĩa là rất hợp lý, nên tính hợp lý cao lại đúng là dấu hiệu của
+dạng không trung thực đáng lo nhất~\autocite{p21metrics}.
+
+\index{mức quan trọng}%
+Tính chất thứ hai thì mới, và nó là chỗ cả mục~\ref{sec:ch09-chan-doan} xoay
+quanh. \tn{Mức quan trọng}{importance} hỏi một bước có ảnh hưởng nhân quả tới
+câu trả lời hay không. Bài báo chỉ ra hai chiều lệch giữa nó và độ trung thực.
+Một bước có thể mô tả trung thực một quá trình đã xảy ra mà vẫn không quan
+trọng về mặt nhân quả, chẳng hạn một nhánh mô hình đã thử rồi bỏ. Ngược lại,
+một bước chứa lời biện minh bịa đặt mà mô hình sau đó dựa vào để trả lời thì
+lại quan trọng về mặt nhân quả trong khi vẫn không trung thực. Đem đồng nhất
+hai tính chất ấy sẽ gán nhãn không trung thực cho các nhánh đã thử rồi bỏ, gán
+nhãn trung thực cho các lời biện minh bịa đặt, và như thế là đảo ngược đúng
+cái ranh giới mà việc đánh giá độ trung thực muốn nắm~\autocite{p21metrics}.
+
+Hai định nghĩa đã có. Việc còn lại là dựng ra những chuỗi suy luận mà nhãn theo
+hai định nghĩa ấy biết trước được.

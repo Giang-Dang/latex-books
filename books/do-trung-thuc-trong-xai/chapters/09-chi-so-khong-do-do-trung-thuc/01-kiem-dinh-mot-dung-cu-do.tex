@@ -1,0 +1,55 @@
+\section{Kiểm định một dụng cụ đo}
+\label{sec:ch09-kiem-dinh-mot-dung-cu-do}
+
+\index{độ trung thực!kiểm định chỉ số}%
+\index{siêu đánh giá}%
+Phép so sánh của mục~\ref{sec:ch08-chi-so-nhu-mot-dung-cu} tách hai phẩm chất
+của một dụng cụ đo: cho ra số ổn định là một chuyện, còn số ấy có tương ứng
+với đại lượng ghi trên mặt đồng hồ hay không là chuyện khác. Muốn kiểm phẩm
+chất thứ hai thì phải có một nguồn thứ hai để đối chiếu. Nhiệt kế được kiểm
+tại điểm đóng băng và điểm sôi của nước, tức tại những trạng thái mà nhiệt độ
+đã biết trước bằng con đường khác, không phải bằng chính nhiệt kế ấy.
+
+Với \tn{chỉ số trung thực}{faithfulness metric}, nguồn thứ hai đó phải là một
+tập chuỗi suy luận mà ta
+đã biết cái nào trung thực và cái nào không, biết bằng con đường không đi qua
+bất kỳ chỉ số nào. Đây chính là chỗ mà cả lĩnh vực dừng lại, và các tác giả
+nêu lý do bằng một câu ngắn: trả lời câu hỏi ấy đòi hỏi nhãn ground truth, mà
+nhãn ấy khó có được vì nội dung tính toán bên trong mô hình không quan sát
+trực tiếp được~\autocite{p21metrics}.
+
+Lối ra mà bài báo chọn không phải là quan sát cho bằng được cái không quan sát
+được, mà là đổi chiều bài toán. Thay vì lấy một chuỗi suy luận có sẵn rồi tìm
+cách biết mô hình đã tính gì, họ dựng trước những nhiệm vụ có tính chất sau:
+một câu trả lời đúng, hoặc một câu trả lời sai theo đúng một kiểu đã cài sẵn,
+chỉ có thể xuất hiện nếu mô hình đã thực hiện một phép tính cụ thể nào đó. Khi
+ấy nhãn không đến từ việc nhìn vào mô hình, mà đến từ thiết kế của nhiệm
+vụ~\autocite{p21metrics}. Hình~\ref{fig:ch09-vong-kiem-dinh} vẽ cách bố trí ấy.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch09-vong-kiem-dinh}
+  \caption{Nhánh trên chạy được là nhờ các nhiệm vụ được dựng sao cho một câu
+  trả lời đúng chỉ sinh ra được từ một phép tính đã biết trước, nên nhãn không
+  phải hỏi một chỉ số nào khác mới có. Bản gộp của sách, dựng từ thủ tục bài
+  báo mô tả.}
+  \label{fig:ch09-vong-kiem-dinh}
+\end{figure}
+
+Cách bố trí ấy có một hệ quả về thứ bậc đáng nói ngay. Ở
+hình~\ref{fig:ch08-vong-lap-do}, chỉ số là dụng cụ và lời giải thích là vật
+được đo; ở hình~\ref{fig:ch09-vong-kiem-dinh}, chỉ số tụt xuống thành vật được
+đo, còn dụng cụ là thiết kế nhiệm vụ. Toàn bộ chương này nằm ở tầng thứ hai
+ấy, nên mọi con số dưới đây là điểm của một chỉ số, không phải điểm của một
+phương pháp attribution.
+
+Thang điểm được dùng là AUROC. Mỗi chỉ số trả về một số thực cho mỗi chuỗi suy
+luận, mỗi chuỗi mang một nhãn đúng hoặc sai, và AUROC đo khả năng chỉ số ấy
+xếp một chuỗi trung thực lên trên một chuỗi không trung thực khi bốc ngẫu
+nhiên mỗi loại một cái. Một chỉ số bốc thăm được 0.5, một chỉ số phân biệt
+hoàn hảo được 1.
+
+Còn lại một câu hỏi phải trả lời trước khi dựng nhiệm vụ: trung thực nghĩa là
+gì khi vật được đánh giá là một chuỗi suy luận chứ không phải một
+\tn{bản đồ nhiệt}{heatmap}.
+Mục sau đọc phần bài báo dành cho câu hỏi đó.

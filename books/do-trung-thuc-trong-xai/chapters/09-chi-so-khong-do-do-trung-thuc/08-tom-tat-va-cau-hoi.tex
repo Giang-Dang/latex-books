@@ -1,0 +1,76 @@
+\begin{tomtat}
+\begin{itemize}
+  \item Vòng luẩn quẩn của chương~\ref{ch:do-do-trung-thuc} bị phá bằng cách
+  đổi chiều bài toán. Thay vì tìm cách quan sát nội dung tính toán bên trong
+  mô hình, bài báo dựng những nhiệm vụ mà một câu trả lời nhất định chỉ xuất
+  hiện được nếu một phép tính đã biết trước đã xảy ra, nên nhãn đúng đến từ
+  thiết kế nhiệm vụ. Hình~\ref{fig:ch09-vong-kiem-dinh} cho thấy hệ quả về thứ
+  bậc: chỉ số thôi làm dụng cụ và trở thành vật được đo.
+  \item Định nghĩa~\ref{def:ch09-buoc-trung-thuc} và
+  định nghĩa~\ref{def:ch09-chuoi-trung-thuc} phát biểu độ trung thực cho chuỗi
+  suy luận theo \tn{cách đọc cơ chế}{mechanistic reading}, tức theo quá trình
+  đã thật sự diễn ra chứ
+  không theo điều mô hình \enquote{tin}. Cách đọc kia bị loại vì gần như không
+  bác bỏ được. Độ trung thực cũng được tách khỏi mức quan trọng: một nhánh đã
+  thử rồi bỏ thì trung thực mà
+  không quan trọng, còn một lời biện minh bịa đặt được dựa vào thì quan trọng
+  mà không trung thực.
+  \item BonaFide gồm 3\,066 chuỗi trên mười mô hình trọng số mở và mười ba
+  nhiệm vụ, gán nhãn bằng một đường ống hai pha ưu tiên độ chính xác hơn độ
+  phủ, đạt độ chính xác 98.9\% khi đối chiếu với sáu người chú giải. Tỉ lệ
+  nhãn ở mức cả chuỗi lệch mạnh về phía không trung thực, và đó là hệ quả của
+  định nghĩa~\ref{def:ch09-chuoi-trung-thuc} chứ không phải một quan sát về
+  các mô hình.
+  \item Bảng~\ref{tab:ch09-auroc} là kết quả trung tâm: phần lớn tám chỉ số
+  nằm sát mức bốc thăm 0.5, chỉ số tốt nhất ở mức cả chuỗi đạt 0.70 và ở mức
+  từng bước đạt 0.59, và không chỉ số nào giữ được thành tích qua cả hai mức.
+  Mức đồng thuận giữa các chỉ số trần ở kappa 0.35, nên chúng đo những tính
+  chất khác nhau. Chỉ số tốt nhất cũng là chỉ số đắt nhất, và một biến thể
+  không được chạy lần nào vì chi phí.
+  \item Bài báo đưa hai chẩn đoán và một phép kiểm cho chẩn đoán thứ nhất:
+  nhóm dựa trên mức quan trọng đồng nhất mức quan trọng với độ trung thực, và
+  bằng chứng là chúng mắc ít lỗi hơn hẳn ở
+  \tn{nhiệm vụ trực tiếp}{outright task}, nơi hai tính
+  chất ấy trùng nhau. Nhóm dựa trên tính hữu dụng ngữ nghĩa hỏng theo chiều
+  ngược lại, vì một lời biện minh bịa đặt vẫn đủ để truyền đạt câu trả lời.
+  \item Đối tượng của bài báo là chuỗi suy luận, và các tác giả tự tách khỏi
+  đối tượng của Phần~II ngay khi viết định nghĩa mới. Cái đi qua được ranh giới
+  là phương pháp dựng ground truth, hai chẩn đoán ở dạng cấu trúc, và phép kiểm
+  mức đồng thuận; cái không đi qua được là mọi con số. Với attribution đặc
+  trưng, câu hỏi này vẫn chưa được hỏi bằng thực nghiệm.
+\end{itemize}
+\end{tomtat}
+
+\cauhoi
+\begin{cauhoids}
+  \item Hình~\ref{fig:ch09-vong-kiem-dinh} và
+  hình~\ref{fig:ch08-vong-lap-do} vẽ hai vòng lặp ở hai tầng. Hãy chỉ ra vật
+  được đo và dụng cụ đo trong từng hình. Ba ô viền đứt của
+  hình~\ref{fig:ch08-vong-lap-do} vẫn nằm nguyên bên trong mỗi chỉ số đang được
+  chấm ở tầng trên; hãy cho biết ai là người phải chọn cách điền chúng ở mỗi
+  tầng, và vì sao điều đó đổi cách đọc con số.
+  \item Định nghĩa~\ref{def:ch09-chuoi-trung-thuc} đòi hai điều: có trọn một
+  đường suy luận đã đi, và không có bước nào không trung thực. Hãy dựng một
+  chuỗi thỏa điều kiện thứ hai mà vi phạm điều kiện thứ nhất, và cho biết loại
+  mô hình nào theo bài báo hay hỏng ở vế nào.
+  \item Tỉ lệ nhãn không trung thực ở mức cả chuỗi cao hơn hẳn ở mức từng bước.
+  Hãy giải thích vì sao con số đó không cho phép kết luận rằng phần lớn chuỗi
+  suy luận của các mô hình là không trung thực.
+  \item CC-SHAP đạt 0.70 ở mức cả chuỗi và 0.41 ở mức từng bước. Hãy nêu điều
+  mà cặp số ấy loại trừ về CC-SHAP, và cho biết vì sao một chỉ số đạt 0.70 ở
+  một thang vẫn chưa dùng được để giám sát.
+  \item Dòng LM Judge đạt 0.87 và 0.82, cao hơn mọi chỉ số trong bảng. Hãy nêu
+  lý do các tác giả xếp nó là trần trên chứ không phải chỉ số dự thi, rồi cho
+  biết cần thay đổi gì trong cách dựng bộ dữ liệu để nó trở thành một chỉ số
+  dự thi hợp lệ.
+  \item Mục~\ref{sec:ch09-chan-doan} trình một phép kiểm cho giả thuyết rằng
+  các chỉ số đang đo mức quan trọng thay vì độ trung thực. Hãy phát biểu lại
+  phép kiểm ấy dưới dạng một tiên đoán có thể sai, rồi thiết kế phép kiểm
+  tương ứng cho họ xóa dần của mục~\ref{sec:ch08-ho-xoa-dan}.
+  \item Đọc \enquote{Faithfulness Metrics Don't Measure Faithfulness: A
+  Meta-Evaluation with Ground Truth} của Gur-Arieh và cộng
+  sự~\autocite{p21metrics}, phần mô tả hai kiểu nhiệm vụ. Hãy chọn một phương
+  pháp attribution của Phần~II và phác một bài toán mà đầu ra của nó để lộ
+  đặc trưng nào buộc phải được dùng, rồi cho biết chỗ nào trong phác thảo ấy
+  khó hơn so với trường hợp chuỗi suy luận.
+\end{cauhoids}
