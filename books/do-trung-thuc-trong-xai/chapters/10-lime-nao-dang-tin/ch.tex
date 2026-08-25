@@ -1,3 +1,46 @@
-% Scope (SPEC table of contents): LIME's instability as a concrete unfaithfulness case study; the variant zoo. Paper 22.
+% Scope (SPEC table of contents): the LIME variant zoo read from paper 22's
+% survey: five issue categories, four pipeline substeps, 48 techniques, and the
+% survey's own record that there is no way to rank them. Paper 22 runs no
+% experiment, so the chapter reports its classification and attributes the
+% instability claim through it rather than presenting instability as a result
+% this paper measured; the TOC line was corrected in the same session.
+%
+% Every count on these pages is recorded in research/ch10-vuon-bien-the-lime.md
+% with its page anchor in the PDF. The survey states no metric by formula, so
+% this chapter states none on its behalf.
 \chapter{LIME nào đáng tin?}
 \label{ch:lime-nao-dang-tin}
+
+Chương~\ref{ch:chi-so-khong-do-do-trung-thuc} khép lại bằng một lối đi. Vì chưa
+ai đem các \tn{chỉ số trung thực}{faithfulness metric} của attribution đặc trưng
+ra đối chiếu với ground truth dựng sẵn, bằng chứng gần nhất về tình trạng không
+trung thực phải tìm ở chỗ lời giải thích tự mâu thuẫn với chính nó: chạy hai lần
+một phương pháp trên cùng một mô hình và cùng một đầu vào mà ra hai lời giải
+thích khác nhau thì ít nhất một trong hai là sai, và kết luận ấy không cần
+ground truth nào. Chương này đọc trường hợp đó trên chính LIME.
+
+Đọc nó ở đâu thì lại là một câu hỏi riêng, vì không có bài báo nào của bộ đọc
+dành riêng cho tính không ổn định của LIME. Cái có là một khảo sát năm 2025 của
+Knab, Marton, Schlegel và Bartelt, mà các tác giả mô tả là khảo sát đầu tiên gom
+các khái niệm nền và các hạn chế đã biết của LIME vào một chỗ. Nhan đề của nó đã
+là câu hỏi mà chương này mượn làm tên:
+\enquote{Which LIME should I trust?}~\autocite{p22whichlime}. Khảo sát đếm được
+48 kỹ thuật phái sinh từ LIME, xếp chúng theo năm nhóm vấn đề mà tính không ổn
+định là một, và theo bốn bước của quy trình mà
+mục~\ref{sec:ch03-sinh-lan-can} và mục~\ref{sec:ch03-khop-mo-hinh-thay-the} đã
+dựng. Rồi ở phần thảo luận, khảo sát ghi rằng chưa có chuẩn nào để so 48 kỹ
+thuật ấy với nhau.
+
+Loại công trình ấy quyết định chương này được phép nói gì, nên
+mục~\ref{sec:ch10-cau-hoi-trong-tua-de} dừng lại ở đó trước khi vào phân loại.
+Một khảo sát tài liệu ghi nhận chứ không đo, nên mọi phát biểu dưới đây về hành
+vi của LIME được quy tiếp qua khảo sát về những bài báo nó dẫn.
+
+\input{chapters/10-lime-nao-dang-tin/01-cau-hoi-trong-tua-de}
+\input{chapters/10-lime-nao-dang-tin/02-nam-nhom-van-de}
+\input{chapters/10-lime-nao-dang-tin/03-bon-buoc-va-cho-can-thiep}
+\input{chapters/10-lime-nao-dang-tin/04-vuon-bien-the}
+\input{chapters/10-lime-nao-dang-tin/05-khong-co-cach-so-sanh}
+\input{chapters/10-lime-nao-dang-tin/06-mot-tu-khong-xuat-hien}
+\input{chapters/10-lime-nao-dang-tin/07-dieu-khao-sat-chua-giai-quyet}
+\input{chapters/10-lime-nao-dang-tin/08-tom-tat-va-cau-hoi}

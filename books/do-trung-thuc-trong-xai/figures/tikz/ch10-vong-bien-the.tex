@@ -1,0 +1,28 @@
+\begin{tikzpicture}[
+  every node/.style={font=\footnotesize, align=center},
+  box/.style={draw=black!65, rounded corners=2pt, fill=black!5,
+    minimum width=30mm, minimum height=11mm},
+  askbox/.style={box, draw=black!85, line width=1pt, fill=black!12},
+  gapbox/.style={draw=black!45, dotted, thick, rounded corners=2pt, fill=white,
+    minimum width=30mm, minimum height=11mm},
+  flow/.style={-{Stealth[length=2mm]}, thick, black!70},
+  blocked/.style={-{Stealth[length=2mm]}, thick, black!45, dotted},
+  note/.style={font=\scriptsize, align=center, black!55, text width=30mm}
+]
+  \node[box] (issue) at (0,2.4) {Một nhóm vấn đề\\của LIME};
+  \node[box] (variant) at (5.8,2.4) {Biến thể mới\\sửa nhóm ấy};
+  \node[askbox, minimum width=32mm] (ask) at (5.8,0)
+    {Có hơn các biến thể\\trước hay không?};
+
+  \node[gapbox] (metric) at (3.0,-2.4) {Thước đo chung:\\chưa được kiểm chứng};
+  \node[gapbox] (code) at (8.6,-2.4) {Mã nguồn:\\một nửa không có};
+
+  \draw[flow] (issue) -- (variant);
+  \draw[flow] (variant) -- (ask);
+  \draw[blocked] (metric) -- (ask);
+  \draw[blocked] (code) -- (ask);
+  \draw[blocked] (ask.west) -| (issue.south);
+
+  \node[note, text width=30mm] at (1.9,0.75)
+    {không kết luận được,\\nên quay lại viết\\biến thể tiếp theo};
+\end{tikzpicture}

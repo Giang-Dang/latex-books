@@ -19,10 +19,8 @@ Initialized 2026-08-24. The skeleton builds clean: 18 chapter stubs in five
 parts, four appendix stubs (appendix D, the corpus table, written in full),
 refs.bib seeded with all 32 corpus papers, prose gate armed (Spelling en-US
 with the tone-mark table, Gloss against appendix B). Chapters 01 through 05 and
-chapters 07 through 09 are reviewed; chapter 06 is drafted and awaits its
-audit, which is the last thing standing between Part III and done. The
-2026-08-25 build is 112 pages, no overfull boxes, no undefined references,
-prose gate clean, and the rendered chapter pages inspected before review.
+chapters 07 through 10 are reviewed; chapter 06 is drafted and awaits its audit,
+which is the last thing standing between Part III and done.
 
 Two things changed at the book level in chapter 08's session, both in the
 decision log. The anchor paper turned out to meta-evaluate chain-of-thought
@@ -37,7 +35,19 @@ at chapter 09 and carries its object difference in the prose (decision 42), so
 the book spine is unchanged and chapter 17 gains a primary source. It is also
 the first chapter to print a measurement, which is what finally exercised the
 Numbers check the cliff armed, and which forced the period-decimal call in
-decision 43. Part IV is now two chapters deep with five to go.
+decision 43.
+
+Chapter 10's session, 2026-08-25, moved the book on three fronts. It corrected a
+TOC line that had promised a case study its paper cannot supply (decision 47),
+which is the fourth time an init-written line has over-promised and the point at
+which the pattern is worth naming: a TOC line that names a *result* is the one to
+re-check against the PDF first. It settled a word collision between two cited
+papers rather than letting the glossary contradict itself (decision 49). And its
+glossary sweep handed two terms back to the chapters that introduced them
+(decision 50), which is decision 27's mechanism firing for the third time. Part
+IV is now three chapters deep with four to go, and the 2026-08-25 build is 118
+pages, no overfull boxes, no undefined references, prose gate clean, and the
+rendered chapter pages inspected.
 
 The paper corpus lives outside this repo at `F:\repo\thesis-xai-faithfulness`
 (32 arXiv PDFs in six tier folders; its README.md holds the reading ladder
@@ -99,6 +109,10 @@ settled row is re-opened only by recording what changed and why, in the row.
 | 44 | The book may float a table, and its label class is `tab:` | Chapter 09 prints paper 21's AUROC results as `table`/`tabular` with booktabs, the first table float in a chapter of this book; appendices A, B and D had tables but no floats and no labels. A results table of eleven rows is not prose and not a figure, and the alternative, eleven scores read out in a paragraph, is unreadable. house-style's label list names `ch:`, `sec:`, `fig:` and `app:` only, so `tab:chNN-<slug>` is added here rather than left to drift. The em rules a source table uses for a cell with no run are spelled out as words instead, because `--` is banned in prose and a blank cell cannot say whether the variant was run and dropped or never run. |
 | 45 | Chapter 09 sources, scope and terminology | Chapter 09 reads arXiv:2605.25052v1 in full, main text pages 1-9 and appendices A-G pages 18-31, from the PDF, with the revision re-verified on the arXiv abstract page. It cites no paper outside the corpus: where it names Lanham, Tutek, Parcalabescu, Shen or Chen it attributes through paper 21's own statements, cited to `p21metrics`, rather than adding bib keys for papers the book does not itself read. It adds thirteen terms to appendix B, ten metric and dataset names to the keep-in-English block, and AUROC and FUR to appendix C. It also corrected chapter 08's research note, which had recorded the LM Judge skyline margins as `± 0.02` and `± 0.04`, the row below it, against the paper's `± 0.01` and `± 0.02`; chapter 08 prints no decimal, so nothing shipped wrong. |
 | 46 | An abbreviation with no expansion in its own source gets none | Chapter 09 needed AUROC, FUR and SCM. Paper 21 expands FUR and expands neither of the others. FUR and AUROC are in appendix C: AUROC because paper 21's confidence intervals are DeLong intervals and the DeLong paper it cites for them supplies "receiver operating characteristic", a chain recorded in the research note. **SCM is not**, because no source the book has read expands it, so it sits in appendix B's keep-in-English block as a bare metric name. This is chapter 08's ERASER rule applied a second time, and it is now general: an invented expansion is worse than no expansion, and appendix C's header comment carries both cases. |
+| 47 | **Chapter 10's TOC line promised a case study its paper cannot supply** | The initialized TOC said chapter 10 would present LIME's instability as a concrete unfaithfulness case study. Paper 22 is a literature survey and it runs no experiment: no results section, no re-implementation, no benchmark, no dataset of its own, and its three tables classify other people's published work. It defines a Stability Issue as one of five categories and attributes it to seven cited papers rather than measuring it. The chapter therefore reports the classification and attributes every behavioural claim about LIME *through* the survey, on decision 45's precedent, and says so in the opener rather than letting a reader take the survey for a study. The TOC line now says what the chapter delivers. Same class as decisions 24 and 28; this is the fourth time a TOC line written at init has promised more than its paper contains, and the pattern is that a line naming a *result* is the one to re-check first. |
+| 48 | Chapter 10 sources, scope and terminology | Chapter 10 reads arXiv:2503.24365v1, body pages 1-18 in full, from the PDF; pages 19-25 are the bibliography and were scanned only. The revision and metadata were re-verified on the arXiv abstract page and through the arXiv API: v1 is the only revision, and the arXiv Comments field records acceptance at the 3rd World Conference on eXplainable Artificial Intelligence (XAI 2025) with no `journal-ref`, so the book cites the arXiv version. The seeded refs.bib title had capitalised *Should* and *Trust*; the source title is lowercase and the entry is corrected. The chapter cites no paper outside the corpus: where it names Webster, Brocke or Nauta it attributes through paper 22's own statements, on decision 45's precedent. It adds four terms to appendix B (sinh đặc trưng, sinh mẫu, biểu diễn lời giải thích, phân đoạn) and six names to the keep-in-English block (S-LIME, BayLIME, B-LIME, Correctness, Consistency, Continuity), and it adds definition~10.1, tính ổn định. |
+| 49 | The survey's *fidelity* is not the book's `fidelity`, and the book renames rather than collides | Paper 22's Fidelity Issue is the local surrogate failing to capture the model's behaviour, which is definition 1.2 applied to the surrogate. The book already keeps `fidelity` in English as the counterfactual quantity chapter 07 named and chapter 08 read closely. Two papers, one English word, two objects. Chapter 10 writes the survey's category as ordinary Vietnamese, độ khớp, names the collision once in the prose, and adds no appendix B row for it: a row mapping `fidelity` to a Vietnamese term while the keep-block says to leave it in English would make the glossary contradict itself and the Gloss check unreadable. Same class as decision 29, one layer up: there the collision was between two papers' symbols, here between two papers' words. |
+| 50 | Two terms chapter 10 surfaced belong to earlier chapters | Adding chapter 10's block to appendix B made the Gloss check report `tính cục bộ` unglossed in chapters 03 and 04 and `tính ổn định` unglossed in chapter 08. Both are decision 27's case rather than chapter 10's: chapter 03 introduces locality in section 3.2 and chapter 08 introduces stability when it reads max-sensitivity, so the terms belong there and chapter 10 borrows them. Both moved to the owning chapter's block and are glossed at their first use. One of the four findings was a false positive of decision 31's kind: chapter 04 read \enquote{TreeSHAP chỉ làm phép tính cục bộ nhanh hơn}, where `tính` belongs to `phép tính` and the term is not there at all; that sentence was reworded rather than glossed. Chapter 03's \enquote{giữa các lần sinh mẫu} was reworded for the same reason, since the survey's substep name is chapter 10's and chapter 03's use was ordinary prose. |
 
 ## Version baseline
 
@@ -144,7 +158,7 @@ IDs).
 
 8. **Đo độ trung thực: các họ chỉ số** - the faithfulness metric families and the assumption each smuggles in; one counterfactual loop with three free choices, then deletion and insertion, comprehensiveness and sufficiency, ROAR and the out-of-distribution objection, Sensitivity-n and infidelity, and the randomization tests that are necessary conditions rather than metrics. A metric is an instrument, and instruments need validation. Papers 14, 20, 21, plus the seven metric papers from outside the corpus (decision 34), which supply every metric definition because no corpus paper does.
 9. **Chỉ số trung thực không đo độ trung thực** - the anchor paper read closely: constructed ground truth via known-mechanism tasks, metrics near chance. Its object is the faithfulness of chuỗi suy luận, not of feature attribution (decision 33), and the chapter carries that difference in section 9.7 rather than letting a reader assume the results land on Part II's methods (decision 42). Paper 21 (arXiv 2605.25052).
-10. **LIME nào đáng tin?** - LIME's instability as a concrete unfaithfulness case study; the variant zoo. Paper 22.
+10. **LIME nào đáng tin?** - the variant zoo read from the field's own survey: five issue categories, four pipeline substeps, 48 techniques, two thirds of them aimed at the surrogate's fidelity or at stability, and the survey's own record that nothing ranks them. Paper 22 runs no experiment, so instability is reported as its classification rather than as a result it measured (decision 47). Paper 22.
 11. **Attribution suốt đường xuống** - the research metagame: benchmark churn, metric proliferation, the incentives behind yet another unvalidated metric. Paper 23.
 12. **Con người vắng mặt** - fewer than 1 percent of XAI papers validate with humans; automated metrics vs what users actually perceive. Papers 24, 25.
 13. **Giới hạn lý thuyết của giải thích** - the algorithmic-information-theoretic ceiling on explainability, and what a bound does and does not say about practice. Paper 26.
@@ -180,7 +194,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 07 | reviewed | Drafted and audited 2026-08-24 from arXiv:2501.18887v3 and arXiv:2505.07005v1, both read as PDFs. Seven sections plus summary and questions; one TikZ diagram; one numbered definition and two equations. It states the attribution function over a chosen set of aspects, walks data and component attribution through the same three techniques Part II used, gives the local function approximation framework its equation, then sets attribution on the survey's range and stage axes. It closes on the shared evaluation vocabulary, fidelity, inverse fidelity and sparsity, which chapter 08 takes up. No paper-reported decimal is printed, so research/ remains empty under decision 19. Full LuaLaTeX build clean (87 pages, no overfull boxes); mechanical prose gate clean; the rendered chapter pages were inspected. |
 | 08 | reviewed | Drafted and audited 2026-08-24. Seven sections plus summary and questions; one TikZ diagram; one numbered definition and one equation. It places every faithfulness metric in Doshi-Velez and Kim's functionally-grounded tier, reduces the whole literature to one counterfactual loop with three free choices, then walks four families through it: deletion and insertion with comprehensiveness and sufficiency, ROAR and the out-of-distribution objection, Sensitivity-n and infidelity, and the randomization tests that are necessary conditions rather than metrics. It closes on paper 21's four-category grouping and its stated diagnosis, naming in the prose that the paper's object is chuỗi suy luận (decision 33). Cites seven papers from outside the corpus (decision 34); no corpus paper defines a metric. Crossed the research/ cliff (decisions 35 to 37) while printing no decimal of its own. Full LuaLaTeX build clean (96 pages, no overfull boxes, no undefined references); mechanical prose gate clean; the rendered chapter pages were inspected. |
 | 09 | reviewed | The anchor chapter, drafted and audited 2026-08-25 from arXiv:2605.25052v1 read in full (pages 1-9 and 18-31). Seven sections plus summary and questions; one TikZ diagram; the book's first table float (decision 44); two numbered definitions. It rebuilds the anchor's method (ground truth forced by task design rather than observed inside the model), its BonaFide benchmark, its AUROC results, and its two diagnoses, then spends section 9.7 on what crosses to feature attribution and what does not, under decision 42. **First chapter in the book to print a measurement**, so it created `research/ch09-bai-bao-neo.md` and settled decision 43; it also corrected the LM Judge skyline margins in chapter 08's note. Full LuaLaTeX build clean (112 pages, no overfull boxes, no undefined references); mechanical prose gate clean; the rendered chapter pages were inspected, which is how the figure's note-over-arrow collision was caught. The 2026-08-25 audit fixed a miscount of the prior-work comparisons, named Chen and Shen where the prose had left prior work anonymous, cut the paragraph narrating the book's own decimal notation to the reader, trimmed the figure caption to what the prose does not already say, added the FUR row the table-5 argument had skipped, and unified `kiểm định chỉ số` with chapter 08's index heading. Six audit findings were rejected on the record, five of them because the claim was in the paper and the research note was what lacked the anchor; the note now carries all five. |
-| 10 | not-started | |
+| 10 | reviewed | Drafted and audited 2026-08-25 from arXiv:2503.24365v1, body pages 1-18 read in full from the PDF, with the revision and the arXiv Comments field re-verified on the abstract page and through the API. Seven sections plus summary and questions; one TikZ diagram; one numbered definition; no table float. It reads the variant survey as the field's own record of what happened to LIME: five issue categories, four pipeline substeps, 48 techniques of which 32 aim at the surrogate's fidelity or at stability, then the survey's discussion, where 50\% of the techniques have no code, most papers compare only against vanilla LIME, and evaluation metrics get chosen to confirm the contribution. Section 10.6 turns on a verified absence: `faithfulness` and `ground truth` occur zero times in the body, and the survey's `Correctness` property is definition 1.2 under a third name. **The TOC line was wrong and changed (decision 47)**: paper 22 runs no experiment, so instability is reported as its classification, not as a result it measured. Its glossary sweep moved `tính cục bộ` to chapter 03 and `tính ổn định` to chapter 08 (decision 50) and it declined to add an appendix B row that would have collided with `fidelity` (decision 49). Prints no decimal: every number in it is an integer or a whole percentage, all recorded in `research/ch10-vuon-bien-the-lime.md`. Full LuaLaTeX build clean (118 pages, no overfull boxes, no undefined references); mechanical prose gate clean; the rendered chapter pages were inspected. **The 2026-08-25 audit was the most productive this book has had and two of its findings were structural.** It caught that chapter 09's closing paragraph hands this chapter the instability case explicitly (\enquote{Chương 10 đọc trường hợp ấy trên chính LIME}) while the draft opened on chapter 09's middle and then disclaimed all measurement, so the hand-off was broken; the opener was rewritten to take the hand-off and to answer it with what the survey actually is. It also caught section 10.6 treating chapter 09's near-chance AUROCs as evidence against chapter 08's metric families, which is exactly the transfer decision 42 and section 9.7 exist to block; that passage now says the objection is that the metrics are unverified rather than that they are known broken, and names the boundary. Other fixes: the survey's sample-generation step has five subgroups and the draft said four; the fourth feature-generation subgroup is unnamed in the source and the draft had renamed it after one member; a citation was attributing to chapter 08's prose a zero-occurrence claim that lives only in decision 34; definition 10.1 carried a citation for a positive statement the survey only makes negatively; the survey's \enquote{or} had become \enquote{and} and its \enquote{many papers} had become \enquote{most}; the 50\% is now stated with the paper's own phrasing plus the note that the body never says whether it is the share lacking code or holding it; the figure's dashed \enquote{missing} boxes became dotted because chapter 08's figure already uses dashed for a free choice; and five announcing sentences, three punchline closes and two colloquial spans were cut for the textbook tone. Six findings were rejected: four were already fixed before the auditor read (the missing decision rows, the not-started progress row, the incomplete parameter mapping, the `\emph`/`\enquote` inconsistency), and two were judged wrong on the record, namely that `tính ổn định` should belong to chapter 10 rather than chapter 08 (decision 27 gives it to the chapter that introduced it, which is 08) and that `độ khớp` needs an appendix B row (decision 49 explains why it must not have one, though the `fidelity` keep-row was extended to carry the collision). |
 | 11 | not-started | |
 | 12 | not-started | |
 | 13 | not-started | Orientation note dead; draft from the PDF. |
@@ -190,7 +204,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 17 | not-started | Blocked on the CoT-corpus open item before outlining. |
 | 18 | not-started | Needs the limitation-statement log the open items describe. |
 | App A | drafted | Seeded by chapter 03, extended by chapters 04 through 07, and made a longtable by decision 30. The chapter 01-06 audit added rows for the feature count and for Grad-CAM's `$Z$`, renamed the player set to `$N$`, and put `hàm nhân` back in Vietnamese. |
-| App B | drafted | Nine per-chapter blocks plus the keep-in-English block, 69 terms under the Gloss check. The chapter 01-06 audit added ten terms the prose used but the appendix never listed, dropped an unused `tích phân đường` row, and moved `baseline` to the keep-in-English block under decision 38. Chapter 09 added its own block of thirteen, `mức quan trọng` to chapter 08's block, and ten metric and dataset names to the keep-in-English block, SCM among them with no expansion (decision 46). |
+| App B | drafted | Nine per-chapter blocks plus the keep-in-English block, 69 terms under the Gloss check. The chapter 01-06 audit added ten terms the prose used but the appendix never listed, dropped an unused `tích phân đường` row, and moved `baseline` to the keep-in-English block under decision 38. Chapter 09 added its own block of thirteen, `mức quan trọng` to chapter 08's block, and ten metric and dataset names to the keep-in-English block, SCM among them with no expansion (decision 46). Chapter 10 added a block of four, six names to the keep-in-English block, and gave `tính cục bộ` to chapter 03 and `tính ổn định` to chapter 08 rather than claiming them (decision 50); it deliberately added no row for the survey's `fidelity` (decision 49). Now ten per-chapter blocks and 75 terms under the Gloss check. |
 | App C | drafted | Thirteen abbreviations: ten seeded at init, plus Grad-CAM (used eighteen times, never expanded in the prose), and AUROC and FUR from chapter 09. SCM is deliberately absent under decision 46. Grows with the chapters. |
 | App D | drafted | Written in full at init: 32 rows, reading order, tier, arXiv ID, owning chapter. |
 
@@ -226,7 +240,15 @@ keep the two in step.
 - **Humanizer skill:** humanizer-vi. Never the English humanizer: the book
   is Vietnamese and is judged against the Vietnamese tone profiles.
 - **Cohesion:** every section opens with a sentence that ties to the previous
-  section's conclusion, and within a paragraph consecutive sentences connect
+  section's conclusion, **and every chapter opens on the last paragraph of the
+  chapter before it, not on that chapter's middle.** The second half of that
+  rule was added after chapter 10's audit: chapter 09 ends by handing chapter 10
+  a specific case to read, chapter 10's first draft picked up an earlier thread
+  instead, and the promise chapter 09 had made to the reader went unanswered.
+  The check is mechanical even though no script does it: before drafting, read
+  the previous chapter's closing paragraph and make the opener answer it, or
+  change that closing paragraph in the same session. Within a paragraph,
+  consecutive sentences connect
   through a relation word, an explicit antecedent, or topic repetition - never
   bare juxtaposition. One name per concept, book-wide; the settled ledger so
   far: "lời giải thích" (the artifact; "giải thích" only as the act),
@@ -275,7 +297,16 @@ keep the two in step.
   diagnosis is that the two get conflated. That term belongs to chapter 08,
   which introduced it and had never glossed it; chapter 09's glossary sweep
   exposed the omission and chapter 08 now glosses it, on decision 27's
-  precedent.
+  precedent. Chapter 10 adds "sinh đặc trưng", "sinh mẫu", "biểu diễn lời giải
+  thích" and "phân đoạn", the survey's four pipeline substeps. It settles "độ
+  khớp" for the survey's Fidelity Issue, held apart from the English `fidelity`
+  of chapter 07 and from "độ trung thực" (decision 49); "độ khớp" is ordinary
+  Vietnamese here and deliberately gets no appendix B row, because a row for it
+  would contradict the keep-in-English block. `tính cục bộ` belongs to chapter
+  03 and `tính ổn định` to chapter 08, not to chapter 10, on decision 27's
+  precedent a third time (decision 50). S-LIME, BayLIME, B-LIME, Correctness,
+  Consistency and Continuity stay English on the reasoning chapter 08 gave for
+  its own metric names.
 - **Listings:** this book ships no code that runs, anywhere. Two listing
   forms only: (1) pseudo-code in `algpseudocode` (the `algorithm` float,
   renamed *Thuật toán* in preamble/macros.tex), which the prose always calls
@@ -308,8 +339,8 @@ keep the two in step.
   the next chapter.
 - **Companion code:** none. There is no repo, no verify command, no tag
   convention, and the book says nothing that would need one.
-- **Research:** the cliff is crossed. `research/` holds a note from chapter 08
-  (decision 35) and one from chapter 09, so the Numbers and Verbatim checks are
+- **Research:** the cliff is crossed. `research/` holds a note from chapters 08,
+  09 and 10 (decision 35), so the Numbers and Verbatim checks are
   live over the whole manuscript: every decimal printed anywhere must appear in
   some note here. Decimals are printed with a period so that the check can see
   them at all (decision 43).
@@ -370,7 +401,15 @@ keep the two in step.
   of that log. The "or in the chapter folder's scope comment until then" escape
   is spent: notes exist from chapter 08 on, so the note is the only place.
   Paper 21's log is recorded in `research/ch08-cac-ho-chi-so.md`, so chapter 09
-  does not have to re-derive it. Unblocked chapter by chapter as Part IV drafts.
+  does not have to re-derive it. Paper 22's is in
+  `research/ch10-vuon-bien-the-lime.md`. Two of the seven Part IV chapters are
+  now logged, and the note for chapter 10 records the first crossing between two
+  logs: papers 21 and 22 name the same blocking limitation, the absence of a
+  validated evaluation instrument, from opposite directions, one by measuring
+  that the instruments fail and one by recording that no standard for using them
+  exists. That crossing is chapter 18's first actual intersection rather than a
+  single paper's list, so chapter 18 should start from it. Unblocked chapter by
+  chapter as Part IV drafts.
 - **`Listings.MaxLineLength` unset.** Unblocked the day the book admits its
   first minted or verbatim environment: measure on a built page (decision 21)
   and set it in the same session.
@@ -390,15 +429,21 @@ keep the two in step.
   collides with the subtitle's "chuỗi suy luận" - settle which side owns it
   when appendix B gains its first rows.
 - **The chapters are running six to ten typeset pages each.** Re-measured on the
-  2026-08-25 build: chapters 01 through 09 start on pages 3, 9, 15, 21, 27, 35,
-  39, 49 and 57, and chapter 09 ends on page 66. Nine drafted chapters come to
-  64 pages against decision 6's 300-400 for eighteen. The Part IV trend decision
-  6 predicted is now visible in two data points rather than one: chapter 08 ran
-  8 pages and chapter 09 runs 10, against six per chapter across Parts I and II.
-  Extrapolating the core at ten pages and the rest at seven still lands the book
-  near 150 pages, well under half the target. Either the target or the density
-  is wrong, and neither audit has chosen: this closes with a decision-log row
-  that revises decision 6 or that records why the current density is right.
-  Chapter 09 is evidence for the second reading, since its length came from the
-  material rather than from padding, and the audit's cuts made it shorter, not
-  longer. Re-measure before deciding.
+  2026-08-25 chapter 10 build: chapters 01 through 10 start on printed pages 3,
+  9, 15, 21, 27, 35, 39, 49, 57 and 67, and chapter 10 ends on page 74. Ten
+  drafted chapters come to 72 pages against decision 6's 300-400 for eighteen.
+  The Part IV trend decision 6 predicted now has three data points and it is not
+  a trend: chapter 08 ran 8 pages, chapter 09 ran 10, chapter 10 runs 8, against
+  six per chapter across Parts I and II. Extrapolating the core at nine pages
+  and the rest at seven lands the book near 145 pages, well under half the
+  target. Either the target or the density is wrong, and no audit has chosen:
+  this closes with a decision-log row that revises decision 6 or that records
+  why the current density is right. **Chapter 10 is the strongest evidence yet
+  for the second reading and it points at a cause the earlier note missed.**
+  Its length is set by how much its single paper actually contains, and paper 22
+  is a survey with no experiment, so there is no results section to walk
+  through. A book whose chapters are each one close reading will be as long as
+  its papers are deep, and no drafting decision changes that. If the 300-400
+  target is to be met, it has to be met by reading more papers per chapter or by
+  adding chapters, not by writing the same chapters longer. Decide that before
+  Part V rather than after.

@@ -1,0 +1,78 @@
+\section{Năm nhóm vấn đề}
+\label{sec:ch10-nam-nhom-van-de}
+
+\index{LIME!năm nhóm vấn đề}%
+Ba bảng mà mục trước vừa kể dựng trên hai trục, và trục thứ nhất là câu hỏi một
+biến thể sinh ra để sửa cái gì. Khảo sát rút từ tài liệu ra năm nhóm vấn đề, và
+mỗi nhóm được phát biểu kèm danh sách những bài báo đã nêu
+nó~\autocite{p22whichlime}. Năm nhóm ấy như sau, theo thứ tự khảo sát đặt.
+
+\index{tính cục bộ}%
+Trước hết là \tn{tính cục bộ}{locality}. Lời giải thích có thể không đủ riêng
+cho điểm đang xét, nếu các mẫu đã nhiễu dùng để dựng mô hình thay thế không đại
+diện được cho biên quyết định ở ngay quanh điểm ấy. Bốn bài báo được dẫn cho
+nhóm này. Đây chính là câu hỏi mà mục~\ref{sec:ch03-dieu-lime-chua-giai-quyet}
+để lại: một đường khớp tốt trên lân cận do người dùng dựng không tự chứng minh
+lân cận ấy là lân cận đúng.
+
+Nhóm thứ hai là độ khớp của mô hình thay thế. Khảo sát phát biểu nó là chuyện mô
+hình thay thế \enquote{có thể không nắm bắt chính xác hành vi của mô hình gốc,
+dẫn tới những lời giải thích không phản ánh đầy đủ quá trình ra quyết định của
+mô hình gốc}, với sáu bài báo được dẫn. Các tác giả buộc nhóm này với nhóm trước:
+độ khớp kém có thể sinh ra từ tính cục bộ kém, nhưng cũng có thể sinh ra từ một
+mô hình thay thế quá đơn giản hoặc từ một biểu diễn
+\tn{đặc trưng}{feature} không đủ.
+
+Tên gọi của nhóm ấy cần một câu riêng, vì cùng một chữ tiếng Anh đang chỉ hai
+thứ khác nhau trong hai bài báo mà sách đều dẫn. Khảo sát gọi nhóm vấn đề trên là
+\enquote{fidelity}, và định nghĩa nó đúng bằng định nghĩa~\ref{def:ch01-do-trung-thuc}
+của sách áp cho \tn{mô hình thay thế cục bộ}{local surrogate}. Đó không phải
+đại lượng fidelity của
+đánh giá phản thực mà chương~\ref{ch:khung-hop-nhat} đặt tên và
+chương~\ref{ch:do-do-trung-thuc} đọc kỹ. Sách vì vậy gọi nhóm vấn đề này bằng
+tiếng Việt, độ khớp, và giữ fidelity cho đại lượng đã có tên; chỗ duy nhất
+chương này viết chữ ấy nữa là khi nói về chính chữ ấy.
+
+Nhóm thứ ba là \tn{khả năng diễn giải}{interpretability}: cách trình bày lời
+giải thích có thể không
+diễn đạt được quyết định của mô hình theo lối người dùng đọc được, hoặc phải sửa
+lại cho hợp một kiểu dữ liệu khác. Năm bài báo được dẫn. Nhóm này khác ba nhóm
+kia ở một điểm mà chương~\ref{ch:giai-thich-de-lam-gi} đã tách sẵn: nó nói về
+người đọc lời giải thích, không nói về quan hệ giữa lời giải thích và mô hình.
+
+\index{tính ổn định}%
+Nhóm thứ tư là \tn{tính ổn định}{stability}, tức nhóm chứa trường hợp mà
+chương~\ref{ch:chi-so-khong-do-do-trung-thuc} đã giao lại cho chương này. Khảo
+sát phát biểu nó ở dạng phủ định, như một hỏng hóc: lời giải thích của LIME
+\enquote{có thể thay đổi đáng kể do những thay đổi nhỏ ở dữ liệu đầu vào, ở quá
+trình nhiễu, ở phép lấy mẫu, ở các lần chạy lặp lại, hoặc ở mô hình bên dưới},
+và hệ quả là những kết quả không nhất quán và không đáng
+tin~\autocite{p22whichlime}. Sách phát biểu lại điều kiện ấy ở dạng khẳng định
+để về sau trích theo số; nội dung là của khảo sát, còn dạng khẳng định là của
+sách.
+
+\begin{definition}[Tính ổn định của lời giải thích]
+\label{def:ch10-tinh-on-dinh}
+Một phương pháp giải thích là ổn định khi những thay đổi nhỏ ở dữ liệu đầu vào,
+ở \tn{phép nhiễu}{perturbation}, ở phép lấy mẫu, ở lần chạy lặp lại, hay ở mô
+hình được giải thích chỉ làm lời giải thích thay đổi ít.
+\end{definition}
+
+Bảy bài báo được dẫn cho nhóm này, nhiều hơn mọi nhóm khác. Khảo sát nói thêm
+một điều về hệ quả mà định nghĩa~\ref{def:ch10-tinh-on-dinh} chưa chứa: khi lời
+giải thích đổi giữa hai lần chạy, người đọc \enquote{không biết được sự bất ổn
+định bắt nguồn từ phần nào}, nên mất lòng tin vào phương pháp giải thích hoặc
+vào chính mô hình được giải thích~\autocite{p22whichlime}. Đó đúng là chỗ
+chương~\ref{ch:chi-so-khong-do-do-trung-thuc} dừng lại: hai lần chạy cho hai lời
+giải thích khác nhau thì ít nhất một trong hai là sai, và kết luận ấy không cần
+ground truth nào. Cái nó không cho biết là cái nào sai.
+
+Nhóm thứ năm là hiệu năng: sinh các mẫu đã nhiễu, gọi mô hình trên từng mẫu rồi
+khớp mô hình thay thế đều tốn thời gian. Ba bài báo được dẫn, ít nhất trong năm nhóm.
+
+Năm nhóm ấy không độc lập, và khảo sát nói rõ điều đó bằng hai ví dụ ngược
+chiều nhau: tăng tính cục bộ có thể làm hiệu năng xấu đi, còn hạ hiệu năng lại
+có thể làm tính ổn định tốt lên~\autocite{p22whichlime}. Nói cách khác, năm
+nhóm là năm mặt của cùng một tập lựa chọn tự do, chứ không phải năm hỏng hóc
+tách rời nhau, và mục~\ref{sec:ch10-vuon-bien-the} sẽ cho thấy hơn hai phần
+năm số biến thể nhắm vào nhiều hơn một nhóm cùng lúc.

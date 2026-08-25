@@ -1,0 +1,77 @@
+\begin{tomtat}
+\begin{itemize}
+  \item Khảo sát của Knab và cộng sự là một khảo sát tài liệu và nó không chạy
+  thí nghiệm nào:
+  không có mục kết quả, không dựng lại kỹ thuật nào, không có bộ dữ liệu riêng.
+  Ba bảng của nó phân loại công trình đã công bố. Vì vậy mọi phát biểu ở chương
+  này về việc LIME không ổn định là phát biểu được quy qua khảo sát về những bài
+  báo nó dẫn.
+  \item Trục thứ nhất của phân loại là năm nhóm vấn đề: tính cục bộ, độ khớp của
+  mô hình thay thế, khả năng diễn giải, tính ổn định
+  (định nghĩa~\ref{def:ch10-tinh-on-dinh}) và hiệu năng. Năm nhóm không độc lập:
+  khảo sát nêu rằng tăng tính cục bộ có thể làm hiệu năng xấu đi, còn hạ hiệu
+  năng có thể làm tính ổn định tốt lên. Nhóm thứ hai được khảo sát gọi là
+  \enquote{fidelity} theo nghĩa định nghĩa~\ref{def:ch01-do-trung-thuc} áp cho mô
+  hình thay thế, không phải theo nghĩa đại lượng phản thực của
+  chương~\ref{ch:khung-hop-nhat}.
+  \item Trục thứ hai là bốn bước của quy trình: \tn{sinh đặc trưng}{feature
+  generation}, \tn{sinh mẫu}{sample generation}, attribution đặc trưng, và
+  \tn{biểu diễn lời giải thích}{explanation representation}. Bốn bước ấy là
+  hình~\ref{fig:ch03-quy-trinh-lime} gộp thô hơn, và chỗ đứng của một biến thể
+  trong bốn bước cho biết nó đã đổi mệnh đề nào về $f$.
+  \item Bảng phân loại có 48 kỹ thuật: 23 nhắm vào độ khớp, 20 vào tính ổn định,
+  13 vào khả năng diễn giải, 11 vào tính cục bộ, 3 vào hiệu năng, tổng cộng 70
+  lượt gán vì 21 kỹ thuật mang từ hai nhóm trở lên. Đếm theo kỹ thuật thì 32
+  trong 48, tức hai phần ba, nhắm vào độ khớp hoặc tính ổn định. Hiệu năng là
+  nhóm duy nhất đo được mà không cần dụng cụ đo nào đang tranh cãi, và cũng là
+  nhóm ít người làm nhất.
+  \item Phần thảo luận của khảo sát ghi ba điều: một chuẩn thực hành cho nghiên
+  cứu và đánh giá chưa được thiết lập, 50\% số kỹ thuật không có mã nguồn, và
+  phần lớn các bài chỉ so bản sửa của mình với bản LIME chuẩn nên sau 48 công
+  trình vẫn không có mệnh đề nào so hai biến thể với nhau.
+  Hình~\ref{fig:ch10-vong-bien-the} vẽ vòng ấy: không bước nào trong vòng loại
+  bỏ được một biến thể.
+  \item Chữ \enquote{faithfulness} không xuất hiện lần nào trong phần thân bài, và
+  \enquote{ground truth} cũng vậy. Bảng tính chất đánh giá 17 dòng của khảo sát mở
+  đầu bằng \enquote{Correctness}, tức định nghĩa~\ref{def:ch01-do-trung-thuc} dưới
+  cái tên thứ ba, và không dòng nào kèm công thức hay thủ tục tính. Hướng nghiên
+  cứu mà khảo sát đề xuất là xây một khung đánh giá riêng cho LIME từ những
+  thước đo sẵn có; đọc cùng
+  chương~\ref{ch:chi-so-khong-do-do-trung-thuc}, đó là xếp hạng 48 biến thể bằng
+  một dụng cụ chưa ai kiểm định. Mối liên hệ ấy là của sách, không phải của
+  khảo sát.
+\end{itemize}
+\end{tomtat}
+
+\cauhoi
+\begin{cauhoids}
+  \item Mục~\ref{sec:ch03-cac-tham-so-tu-do} liệt kê bảy lựa chọn tự do của
+  LIME, còn mục~\ref{sec:ch10-bon-buoc} xếp chúng vào ba trong bốn bước. Hãy
+  chỉ ra bước nào không nhận lựa chọn nào trong bảy lựa chọn ấy, rồi cho biết
+  vì sao vẫn có những biến thể can thiệp vào bước đó.
+  \item Hãy lập luận rằng một phương pháp không ổn định thì không thể khớp tốt,
+  rồi cho biết chiều ngược lại có đúng không và vì sao. Điều đó nói gì về 10 kỹ
+  thuật mà bảng phân loại xếp vào cả nhóm tính ổn định lẫn nhóm độ khớp.
+  \item Trong năm nhóm vấn đề, hiệu năng là nhóm có ít kỹ thuật nhất và cũng là
+  nhóm dễ đo nhất. Hãy nêu hai cách giải thích khác nhau cho cặp sự kiện đó, một
+  cách quy về giá trị khoa học của vấn đề và một cách quy về cách công trình
+  được đánh giá, rồi cho biết dữ liệu nào phân biệt được hai cách giải thích ấy.
+  \item Hình~\ref{fig:ch10-vong-bien-the} có hai mũi tên đứt đi vào ô câu hỏi.
+  Giả sử một mũi tên được nối lại: toàn bộ 48 kỹ thuật đều công bố mã nguồn. Hãy
+  cho biết vòng ấy có khép được không, và nếu chưa thì còn thiếu gì.
+  \item Chữ \enquote{faithfulness} vắng mặt trong phần thân của khảo sát, và
+  chương~\ref{ch:do-do-trung-thuc} đã ghi một trường hợp cùng loại. Hãy nêu một
+  hệ quả cụ thể của việc hai nhánh nghiên cứu dùng hai bộ từ vựng không giao
+  nhau cho cùng một tính chất, ở mức thao tác của người đi tìm tài liệu.
+  \item Bảng tính chất của khảo sát mô tả \enquote{Correctness} bằng lời và không
+  kèm thủ tục tính. Hãy chọn một họ chỉ số của
+  mục~\ref{sec:ch08-ho-xoa-dan} và cho biết cần thêm những gì để biến câu mô tả
+  ấy thành một thủ tục chạy được, rồi chỉ ra lựa chọn nào trong số đó là lựa
+  chọn tự do theo nghĩa hình~\ref{fig:ch08-vong-lap-do}.
+  \item Đọc \enquote{Which LIME should I trust? Concepts, Challenges, and
+  Solutions} của Knab và cộng sự~\autocite{p22whichlime}, phần thảo luận. Hãy
+  chọn một trong ba quan sát của phần ấy và thiết kế một phép đo cho nó trên
+  một nhánh phương pháp khác trong sách, chẳng hạn nhánh attribution theo
+  gradient của chương~\ref{ch:attribution-theo-gradient}, rồi cho biết phép đo
+  ấy cần dữ liệu gì mà một khảo sát tài liệu không tự có.
+\end{cauhoids}
