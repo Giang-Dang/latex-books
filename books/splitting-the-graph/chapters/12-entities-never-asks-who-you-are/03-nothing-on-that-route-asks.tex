@@ -1,0 +1,114 @@
+\section{Nothing On That Route Asks}
+\label{sec:ch12-nothing-on-that-route-asks}
+
+\index{entities@\code{\_entities}!what the specification says about it|(}%
+Apollo's subgraph specification defines the route in one line, and
+chapter~\ref{ch:first-subgraph} printed it:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+_entities(representations: [_Any!]!): [_Entity]!
+\end{graphqlsdl}
+
+\index{entities@\code{\_entities}!what the specification validates}%
+The page goes on to say what a subgraph library must validate, and the list
+is entirely about the representation coming in: that it carries
+\code{\_\_typename}, and that it carries every field named in the type's
+\code{@key} field set~\autocite{apollosubgraphspec}. Those are questions
+about whether a representation is well formed. Neither of them is a question
+about who sent it.
+
+\index{entities@\code{\_entities}!the words that are not in the specification}%
+The words \enquote{authentication} and \enquote{authorization} do not appear
+on that page at all. It lists the definitions of \code{@authenticated},
+\code{@requiresScopes} and \code{@policy} among the directives a subgraph
+schema may carry, and says nothing about applying any of them to the entity
+route, nothing about who enforces them, and nothing about what a subgraph
+should do with a representation from a caller it does not recognize. I went
+looking for that sentence in the same way chapter~\ref{ch:representation-order}
+went looking for one about checking the answer. It is not there.
+
+\index{entities@\code{\_entities}!the route has no identity to check}%
+Which is consistent rather than careless, once you look at what the route is
+for. Everything about its signature says machine. The argument is
+\code{\_Any}, a scalar that exists so representations can be passed through
+untyped. The return is a union with no common field. There is no user in that
+design, because the caller the design has in mind is a router that has
+already decided the request is allowed.
+
+\subsection{Apollo Says So Outright}
+
+\index{subgraph!not to be reachable by clients}%
+The assumption is not left implicit. Apollo's own security guidance states it
+as a rule and names this field as the reason:
+\enquote{As a best practice for supergraphs, only the router should query
+individual subgraphs directly}, because \enquote{if this field is exposed
+publicly, any client can circumvent internal resolver logic and fetch any
+entity data by mimicking the router}~\autocite{apollographsecurity}.
+
+\index{subgraph!the network position is a control}%
+That is the whole architecture in two sentences, and it is a real control. A
+subgraph nobody can route a packet to cannot be asked anything. If your three
+services are on a private network and the router is the only thing with a
+public address, the requests in
+section~\ref{sec:ch12-three-doors-one-column} are requests nobody can send.
+
+\index{subgraph!a network position is not a guard}%
+I would still not leave it there, for a reason that has nothing to do with
+distrusting the network team. A network position is a property of a
+deployment, and the guard it substitutes for is a property of the code. They
+live in different repositories, change on different schedules, and are
+reviewed by different people. The code moves to a new environment; the
+position does not come with it. Anything already inside the network is inside
+it, which covers a compromised sidecar, a debugging proxy somebody left up, a
+developer machine on the VPN, and the next service that gets deployed into
+the same subnet. And there is no test that fails when the position stops
+holding.
+
+\index{subgraph!both, and the argument is not about which}%
+So both, and I do not think that is a compromise. The network position is
+what stops a stranger reaching the port. The guard in the service is what
+means it did not matter that they got there. They fail in different ways and
+they are not substitutes for one another, which is the only reason to have
+two of anything.
+
+\index{authorization!nobody bylined writes about this route}%
+I looked for somebody to hand this argument to and did not find one. Two
+named engineers make the general case, and I take both: David Walter at
+Apollo, that subgraphs \enquote{should only be accessible from your router,
+never directly from the public internet}~\autocite{walter2026subgraphs}, and
+Tom Houl\acu{e} at Grafbase, a competing implementation, warning that
+\enquote{if subgraphs accept unauthenticated traffic, attackers could bypass
+security by directly accessing subgraph
+endpoints}~\autocite{houle2026federation}. Neither
+of them writes about \code{\_entities} in particular. The one article I found
+that does is signed with a company name and no person's, and I am not willing
+to hang a security claim on writing nobody put their name to. So the specific
+claim in this chapter, that this route in this stack walks past a guard on a
+root field, is mine. What stands behind it is the measurements above rather
+than an authority, and if that is not enough for you, the requests are short
+and your own subgraph is right there.
+
+\subsection{The Router Does Hide It}
+
+\index{router!hides the entity route from clients}%
+One thing chapter~\ref{ch:enter-the-router} established is worth repeating
+here, because it cuts the other way. Introspect the router rather than a
+subgraph and the route is not there:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"__schema":{"queryType":{"fields":[{"name":"node"},
+ {"name":"nodes"},{"name":"sessions"},{"name":"speakers"},
+ {"name":"ratingCount"}]}}}}
+\end{minted}
+
+\index{router!hiding is not guarding}%
+\code{\_entities} and \code{\_service} are absent from the composed schema,
+which is what the specification asks for and what the router does. A client
+talking to the router cannot name the field, cannot construct the query, and
+cannot see it in the schema.
+
+That is the graph's public face and it is correct. It is also not a guard on
+the service, which is still listening on its own port with the same three
+doors it had before. Hiding a field from one client is not the same as
+refusing it to another.
+\index{entities@\code{\_entities}!what the specification says about it|)}%

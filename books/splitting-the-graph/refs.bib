@@ -468,3 +468,115 @@
                   not to Lee Byron, who is the repository's maintainer and
                   first-listed contributor}
 }
+
+%--------------------------------------------------------------------------
+% Chapter 12 - _entities Never Asks Who You Are
+%--------------------------------------------------------------------------
+
+@online{apollographsecurity,
+  author       = {{Apollo GraphQL}},
+  title        = {Graph Security},
+  organization = {Apollo GraphOS Docs},
+  url          = {https://www.apollographql.com/docs/graphos/platform/security/overview},
+  urldate      = {2026-08-25},
+  addendum     = {Unsigned, and used under decision 39 as a specification's
+                  publisher describing its own artifact rather than as vendor
+                  prose arguing a result. Both sentences the chapter quotes
+                  were fetched and confirmed word for word on the access date.
+                  This is the only source found anywhere that names
+                  Query.\_entities as the reason a subgraph must not be
+                  publicly reachable}
+}
+
+@online{apolloauthorization,
+  author       = {{Apollo GraphQL}},
+  title        = {Authorization in the {GraphOS} Router},
+  organization = {Apollo GraphOS Docs},
+  url          = {https://www.apollographql.com/docs/graphos/routing/security/authorization},
+  urldate      = {2026-08-25},
+  addendum     = {Unsigned, same basis. Cited for one sentence only, that the
+                  router resolves an entity through a protected key field and
+                  then declines to return it, which is Apollo describing the
+                  same read-then-filter order this chapter measured in Cosmo.
+                  The page is about Apollo's own router, which this book does
+                  not use, and nothing else on it is relied on}
+}
+
+@online{cosmoauthentication,
+  author       = {{WunderGraph}},
+  title        = {Authentication and Authorization},
+  organization = {Cosmo Docs},
+  url          = {https://cosmo-docs.wundergraph.com/router/authentication-and-authorization},
+  urldate      = {2026-08-25},
+  addendum     = {Unsigned, same basis: the vendor documenting the behaviour of
+                  its own router rather than arguing an outcome. The quoted
+                  clause was fetched and confirmed word for word. The same page
+                  documents enable\_pre\_fetch\_field\_authorization, which the
+                  chapter mentions and does not cite, because turning it on did
+                  not reproduce what the description implies and the chapter
+                  reports the measurement instead}
+}
+
+@online{cosmoheaders,
+  author       = {{WunderGraph}},
+  title        = {Subgraph Request Header Operations},
+  organization = {Cosmo Docs},
+  url          = {https://cosmo-docs.wundergraph.com/router/proxy-capabilities/subgraph-request-header-operations},
+  urldate      = {2026-08-25},
+  addendum     = {Unsigned, same basis. Cited for the default, that no headers
+                  are forwarded to subgraphs unless configured, which the
+                  chapter also demonstrates by removing the block and watching
+                  the graph refuse a caller the router had already verified}
+}
+
+@online{walter2026subgraphs,
+  author       = {Walter, David},
+  title        = {Securing {Apollo} {Federation} Subgraphs: Context and Best Practices},
+  organization = {Apollo GraphQL},
+  date         = {2026-01-14},
+  url          = {https://www.apollographql.com/blog/securing-apollo-federation-subgraphs-context-and-best-practices},
+  urldate      = {2026-08-25},
+  addendum     = {Bylined, so the named-engineer rule is met and the chapter
+                  says whose post it is. Cited for the general claim that a
+                  subgraph should not be reachable from the public internet. It
+                  does not discuss the entity route specifically, and the
+                  chapter does not imply that it does}
+}
+
+@online{houle2026federation,
+  author       = {Houl{\'e}, Tom},
+  title        = {Security considerations in {GraphQL} Federation},
+  organization = {Grafbase},
+  url          = {https://grafbase.com/blog/security-considerations-in-graphql-federation},
+  urldate      = {2026-08-25},
+  addendum     = {Bylined, and from a competing federation implementation
+                  rather than from either vendor this book builds on, which is
+                  why it is worth having beside Walter's. Cited for one
+                  sentence about attackers reaching subgraph endpoints
+                  directly. A second sentence attributed to this page during
+                  research, about authorization being enforced locally within
+                  each subgraph, was NOT found on it when the page was fetched
+                  to check, and that wording is used nowhere. No publication
+                  date is printed on the page}
+}
+
+@online{chillicream6546,
+  author       = {{ChilliCream}},
+  title        = {Support authorization on {Apollo} {Federation} \_entities query},
+  organization = {GitHub},
+  number       = {6546},
+  date         = {2023-09-20},
+  url          = {https://github.com/ChilliCream/graphql-platform/issues/6546},
+  urldate      = {2026-08-25},
+  addendum     = {An issue thread, cited as the artifact under decision 39 and
+                  not as an authority. Opened by a user rather than by
+                  ChilliCream, still open on the access date, thirteen
+                  comments, read with gh issue view. The chapter uses two
+                  things from it: a commenter's account of why field middleware
+                  does not reach a reference resolver, which agrees with what
+                  was measured here, and the fact that it is open. Michael
+                  Staib's 2023 comment saying he would address it is NOT quoted
+                  as a claim about the current release: the pull request he
+                  linked, 6769, was closed without being merged, checked with
+                  gh pr view on the same date}
+}

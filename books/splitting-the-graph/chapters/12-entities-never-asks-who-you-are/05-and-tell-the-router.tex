@@ -1,0 +1,273 @@
+\section{And Tell the Router}
+\label{sec:ch12-and-tell-the-router}
+
+\index{router!the graph after the guard lands|(}%
+Deploy section~\ref{sec:ch12-guard-the-data} and the graph stops working for
+everybody. Ask the router for a session and its speaker's address, with a
+token the router itself verified:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{graphql}
+{ sessions(first: 10) { nodes { title speaker { name email } } } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[
+  {"message":"Failed to fetch from Subgraph 'speakers' at Path 'sessions.nodes.@.speaker'.",
+   "extensions":{
+     "errors":[
+       {"message":"The current user is not authorized to access this resource.",
+        "path":["sessions","nodes","@","speaker","email"],
+        "extensions":{"code":"AUTH_NOT_AUTHENTICATED"}},
+       {"message":"The current user is not authorized to access this resource.",
+        "path":["sessions","nodes","@","speaker","email"],
+        "extensions":{"code":"AUTH_NOT_AUTHENTICATED"}},
+       {"message":"The current user is not authorized to access this resource.",
+        "path":["sessions","nodes","@","speaker","email"],
+        "extensions":{"code":"AUTH_NOT_AUTHENTICATED"}}],
+     "serviceName":"speakers",
+     "statusCode":200}},
+  {"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.speaker.name'.",
+   "path":["sessions","nodes",0,"speaker","name"]},
+  {"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.speaker.name'.",
+   "path":["sessions","nodes",1,"speaker","name"]},
+  {"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.speaker.name'.",
+   "path":["sessions","nodes",2,"speaker","name"]},
+  {"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.speaker.name'.",
+   "path":["sessions","nodes",3,"speaker","name"]}],
+ "data":{"sessions":{"nodes":[
+   {"title":"Schemas That Outlive Their Authors","speaker":null},
+   {"title":"Reading a Query Plan","speaker":null},
+   {"title":"The Bank That Split Its Graph","speaker":null},
+   {"title":"Paging Without Offsets","speaker":null}]}}}
+\end{minted}
+
+\index{router!three refusals for four sessions}%
+Three refusals from the subgraph and four from the router, for four sessions.
+The subgraph counts distinct speakers, because
+chapter~\ref{ch:router-n-plus-1} established that the router de-duplicates
+representations before it sends them and this page has three speakers across
+its four sessions. The non-null errors count sessions, because that is where
+the nulls land.
+
+\index{router!an anonymous caller is told the same thing}%
+Send the same query with no token at all and the answer is byte for byte
+identical. That is the tell, and it is the reason this is worth a section:
+a graph whose authorization is working looks different to those two callers.
+This one does not, because neither of them is getting through and both for
+the same reason.
+
+\index{router!headers are not forwarded by default}%
+The router does not forward request headers to subgraphs unless it is told
+to, and WunderGraph says so in as many words: \enquote{by default, no headers
+are forwarded for security reasons}~\autocite{cosmoheaders}. The Speakers
+service is not refusing your caller. It is refusing an anonymous request,
+because an anonymous request is what reached it.
+
+\index{non-null!the guard's blast radius through the seam}%
+The four errors underneath are what a non-null field costs when the entity
+carrying it disappears. Losing \code{email} loses the whole \code{Speaker},
+and \code{name} is \code{String!}, so every session on the page reports a null
+it cannot hold. The titles arrive; nothing under them does.
+
+\index{router!what the missing block survives}%
+The part that makes this expensive to diagnose is how narrow it is. The
+refusal follows the guarded column rather than the seam, so the same seam
+asked for a speaker's public name never selects \code{email}, nothing objects,
+and the answer is complete. Every dashboard stays green and one screen is
+broken.
+
+\subsection{Telling the Router Who You Are}
+
+\index{router!validating a token}%
+The second thing the router needs is a way to know a token at all, and it
+takes either a JWKS url, which is what a deployment with an identity provider
+behind it uses, or a shared secret. Here is \code{config.yaml} again in full,
+the file chapter~\ref{ch:enter-the-router} wrote, with everything this chapter
+adds to it marked:
+
+\begin{minted}[highlightlines={19-48}]{yaml}
+version: "1"
+
+# Without this the router asks Cosmo Cloud for its execution config and
+# refuses to start, because it has no token to ask with. The path is
+# resolved against the directory the router is started in, not against
+# this file, so start it from this folder:
+#
+#   router -config config.yaml
+execution_config:
+  file:
+    path: ../graph/router.json
+
+# A development switch, and what makes the query plan visible at all.
+# The plan is an Advanced Request Tracing option, and outside dev mode
+# the router wants a Cosmo Cloud token before it hands one out. With
+# this off, X-WG-Include-Query-Plan is ignored rather than refused.
+dev_mode: true
+
+# Who the router thinks is asking. The alternative entry in this list
+# is a jwks url, which is what a deployment with an identity provider
+# behind it uses; the shared secret is here because this book stands
+# up no such provider. header_key_id is not optional: the router
+# matches it against the kid in the token header, so the token this
+# book mints carries one.
+#
+# A request carrying a token this key does not verify is answered 401
+# by the router and never reaches a subgraph.
+authentication:
+  jwt:
+    jwks:
+      - secret: splitting-the-graph-development-signing-key-32b
+        symmetric_algorithm: HS256
+        header_key_id: dev
+
+# The router does not forward request headers to subgraphs unless it
+# is told to, and a subgraph that guards its own data cannot tell who
+# is asking without this block. Leaving it out does not make the graph
+# insecure; it makes the guarded field unreachable. Every request that
+# names one comes back null with an authorization error underneath,
+# for a caller holding a good token exactly as for a caller holding
+# none, which is what makes the missing block read like a policy
+# rather than like a header. A request that never names a guarded
+# field is unaffected, so this survives a smoke test.
+headers:
+  all:
+    request:
+      - op: propagate
+        named: Authorization
+\end{minted}
+
+\index{router!a token it cannot verify never reaches a subgraph}%
+With that in place the router refuses a token it cannot verify itself, and it
+is the first time in this book that the router refuses anything outright
+rather than answering 200 with the problem inside the envelope:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+HTTP/1.1 401 Unauthorized
+
+{"errors":[{"message":"unauthorized"}]}
+\end{minted}
+
+\index{router!the secret is written twice}%
+The secret is in two files, and there is no way around that. The service
+validates it in C\# and the router validates it in YAML, and nothing is
+shared between a service and a config file. In a deployment both read it from
+the same secret store; in this book both have it written out, so that you can
+type the system from the page and mint a token that works against either.
+
+\subsection{The Directive, and What It Actually Does}
+
+\index{authenticated@\code{"@authenticated}!the second attribute}%
+That leaves the second attribute,
+\code{[Authenticated]}, which section~\ref{sec:ch12-guard-the-data} put on
+the column and did not explain. It is Apollo's directive rather than Hot
+Chocolate's, and the point of it is that it survives composition. Hot
+Chocolate emits it and adds it to the import list without being asked:
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+@link(
+  url: "https://specs.apollo.dev/federation/v2.6"
+  import: ["@authenticated", "@key", "@shareable", "@tag", "FieldSet"]
+)
+\end{graphqlsdl}
+
+\begin{graphqlsdl}[fontsize=\footnotesize]
+email: String! @authorize @authenticated
+\end{graphqlsdl}
+
+\index{authenticated@\code{"@authenticated}!what the composer does with it}%
+\code{wgc router compose} accepts both, which is worth saying out loud after
+chapter~\ref{ch:composition} lost a whole section to a directive Hot
+Chocolate emitted and the composer would not take. \code{@authorize} rides
+along untouched. \code{@authenticated} is compiled into a rule the router
+consumes:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"typeName":"Speaker","fieldName":"email",
+ "authorizationConfiguration":{"requiresAuthentication":true}}
+\end{minted}
+
+\index{authenticated@\code{"@authenticated}!on a type it compiles to the edges}%
+Put the directive on a type instead of a field and the shape of that output
+does not follow the shape of what you wrote. The composer emits one rule per
+field that \emph{returns} the type. So the directive on \code{Speaker}
+produces three rules, on \code{Session.speaker}, on the connection's
+\code{nodes} and on the edge's \code{node}, and not one of them mentions
+\code{Speaker}. Worth knowing before you go looking for your type in that
+file.
+
+\subsection{It Is a Filter, Not a Gate}
+
+\index{authenticated@\code{"@authenticated}!the router refuses in its own words}%
+The router does enforce the rule. Take Hot Chocolate's attribute back off the
+column, leave Apollo's on it, and an unauthenticated caller through the
+router is refused:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[
+  {"message":"Unauthorized to load field 'Query.sessions.nodes.speaker.email', Reason: not authenticated.",
+   "path":["sessions","nodes",0,"speaker","email"],
+   "extensions":{"code":"UNAUTHORIZED_FIELD_OR_TYPE"}},
+  {"message":"Unauthorized to load field 'Query.sessions.nodes.speaker.email', Reason: not authenticated.",
+   "path":["sessions","nodes",1,"speaker","email"],
+   "extensions":{"code":"UNAUTHORIZED_FIELD_OR_TYPE"}},
+  {"message":"Unauthorized to load field 'Query.sessions.nodes.speaker.email', Reason: not authenticated.",
+   "path":["sessions","nodes",2,"speaker","email"],
+   "extensions":{"code":"UNAUTHORIZED_FIELD_OR_TYPE"}},
+  {"message":"Unauthorized to load field 'Query.sessions.nodes.speaker.email', Reason: not authenticated.",
+   "path":["sessions","nodes",3,"speaker","email"],
+   "extensions":{"code":"UNAUTHORIZED_FIELD_OR_TYPE"}}],
+ "data":{"sessions":{"nodes":[
+   {"title":"Schemas That Outlive Their Authors","speaker":null},
+   {"title":"Reading a Query Plan","speaker":null},
+   {"title":"The Bank That Split Its Graph","speaker":null},
+   {"title":"Paging Without Offsets","speaker":null}]}}}
+\end{minted}
+
+\index{authenticated@\code{"@authenticated}!no subgraph objected}%
+That refusal is the router's own, in its own words, and no subgraph error is
+relayed alongside it, because no subgraph objected to anything. The service
+has no rule on that column any more.
+
+\index{statement count!the router reads the row and discards it}%
+Which raises the question the rest of this book has trained you to ask. What
+did that request cost? One statement in the Speakers service. The
+entity fetch went out, the reference resolver ran, SQLite returned the row
+with the address on it, and the router took the value out of the answer on
+the way to the client.
+
+\index{authenticated@\code{"@authenticated}!documented as a post-filter}%
+That is not a defect and WunderGraph documents it plainly. Fields carrying
+the directive, it says, \enquote{are authorized after the subgraph fetch and
+filtered out of the response}~\autocite{cosmoauthentication}. Apollo describes
+the same shape for its own router, saying of a protected key field that
+\enquote{the router would use the \code{id} field to resolve the
+\code{Product} entity, but it wouldn't return
+it}~\autocite{apolloauthorization}. Both gateways read first and decide
+second.
+
+\index{authenticated@\code{"@authenticated}!what a post-filter cannot protect}%
+So what the directive protects is the response. It does not protect the row,
+which was read; it does not protect the wire between the router and the
+service, which carried the address; and it does not protect port 5002 at all.
+With only the directive in place, the entity route on that service hands the
+column to anyone who can reach it, with a token or without one, because the
+only rule in the graph lives in a process the request never goes through.
+
+\index{authorization!the switch that looks like the answer}%
+The router has an authorization option, off by default, whose documentation
+says it authorizes an operation's protected fields before any subgraph fetch
+runs. That is the description of a gate, and it is the one thing that would
+change the paragraph above. Setting it did not change the statement count.
+This book therefore ships without it, and nothing in this chapter rests on
+it; the switch is named in the research note rather than here, because a
+reader who goes and sets it will get the graph I measured rather than the
+graph its description promises.
+
+\index{authorization!both, in both places}%
+Ship both attributes. \code{[Authenticated]} moves the refusal to the edge
+for the ordinary case, gives the client one consistent error whichever
+subgraph owns the field, and is the only one of the two that a router can act
+on. \code{[Authorize]} is the one that means it. If you have to drop one,
+drop the one in the supergraph, because the other is the one still standing
+when somebody reaches the port.
+\index{router!the graph after the guard lands|)}%

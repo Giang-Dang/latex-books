@@ -2,12 +2,16 @@
 \chapter{\code{\_entities} Never Asks Who You Are}
 \label{ch:entities-authorization}
 
-\emph{Not yet drafted.}
+A guard on a root field guards that root field, and the entity route reaches
+the same rows without ever going near it.
 
-% Chapter skeleton, SPEC decision 13. Five beats, this order:
-%   1. The one sentence  - what this chapter establishes, stated first.
-%   2. Show it          - the thing running, or in Part III the thing failing.
-%   3. Why it does that - the mechanism. All theory lives here (decision 14).
-%   4. Do it properly   - the complete, correct implementation.
-%   5. Summary box      - decision 21.
-% Section files are \input from here, numbered 01-, 02-, ... from the book root.
+There are three doors into a subgraph's data and the attribute you reach for
+covers one of them. The other two are listed in the schema any caller can
+introspect, which is how somebody finds them without knowing your code.
+
+\input{chapters/12-entities-never-asks-who-you-are/01-three-doors-one-column}
+\input{chapters/12-entities-never-asks-who-you-are/02-the-guard-that-emits-nothing}
+\input{chapters/12-entities-never-asks-who-you-are/03-nothing-on-that-route-asks}
+\input{chapters/12-entities-never-asks-who-you-are/04-guard-the-data}
+\input{chapters/12-entities-never-asks-who-you-are/05-and-tell-the-router}
+\input{chapters/12-entities-never-asks-who-you-are/06-summary}

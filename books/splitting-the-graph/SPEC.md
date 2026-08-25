@@ -85,12 +85,28 @@ because the schedule names speakers in ascending order and ascending is the
 order the rows come back in (decision 101). `verify.ps1` is at 353 assertions on
 `main`.
 
-Next action: chapter 12, `_entities` never asks who you are. Decision 85 already
-recorded what it inherits: `resolvable: false` is advice to the composer rather
-than a guard, and a representation sent straight to a service that declares a
-stub answers `Unexpected Execution Error` rather than a refusal. Chapter 11 adds
-a second thing worth carrying in: nothing on the entity route validates what
-comes back, which is the same absence of checking one layer along.
+Chapter 12 put the first guard in the book on a field and found three doors
+where it expected one: `node(id:)` reaches the guarded rows for the same reason
+`_entities` does, and all three are advertised by introspection. Three findings
+outrank the chapter. The correction a reader reaches after the first one is
+worse than the mistake, because `[Authorize]` on a reference resolver compiles
+clean, emits no directive at all and guards nothing, which `[GraphQLIgnore]` is
+the direct cause of (decision 106). A guard on a field is not a guard on a
+fetch: the row is read and only the value withheld, at one statement, where a
+guard on the type refuses first and costs none (decision 107). And the router's
+own `@authenticated` is a filter rather than a gate, enforced after the subgraph
+has answered and costing the same statement, so it protects the response and not
+the port (decision 109). The graph now needs a bearer token for one column, the
+router validates and forwards it, and `verify.ps1` is at 389 assertions on
+`main`.
+
+Next action: chapter 13, the page you cannot ask for. Two things it inherits and
+should read before touching anything. Decision 101 depends on the seed, the
+default sort and the paging surface all staying exactly as they are, and chapter
+13's cross-seam sorting is the chapter most likely to move one of them, which
+would silently un-break chapter 11's demonstration. And the open item on whether
+it needs a fourth subgraph is still open, which decides how much of decision 23
+survives.
 
 **Why this book exists.** It is the second book in this library on federated
 GraphQL in .NET, and it exists because the first one,
@@ -232,6 +248,15 @@ and why, in the row.
 | 102 | GreenDonut's two clauses fail differently, and chapter 11 is built on the asymmetry | `DataLoaderBase.FetchAsync` carries the contract in its own doc comment, read out of the shipped 16.6.1 assembly: \enquote{For every provided key must be a result returned. Also to be mentioned is, the results must be returned in the exact same order the keys were provided.} Measured 2026-08-24: breaking the first leaves a slot in the span unwritten, and an unresolved `Result` becomes `Unexpected Execution Error` at that position, which is the **fourth** distinct cause of that message in this book after the stub advertising an unresolvable key (decision 85), the Ratings service without its serializer (decision 86), and the dictionary with a duplicate key that chapter 10 closed on (decision 97). Those three are the ones chapter 10 prints; decision 69's original is not among them, because decision 96 records that it was never re-derived. Breaking the second costs nothing and says nothing. The chapter prints both, because which half of a contract fails loudly is what decides whether anyone finds out. Also recorded: de-duplication and decision 68's type-name guard both survive the defect, living in `DataLoaderBase` above `FetchAsync` and in the reference resolver respectively, so a narrow defect is not a safe one. |
 | 103 | Chapter 11 issues no HotChocolate 14 callout, deliberately | The fourth chapter to do this, after decisions 64, 91 and 98. Everything chapter 11 is about lives in GreenDonut rather than in Hot Chocolate: `DataLoaderBase<TKey, TValue>`, its `FetchAsync` and the doc comment stating the order contract are the same API on both versions, so a callout would report no difference. The chapter's demonstration needs more than that, though, and cannot have it: the failure is visible only across a seam, and `hc14` has one subgraph (decision 91), `Session` is not an entity there at all (decision 71), and the Speakers service does not exist on that branch. Building one to host a deliberately broken loader would put a second full service on a branch decision 47 keeps to what a callout quotes, to demonstrate a defect in a library that does not differ between the versions. `ch11-hc14` tags an unchanged tree with an unchanged 214, on the same footing as `ch05`, `ch08`, `ch09-hc14` and `ch10-hc14` (decision 66). |
 | 104 | A second correct implementation gets a tag, on the same reasoning a wrong one does | Chapter 11 prints the corrected hand-written loader as its beat 4, and decision 48 says every listing the book prints is run before it is typeset. `ch11-handwritten` is therefore the first tag in this repository that is neither `main` nor a state the book argues against: an alternative implementation, verified by running `main`'s own `verify.ps1` against it unchanged and unloosened, 353 assertions PASS, the same 353 that pass against the source-generated loader. That equivalence is the chapter's claim, so running the whole script is the proof rather than a spot check. Rejected: describing the corrected loop under decision 65, which would have left the chapter's only constructive listing the unproved one. **One edit both hand-written branches carry:** the override names its list parameter `ids` rather than the base class's `keys`, because EF Core names SQL parameters after the closed-over variable and the book's other two loaders print `@ids1`. A reader typing the file from an IDE's `override` completion gets `keys` and sees `@keys1`; that difference is real, harmless, and recorded here rather than in the prose. |
+| 105 | Authorization goes on the data, and the guarded thing in this book is one column rather than a type | Settled by chapter 12. Measured 2026-08-25 on 16.6.1: `[Authorize]` on a field of `Query` guards that field and nothing else, and `_entities` and `node(id:)` reach the same rows with no credentials at all, at the statement count they always cost. The attribute works on the **type** and on the **field**, and both cover all three routes. The book guards the field, `Speaker.Email`, written `[property: Authorize, Authenticated]` because a positional record's undecorated attribute lands on the constructor parameter where Hot Chocolate never looks. **The reason is scope rather than security.** Guarding the `Speaker` type would refuse `name` and `bio` too, which would put a bearer token into every request this book prints from chapter 9 onward, for the rest of its length, to demonstrate a mechanism one column shows just as well. `Speaker` is a public program entry with one private column in it, and the graph should say so. A book whose whole type was confidential would guard the type and the chapter says so. |
+| 106 | `[Authorize]` on a reference resolver compiles, emits nothing and guards nothing | Measured 2026-08-25 and the sharpest thing chapter 12 found, because it is the correction a reader reaches on the second try. Hot Chocolate's authorization is field middleware and needs a field descriptor; `[GraphQLIgnore]`, which chapter 6 put on that method so it would not be published as a field of `Speaker`, is exactly what denies it one. The two attributes sit on adjacent lines wanting opposite things and neither the compiler nor the schema builder says a word: 0 warnings, and **zero** occurrences of `@authorize` in the exported document, with no directive definition either. `AddAuthorization()` still writes its `ApplyPolicy` enum, so the state reads as configured. Proved by a caller with a token and a caller with none getting byte-identical answers, which is what separates a rule that ran and passed from no rule. `ch12-inertguard` carries it. This is what ChilliCream issue 6546 reported in September 2023 against 13.5.1; it is still open, the pull request Michael Staib linked in December 2023 (6769) was closed unmerged, and the behaviour still holds for **that placement only**. The issue never tried the type or the field. |
+| 107 | A field guard costs the row; only a type guard refuses before the resolver | Measured 2026-08-25 and recorded because the obvious reading of decision 105 is wrong. With the guard on `Speaker.email`, a refused request costs **one statement** in Speakers: the reference resolver runs, the row is read with every column on it, and field middleware withholds the value on the way out. The same request against a type-level `[Authorize]` costs **zero**, refused before any resolver runs, exactly as the root-field guard in `ch12-rootguard` costs zero. So the two placements are a real trade rather than a matter of taste, and the chapter prints both numbers. Not established: whether a field guard can be made to refuse before the fetch. |
+| 108 | The router must be told two separate things, and neither is a default | Settled by chapter 12. **It does not forward headers.** WunderGraph documents the default as no headers forwarded, and the consequence is not a weaker graph but a broken field: with the guard shipped and no `headers` block, a caller whose token the router verified is refused by the subgraph as unauthenticated, and an anonymous caller is refused **identically**, so nothing in the response points at a header rather than at a policy. `ch12-noforward` carries it. Narrower than it first looks, and the run corrected the first draft of that script: the refusal follows the guarded column and not the seam, so a cross-seam request that never names a guarded field answers completely, which is why a missing block survives a smoke test. **And it needs a way to verify a token.** `authentication.jwt.jwks[]` takes either a `url` or the triple `secret`, `symmetric_algorithm`, `header_key_id`, established by probing the router's own JSON schema, which refuses an unknown property and names the path. `authentication.providers`, which older material uses, is not a valid key at 0.341.0. A token the router cannot verify is answered **401** and reaches no subgraph, the first time in this book the router refuses anything outright rather than answering 200 with the problem in the envelope. |
+| 109 | `@authenticated` is a filter on the answer, not a gate on the fetch, and the book ships it anyway | `HotChocolate.ApolloFederation` 16.6.1 publishes `AuthenticatedAttribute`, `RequiresScopesAttribute` and `PolicyAttribute`, read out of the shipped assembly; a search-engine summary claiming the name `ApolloAuthenticated` is wrong and is recorded here so nobody re-derives it. `[Authenticated]` emits `@authenticated`, adds it to the `@link` import list unasked, and **composes cleanly**, which is worth recording after decision 73's `@cost`: `wgc` carries Hot Chocolate's own `@authorize` through untouched as well. The composer compiles the federation directive into one `authorizationConfiguration` on `Speaker.email`; put it on a **type** and it writes one rule per field that *returns* the type instead, so `@authenticated` on `Speaker` produces rules on `Session.speaker`, `SpeakersConnection.nodes` and `SpeakersEdge.node` and none naming `Speaker`. **The router enforces it after the subgraph has answered.** Measured on `ch12-routeronly` with the subgraph guard removed: an unauthenticated request is refused at the router and still costs **one statement** in Speakers, and the same service hands the column to anyone on port 5002 with a token or without one. WunderGraph documents the order plainly and Apollo describes the same shape for its own router. The book ships both attributes and says which one means it. |
+| 110 | Turning authorization on adds a type to the supergraph | `AddAuthorization()` puts an `ApplyPolicy` enum into the subgraph schema because it is the argument type of the `@authorize` directive the registration declares, the composer carries it up, and the router serves it to clients. The named-type count the router serves goes from 23 to **24**, and the list of types the router adds over the Sessions subgraph gains `ApplyPolicy`. Chapters 8 and 9 print 21 and 23 and stay provable at their own tags under decision 52. Recorded rather than buried because it is a reader-visible consequence of a line nobody thinks of as schema design, in the same family as decision 72's `@shareable` on `PageInfo`. Not established: whether `@inaccessible` or a type interceptor could keep it out. |
+| 111 | Chapter 12 issues no HotChocolate 14 callout, deliberately | The fifth chapter to do this, after decisions 64, 91, 98 and 103. There is no Speakers service on `hc14` to guard a field of (decision 91), so there is nothing there to put an attribute on and nothing to measure. Standing one up would put a second full service on a branch decision 47 keeps to what a callout quotes. Every assertion the chapter adds therefore sits behind a new `EmailGuarded` flag which is false on that branch, and `ch12-hc14` tags an unchanged tree with an unchanged 214, on the same footing as `ch05`, `ch08`, `ch09-hc14`, `ch10-hc14` and `ch11-hc14` (decision 66). |
+| 112 | A cited author's acute accent gets a macro, the same as decision 40's diaeresis | Chapter 12 cites Tom Houl\acu{e} at Grafbase, and decision 40 settled the reasoning one letter along: strict `Ascii` mode forbids the Unicode letter, respelling him would misspell a real person, and a bare `\'` in a chapter file is an apostrophe as far as the prose gate's quote check is concerned. `\acu` joins `\uml` in `preamble/macros.tex`. Recorded rather than left as a silent edit because the two macros are a family and the next accent should join it rather than starting a third pattern. |
+| 113 | The verification repo proves the page and the code are one text, because nothing else does | Settled by chapter 12's audit, which found two listings drifted from the files they claim to be: one carried a `using` directive the file does not have, and one abbreviated a five-line doc comment to one. The book compiled clean and the prose gate passed. `verify.ps1` proves the code runs, which is a different claim from the one decisions 15 and 48 make to the reader. `check-listings.ps1` beside it now compares every whole-file listing the book prints against this repository at the tag it came from, and it lives there rather than in `scripts/check-chapter.ps1` because the map from a listing to a tag is this book's and decision 18 keeps that provenance off the page deliberately. The map is maintained by hand: **a chapter that prints a file adds a row when it is drafted**, and a chapter is not finished until that script passes. It reads `csharp`, `yaml` and `xml` only, because a `json` or `text` block is captured output and a `graphql` block is a request, and none of those has a file behind it. |
 
 
 ## Version baseline
@@ -258,6 +283,8 @@ and this section is what appendix A is built from.
 | Apollo Federation, as the subgraphs declare it | v2.6 | verified 2026-08-23, chapter 5 note; the `@link` url the package emits with nothing pinned. Decision 63 |
 | WunderGraph Cosmo Router | 0.341.0 | verified 2026-08-24, chapter 8 note, **by running it**: `router -version` reports 0.341.0 on go1.26.6, built 2026-08-18, matching the release's own timestamp. Still the newest stable on that date. The Windows archive's md5 matches the one published beside it, and the Apache-2.0 license was read out of the archive rather than out of the repository. `verify.ps1` asserts the version |
 | `wgc` (Cosmo CLI) | 0.129.9 | verified 2026-08-23, chapter 7 note. Re-pinned from 0.129.7, which was two patch releases stale by then; every chapter 7 measurement is on 0.129.9 and `verify.ps1` asserts the version rather than accepting what is installed, because the chapter quotes the tool's error text |
+| `HotChocolate.AspNetCore.Authorization` (`main`) | 16.6.1 | verified 2026-08-25, chapter 12 note. Added to `Speakers.csproj` by chapter 12; same version sequence as the rest of the family, published the same day as `HotChocolate.ApolloFederation` 16.6.1 |
+| `Microsoft.AspNetCore.Authentication.JwtBearer` (`main`) | 10.0.11 | verified 2026-08-25, chapter 12 note. Added to `Speakers.csproj` by chapter 12; follows the framework rather than Hot Chocolate, so it matches the EF Core row above rather than the 16.6.1 rows |
 | Pygments | 2.19.2 | verified 2026-08-19 on this machine; see decision 31 |
 | Go, as the router reports it | go1.26.6 | verified 2026-08-24, chapter 8 note. Not a thing this book installs: it is what the router binary was built with, and it is in the table because `router -version` prints it and a reader will see it |
 
@@ -291,7 +318,7 @@ session. Chapter folders in `chapters/` carry the same scope lines.
 
 10. **The N+1 the Router Creates** - the router de-duplicates and batches representations and a naive reference resolver does not; what a DataLoader behind one is worth, and why it cannot also project. **Updated 2026-08-24 while drafting**, from a line that said only that the router batches: it does both, and which half it does not do is the chapter's argument (decision 95). The projection clause is decisions 96 and 97, which correct decision 69.
 11. **Right Data, Wrong Entity** - `_entities` must answer in representation order, and what silently wrong data looks like when it does not. **Confirmed 2026-08-24 while drafting**, with one clause added rather than changed: the chapter is equally about why nothing catches it, because the router validates only the length of the answer (decision 100) and this book's own seed makes the failure invisible on every page it prints (decision 101).
-12. **`_entities` Never Asks Who You Are** - the guard on the root field that the entity route walks straight past
+12. **`_entities` Never Asks Who You Are** - the guard on the root field that the entity route walks straight past. **Confirmed 2026-08-25 while drafting**, with two clauses added rather than changed: there are three doors and not two, because `node(id:)` reaches the same rows for the same reason, and the correction a reader reaches next is worse than the mistake, because `[Authorize]` on the reference resolver emits no directive at all (decision 106). The fix half of the chapter is the router's, which has to be told separately to verify a token and to forward it (decision 108).
 13. **The Page You Cannot Ask For** - filtering, sorting and paginating across a seam; why no directive fixes it, and the dedicated search domain as the escape
 14. **One Field Fails and the Response Is Empty** - non-null error propagation, blast radius, designing for partial failure, and `@semanticNonNull`
 15. **Where Satisfiability Actually Fails** - reading composition errors, and why the composer blames one route out of four that fail
@@ -330,7 +357,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 09 | drafted | Note at `research/ch09-the-second-and-third-subgraph.md`. Three tags, `verify.ps1` PASS on each: `ch09` (main, 328 assertions), `ch09-hc14` (214, an unchanged tree with the shared script branched so it still passes) and `ch09-noserializer` (20, the Ratings service without `AddDefaultNodeIdSerializer()`, which builds, starts and answers its own root field while the entity route alone fails in silence, decision 51). The graph becomes three services on three databases. Speaker leaves Sessions for a stub with `resolvable: false`; Speakers owns the rows; Ratings contributes three fields to a type it does not own, one of them behind `@requires`. The first query answered across two subgraphs costs the two statements chapter 3 measured inside one process. Settled decisions 85 to 91, and closed four open items. The retro added three more: decisions 92 and 93 turn on two new gate checks this chapter's audit argued for, and 94 is the rule no check can enforce. 30 pages, the longest in part II, and one chapter (decision 89). |
 | 10 | drafted | Note at `research/ch10-the-n-plus-1-the-router-creates.md`. Three tags, `verify.ps1` PASS on each: `ch10` (main, 342 assertions), `ch10-naive` (33, the Speakers reference resolver with the DataLoader taken out from behind it, decision 51) and `ch10-hc14` (214, an unchanged tree). The first chapter of part III. Its one source change is a DataLoader behind the Sessions reference resolver, which is the debt chapter 6 left in a comment. Two findings are larger than the chapter: the router de-duplicates representations before it sends them (decision 95), and decision 69 is wrong, which decision 96 records and corrects. Settled decisions 95 to 98, closed one open item and narrowed two. 10 pages, the shortest chapter since 5, and it stayed short because the audit moved seven verbatim captures out of the prose: they came from scratch states no tag produces, which decisions 48, 53 and 65 do not allow the book to quote. That triage is recorded at the end of the note. |
 | 11 | drafted | Note at `research/ch11-right-data-wrong-entity.md`. Four tags, `verify.ps1` PASS on each: `ch11` (main, 353 assertions, unchanged source), `ch11-misordered` (40, the hand-written loader filling the results span by row rather than by key, decision 51), `ch11-handwritten` (353, the corrected hand-written loader run against main's own script, decision 104) and `ch11-hc14` (214, an unchanged tree). The chapter changes no line of the example, because the example was already right; what it adds is the request that would have caught the defect. Carries the deliberately broken listing the TOC owed, under decision 22's carve-out. Three findings are larger than the chapter: the source generator makes this failure unreachable and reinterprets a list return rather than rejecting it (decision 99), the router validates the length of an entity answer and nothing else (decision 100), and this book's seed hides the failure completely, so the chapter is about why every page still looked right (decision 101). Settled decisions 99 to 104 and opened four open items. 12 pages. |
-| 12 | not-started | |
+| 12 | drafted | Note at `research/ch12-entities-never-asks-who-you-are.md`. Six tags, `verify.ps1` PASS on each: `ch12` (main, 389 assertions), `ch12-rootguard` (20, `[Authorize]` on `Query.speakers` and nothing else), `ch12-inertguard` (13, the same attribute on the reference resolver, emitting no directive at all), `ch12-routeronly` (17, the federation directive with no subgraph guard behind it), `ch12-noforward` (17, main's C# with the router's `headers` block removed) and `ch12-hc14` (214, an unchanged tree). The book's first authorization, its first bearer token, and the first request in it that the router answers with something other than 200. `Speaker` gains one guarded column rather than a guarded type, which is what keeps every request chapters 9 to 11 print answerable without a credential (decision 105). Three findings outrank the chapter: the correction a reader reaches next is inert and silent (decision 106), a field guard costs the row while a type guard costs nothing (decision 107), and the router's own directive filters the answer after the subgraph has already read it (decision 109). Settled decisions 105 to 113 and opened five open items. The audit found nine things, seven of them real; the two rejected are recorded with their evidence at the end of the note. Four of the seven were files the chapter changed and never printed, which is decision 15 and the first of the three failures this book exists to fix, so decision 113 puts a check behind it. 16 pages, four of them the files the audit added. |
 | 13 | not-started | **Open item:** may need a fourth subgraph. See Open items. |
 | 14 | not-started | |
 | 15 | not-started | |
@@ -373,10 +400,13 @@ keep the two in step.
   `check-chapter.psd1` starts empty and grows only as the gate finds a real
   case - a British spelling inside captured tool output or a vendor's own
   prose. A spelling exemption is never added to accommodate the author's habit.
-  A cited author whose name carries a diacritic keeps it, written with the
-  `\uml`-style accent macro from `preamble/macros.tex` rather than the Unicode
-  letter, which strict `Ascii` mode forbids, or a respelling, which would
-  misspell a real person (decision 40).
+  A cited author whose name carries a diacritic keeps it, written with an
+  accent macro from `preamble/macros.tex` rather than the Unicode letter,
+  which strict `Ascii` mode forbids, or a respelling, which would misspell a
+  real person (decision 40). There are two, `\uml` for a diaeresis and `\acu`
+  for an acute, and a name needing a third accent adds it to that family
+  rather than writing the accent raw: a bare `\"` or `\'` in a chapter file is
+  a quote character as far as the prose gate is concerned (decision 112).
 - **Humanizer skill:** `humanizer`.
 - **Listings:** every C# and SDL listing is build-along and complete. A file
   appears in full the first time it matters. A later change to it is shown as
@@ -717,6 +747,53 @@ An unresolved question, and the condition that unblocks it.
   start failing a request the book prints as correct. Nothing checks this across
   chapters. Unblocked by outlining chapter 13, which should read decision 101
   before it touches the ordering of anything.
+- **Why the router's pre-fetch field authorization did not stop the fetch.**
+  `enable_pre_fetch_field_authorization` exists at router 0.341.0, defaults to
+  false, is accepted by the config schema, and its documentation says it
+  authorizes an operation's protected fields before any subgraph fetch runs.
+  Measured 2026-08-25 on `ch12-routeronly`: with it on, the Speakers service
+  still issued one statement answering a request the router then refused. It is
+  not inert, because the error set on a neighboring request changed when it was
+  set, but it did not prevent the read. Chapter 12 states the measurement and
+  claims nothing about the switch. Unblocked by reading the router's own
+  authorization path, or by WunderGraph documenting what the option covers.
+- **Whether a field guard can be made to refuse before the fetch.** Decision 107
+  measured the trade: a guard on `Speaker.email` costs the row and a guard on
+  the `Speaker` type costs nothing, because field middleware runs after the
+  resolver and type middleware runs before it. Whether anything gives the
+  precision of the first at the cost of the second was not explored, and it
+  matters for a type whose row is expensive rather than merely private.
+  Unblocked by finding a mechanism that refuses a single field before its
+  entity is fetched, at which point decision 107's trade is worth restating.
+- **Whether `@requiresScopes` and `@policy` behave the way `@authenticated`
+  does.** `RequiresScopesAttribute` and `PolicyAttribute` ship in
+  `HotChocolate.ApolloFederation` 16.6.1 beside `AuthenticatedAttribute` and
+  neither was applied to anything. Decision 109's finding, that the router
+  filters after the fetch, was measured for `@authenticated` alone, and Apollo's
+  own documentation notes that `@policy` needs a router plugin to evaluate it at
+  all. No chapter claims anything about either. Unblocked by putting one on a
+  field and measuring the same two things: what the composer writes, and what
+  the statement count is for a refused request. Chapter 20's complexity-limit
+  question is the likely place.
+- **Whether `ApplyPolicy` can be kept out of the supergraph.** Decision 110
+  records that `AddAuthorization()` puts the enum in the subgraph schema, the
+  composer carries it up, and the router serves it, taking the named type count
+  from 23 to 24. Whether `@inaccessible` on it, or a type interceptor of the
+  kind decision 74 already ships for `Query.node`, could hide it from clients
+  was not tried. Unblocked by trying one, and worth doing only if a chapter
+  decides a public schema should not describe its own authorization machinery.
+- **Whether `@wundergraph/composition` has ever had the access-control bugs
+  Apollo's composer had.** Two CVEs published 2025-11-13, CVE-2025-64530 and
+  CVE-2025-64172, are both in `@apollo/composition`: access-control directives
+  not enforced across interface implementations, and not propagated across
+  `@requires`. The second is close enough in shape to matter here, because this
+  book's graph has a `@requires` field. This book composes with
+  `@wundergraph/composition` 0.63.3, a different implementation. Checked and
+  found empty on 2026-08-25: `gh api repos/wundergraph/cosmo/security-advisories`
+  returns nothing, so there are no published advisories for that repository.
+  That is an absence of advisories rather than an absence of the defect.
+  Unblocked by testing the transitive case directly against this composer, which
+  chapter 15's satisfiability work is the natural place for.
 - **Whether Pygments gains an SDL lexer.** Decision 31 is a workaround with a
   measured justification, not a preference. Unblocked by a Pygments release
   whose `graphql` lexer handles type definitions, `!` and directives; at that

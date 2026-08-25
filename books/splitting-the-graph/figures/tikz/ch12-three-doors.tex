@@ -1,0 +1,116 @@
+% Three doors into one column of data, and a guard standing in front of
+% exactly one of them.
+%
+% The Speakers subgraph exposes three fields on Query, all three advertised
+% by introspection, and all three reach the same rows of the Speaker table:
+%   speakers(first:)                the root field
+%   _entities(representations:)     the entity route the router uses
+%   node(id:)                       the node field
+% A guard placed on the root field only stops speakers(first:) and does
+% nothing to the other two: _entities and node still return Speaker.email in
+% full. That is the whole picture: one path blocked, two paths open, one
+% column of data behind all three.
+%
+% Layout is boxes and links, the idiom figures/tikz/ch11-position-is-the-join.tex
+% uses, not the axis-and-ticks timeline of ch01-one-field.tex and
+% ch06-two-routes.tex: the subject here is three parallel routes converging
+% on one target, not a sequence unfolding over one request, so there is no
+% single shared axis for all three to sit on.
+%
+% Three field boxes on the left, one tall box on the right standing for the
+% Speaker rows and their email column (drawn tall on purpose, so a single
+% box can receive an arrow at more than one height and still read as one
+% target). The entities and node links run straight through from field box
+% to data box, arrowhead at the data box: the request is answered. The
+% speakers link runs only as far as a small guard box and stops there: it
+% never reaches the data box at all, which is the point a reader should
+% get in one glance, not from a label.
+%
+% A short dashed mark crosses the entities and node links at the same
+% x-coordinate as the guard box, purely as an annotation (the links
+% themselves are not broken there). It marks where a check would also have
+% to sit if it were checking the data rather than one field, and the note
+% beside it says so. This is the one place this figure borrows the "guard
+% belongs around the data, not on one path" idea the brief allows; it stays
+% inside one panel rather than adding a second, because the same guard box
+% and the same gate x-coordinate already carry the comparison.
+%
+% No fills, square corners, one stroke weight throughout (0.4pt), arrowhead
+% only where a request actually lands (the data box, or the guard box for
+% the one path that gets no further) -- the same "arrowhead marks the one
+% directional claim" idiom ch11 uses. Dashed is a short, local mark here,
+% not a link of its own, and does not carry the same meaning dashed carries
+% in ch11; the note beside it is what supplies the meaning, same as ch11's
+% own legend does for its two link styles.
+%
+% No versions, timings or counts anywhere, per SPEC decision 19.
+%
+% No quotation marks anywhere in this file (strict Ascii mode; a literal "
+% reads as a quote character to the prose gate, and \" is a diaeresis
+% accent that fails to compile inside a node). \_entities is written with
+% the escape TikZ needs for an underscore in text mode, the same way
+% ch06-two-routes.tex escapes \_\_typename.
+%
+% Widths: field boxes are 38mm text plus 2mm inner sep, centered at x=22,
+% so they span x=1 to x=43, starting near the left margin the way every
+% other figure in this book does. The guard box is centered at x=84 and
+% spans x=78 to x=90. The data box is 26mm text plus 2mm inner sep,
+% centered at x=135, spanning x=120 to x=150 -- the same right-hand edge
+% ch11's note uses, and inside the 155mm text measure (A4, 30mm inner,
+% 25mm outer). The note beside the dashed marks runs from x=90 to x=136,
+% clear of that edge.
+%
+% Bare tikzpicture (house style): the figure environment, caption and
+% label live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  lane/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+  fieldbox/.style={draw, line width=0.4pt, align=center, text width=38mm,
+    inner sep=2mm, minimum height=14mm},
+  gatebox/.style={draw, line width=0.4pt, align=center, text width=10mm,
+    inner sep=1mm, minimum height=10mm},
+  databox/.style={draw, line width=0.4pt, align=center, text width=26mm,
+    inner sep=2mm, minimum height=100mm},
+  reachlink/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  blocklink/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  gapmark/.style={draw, line width=0.4pt, dashed},
+  note/.style={align=left, inner sep=2pt},
+]
+
+% ---------------------------------------------------------------- heading
+\node[lane] at (0,58) {Speakers subgraph, three fields of Query};
+
+% ------------------------------------------------------------ field boxes
+\node[fieldbox] (fspk)  at (22,40)  {speakers(first:)\\the root field};
+\node[fieldbox] (fent)  at (22,0)
+  {\_entities(representations:)\\the entity route};
+\node[fieldbox] (fnode) at (22,-40) {node(id:)\\the node field};
+
+% -------------------------------------------------------------- the guard
+\node[gatebox] (guard) at (84,40) {guard};
+\node[note, anchor=north] at (84,32) {refused here};
+
+% ------------------------------------------------------------- data column
+\node[databox] (data) at (135,0) {Speaker rows\\email column};
+
+% ------------------------------------------------------------------ links
+% The two open routes: unbroken, arrowhead at the data box.
+\draw[reachlink] (fent.east)  -- (120,0);
+\draw[reachlink] (fnode.east) -- (120,-40);
+
+% The guarded route: stops at the guard box and goes no further.
+\draw[blocklink] (fspk.east) -- (guard.west);
+
+% ------------------------------------------------------- where a check on
+% ------------------------------------------------- the data would also sit
+\draw[gapmark] (84,-5)  -- (84,5);
+\draw[gapmark] (84,-45) -- (84,-35);
+% text width 26mm, not 46: the note is anchored at the gate x and the data
+% box starts at x=120, so anything wider than 30mm runs into the box.
+\node[note, anchor=west, text width=26mm] at (90,-20)
+  {the same crossing point on both open routes, and nothing stands there};
+
+\end{tikzpicture}

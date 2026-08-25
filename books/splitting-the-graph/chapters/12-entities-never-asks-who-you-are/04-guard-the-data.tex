@@ -1,0 +1,151 @@
+\section{Guard the Data}
+\label{sec:ch12-guard-the-data}
+
+\index{authorization!the placement that works|(}%
+Put the attribute on the column. Here is \code{Speaker.cs} again, complete,
+with what moved marked:
+
+\begin{minted}[highlightlines={1,2,13,14,19}]{csharp}
+using HotChocolate.ApolloFederation.Types;
+using HotChocolate.Authorization;
+
+namespace Speakers;
+
+/// <summary>
+/// A person giving one or more sessions. This service owns the rows;
+/// the Sessions subgraph knows only that a speaker with this id exists.
+/// </summary>
+/// <param name="Id">Stable identifier for this speaker.</param>
+/// <param name="Name">The name to print in the program.</param>
+/// <param name="Bio">A sentence or two, if the speaker sent any.</param>
+/// <param name="Email">Where the program committee writes. Not for
+/// the printed program, and guarded on every route into it.</param>
+public sealed record Speaker(
+    int Id,
+    string Name,
+    string? Bio,
+    [property: Authorize, Authenticated] string Email);
+\end{minted}
+
+\index{authorization!property: on a positional record}%
+\code{[property:]} is doing real work in that line and not decoration. A
+positional record's parameters are constructor parameters, and an attribute
+written without a target lands on the parameter, where Hot Chocolate never
+looks. The property is what becomes a field of the GraphQL type, so the
+property is what the attribute has to reach. This is the same targeting
+chapter~\ref{ch:second-third-subgraph} used to write the Sessions stub, whose
+whole body is one \code{[property: ID<Speaker>]}.
+
+\code{[Authorize]} is Hot Chocolate's and is what this service enforces.
+\code{[Authenticated]} is Apollo's, and it is
+section~\ref{sec:ch12-and-tell-the-router}'s subject; ignore it for the
+moment.
+
+\index{authorization!the root field loses its attribute}%
+\code{Query.cs} goes back to what chapter~\ref{ch:second-third-subgraph}
+printed. The attribute on \code{speakers} is not wrong, exactly, but it is
+now redundant and it is the shape of the mistake this chapter is about, so it
+comes off rather than staying as a belt.
+
+\subsection{All Three Doors}
+
+\index{authorization!every route refuses the column}%
+The entity route, with nothing in the header:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[
+  {"message":"The current user is not authorized to access this resource.",
+   "path":["_entities",0,"email"],
+   "extensions":{"code":"AUTH_NOT_AUTHENTICATED"}}],
+ "data":{"_entities":[null]}}
+\end{minted}
+
+\index{non-null!a refused field empties its entity}%
+Look at the \code{data} half before the error. The entry is \code{null}, not
+a speaker with a field missing. \code{email} is \code{String!}, so refusing
+it has nowhere to put a null and the whole entity goes instead. That is
+chapter~\ref{ch:null-blast-radius}'s subject arriving early and in miniature,
+and it is worth knowing now because it decides how much a client loses when a
+guard fires.
+
+\code{node(id:)} answers the same way, at \code{["node","email"]}, and so
+does the root field at \code{["speakers","nodes",0,"email"]}. One attribute,
+three routes.
+
+\index{authorization!the request that is allowed}%
+The allowed version of that request is the same bytes with one header on it.
+The token is an ordinary HS256 JWT over the key
+section~\ref{sec:ch12-three-doors-one-column} printed, carrying a
+\code{kid} of \code{dev} because the router will want one, and anything that
+signs a JWT will produce it:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+POST /graphql HTTP/1.1
+Host: localhost:5002
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImRldiJ9.eyJzdWIiOiJyZWFkZXIiLCJpYXQiOjE3ODc2MTYwMDAsImV4cCI6MjEwMzE0ODgwMH0.WsMUkqKCTt2DnBSfeGtpErBxfMvFgcsCl14mph4yKOA
+
+{"query":"query E($r: [_Any!]!) { _entities(representations: $r) { ... on Speaker { id name email } } }","variables":{"r":[{"__typename":"Speaker","id":"U3BlYWtlcjox"}]}}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"_entities":[{"id":"U3BlYWtlcjox","name":"Ada Fischer",
+ "email":"ada@example.test"}]}}
+\end{minted}
+
+\index{authorization!the rest of the type is untouched}%
+And the rest of the type is untouched, which is the reason for guarding the
+field rather than the type. Ask the entity route for a name with no token:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"_entities":[{"id":"U3BlYWtlcjox","name":"Ada Fischer"}]}}
+\end{minted}
+
+\index{authorization!earlier chapters still answer}%
+Which means every request this book has printed since
+chapter~\ref{ch:second-third-subgraph} still answers on this graph without a
+credential, because none of them asks for the guarded column. A book that
+locked the whole \code{Speaker} type here would have put a bearer token into
+every printed request for the rest of its length, to demonstrate a mechanism
+that one column shows just as well.
+
+\subsection{What the Guard Costs}
+
+\index{statement count!a refused field still reads the row}%
+That refusal is not free, and the number is the interesting part.
+Chapter~\ref{ch:data-without-n-plus-1}'s interceptor prints
+one statement while the entity route refuses the column. The same one an
+authorized request costs.
+
+\index{authorization!field middleware runs after the resolver}%
+The reference resolver ran. It decoded the key, checked the type name inside
+it, went through the DataLoader and read the row out of SQLite with every
+column on it, including the one the caller is not allowed to see. The guard
+is field middleware, so it ran when \code{email} resolved, which is after all
+of that. What it stopped was the value leaving the process, not the value
+being read.
+
+\index{authorization!a guard on the type refuses first}%
+Move the attribute up to the type and that changes. \code{[Authorize]} on
+\code{SpeakerType} refuses the whole entity route before any resolver runs,
+and the statement count for the same request is zero. Nothing is
+read in order to be refused, exactly as
+section~\ref{sec:ch12-three-doors-one-column}'s root-field guard cost nothing.
+
+\index{authorization!the trade between type and field}%
+So the two placements are a real trade rather than a matter of taste. A type
+guard is cheaper and coarser: nothing touches the database, and the caller
+loses every field of that type including the ones that were never sensitive.
+A field guard is precise and costs a read: the row comes back and the column
+does not leave. Which one you want depends on whether the type is private or
+the column is, and this book's \code{Speaker} is a public program entry with
+one private column in it.
+
+\index{authorization!what a type guard would break}%
+That is not a general recommendation to prefer the field. If the whole type
+were confidential I would guard the type and take the cheaper refusal, and if
+the row itself were expensive to fetch I would think harder about a field
+guard that fetches it anyway. What is not a trade, and what this whole
+chapter is about, is guarding a root field: that is cheap and precise and
+covers one of three doors.
+\index{authorization!the placement that works|)}%
