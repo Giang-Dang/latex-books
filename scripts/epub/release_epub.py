@@ -36,6 +36,15 @@ from pathlib import Path
 import booksource
 import figures
 
+# Two of the four books are written in Vietnamese, and pandoc quotes their
+# prose back in its warnings. On Windows the console encoding is cp1252,
+# which cannot represent that, and printing a warning killed the build with
+# a UnicodeEncodeError - the report about a problem becoming a worse
+# problem. Every stream this writes to is UTF-8 from here on.
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(encoding="utf-8", errors="replace")
+
 # Where a book keeps the pandoc filters describing its own environments. Same
 # split as check-chapter.psd1: the script is shared, the policy is the book's.
 BOOK_FILTER_DIR = "epub"
@@ -308,6 +317,12 @@ def build(book: Book, work: Path, verbose: bool) -> Path:
         "--top-level-division=chapter",
         "--split-level=2",
         "--toc", "--toc-depth=3",
+        # EPUB 3 is the only ebook format that carries MathML, and
+        # without asking for it pandoc writes maths as TeX inside a
+        # span, which a reader shows as source. Measured on
+        # do-trung-thuc-trong-xai: no --mathml, no <math> element in the
+        # whole book; with it, every equation converts.
+        "--mathml",
         "--citeproc", "--bibliography=refs.bib",
         "-M", f"figure_dir={figure_dir.as_posix()}",
         "-M", "lang=en",
