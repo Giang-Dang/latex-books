@@ -1,0 +1,63 @@
+\section{Giải thích cho lời giải thích}
+\label{sec:ch11-giai-thich-cho-loi-giai-thich}
+
+\index{attribution!nối tầng|(}%
+Tầng thứ nhất là thứ Phần~II đã dựng xong. Một phương pháp attribution nhận một
+mô hình $f$ và một đầu vào $x$, rồi trả về cho mỗi \tn{đặc trưng}{feature} $i$ một số
+$\varphi_i(x,f)$ nói đặc trưng ấy đóng góp bao nhiêu vào đầu ra, theo nghĩa mà
+định nghĩa~\ref{def:ch06-attribution} đặt. LIME, SHAP, Integrated Gradients và
+Grad-CAM đều trả về một bảng số như vậy, mỗi đặc trưng một số.
+
+Một bảng số như vậy không nói được hai đặc trưng ảnh hưởng lẫn nhau ra sao. Nếu
+mô hình chỉ dùng đặc trưng thứ hai khi đặc trưng thứ nhất có mặt, thì quan hệ ấy
+phải nằm đâu đó trong hai con số, nhưng hai con số không có chỗ để chứa nó: mỗi
+số gắn với một đặc trưng, và quan hệ thì gắn với một cặp. Bài báo gọi những
+tương tác ấy bằng hai tên đối nhau, synergy và antisynergy, và chỉ giải nghĩa
+tên thứ hai: antisynergy là trường hợp attribution riêng của hai đặc trưng
+triệt nhau khi cộng lại, tức đúng chỗ mà một phương pháp bậc nhất không nhìn
+thấy gì~\autocite{p23metagame}.
+
+Lối ra mà lĩnh vực chọn cho vấn đề ấy là lối mà chương này đọc, và nó có tên
+riêng trong bài. Một \tn{attribution nối tầng}{serial attribution} lấy chính
+phương pháp attribution áp lần thứ hai, lần này lên đầu ra của lần thứ nhất.
+Cụ thể, hàm được giải thích ở lần thứ hai không còn là mô hình $f$ nữa mà là
+hàm $\varphi_i(\cdot,f)$, tức hàm gán cho mỗi đầu vào con số mà lần thứ nhất đã
+gán cho đặc trưng $i$:
+%
+\begin{equation}
+  \label{eq:ch11-noi-tang}
+  \varphi_j\bigl(x,\ \varphi_i(\cdot,f)\bigr).
+\end{equation}
+%
+Đọc phương trình~\ref{eq:ch11-noi-tang} từ trong ra ngoài: bên trong là
+attribution của đặc trưng $i$ cho mô hình, bên ngoài là attribution của đặc
+trưng $j$ cho cái attribution ấy. Kết quả là một con số cho mỗi cặp $(i,j)$,
+tức đúng chỗ chứa mà bảng số một tầng không có.
+
+Ý tưởng ấy không mới trong bài báo này. Bài dẫn nó về Janizek, Sturmfels và Lee
+năm 2021, những người đặt cho nó cái tên mà chương này mượn làm tên mục, giải
+thích cho lời giải thích, và xây dựng phiên bản dùng Integrated Gradients hai
+lần dưới tên integrated Hessians; phiên bản dùng \tn{giá trị Shapley}{Shapley value} hai lần thì
+mang tên serial Shapley value và thuộc về Lundstrom cùng
+Razaviyayn~\autocite{p23metagame}. Sách không đọc hai bài ấy và thuật lại chúng
+qua lời của bài báo, theo đúng cách chương~\ref{ch:chi-so-khong-do-do-trung-thuc}
+đã làm với những công trình mà bài báo neo nhắc tới.
+
+Bài báo và sách viết ký hiệu khác nhau ở hai chỗ, và cả hai chỗ đều đáng ghi
+lại vì người đọc sẽ mở bài ra. Bài viết $\phi_i(f,x)$ với mô hình đứng trước,
+còn sách giữ thứ tự
+$\varphi_i(x,f)$ mà phụ lục~\ref{app:ky-hieu} đã chốt từ
+chương~\ref{ch:attribution-tu-nguyen-ly-dau}. Và bài đặt cho vế trái của
+phương trình~\ref{eq:ch11-noi-tang} một ký hiệu riêng, $\psi_{i,j}$, mà sách
+không dùng: $\psi$ đã được chương~\ref{ch:khung-hop-nhat} gán cho attribution
+của một điểm huấn luyện, và một cuốn sách giữ một tên cho một khái niệm thì
+không lấy lại ký hiệu ấy cho một thứ khác. Viết đủ như phương
+trình~\ref{eq:ch11-noi-tang} cũng nói rõ hơn cấu trúc mà mục này đang bàn.
+
+Cấu trúc ấy trả lời được câu hỏi về cặp đặc trưng, nhưng nó mở ra một câu hỏi
+mà mục sau dành cả mục để trả lời. Nếu con số ở tầng hai được sinh ra bằng cùng
+một thủ tục đã sinh ra con số ở tầng một, thì nó cũng thừa hưởng mọi tính chất
+của thủ tục ấy, kể cả những tính chất không mong muốn. Bài báo chỉ ra rằng có
+một tính chất không mong muốn như thế, và chỉ ra nó trên một hàm mà người ta
+biết trước đáp án đúng.
+\index{attribution!nối tầng|)}%

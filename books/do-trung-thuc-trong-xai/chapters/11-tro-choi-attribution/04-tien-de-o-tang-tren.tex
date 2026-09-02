@@ -1,0 +1,99 @@
+\section{Một tiên đề ở tầng trên}
+\label{sec:ch11-tien-de-o-tang-tren}
+
+\index{tính hiệu quả phân tầng|(}%
+Một xây dựng như thế được bảo đảm bằng cái gì? Bài trả lời bằng một tiên đề mà
+người đọc Phần~II đã gặp hình dạng của nó hai lần rồi, và đặt cho nó cái tên
+\tn{tính hiệu quả phân tầng}{hierarchical efficiency}.
+
+\begin{definition}[Tính hiệu quả phân tầng]
+  \label{def:ch11-hieu-qua-phan-tang}
+  Một họ đại lượng bậc hai $\varphi_{j \to i}$ được gọi là hiệu quả phân tầng
+  đối với attribution bậc nhất $\varphi_i(x,f)$ nếu
+  %
+  \begin{equation}
+    \label{eq:ch11-hieu-qua-phan-tang}
+    \varphi_i(x,f)
+      = \sum_{j \in [d]} \varphi_{j \to i}(x,f)
+      = \varphi_{i \to i}(x,f) + \sum_{j \neq i} \varphi_{j \to i}(x,f)
+  \end{equation}
+  %
+  với mọi đặc trưng $i$~\autocite{p23metagame}.
+\end{definition}
+
+Phương trình~\ref{eq:ch11-hieu-qua-phan-tang} nói rằng attribution bậc nhất của
+một đặc trưng được lấy lại nguyên vẹn khi cộng \tn{hiệu ứng riêng}{pure individual effect} của nó với các
+hiệu ứng tương tác của nó với những đặc trưng còn lại. Không có phần nào của
+$\varphi_i$ rơi ra ngoài, và không có phần nào được đếm hai lần. Bài chứng minh
+rằng meta-attribution của định nghĩa~\ref{def:ch11-meta-attribution} thỏa tính
+chất ấy, nên phép phân tách mà mục trước dựng không đánh mất gì của tầng dưới.
+
+Hình dạng ấy chính là hình dạng của \tn{tính đầy đủ}{completeness}, tiên đề mà
+mệnh đề~\ref{prop:ch05-tinh-day-du} phát biểu cho Integrated Gradients, và của
+\tn{độ chính xác cục bộ}{local accuracy} mà chương~\ref{ch:shap} rút ra từ tiên đề của giá trị
+Shapley. Cả ba nói cùng một điều ở ba tầng khác nhau: tổng các phần bằng cái
+được chia. Ở tính đầy đủ, cái được chia là hiệu số đầu ra của mô hình giữa đầu
+vào và baseline, còn các phần là attribution của từng đặc trưng. Ở tính hiệu
+quả phân tầng, cái được chia là attribution của một đặc trưng, còn các phần là
+meta-attribution của đặc trưng ấy với từng đặc trưng khác. Tiên đề đi lên một
+tầng cùng với xây dựng.
+
+Kết quả thứ nhất của bài nói rằng tiên đề ấy đã được thỏa từ trước, ở những chỗ
+không ai phát biểu nó.
+
+\begin{theorem}[Các chỉ số tương tác sẵn có đều hiệu quả phân tầng]
+  \label{thm:ch11-phan-tang-san-co}
+  Các chỉ số tương tác đang được dùng đều thỏa
+  phương trình~\ref{eq:ch11-hieu-qua-phan-tang}. Cả họ tương tác Shapley, mà
+  STII là một thành viên, phân tách giá trị Shapley, còn SOP phân tách
+  Integrated Gradients, với quy ước rằng
+  đại lượng bậc hai lấy từ một chỉ số theo tập là giá trị của chỉ số ấy trên
+  cặp chia cho số phần tử của cặp. Các phương pháp nối tầng cũng phân tách
+  attribution bậc nhất của chúng, với đại lượng bậc hai lấy thẳng bằng giá trị
+  nối tầng~\autocite{p23metagame}.
+\end{theorem}
+
+Bài gọi kết quả này là điều đáng ngạc nhiên, vì những chỉ số ấy được xây dựng
+với mục đích khác và không ai trình bày chúng như một phép phân tách theo tầng.
+Kết quả thứ hai làm chặt thêm quan hệ: Meta-SV và Meta-IG là biến thể có hướng
+của hai chỉ số theo tập đã có, cụ thể là của STII và của SOP. Với mỗi cặp
+$i \neq j$,
+%
+\begin{equation}
+  \label{eq:ch11-doi-xung-hoa}
+  \text{STII}_{\{i,j\}}
+    = \varphi^{\text{Meta-SV}}_{j \to i} + \varphi^{\text{Meta-SV}}_{i \to j},
+  \qquad
+  \text{SOP}_{\{i,j\}}
+    = \varphi^{\text{Meta-IG}}_{j \to i} + \varphi^{\text{Meta-IG}}_{i \to j},
+\end{equation}
+%
+nghĩa là chỉ số theo tập thu được từ đại lượng có hướng bằng cách cộng hai
+chiều lại~\autocite{p23metagame}. Đọc theo chiều ngược, đó là lời giải thích
+cho ô gộp trong bảng~\ref{tab:ch11-tach-hieu-ung}: chỉ số theo tập không mất
+thông tin về chiều vì nó chưa bao giờ có, mà vì nó cộng hai chiều lại trước khi
+báo cáo.
+
+Đến đây phải tách ra điều mà tiên đề bảo đảm với điều nó không bảo đảm, và chỗ
+tách này là cách đọc của sách chứ không phải phát biểu của bài. Tính hiệu quả
+phân tầng ràng buộc quan hệ giữa tầng hai và tầng một. Nó không nói gì về việc
+tầng một có đúng hay không, vì $\varphi_i$ đứng ở vế trái của
+phương trình~\ref{eq:ch11-hieu-qua-phan-tang} như một đại lượng cho trước.
+
+Gradient nhân đầu vào là minh họa sẵn có cho điều đó, và bài in các con số cần
+thiết ở hai cột mà bảng~\ref{tab:ch11-tach-hieu-ung} không chép lại. Với hàm ở
+phương trình~\ref{eq:ch11-ham-vi-du}, phương pháp ấy cho
+$\varphi_1 = x_1 + T$ và $\varphi_2 = 2T$, nên tổng hai attribution bậc nhất
+của nó bằng $x_1 + 3T$, trong khi hiệu số đầu ra giữa đầu vào và baseline chỉ
+bằng $x_1 + T$~\autocite{p23metagame}. Phương pháp bậc nhất ấy vi phạm tính đầy
+đủ, và Meta-G$\times$I dựng trên nó vẫn hiệu quả phân tầng: cộng hàng
+Meta-G$\times$I của bảng lại thì được đúng $\varphi_1$ và đúng $\varphi_2$, tức
+là phép phân tách bảo toàn nguyên vẹn một con số vốn đã sai.
+
+Đó là kết luận mà chương~\ref{ch:attribution-tu-nguyen-ly-dau} đã rút ra ở tầng
+dưới, gặp lại ở tầng trên. Mục~\ref{sec:ch06-do-do-la-gia-thuyet} cho thấy các
+tiên đề của attribution ràng buộc được dạng của lời giải thích mà không chọn
+được \tn{độ đo}{measure}, nên một xây dựng thỏa hết tiên đề vẫn còn nguyên câu hỏi nó có đúng
+hay không. Ở đây cũng vậy, chỉ khác là câu hỏi ấy giờ có hai tầng để hỏi.
+Mục~\ref{sec:ch11-ba-phep-do-va-ba-cai-nen} xem bài trả lời nó bằng cách nào.
+\index{tính hiệu quả phân tầng|)}%

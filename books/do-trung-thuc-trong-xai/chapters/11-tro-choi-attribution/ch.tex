@@ -1,3 +1,59 @@
-% Scope (SPEC table of contents): The research metagame: benchmark churn, metric proliferation, the incentives behind yet another unvalidated metric. Paper 23.
+% Scope (SPEC table of contents): attribution applied to the output of an
+% attribution. Paper 23 introduces the metagame and meta-attributions,
+% diagnoses interaction leakage in serial methods on a two-variable function
+% whose answer is known analytically, and proves that existing interaction
+% indices already decompose attributions hierarchically.
+% The chapter reads it as the regress its title names: the faithfulness
+% question moves up one level with the construction and finds no floor there.
+%
+% The initialized TOC line promised the research metagame, benchmark churn and
+% publication incentives, and paper 23 contains none of that; the line was
+% inferred from the title and was corrected in this session (decision 56).
+% The paper's object is second-order interaction effects, not faithfulness,
+% which is decision 54's object gap for the fourth time in Part IV.
+%
+% Every number on these pages is recorded in
+% research/ch11-attribution-suot-duong-xuong.md with its page anchor in the
+% PDF, including the analytic fractions of table 11.1 and the claim about the
+% pointing game's chance level that the book checked and declined to print.
 \chapter{Attribution suốt đường xuống}
 \label{ch:tro-choi-attribution}
+
+Chương~\ref{ch:lime-nao-dang-tin} khép lại bằng một nghi vấn không có bằng
+chứng đi kèm. Ba thói quen mà khảo sát biến thể LIME ghi lại, đem bản sửa của
+mình so với đúng bản gốc, chọn chỉ số nào xác nhận được đóng góp đã tuyên bố,
+và không công bố mã nguồn, đều không có chỗ nào riêng cho LIME; nhưng khảo sát
+chỉ nêu điều đó trong một câu rồi dừng, nên chương ấy cũng phải dừng theo.
+
+Công trình mà chương này đọc là một bài báo phương pháp, do Baniecki, Biecek và
+Fumagalli đưa lên arXiv tháng 5 năm 2026, đề xuất một khung mà các tác giả đặt
+tên là metagame để đo \tn{tương tác bậc hai}{second-order interaction} giữa các
+thành phần của một lời giải thích~\autocite{p23metagame}. Nó không nghiên cứu
+lĩnh vực; nó là một công trình trong lĩnh vực, và chính chỗ đó làm nó dùng được
+cho phép thử mà chương trước đề ra.
+
+Đối tượng của bài là tương tác bậc hai giữa các đặc trưng, không phải độ trung
+thực, và điều ấy phải được nói trước khi tới con số, đúng như
+mục~\ref{sec:ch09-doi-tuong-khac-nhau} đã làm với bài báo neo. Nhan đề dễ bị
+đọc thành một câu về lĩnh vực, nhưng trong toàn bộ 32 trang của bài không có
+lấy một lần các chữ \enquote{incentive}, \enquote{publication} hay
+\enquote{peer review}. Chữ \enquote{metagame} ở đó là tên của một trò chơi hợp
+tác, không phải một nhận xét về cách lĩnh vực này vận hành; chính các tác giả
+tách nghĩa ấy ra trong phần công trình liên quan.
+
+Cái làm bài báo này thuộc về Phần~IV nằm ở nửa đầu nhan đề. Xây dựng của bài
+lấy một phương pháp attribution rồi đem chính phương pháp ấy áp lên đầu ra của
+nó, tức là giải thích một lời giải thích. Đó là nghĩa đen của
+\enquote{attribution suốt đường xuống}. Và một khi lời giải thích có thêm một
+tầng, câu hỏi mà cả Phần~IV đang đuổi theo cũng lên theo một tầng: nếu chưa ai
+kiểm chứng được tầng thứ nhất, thì tầng thứ hai được kiểm chứng bằng gì.
+Mục~\ref{sec:ch11-giai-thich-cho-loi-giai-thich} bắt đầu từ tầng thứ nhất.
+
+\input{chapters/11-tro-choi-attribution/01-giai-thich-cho-loi-giai-thich}
+\input{chapters/11-tro-choi-attribution/02-ro-ri-tuong-tac}
+\input{chapters/11-tro-choi-attribution/03-tro-choi-dung-tren-attribution}
+\input{chapters/11-tro-choi-attribution/04-tien-de-o-tang-tren}
+\input{chapters/11-tro-choi-attribution/05-ba-phep-do-va-ba-cai-nen}
+\input{chapters/11-tro-choi-attribution/06-khong-co-tang-day}
+\input{chapters/11-tro-choi-attribution/07-dieu-bai-bao-chua-giai-quyet}
+\input{chapters/11-tro-choi-attribution/08-tom-tat-va-cau-hoi}
