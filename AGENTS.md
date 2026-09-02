@@ -13,6 +13,12 @@ preamble code; repo-wide consistency is structural only.
 - scripts/ - setup.ps1, new-book.ps1, release.ps1, release-epub.ps1,
   check-chapter.ps1 (the prose gate), and the tests beside release.ps1 and
   the prose gate (PowerShell 7+)
+- scripts/epub/ - the EPUB driver release-epub.ps1 launches: a conda
+  environment.yml, release_epub.py holding the menu and the build, and
+  booksource.py and figures.py beside it. Python rather than PowerShell
+  because the conversion needs a flattening pass over the LaTeX tree, a
+  per-figure render and two pandoc filters, which is more program than a
+  release script should carry inline.
 - .githooks/ - every hook this repo runs, because setup.ps1 points
   core.hooksPath here and git then reads nothing from .git/hooks. pre-commit is
   the local build gate: it compiles and prose-checks every staged book before
@@ -40,7 +46,8 @@ preamble code; repo-wide consistency is structural only.
 
 Inside a book: main.tex, .latexmkrc, refs.bib, SPEC.md, check-chapter.psd1,
 preamble/{packages,fonts,macros}.tex, frontmatter/, chapters/NN-name/,
-backmatter/, figures/{images,tikz}/, research/ (optional), build/ (generated).
+backmatter/, figures/{images,tikz}/, epub/ (pandoc filters, optional),
+research/ (optional), build/ (generated).
 
 ## Build commands
 
@@ -53,13 +60,22 @@ backmatter/, figures/{images,tikz}/, research/ (optional), build/ (generated).
   changed first, and asks which to build. `pwsh scripts/release.ps1 <name>...`
   and `-All` skip the prompt; add `-DryRun` to see the selection without
   spending the rebuild.
-- Release an EPUB: `pwsh scripts/release-epub.ps1`, same menu and same
-  arguments, running tex4ebook instead of latexmk and writing
-  dist/<name>.epub. It refuses a book whose \includeonly is still active,
-  and warns when tidy or epubcheck is missing rather than shipping an
-  unvalidated file quietly. A book that needs its own make4ht settings puts
-  them in books/<name>/epub.mk4, which the script passes through when it
-  exists.
+- Release an EPUB: `pwsh scripts/release-epub.ps1`, the same menu and the
+  same selection grammar as release.ps1, writing dist/<name>.epub. Flags
+  are the driver's rather than PowerShell's: `--all`, `--dry-run`,
+  `--verbose`. On its first run it builds the conda environment named in
+  scripts/epub/environment.yml; `-Recreate` rebuilds it. Needs pandoc,
+  lualatex and dvisvgm on PATH, and says so when epubcheck is missing
+  rather than shipping an unvalidated file quietly.
+- A book opts into EPUB by putting pandoc Lua filters in its epub/
+  directory; a book without them is refused rather than converted badly.
+  Same split as check-chapter.psd1 - the script is shared, the policy is
+  the book's. The filters name every environment the book uses and stop
+  the build on one they have no rule for, because pandoc's own answer is
+  to render an unknown environment's body as prose with its formatting
+  gone and report nothing. epub/figures-preamble.tex overrides the
+  preamble each TikZ figure is compiled against, for a book whose
+  pictures need libraries the default does not load.
 
 ## Hard rules
 
