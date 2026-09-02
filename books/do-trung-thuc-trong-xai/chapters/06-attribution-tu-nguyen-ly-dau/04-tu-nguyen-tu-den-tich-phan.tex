@@ -4,35 +4,80 @@
 \index{độ đo|(}%
 \index{tích phân}%
 \tn{Hàm chỉ báo}{indicator function} giải thích một vùng, trong khi mô hình thực
-tế thay đổi trên nhiều vùng. Bước nối là xấp xỉ một hàm liên tục bằng tổng có trọng số của các hàm chỉ báo
-trên một phân hoạch ngày càng mịn. Ở đây bài báo giới hạn miền vào khối đơn
-vị $[0,1]^d$, với $d$ là số chiều của không gian đầu vào; giới hạn ấy là điều
-kiện để bước lấy giới hạn phía sau dùng được~\autocite{p17firstprinciples}.
-Nếu attribution tuyến tính theo mô hình, attribution của tổng bằng tổng các
-attribution nguyên tử.
-Khi phân hoạch tiến tới giới hạn và attribution ổn định trước hội tụ đều của
-mô hình, tổng đó thành tích phân~\autocite{p17firstprinciples}.
+tế thay đổi trên nhiều vùng. Bài báo đi từ vùng tới mô hình qua bốn bước, và
+hình~\ref{fig:ch06-xay-attribution} vẽ đúng bốn bước ấy theo chiều xây
+dựng~\autocite{p17firstprinciples}. Ở đây bài báo giới hạn miền vào khối đơn vị
+$[0,1]^d$, với $d$ là số chiều của không gian đầu vào, và giả sử $f$ liên tục
+trên khối ấy; hai giới hạn này là điều kiện để bước lấy giới hạn phía sau dùng
+được.
 
-Kết quả của khung là công thức
+Bước thứ nhất là \tn{quy tắc nguyên tử}{atomic attribution rule} của mục
+trước. Với mỗi hình hộp $R$, quy tắc gán cho đặc trưng $j$ tại $x$ một số, và
+ta ký hiệu số ấy là $\mu_{j,x}(R)$. Ký hiệu này chỉ ghi lại quy tắc, chưa thêm
+gì mới.
+
+Bước thứ hai xấp xỉ $f$. Chia $[0,1]^d$ thành một lưới các hình hộp nhỏ
+$R_1,\dots,R_n$, lấy giá trị của $f$ tại một đỉnh $y_k$ của mỗi hộp, rồi đặt
+$f_n=\sum_k f(y_k)\,\mathbf{1}_{R_k}$. Hàm $f_n$ là hàm bậc thang, hằng trên
+từng hộp, và vì $f$ liên tục nên lưới càng mịn thì $f_n$ càng sát $f$ đều trên
+toàn khối.
+
+Bước thứ ba dùng tính tuyến tính, tiên đề duy nhất mà chương này giữ lại.
+Attribution của một tổng bằng tổng các attribution, nên
+\begin{equation}
+\label{eq:ch06-tong-riemann}
+\varphi_j(x,f_n)=\sum_{k} f(y_k)\,\mu_{j,x}(R_k).
+\end{equation}
+Vế phải là một tổng Riemann: giá trị hàm tại mỗi hộp nhân với trọng lượng của
+hộp ấy. Chỗ khác với tổng Riemann quen thuộc là trọng lượng không phải thể tích
+của hộp mà là số $\mu_{j,x}(R_k)$ do quy tắc nguyên tử gán.
+
+Bước thứ tư lấy giới hạn khi lưới mịn dần, và để giới hạn ấy có nghĩa, bài báo
+cần hai điều. Thứ nhất, các số $\mu_{j,x}(R)$ mà quy tắc nguyên tử gán cho các
+hình hộp phải là giá trị của một
+\tn{độ đo Borel hữu hạn có dấu}{finite signed Borel measure} trên $[0,1]^d$,
+tức một cách gán trọng lượng, có thể âm, cho mọi tập Borel của khối, là mọi
+vùng dựng được từ các hình hộp bằng hợp, giao và phần bù đếm được, không chỉ
+cho các hình hộp. Bài báo lấy điều này làm giả thiết: mỗi quy tắc nguyên tử
+được cho sẵn dưới dạng một họ độ đo như thế. Thứ hai, attribution phải ổn định trước hội
+tụ đều của mô hình: nếu $f_n$ tiến tới $f$ đều thì $\varphi_j(x,f_n)$ phải
+tiến tới $\varphi_j(x,f)$. Không có điều này, giới hạn của các tổng trong
+phương trình~\ref{eq:ch06-tong-riemann} là một con số không nói gì về $f$. Với
+hai điều ấy, tổng Riemann hội tụ về tích phân của $f$ theo
+\tn{độ đo}{measure} $\mu_{j,x}$, và attribution của $f$ là
 
 \begin{equation}
 \label{eq:ch06-attribution-do-do}
 \varphi_j(x,f)=\int_{[0,1]^d} f(y)\,\mathrm{d}\mu_{j,x}(y).
 \end{equation}
 
-Ở đây $\mu_{j,x}$ là một \tn{độ đo Borel hữu hạn có dấu}{finite signed Borel measure}
-gắn với đặc trưng $j$ và đầu vào $x$. Nó không phải dữ liệu phụ để che trong
-cài đặt. Nó quyết định những điểm
-$y$ nào của không gian đầu vào được tính, và chúng được tính với dấu cùng
-trọng số ra sao. Hình~\ref{fig:ch06-xay-attribution} đặt bốn bước này theo
-đúng chiều xây dựng, thay vì đi ngược từ một công thức đã quen.
+Bài báo còn nêu chiều ngược lại, rút từ định lý biểu diễn Riesz của giải tích
+hàm: mọi attribution tuyến tính và ổn định trước hội tụ đều, xét trên các hàm
+liên tục của $[0,1]^d$, đều có dạng của phương
+trình~\ref{eq:ch06-attribution-do-do} với một họ độ đo duy
+nhất~\autocite{p17firstprinciples}. Vậy chọn quy tắc nguyên tử và chọn độ đo là
+cùng một việc, nhìn từ hai phía.
+
+Ví dụ hai chiều của mục~\ref{sec:ch06-ham-chi-bao} cho thấy một độ đo trông ra
+sao. Quy tắc thứ hai ở đó gán cho đặc trưng thứ nhất số $b_2-a_2$ khi
+$x_1\in(a_1,b_1]$, và số ấy đúng là trọng lượng mà độ đo sau đây gán cho hình
+hộp $R$: toàn bộ trọng lượng tập trung trên đường thẳng $y_1=x_1$ và trải đều
+dọc theo tọa độ thứ hai. Tích phân của $f$ theo độ đo ấy là
+$\int_0^1 f(x_1,y_2)\,\mathrm{d}y_2$: giữ tọa độ đang xét tại giá trị của $x$,
+lấy trung bình tọa độ kia trên cả khoảng.
+
+Ở đây $\mu_{j,x}$ gắn với đặc trưng $j$ và đầu vào $x$, và nó không phải một
+chi tiết cài đặt. Nó quyết định những điểm $y$ nào của không gian đầu vào được
+tính, và chúng được tính với dấu cùng trọng số ra sao.
 
 \begin{figure}[htbp]
   \centering
   \input{figures/tikz/ch06-xay-attribution}
-  \caption{Khung xây attribution của Taimeskhanov và Garreau. Một quy tắc cho
-  hàm chỉ báo xác định độ đo $\mu_{j,x}$; xấp xỉ $f$ bằng các vùng nhỏ và lấy
-  giới hạn đưa attribution về tích phân trong phương trình~\ref{eq:ch06-attribution-do-do}.
-  Sơ đồ là cách sách này đọc lại cơ chế của bài báo~\autocite{p17firstprinciples}.}
+  \caption{Bốn bước xây attribution của Taimeskhanov và Garreau, đúng thứ tự
+  của mục này: quy tắc nguyên tử cho hàm chỉ báo, phép xấp xỉ $f$ bằng tổng
+  trên các hình hộp, tính tuyến tính cho tổng Riemann của
+  phương trình~\ref{eq:ch06-tong-riemann}, rồi giới hạn đưa attribution về
+  tích phân trong phương trình~\ref{eq:ch06-attribution-do-do}. Sơ đồ là cách
+  sách này đọc lại cơ chế của bài báo~\autocite{p17firstprinciples}.}
   \label{fig:ch06-xay-attribution}
 \end{figure}

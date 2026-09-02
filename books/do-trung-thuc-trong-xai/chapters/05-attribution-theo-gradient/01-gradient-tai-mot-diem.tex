@@ -12,7 +12,11 @@ Nếu chỉ tô màu đạo hàm, một đặc trưng có biên độ lớn như
 thể biến mất khỏi lời giải thích. Nhân gradient với $x_i$, một cách làm quen thuộc trong thực hành mà
 chương~\ref{ch:attribution-tu-nguyen-ly-dau} sẽ gặp lại dưới tên
 Gradient$\mathbin{\times}$Input, khắc
-phục một phần vấn đề về đơn vị đo, nhưng vẫn chỉ đọc độ dốc tại điểm cuối. Một đơn vị ReLU có
+phục một phần vấn đề về đơn vị đo: đạo hàm riêng có đơn vị là đầu ra trên một
+đơn vị của đặc trưng, nên hai đặc trưng đo bằng hai đơn vị khác nhau không so
+được với nhau qua đạo hàm, còn tích $x_i\,\partial F(x)/\partial x_i$ thì mang
+đơn vị của đầu ra với mọi $i$. Tuy nhiên tích ấy vẫn chỉ đọc độ dốc tại điểm
+cuối. Một đơn vị ReLU có
 thể đã thay đổi đầu ra trên đường đi tới $x$, rồi bão hòa ở $x$ và cho gradient
 bằng không~\autocite{p11ig}. Khi đó, một lời giải thích chỉ nhìn điểm đến sẽ bỏ mất sự thay đổi đã xảy ra
 trên đường tới đó.

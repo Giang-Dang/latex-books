@@ -21,8 +21,8 @@ hay SHAP là đi ngược lại lập luận mở đường cho chính các kế
 Cái đi qua được ranh giới là ba thứ, và cả ba đều không phải con số.
 
 Thứ nhất là phương pháp. Vòng luẩn quẩn mà
-mục~\ref{sec:ch08-dieu-chua-giai-quyet} mô tả không phải đặc sản của chuỗi suy
-luận; nó xuất hiện ở bất cứ đâu mà ground truth đòi biết nội dung tính toán bên
+mục~\ref{sec:ch08-dieu-chua-giai-quyet} mô tả không phải điều riêng của chuỗi
+suy luận; nó xuất hiện ở bất cứ đâu mà ground truth đòi biết nội dung tính toán bên
 trong mô hình. Lối ra của bài báo cũng không gắn với chuỗi suy luận: chọn
 những bài toán mà đầu ra để lộ phép tính đã sinh ra nó thì được ground truth
 mà không cần nhìn vào trong. Nguyên tắc ấy chuyển sang attribution đặc trưng
@@ -39,8 +39,8 @@ biện minh bịa đặt vẫn qua được các chỉ số hữu dụng ngữ n
 lọt vào dụng cụ đo, mà đó là rủi ro của mọi cách đánh giá lấy phản ứng của một
 người đọc, hoặc một mô hình đọc, làm thước.
 
-Thứ ba là một phép kiểm mà phía attribution có thể chạy ngay và phần lớn chưa
-chạy: đo mức đồng thuận giữa các chỉ số. Kết quả kappa quanh 0 không cần ground
+Thứ ba là một phép kiểm mà phía attribution có thể chạy ngay: đo mức đồng
+thuận giữa các chỉ số. Kết quả kappa quanh 0 không cần ground
 truth mới đọc được, mà chỉ cần chạy nhiều chỉ số trên cùng một tập. Nếu hai
 chỉ số cùng đo một đại lượng thì chúng phải đồng thuận cao hơn thế nhiều, nên
 mức đồng thuận thấp một mình nó đã đủ để loại bỏ khả năng cả hai cùng đo đúng
@@ -61,9 +61,8 @@ buộc phải xảy ra, trong khi một chuỗi bất kỳ còn chứa nhiều b
 kế ấy không nói được gì; thiết kế đặt độ chính xác lên trước cũng làm lệch
 phân bố nhãn ở mức cả chuỗi theo hướng đã nói ở
 mục~\ref{sec:ch09-bonafide}~\autocite{p21metrics}. Phương pháp cũng chỉ chạy
-được trên mô hình trọng số mở, nên đúng những mô hình đóng đang được dùng
-nhiều nhất lại nằm ngoài tầm. Và một ô của bảng bỏ trống vì chi phí, nghĩa là
-có một chỉ số mà bộ đánh giá không đủ sức kiểm.
+được trên mô hình trọng số mở, nên các mô hình đóng nằm ngoài tầm. Và một ô
+của bảng bỏ trống vì chi phí.
 
 Điều đó đặt Phần~IV vào thế phải đi tiếp bằng đường khác. Nếu chưa ai đem các
 chỉ số attribution ra đối chiếu với ground truth dựng sẵn, thì bằng chứng gần

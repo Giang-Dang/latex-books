@@ -4,15 +4,29 @@
 \index{độ trung thực}%
 \index{ground truth}%
 Các trường hợp thu hồi được cho thấy khung đo được những giả định đã có, nhưng
-không tự chọn giả định đúng cho một miền ứng dụng. Bài báo đề xuất tối ưu độ đo
-theo một chỉ số recall khi biết tập đặc trưng thật của mô hình tuyến tính. Chính
-điều kiện biết ground truth là giới hạn đầu tiên mà bài báo tự nêu: không phải
-lúc nào ta cũng có tập đặc trưng chuẩn để tối ưu theo cách
-đó~\autocite{p17firstprinciples}.
+không tự chọn giả định đúng cho một miền ứng dụng. Bài báo thử một cách chọn
+bằng tối ưu, trên lớp mô hình mà ground truth có sẵn: mô hình tuyến tính
+$f(y)=w^{\top}y$, ở đó tập đặc trưng thật là những $j$ có $|w_j|$ vượt một
+ngưỡng. Attribution ở đây là toàn cục, không phụ thuộc $x$, và mỗi
+\tn{độ đo}{measure} $\mu_j$ là một độ đo xác suất trên $[0,1]^d$. Với mỗi bộ
+độ đo như thế, recall là tỉ lệ đặc trưng thật được attribution xếp trên một
+ngưỡng thứ hai, và bài toán là tìm bộ độ đo làm recall lớn
+nhất~\autocite{p17firstprinciples}. Chính điều kiện biết ground truth là giới
+hạn đầu tiên mà bài báo tự nêu: không phải lúc nào ta cũng có tập đặc trưng
+chuẩn để tối ưu theo cách đó.
 
-Giới hạn thứ hai bài báo nêu là kỹ thuật: kết quả không mô tả trực tiếp các
-nghiệm tối ưu trong không gian độ đo, vì phép chiếu dùng ở đó không song
-ánh~\autocite{p17firstprinciples}.
+Giới hạn thứ hai bài báo nêu là kỹ thuật, và nó nằm ở cách bài toán được giải.
+Tối ưu trực tiếp trên không gian các độ đo nói chung khó và không có dạng
+đóng, nên bài báo thay mỗi độ đo bằng trọng tâm của nó, điểm trung bình của
+$y$ theo độ đo ấy như mục~\ref{sec:ch06-thu-hoi} đã dùng, và phát biểu điều
+kiện tối ưu trên các trọng tâm: với mỗi đặc trưng thật $j$, trọng tâm $m$ của
+$\mu_j$ phải thỏa $w^{\top}m\ge\alpha$ hoặc $w^{\top}m\le-\alpha$, với
+$\alpha$ là ngưỡng xếp hạng, còn với các đặc trưng khác thì trọng tâm tự
+do~\autocite{p17firstprinciples}. Phép thay độ đo bằng trọng tâm không song
+ánh, vì nhiều độ đo khác nhau có cùng một trọng tâm. Vì vậy kết quả chỉ nói
+trọng tâm tối ưu nằm ở đâu, chứ không mô tả hết các độ đo tối ưu, và cũng
+không có cách đơn giản để đi ngược từ một trọng tâm về mọi độ đo sinh ra
+nó~\autocite{p17firstprinciples}.
 
 Còn một giới hạn thứ ba mà cuốn sách này thêm vào, nằm ở ý nghĩa của
 attribution. Một độ đo có thể cho một phép tính chặt chẽ và một xấp xỉ chính

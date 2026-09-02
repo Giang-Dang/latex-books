@@ -32,11 +32,16 @@ trong tập đặc trưng đó đối với bài toán. Đó là một đại l�
 nó không phải quan hệ mà định nghĩa~\ref{def:ch01-do-trung-thuc} đặt ra, vốn nói
 về một hành vi của một mô hình đã cho.
 
-Hase và cộng sự sau đó siết lập luận và nói rõ nó ăn tới đâu. Họ gọi thứ mà
+Hase và cộng sự sau đó siết lập luận và nói rõ nó đi xa tới đâu. Họ gọi thứ mà
 ROAR mô tả bằng đúng một cái tên, \tn{đầu vào ngoài phân phối}{out-of-distribution input},
-và vì các đầu vào phản thực là như vậy, tiên nghiệm của mô hình và cả cách
-khởi tạo trọng số ngẫu nhiên đều lọt được vào lời giải thích và vào chính các
-chỉ số đánh giá lời giải thích~\autocite{mood}. Câu ấy nặng hơn câu của ROAR
+và vì các đầu vào \tn{phản thực}{counterfactual} là như vậy, tiên nghiệm của
+mô hình và cả cách khởi tạo trọng số ngẫu nhiên đều lọt được vào lời giải
+thích và vào chính các chỉ số đánh giá lời giải thích~\autocite{mood}. Đường
+lọt ấy, theo cách sách đọc lập luận của họ, đi như sau: trên một đầu vào mà dữ
+liệu huấn luyện chưa từng bao phủ, dữ liệu không quyết định đầu ra của mô hình,
+nên đầu ra do những thứ còn lại quyết định, là lớp mô hình cùng bộ điều chuẩn,
+tức tiên nghiệm, và cả điểm khởi tạo ngẫu nhiên của trọng số. Một chỉ số đọc
+đầu ra ấy thì đọc luôn phần do khởi tạo quyết định. Câu ấy nặng hơn câu của ROAR
 một bậc. ROAR nói ta không đọc được con số; Hase và cộng sự nói con số có mang
 thông tin, nhưng một phần thông tin ấy đến từ những thứ chẳng liên quan gì đến
 lời giải thích lẫn mô hình đã huấn luyện.

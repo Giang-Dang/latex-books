@@ -8,19 +8,23 @@ thẳng. Định nghĩa được dùng rộng rãi nhất, của Jacovi và Gold
 giải thích trung thực là lời giải thích phản ánh đúng quá trình suy luận đằng
 sau tiên đoán của mô hình. Định nghĩa ấy được thiết kế cho những phương pháp
 sinh ra một lời giải thích mạch lạc và khép kín về hành vi của mô hình, mà hai
-ví dụ bài báo nêu là bản đồ chú ý và điểm nổi bật~\autocite{p21metrics}.
+ví dụ bài báo nêu là bản đồ chú ý và các điểm số saliency, tức attribution đặc
+trưng theo cách gọi của sách~\autocite{p21metrics}.
 
 Hai ví dụ đó đáng dừng lại, vì chúng chính là đối tượng của Phần~II. Ngay ở
 mục dựng định nghĩa, bài báo neo ghi rằng định nghĩa cũ được thiết kế cho lớp
 đối tượng ấy, rồi lập luận rằng chuỗi suy luận của các mô hình suy luận hiện
-nay không thuộc lớp đó: chuỗi ấy là lời kể dài mà mô hình phát ra trong lúc
-giải bài, và nó có thể chứa nhiều bước không nối trực tiếp với tiên đoán, thậm
-chí không liên quan gì tới tiên đoán~\autocite{p21metrics}. Việc bài báo phải
+nay không thuộc lớp đó. Mô hình suy luận, theo cách gọi của bài báo và từ đây
+của sách, là mô hình được huấn luyện để sinh một chuỗi suy luận dài trước khi
+trả lời, khác với mô hình chỉ chỉnh theo chỉ dẫn. Chuỗi ấy là lời kể dài mà mô
+hình phát ra trong lúc giải bài, và nó có thể chứa nhiều bước không nối trực
+tiếp với dự đoán, thậm chí không liên quan gì tới dự
+đoán~\autocite{p21metrics}. Việc bài báo phải
 viết định nghĩa mới vì thế không phải chuyện hình thức; đó là chỗ nó tự tách
 khỏi đối tượng của Phần~II, và tách bằng lập luận của chính nó.
 
 Trước khi phát biểu định nghĩa, các tác giả phải chọn giữa hai cách đọc chữ
-\enquote{trung thực} khi chủ thể là một mô hình biết nói. Theo
+\enquote{trung thực} khi chủ thể là một mô hình sinh văn bản. Theo
 \tn{cách đọc cơ chế}{mechanistic reading}, một \tn{bước suy luận}{CoT step}
 trung thực khi nó mô tả đúng quá trình đã sinh ra thông tin mà nó đưa ra. Theo
 \tn{cách đọc hiện tượng}{phenomenological reading}, bước ấy vẫn được coi là
@@ -47,13 +51,14 @@ ra có chủ ý. Bước ấy không buộc phải mô tả phép tính diễn r
 sinh ra nó, mà chỉ cần mô tả một phép tính đã diễn ra ở đâu đó: một phép tính
 có thể xảy ra gọn trong một lượt truyền xuôi rồi được kể ra rải rác qua nhiều
 câu sau đó. Và định nghĩa chỉ áp cho những bước có mô tả một quá trình; những
-câu khẳng định trần trụi nằm ngoài phạm vi, còn những
+câu khẳng định trần trụi, kiểu \enquote{Da Vinci vẽ Starry Night}, không mô
+tả quá trình nào nên nằm ngoài phạm vi, còn những
 \tn{bước trơ}{inert step} kiểu \enquote{Hmm.} thì không mang thông tin nào và
 không đánh giá được theo hướng nào cả~\autocite{p21metrics}.
 
 Nhãn cho từng bước chưa đủ để nói cả chuỗi có trung thực hay không, và các tác
 giả nêu hai lý do. Một chuỗi mà mọi bước đều trung thực khi xét riêng vẫn có
-thể xuyên tạc cách mô hình suy luận, chẳng hạn khi mô hình đi theo một gợi ý
+thể xuyên tạc quá trình suy luận của mô hình, chẳng hạn khi mô hình đi theo một gợi ý
 mà không bước nào nhắc tới gợi ý ấy. Ngoài ra câu hỏi cuối cùng mà người dùng
 quan tâm được đặt ở mức cả chuỗi: chuỗi suy luận này có tin được
 không~\autocite{p21metrics}.

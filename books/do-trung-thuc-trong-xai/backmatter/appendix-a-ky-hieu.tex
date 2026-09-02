@@ -28,7 +28,7 @@ $M$ & Số đặc trưng trong biểu diễn dùng để giải thích. LIME vi�
 $x_0$ & Baseline của Integrated Gradients & - & - & $x'$ & - \\
 $z'$ & Một biểu diễn đã nhiễu dùng để lấy mẫu & $z'$ & Liên minh nhị phân & - & - \\
 $z$ & Đầu vào gốc được dựng lại từ $z'$ & $z$ & - & - & - \\
-$g$ & Mô hình giải thích dễ đọc & $g$ & $g$ & - & - \\
+$g$ & Mô hình giải thích dễ đọc; chương~\ref{ch:khung-hop-nhat} cũng dùng cho hàm attribution của định nghĩa~\ref{def:ch07-ham-attribution}, mà hệ số của mô hình dễ đọc chính là điểm số hàm ấy gán & $g$ & $g$ & - & - \\
 $\pi_x$ & Hàm nhân cho trọng số & $\pi_x$ & $\pi_{x'}$ & - & - \\
 $\mathcal{Z}$ & Tập mẫu cùng đầu ra và trọng số & $\mathcal{Z}$ & $Z$ & - & - \\
 $S$ & Một liên minh đặc trưng & - & $S$ & - & - \\
@@ -46,7 +46,10 @@ $y^c$ & Điểm số của lớp mục tiêu $c$, lấy trước phép softmax &
 $Z$ & Số vị trí trong một bản đồ đặc trưng. Không phải $\mathcal{Z}$ ở trên, và không phải $Z$ mà SHAP dùng cho tập mẫu & - & - & - & $Z$ \\
 $\varphi_j(x,f)$ & Attribution của đặc trưng $j$ tại đầu vào $x$ cho mô hình $f$ & - & - & - & - \\
 $\mu_{j,x}$ & Độ đo chọn cách lấy trung bình cho đặc trưng $j$ tại $x$ & - & - & - & - \\
+$E$ & Tập đối tượng mà một hàm attribution gán điểm: đặc trưng, điểm huấn luyện hoặc thành phần & - & - & - & - \\
 $\mathcal{D}_{\mathrm{train}}$ & Tập dữ liệu huấn luyện & - & - & - & - \\
+$\theta^{*}$ & Tham số của mô hình sau huấn luyện & - & - & - & - \\
+$\mathcal{L}(x,\theta)$ & Mất mát của mô hình với tham số $\theta$ tại một điểm $x$; $\nabla_{\theta}$ là gradient theo tham số & - & - & - & - \\
 $\psi_i(x)$ & Attribution của điểm huấn luyện thứ $i$ tại đầu vào $x$ & - & - & - & - \\
 $c_k$ & Một thành phần bên trong mô hình & - & - & - & - \\
 $\gamma_k(x)$ & Attribution của thành phần $c_k$ tại đầu vào $x$ & - & - & - & - \\

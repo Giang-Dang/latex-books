@@ -5,12 +5,12 @@
     minimum width=3.4cm, minimum height=1.1cm, fill=black!15},
   arrow/.style={-{Stealth[length=2mm]}, draw=black!65, thick}
 ]
-  \node[box] (atom) {Quy tắc attribution\\cho hàm chỉ báo $\mathbf{1}_R$};
-  \node[data, right=11mm of atom] (measure) {Độ đo\\$\mu_{j,x}$};
-  \node[box, right=11mm of measure] (sum) {Xấp xỉ $f$ bằng tổng\\trên các vùng $R$};
-  \node[data, below=11mm of sum] (integral) {Giới hạn:\\$\varphi_j(x,f)=\int f\,\mathrm{d}\mu_{j,x}$};
+  \node[box] (atom) {Bước 1: quy tắc nguyên tử\\$\mathbf{1}_R \mapsto \mu_{j,x}(R)$};
+  \node[box, right=11mm of atom] (approx) {Bước 2: xấp xỉ $f$\\$f_n=\sum_k f(y_k)\,\mathbf{1}_{R_k}$};
+  \node[box, below=11mm of approx] (sum) {Bước 3: tuyến tính\\$\varphi_j(x,f_n)=\sum_k f(y_k)\,\mu_{j,x}(R_k)$};
+  \node[data, left=11mm of sum] (integral) {Bước 4: giới hạn\\$\varphi_j(x,f)=\int f\,\mathrm{d}\mu_{j,x}$};
 
-  \draw[arrow] (atom) -- (measure);
-  \draw[arrow] (measure) -- (sum);
+  \draw[arrow] (atom) -- (approx);
+  \draw[arrow] (approx) -- (sum);
   \draw[arrow] (sum) -- (integral);
 \end{tikzpicture}

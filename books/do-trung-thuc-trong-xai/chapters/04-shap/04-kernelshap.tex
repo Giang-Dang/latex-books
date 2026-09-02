@@ -5,32 +5,51 @@
 Sau khi đã chọn cách gán giá trị cho liên minh, ta vẫn phải tính các
 \tn{giá trị Shapley}{Shapley value} đó. Khi có $M$ đặc trưng,
 phương trình~\ref{eq:ch04-gia-tri-shapley} đòi hỏi xem nhiều
-liên minh. KernelSHAP viết cùng bài toán ấy dưới dạng hồi quy có trọng số trên các
-vector $z'$ biểu thị liên minh. Mô hình hồi quy vẫn là
-phương trình~\ref{eq:ch04-mo-hinh-cong-tinh}, nhưng trọng số của một liên minh
-phụ thuộc số đặc trưng nó chứa. Các liên minh rất nhỏ và rất lớn được nhấn
-mạnh để ràng buộc giá trị nền và tổng các đóng góp~\autocite{p10shap}.
+liên minh. KernelSHAP viết cùng bài toán ấy dưới dạng hồi quy có trọng số: nó
+khớp mô hình của phương trình~\ref{eq:ch04-mo-hinh-cong-tinh} vào các giá trị
+$f_x(z')$ trên các liên minh $z'$ bằng bình phương tối thiểu có trọng số, tức
+cực tiểu hóa $\sum_{z'}\pi_{x'}(z')\,[f_x(z')-g(z')]^2$, trong đó trọng số
+$\pi_{x'}(z')$ của một liên minh chỉ phụ thuộc số bit bật $|z'|$ của nó, và
+bài báo chọn hàm trọng số sao cho nghiệm trùng với giá trị Shapley của
+phương trình~\ref{eq:ch04-gia-tri-shapley}~\autocite{p10shap}.
 
 \index{hàm nhân Shapley}%
-Hình~\ref{fig:ch04-kernelshap} cho thấy phép hồi quy chỉ là lớp tính toán. Mỗi
-liên minh đưa vào hồi quy trước hết phải được gán giá trị bằng quy tắc hoàn
-thiện đặc trưng ở mục~\ref{sec:ch04-gia-tri-lien-minh-va-phan-phoi-nen}. Vì vậy,
-KernelSHAP không loại bỏ giả định về dữ liệu; nó dùng một \tn{hàm nhân Shapley}{Shapley
-kernel} để làm hồi quy trả về cách chia mà các tiên đề đã chọn.
+Hàm trọng số này là \tn{hàm nhân Shapley}{Shapley kernel}:
+\begin{equation}
+\label{eq:ch04-ham-nhan-shapley}
+\pi_{x'}(z')=\frac{M-1}{\binom{M}{|z'|}\,|z'|\,(M-|z'|)}.
+\end{equation}
+Mẫu số bằng không khi $|z'|$ là $0$ hay $M$, nên liên minh rỗng và liên minh
+đầy nhận trọng số vô hạn, và hai đầu ấy quyết định hai ràng buộc. Với liên
+minh rỗng, mọi $z'_i$ bằng không nên phương trình~\ref{eq:ch04-mo-hinh-cong-tinh}
+rút về $g=\phi_0$, và trọng số vô hạn ép $\phi_0$ bằng đúng giá trị của liên
+minh rỗng, tức giá trị nền. Với liên minh đầy, mọi $z'_i$ bằng một nên
+$g=\phi_0+\sum_i\phi_i$, và trọng số vô hạn ép tổng ấy bằng đúng $f(x)$. Ràng
+buộc thứ hai chính là \tn{độ chính xác cục bộ}{local accuracy}, còn ràng buộc
+thứ nhất ghim giá trị nền; trong cài đặt, chúng được xử lý bằng cách khử hai
+ẩn khỏi bài toán thay vì đưa trọng số vô hạn vào phép
+tính~\autocite{p10shap}.
+
+Hình~\ref{fig:ch04-kernelshap} cho thấy phép hồi quy chỉ là phần tính toán. Mỗi
+liên minh đưa vào hồi quy trước hết phải được gán giá trị bằng
+\tn{quy tắc hoàn thiện}{completion rule} đặc trưng ở
+mục~\ref{sec:ch04-gia-tri-lien-minh-va-phan-phoi-nen}. Vì vậy,
+KernelSHAP không loại bỏ giả định về dữ liệu; hàm nhân Shapley chỉ bảo đảm
+rằng, với các giá trị liên minh đã cho, phép hồi quy trả về đúng cách chia mà
+phương trình~\ref{eq:ch04-gia-tri-shapley} định nghĩa.
 
 \begin{figure}[htbp]
   \centering
   \input{figures/tikz/ch04-kernelshap}
-  \caption{Giả định về dữ liệu và phép tính nằm ở hai chỗ khác nhau trong sơ
-  đồ: nó vào ở bước gán giá trị cho liên minh, không ở bước hồi quy. Cách viết
-  hồi quy này bắt nguồn từ Lundberg và Lee~\autocite{p10shap}.}
+  \caption{Sơ đồ KernelSHAP, dựng theo cách viết hồi quy của Lundberg và
+  Lee~\autocite{p10shap}.}
   \label{fig:ch04-kernelshap}
 \end{figure}
 
 Điểm này nối thẳng với LIME. Cả hai đều có mô hình cộng tính và có thể dùng
 hồi quy bình phương tối thiểu. Tuy nhiên, LIME chọn \tn{hàm nhân}{kernel} lân
-cận và độ thưa theo kinh nghiệm, còn KernelSHAP chọn hàm nhân, hàm mất mát và ràng buộc
-để nghiệm thỏa \tn{độ chính xác cục bộ}{local accuracy},
+cận và độ thưa theo kinh nghiệm, còn KernelSHAP chọn hàm nhân, hàm mất mát và
+số hạng điều chuẩn, đặt bằng không, để nghiệm thỏa độ chính xác cục bộ,
 \tn{tính vắng mặt}{missingness} và
 \tn{tính nhất quán}{consistency}~\autocite{p10shap}. Sự khác
 biệt nằm ở bài toán được giải, không nằm ở việc cả hai đều dùng hồi quy.

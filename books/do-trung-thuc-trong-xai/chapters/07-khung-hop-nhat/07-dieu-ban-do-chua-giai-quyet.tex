@@ -23,10 +23,10 @@ trong nhóm phép nhiễu đến tối ưu ngẫu nhiên trong nhóm xấp xỉ 
 lên đó là các \tn{siêu tham số}{hyperparameter} không tầm thường: số mẫu dùng
 để tính giá trị Shapley,
 tốc độ học và số bước của phép khớp tuyến tính, và lượng giảm chấn cho nghịch
-đảo Hessian. Riêng với kiểu nhiễu được chọn, đặt kích hoạt về không, thay bằng
-trung bình hay lấy ngẫu nhiên, bài báo nhận xét rằng ba cách lẽ ra phải cho kết
-quả gần nhau theo nguyên lý, nhưng trên thực tế thường cho attribution khác nhau
-rõ rệt~\autocite{p18unified}. Chương~\ref{ch:lime-nao-dang-tin} đọc kỹ hiện
+đảo Hessian. Riêng với kiểu nhiễu được chọn, đặt về không, thay bằng trung
+bình hay lấy ngẫu nhiên, bài báo nhận xét rằng ba cách lẽ ra phải cho kết quả
+gần nhau theo nguyên lý, ở cả ba nhánh, nhưng trên thực tế thường cho
+attribution khác nhau rõ rệt~\autocite{p18unified}. Chương~\ref{ch:lime-nao-dang-tin} đọc kỹ hiện
 tượng này ở LIME.
 
 Vấn đề thứ ba là vấn đề của cuốn sách. Muốn nói phương pháp nào tốt hơn thì phải
@@ -46,11 +46,12 @@ cao và bỏ những phần tử điểm thấp; inverse fidelity đo tính cầ
 ngược lại; và sparsity đo cần bao nhiêu phần tử mới đạt fidelity
 cao~\autocite{p18unified}. Leave-one-out của
 \tn{attribution dữ liệu}{data attribution} là một trường hợp riêng của inverse
-fidelity. Ba đại lượng ấy chính là các họ
-chỉ số mà chương~\ref{ch:do-do-trung-thuc} sẽ mổ xẻ, và ở đây chúng đến từ một
-bài báo không hề phê phán chúng.
+fidelity. Hai trong ba đại lượng ấy, fidelity và inverse fidelity, là hai họ
+chỉ số mà chương~\ref{ch:do-do-trung-thuc} sẽ đọc kỹ dưới tên riêng của từng
+bài báo, và ở đây chúng đến từ một bài báo không hề phê phán chúng.
 
-Chỗ hợp nhất vì thế cắt cả hai chiều. Nếu ba nhánh thật sự dùng chung một bộ kỹ
+Phép hợp nhất vì thế có hệ quả ở cả hai chiều. Nếu ba nhánh
+thật sự dùng chung một bộ kỹ
 thuật và một bộ chỉ số đánh giá, thì một sai sót trong bộ chỉ số ấy không dừng
 lại ở một nhánh. Bản thân các tác giả cũng ghi lại quan điểm đối lập rằng ba
 nhánh nên tiếp tục phát triển độc lập vì mỗi nhánh có động lực riêng, và họ trả

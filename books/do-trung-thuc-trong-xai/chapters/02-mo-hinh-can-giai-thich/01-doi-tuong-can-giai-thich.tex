@@ -4,8 +4,9 @@
 \index{mô hình ngôn ngữ lớn}%
 Chương trước đã nêu rằng \tn{độ trung thực}{faithfulness} luôn phải gắn với một hành vi và một
 loại can thiệp xác định. Với \tn{mô hình ngôn ngữ lớn}{large language model},
-hành vi dễ thấy nhất là sự tiếp nối: sau một dãy token đầu vào, mô hình phân
-bố khả năng cho token kế tiếp rồi lặp lại quá trình ấy để sinh câu trả lời.
+hành vi dễ thấy nhất là sinh token kế tiếp: sau một dãy token đầu vào, mô
+hình trả một phân phối xác suất trên token kế tiếp, chọn một token từ phân
+phối ấy, rồi lặp lại quá trình này để sinh câu trả lời.
 Tuy nhiên, người dùng thường không đặt một token rời rạc vào mô hình. Họ đưa
 vào một \tn{lời nhắc}{prompt} có chỉ dẫn, dữ kiện, ví dụ, quy ước hội thoại
 và đôi khi cả những ràng buộc về định dạng đầu ra.

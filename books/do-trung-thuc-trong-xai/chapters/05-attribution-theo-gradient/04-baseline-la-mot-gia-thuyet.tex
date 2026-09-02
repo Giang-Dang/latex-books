@@ -6,7 +6,8 @@
 $F(x)-F(x_0)$. Nói cách khác, Integrated Gradients giải thích phần đầu ra khác
 so với baseline, không giải thích toàn bộ đầu ra theo nghĩa tuyệt đối. Vì vậy,
 baseline không phải là một chi tiết để điền trước khi chạy hàm;
-nó xác định câu hỏi phản thực mà attribution đang trả lời.
+nó xác định câu hỏi \tn{phản thực}{counterfactual} mà attribution đang trả
+lời, tức câu hỏi đầu ra sẽ khác đi bao nhiêu nếu đầu vào là $x_0$ thay vì $x$.
 
 Với ảnh, bài báo gốc nêu ảnh đen như một ví dụ về tín hiệu vắng mặt; với văn
 bản, nó nêu vector embedding toàn không~\autocite{p11ig}. Hai lựa chọn có lý

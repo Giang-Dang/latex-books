@@ -3,8 +3,11 @@
 
 \index{LIME|(}%
 \index{mô hình thay thế cục bộ}%
-Chương trước kết thúc bằng câu hỏi về một can thiệp trên đầu vào. LIME trả lời
-câu hỏi ấy bằng một \tn{mô hình thay thế cục bộ}{local surrogate}: thay vì cố
+Chương trước kết thúc bằng ba câu hỏi mà một phương pháp hậu nghiệm phải trả
+lời: đơn vị nào được coi là \tn{đặc trưng}{feature}, cách nhiễu đầu vào nào
+còn có nghĩa, và
+thay đổi đầu ra nào trả lời câu hỏi đang đặt ra. LIME trả lời cả ba bằng một
+\tn{mô hình thay thế cục bộ}{local surrogate}: thay vì cố
 mô tả toàn bộ $f$, nó học một mô hình thay thế $g$ cho vùng quanh một đầu vào
 $x$. Ribeiro, Singh và Guestrin gọi cách làm này là local interpretable
 model-agnostic explanations, hay LIME~\autocite{p09lime}.

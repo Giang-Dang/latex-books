@@ -29,12 +29,16 @@ can thiệp vào trọng số của mô hình thay vì vào đầu vào. Trong b
 phép thử thứ nhất ở mục~\ref{sec:ch08-dieu-kien-can} động tới trọng số, mà nó
 là điều kiện cần chứ không phải một chỉ số, nên ở phía attribution nhóm này
 chưa có đại diện thực sự. Nhóm dựa trên attribution dùng lại chính SHAP của
-chương~\ref{ch:shap} làm dụng cụ đo. Nhóm thứ tư thì đo thứ khác hẳn: lời giải
+chương~\ref{ch:shap} làm dụng cụ đo: nó tính đóng góp SHAP của các token đầu
+vào hai lần, một lần cho việc sinh câu trả lời và một lần cho việc sinh chuỗi
+suy luận, rồi lấy mức giống nhau giữa hai bản đóng góp làm điểm trung thực.
+Nhóm thứ tư thì đo thứ khác hẳn: lời giải
 thích có đủ dùng cho một mô hình yếu hơn tái lập được câu trả lời hay
 không~\autocite{p21metrics}.
 
 Chẩn đoán mà bài báo đưa ra cho hai nhóm lớn nhất là chỗ đáng mang về nhất, vì
-nó nói đúng cái mà chương này đi tìm: giả định nào đã lẻn vào. Với nhóm dựa trên
+nó nói đúng cái mà chương này đi tìm: giả định nào đã đi vào dụng cụ đo mà
+không được khai báo. Với nhóm dựa trên
 mức quan trọng, các tác giả cho rằng chúng đồng nhất mức quan trọng với độ trung
 thực, nên có thể gán nhãn không trung thực cho một bước vốn trung thực mà chỉ vì
 nó không thiết yếu với câu trả lời cuối~\autocite{p21metrics}. Đó chính là phép

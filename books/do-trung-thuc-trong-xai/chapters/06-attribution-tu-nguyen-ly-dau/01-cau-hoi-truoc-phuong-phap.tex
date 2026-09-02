@@ -4,7 +4,8 @@
 \index{attribution}%
 Mục cuối của chương~\ref{ch:attribution-theo-gradient} đã tách bảo đảm hình
 thức khỏi kết luận về độ trung thực. Sự tách ấy cũng áp dụng khi so các họ
-phương pháp. Taimeskhanov và Garreau bắt đầu từ một định nghĩa tối giản.
+phương pháp. Taimeskhanov và Garreau bắt đầu từ một định nghĩa tối giản lấy
+từ tài liệu trước.
 
 \begin{definition}[Attribution đặc trưng]
 \label{def:ch06-attribution}
@@ -20,11 +21,13 @@ LIME, SHAP và Integrated Gradients đã cho ba câu trả lời khác nhau cho 
 trống đó. LIME chọn lân cận và trọng số cho các mẫu đã nhiễu. SHAP chọn giá trị
 của liên minh và một phân phối nền. Integrated Gradients chọn baseline cùng
 đường đi tới đầu vào. Vì vậy, việc hai phương pháp trả các điểm số khác nhau
-không tự chứng minh phương pháp nào sai. Trước hết, chúng có thể đang trả lời
-những câu hỏi phản thực khác nhau.
+không tự chứng minh phương pháp nào sai. Chúng có thể chỉ đang trả lời
+những câu hỏi \tn{phản thực}{counterfactual} khác nhau.
 
-Bài báo của Taimeskhanov và Garreau bắt đầu ở mức trừu tượng hơn. Thay vì đặt
-điều kiện cho một công thức đã có, bài báo hỏi ta có thể tin một attribution
-nhỏ nhất nào, rồi ghép các attribution nhỏ ấy thành attribution của $f$ như
-thế nào~\autocite{p17firstprinciples}. Cách đặt câu hỏi này sẽ buộc lựa chọn
-ẩn trong mỗi phép tính hiện ra trên trang.
+Bài báo của Taimeskhanov và Garreau đặt câu hỏi ở mức trừu tượng hơn ba
+phương pháp ấy. Thay vì đặt
+điều kiện cho một công thức đã có, bài báo hỏi hai câu theo thứ tự. Câu thứ
+nhất: với lớp mô hình đơn giản nhất có thể, attribution nào là đáng tin? Câu
+thứ hai: từ attribution của những mô hình đơn giản ấy, ghép thành attribution
+của một mô hình $f$ bất kỳ bằng cách nào~\autocite{p17firstprinciples}? Cách
+đặt câu hỏi này sẽ buộc lựa chọn ẩn trong mỗi phép tính lộ ra.

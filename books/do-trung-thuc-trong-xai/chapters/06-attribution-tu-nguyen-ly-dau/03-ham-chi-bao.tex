@@ -3,8 +3,10 @@
 
 \index{hàm chỉ báo}%
 Các tiên đề đã cho thấy ràng buộc một công thức từ bên ngoài có thể quá chặt.
-Ta chuyển sang trường hợp đơn giản nhất: mô hình chỉ trả lời một vùng $R$ của
-không gian đầu vào có được kích hoạt hay không. \tn{Hàm chỉ báo}{indicator function}
+Ta chuyển sang trường hợp đơn giản nhất: mô hình chỉ trả lời đầu vào có nằm
+trong một vùng $R$ của không gian đầu vào hay không. Vùng ấy là một hình hộp,
+tức tích của $d$ khoảng, mỗi khoảng trên một tọa độ,
+$R=(a_1,b_1]\times\cdots\times(a_d,b_d]$. \tn{Hàm chỉ báo}{indicator function}
 của $R$ được viết
 
 \begin{equation}
@@ -17,12 +19,24 @@ của $R$ được viết
 \end{equation}
 
 Với mô hình trong phương trình~\ref{eq:ch06-ham-chi-bao}, câu hỏi attribution
-cụ thể hơn nhiều. Ở đầu vào $x$, đặc trưng $j$ quan trọng cho việc kích hoạt
-$R$ theo nghĩa nào? Một câu trả lời có thể chỉ kiểm tra tọa độ $j$ của $x$ có
-nằm trong khoảng tương ứng của $R$ hay không. Một câu trả lời khác có thể cân
-theo kích thước các khoảng còn lại. Bài báo không coi hai lựa chọn đó là cùng
-một attribution; chúng là hai cách gán attribution nguyên tử khác nhau~\autocite{p17firstprinciples}.
+cụ thể hơn nhiều. Ở đầu vào $x$, đặc trưng $j$ quan trọng cho việc $x$ rơi vào
+$R$ theo nghĩa nào? Bài báo đưa một câu trả lời rồi sửa nó, trên trường hợp
+hai chiều~\autocite{p17firstprinciples}. Câu trả lời thứ nhất chỉ kiểm tra tọa
+độ $j$ của $x$ có nằm trong khoảng $(a_j,b_j]$ của $R$ hay không: nếu có thì
+$\varphi_j=1$, nếu không thì $\varphi_j=0$. Attribution nhị phân như thế không
+có độ lớn, nên bài báo sửa thành câu trả lời thứ hai: giữ phép kiểm ấy nhưng
+nhân thêm độ dài của khoảng còn lại. Với $d=2$, đặc trưng thứ nhất nhận
+$b_2-a_2$ khi $x_1\in(a_1,b_1]$, còn đặc trưng thứ hai nhận $b_1-a_1$ khi
+$x_2\in(a_2,b_2]$; với $d$ bất kỳ, sách mở rộng theo đúng cách ấy, nhân với độ
+dài của mọi khoảng còn lại. Lý do là khi khoảng $(a_2,b_2]$ rộng, điều kiện
+trên tọa độ thứ hai gần như luôn thỏa, nên phần lớn lý do khiến $x$ rơi vào
+$R$ nằm ở tọa độ thứ nhất, và tọa độ ấy đáng nhận phần lớn attribution. Bài
+báo không coi hai lựa chọn đó là cùng một attribution; chúng là hai
+\tn{quy tắc nguyên tử}{atomic attribution rule} khác nhau. Chữ nguyên tử chỉ
+đúng một việc: đây là attribution cho hàm chỉ báo, đơn vị nhỏ nhất mà mọi
+attribution khác trong chương sẽ được ghép từ đó.
 
 Thứ tự lập luận vì thế đi ngược chiều quen thuộc: ta quy định attribution cho
 hàm chỉ báo trước, rồi mới hỏi quy định ấy mở rộng được tới lớp hàm nào.
-Chính cách gán attribution nguyên tử này sẽ trở thành độ đo trong dạng tổng quát.
+Mục~\ref{sec:ch06-tu-nguyen-tu-den-tich-phan} làm bước mở rộng ấy, và ở đó quy
+tắc nguyên tử sẽ hiện ra dưới một tên khác, là \tn{độ đo}{measure}.

@@ -3,22 +3,23 @@
 
 Bất định thống kê của phép tổng hợp không phải là điều duy nhất còn lại. Các
 tiên đề làm rõ cách chia một chênh lệch đã được định nghĩa, nhưng không
-chọn thay người dùng chênh lệch nào đáng chia. Giá trị nền, quy tắc hoàn thiện
-đặc trưng còn thiếu và việc dùng kỳ vọng có điều kiện hay biên đều nằm trước
-phương trình Shapley. Nếu những lựa chọn ấy không hợp với câu hỏi miền, một lời giải
-thích vẫn có thể thỏa tiên đề mà không mô tả can thiệp người đọc quan tâm.
+chọn thay người dùng chênh lệch nào đáng chia. Giá trị nền và
+\tn{quy tắc hoàn thiện}{completion rule} đặc trưng còn thiếu, tức việc dùng kỳ
+vọng có điều kiện hay biên, đều nằm trước phương trình Shapley. Nếu những lựa chọn ấy không hợp với câu hỏi của bài toán
+ứng dụng, một lời giải thích vẫn có thể thỏa tiên đề mà không mô tả can thiệp
+người đọc quan tâm.
 
 Sự phân biệt này đặc biệt quan trọng với \tn{giá trị Shapley}{Shapley value}
 khi các đặc trưng phụ thuộc. Một đóng góp có thể phản ánh thông tin trùng lặp,
-quan hệ tương quan hoặc một tình huống hoàn thiện chưa từng xuất hiện trong dữ
-liệu. Các tiên đề bảo đảm \tn{tính nhất quán}{consistency} của phép chia trên hàm giá trị đã
+quan hệ tương quan, hoặc một tổ hợp giá trị do quy tắc hoàn thiện tạo ra mà dữ
+liệu thật không có. Các tiên đề bảo đảm \tn{tính nhất quán}{consistency} của phép chia trên hàm giá trị đã
 chọn; chúng không xác nhận hàm giá trị ấy là mô hình nhân quả hoặc là thước đo
 \tn{độ trung thực}{faithfulness}.
 
 Vì vậy, SHAP là bước tiến so với việc chọn hàm nhân của LIME theo kinh nghiệm, nhưng chưa
 phải là điểm kết thúc của lập luận. Chương~\ref{ch:attribution-theo-gradient}
-chuyển sang attribution theo gradient, nơi đường đi từ baseline tới đầu vào
-thật lại đưa một lựa chọn nền khác vào phương trình. Qua các phương pháp, câu hỏi giữ
+chuyển sang attribution theo gradient, nơi baseline, điểm xuất phát mà chương
+ấy sẽ định nghĩa, đưa một lựa chọn đối chiếu khác vào phép tính. Qua các phương pháp, câu hỏi giữ
 nguyên: thành phần vắng mặt đã được thay bằng điều gì, và vì sao sự thay thế đó
 đại diện cho thay đổi có nghĩa?
 

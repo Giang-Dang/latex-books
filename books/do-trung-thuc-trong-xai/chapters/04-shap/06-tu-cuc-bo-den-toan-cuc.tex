@@ -2,8 +2,8 @@
 \label{sec:ch04-tu-cuc-bo-den-toan-cuc}
 
 \index{suy luận thống kê}%
-Vì TreeSHAP chỉ làm cho phép tính tại từng điểm nhanh hơn, một kết luận toàn cục vẫn phải
-được xây từ nhiều đầu vào. Với đặc trưng $i$ cố định, $\phi_i(x)$ là một hàm
+TreeSHAP chỉ làm cho phép tính tại từng điểm nhanh hơn; một kết luận toàn cục
+vẫn phải được xây từ nhiều đầu vào. Với đặc trưng $i$ cố định, $\phi_i(x)$ là một hàm
 theo $x$: nó cho phần đóng góp của $i$ tại từng điểm. Trong thực hành, người
 ta thường lấy trung bình độ lớn hoặc bình phương của hàm này trên một
 tập dữ liệu để xếp hạng đặc trưng. Phép tổng hợp ấy chuyển một lời giải thích
@@ -11,16 +11,45 @@ cục bộ thành một phát biểu toàn cục, nên nó cần một câu hỏ
 của con số tổng hợp là bao nhiêu?
 
 Whitehouse, Sawarni và Syrgkanis gọi hàm $\phi_i(\cdot)$ ấy là đường cong
-SHAP, và xét các lũy thừa bậc $p$ của nó; trung bình trị tuyệt đối ứng với
-$p=1$ và trung bình bình phương ứng với $p=2$. Họ coi đường cong SHAP là một
-hàm phụ phải ước lượng từ dữ liệu, nên thay một mô hình đã học vào rồi lấy
-trung bình thì chưa đủ để có suy luận tiệm cận chuẩn. Bài báo xây dựng các ước
-lượng đã khử chệch để lập khoảng tin cậy cho các đại lượng
-đó~\autocite{p19shapinference}.
+SHAP, và đại lượng toàn cục mà họ xét là kỳ vọng của lũy thừa bậc $p$ của nó
+trên phân phối dữ liệu, $\mathbb{E}\,|\phi_i(X)|^p$, với $X$ là vector đặc
+trưng ngẫu nhiên. Với $p=1$ đó là trung bình trị tuyệt đối, với $p=2$ là trung
+bình bình phương, đúng hai con số mà thực hành dùng để xếp
+hạng~\autocite{p19shapinference}. Trong thiết lập của bài báo, SHAP giải thích
+hàm hồi quy thật của dữ liệu, $\mathbb{E}[Y\mid X=x]$ với $Y$ là biến cần dự
+đoán, chứ không phải một mô hình cụ thể đã huấn luyện, và dùng
+\tn{quy tắc hoàn thiện}{completion rule} biên, tức kỳ vọng biên của
+mục~\ref{sec:ch04-gia-tri-lien-minh-va-phan-phoi-nen}.
+
+Khó khăn nằm ở chỗ đường cong SHAP không quan sát được. Nó được định nghĩa qua
+hàm hồi quy thật, mà ta chỉ có một mô hình đã học xấp xỉ hàm ấy, nên $\phi_i$
+cũng chỉ có một bản ước lượng $\hat\phi_i$. Cách làm quen thuộc là thay
+$\hat\phi_i$ vào rồi lấy trung bình trên mẫu. Bài báo chỉ ra vì sao cách ấy
+không đủ để lập khoảng tin cậy: sai số của $\hat\phi_i$ so với $\phi_i$ đi
+thẳng vào trung bình, và muốn sai số ấy nhỏ tới mức không làm hỏng khoảng tin
+cậy thì mô hình đã học phải hội tụ nhanh hơn cả tốc độ của một mô hình tham số,
+điều thường không đạt được~\autocite{p19shapinference}. Đường cong SHAP đóng vai
+mà thống kê bán tham số gọi là \tn{hàm phụ}{nuisance function}: một hàm phải
+ước lượng trên đường đi tới đại lượng cần tính, nhưng bản thân nó không phải
+đích.
+
+Cách sửa của bài báo là một \tn{ước lượng khử chệch}{debiased estimator}. Vào
+trung bình thô, họ cộng thêm các số hạng hiệu chỉnh được thiết kế sao cho sai
+số bậc nhất của các hàm phụ triệt tiêu; ở đây có hai hàm phụ, đường cong SHAP
+và hàm hồi quy thật mà nó được dựng từ đó, nên cần hai số hạng hiệu chỉnh. Nhờ
+vậy điều kiện về tốc độ hội tụ nới ra, hàm phụ chỉ cần hội tụ với tốc độ căn
+bậc bốn của cỡ mẫu thay vì căn bậc hai, và phần sai số còn lại nhỏ đủ để ước
+lượng có phân phối gần chuẩn khi mẫu lớn, từ đó lập được khoảng tin cậy cho
+$\mathbb{E}\,|\phi_i(X)|^p$~\autocite{p19shapinference}. Với $p$ từ một tới
+dưới hai, hàm $|u|^p$ không đủ trơn tại không để phép hiệu chỉnh áp trực tiếp,
+nên bài báo thay nó bằng một bản làm trơn rồi cho độ làm trơn giảm dần theo cỡ
+mẫu.
 
 \index{lời giải thích cục bộ}%
 Kết quả này không biến một giá trị SHAP cục bộ thành bằng chứng về cơ chế của
-mô hình. Nó làm một việc khác: nếu ta đã chọn hàm giá trị và dữ liệu đánh giá,
-thì phát biểu toàn cục dựa trên các giá trị SHAP phải mang theo bất định lấy
-mẫu và bất định do ước lượng. Đây là nền tảng thống kê mà một biểu đồ xếp hạng
+mô hình. Nó làm một việc khác: khi đường cong SHAP phải ước lượng, tức khi đối
+tượng giải thích là hàm hồi quy thật, phát biểu toàn cục dựa trên các giá trị
+SHAP phải mang theo cả bất định lấy mẫu lẫn bất định do ước lượng; với một mô
+hình đã huấn luyện, đường cong tính được chính xác và chỉ còn bất định lấy mẫu
+của phép lấy trung bình. Đây là nền tảng thống kê mà một biểu đồ xếp hạng
 đặc trưng thường chưa thể hiện.

@@ -3,8 +3,8 @@
   \item Vòng luẩn quẩn của chương~\ref{ch:do-do-trung-thuc} bị phá bằng cách
   đổi chiều bài toán. Thay vì tìm cách quan sát nội dung tính toán bên trong
   mô hình, bài báo dựng những nhiệm vụ mà một câu trả lời nhất định chỉ xuất
-  hiện được nếu một phép tính đã biết trước đã xảy ra, nên nhãn đúng đến từ
-  thiết kế nhiệm vụ. Hình~\ref{fig:ch09-vong-kiem-dinh} cho thấy hệ quả về thứ
+  hiện được nếu một phép tính đã biết trước đã xảy ra, nên nhãn ground truth
+  đến từ thiết kế nhiệm vụ. Hình~\ref{fig:ch09-vong-kiem-dinh} cho thấy hệ quả về thứ
   bậc: chỉ số thôi làm dụng cụ và trở thành vật được đo.
   \item Định nghĩa~\ref{def:ch09-buoc-trung-thuc} và
   định nghĩa~\ref{def:ch09-chuoi-trung-thuc} phát biểu độ trung thực cho chuỗi
@@ -16,8 +16,8 @@
   không quan trọng, còn một lời biện minh bịa đặt được dựa vào thì quan trọng
   mà không trung thực.
   \item BonaFide gồm 3\,066 chuỗi trên mười mô hình trọng số mở và mười ba
-  nhiệm vụ, gán nhãn bằng một đường ống hai pha ưu tiên độ chính xác hơn độ
-  phủ, đạt độ chính xác 98.9\% khi đối chiếu với sáu người chú giải. Tỉ lệ
+  nhiệm vụ, gán nhãn bằng một đường ống hai pha ưu tiên precision hơn độ
+  phủ, đạt precision 98.9\% khi đối chiếu với sáu người chú giải. Tỉ lệ
   nhãn ở mức cả chuỗi lệch mạnh về phía không trung thực, và đó là hệ quả của
   định nghĩa~\ref{def:ch09-chuoi-trung-thuc} chứ không phải một quan sát về
   các mô hình.
@@ -60,7 +60,8 @@
   mà cặp số ấy loại trừ về CC-SHAP, và cho biết vì sao một chỉ số đạt 0.70 ở
   một thang vẫn chưa dùng được để giám sát.
   \item Dòng LM Judge đạt 0.87 và 0.82, cao hơn mọi chỉ số trong bảng. Hãy nêu
-  lý do các tác giả xếp nó là trần trên chứ không phải chỉ số dự thi, rồi cho
+  lý do các tác giả xếp nó là \tn{trần trên}{skyline} chứ không phải chỉ số
+  dự thi, rồi cho
   biết cần thay đổi gì trong cách dựng bộ dữ liệu để nó trở thành một chỉ số
   dự thi hợp lệ.
   \item Mục~\ref{sec:ch09-chan-doan} trình một phép kiểm cho giả thuyết rằng

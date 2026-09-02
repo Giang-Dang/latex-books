@@ -16,7 +16,11 @@ mạng có kiến trúc hoặc tham số trung gian khác nhau nhưng tính đú
 hàm phải cho cùng lời giải thích. Attribution nhằm nói về quan hệ giữa đầu vào
 và đầu ra, nên nó không nên thay đổi chỉ vì người triển khai viết lại cùng một
 phép tính. Gradient thỏa yêu cầu này nhờ quy tắc dây chuyền, vì nó chỉ phụ thuộc vào hàm
-mà mạng biểu diễn; một số quy tắc lan truyền ngược đã sửa đổi thì không.
+mà mạng biểu diễn. Những phương pháp sửa lại quy tắc lan truyền ngược, gán cho
+mỗi đơn vị của mạng một điểm số rồi truyền ngược điểm số ấy theo một quy tắc
+riêng thay vì theo đạo hàm, thì không: bài báo nêu DeepLift và LRP làm ví dụ,
+vì điểm số của chúng phụ thuộc vào cách mạng được viết chứ không chỉ vào hàm
+mà mạng tính~\autocite{p11ig}.
 
 Hai tiên đề không chứng minh một bản đồ là trung thực theo nghĩa nhân quả. Chúng
 chỉ loại những lời giải thích mâu thuẫn với hai trực giác tối thiểu về đóng góp.

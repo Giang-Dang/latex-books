@@ -17,9 +17,14 @@ hoặc phép lặp chủ đề. Kho từ nối của chuyên khảo tiếng Vi�
 hết, do đó, chú ý rằng, ta thấy - mỗi chỗ chuyển một từ là đủ. Độ cô đọng `vừa` cắt đoạn dạo
 đầu chứ không cắt câu chuyển: một câu nối hai mục là mạch lập luận, không phải chỗ thừa.
 
-**Độ cô đọng:** `vừa`. Một suy diễn phải trình đủ từng bước, và một bước không phải là chỗ thừa.
-Cái vẫn bị cắt là phần văn xuôi quanh phần toán: đoạn báo trước sắp có định lý, và đoạn tổng kết
-mục này vừa chứng minh xong cái gì. Xem phần Độ cô đọng trong `SKILL.md`.
+**Độ cô đọng:** `vừa` làm nền, và nới theo độ khó của thứ đang giải thích. Một đoạn giải thích
+định nghĩa hay khái niệm khó được lấy đủ chỗ, tức mức `rộng` cho riêng đoạn ấy: bước trung
+gian viết ra, một ví dụ chạy được, một câu nói vì sao cần đối tượng đó trước khi nói nó là gì.
+Chỗ dễ hoặc đã quen giữ `vừa`. Bốn phép thử của mức `chặt` vẫn áp cho mọi câu thêm vào, nên nới
+là thêm bước và ví dụ, không phải thêm câu nhắc lại. Một suy diễn phải trình đủ từng bước, và
+một bước không phải là chỗ thừa. Cái vẫn bị cắt là phần văn xuôi quanh phần toán: đoạn báo trước
+sắp có định lý, và đoạn tổng kết mục này vừa chứng minh xong cái gì. Xem phần Độ cô đọng trong
+`SKILL.md`.
 
 **Thuật ngữ:** định nghĩa trước khi dùng, rồi một tên cho một khái niệm đến hết sách. Xoay vòng
 từ đồng nghĩa (nhóm G) phá tone này nặng hơn mọi lỗi khác: người mới đọc "mô hình", "mạng" và
@@ -44,6 +49,14 @@ từ đồng nghĩa (nhóm G) phá tone này nặng hơn mọi lỗi khác: ngư
 - **Quy chiếu không tiền ngữ:** "điều này", "khái niệm ấy", "phần tiếp theo" mà người đọc
   không chỉ ra được đích. Tham chiếu tới chỗ khác trong sách nêu đích tường minh: phần,
   chương hay mục nào.
+- **Thuật ngữ của bài báo dùng như đã quen:** một ký hiệu hay một từ lấy từ bài báo đang
+  trích ($h_x$, "quy tắc hoàn thiện", "phản thực") xuất hiện trước khi được định nghĩa, và câu
+  chỉ có nghĩa với người đã đọc bài đó. Định nghĩa hoặc gloss ở lần dùng đầu; một ký hiệu
+  không được xuất hiện lần đầu bên trong một định lý đánh số.
+- **Nén một kết quả kỹ thuật vào một câu:** ba, bốn khái niệm chưa giải thích trong cùng một
+  câu ("hàm phụ phải ước lượng từ dữ liệu, nên thay mô hình vào rồi lấy trung bình chưa đủ để
+  có suy luận tiệm cận chuẩn"). Người đọc parse được ngữ pháp mà không lấy ra được nội dung.
+  Tách thành các bước, mỗi khái niệm một câu, và nới độ cô đọng cho đúng đoạn ấy.
 
 ## Trước và sau
 
