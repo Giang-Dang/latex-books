@@ -58,6 +58,14 @@ if (-not $folders) {
 # order the list at random and call every released EPUB current.
 $hasGit = [bool](Get-Command git -ErrorAction SilentlyContinue)
 
+# Every call below quotes the -- that separates revisions from paths, and has
+# to: PowerShell reads a bare -- as its own end-of-parameters token and drops
+# it before the argument list reaches git. Git is then left guessing whether
+# dist/<name>.pdf is a revision or a path, and for a file that does not exist
+# yet it refuses to guess - "fatal: ambiguous argument ... unknown revision or
+# path not in the working tree", once per book. An existing path masks it,
+# which is why this went unnoticed: every book here already had a released
+# PDF. A book released for the first time would not.
 function Invoke-Git {
     param([Parameter(ValueFromRemainingArguments = $true)][string[]]$GitArgs)
 
@@ -74,7 +82,7 @@ function Invoke-Git {
 function Get-LastCommitEpoch {
     param([string]$PathSpec)
 
-    $out = Invoke-Git log -1 --format=%ct -- $PathSpec
+    $out = Invoke-Git log -1 --format=%ct '--' $PathSpec
     $line = @($out) | Where-Object { $_ } | Select-Object -First 1
     if (-not $line) { return $null }
     [long]$line
@@ -108,7 +116,7 @@ $rows = @(foreach ($folder in $folders) {
             Name    = $name
             Path    = $folder.FullName
             Age     = if ($hasGit -and $null -eq $changed) { 'uncommitted' } else { Format-Age $changed }
-            Dirty   = [bool](Invoke-Git status --porcelain -- "books/$name")
+            Dirty   = [bool](Invoke-Git status --porcelain '--' "books/$name")
             Dist    = $dist
             # A book with no commit yet is the most recent thing there is.
             SortKey = if ($null -eq $changed) { [long]::MaxValue } else { $changed }
