@@ -280,19 +280,19 @@ def book_metadata(book: Path) -> dict[str, str]:
     return found
 
 
-def build(book: Book, work: Path, verbose: bool) -> Path:
-    # Checked before anything is compiled. A book without filters cannot be
-    # released, and finding that out after rendering its figures wastes a
-    # minute and reports the wrong problem.
-    filters = sorted((book.path / BOOK_FILTER_DIR).glob("*.lua"))
-    if not filters:
-        raise SystemExit(
-            f"{book.name}: no pandoc filters in {BOOK_FILTER_DIR}/. Without them "
-            f"every custom environment in the book converts to prose with its "
-            f"formatting gone, and nothing reports it. Add them, or leave the "
-            f"book out of the release."
-        )
+def filters_for(book: Book) -> list[Path]:
+    """The book's pandoc filters, in the order their names sort.
 
+    Order is the book's to choose and matters: splitting-the-graph's
+    01-environments.lua re-parses the bodies of its box environments, which is
+    what exposes the cross-references inside them to 02-crossrefs.lua - 416
+    references before that pass, 430 after.
+    """
+    return sorted((book.path / BOOK_FILTER_DIR).glob("*.lua"))
+
+
+def build(book: Book, work: Path, verbose: bool) -> Path:
+    filters = filters_for(book)
     work.mkdir(parents=True, exist_ok=True)
 
     flat, read = booksource.flatten(book.path)
@@ -421,6 +421,22 @@ def main() -> int:
     for tool, why in OPTIONAL_TOOLS.items():
         if shutil.which(tool) is None:
             print(f"Not on PATH: {tool} ({why})")
+
+    # Every selected book is checked before the first one is built. Finding a
+    # book unreleasable halfway through a selection leaves dist/ half updated,
+    # which is what happened the first time this ran on two books: one landed,
+    # the second was refused, and the release had to be sorted out afterwards.
+    unreleasable = [b for b in selected if not filters_for(b)]
+    if unreleasable:
+        raise SystemExit(
+            "No pandoc filters in {dir}/ for: {names}.\n"
+            "Without them every custom environment in a book converts to prose "
+            "with its formatting gone, and nothing reports it. Add the filters, "
+            "or leave those books out of the release.".format(
+                dir=BOOK_FILTER_DIR,
+                names=", ".join(b.name for b in unreleasable),
+            )
+        )
 
     print(f"Releasing {len(selected)} of {len(books)} book(s): "
           f"{', '.join(b.name for b in selected)}")
