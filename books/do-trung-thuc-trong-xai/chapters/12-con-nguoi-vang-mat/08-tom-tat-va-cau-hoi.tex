@@ -1,0 +1,86 @@
+\begin{tomtat}
+\begin{itemize}
+  \item Doshi-Velez và Kim nói rằng đánh giá theo chức năng, cách đánh giá
+  không có người tham gia, thích hợp nhất khi đối tượng đem đo đã được kiểm
+  chứng từ trước bằng một cách đánh giá đắt hơn. Mọi chỉ số trung thực của
+  chương~\ref{ch:do-do-trung-thuc} đều nằm ở cách đánh giá ấy, nên cả Phần~IV
+  đang mang một món nợ kiểm chứng. Hình~\ref{fig:ch12-hai-nhanh-danh-gia} tách
+  hai nhánh mà một lời giải thích đi qua và đánh dấu bằng nét chấm hai thứ
+  đang thiếu: phép đối chiếu giữa hai nhánh, và quan hệ giữa lời giải thích
+  với mô hình mà không nhánh nào đo.
+  \item Cuộc kiểm đếm của Suh và cộng sự rà 18\,254 bài XAI trong cơ sở dữ liệu
+  Scopus và cho một cái phễu bốn mức: 253 bài có từ khóa về thử nghiệm với
+  người, 237 bài đúng chủ đề, 128 bài thật sự kiểm chứng với người, tức 0.70\%
+  của mức đầu. Trong 237 bài đã tự tuyên bố có khả năng giải thích cho người,
+  128 bài đem lời tuyên bố ra thử; bài báo phát biểu tỉ lệ ấy là 54\% ở một chỗ
+  và 56\% ở chỗ khác, nên sách in phép đếm.
+  \item Con số ấy không phải con số về độ trung thực. Các chữ
+  \enquote{faithfulness}, \enquote{ground truth} và \enquote{attribution} không
+  xuất hiện lần nào trong bài. Cái được đếm là việc kiểm chứng lời tuyên bố về
+  khả năng giải thích cho người, tức phía tính hợp lý của cặp khái niệm mà
+  mục~\ref{sec:ch01-do-trung-thuc-va-tinh-hop-ly} tách ra. Và 128 là chặn trên
+  chứ không phải chặn dưới, vì phép chấm chỉ hỏi một thí nghiệm hành vi có tồn
+  tại hay không: bài báo nêu ba chỗ mà một thí nghiệm có thể rỗng, là không
+  biết ai được hỏi, hỏi sai đối tượng, và hỏi những câu mà người trả lời không
+  kiểm tra được hoặc những câu đặt phương pháp cạnh một mốc so sánh đã hỏng
+  sẵn. Lập luận trục của bài là lập luận tín hiệu: một lời tuyên bố về khả năng
+  giải thích chỉ được xác nhận khi có xác nhận rằng tín hiệu đã được nhận và
+  hiểu đúng.
+  \item Nghiên cứu của Liedeker và cộng sự chạy đúng phép đối chiếu ấy, nhưng
+  trên lời giải thích phản thực chứ không trên attribution đặc trưng, nên mọi
+  con số của nó dừng ở ranh giới mà mục~\ref{sec:ch09-doi-tuong-khac-nhau} đã
+  dựng cho bài báo neo. 167 người chấm 85 lời giải thích trên ba bộ dữ liệu
+  bảng theo năm chiều, gộp thành một điểm duy nhất; cả năm chiều đều nằm ở phía
+  tính hợp lý.
+  \item Kết quả: gộp mọi lời giải thích thì chỉ Trust Score đạt mức ý nghĩa với
+  điểm gộp, $r = 0.307$, còn lại đều dưới 0.1. Tách theo bộ dữ liệu thì các
+  tương quan đổi cả dấu, độ lệch chuẩn trung bình của chúng giữa ba bộ là 0.31,
+  và đó là con số nặng hơn cả, vì một chỉ số đổi dấu theo lĩnh vực thì không
+  hiệu chỉnh được. Trên cả 127 tổ hợp con của bảy chỉ số, cả năm lớp mô hình dự
+  báo đều cho $R^2$ trung bình âm, và thêm chỉ số quá ba tới bốn cái thì làm dự
+  báo xấu đi.
+  \item Cái đi qua ranh giới không phải con số mà là tiền lệ: phép đối chiếu
+  giữa chỉ số tự động và cảm nhận của người là làm được, và kết quả của nó
+  không hiển nhiên. Bài báo còn thuật lại rằng bộ đánh giá M4 cho thấy các chỉ
+  số trung thực của attribution đặc trưng chỉ tương quan yếu với nhau và có thể
+  cho ra những bảng xếp hạng mâu thuẫn; sách thuật qua lời bài báo vì không đọc
+  M4. Đó là phép thử đồng thuận, không phải phép đối chiếu với ground truth,
+  nên phát biểu bỏ ngỏ của
+  mục~\ref{sec:ch09-doi-tuong-khac-nhau} không đổi.
+\end{itemize}
+\end{tomtat}
+
+\cauhoi
+\begin{cauhoids}
+  \item Mục~\ref{sec:ch12-hai-nhanh-danh-gia} lập luận rằng dù hỏi bao nhiêu
+  người thì câu trả lời của họ cũng không trực tiếp cho biết lời giải thích có
+  phản ánh đúng mô hình hay không. Hãy nêu một thiết kế thí nghiệm có người mà
+  kết quả của nó vẫn ràng buộc được độ trung thực, rồi chỉ ra thiết kế ấy phải
+  giả định thêm điều gì về nhiệm vụ giao cho người tham gia.
+  \item Cuộc kiểm đếm loại bài rà tổng quan, bài hội thảo nhỏ và bài không
+  tiếng Anh ngay trong truy vấn. Với từng loại trong ba loại, hãy cho biết việc
+  loại nó làm con số 0.70\% lệch lên hay lệch xuống, và vì sao.
+  \item Trong bốn tình huống bị chấm 0 mà mục~\ref{sec:ch12-mot-cuoc-kiem-dem}
+  liệt kê, tình huống thứ tư là bài so kết quả của mình với nhãn do người gán.
+  Hãy giải thích vì sao tình huống ấy vẫn nằm trọn ở nhánh trên của
+  hình~\ref{fig:ch12-hai-nhanh-danh-gia}, rồi cho biết bộ dữ liệu neo của
+  chương~\ref{ch:chi-so-khong-do-do-trung-thuc} có rơi vào cùng tình huống hay
+  không.
+  \item Mục~\ref{sec:ch12-ket-qua-va-ranh-gioi} lập luận rằng độ lệch 0.31 giữa
+  các bộ dữ liệu nặng hơn hệ số 0.307. Hãy dựng lại lập luận ấy bằng lời của
+  mình, rồi nêu một trường hợp mà kết luận ngược lại: một chỉ số tương quan yếu
+  nhưng ổn định vẫn tệ hơn một chỉ số tương quan mạnh nhưng đổi dấu.
+  \item Completeness trong bảy chỉ số của bài báo được tính bằng SHAP. Hãy chỉ
+  ra chuỗi giả định mà một con số Completeness phải dựa vào, tính từ tiên đề
+  của chương~\ref{ch:shap} trở đi, rồi cho biết chuỗi ấy đứt ở đâu nếu
+  attribution SHAP không trung thực.
+  \item Kết quả về tổ hợp cho thấy thêm chỉ số vào quá ba tới bốn cái thì dự
+  báo xấu đi. Hãy nêu hai cách giải thích khác nhau cho hiện tượng đó, một cách
+  quy về bản chất của các chỉ số và một cách quy về cỡ mẫu, rồi cho biết dữ
+  liệu nào phân biệt được hai cách giải thích ấy.
+  \item Đọc \enquote{Fewer Than 1\% of Explainable AI Papers Validate
+  Explainability with Humans} của Suh và cộng sự~\autocite{p24humangap}, mục
+  phương pháp và bảng 1. Hãy sửa truy vấn Scopus in trong bảng ấy thành một
+  truy vấn đếm số bài kiểm chứng độ trung thực thay vì khả năng giải thích cho
+  người, rồi cho biết truy vấn mới gặp khó khăn gì mà truy vấn gốc không gặp.
+\end{cauhoids}

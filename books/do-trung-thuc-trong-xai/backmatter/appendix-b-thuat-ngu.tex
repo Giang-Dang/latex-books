@@ -136,6 +136,7 @@ khả năng giải thích & explainability \\
 siêu suy luận & meta-reasoning \\
 hệ tự hành đáng tin cậy & trustworthy autonomous systems \\
 ngẫu nhiên hóa miền & domain randomization \\
+lời giải thích phản thực & counterfactual explanation \\
 \bottomrule
 \end{tabular}
 
@@ -198,6 +199,20 @@ phân đoạn & segmentation \\
 
 \medskip
 
+\textbf{Chương 12}
+
+\begin{tabular}{@{}lp{7cm}@{}}
+\toprule
+Thuật ngữ & Tiếng Anh \\
+\midrule
+cảm nhận của người dùng & user perception \\
+thang Likert & Likert scale \\
+lực kiểm định & statistical power \\
+\bottomrule
+\end{tabular}
+
+\medskip
+
 \textbf{Giữ nguyên tiếng Anh (không dịch)}
 
 % longtable, not tabular: this block gains rows every chapter and a plain
@@ -226,7 +241,7 @@ ground truth & Giữ nguyên; đáp án đúng để đối chiếu, không có 
 leave-one-out & Giữ nguyên; tên thủ tục bỏ một phần tử rồi tính lại \\
 fidelity & Giữ nguyên; tên một đại lượng của đánh giá phản thực, chương 08 đọc kỹ. Khảo sát biến thể LIME của chương 10 dùng cùng chữ này cho một thứ khác, là việc mô hình thay thế không nắm được hành vi của mô hình gốc; nhóm vấn đề ấy được gọi bằng tiếng Việt là độ khớp, và chữ fidelity trong sách luôn chỉ đại lượng của chương 08 \\
 inverse fidelity & Giữ nguyên; đại lượng đối của fidelity, đo tính cần \\
-sparsity & Giữ nguyên; tên một đại lượng của đánh giá phản thực \\
+sparsity & Giữ nguyên; tên một đại lượng của đánh giá phản thực, đếm cần bao nhiêu phần tử điểm cao mới đạt fidelity. Bộ chỉ số của lời giải thích phản thực mà chương 12 đọc dùng lại chính chữ này cho một đại lượng khác, là số đặc trưng mà một lời giải thích phản thực đổi; chương 12 nêu chỗ va chữ ấy trong văn \\
 attribution patching & Giữ nguyên; tên phương pháp xấp xỉ phép vá bằng gradient \\
 checkpoint & Giữ nguyên; bản lưu tham số giữa chừng quá trình huấn luyện \\
 multi-armed bandit & Giữ nguyên; tên lớp thuật toán phân bổ lượt thử \\
@@ -265,5 +280,13 @@ B-LIME & Giữ nguyên; tên biến thể LIME duy nhất mà khảo sát xếp 
 Correctness & Giữ nguyên; tên tính chất đầu tiên trong bảng đánh giá của khảo sát biến thể LIME, mô tả đúng bằng định nghĩa~\ref{def:ch01-do-trung-thuc} \\
 Consistency & Giữ nguyên; tên tính chất hỏi lời giải thích có ổn định qua nhiều điểm tương tự hay không \\
 Continuity & Giữ nguyên; tên tính chất hỏi thay đổi nhỏ ở đầu vào có dẫn tới thay đổi nhỏ ở lời giải thích hay không \\
+Proximity & Giữ nguyên; tên chỉ số đo khoảng cách giữa đầu vào gốc và lời giải thích phản thực \\
+Closeness & Giữ nguyên; tên chỉ số đo khoảng cách từ lời giải thích phản thực tới những điểm huấn luyện gần nó nhất \\
+Diversity & Giữ nguyên; tên chỉ số đo mức độc lập lẫn nhau giữa các đặc trưng bị đổi \\
+Oracle Score & Giữ nguyên; tên chỉ số nhân xác suất lớp đích của mô hình nền với xác suất của một mô hình thứ hai huấn luyện độc lập \\
+Trust Score & Giữ nguyên; tên chỉ số đo bản đã sửa nằm sâu trong lớp được dự đoán tới đâu, chỉ số duy nhất đạt mức ý nghĩa trong nghiên cứu của chương 12 \\
+Completeness & Giữ nguyên; tên chỉ số lấy tỉ lệ khối lượng mức quan trọng SHAP của những đặc trưng bị đổi, khác tính đầy đủ của chương 05 vốn là một tiên đề \\
+M4 & Giữ nguyên; tên bộ đánh giá các chỉ số trung thực của attribution đặc trưng, sách không đọc bài ấy và chỉ thuật lại qua bài báo dẫn nó \\
+Combined Quality Score & Giữ nguyên; tên bài báo của chương 12 đặt cho điểm trung bình của năm chiều đánh giá; sách gọi nó là điểm gộp trong văn và không dùng chữ viết tắt CQS, nên phụ lục~\ref{app:viet-tat} không có dòng cho nó \\
 \end{longtable}
 \normalsize

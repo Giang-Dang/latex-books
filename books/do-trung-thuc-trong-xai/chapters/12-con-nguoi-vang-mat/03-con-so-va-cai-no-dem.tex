@@ -1,0 +1,85 @@
+\section{Con số, và điều nó không đếm}
+\label{sec:ch12-con-so-va-cai-no-dem}
+
+\index{kiểm đếm tài liệu XAI!bốn mức lọc}%
+Với thủ tục tìm và thủ tục chấm của mục trước, kết quả là một cái phễu bốn
+mức, và bảng 3 của bài báo in cả bốn~\autocite{p24humangap}. Mức thứ nhất là
+toàn bộ tài liệu mà truy vấn gom được: 18\,254 bài mang từ khóa về khả năng
+giải thích. Mức thứ hai lọc lấy những bài chứa cả từ khóa về thử nghiệm với
+người: 253 bài, tức 1.39\%. Mức thứ ba loại 16 bài được thống nhất là lạc
+đề, tức những bài không trình bày một phương pháp XAI nào mà là bài rà tổng
+quan về chính lĩnh vực XAI, bài bàn triết học về khả năng giải thích, hoặc bài
+tóm lược công trình của người khác; còn lại 237 bài đúng chủ đề, tức 1.30\%. Mức thứ tư là những
+bài thật sự có kiểm chứng với người: 128 bài, tức 0.70\%.
+
+Bốn con số ấy khớp với nhau ở hai chỗ mà một cái phễu có thể lệch. Bảng 2 của
+bài chấm 253 bài của mức hai thành 109 bài không có kiểm chứng, 128 bài có, và
+16 bài lạc đề; ba số ấy cộng lại đúng 253, và 253 trừ 16 đúng bằng 237 của mức
+ba~\autocite{p24humangap}.
+
+\index{kiểm đếm tài liệu XAI!tỉ lệ 0.7 phần trăm}%
+Con số 0.70\% là con số của nhan đề, và nó là 128 trên 18\,254. Đọc nó theo
+chiều ngược lại thì bài báo nói rằng hơn 98\% tài liệu XAI thậm chí không xuất
+hiện cùng từ khóa nào về đánh giá với người, và hơn 99\% không chứa bằng chứng
+thực nghiệm nào từ người~\autocite{p24humangap}. Các tác giả cũng nói con số
+này không nhạy với sai số của bộ từ khóa theo cách người ta có thể nghĩ: giả
+sử tiêu chí tìm sai tới một bậc độ lớn, tức tỉ lệ kiểm chứng thật cao gấp mười
+lần, thì kết quả vẫn chỉ là 7\% số công trình được thử với
+người~\autocite{p24humangap}.
+
+Trong bốn con số, con số đáng dừng lại lâu nhất là tỉ lệ ở mức ba so với mức
+bốn, tức 128 trong 237. Hai mức ấy nói về cùng một tập bài: những bài đã tự
+tuyên bố rằng phương pháp của mình giải thích được cho người. Vậy trong số
+chính những bài đã hứa điều đó, chỉ hơn một nửa đem lời hứa ra thử, và gần một
+nửa thì không.
+Bài báo phát biểu tỉ lệ này hai lần và hai lần không khớp nhau: mục 3 viết
+\enquote{54\% of papers provide an evaluation, 46\% do not}, còn mục 4.1 viết
+\enquote{only 56\% of them provided an evaluation with
+humans}~\autocite{p24humangap}. Phép chia 128 cho 237 cho 54\%, và cả hai bảng
+đều nhất quán với mục 3, nên con số ở mục 4.1 là chỗ sai của bài. Sách vì thế
+in các phép đếm chứ không in tỉ lệ ấy, và ghi lại chỗ vênh này một lần tại đây;
+nhận xét này là của sách.
+
+\index{kiểm đếm tài liệu XAI!ba khảo sát trước đó}%
+Ba công trình trước đó mà bài báo dựa lên cùng cho một hình dạng, và sách thuật
+lại cả ba qua lời của bài báo vì không đọc bài nào trong ba. Miller và cộng sự
+năm 2017 rà 23 bài của một hội thảo XAI: chỉ 4 bài dẫn tới nghiên cứu khoa học
+xã hội liên quan, chỉ 1 bài dựng mô hình trên nền ấy, và không bài nào trong
+23 có kiểm chứng thực nghiệm. Wells và Bednarz rà 25 bài về giải thích cho học
+tăng cường và thấy 17 bài không có thử nghiệm nào với người dùng. Nauta và
+cộng sự rà 300 bài ở các hội nghị AI hàng đầu và thấy cứ 3 bài thì 1 bài đánh
+giá phương pháp của mình chỉ bằng bằng chứng giai thoại, còn cứ 5 bài mới có 1
+bài đánh giá với người dùng thật~\autocite{p24humangap}. Ba cuộc rà ấy đọc 23,
+25 và 300 bài, so với 18\,254 bài của cuộc kiểm đếm này, và ba lần đều ra cùng
+một kết luận.
+
+\index{độ trung thực!vắng tên trong cuộc kiểm đếm}%
+Đến đây phải nói rõ điều mà con số 0.70\% không nói, vì đây là chỗ dễ đọc lệch
+nhất trong cả chương. Trong toàn bộ bài báo, các chữ \enquote{faithfulness} và
+\enquote{faithful} không xuất hiện lần nào, chữ \enquote{ground truth} cũng
+không, và cả \enquote{attribution}, \enquote{LIME}, \enquote{SHAP} lẫn
+\enquote{saliency} đều không~\autocite{p24humangap}. Cái được đếm là việc kiểm
+chứng lời tuyên bố về khả năng giải thích cho người. Theo cặp khái niệm mà
+mục~\ref{sec:ch01-do-trung-thuc-va-tinh-hop-ly} tách ra, đó là phía tính hợp
+lý, không phải phía độ trung thực. Vậy nên câu \enquote{chưa tới 1\% số bài XAI
+kiểm chứng độ trung thực} là một câu sai, và không phải câu bài báo này nói.
+
+Nếu vậy thì con số ấy nói gì với Phần~IV? Nó nói đúng điều mà quan hệ vay mượn
+ở mục~\ref{sec:ch12-hai-nhanh-danh-gia} đòi. Đánh giá theo chức năng đứng vững
+nhờ một việc kiểm chứng đã làm ở cách đánh giá đắt hơn, và cuộc kiểm đếm cho
+thấy việc kiểm chứng ấy hầu như không được làm ở đâu cả. Món nợ không phải là
+món nợ đã trả rồi mà ta quên mất; nó chưa từng được trả. Đó là lý do một chương
+về vắng mặt con người thuộc về Phần~IV chứ không thuộc về Phần~V: nó không đề
+xuất lối thoát nào, nó ghi lại rằng cái nền mà cả Phần~IV đứng lên chưa được ai
+dựng.
+
+Thêm một điều nữa mà phép đếm không nói, và bài báo tự nêu nó. Một bài được 1
+điểm khi nó có một thí nghiệm hành vi với người, bất kể thí nghiệm ấy tốt hay
+tồi. Các tác giả viết rằng thang điểm này có thể cần làm lại, vì sự có mặt đơn
+thuần của một cuộc đánh giá chưa chắc tương đương với
+\enquote{a paper that presents a \enquote{good} evaluation}, và họ dẫn ngay quan sát
+của chính mình rằng một số đánh giá không ghi cả số người tham gia lẫn chuyên
+môn của họ~\autocite{p24humangap}. Nói cách khác, 128 là chặn trên chứ không phải chặn
+dưới. Mục~\ref{sec:ch12-nghien-cuu-khong-co-nguoi} đọc chỗ đó.
+
+\index{kiểm đếm tài liệu XAI|)}%

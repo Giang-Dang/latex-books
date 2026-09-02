@@ -1,0 +1,153 @@
+\section{Một phép đối chiếu đã được làm}
+\label{sec:ch12-mot-phep-doi-chieu}
+
+\index{đối chiếu chỉ số với người|(}%
+Cuộc kiểm đếm cho biết mũi tên nằm ngang của
+hình~\ref{fig:ch12-hai-nhanh-danh-gia} hầu như không được vẽ, nhưng nó không
+cho biết chuyện gì xảy ra ở những lần hiếm hoi mà nó được vẽ. Liedeker, Ell,
+Cimiano và Düsing, bốn tác giả ở Đại học Bielefeld, chạy đúng phép đối chiếu
+ấy trong một nghiên cứu công bố tháng 3 năm 2026 và được nhận ở
+hội nghị World Conference on eXplainable Artificial Intelligence 2026, cùng
+loạt hội nghị đã nhận khảo sát mà chương~\ref{ch:lime-nao-dang-tin}
+đọc~\autocite{p25userperception}. Đây là bài đầu tiên trong danh mục của sách
+đặt điểm số của một chỉ số tự động cạnh đánh giá của người trên cùng những lời
+giải thích rồi báo cáo mức trùng khớp.
+
+\index{lời giải thích phản thực}%
+Đối tượng của nó phải nói ngay, vì nó không phải đối tượng của Phần~II. Bài
+báo chấm các chỉ số của \tn{lời giải thích phản thực}{counterfactual
+explanation}, tức một họ phương pháp giải thích khác hẳn attribution đặc trưng:
+thay vì gán một điểm số cho từng \tn{đặc trưng}{feature}, một lời giải thích phản thực trả
+về một phiên bản đã sửa của chính đầu vào, sửa ít nhất có thể, sao cho mô hình
+đổi dự đoán sang lớp khác. Người đọc nhìn vào đó thì biết cần đổi gì để kết
+quả khác đi.
+
+Chữ \enquote{phản thực} ở đây không cùng nghĩa với chữ \tn{phản thực}{counterfactual} mà Phần~IV đã
+dùng, và hai nghĩa ấy phải giữ tách nhau. Từ chương~\ref{ch:khung-hop-nhat}
+trở đi, phép thử phản thực là thao tác bỏ đi hoặc thay đổi những phần tử được
+chấm điểm cao rồi xem đầu ra của mô hình đổi bao nhiêu, tức một cách đo một
+lời giải thích đã có. Ở chương này, một lời giải thích phản thực là bản thân
+lời giải thích. Cùng một chữ, một bên là dụng cụ đo và một bên là vật được đo.
+Đây là trường hợp cùng loại với chỗ va chữ mà
+chương~\ref{ch:lime-nao-dang-tin} đã phải gỡ, chỉ khác là ở đó hai bài báo va
+nhau ở chữ fidelity còn ở đây chúng va nhau ở chữ phản thực.
+
+Hệ quả của ranh giới ấy giống hệt hệ quả mà
+mục~\ref{sec:ch09-doi-tuong-khac-nhau} rút ra cho bài báo neo. Bài báo neo đo
+các chỉ số của \tn{chuỗi suy luận}{chain-of-thought}, bài này đo các chỉ số của lời giải thích phản
+thực, và không bài nào đo các họ chỉ số của
+chương~\ref{ch:do-do-trung-thuc}. Cái đi qua được ranh giới lần này là gì thì
+mục~\ref{sec:ch12-ket-qua-va-ranh-gioi} nói, sau khi đã có kết quả để nói về.
+
+\index{đối chiếu chỉ số với người!thiết kế nghiên cứu}%
+Thiết kế nghiên cứu gồm ba phần, và phần đầu là sinh lời giải thích. Nó chạy
+trên ba bộ dữ liệu bảng lấy từ kho UCI, chọn theo tiêu chí đặc
+trưng và nhãn phải trực giác đủ để người không chuyên đọc được: Mushroom, phân
+loại nấm ăn được hay độc, Obesity Levels, phân loại mức béo phì thành bảy lớp,
+và Heart Disease, dự đoán có bệnh tim hay không. Mô hình nền là XGBoost, đạt
+điểm F1 từ 0.85 trở lên trên cả ba. Lời giải thích phản thực được sinh cho mọi
+điểm trong tập kiểm thử bằng phương pháp Counterfactuals Guided by Prototypes,
+qua thư viện Alibi Explain; một lời giải thích được coi là hợp lệ khi dự đoán
+của mô hình trên điểm mới sinh đã lật sang lớp
+đích~\autocite{p25userperception}.
+
+Từ khối lời giải thích hợp lệ ấy, các tác giả rút một mẫu nhỏ để đưa vào
+nghiên cứu người dùng, và cách rút mẫu đáng ghi vì nó quyết định phổ của cái
+được chấm. Họ phân cụm bằng k-means trên chính vector bảy chỉ số của từng lời
+giải thích, chia số suất theo cỡ cụm sao cho mỗi cụm góp ít nhất một lời giải
+thích, rồi rút ngẫu nhiên đều trong từng cụm. Kết quả là 85 lời giải thích,
+chia 30 cho Mushroom, 30 cho Obesity Levels và 25 cho Heart
+Disease~\autocite{p25userperception}. Cách rút này giữ cho mẫu phủ được cấu
+trúc của toàn bộ không gian chỉ số thay vì dồn vào vùng đông nhất; hệ quả là
+tương quan tính về sau không bị thu hẹp chỉ vì các lời giải thích được chấm
+quá giống nhau, và hệ quả ấy là điều sách đọc ra chứ không phải điều bài báo
+nêu.
+
+\index{đối chiếu chỉ số với người!nghiên cứu người dùng}%
+Phần thứ hai là thu đánh giá của người, và nó chạy trên nền tảng Prolific. Người tham gia được giới thiệu
+về lời giải thích phản thực bằng một ví dụ trên bộ dữ liệu tín dụng Đức đã
+được giản lược, rồi mỗi người nhận một trong 20 gói, mỗi gói 12 lời giải
+thích, bốn cho mỗi bộ dữ liệu. Thứ tự các bộ dữ liệu được xáo, còn các lời
+giải thích cùng một bộ thì đặt liền nhau để giảm tải nhận thức. Mỗi lời giải
+thích hiện ra dưới dạng bảng đối chiếu điểm gốc với phiên bản đã sửa, các đặc
+trưng bị đổi được tô sáng, kèm một đoạn mô tả ngắn bằng
+lời~\autocite{p25userperception}.
+
+Mỗi lời giải thích được chấm theo năm chiều, mỗi chiều là một câu hỏi trên
+\tn{thang Likert}{Likert scale} bốn mức, từ 1 là \enquote{Definitely Yes} tới
+4 là \enquote{Definitely No}, cộng thêm lựa chọn không biết. Năm chiều là: lớp
+mà mô hình dự đoán có chính xác không; lời giải thích có hiểu được không; lời
+giải thích có hợp lý không; lời giải thích có đủ chi tiết không; và lời giải
+thích có làm người đọc hài lòng không~\autocite{p25userperception}. Cần chú ý
+chiều của thang: 1 là câu trả lời tích cực nhất, nên số càng nhỏ càng tốt.
+
+Đọc năm chiều ấy cạnh cặp khái niệm của
+mục~\ref{sec:ch01-do-trung-thuc-va-tinh-hop-ly} thì thấy cả năm đều nằm ở phía
+tính hợp lý. Không chiều nào hỏi người tham gia rằng lời giải thích có phản
+ánh đúng mô hình hay không, và cũng không thể hỏi, vì người tham gia không
+nhìn thấy mô hình. Nhận xét này là của sách, và nó không phải một lời chê
+thiết kế: nó là điều mà mũi tên chấm vòng lên phía mô hình trong
+hình~\ref{fig:ch12-hai-nhanh-danh-gia} đã vẽ sẵn.
+
+\index{đối chiếu chỉ số với người!cỡ mẫu}%
+Mẫu người cuối cùng gồm 167 người, sau khi một người trượt các câu kiểm tra
+độ chú ý và bị loại. Tuổi từ 20 tới 72, trung bình 40.85 với độ lệch chuẩn
+13.05; 77.8\% có bằng đại học trở lên; kinh nghiệm học máy tự khai trung bình
+2.67 với độ lệch chuẩn 0.93 trên thang bốn mức. Tổng cộng 2\,004 lượt chấm được
+thu, tức trung bình 23.58 bộ chấm đầy đủ cho mỗi lời giải
+thích~\autocite{p25userperception}.
+
+Năm chiều ấy về sau được gộp thành một điểm duy nhất, và bước gộp cần được
+biện minh chứ không được làm mặc nhiên, vì mọi kết quả của
+mục~\ref{sec:ch12-ket-qua-va-ranh-gioi} tính trên điểm gộp ấy. Các tác giả
+biện minh bằng hai phép kiểm, mỗi phép trả lời một câu hỏi khác nhau.
+
+Câu hỏi thứ nhất là những người chấm có đồng thuận với nhau không. Nếu hai
+người cùng đọc một lời giải thích mà cho hai điểm rất khác nhau thì điểm ấy
+nói về người chấm nhiều hơn nói về lời giải thích. Các tác giả đo bằng hệ số
+tương quan nội lớp, tức tỉ lệ phương sai của các điểm chấm sinh ra từ khác
+biệt giữa các lời giải thích chứ không từ khác biệt giữa những người chấm. Kết
+quả là thấp khi xét từng người chấm một, và cao hơn nhưng vẫn chỉ ở mức vừa
+phải khi lấy trung bình nhiều người, đúng như các nghiên cứu người dùng trước
+đó trong XAI~\autocite{p25userperception}. Bài báo không in giá trị cụ thể
+nào, nên sách không in giá trị nào.
+
+Câu hỏi thứ hai là năm chiều có đang đo cùng một thứ không, và câu này mới là
+câu cho phép gộp. Hai phép kiểm trả lời nó. Hệ số Cronbach alpha đo mức năm
+chiều dao động cùng nhau qua các lời giải thích, và giá trị 0.88 nằm ở mức
+được coi là cao. Phân tích thành phần chính đi xa hơn một bước: nó tìm trục mà
+theo đó năm chiều biến thiên nhiều nhất, và ở đây trục thứ nhất một mình đã
+giải thích 74.1\% phương sai của cả năm, nghĩa là gần ba phần tư những gì năm
+chiều phân biệt được đều nằm trên một trục duy
+nhất~\autocite{p25userperception}. Với hai kết quả đó, lấy trung bình năm
+chiều không làm mất mấy thông tin, nên các tác giả gộp chúng thành một điểm
+duy nhất mà họ đặt tên là Combined Quality Score, và mọi phân tích về sau chạy
+trên điểm gộp ấy bên cạnh năm chiều riêng. Trên toàn bộ 85 lời giải thích,
+điểm gộp trung bình là 2.10 với độ lệch chuẩn 0.22, tức nằm giữa hai mức trả
+lời tích cực nhất của thang.
+
+\index{đối chiếu chỉ số với người!lực kiểm định}%
+Còn một phần nữa của thiết kế mà bài báo làm và phần lớn nghiên cứu người dùng
+không làm, và chính phần này quyết định kết quả ở
+mục~\ref{sec:ch12-ket-qua-va-ranh-gioi} được đọc như thế nào. Đó là phân tích
+\tn{lực kiểm định}{statistical power}: tính trước xem với cỡ mẫu đang có, hiệu
+ứng nhỏ tới đâu thì vẫn phát hiện được, và nhỏ hơn ngưỡng đó thì không. Lực
+kiểm định là xác suất phép thử báo có hiệu ứng khi hiệu ứng thật sự tồn tại ở
+một cỡ cho trước, nên nói một nghiên cứu có lực 80\% với hiệu ứng cỡ ấy là nói
+rằng nếu hiệu ứng đúng cỡ ấy có thật thì cứ mười lần chạy sẽ có tám lần thấy
+được nó. Với mức ý nghĩa 0.05 và cỡ mẫu 25 tới 30 lời giải thích cho mỗi bộ dữ
+liệu, nghiên cứu đạt lực 80\% cho các hiệu ứng lớn, tức hệ số tương quan từ
+0.50 trở lên. Với phần hồi quy dùng bảy chỉ số làm biến dự báo, cỡ ấy đủ để phát
+hiện hệ số xác định $R^2$ từ 0.40 trở lên; muốn phát hiện $R^2$ bằng 0.30 thì
+cần khoảng 42 lời giải thích cho mỗi bộ dữ liệu, và $R^2$ bằng 0.15 thì cần
+khoảng 89~\autocite{p25userperception}.
+
+Các tác giả nói rõ mình chọn cỡ ấy vì lý do gì, và lý do đó là một lập luận về
+mục đích chứ không phải một lời biện hộ. Câu hỏi trung tâm của nghiên cứu là
+liệu các chỉ số tự động có làm được đại lượng thay thế cho đánh giá của người
+hay không. Nếu một chỉ số, hoặc một tổ hợp chỉ số, xấp xỉ được đánh giá của
+người thì hiệu ứng phải lớn, và cỡ mẫu này thừa sức thấy. Còn một chỉ số chỉ
+tương quan yếu với cảm nhận của người, dưới 0.30, thì các tác giả cho rằng nó
+ít có giá trị thực dụng~\autocite{p25userperception}. Nghiên cứu vì thế được
+dựng để trả lời câu hỏi \enquote{có dùng thay được không}, và nó thừa nhận
+rằng câu hỏi \enquote{có tương quan chút nào không} thì cần mẫu lớn hơn.

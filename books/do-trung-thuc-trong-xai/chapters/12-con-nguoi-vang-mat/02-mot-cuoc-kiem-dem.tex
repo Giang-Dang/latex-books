@@ -1,0 +1,74 @@
+\section{Một cuộc kiểm đếm}
+\label{sec:ch12-mot-cuoc-kiem-dem}
+
+\index{kiểm đếm tài liệu XAI|(}%
+Mục trước đặt một câu hỏi thực nghiệm: khối thí nghiệm có người mà cách đánh
+giá theo chức năng vay mượn có lớn tới đâu. Suh, Hurley, Smith và Siu, bốn tác
+giả ở MIT Lincoln Laboratory, trả lời câu ấy bằng cách đi đếm, và nhan đề bài
+báo của họ đã là câu trả lời: \enquote{Fewer Than 1\% of Explainable AI Papers
+Validate Explainability with Humans}~\autocite{p24humangap}.
+
+Trước khi đọc con số thì phải biết bài báo này là loại công trình gì, vì điều
+đó quyết định con số nói được gì. Đây là một công trình bảy trang trong nhánh
+Extended Abstracts của hội nghị CHI 2025, và các tác giả gọi nó là một báo cáo
+sơ bộ, \enquote{late-breaking work}, ngay ở câu đầu tiên của phần tóm tắt; mục
+cuối bài mang tiêu đề \enquote{Beyond this Late-Breaking Work} và mô tả công
+trình như một khúc dạo cho nghiên cứu về sau~\autocite{p24humangap}. Nó không
+phải một bài báo đầy đủ và không tự nhận là thế.
+
+\index{kiểm đếm tài liệu XAI!đối tượng được đo}%
+Điều nó đo cũng không phải là mô hình. Không có mô hình nào được huấn luyện,
+không có bộ dữ liệu dự đoán nào, không chỉ số nào được tính. Vật được đo là
+chính khối tài liệu XAI: bao nhiêu bài tuyên bố rằng phương pháp của mình giải
+thích được cho người, và bao nhiêu bài trong số đó đem lời tuyên bố ấy ra thử
+với người thật. Một cuộc kiểm đếm như vậy đứng hay đổ ở thủ tục tìm và thủ tục
+chấm, nên hai thủ tục ấy đáng đọc kỹ.
+
+\index{kiểm đếm tài liệu XAI!thủ tục tìm}%
+Thủ tục tìm chạy trên cơ sở dữ liệu Scopus, gồm cả tài liệu đã xuất bản lẫn
+bản tiền ấn phẩm. Các tác giả làm việc với một thủ thư chuyên nghiệp trong ba
+tháng để dựng và tinh chỉnh bộ từ khóa, lặp lại nhiều vòng, và họ in nguyên
+văn hai chuỗi truy vấn Scopus vào bảng 1 của bài để người khác dựng
+lại được~\autocite{p24humangap}. Truy vấn thứ nhất gom mọi bài mang từ khóa về
+\tn{khả năng giải thích}{explainability} và
+\tn{khả năng diễn giải}{interpretability}; truy vấn thứ hai lấy đúng tập ấy
+rồi thêm ràng buộc về thử nghiệm với người dùng cuối, bằng những cụm như
+\enquote{human-subject}, \enquote{end-user}, \enquote{experiment},
+\enquote{feedback} và \enquote{interview}.
+
+Ba loại tài liệu bị loại ngay trong truy vấn, và cả ba đều để lại dấu trên kết
+quả. Bài rà tổng quan bị loại bằng điều kiện tiêu đề chứa \enquote{review},
+\enquote{survey} hoặc \enquote{overview} và bằng loại tài liệu; bài không
+tiếng Anh bị loại bằng điều kiện ngôn ngữ; bài hội thảo nhỏ bị loại theo mô tả
+của chính các tác giả ở mục bàn về hướng tiếp theo. Đó là ba giới hạn mà bài
+báo tự nêu, chứ không phải ba điều sách phát hiện ra.
+
+\index{kiểm đếm tài liệu XAI!thủ tục chấm}%
+Thủ tục chấm thì mượn từ chỗ khác, và chỗ mượn đáng ghi lại. Tiêu chí chấm lấy
+từ Miller và cộng sự: một bài được 1 điểm nếu chính nó kiểm chứng lời tuyên bố
+về khả năng giải thích với người, và 0 điểm nếu không. Mỗi bài trong tập cuối
+được ba người chấm, và chỗ bất đồng được giải quyết bằng thảo
+luận~\autocite{p24humangap}.
+
+Có một chỗ trong thủ tục chấm mà bài báo thu hẹp phạm vi có chủ ý, và chỗ ấy
+đổi nghĩa của con số cuối cùng. Miller và cộng sự có hai tiêu chí, không phải
+một: bên cạnh tiêu chí kiểm chứng vừa nêu còn một tiêu chí thứ hai, chấm theo
+việc bài báo có dẫn hoặc có triển khai công trình khoa học xã hội hay không.
+Suh và cộng sự không dùng tiêu chí thứ hai, và họ nói lý do: nó được đặt ra
+năm 2017 nên \enquote{may be outdated}, và họ giữ phạm vi ở \enquote{only the
+use of humans in a behavioral study to evaluate the XAI
+method}~\autocite{p24humangap}. Vậy nên cái được đếm là sự có mặt của một thí
+nghiệm hành vi với người, không phải chất lượng của thí nghiệm ấy, và cũng
+không phải mức độ bài báo dựa vào hiểu biết đã có về con người.
+
+Bài báo còn liệt kê bốn tình huống mà một bài bị chấm 0 dù thoạt nhìn có vẻ
+đáng được điểm, và bốn tình huống ấy vẽ ra ranh giới của phép đếm rõ hơn mọi
+định nghĩa: bài tự nhận là đã diễn giải được nhờ chính thiết kế của mô hình
+nên cho rằng mình không cần thí nghiệm với người; bài đóng góp một khung hoặc
+một cách đánh giá tự nhận là giải thích được nhưng không đem khung ấy thử với
+người; bài dùng dữ
+liệu do người sinh ra trong lúc huấn luyện nhưng không đánh giá với người; và
+bài so kết quả của mình với nhãn do người gán mà không có bước kiểm chứng nào
+với người~\autocite{p24humangap}. Tình huống thứ tư là tình huống dễ nhầm nhất
+trong bốn, vì nhãn do người gán trông rất giống một phép kiểm chứng có người,
+và mục~\ref{sec:ch12-nghien-cuu-khong-co-nguoi} quay lại đúng chỗ ấy.

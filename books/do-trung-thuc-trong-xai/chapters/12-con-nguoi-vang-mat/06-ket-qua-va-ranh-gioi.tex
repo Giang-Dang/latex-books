@@ -1,0 +1,182 @@
+\section{Kết quả, và ranh giới của nó}
+\label{sec:ch12-ket-qua-va-ranh-gioi}
+
+\index{chỉ số phản thực!bảy chỉ số}%
+Mục trước dựng xong hai vế của phép đối chiếu ở phía người. Vế còn lại là bảy
+chỉ số tự động, tính trên đúng 85 lời giải thích ấy. Bài báo lấy chúng từ tài
+liệu về lời giải thích phản thực và cho mỗi chỉ số một công
+thức~\autocite{p25userperception}. Sách mô tả từng chỉ số bằng lời và không
+chép công thức nào, vì cái chương này lập luận là quan hệ giữa bảy con số ấy
+với đánh giá của người, và quan hệ đó không đọc được từ công thức. Đây là lựa
+chọn của sách, không phải giới hạn của nguồn: khác với bảng tính chất mà
+chương~\ref{ch:lime-nao-dang-tin} đọc, vốn không kèm thủ tục tính nào, bài báo
+này có đủ công thức cho cả bảy.
+
+Sparsity đếm số đặc trưng khác nhau giữa đầu vào gốc và bản đã sửa, nên càng
+thấp thì lời giải thích càng đổi ít chỗ. Proximity đo khoảng cách giữa hai
+điểm ấy trong không gian đặc trưng, nên càng thấp thì bản đã sửa càng sát bản
+gốc. Closeness đo khoảng cách trung bình từ bản đã sửa tới những điểm huấn
+luyện gần nó nhất, nên càng thấp thì bản đã sửa càng nằm gần dữ liệu đã quan
+sát được. Diversity đo mức độc lập lẫn nhau giữa các đặc trưng bị đổi: với mỗi
+cặp đặc trưng bị đổi, bài báo tính thông tin tương hỗ chuẩn hóa của cặp ấy,
+tức mức biết giá trị của đặc trưng này thì đoán được giá trị của đặc trưng kia,
+quy về thang từ 0 tới 1, rồi lấy trung bình phần bù trên mọi cặp; nên càng cao
+thì các chỗ đổi càng ít trùng lặp thông tin. Oracle Score nhân xác suất mà mô
+hình nền gán cho lớp đích với xác suất mà một mô hình thứ hai, huấn luyện độc
+lập, gán cho cùng lớp ấy, nên càng cao thì hai mô hình càng đồng ý rằng bản đã
+sửa thuộc lớp đích. Trust Score cần một quy ước về khoảng cách từ một điểm tới
+một lớp, và quy ước ấy là khoảng cách trung bình tới ba điểm huấn luyện gần
+nhất thuộc lớp đó; chỉ số lấy tỉ số giữa khoảng cách tới lớp gần nhất khác và
+khoảng cách tới chính lớp được dự đoán, nên càng cao thì bản đã sửa càng nằm
+sâu trong lớp của nó. Completeness hỏi lời giải thích có động vào những đặc
+trưng mà mô hình coi trọng hay không: lấy năm đặc trưng có \tn{mức quan
+trọng}{importance} SHAP lớn nhất tại điểm gốc, cộng các mức quan trọng ấy lại,
+rồi xem phần đóng góp của những đặc trưng vừa nằm trong năm đặc trưng đó vừa bị
+lời giải thích đổi chiếm bao nhiêu phần của tổng; nên càng cao thì lời giải
+thích càng động vào đúng những chỗ mô hình coi
+trọng~\autocite{p25userperception}.
+
+Hai chỗ trong bảy chỉ số ấy dùng lại chữ mà sách đã cấp cho thứ khác, và cả
+hai phải nêu ra ở đây. Sparsity của chương~\ref{ch:khung-hop-nhat} là đại
+lượng đếm cần bao nhiêu phần tử điểm cao mới đạt fidelity, tức một tính chất
+của lời giải thích attribution; sparsity ở đây đếm số đặc trưng mà một lời
+giải thích phản thực đổi. Còn \tn{tính đầy đủ}{completeness} của
+chương~\ref{ch:attribution-theo-gradient} là tiên đề buộc tổng attribution
+bằng chênh lệch đầu ra giữa đầu vào và baseline; Completeness ở đây là một tỉ
+lệ khối lượng SHAP và không phải tiên đề nào cả. Sách giữ cả bảy cái tên bằng
+tiếng Anh, đúng theo lý do mà chương~\ref{ch:do-do-trung-thuc} đã nêu cho các
+tên chỉ số của nó, và ghi hai chỗ va chữ ở đây một lần.
+
+\index{chỉ số phản thực!dựng trên SHAP}%
+Chỉ số cuối cùng trong bảy đáng một câu riêng vì nó khép một vòng mà cả
+Phần~IV đang mở. Completeness được tính bằng SHAP, tức bằng chính phương pháp
+mà chương~\ref{ch:shap} đọc và chương~\ref{ch:do-do-trung-thuc} chưa xác nhận
+được độ trung thực. Vậy một trong bảy con số dùng để chấm chất lượng lời giải
+thích lại là hàm của một lời giải thích khác, và nếu attribution kia sai thì
+con số này sai theo mà không có dấu hiệu nào trên mặt số. Quan sát này là của
+sách; bài báo chỉ nêu SHAP như cách tính, không bàn tới hệ quả ấy.
+
+\index{chỉ số phản thực!tương quan với đánh giá của người}%
+Kết quả thứ nhất là tương quan từng cặp. Các tác giả tính hệ số tương quan
+Pearson giữa bảy chỉ số và năm chiều đánh giá cộng với điểm gộp, tính riêng
+cho từng bộ dữ liệu. Gộp toàn bộ 85 lời giải thích lại thì chỉ một chỉ số duy
+nhất có liên hệ đạt mức ý nghĩa thống kê với điểm gộp: Trust Score, với
+$r = 0.307$ và $p = 0.004$. Sáu chỉ số còn lại đều cho tương quan không đáng
+kể, trị tuyệt đối dưới 0.1~\autocite{p25userperception}.
+
+Kết quả thứ hai nằm dưới kết quả thứ nhất và nặng hơn nó. Khi tách theo bộ dữ
+liệu, các tương quan không chỉ yếu mà còn ngược chiều nhau. Trên Mushroom,
+sparsity, diversity, proximity và closeness tương quan âm ở mức vừa tới mạnh
+với chiều đủ chi tiết, chiều hài lòng và điểm gộp, hệ số từ $-0.38$ tới
+$-0.64$; bài báo đọc điều đó là người dùng ở lĩnh vực này thích những lời giải
+thích đổi ít đặc trưng và đổi ở mức nhỏ. Trên Obesity Levels thì phần lớn tương quan mang
+dấu dương: diversity, Trust Score và Completeness tương quan dương với chiều
+hợp lý, chiều hài lòng và điểm gộp, hệ số từ 0.37 tới 0.52, và bài báo đọc
+điều đó là người dùng ở lĩnh vực này thiên về những lời giải thích đầy đủ
+thông tin hơn. Trên Heart Disease thì tương quan yếu đều và không đạt mức ý
+nghĩa ở mọi cặp, dấu thì lẫn lộn. Độ lệch chuẩn trung bình của các hệ số tương
+quan giữa ba bộ dữ liệu là 0.31~\autocite{p25userperception}.
+
+Con số 0.31 ấy là con số quan trọng nhất trong cả mục này, quan trọng hơn
+$r = 0.307$ ở trên, và lý do thì nằm ở chỗ một dụng cụ đo được dùng để làm gì.
+Một chỉ số tương quan yếu với \tn{cảm nhận của người dùng}{user perception}
+vẫn còn dùng được nếu nó yếu
+đều: ta biết nó đo lệch bao nhiêu và hiệu chỉnh. Một chỉ số đổi cả dấu khi
+chuyển sang bộ dữ liệu khác thì không hiệu chỉnh được, vì muốn hiệu chỉnh phải
+biết trước dấu, mà biết trước dấu thì đã phải chạy nghiên cứu người dùng trên
+chính bộ dữ liệu ấy rồi, tức đã không cần tới chỉ số nữa. Bài báo tự phát biểu
+điều đó ngay sau khi in con số: không chỉ số đơn lẻ nào, và cũng không tổ hợp
+chỉ số nào giữ được ổn định, làm đại lượng thay thế đáng tin cho đánh giá của
+người xuyên qua các lĩnh vực~\autocite{p25userperception}.
+
+\index{chỉ số phản thực!tổ hợp nhiều chỉ số}%
+Vế thứ hai của câu vừa dẫn, về tổ hợp, là kết quả thứ ba và nó được kiểm bằng
+một phép thử vét cạn. Trong thực hành, người ta hiếm khi báo cáo một chỉ số
+đơn lẻ; người ta in cả một hàng chỉ số cạnh nhau và ngầm cho rằng cả hàng ấy
+gộp lại thì mô tả được chất lượng. Các tác giả đem giả định ấy ra thử: họ chạy
+mọi tổ hợp con khác rỗng của bảy chỉ số, tức 127 tổ hợp, huấn luyện năm lớp mô
+hình dự báo trên mỗi tổ hợp, cho ba bộ dữ liệu và sáu biến mục tiêu, tức năm
+chiều đánh giá cộng với điểm gộp, rồi đo bằng $R^2$ tính theo lối đánh giá
+chéo năm phần: chia dữ liệu làm năm phần, lần lượt lấy bốn phần huấn luyện và
+phần còn lại để chấm, rồi lấy trung bình năm lần chấm ấy, nên con số báo cáo
+là mức khái quát ra dữ liệu chưa thấy chứ không phải mức khớp trên dữ liệu
+huấn luyện~\autocite{p25userperception}.
+
+Cách đo ấy cần một câu giải nghĩa vì dấu của nó mang thông tin. Hệ số xác định
+$R^2$ so sai số của mô hình dự báo với sai số của một mốc tầm thường là luôn
+đoán giá trị trung bình. Bằng 0 nghĩa là mô hình không hơn gì cái mốc ấy; âm
+nghĩa là nó tệ hơn cả việc đoán trung bình.
+
+Với cách đọc đó, kết quả gọn lại thành một dòng: trung bình trên mọi thiết
+lập, cả năm lớp mô hình đều cho $R^2$ âm. Hồi quy tuyến tính trung bình
+$-1.253$, XGBoost còn tệ hơn ở $-1.874$ do quá khớp trên cỡ mẫu nhỏ, k láng
+giềng gần nhất $-0.887$, và rừng ngẫu nhiên tốt nhất trong năm nhưng vẫn
+$-0.474$; mô hình cộng tính tổng quát, lớp mô hình cho mỗi biến dự báo một
+đường cong riêng rồi cộng các đường cong lại, thì thường không hội tụ trên cỡ
+mẫu này nên không có con số~\autocite{p25userperception}. Ở trường hợp thuận lợi nhất mà bài báo đem ra
+minh họa, dự báo chiều hài lòng trên Heart Disease, rừng ngẫu nhiên đạt $R^2$
+dương ở 95 trong 127 tổ hợp, nhưng trung bình chỉ 0.067 và cao nhất 0.331.
+
+Còn một điều mà phép vét cạn này thấy được và một phép thử trên vài tổ hợp thì
+không: thêm chỉ số vào không những không giúp mà còn làm hỏng. Xét theo số chỉ
+số có mặt trong tổ hợp, hồi quy tuyến tính khá lên chút ít tới mức bốn chỉ số
+rồi tụt mạnh; rừng ngẫu nhiên đạt đỉnh ở ba và bốn chỉ số, cao nhất $R^2$ bằng
+0.33 với ba chỉ số, rồi giảm đơn điệu khi thêm nữa. Bài báo tóm lại rằng ngay
+với mô hình phi tuyến, tăng số chỉ số quá khoảng ba tới bốn thì không cải
+thiện mà làm giảm hiệu năng~\autocite{p25userperception}.
+
+Đọc theo chiều của một dụng cụ đo, kết quả ấy nói một điều cụ thể. Nếu bảy chỉ
+số cùng đo bảy mặt khác nhau của một đại lượng chung, thì đưa thêm mặt vào
+phải làm bức tranh đầy hơn. Việc thêm chỉ số làm hỏng dự báo có nghĩa là những
+chỉ số thêm vào mang nhiễu chứ không mang thông tin bổ sung về cái mà người
+đọc cảm nhận. Bài báo gọi đó là một giới hạn mang tính cấu trúc trong cách các
+chỉ số hiện nay nắm bắt những tiêu chí có ý nghĩa với con
+người~\autocite{p25userperception}.
+
+\index{độ trung thực!của attribution đặc trưng, phép thử đồng thuận}%
+Cái không đi qua được biên giới sang các họ chỉ số của
+chương~\ref{ch:do-do-trung-thuc} là mọi con số ở trên. Hệ số 0.307, độ
+lệch 0.31, mọi giá trị $R^2$: tất cả đều là số đo trên bảy chỉ số của lời giải
+thích phản thực, trên ba bộ dữ liệu bảng, với một phương pháp sinh duy nhất.
+Không con số nào trong đó nói gì về deletion, về comprehensiveness, về ROAR
+hay về Sensitivity-n. Đây là cùng một ranh giới mà
+mục~\ref{sec:ch09-doi-tuong-khac-nhau} dựng cho bài báo neo, và nó được giữ ở
+đây vì đúng cùng một lý do.
+
+Cái đi qua được thì là câu hỏi chứ không phải con số: các chỉ số
+tự động của một họ lời giải thích đã bị đem đối chiếu với cảm nhận của người
+đúng một lần, và chúng không trụ được. Với các họ chỉ số của
+chương~\ref{ch:do-do-trung-thuc}, phép đối chiếu ấy chưa được làm lần nào. Cái
+đi qua biên giới vì thế là một tiền lệ: phép thử ấy khả thi, và kết quả của nó
+không hiển nhiên.
+
+Đi cùng tiền lệ ấy là một mẩu bằng chứng mà bài báo này thuật lại chứ không tự
+làm, và nó chạm đúng vào các họ chỉ số của
+chương~\ref{ch:do-do-trung-thuc}. Ở phần mở đầu và phần công trình liên quan,
+các tác giả dẫn một bộ đánh giá tên là M4 và ghi rằng bộ ấy cho thấy các chỉ
+số trung thực thông dụng của attribution đặc trưng chỉ tương quan yếu với
+nhau và có thể cho ra những bảng xếp hạng phương pháp mâu thuẫn
+nhau~\autocite{p25userperception}. Sách không đọc bài M4 và không thêm khóa
+trích dẫn cho nó, nên phát biểu này được thuật qua lời của bài báo hiện tại,
+đúng theo cách chương~\ref{ch:chi-so-khong-do-do-trung-thuc} đã làm với các
+công trình mà bài báo neo nhắc tới.
+
+Mẩu bằng chứng ấy trả lời đúng một việc mà
+mục~\ref{sec:ch09-doi-tuong-khac-nhau} đã giao. Trong ba thứ mà mục ấy nói là
+đi qua được ranh giới, thứ ba là một phép kiểm mà phía attribution có thể chạy
+ngay: đo mức đồng thuận giữa các chỉ số, việc không cần ground truth mà chỉ
+cần chạy nhiều chỉ số trên cùng một tập. Phép kiểm ấy hóa ra đã được chạy, và
+kết quả của nó là kết quả mà mục ấy dự đoán.
+
+Nhưng phải đặt nó đúng chỗ, vì nó là thứ dễ bị đọc quá tay. Phép thử đồng
+thuận giữa các chỉ số không phải phép đối chiếu với ground truth. Nhiều chỉ số
+bất đồng với nhau thì không thể cùng đúng, nhưng nhiều chỉ số đồng thuận với
+nhau cũng chưa chắc cái nào đúng, vì chúng có thể cùng sai theo một kiểu.
+Chương~\ref{ch:chi-so-khong-do-do-trung-thuc} đã đọc đúng phép thử đồng thuận
+ấy trên tám chỉ số của chuỗi suy luận và không rút từ nó một kết luận về độ
+trung thực. Vậy điều đúng để nói là câu hỏi về mức đồng thuận nay đã được hỏi
+cả với các chỉ số của attribution đặc trưng và câu trả lời cùng một hình dạng,
+còn câu hỏi về đối chiếu với ground truth thì vẫn chưa được hỏi với chúng.
+Phát biểu mà mục~\ref{sec:ch09-doi-tuong-khac-nhau} để ngỏ không đổi.
+
+\index{đối chiếu chỉ số với người|)}%
