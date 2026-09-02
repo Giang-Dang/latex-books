@@ -14,14 +14,14 @@
   \node[askbox, minimum width=32mm] (ask) at (5.8,0)
     {Có hơn các biến thể\\trước hay không?};
 
-  \node[gapbox] (metric) at (3.0,-2.4) {Thước đo chung:\\chưa được kiểm chứng};
+  \node[gapbox] (metric) at (3.0,-2.4) {Chỉ số chung:\\chưa được kiểm chứng};
   \node[gapbox] (code) at (8.6,-2.4) {Mã nguồn:\\một nửa không có};
 
   \draw[flow] (issue) -- (variant);
   \draw[flow] (variant) -- (ask);
   \draw[blocked] (metric) -- (ask);
   \draw[blocked] (code) -- (ask);
-  \draw[blocked] (ask.west) -| (issue.south);
+  \draw[flow] (ask.west) -| (issue.south);
 
   \node[note, text width=30mm] at (1.9,0.75)
     {không kết luận được,\\nên quay lại viết\\biến thể tiếp theo};

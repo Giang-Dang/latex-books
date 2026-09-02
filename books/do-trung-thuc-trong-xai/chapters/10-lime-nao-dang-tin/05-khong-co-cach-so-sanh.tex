@@ -2,8 +2,8 @@
 \label{sec:ch10-khong-co-cach-so-sanh}
 
 \index{LIME!khả năng dựng lại}%
-Chỗ hở mà mục trước dừng lại được khảo sát mở rộng thành cả một phần thảo luận,
-và phần ấy mở bằng một câu chẩn đoán: dù LIME phổ biến đến thế, một chuẩn thực
+Khảo sát dành cả một phần thảo luận cho khoảng trống mà mục trước dừng lại ở
+đó, và phần ấy mở bằng một câu chẩn đoán: dù LIME phổ biến đến thế, một chuẩn thực
 hành cho việc nghiên cứu và đánh giá vẫn chưa được thiết lập, và chính sự thiếu
 chuẩn ấy cản trở tính chặt chẽ khoa học của các kỹ thuật dựa trên
 LIME~\autocite{p22whichlime}. Ba quan sát cụ thể đứng sau câu đó.
@@ -26,13 +26,14 @@ trình liên quan và nói nó làm giảm chất lượng nghiên cứu. Nhữn
 biến thể trước thì thường so với S-LIME hoặc BayLIME, không phải vì hai cái đó
 là mốc đúng, mà vì hai cái đó có mã nguồn~\autocite{p22whichlime}.
 
-Hệ quả của lối làm ấy là một thứ tự bộ phận rỗng. Nếu mỗi biến thể chỉ được so
+Hệ quả của lối làm ấy là không có một quan hệ hơn kém nào giữa các biến thể
+với nhau. Nếu mỗi biến thể chỉ được so
 với gốc, thì sau 48 kỹ thuật ta biết 48 mệnh đề dạng \enquote{biến thể này
 tốt hơn LIME chuẩn ở nhóm vấn đề kia}, và không biết một mệnh đề nào so hai
 biến thể với nhau. Câu hỏi trong tựa đề khảo sát vì thế vẫn nguyên ở cuối bài,
 và khảo sát không đưa ra đáp án nào cho nó.
 
-Quan sát thứ ba là về thước đo. Khảo sát nêu một vấn đề mà nó gọi là phổ biến,
+Quan sát thứ ba là về chỉ số. Khảo sát nêu một vấn đề mà nó gọi là phổ biến,
 và gọi là phổ biến trong cả cộng đồng XAI chứ không riêng nhánh LIME: các thước
 đo dùng để đánh giá được chọn sao cho chúng xác nhận đóng góp đã tuyên
 bố~\autocite{p22whichlime}. Với các đánh giá định tính bằng khảo sát người dùng,
@@ -44,10 +45,11 @@ Nét chấm ở đó có nghĩa là thứ đang thiếu, khác với nét đứt
 hình~\ref{fig:ch08-vong-lap-do}, vốn đánh dấu một lựa chọn để ngỏ.
 Một nhóm vấn đề được nêu, một biến thể ra đời để sửa nhóm ấy, rồi câu hỏi biến
 thể mới có hơn các biến thể trước hay không cần hai thứ để trả lời: mã nguồn của
-các biến thể trước, và một thước đo mà cả hai bên cùng chấp nhận. Mã nguồn thì
-một nửa không có. Thước đo thì
-mục~\ref{sec:ch10-mot-tu-khong-xuat-hien} và
-chương~\ref{ch:chi-so-khong-do-do-trung-thuc} nói về nó. Vì câu hỏi không trả
+các biến thể trước, và một chỉ số mà cả hai bên cùng chấp nhận. Mã nguồn thì
+một nửa không có. Chỉ số thì chưa cái nào được kiểm định:
+mục~\ref{sec:ch10-mot-tu-khong-xuat-hien} cho thấy khảo sát không có thủ tục
+tính nào, và chương~\ref{ch:chi-so-khong-do-do-trung-thuc} cho thấy ngay các
+chỉ số có thủ tục cũng chưa được đối chiếu với ground truth. Vì câu hỏi không trả
 lời được, việc còn lại mà một tác giả làm được là nêu một nhóm vấn đề khác và
 viết biến thể tiếp theo.
 
@@ -55,13 +57,14 @@ viết biến thể tiếp theo.
   \centering
   \input{figures/tikz/ch10-vong-bien-the}
   \caption{Ô viền đậm là chỗ duy nhất trong vòng có thể loại bỏ một biến thể, và
-  nó là ô duy nhất không có đầu vào liền nét. Bản gộp của sách, dựng từ phần
-  thảo luận của khảo sát~\autocite{p22whichlime}.}
+  hai đầu vào mà nó cần đều là nét chấm, tức đang thiếu. Bản gộp của sách, dựng
+  từ phần thảo luận của khảo sát~\autocite{p22whichlime}.}
   \label{fig:ch10-vong-bien-the}
 \end{figure}
 
 Vòng ấy chạy được mà không cần ai gian dối, và đó là điều làm nó khó chữa. Mỗi
 bước trong vòng đều hợp lý xét riêng: nêu một hạn chế có thật, đề xuất một cách
 sửa, so với bản gốc để cho thấy cách sửa có tác dụng, rồi công bố. Cái sai nằm ở
-chỗ vòng không có bước nào loại bỏ được một biến thể, nên qua chín năm số biến
-thể chỉ tăng mà chưa cái nào bị loại.
+chỗ vòng không có bước nào loại bỏ được một biến thể; khảo sát không nói câu
+sau, nhưng sách đọc từ đó rằng qua chín năm số biến thể chỉ tăng mà chưa cái
+nào bị loại.

@@ -14,7 +14,7 @@ Bước một là \tn{sinh đặc trưng}{feature generation}: biến đầu và
 thành phần mà lời giải thích sẽ gọi tên, chẳng hạn bằng cách
 \tn{phân đoạn}{segmentation} một tấm ảnh thành các super-pixel. Bước hai là
 \tn{sinh mẫu}{sample generation}: dựng các mẫu đã nhiễu quanh điểm đang xét. Bước
-ba là attribution đặc trưng: khớp một mô hình khả diễn giải, thường là tuyến
+ba là attribution đặc trưng: khớp một mô hình dễ đọc, thường là tuyến
 tính, để xấp xỉ mô hình phức tạp trên vùng cục bộ ấy. Bước bốn là
 \tn{biểu diễn lời giải thích}{explanation representation}: lấy trọng số của mô
 hình thay thế mà trình ra \tn{mức quan trọng}{importance} của từng thành phần.
@@ -30,7 +30,8 @@ thành bốn chỗ mà một tác giả có thể đứng vào để sửa LIME.
 
 Cách chẻ ấy nói được một điều mà danh sách tham số của
 mục~\ref{sec:ch03-cac-tham-so-tu-do} chưa nói. Các tham số tự do không rải đều
-trên quy trình. Biểu diễn $x'$ thuộc bước một; phép dựng lại $z$, phân phối sinh
+trên quy trình; phép đối chiếu sau đây là của sách, vì khảo sát không nhắc tới
+danh sách của chương~\ref{ch:lime}. Biểu diễn $x'$ thuộc bước một; phép dựng lại $z$, phân phối sinh
 nhiễu và số mẫu $N$ thuộc bước hai; hàm khoảng cách $D$, độ rộng $\sigma$ và độ
 dài $K$ thuộc bước ba; bước bốn không nhận lựa chọn nào trong bảy lựa chọn ấy. Vì vậy khi một
 tác giả nói mình đã sửa được một nhóm vấn đề, chỗ đứng của họ trong bốn bước cho
@@ -43,7 +44,7 @@ quan trọng tính sẵn, và một nhóm mà khảo sát để ngỏ tên gọi
 đặc trưng không theo ba lối trên, chẳng hạn sinh ra luật thay vì đặc trưng, hoặc
 chạy song song hai kiểu dữ liệu. Ở bước hai có năm nhóm: chọn lọc mẫu, xấp xỉ,
 dựa trên lân cận, dựa trên phân phối, và một nhóm để ngỏ nữa gồm những cách sinh
-mẫu riêng cho từng kiểu dữ liệu. Ở bước ba có bốn nhóm: sửa mô hình tuyến tính,
+mẫu không theo bốn lối trên, chẳng hạn cách riêng cho một kiểu dữ liệu. Ở bước ba có bốn nhóm: sửa mô hình tuyến tính,
 thay hẳn mô hình thay thế bằng cây, rừng hay đồ thị, đổi cách tính trọng số, và
 đổi cách huấn luyện. Ở bước bốn có hai nhóm: mở rộng dạng lời giải thích, chẳng
 hạn thành luật hay thành đồ thị, và làm lời giải thích tương tác
@@ -51,7 +52,8 @@ hạn thành luật hay thành đồ thị, và làm lời giải thích tương
 
 Danh sách con ấy đáng đọc vì nó cho thấy phạm vi của cái gọi là một biến thể của
 LIME. Thay mô hình thay thế tuyến tính bằng một cây hồi quy đa đầu ra, hoặc bằng
-một hệ lập trình logic quy nạp, thì cái còn lại của LIME chỉ là ý tưởng nhiễu
-quanh một điểm rồi khớp một mô hình khả diễn giải. Bốn bước vì thế vừa là hệ tọa
+một hệ lập trình logic quy nạp, tức một hệ học ra các luật logic từ ví dụ, thì
+cái còn lại của LIME chỉ là ý tưởng nhiễu
+quanh một điểm rồi khớp một mô hình dễ đọc. Bốn bước vì thế vừa là hệ tọa
 độ vừa là lời cảnh báo: hai kỹ thuật cùng mang chữ LIME trong tên có thể không
 còn chung một thủ tục nào ngoài cái khung bốn ô.

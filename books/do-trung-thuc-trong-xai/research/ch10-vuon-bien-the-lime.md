@@ -405,3 +405,35 @@ from. Nothing else numeric is printed.
 There is no decimal fraction anywhere in chapter 10; every number above is an
 integer or a whole percentage. The chapter prints no AUROC, no score and no
 measurement, because the survey reports none.
+
+## 2026-09-02: the opaque-prose pass (decision 52)
+
+The pass rewrote thirteen passages for comprehension and a cold audit then
+checked the chapter against the PDF. Four things the chapter had been printing
+were in the PDF but not in this note; the audit verified them and they are
+recorded here so the note again covers every claim on the page.
+
+- Abstract, p. 1: the authors describe the survey as the first to gather LIME's
+  foundational concepts and known limitations in one place. Chapter opener.
+- Pp. 12-13, the intervention subgroups: the examples the chapter names for
+  replacing the linear surrogate (a multi-output regression tree, an inductive
+  logic programming system) and for widening the explanation form (rules,
+  graphs) come from LIMEtree, LIME-Aleph, Anchors and gLIME as the survey
+  describes them there. The step-2 arbitrary-based group on p. 12 also contains
+  a modular approach that lets the user switch sampling techniques, so the
+  chapter now says that group holds methods outside the four named ones and
+  gives modality-specific sampling only as an example.
+- Table 2, p. 14, and p. 15: the modalities are text, tabular, image, time
+  series, audio, graph and image-with-text, with narrow domains such as
+  archaeology and healthcare inside them; the sentence on not being able to
+  determine whether generality claims hold, for lack of code, closes the
+  section on table 2 (p. 15), not a table row.
+- P. 15: the survey itself calls the compare-only-with-vanilla-LIME habit "a
+  direct consequence of the code availability limitation".
+- P. 9: a technique modifies "one or multiple points" of the pipeline; the
+  chapter now quotes that in words instead of reading the check-mark columns,
+  which this note declines to count.
+
+Two claims the chapter makes are the book's and are now marked as such in the
+prose: that no variant has been eliminated in nine years, and the mapping of
+chapter 03's seven free choices onto the survey's four steps.
