@@ -1,0 +1,41 @@
+\section{No Directive Moves the Cut}
+\label{sec:ch13-no-directive-moves-the-cut}
+\index{federation directives!page ownership}%
+
+Federation directives describe capabilities and dependencies. None of the
+directives in this graph gives Sessions remote rating values before its list
+resolver runs~\autocite{apollodirectives}.
+
+As chapter~\ref{ch:second-third-subgraph} showed, \code{@requires} is the
+tempting one. It built \code{feedbackUrl} in Ratings from a title owned by
+Sessions. The plan added \code{title} to a representation and then ran the
+field resolver. Applied here, it could help a field resolver compute another
+field. It does not turn a root \code{IQueryable<Session>} into a query over a
+remote ratings table.
+
+\code{@provides} points the other way. It says that a resolver can return a
+normally external field at a particular path. The service must already possess
+the value. The directive neither fetches it nor keeps it current.
+
+\code{@shareable} says that more than one subgraph can resolve a field. It
+does not copy the field into those subgraphs. If Sessions genuinely maintained
+an average score, marking both definitions shareable could describe that
+capability. The local value, not the annotation, would make filtering possible.
+
+\code{@listSize} is demand-control metadata. It helps an engine estimate the
+size and cost of a list. It does not define relational ordering or a distributed
+cursor protocol.
+
+These are claims about this schema, not a declaration that federated graphs
+cannot offer cross-domain search. They can. The search surface needs an owner
+that has the values at the moment it chooses the page.
+
+There are two plausible places to put that owner. A complete projection inside
+Ratings produces the same page, SQL, statement counts, and router plan as a
+separate service. That option saves a process but makes Ratings own rating
+writes and a second discovery domain.
+
+I prefer the honest boundary: a fourth Search subgraph. It owns no canonical
+Session. It owns a denormalized document used to find Sessions. The extra
+process is real cost, and so is keeping the projection fresh. Hiding those
+facts inside Ratings would not remove them.

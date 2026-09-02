@@ -1,0 +1,119 @@
+\section{Run the Page}
+\label{sec:ch13-run-the-page}
+\index{statement count!search page}%
+
+The new root can express the request that \code{sessions} could not:
+
+\begin{minted}{graphql}
+query SearchPage($minimumScore: Float, $first: Int) {
+  searchSessions(
+    minimumScore: $minimumScore
+    order: RATING_DESCENDING
+    first: $first
+  ) {
+    nodes {
+      session { id title }
+      averageScore
+      ratingCount
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}
+\end{minted}
+
+With \code{minimumScore} set to 4.0 and \code{first} set to 2, the router
+returns:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{
+  "data": {
+    "searchSessions": {
+      "nodes": [
+        {
+          "session": {
+            "id": "U2Vzc2lvbjoy",
+            "title": "Reading a Query Plan"
+          },
+          "averageScore": 4.5,
+          "ratingCount": 2
+        },
+        {
+          "session": {
+            "id": "U2Vzc2lvbjox",
+            "title": "Schemas That Outlive Their Authors"
+          },
+          "averageScore": 4,
+          "ratingCount": 3
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": "MQ=="
+      }
+    }
+  }
+}
+\end{minted}
+
+The first row is now the 4.5 session. More important, \code{hasNextPage} is
+about the filtered ordering, not the schedule ordering that happened to be
+available elsewhere.
+
+The Search log proves where the cut occurred. Its SQL filters by average score,
+orders that column descending, then orders by session id before applying the
+limit. The id tie-breaker is inside the same statement as the limit. It is not
+a repair step in the router.
+
+\begin{center}
+\begin{tabular}{@{}lr@{}}
+\toprule
+Service & SQL statements \\
+\midrule
+Search & 1 \\
+Sessions & 1 \\
+Ratings & 0 \\
+Speakers & 0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The Sessions statement is one batched entity lookup for the two chosen keys.
+Ratings is absent because the averages used for discovery came from the Search
+projection. Speakers is absent because the request did not select a speaker.
+
+The plan has a \code{Sequence} with two children. The first is a
+\code{Single} fetch from Search, subgraph id 3. The second is a
+\code{BatchEntity} fetch from Sessions, subgraph id 0, and it declares that
+it waits for fetch 0. Reversing those two steps would recreate the original
+problem. The plan places them in the only order that can answer the request.
+
+An unfiltered request is a separate completeness check. In rating-descending
+order the four averages are 4.5, 4.0, 3.0, and null. The unrated session is
+still discoverable and reports a rating count of 0. A projection built only by
+grouping existing rating rows would silently lose it.
+
+\subsection{The Consistency Bill}
+\label{sec:ch13-consistency-bill}
+\index{search projection!freshness}%
+
+The deterministic seed isolates execution mechanics. A real system needs an
+update path from schedule and rating changes into the projection. That might
+be event-driven, a change-data-capture pipeline, or a periodic rebuild. The
+choice belongs to the product's freshness requirement; Federation does not
+choose it.
+
+The API should say what that requirement permits. If a newly submitted rating
+may take a minute to affect discovery, document and monitor that lag. If a
+booking workflow requires read-your-write behavior, this eventually updated
+projection may be the wrong mechanism for that workflow. A search index is not
+a free join. It moves the join to write or ingestion time and makes staleness a
+domain concern.
+
+I also would not call the cursor stable merely because it has a deterministic
+tie-breaker. The tie-breaker orders one snapshot. If scores change between two
+requests, members can move across a cursor boundary. Snapshot tokens or a
+versioned index are different features, and this chapter has not implemented
+either.
+
+That is the full trade: the graph gains a page it can honestly answer, and the
+Search domain gains responsibility for completeness, freshness, and ordering.

@@ -1,0 +1,166 @@
+\section{A Domain That Can Ask}
+\label{sec:ch13-domain-that-can-ask}
+\index{search subgraph!complete projection}%
+
+Search is a small read model, not another owner for Session. Its project uses
+the same runtime, federation package, paging support, and SQLite provider as
+the existing services:
+
+\begin{minted}[fontsize=\footnotesize]{xml}
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="HotChocolate.ApolloFederation"
+                      Version="16.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore"
+                      Version="16.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore.CommandLine"
+                      Version="16.6.1" />
+    <PackageReference Include="HotChocolate.Data.EntityFramework"
+                      Version="16.6.1" />
+    <PackageReference Include="HotChocolate.Types.Analyzers"
+                      Version="16.6.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"
+                      Version="10.0.11" />
+  </ItemGroup>
+</Project>
+\end{minted}
+
+The fourth local port is 5004:
+
+\begin{minted}{json}
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5004",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
+\end{minted}
+
+The read-model row carries everything needed to decide the page. The integer
+key stays out of the schema; clients receive a Session entity instead.
+
+\begin{minted}{csharp}
+namespace Search;
+
+public sealed record SessionSearchDocument(
+    [property: GraphQLIgnore] int SessionId,
+    DateTimeOffset StartsAt,
+    double? AverageScore,
+    int RatingCount);
+\end{minted}
+
+The seed is deliberately complete. Session 4 has no ratings, but it still has
+a search document. A ratings table alone could not produce that row.
+
+\begin{minted}{csharp}
+namespace Search;
+
+public static class SessionSearchData
+{
+    public static readonly
+        IReadOnlyList<SessionSearchDocument> Documents =
+    [
+        new(1, At(9), 4.0, 3),
+        new(2, At(10), 4.5, 2),
+        new(3, At(11), 3.0, 1),
+        new(4, At(14), null, 0)
+    ];
+
+    private static DateTimeOffset At(int hour) =>
+        new(2026, 9, 14, hour, 0, 0, TimeSpan.Zero);
+}
+\end{minted}
+
+The primary key is also the final ordering key. That turns equal start times or
+equal scores into one deterministic order. It does not promise a snapshot
+across separate requests; rows can still change between pages.
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Search;
+
+public sealed class SearchContext(
+    DbContextOptions<SearchContext> options) : DbContext(options)
+{
+    public DbSet<SessionSearchDocument> SessionSearch =>
+        Set<SessionSearchDocument>();
+
+    protected override void OnModelCreating(ModelBuilder model)
+    {
+        model.Entity<SessionSearchDocument>()
+            .HasKey(s => s.SessionId);
+        model.Entity<SessionSearchDocument>()
+            .Property(s => s.StartsAt)
+            .HasConversion(
+                v => v.UtcDateTime,
+                v => new DateTimeOffset(v, TimeSpan.Zero));
+        model.Entity<SessionSearchDocument>()
+            .HasData(SessionSearchData.Documents);
+    }
+}
+\end{minted}
+
+One enum is enough for the two orderings this example needs:
+
+\begin{minted}{csharp}
+namespace Search;
+
+public enum SessionSearchOrder
+{
+    StartsAt,
+    RatingDescending
+}
+\end{minted}
+
+The resolver performs the important operations in one \code{IQueryable}.
+Filtering and ordering happen before Hot Chocolate applies the paging
+arguments. Both orders end with \code{SessionId}.
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Search;
+
+[QueryType]
+public static class Query
+{
+    [UsePaging(DefaultPageSize = 2, MaxPageSize = 10)]
+    public static IQueryable<SessionSearchDocument> SearchSessions(
+        SearchContext db,
+        double? minimumScore,
+        SessionSearchOrder? order)
+    {
+        var query = db.SessionSearch.AsNoTracking();
+        if (minimumScore is not null)
+        {
+            query = query.Where(
+                s => s.AverageScore >= minimumScore.Value);
+        }
+        return order is SessionSearchOrder.RatingDescending
+            ? query.OrderByDescending(s => s.AverageScore)
+                .ThenBy(s => s.SessionId)
+            : query.OrderBy(s => s.StartsAt)
+                .ThenBy(s => s.SessionId);
+    }
+}
+\end{minted}
+
+Notice what is absent: no call to Sessions, Ratings, or the router. Search can
+decide the page locally because its projection already has the decision
+values. That is the price and the point of the projection.

@@ -1,0 +1,99 @@
+% Two page orders. In both lanes the page has two sessions and crosses the
+% same subgraph seam twice: keys travel out and fields travel back. The five
+% ticks are aligned because the operations have the same broad shape. What
+% changes is which service owns enough data to order the list before it cuts
+% the page.
+%
+% Lane A starts from the Sessions list. Sessions orders that list and applies
+% first: 2 before the router asks Ratings for scores. Ratings can enrich only
+% the two representations it receives. Once those scores return, the router
+% can only merge fields into the two fetched rows. It cannot replace either row
+% with a higher-scored session whose key was never in the request.
+%
+% Lane B starts from a Search index that contains the fields needed for both
+% filtering and ordering. Search can therefore choose the two-session page
+% while every value that determines membership is present. Sessions receives
+% only the chosen keys and supplies canonical fields; the router's last merge
+% does not have to revisit which sessions belong to the page.
+%
+% Same idiom as figures/tikz/ch01-one-field.tex and
+% ch05-the-join-moves.tex: a left-to-right timeline in each lane, square
+% black-on-white engineering labels, one stroke weight, and dashed vertical
+% rules for the fixed service seam. The seam is crossed once in each direction,
+% so each lane has two rules. This is deliberately not a box-and-arrow
+% architecture diagram: sequence, and specifically the position of the cut,
+% is the claim.
+%
+% Bare tikzpicture (house style): the figure environment, caption and label
+% live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  axis/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  tick/.style={draw, line width=0.4pt},
+  event/.style={anchor=south, align=center, text width=24mm,
+    inner sep=1pt},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  lane/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+  boundary/.style={draw, line width=0.4pt, dashed},
+]
+
+% ------------------------------------------------------------------- lane A
+\node[lane] at (0,21)
+  {A. Sessions owns the list: scores arrive after the cut};
+
+\draw[axis] (0,0) -- (150,0);
+\foreach \x in {14,45,76,108,140}{
+  \draw[tick] (\x,-1.5) -- (\x,1.5);
+}
+\foreach \x in {94,123}{
+  \draw[boundary] (\x,-2) -- (\x,10);
+  \node[spanlabel, inner sep=1pt] at (\x,-2) {seam};
+}
+
+\node[event, text width=22mm] at (14,3)
+  {Sessions owns\\the list};
+\node[event, text width=28mm] at (45,3)
+  {Sessions orders,\\then cuts\\{\ttfamily first: 2}};
+\node[event, text width=27mm] at (76,3)
+  {router sends only\\those 2 session\\keys to Ratings};
+\node[event, text width=23mm] at (108,3)
+  {Ratings adds\\scores to those\\2 sessions};
+\node[event, text width=25mm] at (140,3)
+  {router cannot admit\\a higher-scored\\session it never\\fetched};
+
+\draw[span] (35,-8) -- (35,-11) -- (55,-11) -- (55,-8);
+\node[spanlabel] at (45,-12) {page membership fixed here};
+
+% ------------------------------------------------------------------- lane B
+\begin{scope}[shift={(0,-55)}]
+  \node[lane] at (0,21)
+    {B. Search owns a combined index: rank is known before the cut};
+
+  \draw[axis] (0,0) -- (150,0);
+  \foreach \x in {14,45,76,108,140}{
+    \draw[tick] (\x,-1.5) -- (\x,1.5);
+  }
+  \foreach \x in {94,123}{
+    \draw[boundary] (\x,-2) -- (\x,10);
+    \node[spanlabel, inner sep=1pt] at (\x,-2) {seam};
+  }
+
+  \node[event, text width=22mm] at (14,3)
+    {Search owns the\\combined index};
+  \node[event, text width=28mm] at (45,3)
+    {Search filters,\\orders, and cuts\\{\ttfamily first: 2}};
+  \node[event, text width=27mm] at (76,3)
+    {router sends the\\2 chosen session\\keys to Sessions};
+  \node[event, text width=23mm] at (108,3)
+    {Sessions supplies\\canonical fields\\for those 2};
+  \node[event, text width=25mm] at (140,3)
+    {router merges the\\chosen page; all\\required values were\\present at the cut};
+
+  \draw[span] (35,-8) -- (35,-11) -- (55,-11) -- (55,-8);
+  \node[spanlabel] at (45,-12) {page membership fixed here};
+\end{scope}
+
+\end{tikzpicture}

@@ -1,0 +1,230 @@
+\section{Put the Page with the Values}
+\label{sec:ch13-put-page-with-values}
+\index{entity reference!from search results}%
+
+Search returns references to Sessions rather than copying canonical titles into
+its public contract. Its local Session shape is only an opaque node id:
+
+\begin{minted}{csharp}
+using HotChocolate.Types.Relay;
+
+namespace Search;
+
+public sealed record Session([property: ID] string Id);
+\end{minted}
+
+The key is not resolvable here. Search can identify a Session, but the router
+must ask Sessions to hydrate it.
+
+\begin{minted}{csharp}
+using HotChocolate.ApolloFederation.Types;
+
+namespace Search;
+
+[ObjectType<Session>]
+[Key("id", false)]
+public static partial class SessionType;
+\end{minted}
+
+The document resolver formats the integer database key as the same global node
+id used everywhere else in the graph:
+
+\begin{minted}{csharp}
+using HotChocolate.Types.Relay;
+
+namespace Search;
+
+[ObjectType<SessionSearchDocument>]
+public static partial class SessionSearchDocumentType
+{
+    public static Session GetSession(
+        [Parent] SessionSearchDocument document,
+        INodeIdSerializer serializer)
+        => new(serializer.Format(nameof(Session), document.SessionId));
+}
+\end{minted}
+
+That produces a composed shape in which discovery data and canonical entity
+data remain distinguishable:
+
+\begin{graphqlsdl}
+type SessionSearchDocument {
+  session: Session!
+  startsAt: DateTime!
+  averageScore: Float
+  ratingCount: Int!
+}
+\end{graphqlsdl}
+
+I keep the statement interceptor in this service too. Without a separate log,
+the claim that paging happened locally would be guesswork.
+
+\begin{minted}{csharp}
+using System.Data.Common;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+
+namespace Search;
+
+public sealed class StatementLog : DbCommandInterceptor
+{
+    private static int _count;
+
+    public override InterceptionResult<DbDataReader> ReaderExecuting(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result)
+    {
+        Console.WriteLine(
+            $"-- statement {Interlocked.Increment(ref _count)}");
+        Console.WriteLine(command.CommandText);
+        return result;
+    }
+
+    public override
+        ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result,
+        CancellationToken cancellationToken = default)
+    {
+        Console.WriteLine(
+            $"-- statement {Interlocked.Increment(ref _count)}");
+        Console.WriteLine(command.CommandText);
+        return ValueTask.FromResult(result);
+    }
+}
+\end{minted}
+
+The host is the same explicit stack used by the other subgraphs. Paging
+arguments are enabled before federation, cost defaults remain disabled for the
+composer, and the database is created from the deterministic seed.
+
+\begin{minted}{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Search;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<SearchContext>(options =>
+{
+    options.UseSqlite("Data Source=search.db");
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+builder
+    .AddGraphQL()
+    .AddSearchTypes()
+    .RegisterDbContextFactory<SearchContext>()
+    .AddPagingArguments()
+    .AddDefaultNodeIdSerializer()
+    .AddApolloFederation()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false);
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<SearchContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL().WithOptions(options =>
+{
+    options.Tool.ServeMode = ServeMode.Embedded;
+});
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+Finally, composition gets the fourth input. This is the complete
+\code{graph/graph.yaml}, not a patch:
+
+\begin{minted}[highlightlines={15,16,17,18}]{yaml}
+version: 1
+subgraphs:
+  - name: sessions
+    routing_url: http://localhost:5001/graphql
+    schema:
+      file: ../src/Sessions/schema.graphql
+  - name: speakers
+    routing_url: http://localhost:5002/graphql
+    schema:
+      file: ../src/Speakers/schema.graphql
+  - name: ratings
+    routing_url: http://localhost:5003/graphql
+    schema:
+      file: ../src/Ratings/schema.graphql
+  - name: search
+    routing_url: http://localhost:5004/graphql
+    schema:
+      file: ../src/Search/schema.graphql
+\end{minted}
+
+The router config does not change, but a service addition is exactly when I
+want to reprint it. There is still one static execution artifact and one
+router process:
+
+\begin{minted}{yaml}
+version: "1"
+
+# Without this the router asks Cosmo Cloud for its execution config and
+# refuses to start, because it has no token to ask with. The path is
+# resolved against the directory the router is started in, not against
+# this file, so start it from this folder:
+#
+#   router -config config.yaml
+execution_config:
+  file:
+    path: ../graph/router.json
+
+# A development switch, and what makes the query plan visible at all.
+# The plan is an Advanced Request Tracing option, and outside dev mode
+# the router wants a Cosmo Cloud token before it hands one out. With
+# this off, X-WG-Include-Query-Plan is ignored rather than refused.
+dev_mode: true
+
+# Who the router thinks is asking. The alternative entry in this list
+# is a jwks url, which is what a deployment with an identity provider
+# behind it uses; the shared secret is here because this book stands
+# up no such provider. header_key_id is not optional: the router
+# matches it against the kid in the token header, so the token this
+# book mints carries one.
+#
+# A request carrying a token this key does not verify is answered 401
+# by the router and never reaches a subgraph.
+authentication:
+  jwt:
+    jwks:
+      - secret: splitting-the-graph-development-signing-key-32b
+        symmetric_algorithm: HS256
+        header_key_id: dev
+
+# The router does not forward request headers to subgraphs unless it
+# is told to, and a subgraph that guards its own data cannot tell who
+# is asking without this block. Leaving it out does not make the graph
+# insecure; it makes the guarded field unreachable. Every request that
+# names one comes back null with an authorization error underneath,
+# for a caller holding a good token exactly as for a caller holding
+# none, which is what makes the missing block read like a policy
+# rather than like a header. A request that never names a guarded
+# field is unaffected, so this survives a smoke test.
+headers:
+  all:
+    request:
+      - op: propagate
+        named: Authorization
+\end{minted}
+
+The fourth subgraph changes graph ownership, not the router's configuration
+model.
