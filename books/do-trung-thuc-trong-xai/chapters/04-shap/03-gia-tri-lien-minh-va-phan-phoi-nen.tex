@@ -19,12 +19,17 @@ Bài báo gốc cũng nêu một xấp xỉ rẻ hơn: thay kỳ vọng có đi�
 biên, tức lấy các đặc trưng còn thiếu từ phân phối biên của chúng thay vì từ
 phân phối có điều kiện trên phần đã biết.
 Xấp xỉ này có thể tạo các tổ hợp mà dữ liệu thật hiếm khi hoặc không bao giờ
-có. Vì vậy, khi hai đặc trưng phụ thuộc nhau, một thanh SHAP không tự cho biết
+có. Vì vậy, khi hai đặc trưng phụ thuộc nhau, một giá trị SHAP không tự cho biết
 liệu nó đang mô tả quan hệ dữ liệu quan sát được hay một can thiệp giả định.
 
 Các công trình sau đó phân biệt rõ cách nhìn có điều kiện và cách nhìn biên.
 Trong cách nhìn biên, các đặc trưng còn thiếu được lấy từ phân phối biên; bài báo
 về suy luận thống kê cho SHAP lưu ý rằng các phần mềm thường dùng cách này và
 rằng hai cách nhìn có những diễn giải khác nhau~\autocite{p19shapinference}.
-Vì vậy, một biểu đồ SHAP cần đi cùng câu trả lời về phân phối nền và quy tắc
-hoàn thiện, chứ không chỉ danh sách các $\phi_i$.
+Vì vậy, một biểu đồ SHAP cần đi cùng câu trả lời về phân phối nền và về
+\tn{quy tắc hoàn thiện}{completion rule}, tức cách điền giá trị cho các đặc
+trưng còn thiếu của một liên minh trước khi đưa liên minh ấy vào $f$, chứ
+không chỉ danh sách các $\phi_i$. Hai thứ ấy tách nhau: quy tắc hoàn thiện nói
+giá trị thay thế được lấy theo phân phối có điều kiện, theo phân phối biên, hay
+bằng một giá trị cố định, còn phân phối nền là tập dữ liệu mà quy tắc ấy lấy
+mẫu từ đó.

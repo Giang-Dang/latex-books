@@ -4,11 +4,15 @@
 
 Một mô hình có thể dự đoán đúng mà vẫn để lại hai câu hỏi chưa được trả lời:
 nó dựa vào đâu để đi tới dự đoán ấy, và lý do ta đọc được có thực sự là lý do
-mô hình đã dùng hay không? Hai câu hỏi này không trùng nhau: câu thứ nhất hỏi
-con người cần biết gì trước khi giao một quyết định cho mô hình, còn câu thứ
-hai hỏi chính lời giải thích đúng đến đâu.
+mô hình đã dùng hay không? Hai câu hỏi này không trùng nhau. Câu thứ nhất hỏi
+về mô hình, và người hỏi là người sắp giao một quyết định cho nó. Câu thứ hai
+hỏi về chính lời giải thích, tức câu trả lời mà ta nhận được cho câu thứ nhất:
+nó đúng đến đâu.
 
-Chương này tách hai câu hỏi đó ra trước khi bàn đến LIME, SHAP hay attribution.
+Chương này tách hai câu hỏi đó ra trước khi bàn đến LIME, SHAP hay attribution,
+tên chung của các phương pháp gán cho từng đặc trưng của đầu vào một điểm số
+đóng góp vào đầu ra, mà định nghĩa~\ref{def:ch06-attribution} sẽ phát biểu
+chính xác.
 Thuộc tính cho biết lời giải thích có bám vào cơ chế ra quyết định của mô hình
 hay không, ta gọi là \tn{độ trung thực}{faithfulness}; một lời giải thích nghe
 hợp lý với người đọc vẫn có thể thiếu thuộc tính ấy. Sự phân biệt này là tiền

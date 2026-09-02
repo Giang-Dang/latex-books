@@ -13,11 +13,15 @@ chọn LIME, SHAP hay một phương pháp gradient. Ta sẽ xem một khung b�
 \tn{hàm chỉ báo}{indicator function} trên các vùng của không gian đầu vào, rồi
 dùng tính tuyến tính để đi tới mô hình phức tạp hơn~\autocite{p17firstprinciples}.
 Khung đó không trao một đáp án duy nhất cho mọi bài toán. Nó làm lộ giả định nằm
-trong lựa chọn độ đo, chính là chỗ các chương trước thường gọi là \tn{phân phối
-nền}{background distribution} hoặc baseline. Các điều kiện như
+trong lựa chọn \tn{độ đo}{measure}, hiểu theo nghĩa của lý thuyết độ đo: một quy
+tắc gán trọng lượng cho từng vùng của không gian đầu vào, mà
+mục~\ref{sec:ch06-tu-nguyen-tu-den-tich-phan} sẽ dựng từ đầu. Đó là giả định
+mà các chương trước thường gọi là \tn{phân phối nền}{background distribution}
+hoặc baseline. Các điều kiện như
 \tn{tính đầy đủ}{completeness}, \tn{độ nhạy}{sensitivity} và tính tuyến tính
-chỉ đánh giá một phần của lựa chọn ấy, còn \tn{độ trung thực}{faithfulness}
-cần một đối chiếu có nghĩa trong miền ứng dụng.
+chỉ ràng buộc lựa chọn ấy mà không quyết định nó, còn
+\tn{độ trung thực}{faithfulness} cần một đối chiếu có nghĩa trong miền ứng
+dụng.
 
 \input{chapters/06-attribution-tu-nguyen-ly-dau/01-cau-hoi-truoc-phuong-phap}
 \input{chapters/06-attribution-tu-nguyen-ly-dau/02-tien-de-la-rang-buoc}

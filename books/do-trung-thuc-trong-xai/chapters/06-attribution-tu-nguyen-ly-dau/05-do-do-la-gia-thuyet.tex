@@ -4,11 +4,20 @@
 \index{phân phối nền}%
 \index{baseline}%
 Công thức tích phân đã đặt giả định mà các chương trước thường gặp dưới tên
-khác vào đúng vị trí của nó: độ đo $\mu_{j,x}$. Nếu độ đo giữ tọa độ $j$ ở
-$x_j$ rồi lấy trung bình các tọa độ còn lại theo phân phối dữ liệu, attribution
-trở thành một kỳ vọng có điều kiện. Nếu nó giữ $x_j$ và lấy trung bình phần còn
-lại theo phân phối biên, ta nhận một biến thể giả định độc lập. Một lựa chọn
-khác cho biểu thức của partial dependence plot~\autocite{p17firstprinciples}.
+khác vào đúng vị trí của nó: \tn{độ đo}{measure} $\mu_{j,x}$. Phương
+trình~\ref{eq:ch06-attribution-do-do} nói attribution của đặc trưng $j$ là một
+trung bình có trọng lượng của $f$ trên không gian đầu vào, và phần dành riêng
+cho $j$ nằm ở cách chọn trọng lượng: ví dụ hai chiều ở mục trước ghim tọa độ
+$j$ tại $x_j$ rồi trải trọng lượng lên các tọa độ còn lại. Trải theo cách nào
+là chỗ các độ đo khác nhau, và bài báo xét ba cách~\autocite{p17firstprinciples}. Nếu
+độ đo giữ $x_j$ và phân bố các tọa độ còn lại theo phân phối có điều kiện của
+dữ liệu khi biết $X_j=x_j$, tích phân là kỳ vọng có điều kiện
+$\mathbb{E}[f(X)\mid X_j=x_j]$, đúng đại lượng mà chương~\ref{ch:shap} đã
+dùng làm giá trị liên minh, và bài báo gọi cách làm ấy là attribution dựa trên
+\tn{loại bỏ đặc trưng}{feature removal}. Nếu nó giữ $x_j$ và phân bố phần còn lại theo tích
+các phân phối biên, ta nhận biến thể giả định độc lập. Nếu nó giữ $x_j$ và phân
+bố phần còn lại theo phân phối đồng thời của chính các tọa độ ấy trong dữ liệu,
+không điều kiện gì lên $x_j$, tích phân là partial dependence plot.
 
 Ba trường hợp không chỉ khác kỹ thuật lấy mẫu. Chúng gán trọng lượng cho các
 đầu vào khác nhau, nên chúng trả lời những câu hỏi khác nhau về mô hình. Chẳng

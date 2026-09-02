@@ -11,13 +11,38 @@ Simulatability; nhóm dựa trên
 tham số chỉ có FUR; nhóm dựa trên attribution chỉ có
 CC-SHAP~\autocite{p21metrics}. Cần nói ngay một điều về hình thức trình bày:
 bài báo không viết công thức cho bất kỳ chỉ số nào trong tám chỉ số ấy mà mô tả
-tất cả bằng lời, nên sách cũng không phát biểu công thức nào thay nó.
+tất cả bằng lời, nên sách cũng không phát biểu công thức nào thay nó, và chỉ
+mô tả lại bằng lời, mỗi chỉ số một câu, đủ để đọc bảng.
 
-Hai dòng đối chứng được đưa vào để đọc bảng, và chúng không cùng vai. Random
-gán nhãn theo lối bốc thăm. LM Judge (generic) là một mô hình ngôn ngữ được
-giao vai người giám sát chuỗi suy luận nói chung, không kèm định nghĩa của bài
-báo. Dòng LM Judge còn lại thì được cấp đúng hai định nghĩa của
-mục~\ref{sec:ch09-dinh-nghia-lai}, và các tác giả xếp nó là trần trên chứ không
+Bốn chỉ số của nhóm dựa trên mức quan trọng cùng can thiệp vào chuỗi rồi xem
+câu trả lời có đổi không. Early Answering cắt chuỗi ở những tiền tố ngày càng
+dài, cho mô hình trả lời từ mỗi tiền tố, rồi đo tần suất câu trả lời vẫn trùng
+với câu trả lời khi có cả chuỗi. Adding Mistakes chèn một lỗi vào một bước
+được chọn, cho mô hình sinh tiếp phần còn lại từ đó, rồi đo câu trả lời có còn
+được giữ hay không. Filler Tokens thay cả chuỗi bằng một dãy token vô nghĩa
+lặp lại, chẳng hạn toàn dấu chấm, thử với nhiều độ dài, rồi đo câu trả lời có
+được giữ hay không. SCM áp \tn{phân tích trung gian nhân quả}{causal mediation analysis}
+lên bộ ba câu hỏi,
+chuỗi và câu trả lời: làm hỏng từng thứ một để tách riêng phần tác động đi qua
+chuỗi. Hai chỉ số của nhóm dựa trên tính hữu dụng ngữ nghĩa thì hỏi chuỗi có
+mã hóa đủ đường đi tới câu trả lời hay không. Simulatability đưa chuỗi cho một mô hình yếu hơn làm
+ngữ cảnh thêm và kiểm xem mô hình ấy có tái lập được câu trả lời của mô hình
+gốc hay không. Paraphrasing diễn đạt lại những tiền tố ngày càng dài của chuỗi
+mà giữ nguyên nội dung, cho mô hình chạy tiếp từ mỗi tiền tố đã diễn đạt lại,
+rồi kiểm câu trả lời cuối có được giữ hay không. FUR, viết tắt của Faithfulness
+via Unlearning Reasoning steps, dùng một cập nhật unlearning khu trú, tức sửa
+trọng số để mô hình quên thông tin mà một bước mang, rồi chạy lại mô hình trên
+đầu vào gốc và đo phân phối câu trả lời đổi bao nhiêu. CC-SHAP tính hai phân
+bố đóng góp SHAP trên các token đầu vào, một cho việc sinh câu trả lời và một
+cho việc sinh chuỗi, rồi lấy mức giống nhau giữa hai phân bố làm
+điểm~\autocite{p21metrics}.
+
+Ba dòng tham chiếu được đưa vào để đọc bảng, và chúng không cùng vai. Hai dòng
+là đối chứng. Random gán nhãn theo lối bốc thăm. LM Judge (generic) là một mô
+hình ngôn ngữ được giao vai người giám sát chuỗi suy luận nói chung, không kèm
+định nghĩa của bài báo. Dòng thứ ba, LM Judge, thì được cấp đúng hai định nghĩa của
+mục~\ref{sec:ch09-dinh-nghia-lai}, và các tác giả xếp nó là
+\tn{trần trên}{skyline}, tức mức mà một chỉ số dự thi khó vượt qua, chứ không
 phải một chỉ số dự thi, vì bộ dữ liệu này được dựng bằng chính các đường ống
 dùng mô hình ngôn ngữ chạy trên cùng dữ liệu ấy, nên một giám khảo cùng loại
 được hưởng đúng nguồn tín hiệu đã sinh ra nhãn~\autocite{p21metrics}. Đọc con
@@ -58,19 +83,18 @@ ngược lại bài báo.
 Bảng~\ref{tab:ch09-auroc} là kết quả trung tâm của cả Phần~IV, và cách đọc nó
 chỉ gồm một phép so: cột nào cũng phải đặt cạnh 0.5. Phần lớn các ô nằm
 sát con số ấy. Chỉ số cao nhất ở mức cả chuỗi là CC-SHAP với 0.70, còn ở mức
-từng bước là Filler Tokens với 0.59~\autocite{p21metrics}. Đó là hai thành
-tích tốt nhất mà cả một lĩnh vực đề xuất chỉ số đạt được khi lần đầu bị đem ra
-đối chiếu với ground truth.
+từng bước là Filler Tokens với 0.59~\autocite{p21metrics}.
 
-Hai thành tích ấy còn không giữ được qua hai mức đo. CC-SHAP tụt xuống 0.41 ở
+Hai kết quả ấy còn không giữ được qua hai mức đo. CC-SHAP tụt xuống 0.41 ở
 mức từng bước, tức là thấp hơn bốc thăm, trong khi Filler Tokens về sát mức
 bốc thăm ở mức cả chuỗi~\autocite{p21metrics}. Một dụng cụ đo tốt ở thang này
 và tệ hơn bốc thăm ở thang kia thì chưa đo được cái nó ghi trên mặt đồng hồ;
-nó đang phản ứng với một thứ khác mà ở một trong hai thang thì thứ đó tình cờ
-tương quan với nhãn.
+theo cách sách đọc kết quả ấy, nó đang phản ứng với một thứ khác mà ở một
+trong hai thang thì thứ đó tình cờ tương quan với nhãn.
 
 \index{độ chệch dự đoán}%
-Các con số sát 0.5 ấy không phải là kiểu \enquote{đoán hú họa cân bằng}. Trên
+Các con số sát 0.5 ấy không phải là kiểu đoán ngẫu nhiên cân bằng. Khi lấy 0.5
+làm ngưỡng để đổi điểm số của mỗi chỉ số thành nhãn, trên
 một mẫu đã cân bằng nhãn, nhóm dựa trên mức quan trọng gán nhãn không trung
 thực cho từ 90\% tới 96\% số trường hợp ở mức cả chuỗi, còn nhóm dựa trên tính
 hữu dụng ngữ nghĩa gán nhãn trung thực cho từ 94\% tới
@@ -90,8 +114,8 @@ Còn một trục nữa mà bảng~\ref{tab:ch09-auroc} không thể hiện, và
 tốt nhất ở mức cả chuỗi, tốn tới $10^3$ giây cho mỗi trường hợp. Biến thể mức
 cả chuỗi của FUR thì không được chạy lần nào, vì các tác giả ước tính nó cần
 tới $10^5$ giây cho mỗi chuỗi, tức hơn một ngày~\autocite{p21metrics}. Chỉ số
-đắt nhất trong bảng lại là chỉ số duy nhất nhỉnh hơn hẳn mức bốc thăm, và một
-ô của bảng bỏ trống chỉ vì không ai trả nổi chi phí đo nó.
+đắt nhất trong bảng lại là chỉ số cao nhất ở mức cả chuỗi, và một
+ô của bảng bỏ trống chỉ vì chi phí đo nó vượt quá sức của bộ đánh giá.
 
 Bảng cho biết các chỉ số hỏng. Vì sao chúng hỏng theo đúng kiểu chúng hỏng thì
 là việc của mục sau.

@@ -11,15 +11,16 @@ liệu nó sinh ra mang tên BonaFide~\autocite{p21metrics}.
 Chuỗi suy luận được thu từ mười mô hình trọng số mở thuộc bốn họ, trải từ 4 tỉ
 đến 70 tỉ tham số, gồm cả biến thể suy luận lẫn biến thể chỉnh theo chỉ
 dẫn~\autocite{p21metrics}. Việc chỉ dùng mô hình trọng số mở là bắt buộc chứ không phải một
-lựa chọn: phần lớn các chỉ số cần truy cập vào bên trong mô hình, số còn lại
-cần sửa được phần suy luận của nó, mà điều thứ nhất thì không làm được với mô
-hình đóng~\autocite{p21metrics}.
+lựa chọn: phần lớn các chỉ số cần truy cập vào bên trong mô hình, điều không
+làm được với mô hình đóng, và số còn lại cần sửa được phần suy luận của
+nó~\autocite{p21metrics}.
 
 Mỗi chuỗi được cắt thành các bước ở mức câu, rồi đi qua một đường ống nhiều
-nhánh, mỗi nhánh phụ trách một loại bước. Mỗi nhánh chạy hai pha: một bộ giám
-khảo yếu hơn truy hồi các bước ứng viên khớp định nghĩa của loại đó, rồi một
-bộ giám khảo mạnh hơn xác nhận hoặc loại từng ứng viên. Các tác giả nói rõ
-đường ống ưu tiên độ chính xác hơn độ phủ, vì các nhãn này đóng vai trò ground
+nhánh, mỗi nhánh phụ trách một loại bước. Mỗi nhánh chạy hai pha, cả hai đều do
+mô hình ngôn ngữ đảm nhận: một mô hình yếu hơn làm giám khảo truy hồi các bước
+ứng viên khớp định nghĩa của loại đó, rồi một mô hình mạnh hơn làm giám khảo
+xác nhận hoặc loại từng ứng viên. Các tác giả nói rõ
+đường ống ưu tiên precision hơn độ phủ, vì các nhãn này đóng vai trò ground
 truth nên một nhãn sai đắt hơn nhiều so với một nhãn bị bỏ
 sót~\autocite{p21metrics}.
 
@@ -37,24 +38,29 @@ thực thi bước nút thắt được gán nhãn trung thực, còn gán sai n
 cụ được gán nhãn không trung thực; bước trơ không phải đối tượng đánh
 giá~\autocite{p21metrics}.
 
-Độ chính xác của đường ống được đo bằng người chứ không bằng lập luận. Sáu
+Chất lượng nhãn của đường ống được đo bằng người chứ không bằng lập luận. Sáu
 người chú giải đánh giá 88 nhãn chia đều giữa trung thực và không trung thực,
-và chỉ một bước bị đánh là sai, cho độ chính xác 98.9\% với khoảng tin cậy
-95\% là từ 96.6\% tới 100\%. Mức đồng thuận giữa những người chú giải là
-96.6\%, và hệ số AC1 của Gwet là 0.976; các tác giả dùng AC1 thay cho kappa vì
-dưới phân bố nhãn lệch mạnh như ở đây kappa bị kéo tụt một cách nghịch lý dù
-mức đồng thuận thô rất cao~\autocite{p21metrics}. Một phép rà thứ hai lấy 50
+và chỉ một bước bị đánh là sai, cho precision, tức tỉ lệ nhãn đã gán mà đúng,
+là 98.9\% với khoảng tin cậy 95\% là từ 96.6\% tới 100\%. Mức đồng thuận giữa
+những người chú giải là 96.6\%, và hệ số AC1 của Gwet là 0.976. Các tác giả
+dùng AC1 thay cho kappa vì phân bố các phán quyết ở đây lệch mạnh, gần như mọi
+phán quyết đều là \enquote{đúng}, và dưới một phân bố như thế kappa bị kéo tụt
+một cách nghịch lý dù mức đồng thuận thô rất cao~\autocite{p21metrics}. Một phép rà thứ hai lấy 50
 chuỗi bị gán nhãn không trung thực vì thiếu một
 \tn{bước nút thắt}{bottleneck step} và kiểm tay từng
 chuỗi; cả 50 đều được xếp đúng~\autocite{p21metrics}.
 
 Bộ dữ liệu sau cùng gồm 3\,066 chuỗi suy luận trên mười mô hình và mười ba
-nhiệm vụ. Nó cho 1\,946 nhãn ở mức bước, chia 51\% trung thực và 49\% không
-trung thực, cùng 1\,120 nhãn ở mức cả chuỗi, chia 15\% trung thực và 85\%
-không trung thực~\autocite{p21metrics}.
+nhiệm vụ, được lấy mẫu từ một bể lớn hơn để cân bằng giữa các mô hình và giữa
+các loại nhãn. Nó cho 1\,946 nhãn ở mức bước, chia 51\% trung thực và 49\%
+không trung thực, cùng 1\,120 nhãn ở mức cả chuỗi, chia 15\% trung thực và
+85\% không trung thực~\autocite{p21metrics}. Số nhãn mức chuỗi nhỏ hơn số
+chuỗi, và trang mô tả bộ dữ liệu của bài báo không nói vì sao, nên sách không
+đoán thay.
 
 Chênh lệch giữa hai tỉ lệ ấy không phải là một quan sát về các mô hình, và đọc
-nhầm nó thành như vậy là cái bẫy đầu tiên của bảng số. Nó là hệ quả trực tiếp
+nhầm nó thành như vậy là cách đọc sai đầu tiên mà các con số này dễ dẫn tới.
+Nó là hệ quả trực tiếp
 của định nghĩa~\ref{def:ch09-chuoi-trung-thuc}: muốn gán nhãn trung thực cho
 cả chuỗi thì mọi bước của nó đều phải trung thực hoặc trơ, trong khi chỉ một
 bước không trung thực, hoặc một bước nút thắt vắng mặt, đã đủ để gán nhãn
@@ -62,5 +68,3 @@ ngược lại. Chính các tác giả xếp điều này vào phần hạn ch�
 chính xác lên trước làm lệch phân bố nhãn ở mức chuỗi, nên chứng nhận một
 chuỗi là trung thực khó hơn nhiều so với chiều ngược
 lại~\autocite{p21metrics}.
-
-Có bộ dữ liệu rồi thì phần còn lại là chấm điểm. Mục sau đọc kết quả.

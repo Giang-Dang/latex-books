@@ -3,20 +3,27 @@
 
 \index{mạng ReLU}%
 \index{partial dependence plot}%
-Độ đo làm rõ giả định, đồng thời cho thấy khung không đứng tách khỏi các công
-cụ quen thuộc. Bài báo biểu diễn các attribution dựa trên
-\tn{loại bỏ đặc trưng}{feature removal}, trường hợp giả định độc lập và
-partial dependence plot bằng những họ độ đo khác nhau~\autocite{p17firstprinciples}. Điểm chung là chúng đều viết được như
-kỳ vọng của đầu ra mô hình dưới một cách lấy trung bình đã chọn.
+\tn{Độ đo}{measure} làm rõ giả định, và ba trường hợp của mục trước cho thấy
+khung không đứng tách khỏi các công cụ quen thuộc: attribution dựa trên
+\tn{loại bỏ đặc trưng}{feature removal}, biến thể giả định độc lập và partial
+dependence plot đều viết được như kỳ vọng của đầu ra mô hình dưới một cách lấy
+trung bình đã chọn~\autocite{p17firstprinciples}.
 
 Với hàm từng đoạn affine, bài báo còn đưa attribution về tổng trên các vùng
-tuyến tính. Mạng ReLU sâu thuộc lớp hàm này: trên mỗi vùng kích hoạt cố định,
+affine. Mạng ReLU sâu thuộc lớp hàm này: trên mỗi vùng kích hoạt cố định,
 mạng là một hàm affine; các hệ số của vùng có thể biểu diễn từ trọng số mạng.
 Vì vậy, dạng tổng quát thu về một dạng đóng cho mạng ReLU sau khi phân hoạch
-không gian đầu vào theo các vùng đó. Hệ quả này hẹp hơn phương
-trình~\ref{eq:ch06-attribution-do-do} một bậc: nó đòi hỏi họ độ đo là dương
-chứ không chỉ có dấu, và attribution nguyên tử nhận giá trị không
-âm~\autocite{p17firstprinciples}.
+không gian đầu vào theo các vùng đó: mỗi vùng $P$ đóng góp trọng lượng
+$\mu_{j,x}(P)$ nhân với giá trị của hàm affine của vùng ấy tại trọng tâm của
+độ đo trên vùng, trong đó trọng tâm là điểm trung bình của $y$ theo
+$\mu_{j,x}$ giới hạn trên $P$~\autocite{p17firstprinciples}. Hệ quả này hẹp hơn phương
+trình~\ref{eq:ch06-attribution-do-do} một bậc: nó đòi hỏi mỗi độ đo $\mu_{j,x}$
+là độ đo dương, tức chỉ gán trọng lượng không âm cho mọi vùng, thay vì độ đo có
+dấu, vốn được phép gán trọng lượng âm cho một số vùng. Ở mức
+\tn{quy tắc nguyên tử}{atomic attribution rule}, điều đó nghĩa là attribution
+của \tn{hàm chỉ báo}{indicator function} không bao giờ âm. Đổi lại, bài báo
+ghi rằng với attribution dương thì điều kiện ổn định trước hội tụ đều của
+mục~\ref{sec:ch06-tu-nguyen-tu-den-tich-phan} tự thỏa~\autocite{p17firstprinciples}.
 
 Từ đây không nên suy ra rằng mọi attribution thực hành đều đã có một thuật
 toán rẻ. Bài báo nêu hai cách xấp xỉ tích phân: Monte Carlo với một bộ lấy mẫu, dành

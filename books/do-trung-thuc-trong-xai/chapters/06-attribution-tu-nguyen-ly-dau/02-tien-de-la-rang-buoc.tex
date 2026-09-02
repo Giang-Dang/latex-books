@@ -8,23 +8,37 @@ nó đang cấm điều gì. Bài báo xét ba điều kiện quen thuộc: tín
 baseline cố định, độ nhạy và \tn{tính tuyến tính}{linearity}~\autocite{p17firstprinciples}.
 Chúng hấp dẫn vì mỗi điều kiện loại một lỗi rõ ràng: bỏ sót chênh lệch đầu ra,
 gán điểm cho đặc trưng không ảnh hưởng, hoặc xử lý tổng hai mô hình khác với
-tổng hai lời giải thích.
+tổng hai lời giải thích và nhân mô hình với một hằng số mà không nhân lời giải
+thích với hằng số ấy. Chú ý rằng độ nhạy ở đây theo nghĩa bài báo dùng: một
+đặc trưng không bao giờ ảnh hưởng tới đầu ra thì nhận attribution bằng không ở
+mọi đầu vào. Đó là điều kiện thứ hai mà bài Integrated Gradients cũng nêu bên
+cạnh điều kiện chương~\ref{ch:attribution-theo-gradient} đã gọi bằng tên ấy,
+và hai điều kiện không trùng nhau.
 
 \begin{theorem}
 \label{thm:ch06-ba-tien-de}
 Với $f$ khả vi liên tục hai lần trên $[0,1]^d$, mọi attribution thỏa cả ba
-điều kiện đều tách được thành Gradient$\mathbin{\times}$Input cộng một phần
-dư. Nếu attribution còn Lipschitz liên tục, phần dư ấy bị chặn theo độ cong
-của mô hình~\autocite{p17firstprinciples}.
+điều kiện đều bằng gradient của $f$ tại một điểm, nhân từng thành phần với
+hiệu giữa đầu vào và baseline, tức dạng Gradient$\mathbin{\times}$Input tính
+theo baseline, cộng với attribution của phần dư Taylor bậc hai của $f$ quanh
+điểm ấy. Nếu attribution còn Lipschitz liên tục theo mô hình, nghĩa là đổi mô
+hình một chút thì attribution chỉ đổi một chút, phần dư ấy bị chặn bởi tích của
+hằng số Lipschitz, số chiều $d$ và độ cong lớn nhất của
+$f$~\autocite{p17firstprinciples}.
 \end{theorem}
 
 Khi mô hình tuyến tính, phần dư trong định lý~\ref{thm:ch06-ba-tien-de} biến
 mất. Với mạng ReLU, bài báo nêu con đường xấp xỉ qua các hàm trơn để nối
-kết quả này với lớp mô hình từng đoạn tuyến tính~\autocite{p17firstprinciples}.
+kết quả này với lớp mô hình từng đoạn affine~\autocite{p17firstprinciples}.
 
 Kết quả không nói Gradient$\mathbin{\times}$Input là một phương pháp tồi. Nó
-nói bộ tiên đề này để lại ít tự do hơn trực giác ban đầu gợi ra. Nếu mục tiêu
-là mô tả một khái niệm attribution rộng hơn, việc thêm hoặc sửa một tiên đề có
-thể chỉ chuyển mâu thuẫn sang chỗ khác. Do đó, chương này không cố tìm thêm
-một danh sách tiên đề. Nó đổi hướng sang một đối tượng mà attribution có thể
-được định nghĩa trực tiếp.
+nói bộ tiên đề này để lại ít tự do hơn trực giác ban đầu gợi ra: ai muốn một
+khái niệm attribution rộng hơn Gradient$\mathbin{\times}$Input thì không thể
+giữ cả ba điều kiện cùng lúc. Nới một tiên đề hay thêm một tiên đề khác cũng
+không thoát được ràng buộc ấy. Bài báo nêu hai ví dụ: đòi tính đầy đủ với mọi
+baseline thay vì một baseline cố định thì dẫn tới mâu thuẫn, và các cách phát
+biểu độ nhạy chỉ trên một lân cận của đầu vào thay vì trên toàn không gian mà
+bài báo thử cũng vậy~\autocite{p17firstprinciples}.
+Do đó, chương này không cố tìm thêm một danh sách tiên đề. Nó giữ lại đúng một
+điều kiện là tính tuyến tính, và đổi hướng sang một đối tượng mà attribution
+có thể được định nghĩa trực tiếp.

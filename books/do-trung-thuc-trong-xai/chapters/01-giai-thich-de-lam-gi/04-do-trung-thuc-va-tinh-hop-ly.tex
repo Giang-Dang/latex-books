@@ -13,12 +13,25 @@ giải thích xét trong quan hệ với người nhận.
 \begin{definition}[Độ trung thực]
 \label{def:ch01-do-trung-thuc}
 Lời giải thích có \tn{độ trung thực}{faithfulness} đối với một hành vi và một
-tập can thiệp đã xác định khi các yếu tố mà nó nêu ra phản ánh đúng sự phụ
-thuộc của hành vi ấy vào các yếu tố tương ứng.
+tập can thiệp đã xác định khi những đặc trưng mà nó xếp là quan trọng đúng là
+những đặc trưng mà hành vi ấy phụ thuộc vào dưới các can thiệp thuộc tập đó,
+và những đặc trưng mà nó xếp là không quan trọng thì hành vi ấy không phụ
+thuộc vào.
 \end{definition}
 
-Định nghĩa~\ref{def:ch01-do-trung-thuc} buộc ta nêu rõ hai đối tượng trước
-khi đánh giá. Thứ nhất, hành vi nào đang được giải thích: một dự đoán, một
+Chữ phụ thuộc trong định nghĩa~\ref{def:ch01-do-trung-thuc} mang nghĩa của
+can thiệp: hành vi phụ thuộc vào một đặc trưng khi một can thiệp được phép lên
+đặc trưng ấy làm hành vi thay đổi. Cách phát biểu này là cách sách viết lại
+định nghĩa mà phần lớn tài liệu dùng, của Jacovi và Goldberg, theo đó lời
+giải thích trung thực là lời giải thích phản ánh đúng quá trình suy luận đằng
+sau tiên đoán của mô hình; chương~\ref{ch:chi-so-khong-do-do-trung-thuc} sẽ
+dẫn lại định nghĩa ấy qua bài báo neo của cuốn sách~\autocite{p21metrics}.
+Sách thêm hai vế hành vi và tập can thiệp vì quá trình suy luận của một mô
+hình không quan sát trực tiếp được, còn phản ứng của một hành vi trước một can
+thiệp thì đo được.
+
+Định nghĩa~\ref{def:ch01-do-trung-thuc} vì thế buộc ta nêu rõ hai đối tượng
+trước khi đánh giá. Thứ nhất, hành vi nào đang được giải thích: một dự đoán, một
 lớp đầu ra, hay một vùng đầu vào? Thứ hai, can thiệp nào được phép: che một
 đặc trưng, thay nó bằng một giá trị nền, hay thay đổi một khái niệm ở mức
 cao? Khi hai công trình trả lời khác nhau cho hai câu này, kết quả của chúng

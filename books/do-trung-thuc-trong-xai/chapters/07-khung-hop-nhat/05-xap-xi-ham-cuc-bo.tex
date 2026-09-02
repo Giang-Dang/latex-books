@@ -21,18 +21,24 @@ g^{*} = \operatorname*{arg\,min}_{g \in \mathcal{G}}\;
 
 Bài báo gốc viết lân cận này là $\mathcal{Z}$; sách đổi sang $\mathcal{N}_x$ vì
 chương~\ref{ch:lime} đã gắn $\mathcal{Z}$ với tập mẫu của LIME, và
-phụ lục~\ref{app:ky-hieu} ghi lại phép đối chiếu đó.
+phụ lục~\ref{app:ky-hieu} ghi lại phép đối chiếu đó. Chữ $g$ ở đây là mô hình
+dễ đọc, và hệ số của nó chính là các điểm số mà hàm attribution $g$ của
+định nghĩa~\ref{def:ch07-ham-attribution} gán, nên hai cách dùng cùng chỉ một
+đối tượng.
 
 Sức nặng của phương trình~\ref{eq:ch07-lfa} nằm ở số phương pháp mà nó chứa
 được. Tám phương pháp attribution đặc trưng quen thuộc đều là trường hợp
 riêng của nó, gồm Occlusion, KernelSHAP, Vanilla Gradients, Gradient$\mathbin{\times}$Input,
 Integrated Gradients, SmoothGrad, LIME và C-LIME. Chúng dùng chung một lớp mô
 hình tuyến tính $\mathcal{G}$ và chỉ khác nhau ở hai chỗ: lấy mẫu từ lân cận
-nào, và đo sai lệch bằng hàm mất mát nào~\autocite{p18unified}. Occlusion lấy
-mẫu bằng vectơ one-hot ngẫu nhiên và đo bằng sai số bình phương; KernelSHAP
+nào, và đo sai lệch bằng hàm mất mát nào~\autocite{p18unified}. Một mẫu $\xi$
+tác động lên $x$ theo một trong hai cách, nhân từng thành phần để che bớt đầu
+vào hoặc cộng vào để làm nhiễu nó. Occlusion lấy
+mẫu bằng vector one-hot ngẫu nhiên và đo bằng sai số bình phương; KernelSHAP
 cũng đo bằng sai số bình phương nhưng lấy mẫu theo \tn{hàm nhân Shapley}{Shapley kernel};
-LIME lấy mẫu theo một \tn{hàm nhân}{kernel} mũ; còn nhóm gradient thì đo bằng phép khớp
-gradient chứ không phải sai số bình phương.
+LIME lấy mẫu theo một \tn{hàm nhân}{kernel} mũ; còn nhóm gradient thì đo bằng
+sai lệch giữa gradient của $g$ và gradient của $f$ tại các mẫu, chứ không phải
+sai số bình phương giữa hai đầu ra.
 
 Điều kiện làm cho một hàm mất mát là hợp lệ cũng được nêu tường minh: kỳ vọng
 của $\ell$ bằng không khi và chỉ khi $f$ và $g$ trùng nhau trên mọi mẫu rút từ
@@ -50,12 +56,19 @@ nó chỉ đang trả lời một câu hỏi phản thực khác, và không khu
 khung nói câu hỏi nào hợp với miền ứng dụng.
 
 Với hai nhánh còn lại, bài báo chỉ nêu một giả thuyết, và giả thuyết ấy không
-đối xứng. Attribution đặc trưng xấp xỉ \emph{dự đoán} của mô hình trên không
-gian các đặc trưng. Theo phỏng đoán của các tác giả,
+đối xứng. Ở nhánh đặc trưng, mô hình dễ đọc $g$ nhận một vector đặc trưng làm
+đầu vào và xấp xỉ \emph{dự đoán} $f(x)$ của mô hình; đó là điều
+phương trình~\ref{eq:ch07-lfa} viết. Các tác giả phỏng đoán rằng
 \tn{attribution dữ liệu}{data attribution} xấp xỉ \emph{trọng số} của mô hình
 trên không gian các điểm huấn luyện, còn
-\tn{attribution thành phần}{component attribution} lại xấp xỉ dự đoán, lần này
-trên không gian các thành phần~\autocite{p18unified}. Các tác giả viết nó
-ở dạng phỏng đoán và không chứng minh, nên \tn{hàm attribution}{attribution function}
-của định nghĩa~\ref{def:ch07-ham-attribution} vẫn là mẫu số chung duy nhất mà cả
+\tn{attribution thành phần}{component attribution} xấp xỉ dự đoán của mô hình
+trên không gian các thành phần~\autocite{p18unified}. Sách diễn giải phỏng đoán ấy như sau: ở
+nhánh dữ liệu, $g$ sẽ nhận một tập con của tập huấn luyện làm đầu vào và xấp
+xỉ trọng số mà mô hình học được từ tập con ấy, tức là xấp xỉ kết quả của quá
+trình huấn luyện chứ không phải một dự đoán; còn ở nhánh thành phần, $g$ sẽ
+nhận một tập con các thành phần làm đầu vào và xấp xỉ dự đoán của mô hình khi
+chỉ các thành phần ấy còn hoạt động. Các tác giả viết điều này ở dạng phỏng
+đoán và không chứng minh, nên
+\tn{hàm attribution}{attribution function} của
+định nghĩa~\ref{def:ch07-ham-attribution} vẫn là mẫu số chung duy nhất mà cả
 ba nhánh chắc chắn chia nhau.

@@ -3,9 +3,10 @@
 
 \index{Grad-CAM|(}%
 \index{bản đồ đặc trưng}%
-Mục trước cho thấy baseline quyết định câu hỏi phản thực, chứ không quyết
-định nơi attribution được đặt. Integrated Gradients đặt nó trên từng tọa độ
-đầu vào, và với một ảnh ba kênh màu cỡ $224\times224$ thì hơn một trăm nghìn
+Mục trước cho thấy baseline quyết định câu hỏi \tn{phản thực}{counterfactual},
+chứ không quyết
+định attribution được gán cho đơn vị nào. Integrated Gradients gán nó cho từng
+tọa độ đầu vào, và với một ảnh ba kênh màu cỡ $224\times224$ thì hơn một trăm nghìn
 tọa độ đầu vào là quá mịn để trả lời câu hỏi mô hình nhìn vào vùng nào. Grad-CAM đổi chính
 chỗ đặt ấy: nó chuyển attribution vào tầng tích chập cuối, nơi còn giữ cấu
 trúc không gian. Mỗi \tn{bản đồ đặc trưng}{feature map}

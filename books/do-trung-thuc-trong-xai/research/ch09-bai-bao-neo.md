@@ -282,7 +282,7 @@ FUR expands, p. 24, as \enquote{Faithfulness via Unlearning Reasoning steps}.
 **No expansion of SCM appears anywhere in the paper**, so the book gives it none,
 on the ERASER precedent already written into appendix C's header comment.
 
-Two reference rows, p. 7-8. Random assigns labels at chance. LM Judge (generic)
+Three reference rows, p. 7-8 (two baselines and one skyline). Random assigns labels at chance. LM Judge (generic)
 is an LLM prompted as a generic CoT monitor without the paper's definitions;
 LM Judge with the paper's definitions is reported as a **skyline, not a competing
 method**, because \enquote{our dataset was constructed using LM-based pipelines
@@ -489,3 +489,24 @@ That is the right way round for this paper, whose results live almost entirely i
 figures and tables, and it is how the skyline transcription error in chapter 08's
 note was caught: extraction had put a row boundary in the wrong place, and the
 rendered table shows the alignment directly.
+
+## 2026-09-02: the opaque-prose pass (decision 51)
+
+Section 9.5 now prints a one-sentence procedural description of each of the
+eight metrics. Every sentence is a Vietnamese rendering of the appendix D.1
+quotes recorded above under "What each metric actually does"; nothing was
+added beyond them, and no formula was written (the verified negative above
+still holds). Chapter 08's section 8.7 gained one clause on CC-SHAP from the
+same block. The FUR expansion printed in 9.5 is the one recorded above
+(p. 24); SCM stays unexpanded (decision 46).
+
+Section 9.4 now states that BonaFide is sampled to balance models and label
+types, from p. 7: \enquote{sampled to balance models and label types (the
+unfiltered version is released along with the benchmark)}. The chapter also
+says the paper does not explain why 1,120 CoT-level labels are fewer than
+3,066 CoTs. That is a claim of absence verified this session against p. 7
+only, the page that states both numbers; the labeling rules on the same page
+(a CoT is labeled from its step labels) do not say which CoTs receive no
+CoT-level label, and no other page was re-read for it.
+
+No new decimal was printed by this pass anywhere in chapters 01 to 09.
