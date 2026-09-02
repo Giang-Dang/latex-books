@@ -1,3 +1,61 @@
-% Scope (SPEC table of contents): Fewer than 1 percent of XAI papers validate with humans; automated metrics vs what users actually perceive. Papers 24, 25.
+% Scope (SPEC table of contents): Fewer than 1 percent of XAI papers validate
+% with humans; automated metrics vs what users actually perceive. Papers 24, 25.
+%
+% Two boundaries constrain everything this chapter says, and both are stated in
+% the opener rather than left for a reader to discover. Paper 24 counts human
+% validation of explainability claims and never writes the word faithfulness, so
+% its 0.7 percent is a count on the plausibility side of chapter 01's split, not
+% a count of faithfulness validation. Paper 25's object is counterfactual
+% explanations rather than feature attribution, which is decision 42's object gap
+% one class over.
+%
+% Every number on these pages is recorded in research/ch12-con-nguoi-vang-mat.md
+% with its page anchor in the PDF, including the one place paper 24 contradicts
+% itself on a percentage.
 \chapter{Con người vắng mặt}
 \label{ch:con-nguoi-vang-mat}
+
+Chương~\ref{ch:tro-choi-attribution} khép lại trên một vòng không có bước loại
+bỏ. Một phương pháp mới được đề xuất, được so với những gì có sẵn theo một chỉ
+số mà chính người đề xuất chọn, rồi được công bố; không bước nào trong vòng ấy
+đủ sức nói rằng một phương pháp đã cũ nên thôi dùng. Lý do thì
+chương~\ref{ch:do-do-trung-thuc} và chương~\ref{ch:chi-so-khong-do-do-trung-thuc}
+đã dựng sẵn: muốn loại bỏ thì phải có một dụng cụ đo mà cả hai bên cùng chấp
+nhận, và các dụng cụ hiện có chưa cái nào được kiểm định.
+
+Nhưng có một dụng cụ mà lĩnh vực này nhắc tới ngay từ những bài báo đầu tiên và
+chưa chương nào của sách hỏi tới. Lời giải thích được sinh ra cho một người
+đọc. Nếu người ấy đọc lời giải thích rồi hiểu đúng mô hình hơn trước, thì lời
+giải thích làm được việc của nó; nếu không thì nó không làm được, bất kể điểm
+số của nó ra sao. Chương~\ref{ch:giai-thich-de-lam-gi} đã đặt sẵn chỗ cho phép
+thử ấy khi trình bày ba cách đánh giá của Doshi-Velez và Kim, và
+chương~\ref{ch:do-do-trung-thuc} đã ghi rằng mọi chỉ số trung thực đều nằm gọn
+trong cách thứ ba, cách không có người tham gia. Câu hỏi của chương này là hai
+cách còn lại đã được dùng tới đâu.
+
+Hai bài báo trả lời hai nửa của câu hỏi ấy. Nửa thứ nhất là tần suất: một cuộc
+kiểm đếm năm 2025 rà toàn bộ tài liệu XAI trong cơ sở dữ liệu Scopus và đếm
+xem bao nhiêu bài kiểm chứng lời tuyên bố của mình với người thật, câu trả lời
+nằm ngay trong nhan đề của nó~\autocite{p24humangap}. Nửa thứ hai là kết quả:
+một nghiên cứu năm 2026 đặt điểm số của các chỉ số tự động cạnh đánh giá của
+người trên cùng những lời giải thích, rồi đo xem hai bên có đi cùng nhau
+không~\autocite{p25userperception}. Đây là bài báo đầu tiên trong danh mục của
+sách làm đúng phép đối chiếu ấy.
+
+Hai bài đặt ra hai ranh giới mà chương này phải giữ, nên cả hai được nói ngay ở
+đây thay vì để người đọc tự phát hiện. Cuộc kiểm đếm đếm việc kiểm chứng lời
+tuyên bố về khả năng giải thích cho người, không đếm việc kiểm chứng \tn{độ trung
+thực}{faithfulness}; chữ \enquote{faithfulness} không xuất hiện lần nào trong bài. Còn nghiên
+cứu năm 2026 chấm các chỉ số của một họ lời giải thích khác với họ mà Phần~II
+dựng, nên kết quả của nó không tự động rơi xuống các họ chỉ số của
+chương~\ref{ch:do-do-trung-thuc}. Mục~\ref{sec:ch12-hai-nhanh-danh-gia} bắt đầu
+từ ranh giới thứ nhất.
+
+\input{chapters/12-con-nguoi-vang-mat/01-hai-nhanh-danh-gia}
+\input{chapters/12-con-nguoi-vang-mat/02-mot-cuoc-kiem-dem}
+\input{chapters/12-con-nguoi-vang-mat/03-con-so-va-cai-no-dem}
+\input{chapters/12-con-nguoi-vang-mat/04-nghien-cuu-khong-co-nguoi}
+\input{chapters/12-con-nguoi-vang-mat/05-mot-phep-doi-chieu}
+\input{chapters/12-con-nguoi-vang-mat/06-ket-qua-va-ranh-gioi}
+\input{chapters/12-con-nguoi-vang-mat/07-dieu-hai-bai-chua-giai-quyet}
+\input{chapters/12-con-nguoi-vang-mat/08-tom-tat-va-cau-hoi}

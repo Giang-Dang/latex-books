@@ -1,0 +1,98 @@
+\section{Bên trong 128 bài, và bên ngoài chúng}
+\label{sec:ch12-nghien-cuu-khong-co-nguoi}
+
+\index{nghiên cứu người dùng!chất lượng của phép kiểm chứng|(}%
+Mục trước khép lại ở chỗ 128 là chặn trên. Bài báo dành hai mục thảo luận để
+nói vì sao, một mục về những bài có người tham gia và một mục về những bài
+không có, và hai mục ấy là phần lập luận của bài chứ không phải phần đếm.
+
+Về những bài có người, các tác giả nêu ba chỗ mà một cuộc kiểm chứng có thể
+rỗng. Chỗ thứ nhất là ai được hỏi. Trong 128 bài, 13 bài không ghi số người
+tham gia và 3 bài chỉ ghi con số ước lượng; nhiều bài không công bố chuyên
+môn, trình độ học vấn, hay quan hệ giữa người tham gia với chính nhóm tác giả.
+Các tác giả đặt câu hỏi thẳng: nếu không biết gì về nền tảng của những người
+này, cũng không biết động cơ nào có thể khiến họ đánh giá một kỹ thuật XAI là
+tốt, thì có thể lập luận rằng phép kiểm chứng đã bị lệch một cách không công
+bằng~\autocite{p24humangap}.
+
+Chỗ thứ hai là hỏi ai không đúng đối tượng. Nhiều bài tuyển sinh viên đại học
+làm người tham gia, trong khi người dùng cuối của kỹ thuật đang được thử là
+chuyên gia an ninh mạng, phi công hay bác sĩ. Các tác giả thừa nhận rằng gom
+được chuyên gia trong lĩnh vực là việc khó, nhất là những chuyên gia không làm
+việc cùng nhóm nghiên cứu, và họ ghi nhận một số bài chỉ có hai hoặc ba chuyên
+gia trong cả cuộc đánh giá~\autocite{p24humangap}.
+
+Chỗ thứ ba là hỏi cái gì, và đây là chỗ nặng nhất trong ba. Bài báo chép lại
+hai dạng câu hỏi mà họ gặp trong tài liệu. Dạng thứ nhất hỏi thẳng người tham
+gia rằng họ có thấy cái này giải thích được hay không, \enquote{Do you think
+this is explainable}, và không cho họ chỗ nào để đối chiếu, nên người trả lời
+không có cách nào kiểm tra được câu trả lời của mình. Dạng thứ hai là
+\enquote{Which is more explainable: our explainable method, or this other
+baseline explanation that is clearly worse (e.g., contains grammatical errors
+or has logical flaws)?}~\autocite{p24humangap}, tức đặt phương pháp của tác giả
+cạnh một mốc so sánh đã hỏng sẵn, nên kết quả biết trước. Nhận xét của bài báo về chỗ này là
+một câu về thiết kế thí nghiệm, không phải một lời buộc tội: cần dựng tình
+huống đánh giá sát với ngữ cảnh sử dụng thật mà kỹ thuật nhắm
+tới~\autocite{p24humangap}. Ba chỗ ấy cộng lại là lý do 128 không nên đọc như
+số bài đã kiểm chứng xong.
+
+\index{nghiên cứu người dùng!lập luận tín hiệu}%
+Về những bài không có người, các tác giả đưa một lập luận mà chương này lấy
+làm trục, và nó đáng chép nguyên. Nếu coi việc tạo ra một sản phẩm có thể giải
+thích được như việc phát đi một tín hiệu, thì, các tác giả viết, phải có
+xác nhận rằng tín hiệu đã được nhận và được hiểu đúng thì mới xác nhận được
+lời tuyên bố về khả năng giải thích; nếu không thì không có gì phân biệt AI
+\enquote{giải thích được} với bất kỳ loại AI nào khác, và vô số phương pháp có
+thể giải thích được kia chỉ đang phát tín hiệu vào chỗ
+trống~\autocite{p24humangap}.
+
+Lập luận ấy mạnh hơn một phép loại suy, vì nó đúng theo định nghĩa của cái
+đang được tuyên bố. Định nghĩa~\ref{def:ch01-kha-nang-dien-giai} đặt khả năng
+diễn giải là việc trình bày sao cho con người hiểu được, tức là một phát biểu
+có hai đầu, và một phát biểu hai đầu không kiểm tra được nếu chỉ nhìn một đầu.
+Điểm số của một chỉ số tự động là phát biểu về đầu bên phía mô hình. Nó có thể
+đúng hoàn toàn mà đầu bên kia vẫn không xảy ra.
+
+\index{nghiên cứu người dùng!nhãn do người gán}%
+Có một dạng nghiên cứu nằm giữa hai mục ấy và bị chấm 0, và dạng này đáng tách
+riêng vì nó dễ bị đọc nhầm thành có kiểm chứng. Đó là bài so kết quả của mình
+với dữ liệu hoặc nhãn do người gán, chẳng hạn dùng nhãn người làm mốc, mà
+không có bước đánh giá nào với người~\autocite{p24humangap}. Trong khung của
+hình~\ref{fig:ch12-hai-nhanh-danh-gia}, một nghiên cứu như vậy vẫn nằm trọn ở
+nhánh trên: người xuất hiện trong dữ liệu chứ không xuất hiện ở đầu ra của
+nhánh dưới, nên phép đối chiếu nằm ngang giữa hai nhánh vẫn chưa được chạy.
+Chương~\ref{ch:chi-so-khong-do-do-trung-thuc} đã gặp đúng cấu hình ấy ở một
+chỗ khác: nhãn ground truth của bộ dữ liệu neo do thiết kế nhiệm vụ sinh ra và
+được người kiểm lại, nhưng cái được chấm vẫn là chỉ số, không phải người.
+
+Tình huống thứ nhất trong bốn tình huống bị chấm 0 mà
+mục~\ref{sec:ch12-mot-cuoc-kiem-dem} liệt kê đáng quay lại ở đây, vì nó chạm
+tới một ranh giới Phần~V sẽ dùng. Rudin phân biệt \enquote{explainable}, tức xử lý hậu
+nghiệm một mô hình vốn là \tn{hộp đen}{black box}, với \enquote{interpretable},
+tức tính chất sinh ra từ chính thiết kế mô hình dựa trên hiểu biết chuyên môn
+về lĩnh vực. Một số bài bị chấm 0 đã dựng mô hình cùng với chuyên gia lĩnh
+vực, nên thỏa định nghĩa thứ hai, nhưng lại không tiến hành đánh giá chính
+thức nào với chính nhóm chuyên gia ấy hay với một nhóm rộng
+hơn~\autocite{p24humangap}. Đây là trường hợp mà việc kiểm chứng đáng lẽ rẻ
+nhất, vì người cần hỏi đã ngồi sẵn trong phòng, mà vẫn không được làm.
+
+\index{nghiên cứu người dùng!lời kêu gọi của bài báo}%
+Mục cuối bài là một lời kêu gọi, và nó dùng một phép so sánh với ngành dược.
+Một công ty dược sẽ không bao giờ phân phối một loại thuốc mới mà bỏ qua thử
+nghiệm lâm sàng diện rộng, kể cả khi họ thật sự tin vào hiệu quả của nó dựa
+trên nguyên lý sinh học, trên bằng chứng mô phỏng và trên thí nghiệm trên
+chuột; các tác giả hỏi vì sao mô hình XAI, thứ có thể tác động tới những quyết
+định rủi ro cao, lại được phát hành mà chưa thử với người dùng của
+nó~\autocite{p24humangap}.
+
+Phép so sánh ấy có một phản bác quen thuộc, và bài báo trả lời nó ngay tại
+chỗ. Phản bác là con người thì thiên lệch, và gom một mẫu người đại diện thì
+khó. Câu trả lời của các tác giả là điều đó cũng đúng với mọi bộ dữ liệu chuẩn
+mà học máy vẫn dùng, từ ImageNet tới tập bình luận phim IMDB tới các bộ hỏi
+đáp y khoa: cả ba đều mang thiên lệch của con người từ cách chúng được sinh
+ra, được tuyển chọn và từ bối cảnh văn hóa của chúng~\autocite{p24humangap}.
+Lập luận ấy khép lại chỗ trốn cuối cùng: thiên lệch của con người không phải
+lý do để không hỏi người, vì nó đã nằm sẵn trong những con số mà lĩnh vực này
+vẫn báo cáo.
+
+\index{nghiên cứu người dùng!chất lượng của phép kiểm chứng|)}%
