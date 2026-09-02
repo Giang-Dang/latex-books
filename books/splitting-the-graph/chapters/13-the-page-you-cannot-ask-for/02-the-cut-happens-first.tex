@@ -1,0 +1,39 @@
+\section{The Cut Happens First}
+\label{sec:ch13-cut-happens-first}
+\index{query plan!page cut before hydration}%
+
+The plan explains the result without any special case for pagination. The
+router first asks Sessions for one row. It can then build a Session
+representation and ask Ratings for the score of that row. By the time Ratings
+answers, membership has already been decided.
+
+The two paths in figure~\ref{fig:ch13-two-page-orders} separate operations that
+a flat GraphQL response makes easy to confuse. Hydration fills fields on chosen
+objects. Discovery chooses the objects. The router is good at the first. It
+does not invent the second.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch13-two-page-orders}
+  \caption{In the measured plan, hydration cannot repair a page cut against
+  the wrong ordering. The list owner must see the ordering values first.}
+  \label{fig:ch13-two-page-orders}
+\end{figure}
+
+That distinction is visible in the measured plans for this graph. A root
+\code{Single} fetch produces a list. A later \code{BatchEntity}
+fetch receives representations for members of that list and fills a path such
+as \code{sessions.nodes.@.averageScore}. There is no plan node that discards
+members, reorders them, creates new cursors, and asks the root owner for a
+replacement row.
+
+The missing replacement matters. Imagine Sessions returns ten rows and the
+router removes six whose scores are too low. Returning four rows violates
+\code{first: 10}. Fetching ten more is not generally sufficient because the
+next ten might also fail. The router would need a scan protocol, stable sort
+semantics, cursor ownership, and a termination rule spanning two services.
+None of that follows from selecting a field.
+
+For a connection with this plan shape, I use a strict rule: its owner controls
+membership, filtering, ordering, cursors, and the slice. Remote entity fields
+may decorate the members. They do not participate in choosing them.

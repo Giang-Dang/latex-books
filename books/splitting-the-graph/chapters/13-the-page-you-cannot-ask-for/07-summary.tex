@@ -1,0 +1,14 @@
+\begin{problemsummary}
+{In the measured \code{sessions} plan, the connection can return remote fields
+on each node but cannot use them to filter, sort, or paginate. Asking for the
+first row by a remote score returns the first row in Sessions' local order.}
+{The list owner chooses membership, order, cursors, and the page
+before later entity fetches hydrate remote fields. \code{@requires},
+\code{@provides}, \code{@shareable}, and \code{@listSize} describe other
+capabilities; none supplies a distributed relational paging protocol.}
+{Put the discovery surface in a domain that owns a complete
+projection of every filter and ordering value. Here Search filters and slices
+locally, returns Session keys, and Sessions hydrates the selected entities in
+one batch. Treat projection freshness and cross-request cursor stability as
+explicit product guarantees, not router behavior.}
+\end{problemsummary}

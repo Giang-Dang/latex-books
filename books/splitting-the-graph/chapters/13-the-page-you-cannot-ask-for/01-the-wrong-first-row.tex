@@ -1,0 +1,50 @@
+\section{The Wrong First Row}
+\label{sec:ch13-wrong-first-row}
+\index{pagination!ordering by a remote field}%
+
+The graph already exposes sessions, scores, and a cursor connection. That
+sounds like enough to ask for the best-rated session:
+
+\begin{minted}{graphql}
+{
+  sessions(first: 1) {
+    nodes {
+      title
+      averageScore
+    }
+  }
+}
+\end{minted}
+
+It is not. The answer is:
+
+\begin{minted}{json}
+{
+  "data": {
+    "sessions": {
+      "nodes": [
+        {
+          "title": "Schemas That Outlive Their Authors",
+          "averageScore": 4
+        }
+      ]
+    }
+  }
+}
+\end{minted}
+
+The highest average is 4.5, on \emph{Reading a Query Plan}. The response is
+correct for the request I sent: \code{sessions} is ordered by start time.
+Adding \code{averageScore} to the selection changes which columns come back,
+not what \code{first: 1} means.
+
+The missing API would need a minimum score and a rating-descending order before
+it applied \code{first: 1}. Adding those argument names to Sessions would be
+only schema work. Sessions has start times but no ratings. Ratings has rating
+rows but cannot enumerate sessions; in particular, it has no row at all for
+the unrated session. Either resolver can page its own data. Neither can page
+the requested relation.
+
+This is not the N+1 problem from chapter~\ref{ch:router-n-plus-1}. Batching
+can reduce how many trips retrieve scores after a page exists. It cannot make
+those scores available when Sessions decides which row belongs on the page.
