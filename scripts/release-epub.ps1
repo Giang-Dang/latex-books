@@ -55,15 +55,34 @@ if (-not $environmentName) {
     Write-Error "No 'name:' line in $environmentFile."
 }
 
-if (-not (Get-Command conda -ErrorAction SilentlyContinue)) {
-    Write-Error 'conda is not on PATH. Install Miniconda, or run scripts/epub/release_epub.py directly with a python that has scour installed.'
+# conda is resolved to a file once, and every call below goes through that
+# path rather than through the name.
+#
+# The name is not safe to call. `conda init powershell` puts a module on the
+# profile that defines a function named Invoke-Conda and aliases conda to it.
+# A script with a function of that same name shadows the module's, so `& conda`
+# re-enters the script instead of reaching conda, and PowerShell stops it with
+# "The script failed due to call depth overflow". Under -NoProfile the alias
+# does not exist and the same script works, which is a good way to ship the bug
+# without ever seeing it.
+$conda = $env:CONDA_EXE
+if (-not ($conda -and (Test-Path -LiteralPath $conda))) {
+    $resolved = Get-Command conda -ErrorAction SilentlyContinue
+    while ($resolved -and $resolved.CommandType -eq 'Alias') {
+        $resolved = $resolved.ResolvedCommand
+    }
+    $conda = if ($resolved -and $resolved.CommandType -eq 'Application') { $resolved.Source } else { $null }
+}
+if (-not $conda) {
+    Write-Error 'Could not find the conda executable. Install Miniconda, or run scripts/epub/release_epub.py directly with a python that has scour installed.'
 }
 
 # conda prints its own progress and errors; only the exit code matters here.
-function Invoke-Conda {
+# Named so it cannot collide with the Invoke-Conda that conda itself defines.
+function Invoke-CondaCli {
     param([Parameter(ValueFromRemainingArguments = $true)][string[]]$CondaArgs)
 
-    & conda @CondaArgs
+    & $conda @CondaArgs
     if ($LASTEXITCODE -ne 0) {
         Write-Error "conda $($CondaArgs -join ' ') failed with exit code $LASTEXITCODE."
     }
@@ -75,7 +94,7 @@ function Get-EnvironmentPrefix {
     param([string]$Name)
 
     $PSNativeCommandUseErrorActionPreference = $false
-    foreach ($line in (& conda env list 2>$null)) {
+    foreach ($line in (& $conda env list 2>$null)) {
         if ($line -match '^\s*#') { continue }
         if ($line -match '^\s*(\S+)\s+\*?\s*([A-Za-z]:\\.*|/.*)\s*$') {
             if ($Matches[1] -eq $Name) { return $Matches[2].Trim() }
@@ -88,13 +107,13 @@ $prefix = Get-EnvironmentPrefix $environmentName
 
 if ($prefix -and $Recreate) {
     Write-Host "Removing the $environmentName environment before rebuilding it."
-    Invoke-Conda env remove -n $environmentName --yes
+    Invoke-CondaCli env remove -n $environmentName --yes
     $prefix = $null
 }
 
 if (-not $prefix) {
     Write-Host "Creating the $environmentName conda environment. First run only; later runs reuse it."
-    Invoke-Conda env create -f $environmentFile
+    Invoke-CondaCli env create -f $environmentFile
     $prefix = Get-EnvironmentPrefix $environmentName
     if (-not $prefix) {
         Write-Error "conda reported success but $environmentName is still missing from 'conda env list'."
