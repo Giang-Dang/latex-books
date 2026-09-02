@@ -36,6 +36,11 @@ build/
 # in every status the main checkout prints.
 .claude/worktrees/
 
+# Bytecode from the EPUB driver under scripts/epub/. Python writes it
+# beside the modules it imports, inside the repository.
+__pycache__/
+*.pyc
+
 # Editors / OS
 .DS_Store
 Thumbs.db

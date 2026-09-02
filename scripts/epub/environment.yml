@@ -1,0 +1,21 @@
+# The environment scripts/release-epub.ps1 builds and runs the EPUB driver in.
+#
+# Kept deliberately small. Everything the driver does with the filesystem, git,
+# subprocesses and the EPUB zip is standard library; a dependency earns its
+# place here by doing something that would otherwise be written badly by hand.
+#
+# scour: minifies the SVGs rendered from this book's TikZ figures. Measured on
+#   splitting-the-graph, the 13 figures come out of dvisvgm at 2.6 MB, which is
+#   most of the EPUB. scour removes the metadata, comments and redundant
+#   precision that dvisvgm emits without touching the drawing.
+#
+# The name is what release-epub.ps1 looks for. Changing it here means changing
+# it there.
+name: latex-books-epub
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.12
+  - scour=0.38.2
