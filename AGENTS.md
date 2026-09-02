@@ -8,9 +8,11 @@ preamble code; repo-wide consistency is structural only.
 
 - template/ - skeleton copied to start a new book (same layout as a real book)
 - books/<book-name>/ - one folder per book, fully self-contained
-- dist/ - final released PDFs, one per book, tracked with Git LFS
-- scripts/ - setup.ps1, new-book.ps1, release.ps1, check-chapter.ps1 (the
-  prose gate), and the tests beside the last two (PowerShell 7+)
+- dist/ - final released files, one PDF and, where a book has been released
+  as one, one EPUB per book, tracked with Git LFS
+- scripts/ - setup.ps1, new-book.ps1, release.ps1, release-epub.ps1,
+  check-chapter.ps1 (the prose gate), and the tests beside release.ps1 and
+  the prose gate (PowerShell 7+)
 - .githooks/ - every hook this repo runs, because setup.ps1 points
   core.hooksPath here and git then reads nothing from .git/hooks. pre-commit is
   the local build gate: it compiles and prose-checks every staged book before
@@ -51,13 +53,21 @@ backmatter/, figures/{images,tikz}/, research/ (optional), build/ (generated).
   changed first, and asks which to build. `pwsh scripts/release.ps1 <name>...`
   and `-All` skip the prompt; add `-DryRun` to see the selection without
   spending the rebuild.
+- Release an EPUB: `pwsh scripts/release-epub.ps1`, same menu and same
+  arguments, running tex4ebook instead of latexmk and writing
+  dist/<name>.epub. It refuses a book whose \includeonly is still active,
+  and warns when tidy or epubcheck is missing rather than shipping an
+  unvalidated file quietly. A book that needs its own make4ht settings puts
+  them in books/<name>/epub.mk4, which the script passes through when it
+  exists.
 
 ## Hard rules
 
 - LuaLaTeX only ($pdf_mode = 4 in each book's .latexmkrc). Never switch a book
   to pdflatex or xelatex.
-- Never commit build/ output. dist/ is updated only via scripts/release.ps1 at
-  milestones, never by hand-copying a draft PDF.
+- Never commit build/ output. dist/ is updated only via scripts/release.ps1
+  and scripts/release-epub.ps1 at milestones, never by hand-copying a draft
+  PDF or EPUB.
 - Books stay independent: never extract style files shared by several books.
   Improvements meant for future books go into template/ only; existing books
   adopt them manually if wanted. This is about typesetting, not about tooling:
