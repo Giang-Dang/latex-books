@@ -1,0 +1,72 @@
+\section{Ba phép đo và ba cái nền}
+\label{sec:ch11-ba-phep-do-va-ba-cai-nen}
+
+\index{đánh giá!nền của phép đo|(}%
+Một tiên đề ràng buộc chứ không xác nhận, nên câu hỏi xây dựng bậc hai có đúng
+hay không phải được trả lời bằng phép đo. Bài trả lời bằng ba thí nghiệm trên
+ba họ mô hình, và mục này đọc chúng theo một trục duy nhất: mỗi phép đo lấy cái
+gì làm nền để nói kết quả là đúng.
+
+Thí nghiệm thứ nhất chạy trên mô hình ngôn ngữ. Bài đo tương tác giữa các token
+của \tn{lời nhắc}{prompt} trong tám mô hình Gemma 3, gồm bốn cỡ 1B, 4B, 12B và 27B tham số,
+mỗi cỡ hai bản, bản \tn{tiền huấn luyện}{pretraining} và bản đã tinh chỉnh theo chỉ dẫn. Bộ lời
+nhắc có 21 câu, in đầy đủ trong phần phụ lục của bài, mỗi câu sinh ra câu trả
+lời dài tối đa 100 token~\autocite{p23metagame}. Đại lượng được báo cáo là
+Recall@K, và định nghĩa của nó là chỗ mục này quan tâm: nó đo xem những cặp
+token do người gán nhãn xếp hạng thế nào so với những tương tác mà mô hình cho
+là quan trọng nhất, với $K$ chạy từ 0 tới 15 phần trăm số cặp có hướng. Người
+gán nhãn ở đây là chính các tác giả: trong danh sách 21 lời nhắc, những cặp
+token mà họ coi là có tương tác được in đậm, mỗi lời nhắc từ hai tới bốn cặp.
+
+Vậy nền của thí nghiệm thứ nhất là một phán đoán của con người về những cặp
+token lẽ ra phải tương tác với nhau. Theo cách chia mà
+mục~\ref{sec:ch01-do-trung-thuc-va-tinh-hop-ly} đặt ra, đó là một phép đo ở
+phía \tn{tính hợp lý}{plausibility}, không phải ở phía \tn{độ trung thực}{faithfulness}: nó hỏi
+lời giải thích có khớp với điều người đọc chờ đợi hay không, chứ không hỏi nó
+có khớp với điều mô hình đã làm hay không. Bài không nói ngược lại; nó không
+gọi thí nghiệm này là một phép đo độ trung thực ở bất cứ chỗ nào.
+
+Thí nghiệm thứ hai chạy trên năm bộ mã hóa ảnh và văn bản: một bản CLIP, hai
+bản SigLIP-2 và hai bản MetaCLIP-2, trong đó bản MetaCLIP-2 thứ hai chỉ dùng để
+vẽ minh họa ở độ phân giải cao chứ không góp số vào bảng. Đại lượng được báo cáo là một chỉ số nhận diện tương
+tác mượn từ một bài báo khác, chạy trên tập kiểm định của ImageNet-1k: bài lấy
+mười nhãn lớp, mỗi nhãn 50 ảnh, ghép thành mười lượt thử bốn nhãn, rồi thêm dần
+từng nhãn một để có bốn tình huống mỗi lượt~\autocite{p23metagame}. Phép đo
+hỏi tương tác có rơi đúng vào vật mà nhãn ghi hay không.
+
+Kết quả của thí nghiệm thứ hai có một dạng đáng ghi lại. Với CLIP, chỉ số của
+phương pháp dựa trên \tn{cơ chế chú ý}{attention mechanism} là 0.77 khi ảnh có một vật và tụt xuống 0.25
+khi có bốn vật, còn bản Meta của chính nó thì đi ngược, từ 0.84 lên 0.90. Với
+MetaCLIP-2 cũng vậy: 0.84 tụt xuống 0.25, còn bản Meta giữ ở 0.85 và
+0.86~\autocite{p23metagame}. Trong bảng ấy có năm dòng phương pháp bậc nhất,
+thuộc ba phương pháp khác nhau chạy trên hai mô hình, và cả năm dòng đều dừng
+đúng ở 0.25 tại cột bốn vật. Con số 0.25 gợi mức bốc
+thăm, nhưng chỉ số này được định nghĩa trong một bài báo mà sách không đọc, và
+bài đang đọc không nói mức bốc thăm của nó là bao nhiêu, nên sách ghi lại chỗ
+trùng ấy mà không phát biểu nó nghĩa là gì. Bài cũng ghi rằng một tổ hợp mô
+hình và phương pháp đã bị loại khỏi bảng vì cho đầu ra không đọc được, nên bảng
+không phải là toàn bộ những gì đã chạy.
+
+Thí nghiệm thứ ba chạy trên một mô hình sinh ảnh từ văn bản và đo bằng một
+nhiệm vụ \tn{phân đoạn}{segmentation}. Trên Pascal VOC, tập kiểm định gồm 1\,449 ảnh, trong đó 927
+ảnh có một khái niệm được chú thích và 522 ảnh có từ hai tới năm; trên MS COCO
+là 5\,000 ảnh chú thích toàn cảnh, còn 4\,660 ảnh đủ điều kiện sau khi lọc; và
+trên ImageNet-Seg là 4\,276 mặt nạ nhị phân, giữ lại 3\,535~\autocite{p23metagame}.
+Ở nhiệm vụ một khái niệm trên Pascal VOC, độ chính xác tăng từ 0.832 lên 0.903
+khi thêm xây dựng bậc hai vào phương pháp gốc.
+
+Ba cái nền ấy đặt cạnh nhau thì thấy chúng cùng một loại. Cái thứ nhất là phán
+đoán của người, cái thứ hai là nhãn lớp của bộ dữ liệu, cái thứ ba là mặt nạ
+của bộ dữ liệu. Cả ba đều là câu trả lời cho câu hỏi trong đầu vào có cái gì và
+nằm ở đâu, và không cái nào là câu trả lời cho câu hỏi mô hình đã dùng cái gì.
+Đó là đúng khoảng cách mà định nghĩa~\ref{def:ch01-do-trung-thuc} tách ra, và
+là lý do vì sao ba bảng kết quả ấy, dù đọc kỹ đến đâu, cũng không cho biết
+meta-attribution có trung thực hay không.
+
+Một con số cuối cùng của phần thí nghiệm đáng in ra vì nó đo cái giá. Bài ghi
+rằng toàn bộ thí nghiệm chạy trên một cụm có tám GPU H100 trong khoảng 15 ngày,
+và các tác giả ước rằng những lần chạy thử và những lần thất bại tiêu tốn thêm
+chừng ấy nữa~\autocite{p23metagame}. Chỗ đứng của con số ấy là ở
+mục~\ref{sec:ch11-khong-co-tang-day}, khi câu hỏi trở thành bước tiếp theo tốn
+thêm bao nhiêu.
+\index{đánh giá!nền của phép đo|)}%

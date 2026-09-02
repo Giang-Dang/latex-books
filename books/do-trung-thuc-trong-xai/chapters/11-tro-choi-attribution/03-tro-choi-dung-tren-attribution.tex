@@ -1,0 +1,85 @@
+\section{Trò chơi dựng trên attribution}
+\label{sec:ch11-tro-choi-dung-tren-attribution}
+
+\index{metagame|(}%
+Hai nhóm phương pháp có sẵn để lại một yêu cầu kép: tách sạch
+\tn{hiệu ứng riêng}{pure individual effect} như nhóm theo tập làm được, mà vẫn
+giữ được chiều như nhóm nối tầng có. Xây dựng của bài báo đáp ứng cả hai, và nó
+làm điều đó bằng một phép chuyển mà chương~\ref{ch:shap} đã dựng sẵn công cụ.
+
+Phép chuyển ấy là như sau. Mục~\ref{sec:ch04-tro-choi-chia-gia-tri} đã trình
+bày giá trị Shapley như lời giải của bài toán chia phần thưởng trong một trò
+chơi hợp tác: có một tập người chơi, có một hàm gán cho mỗi liên minh một giá
+trị, và giá trị Shapley chia giá trị của liên minh đầy đủ cho từng người chơi.
+Khi SHAP dùng công cụ ấy để giải thích một mô hình, người chơi là các đặc trưng
+còn hàm giá trị là đầu ra của mô hình trên từng liên minh. Bài báo này giữ
+nguyên công cụ và thay hàm giá trị: hàm giá trị không còn là mô hình nữa mà là
+chính phương pháp attribution. Trò chơi mới ấy là cái mà các tác giả gọi là
+metagame.
+
+Nói cho đủ thì phải nói cả một bước nữa, và bước ấy là chỗ khác nhau giữa xây
+dựng này với phép nối tầng của phương trình~\ref{eq:ch11-noi-tang}. Muốn đo ảnh
+hưởng của đặc trưng $j$ lên attribution của đặc trưng $i$, ta giữ nguyên giá
+trị của $i$ ở mọi liên minh thay vì để nó thay đổi cùng $j$. Phép nối tầng
+không làm vậy: ở đó cả $x_i$ lẫn $x_j$ cùng biến thiên, nên hiệu ứng riêng và
+hiệu ứng cặp dính vào nhau, và bài chỉ ra đó chính là nguồn của chỗ rò mà
+bảng~\ref{tab:ch11-tach-hieu-ung} đo được~\autocite{p23metagame}. Cố định $x_i$
+rồi mới lấy giá trị Shapley của $j$ trên $d-1$ đặc trưng còn lại là điều làm
+cho con số thu được có chiều.
+
+Định nghĩa dưới đây cần thêm một ký hiệu. Viết $\varphi_i(S; x, f)$ cho
+attribution của đặc trưng $i$ khi chỉ những đặc trưng trong tập $S$ có mặt, các
+đặc trưng ngoài $S$ bị thay bằng baseline. Đó là cách che đặc trưng mà
+mục~\ref{sec:ch08-vong-lap-chung} đã đặt tên và là quy ước duy nhất mà bài
+dùng; $\varphi_i(x,f)$ trong sách là trường hợp $S$ chứa tất cả.
+
+\begin{definition}[Meta-attribution]
+  \label{def:ch11-meta-attribution}
+  Cho một phương pháp attribution bậc nhất $\varphi_i(x,f)$ và hai đặc trưng
+  $i \neq j$. Meta-attribution $\varphi_{j \to i}(x,f)$, tức ảnh hưởng của đặc
+  trưng $j$ lên attribution của đặc trưng $i$, được định nghĩa là
+  %
+  \begin{equation*}
+    \varphi_{j \to i}(x,f) :=
+    \sum_{S \subseteq [d] \setminus \{i,j\}}
+      \frac{1}{(d-1)\binom{d-2}{|S|}}
+      \Bigl[\varphi_i\bigl(S \cup \{i,j\}; x, f\bigr)
+          - \varphi_i\bigl(S \cup \{i\}; x, f\bigr)\Bigr].
+  \end{equation*}
+  %
+  Hiệu ứng riêng là giá trị biên của cùng công thức ấy,
+  $\varphi_{i \to i}(x,f) := \varphi_i(\{i\}; x, f)$~\autocite{p23metagame}.
+\end{definition}
+
+Từng phần của định nghĩa~\ref{def:ch11-meta-attribution} đọc được bằng những gì
+Phần~II đã dựng. Trong ngoặc vuông là đóng góp biên của $j$: attribution mà
+đặc trưng $i$ nhận được khi liên minh có cả $j$, trừ đi attribution mà nó nhận
+được khi liên minh ấy không có $j$. Cả hai lần, $i$ đều nằm trong liên minh,
+nên đại lượng bị trừ luôn là attribution của cùng một đặc trưng $i$ trên hai
+tình huống chỉ khác nhau ở sự có mặt của $j$. Trọng số phía trước là trọng số
+Shapley của một trò chơi $d-1$ người chơi, vì $i$ đã bị giữ cố định và không
+còn tham gia. Nó là cùng một trọng số mà
+phương trình~\ref{eq:ch04-gia-tri-shapley} viết bằng giai thừa, chỉ chép sang
+dạng nhị thức: với $n$ người chơi, $|S|!\,(n-|S|-1)!\,/\,n!$ bằng
+$1/\bigl(n\binom{n-1}{|S|}\bigr)$, và ở đây $n = d-1$. Tổng chạy trên mọi liên
+minh $S$ không chứa $i$ và $j$.
+
+Ký hiệu $\varphi_{j \to i}$ nối vào ký hiệu $\varphi_j$ mà
+phụ lục~\ref{app:ky-hieu} đã có, và nối một cách có chủ ý: cái được lấy đóng
+góp biên ở đây chính là attribution của định nghĩa~\ref{def:ch06-attribution},
+nên đại lượng mới là một mở rộng của đại lượng cũ chứ không phải một đại lượng
+trùng tên. Mũi tên trong chỉ số đọc theo chiều ảnh hưởng, từ đặc trưng gây ảnh
+hưởng sang attribution chịu ảnh hưởng.
+
+Khi phương pháp bậc nhất là giá trị Shapley thì bài gọi kết quả là Meta-Shapley
+value, viết tắt Meta-SV; khi nó là Integrated Gradients hay gradient nhân đầu
+vào thì tên là Meta-IG và Meta-G$\times$I. Ba tên ấy là ba dòng cuối của
+bảng~\ref{tab:ch11-tach-hieu-ung}, và cả ba đều trả đúng $x_1$ cùng $0$ cho hai
+hiệu ứng riêng, đồng thời cho hai giá trị khác nhau ở hai chiều của cặp. Hai
+trong ba dòng ấy còn khác nhau ở chỗ đáng chú ý: Meta-SV cho
+$\varphi_{2\to1} = \varphi_{1\to2} = \tfrac{1}{2}T$, tức đối xứng, còn Meta-IG
+cho $\tfrac{1}{3}T$ và $\tfrac{2}{3}T$, tức không đối xứng. Bài giải thích rằng
+tính đối xứng hay không là tính chất của phương pháp bậc nhất nằm dưới chứ
+không phải của xây dựng bậc hai, và dù đối xứng hay không thì cả ba biến thể
+đều tách được hiệu ứng riêng khỏi hiệu ứng tương tác~\autocite{p23metagame}.
+\index{metagame|)}%

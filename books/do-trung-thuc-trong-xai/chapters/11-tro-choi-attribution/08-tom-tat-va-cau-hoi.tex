@@ -1,0 +1,81 @@
+\begin{tomtat}
+\begin{itemize}
+  \item Một \tn{attribution nối tầng}{serial attribution} lấy chính phương pháp attribution áp lên đầu
+  ra của nó, như phương trình~\ref{eq:ch11-noi-tang} viết, và đó là nghĩa đen
+  của nhan đề chương. Cấu trúc ấy có một khiếm khuyết mà bài báo gọi là rò rỉ
+  tương tác và chứng minh trên một hàm hai biến có đáp án đúng biết trước:
+  bảng~\ref{tab:ch11-tach-hieu-ung} cho thấy serial Shapley value gán
+  $x_1 + \tfrac{1}{4}T$ cho một \tn{hiệu ứng riêng}{pure individual effect} lẽ ra bằng $x_1$, còn integrated
+  Hessians gán $\tfrac{4}{9}T$ cho một hiệu ứng riêng lẽ ra bằng không. Đáp án
+  đúng ở đó có được vì hàm và baseline được chọn sao cho nó có, cùng cách dựng
+  ground truth mà chương~\ref{ch:chi-so-khong-do-do-trung-thuc} đọc, nên nó
+  không nói được gì về một transformer.
+
+  \item Định nghĩa~\ref{def:ch11-meta-attribution} sửa chỗ rò bằng cách đổi hàm
+  giá trị của trò chơi hợp tác: người chơi vẫn là các đặc trưng, nhưng cái được
+  chia không còn là đầu ra của mô hình mà là chính attribution bậc nhất. Giữ cố
+  định đặc trưng $i$ rồi lấy giá trị Shapley của $j$ trên $d-1$ đặc trưng còn
+  lại là chỗ khiến con số thu được có chiều, thứ mà các chỉ số theo tập không
+  có. Định lý~\ref{thm:ch11-phan-tang-san-co} cho thấy các chỉ số tương tác sẵn
+  có đã phân tách attribution theo đúng kiểu ấy từ trước, ở chỗ không ai phát
+  biểu điều đó.
+
+  \item \tn{Tính hiệu quả phân tầng}{hierarchical efficiency} của
+  định nghĩa~\ref{def:ch11-hieu-qua-phan-tang}
+  là tính đầy đủ của mệnh đề~\ref{prop:ch05-tinh-day-du} nâng lên một tầng: tổng
+  các phần bằng cái được chia, chỉ khác cái được chia giờ là attribution chứ
+  không phải đầu ra mô hình. Tiên đề ấy ràng buộc quan hệ giữa hai tầng và
+  không nói gì về việc tầng dưới có đúng hay không. Meta-G$\times$I là ví dụ:
+  nó hiệu quả phân tầng trong khi gradient nhân đầu vào nằm dưới nó cho tổng
+  $x_1 + 3T$ trên một hàm có hiệu số đầu ra bằng $x_1 + T$.
+
+  \item Ba thí nghiệm của bài lấy ba cái nền, và cả ba đều nằm ở phía tính hợp
+  lý của cặp khái niệm mà mục~\ref{sec:ch01-do-trung-thuc-va-tinh-hop-ly} tách
+  ra: cặp token do chính các tác giả gán nhãn, nhãn lớp của ImageNet-1k, và mặt
+  nạ phân đoạn. Không cái nào trả lời câu hỏi mô hình đã dùng cái gì.
+  Hình~\ref{fig:ch11-ba-tang} xếp ba tầng lại và đánh dấu bằng nét chấm hai
+  tầng chưa có dụng cụ đo đã được kiểm định.
+
+  \item Phần hạn chế của bài viết rằng một phép so sánh phương pháp cho kết
+  luận chặt còn cần thêm phép đo độ trung thực, cụ thể là các đường cong
+  deletion và insertion trên từng cặp token, và bài không thực hiện phép đo ấy.
+  Hai đường cong đó thuộc các họ chỉ số mà mục~\ref{sec:ch08-ho-xoa-dan} đã đọc
+  và chưa cái nào được kiểm định. Vì vậy vòng nghiên cứu ở đây chạy đủ một lượt
+  mà không có bước loại bỏ: có chỗ yếu, có xây dựng mới sửa được chỗ yếu ấy, có
+  phép so theo chỉ số do người đề xuất chọn, có công bố, và không có bước nào
+  nói được rằng một phương pháp cũ nên thôi dùng.
+\end{itemize}
+\end{tomtat}
+
+\cauhoi
+
+\begin{cauhoids}
+  \item Áp phương trình~\ref{eq:ch11-noi-tang} thêm một lần nữa, tức lấy
+  attribution của attribution của attribution. Viết ra biểu thức thu được, cho
+  biết nó gán một con số cho đối tượng nào, và nói xem
+  định nghĩa~\ref{def:ch11-hieu-qua-phan-tang} có phát biểu được cho tầng thứ
+  ba ấy không.
+
+  \item Với hàm $f(x) = x_1 + x_1 x_2^2$ và baseline tại gốc, hãy đổi vai hai
+  đặc trưng bằng cách xét $f(x) = x_2 + x_1^2 x_2$ và tính lại hai hiệu ứng
+  riêng theo định nghĩa của bài. Dòng \emph{đáp án đúng} của
+  bảng~\ref{tab:ch11-tach-hieu-ung} đổi thế nào, và điều đó cho biết gì về việc
+  đáp án ấy đến từ đâu?
+
+  \item Định nghĩa~\ref{def:ch11-hieu-qua-phan-tang} và
+  mệnh đề~\ref{prop:ch05-tinh-day-du} có cùng dạng. Hãy nêu rõ ở mỗi chỗ, cái
+  được chia là gì và các phần là gì. Sau đó cho biết một phương pháp thỏa cả
+  hai thì đã được bảo đảm điều gì và chưa được bảo đảm điều gì.
+
+  \item Ba thí nghiệm của mục~\ref{sec:ch11-ba-phep-do-va-ba-cai-nen} dùng ba
+  cái nền khác nhau. Giả sử phải thiết kế một phép đo thứ tư cho
+  meta-attribution mà nền của nó nằm ở phía độ trung thực. Phép đo ấy phải trả
+  lời câu hỏi nào, và theo chương~\ref{ch:do-do-trung-thuc} thì dụng cụ nào
+  hiện có để trả lời, kèm điều kiện nào chưa được xác lập cho dụng cụ ấy?
+
+  \item Đọc phần hạn chế ở cuối phần chính của bài
+  báo~\autocite{p23metagame}, gồm bốn phát biểu. Xếp chúng thành hai nhóm, nhóm
+  nói về giới hạn của xây dựng lý thuyết và nhóm nói về giới hạn của bằng chứng
+  thực nghiệm, rồi cho biết nhóm nào chương~\ref{ch:khoang-trong-nghien-cuu} sẽ
+  cần tới khi tổng hợp khoảng trống nghiên cứu.
+\end{cauhoids}

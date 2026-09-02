@@ -1,0 +1,81 @@
+\section{Không có tầng đáy}
+\label{sec:ch11-khong-co-tang-day}
+
+\index{độ trung thực!chỗ đứng trong bài báo bậc hai|(}%
+Không cái nền nào trong ba cái ấy là nền của độ trung thực, thế mà chữ ấy vẫn
+có mặt trong bài. Đọc xem nó có mặt ở đâu là cách gọn nhất để thấy chỗ đứng
+thật của nó.
+
+Trong cả 32 trang, chữ \enquote{faithful} và các dạng của nó xuất hiện mười ba
+lần. Sáu lần trong số đó nằm bên trong tên riêng của một phương pháp khác, chỉ
+số tương tác Shapley trung thành của Tsai và cộng sự, nên chúng không nói gì về
+tính chất. Hai lần là tiêu chuẩn phân tích của
+mục~\ref{sec:ch11-ro-ri-tuong-tac}. Một lần nói rằng AttnLRP đạt mức trung thực
+tốt nhất hiện có trong các bài toán ngôn ngữ và thị giác, và câu ấy quy về một
+bài báo khác chứ không về phép đo nào của bài này. Một lần nữa nói về cuộc
+tranh luận cơ chế chú ý có giải thích trung thực transformer hay không, tức về
+tài liệu khác. Hai lần còn lại nằm ở phần thí nghiệm thứ hai và nói về chính
+bài: một lần gọi biến thể Meta-MaskSigLIP là trung thực nhất để diễn giải
+SigLIP-2, một lần nói tới việc gán trung thực các tương tác giữa hai token. Cả
+hai đều dựa trên chỉ số nhận diện tương tác mà mục trước đã đọc, tức một phép
+đo trên nhãn của bộ dữ liệu~\autocite{p23metagame}.
+
+Lần thứ mười ba là lần quan trọng, và nó nằm trong phần hạn chế của bài. Các
+tác giả viết rằng phần phân tích trên mô hình ngôn ngữ chỉ là một minh họa trên
+vài lời nhắc, và rằng một phép so sánh phương pháp cho ra kết luận chặt thì còn
+cần thêm các phép đo độ trung thực, chẳng hạn các đường cong deletion và
+insertion trên từng cặp token~\autocite{p23metagame}.
+
+Câu ấy là chỗ chương này gặp lại chương~\ref{ch:do-do-trung-thuc}. Deletion và
+insertion là hai trong số các họ chỉ số mà mục~\ref{sec:ch08-ho-xoa-dan} đã đọc
+kỹ, và điều chương ấy kết luận về cả bốn họ là chưa có gì xác lập rằng chúng đo
+đúng đại lượng ghi trên tên chúng. Cho nên bước tiếp theo mà bài tự nêu ra cho
+mình dẫn thẳng tới một dụng cụ chưa được kiểm định. Không phải một dụng cụ đã
+biết là hỏng, vì mục~\ref{sec:ch09-doi-tuong-khac-nhau} đã dựng ranh giới chặn
+đúng phép suy rộng ấy; là một dụng cụ mà chưa ai đem đối chiếu với ground truth
+nào.
+
+\begin{figure}[tbp]
+  \centering
+  \input{figures/tikz/ch11-ba-tang}
+  \caption{Ba tầng của chương này và cái được dùng để kiểm chứng từng tầng. Nét
+  chấm đánh dấu tầng không có dụng cụ đo độ trung thực đã được kiểm định, vì hai
+  lý do khác nhau: tầng hai có dụng cụ nhưng dụng cụ ấy chưa được kiểm định,
+  tầng ba có phép đo nhưng phép đo ấy đo thứ khác. Mũi tên chấm bên phải là
+  bước mà phần hạn chế của bài nêu ra và chưa thực hiện.}
+  \label{fig:ch11-ba-tang}
+\end{figure}
+
+Hình~\ref{fig:ch11-ba-tang} xếp ba tầng ấy lại. Tầng trên cùng là mô hình, và
+tầng ấy có một dụng cụ đo mà cả lĩnh vực chấp nhận: độ chính xác trên tập kiểm
+định, tính được, so được giữa hai mô hình, và không cần lời giải thích nào. Tầng
+thứ hai là attribution bậc nhất, và dụng cụ của nó là các họ \tn{chỉ số trung thực}{faithfulness metric}
+của chương~\ref{ch:do-do-trung-thuc}, chưa cái nào được kiểm định. Tầng thứ ba
+là meta-attribution, và cái đứng ở chỗ dụng cụ của nó là ba phép đo của
+mục~\ref{sec:ch11-ba-phep-do-va-ba-cai-nen}, cả ba đều nằm ở phía tính hợp lý.
+Mũi tên chấm nối tầng ba ngược lên tầng hai là câu trong phần hạn chế: bước
+đúng đắn tiếp theo mà bài nêu ra là mượn dụng cụ của tầng hai, tức mượn đúng
+cái đang thiếu kiểm định.
+
+Đó là nghĩa thứ hai của nhan đề, và là nghĩa mà sách đọc nó theo. Mỗi tầng được
+giải thích bằng một tầng nữa bên dưới, còn câu hỏi tầng này có đúng hay không
+thì được đẩy xuống tầng dưới, chỗ nó đã không có câu trả lời từ trước.
+
+Không nên đọc bài báo này nặng hơn mức nó đáng chịu. Các tác giả không giấu
+khoảng trống ấy; chính họ viết nó ra, gọi tên phép đo còn thiếu, và chỉ ra dụng
+cụ họ sẽ dùng. Đó là lý do bài này dùng được làm bằng chứng cho
+lập luận của chương: chỗ hở được người trong cuộc ghi lại chứ không phải do
+sách phát hiện. Điều sách thêm vào là một quan sát mà bài không có chỗ để nêu,
+rằng dụng cụ được chỉ ra ấy nằm đúng trong tập dụng cụ mà Phần~IV đang chất
+vấn.
+
+Chữ trong nhan đề còn một chỗ dễ nhầm nữa. Trong tài liệu về đánh giá XAI có
+một khái niệm gần âm là bài toán siêu đánh giá, mà bài mô tả bằng đúng một vế
+câu: nó chấm chất lượng của attribution. Bài tự tách mình khỏi khái niệm ấy
+trong phần công trình liên quan, ghi rằng metagame chỉ trùng tên, còn đối tượng
+của metagame là hiệu ứng \tn{tương tác bậc hai}{second-order
+interaction}~\autocite{p23metagame}.
+Sách chưa đọc bài về siêu đánh giá, nên không thêm khóa trích dẫn cho nó ở đây
+và không nói gì thêm về nội dung của nó;
+chương~\ref{ch:khoang-trong-nghien-cuu} sẽ phải quyết định có đọc hay không.
+\index{độ trung thực!chỗ đứng trong bài báo bậc hai|)}%

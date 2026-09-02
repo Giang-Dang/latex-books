@@ -1,0 +1,53 @@
+\section{Điều bài báo chưa giải quyết}
+\label{sec:ch11-dieu-chua-giai-quyet}
+
+Mục trước dừng ở một chỗ hở mà chính các tác giả ghi lại, và phần hạn chế của
+bài còn ba chỗ nữa. Chỗ thứ nhất là giả thiết: toàn bộ lý thuyết dựng trên phép
+che đặc trưng bằng baseline, mà chương~\ref{ch:attribution-theo-gradient} đã
+cho thấy baseline là một lựa chọn tự do chứ không phải một hằng số của bài
+toán. Chỗ thứ hai là chi phí: giá trị Shapley tính chính xác được với trò chơi dưới
+20 người chơi, còn với trò chơi lớn hơn, chẳng hạn lời nhắc của mô hình ngôn
+ngữ, thì phải dùng thuật toán xấp xỉ.
+Chỗ thứ ba là phía người đọc: các tác giả viết rằng đo hiệu ứng bậc cao thì
+đồng thời làm tăng chi phí tính toán và gánh nặng nhận thức cho người
+dùng~\autocite{p23metagame}.
+
+Ba chỗ ấy cộng với chỗ hở của mục trước là toàn bộ những gì bài tự nhận. Sách
+thêm vào hai điều, và cả hai đã được nêu ở trên nên chỉ nhắc lại tên:
+\tn{tính hiệu quả phân tầng}{hierarchical efficiency} ràng buộc quan hệ giữa
+hai tầng mà không xác nhận tầng dưới, và
+ba cái nền của phần thí nghiệm đều nằm ở phía tính hợp lý.
+
+Với ngần ấy, câu hỏi mà chương~\ref{ch:lime-nao-dang-tin} giao lại đã có đủ dữ
+kiện để trả lời. Câu hỏi ấy là liệu vòng của hình~\ref{fig:ch10-vong-bien-the}
+có lặp lại ở những nhánh ngoài LIME hay không, và bài báo của chương này là một
+điểm dữ liệu ở một nhánh xa: không phải \tn{mô hình thay thế cục bộ}{local surrogate model}, không phải
+attribution đặc trưng bậc nhất, mà một tầng dựng bên trên cả hai.
+
+Vòng ấy lặp lại, và lặp lại với từng bước một. Có một chỗ yếu đã biết của các
+phương pháp sẵn có, ở đây là chỗ rò của
+mục~\ref{sec:ch11-ro-ri-tuong-tac}. Có một xây dựng mới sửa đúng chỗ yếu ấy, ở
+đây là meta-attribution, và nó sửa thật: bảng~\ref{tab:ch11-tach-hieu-ung} là
+một chứng cứ phân tích chứ không phải một lời tuyên bố. Có phép so với những gì
+có sẵn, theo những chỉ số mà người đề xuất chọn, ở đây là Recall@K trên nhãn do
+chính nhóm tác giả gán, chỉ số nhận diện tương tác, và điểm phân đoạn. Và rồi
+công trình được công bố.
+
+Bước còn thiếu vẫn là bước ở mục~\ref{sec:ch10-khong-co-cach-so-sanh}, chỉ khác
+là lần này nó thiếu ở một chỗ dễ nhìn hơn nhiều. Không có bước nào trong vòng
+nói được rằng một phương pháp cũ nên thôi dùng. Phép so sánh làm được điều đó
+là phép so sánh mà bài nêu tên rồi để lại, tức là phép đo độ trung thực; và
+việc nó bị để lại không phải chuyện thiếu công sức, vì thí nghiệm đã chạy tám
+GPU H100 trong khoảng 15 ngày rồi chừng ấy nữa cho những lần thất bại. Cái
+thiếu không phải tài nguyên mà là một dụng cụ đo mà cả hai bên cùng chấp nhận.
+
+Cho nên hình dạng mà chương~\ref{ch:lime-nao-dang-tin} nghi ngờ đúng là hình
+dạng chung, và nó chung không vì người trong nghề làm sai điều gì. Nó chung vì
+một vòng nghiên cứu chỉ loại bỏ được một phương pháp khi có chỗ để đối chiếu,
+và Phần~IV đến giờ vẫn chưa tìm ra chỗ ấy. Điều chương này thêm vào là một
+điểm dữ liệu ở chỗ khó chối nhất: không phải một khảo sát nhận xét về người
+khác, mà một công trình tự ghi vào phần hạn chế của mình rằng phép so sánh
+quyết định vẫn còn thiếu.
+
+Mọi dụng cụ mà Phần~IV đã xét cho tới đây đều là dụng cụ không có người tham
+gia. Chương~\ref{ch:con-nguoi-vang-mat} hỏi về những dụng cụ còn lại.

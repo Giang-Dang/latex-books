@@ -1,0 +1,114 @@
+\section{Rò rỉ tương tác}
+\label{sec:ch11-ro-ri-tuong-tac}
+
+\index{rò rỉ tương tác|(}%
+Tính chất không mong muốn ấy có tên trong bài là
+\tn{rò rỉ tương tác}{interaction leakage}, và bài phát biểu nó thẳng: các
+phương pháp nối tầng, tự trong cấu trúc của chúng, không tách sạch được hiệu
+ứng riêng của một đặc trưng khỏi hiệu ứng tương tác của nó với đặc trưng
+khác~\autocite{p23metagame}. Muốn thấy được một phát biểu như vậy thì phải có
+chỗ để so, nghĩa là phải có một trường hợp mà đáp án đúng đã biết trước. Bài
+dựng đúng một trường hợp như thế.
+
+Hàm được chọn là
+%
+\begin{equation}
+  \label{eq:ch11-ham-vi-du}
+  f(x) = x_1 + T, \qquad T := x_1 x_2^2,
+\end{equation}
+%
+với baseline đặt tại gốc, $b = (0,0)$. Hàm này có đúng hai đặc trưng và tách
+sẵn thành hai phần mà người đọc nhìn là biết: một phần chỉ phụ thuộc $x_1$, và
+một phần chỉ khác không khi cả hai đặc trưng cùng khác không. Phần thứ hai là
+tương tác, và sách đặt cho nó cái tên $T$ để khỏi phải viết lại. Bài báo viết
+$I$ ở chỗ này, nhưng phụ lục~\ref{app:ky-hieu} đã gán $I$ cho
+\tn{phép nhiễu}{perturbation} trong
+định nghĩa infidelity của chương~\ref{ch:do-do-trung-thuc}, nên sách đổi tên
+chứ không dùng lại ký hiệu.
+
+Đáp án đúng ở đây không phải một quan sát về mô hình mà là một hệ quả của định
+nghĩa. Bài định nghĩa \tn{hiệu ứng riêng}{pure individual effect} của đặc trưng
+$i$ là attribution của $i$ khi chỉ mình nó có mặt, tức
+$\varphi_{i \to i}(x,f) := \varphi_i(\{i\}; x, f)$: vẫn là phương pháp bậc nhất
+chạy như thường, chỉ khác là chạy trên đầu vào đã bị che hết trừ đặc trưng $i$.
+Với hàm ở phương trình~\ref{eq:ch11-ham-vi-du} và baseline tại gốc, che đặc
+trưng thứ hai để lại hàm $x_1$, còn che đặc trưng thứ nhất để lại hàm hằng
+bằng không. Nên mọi phương pháp bậc nhất trong bảng đều trả về $x_1$ cho đặc
+trưng thứ nhất và $0$ cho đặc trưng thứ hai, bất kể chúng khác nhau thế nào ở
+đầu vào đầy đủ; bài kiểm điều đó cho từng phương pháp trong phần chứng minh
+phụ lục. Hai giá trị ấy bị ép bởi hàm và bởi baseline, không phải đo được từ
+bên trong một mô hình nào. Bài phát biểu tiêu chuẩn dựa trên
+chúng bằng đúng chữ mà cả Phần~IV đang bàn: một phương pháp trung thực phải
+tách được hiệu ứng riêng của $x_1$ khỏi tương tác $x_1 x_2^2$, và cả serial
+Shapley value lẫn integrated Hessians đều không làm được, vì chúng để các số
+hạng tương tác rò sang các thành phần riêng~\autocite{p23metagame}.
+
+Cách dựng ground truth ấy là cách chương~\ref{ch:chi-so-khong-do-do-trung-thuc}
+đã đọc kỹ, chỉ khác đối tượng. Ở bài báo neo, đáp án đúng có được vì nhiệm vụ
+được thiết kế sao cho chỉ có một đường đi tới câu trả lời; ở đây, đáp án đúng có
+được vì hàm được viết ra sao cho hai phần của nó tách rời. Cái giá cũng cùng một
+loại. Bảng~\ref{tab:ch11-tach-hieu-ung} nói về một đa thức hai biến với một quy
+ước che đặc trưng đã cho sẵn, không nói về transformer mà mục~\ref{sec:ch11-ba-phep-do-va-ba-cai-nen}
+sẽ tới; một phương pháp tách sạch ở đây chưa vì thế mà tách sạch ở kia.
+
+\begin{table}[tbp]
+  \centering
+  \small
+  \caption{Attribution bậc hai của ba nhóm phương pháp trên
+  hàm ở phương trình~\ref{eq:ch11-ham-vi-du}, chép từ bảng phân tích của
+  bài~\autocite{p23metagame}. Dòng đầu là của sách, tính từ định nghĩa hiệu ứng
+  riêng của chính bài.}
+  \label{tab:ch11-tach-hieu-ung}
+  \begin{tabular}{@{}llcccc@{}}
+    \toprule
+    & & \multicolumn{2}{c}{Hiệu ứng riêng} & \multicolumn{2}{c}{Tương tác} \\
+    \cmidrule(lr){3-4}\cmidrule(l){5-6}
+    Nhóm & Phương pháp
+      & $\varphi_{1\to1}$ & $\varphi_{2\to2}$
+      & $\varphi_{2\to1}$ & $\varphi_{1\to2}$ \\
+    \midrule
+    \multicolumn{2}{@{}l}{\emph{Đáp án đúng}}
+      & $x_1$ & $0$ & \multicolumn{2}{c}{\emph{tùy phương pháp bậc nhất}} \\
+    \midrule
+    Nối tầng & serial Shapley value
+      & $x_1 + \tfrac{1}{4}T$ & $\tfrac{1}{4}T$
+      & $\tfrac{1}{4}T$ & $\tfrac{1}{4}T$ \\
+    & integrated Hessians
+      & $x_1 + \tfrac{1}{9}T$ & $\tfrac{4}{9}T$
+      & $\tfrac{2}{9}T$ & $\tfrac{2}{9}T$ \\
+    \midrule
+    Theo tập & biến đổi Möbius
+      & $x_1$ & $0$ & \multicolumn{2}{c}{$T$, không có hướng} \\
+    & STII
+      & $x_1$ & $0$ & \multicolumn{2}{c}{$T$, không có hướng} \\
+    & SOP
+      & $x_1$ & $0$ & \multicolumn{2}{c}{$T$, không có hướng} \\
+    \midrule
+    Có hướng & Meta-G$\times$I
+      & $x_1$ & $0$ & $T$ & $2T$ \\
+    & Meta-IG
+      & $x_1$ & $0$ & $\tfrac{1}{3}T$ & $\tfrac{2}{3}T$ \\
+    & Meta-SV
+      & $x_1$ & $0$ & $\tfrac{1}{2}T$ & $\tfrac{1}{2}T$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Hai ô trong bảng ấy đủ để thấy chỗ rò. Serial Shapley value trả về
+$x_1 + \tfrac{1}{4}T$ cho hiệu ứng riêng của đặc trưng thứ nhất, tức một phần
+tư tương tác đã bị cộng vào một con số lẽ ra chỉ được bằng $x_1$. Integrated
+Hessians trả về $\tfrac{4}{9}T$ cho hiệu ứng riêng của đặc trưng thứ hai, mà
+hiệu ứng riêng của đặc trưng ấy bằng không: bốn phần chín tương tác đã bị gán
+cho một đặc trưng mà một mình nó không làm gì cả. Cả hai con số đều là đáp án
+của một thủ tục chạy đúng như nó được định nghĩa, nên đây không phải lỗi cài
+đặt mà là hệ quả của cấu trúc nối tầng.
+
+Nhóm thứ hai trong bảng sửa được chỗ ấy nhưng đánh mất một thứ khác. Ba dòng
+của nó là ba chỉ số chấm cả một tập đặc trưng cùng lúc: biến đổi Möbius, chỉ số
+tương tác Shapley-Taylor mà bài viết tắt là STII, và SOP. Cả ba đều trả đúng
+$x_1$ và $0$ cho hai hiệu ứng riêng, còn tương tác thì chúng để trong một ô duy nhất: chúng chấm cặp không có
+thứ tự $\{1,2\}$, nên không có chỗ nào để phân biệt ảnh hưởng của đặc trưng thứ
+hai lên attribution của đặc trưng thứ nhất với chiều ngược lại. Đó là chỗ mà
+nhóm thứ ba, nhóm mà bài báo đề xuất, đi vào; và mục~\ref{sec:ch11-tro-choi-dung-tren-attribution}
+dựng lại xây dựng ấy.
+\index{rò rỉ tương tác|)}%

@@ -1,0 +1,32 @@
+\begin{tikzpicture}[
+  every node/.style={font=\footnotesize, align=center},
+  obj/.style={draw=black!65, rounded corners=2pt, fill=black!5,
+    minimum width=34mm, minimum height=11mm},
+  ok/.style={draw=black!75, rounded corners=2pt, fill=black!10,
+    minimum width=40mm, minimum height=13mm},
+  gap/.style={draw=black!45, dotted, thick, rounded corners=2pt, fill=white,
+    minimum width=40mm, minimum height=13mm},
+  up/.style={-{Stealth[length=2mm]}, thick, black!70},
+  chk/.style={-{Stealth[length=2mm]}, thick, black!70},
+  miss/.style={-{Stealth[length=2mm]}, thick, black!45, dotted},
+  lbl/.style={font=\scriptsize, align=center, black!55}
+]
+  \node[obj] (model)  at (0,3.0) {Mô hình $f$};
+  \node[obj] (attr)   at (0,0.6) {Attribution bậc nhất\\$\varphi_i(x,f)$};
+  \node[obj] (meta)   at (0,-1.8) {Meta-attribution\\$\varphi_{j\to i}(x,f)$};
+
+  \node[ok]  (acc)    at (6.4,3.0) {Độ chính xác\\trên tập kiểm định};
+  \node[gap] (metric) at (6.4,0.6) {Chỉ số trung thực:\\chưa được kiểm định};
+  \node[gap] (proxy)  at (6.4,-1.8) {Nhãn của người và của\\bộ dữ liệu: tính hợp lý};
+
+  \draw[up] (attr) -- node[lbl, right=1mm] {giải thích} (model);
+  \draw[up] (meta) -- node[lbl, right=1mm] {giải thích} (attr);
+
+  \draw[chk]  (acc)    -- (model);
+  \draw[miss] (metric) -- (attr);
+  \draw[miss] (proxy)  -- (meta);
+
+  \draw[miss] (proxy.east) -- ++(1.0,0) |- (metric.east);
+  \node[lbl, text width=26mm] at (9.1,-0.6)
+    {bước bài báo nêu\\mà chưa làm};
+\end{tikzpicture}
