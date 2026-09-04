@@ -1,0 +1,124 @@
+\section{Cái trần, và cách chứng minh nó}
+\label{sec:ch13-tran-va-chung-minh}
+
+\index{giới hạn lý thuyết!khoảng cách độ phức tạp|(}%
+Mục trước để lại một lời hứa: ô chữ nhật ở góc dưới bên trái của
+hình~\ref{fig:ch13-mien-kha-thi} là rỗng với những mô hình đủ phức tạp. Mục này
+chứng minh điều đó, và cái đáng chú ý không phải kết luận mà là chứng minh dài
+bao nhiêu.
+
+Trước hết, đầu mút bên phải của đường cong. Bài báo chứng minh rằng
+$\kappa_f(0) = K(f)$: số bit ít nhất đủ để giải thích $f$ không sai chút nào
+đúng bằng \tn{độ phức tạp Kolmogorov}{Kolmogorov complexity} của chính
+$f$~\autocite{p26limits}. Chiều dễ là
+chiều lên: bản thân $f$ đạt sai số không và tốn $K(f)$ bit. Chiều xuống là nội
+dung thật: nếu một hàm $g$ với $K(g) < K(f)$ đạt sai số không thì $g$ trùng $f$
+trên mọi đầu vào, nên chương trình tính $g$ cũng tính $f$, nên
+$K(f) \le K(g) < K(f)$, vô lý. Nói bằng lời thì kết quả này phát biểu rằng không
+có bản rút gọn nào giải thích trọn vẹn một mô hình; muốn không sai chỗ nào thì
+phải chép lại cả mô hình.
+
+Bỏ đòi hỏi \enquote{không sai chút nào} thì được kết quả trung tâm của bài.
+
+\begin{theorem}[Khoảng cách độ phức tạp]
+\label{thm:ch13-khoang-cach-do-phuc-tap}
+Tồn tại một hằng số $c$ chỉ phụ thuộc \tn{máy Turing phổ dụng}{universal Turing
+machine} đã chọn, sao cho với
+mọi mô hình $f$ và mọi hàm $g$ thỏa $K(g) < K(f) - c$, tồn tại một đầu vào
+$x \in \mathcal{X}$ với $f(x) \ne g(x)$.
+\end{theorem}
+
+\begin{proof}
+Giả sử ngược lại rằng $f(x) = g(x)$ với mọi $x \in \mathcal{X}$, tức $f = g$.
+Gọi $p_g$ là chương trình ngắn nhất tính $g$, độ dài $K(g)$. Vì $f = g$ nên
+chính $p_g$ cũng tính $f$, do đó $K(f) \le |p_g| = K(g)$. Điều này mâu thuẫn với
+giả thiết $K(g) < K(f) - c$.
+\end{proof}
+
+Định lý~\ref{thm:ch13-khoang-cach-do-phuc-tap} là định lý 2.23 của bài
+báo~\autocite{p26limits}, và chứng minh trên là chứng minh của bài, viết đủ chứ
+không rút gọn. Nó dài bốn dòng, không dùng một giả thiết nào về $f$, và không
+mượn kết quả nào ngoài định nghĩa của $K$. Cả hai mặt của kết quả nằm ở đúng chỗ
+đó. Vì không giả thiết gì nên nó đúng cho mọi mô hình, mọi kiến trúc, mọi bộ dữ
+liệu và mọi phương pháp giải thích đã có hay sẽ có; không có tiến bộ kỹ thuật
+nào lách được nó. Nhưng cũng vì không giả thiết gì nên nó nói rất ít: nó khẳng
+định có một đầu vào mà hai hàm cho kết quả khác nhau, không nói có bao nhiêu đầu
+vào như thế, chúng nằm ở đâu, hay chênh lệch lớn tới đâu. Một lời giải thích
+lệch đúng một điểm, và lệch một lượng nhỏ tùy ý, vẫn thỏa định lý.
+
+\index{không suy biến}%
+Bịt lỗ hổng ấy cần thêm một điều kiện, và bài đặt tên cho nó. Một hàm $f$ được
+gọi là \tn{không suy biến}{non-degenerate} ở mức $\delta$ nếu mọi đầu ra khả dĩ
+khác $f(x)$ đều cách $f(x)$ một khoảng lớn hơn $\delta$, với mọi
+$x$~\autocite{p26limits}. Điều kiện này nói rằng các đầu ra của $f$ tách nhau đủ
+xa để một chỗ lệch là một chỗ nhìn thấy được: nếu $g(x) \ne f(x)$ thì tất yếu
+$\rho(f(x),g(x)) > \delta$.
+
+Vì sao phải phát biểu riêng điều đó thì thấy rõ qua hai trường hợp. Với một bộ
+phân loại có nhãn rời rạc và khoảng cách giữa hai nhãn bất kỳ là một hằng số,
+điều kiện tự động đúng với mọi $\delta$ nhỏ hơn hằng số ấy. Với một mô hình hồi
+quy nhận giá trị trên toàn trục số thì nó hỏng: hai đầu ra có thể cách nhau
+$10^{-9}$, nên một hàm $g$ lệch khỏi $f$ ở rất nhiều điểm vẫn giữ được sai số
+tổng cộng nhỏ hơn $\delta$. Bài gọi những chỗ lệch ấy là các bất đồng vô hình,
+và mục~\ref{sec:ch13-tran-noi-gi} sẽ dùng lại chúng.
+
+Cộng hai điều lại thì được phát biểu mà chương này thật sự cần. Nếu $f$ không
+suy biến ở mức $\delta$ và $K(g) < K(f) - c$ thì
+$\mathcal{E}_{\infty}(f,g) > \delta$~\autocite{p26limits}. Đường cong trong
+hình~\ref{fig:ch13-mien-kha-thi} vì thế không chỉ dương mà còn nằm trên ngưỡng
+$\delta$ ở mọi ngân sách nhỏ hơn $K(f) - c$, và ô chữ nhật đúng là rỗng. Ở đầu
+kia của thang, bài ghi trường hợp tầm thường cho đủ bộ: một hàm với
+$K(f) \le C$ thì giải thích được hoàn hảo trong đúng $C$ bit, vì chính nó là một
+lời giải thích hợp lệ~\autocite{p26limits}.
+
+\index{bộ ba bất khả|(}%
+Bài báo dành mười lăm trang trong sáu mươi lăm, mục 4 cùng toàn bộ phụ lục, cho một chủ
+đề mà tên bài không báo trước: quy định pháp lý về \tn{khả năng giải
+thích}{explainability}. Bài đọc
+ba khung cụ thể theo hướng ấy, gồm điều 13 của EU AI Act, các yêu cầu về mô hình
+trong ngành tài chính và hướng dẫn của FDA cho thiết bị y tế dùng học máy, và
+lập luận rằng mỗi khung đều đòi cùng lúc lời giải thích đọc được và độ khớp cao
+mà không thừa nhận sự đánh đổi giữa hai thứ~\autocite{p26limits}. Sách không đi
+vào phần ấy, vì đối tượng của cuốn sách này là dụng cụ đo của lĩnh vực chứ không
+phải chính sách. Một kết quả trong đó thì phải nêu, vì nó là định lý vừa chứng
+minh viết lại bằng thứ ngôn ngữ khác.
+
+Bài gọi cấu trúc lôgic ấy là \tn{bộ ba bất khả}{trilemma}, cùng dạng với bộ ba
+bất khả trong kinh tế học quốc tế và với định lý CAP của hệ phân
+tán~\autocite{p26limits}.
+
+\begin{theorem}[Bộ ba bất khả trong quy định]
+\label{thm:ch13-bo-ba-bat-kha}
+Xét một khung quy định áp cùng lúc ba đòi hỏi lên các hệ thống không suy biến ở
+mức $\delta$. Đòi hỏi thứ nhất cho phép triển khai hệ thống $f$ với $K(f)$ lớn
+tùy ý. Đòi hỏi thứ hai buộc mỗi hệ thống được triển khai phải kèm một lời giải
+thích $g$ với $K(g) \le b_{\text{người}}$, trong đó $b_{\text{người}}$ là một
+hằng số cố định biểu thị sức đọc của con người. Đòi hỏi thứ ba buộc sai số của
+lời giải thích thỏa $\mathcal{E}(f,g) \le \delta$. Khi ấy hai đòi hỏi bất kỳ
+trong ba đòi hỏi trên thỏa được đồng thời, cả ba thì không, và không đòi hỏi nào
+suy ra được từ hai đòi hỏi còn lại.
+\end{theorem}
+
+Đây là định lý 4.6 của bài~\autocite{p26limits}. Vế \enquote{cả ba thì không}
+được chứng minh trong phụ lục, và đọc phần chứng minh ấy thì thấy hai bước cốt
+lõi của nó là định lý~\ref{thm:ch13-khoang-cach-do-phuc-tap} cộng với điều kiện
+không suy biến, thay $K(g)$ bằng $b_{\text{người}}$. Đòi hỏi thứ nhất cho phép
+chọn một $f$ với $K(f) \ge b_{\text{người}} + c$; đòi hỏi thứ hai ép
+$K(f) - K(g) \ge c$; định lý cho một điểm lệch; và điều kiện không suy biến biến
+điểm lệch ấy thành một sai số lớn hơn $\delta$, mâu thuẫn với đòi hỏi thứ ba.
+Vế \enquote{hai đòi hỏi bất kỳ thì được} chứng minh bằng cách dựng ví dụ cho
+từng cặp: bỏ đòi hỏi thứ ba thì lấy $g$ là hàm hằng, bỏ đòi hỏi thứ hai thì lấy
+$g$ bằng chính $f$, bỏ đòi hỏi thứ nhất thì chỉ cho phép những mô hình dưới
+$b_{\text{người}}$ bit.
+
+Nhận xét của sách về kết quả này, không phải của bài: định
+lý~\ref{thm:ch13-bo-ba-bat-kha} không thêm toán học nào vào định
+lý~\ref{thm:ch13-khoang-cach-do-phuc-tap}. Cái nó thêm là một cách đọc, và cách
+đọc ấy có giá trị riêng, vì nó chỉ ra rằng ba thứ mà một bên soạn quy định
+thường muốn cùng lúc là ba thứ đã được chứng minh không đi cùng nhau được. Bài
+tự nhấn mạnh rằng đây là một kết quả bất khả có điều kiện: nó không nói rằng AI
+phức tạp là cần thiết, cũng không kê đơn nên bỏ đòi hỏi nào, mà chỉ làm rõ hệ
+quả toán học của từng lựa chọn~\autocite{p26limits}.
+
+\index{bộ ba bất khả|)}%
+\index{giới hạn lý thuyết!khoảng cách độ phức tạp|)}%

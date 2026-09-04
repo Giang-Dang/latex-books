@@ -1,0 +1,77 @@
+\section{Một câu hỏi không cần thí nghiệm}
+\label{sec:ch13-cau-hoi-khong-can-thi-nghiem}
+
+\index{giới hạn lý thuyết!loại bằng chứng|(}%
+Bài báo mà chương này đọc là một bài lý thuyết thuần túy của Shrisha Rao, dài 65
+trang, một tác giả duy nhất, và tính tới lúc viết chương này thì vẫn là bản tiền
+ấn phẩm trên arXiv, không có nơi công bố nào ghi
+kèm~\autocite{p26limits}. Nó chứng minh định lý và
+không chạy gì cả. Ở phần kết, chính tác giả xếp việc kiểm chứng bằng thực
+nghiệm vào phần công việc tương lai: kiểm chứng bằng thực nghiệm những dự đoán
+lý thuyết của bài là công việc tương lai quan trọng, và bước đầu có thể là khớp
+vài hàm đa thức đơn giản bằng cây quyết định với độ phức tạp thay đổi dần, rồi
+đối chiếu với các chặn mà bài đưa ra~\autocite{p26limits}. Trong cả bài không có
+một bảng kết quả nào, không một hình vẽ nào, và không một bộ dữ liệu nào.
+
+Vì thế loại bằng chứng ở đây khác hẳn loại bằng chứng mà bốn chương vừa qua thu
+thập, và chỗ khác nhau đáng nói ra trước khi vào nội dung. Một số đo nói về một
+lần chạy: bài báo neo đo được AUROC quanh mức ngẫu nhiên trên tập BonaFide của
+nó, và câu ấy đúng cho tám chỉ số ấy, trên tập ấy, với mười mô hình ấy. Muốn nó
+đúng rộng hơn thì phải chạy thêm. Một chặn thì nói theo chiều ngược lại: nó phát
+biểu rằng trong mọi trường hợp thỏa các giả thiết đã nêu, một sự việc không xảy
+ra được. Muốn nó đúng rộng hơn thì không phải chạy gì thêm, mà phải nới các giả
+thiết.
+
+Cái giá phải trả cho sức mạnh ấy vì thế nằm trọn ở chỗ giả thiết. Một số đo có thể sai
+vì đo hỏng, và người đọc phát hiện được bằng cách đo lại. Một chặn thì không sai
+bao giờ nếu chứng minh đúng; điều nó có thể làm là ràng buộc một đối tượng không
+phải đối tượng người đọc quan tâm. Cho nên với một kết quả loại này, câu hỏi
+kiểm chứng không phải \enquote{có đúng không} mà là \enquote{đúng về cái gì}, và
+câu trả lời nằm ở các định nghĩa chứ không ở phần chứng minh.
+
+\index{giới hạn lý thuyết!đối tượng của bài báo}%
+Với bài báo này, câu trả lời ấy đọc được ngay từ phép đếm chữ. Rà toàn văn cả 65
+trang, kể cả phần tài liệu tham khảo, chữ \enquote{faithfulness} và chữ
+\enquote{faithful} không xuất hiện lần nào. Chữ \enquote{ground truth} cũng
+không xuất hiện lần nào. Chữ \enquote{attribution} xuất hiện đúng một lần, ở
+trang 2, trong một câu liệt kê các họ phương pháp giải thích của phần mở đầu.
+Các tên Shapley, deletion, insertion và saliency không xuất hiện lần nào.
+
+Một phép đếm nữa đáng nêu vì bản thân nó dễ đọc nhầm. Chữ \enquote{metric} xuất
+hiện mười sáu lần, con số đủ lớn để người đọc tưởng đây là một bài bàn về chỉ
+số. Không phải: mỗi lần xuất hiện, chữ ấy hoặc chỉ một trong hai cách đo sai số
+mà mục~\ref{sec:ch13-ham-xap-xi} sẽ dựng, hoặc nằm bên
+trong \enquote{geometric}, \enquote{isoperimetric} và \enquote{parametric}.
+Không một họ chỉ số nào của chương~\ref{ch:do-do-trung-thuc} có mặt trong bài,
+dưới bất kỳ tên nào.
+
+Vậy đối tượng của bài là sai số giữa đầu ra của lời giải thích và đầu ra của mô
+hình, dưới một hạn mức đặt lên độ dài mô tả của lời giải thích. Đó là đại lượng
+mà chương~\ref{ch:lime} gọi là độ khớp của $g$ với $f$ và
+mục~\ref{sec:ch10-mot-tu-khong-xuat-hien} tách khỏi độ trung thực. Một cái trần
+đặt lên đại lượng ấy không tự động là một cái trần đặt lên độ trung thực, và
+mục~\ref{sec:ch13-tran-noi-gi} là chỗ chương này nói nó ràng buộc được gì và
+không ràng buộc được gì. Đây là lần thứ năm Phần~IV gặp một bài báo có đối tượng
+lệch khỏi đối tượng của phần, sau bài báo neo và ba bài của hai chương trước, và
+là lần đầu tiên chỗ lệch nằm ở loại phát biểu chứ không ở họ lời giải thích.
+
+\index{lý thuyết thông tin thuật toán}%
+Công cụ mà bài dùng là \tn{lý thuyết thông tin thuật toán}{algorithmic
+information theory}, viết tắt AIT, một nhánh lý thuyết đo lượng thông tin trong
+một đối tượng riêng lẻ bằng độ dài chương trình ngắn nhất sinh ra đối tượng ấy.
+Chỗ này khác lý thuyết thông tin của Shannon, vốn đo lượng thông tin trung bình
+của một nguồn ngẫu nhiên: AIT hỏi một chuỗi bit cụ thể nén được xuống bao nhiêu,
+chứ không hỏi một phân phối có bao nhiêu entropy. Sự khác biệt ấy là lý do chọn
+nó ở đây, vì một mô hình đã huấn luyện xong là một đối tượng cụ thể chứ không
+phải một phân phối.
+
+Còn một điều đáng ghi trước khi vào mô hình toán, và nó là quan sát của sách chứ
+không phải phát biểu của bài. Bốn chương vừa qua đều mắc chung một khó khăn: mọi
+kết luận của chúng đều phải đi qua một dụng cụ đo mà chính lĩnh vực chưa kiểm
+định. Chương~\ref{ch:chi-so-khong-do-do-trung-thuc} phải dựng ground truth mới
+nói được điều gì, chương~\ref{ch:con-nguoi-vang-mat} phải hỏi 167 người. Kết quả
+của chương này không đi qua dụng cụ nào. Nó là kết quả đầu tiên trong Phần~IV
+không cần một phép đo nào để phát biểu, và cũng chính vì thế mà nó không trả lời
+được câu hỏi về dụng cụ đo.
+
+\index{giới hạn lý thuyết!loại bằng chứng|)}%

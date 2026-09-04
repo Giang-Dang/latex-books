@@ -1,0 +1,117 @@
+\section{Cái trần nói gì và không nói gì về độ trung thực}
+\label{sec:ch13-tran-noi-gi}
+
+\index{giới hạn lý thuyết!cái nó không ràng buộc|(}%
+Kết luận vừa rút ra trên một chỗ hẹp, chuyện LIME và SHAP, đúng cho cả chương:
+cái trần chạm vào độ khớp và không chạm vào câu hỏi của định
+nghĩa~\ref{def:ch01-do-trung-thuc}. Dựng lại nó ở mức cả chương là món nợ chương
+này mang từ chương~\ref{ch:con-nguoi-vang-mat}. Trước hết là ba điều cái trần
+nói được.
+
+Thứ nhất, có một cái sàn, và nó là sàn theo nghĩa mạnh nhất. Với một ngân sách
+đọc cố định và một mô hình đủ phức tạp, một lượng sai số nào đó là không tránh
+được: không phải khó tránh với công nghệ hiện nay, mà không tránh được, bởi bất
+kỳ phương pháp nào đã có hoặc sẽ có. Bốn chương trước đó không có phát biểu nào
+thuộc loại này. Chúng nói rằng một dụng cụ đo đã thất bại trên một tập, rằng
+lĩnh vực chưa có chuẩn xếp hạng, rằng phép đối chiếu với người hầu như chưa
+chạy; mọi câu ấy đều có thể đổi khi có thêm nghiên cứu. Câu ở đây thì không.
+
+Thứ hai, nó nói cái sàn ấy đến từ đâu, và nguồn gốc lại tầm thường tới mức đáng
+nói. Định lý~\ref{thm:ch13-khoang-cach-do-phuc-tap} đứng trên tính không nén
+được: một chương trình tính $g$ mà $g$ trùng $f$ thì cũng là một chương trình
+tính $f$, nên nó không thể ngắn hơn chương trình ngắn nhất tính $f$. Định
+lý~\ref{thm:ch13-chan-duoi-lipschitz} và kết quả về hàm ngẫu nhiên đứng trên
+một phép đếm: số hàm mô tả được trong $b$ bit không quá $2^{b+1}$, còn số hàm mà
+một mô hình có thể là thì nhiều hơn thế rất nhiều. Hai chỗ dựa khác nhau, cùng
+một tính chất: không kỹ thuật giải thích nào đổi được chúng, vì không chỗ nào
+trong hai chỗ ấy nói gì về kỹ thuật.
+
+Thứ ba, nó cho sự đánh đổi ấy một hình dạng có tốc độ, và đây là điều phải phát
+biểu cẩn thận nhất trong ba điều. Câu
+\enquote{giải thích mô hình nhiều chiều thì khó} vốn là kinh nghiệm chung của
+lĩnh vực; ở đây nó thành một phát biểu có số mũ, mũ theo số chiều và đa thức
+theo nghịch đảo ngưỡng sai số. Nhưng như mục~\ref{sec:ch13-tran-cao-bao-nhieu}
+đã chỉ ra, phát biểu ấy là một chặn trên: nó nói phép dựng lưới tốn ngần ấy,
+không nói mọi lời giải thích đều phải tốn ngần ấy, và chặn dưới mà bài chứng
+minh được chỉ tăng tuyến tính theo số chiều. Và nó cho một cách thoát cụ thể:
+số mũ trong chặn trên là chiều nội tại của dữ liệu chứ không phải chiều của
+không gian chứa nó, nên
+giảm chiều trước khi giải thích không phải mẹo kỹ thuật mà là điều kiện để bài
+toán có lời giải trong ngân sách. Đọc theo ngôn ngữ quy định thì cùng ba điều ấy
+thành định lý~\ref{thm:ch13-bo-ba-bat-kha}: một bên soạn luật phải chọn bỏ một
+trong ba thứ mình muốn, và cái hình~\ref{fig:ch13-mien-kha-thi} vẽ chính là tập
+các lựa chọn còn lại sau khi chọn.
+
+Bây giờ tới ba điều nó không nói.
+
+\index{độ trung thực!không nằm trong khung của bài}%
+Điều thứ nhất là điều quan trọng nhất, và nó đọc thẳng ra từ định nghĩa. Sai số
+mà bài chặn đo trên đầu ra: $\rho(f(x), g(x))$ so hai giá trị mà hai hàm trả về
+tại cùng một điểm. Định nghĩa~\ref{def:ch01-do-trung-thuc} hỏi một câu khác, là
+lời giải thích có phản ánh đúng quá trình mà mô hình dùng để tới đầu ra hay
+không. Hai lời giải thích có thể có sai số đầu ra bằng nhau mà quy công cho
+những đặc trưng khác hẳn nhau, và khung của bài không phân biệt được chúng, vì
+nó không nhìn vào bên trong $f$ lần nào.
+
+Chỗ ấy còn sắc hơn nếu nhìn vào chính điểm tối ưu của khung. Bài chứng minh
+$\kappa_f(0) = K(f)$, nghĩa là lời giải thích duy nhất đạt sai số không là một
+chương trình tính đúng hàm $f$. Trong khung này, đó là lời giải thích hoàn hảo.
+Với định nghĩa~\ref{def:ch01-do-trung-thuc} thì nó chưa chắc trung thực chút
+nào: hai chương trình tính cùng một hàm có thể tính theo hai cách hoàn toàn khác
+nhau, và một bảng tra cứu liệt kê mọi cặp đầu vào đầu ra cũng tính đúng hàm ấy
+mà không phản ánh bước nào trong quá trình mô hình dùng. Nó lại còn là đúng thứ
+mà cả lĩnh vực XAI sinh ra để tránh, vì một chương trình dài bằng mô hình thì
+không ai đọc được. Vậy đại lượng mà bài cực tiểu đạt cực trị tại một chỗ vừa vô
+dụng với người đọc vừa không có bảo đảm nào về độ trung thực, và điều đó cho
+thấy nó không phải đại lượng mà Phần~IV đang tìm.
+
+Còn một chỗ nữa, hẹp hơn và kỹ thuật hơn. Định
+nghĩa~\ref{def:ch07-ham-attribution} cho một \tn{hàm attribution}{attribution
+function} gán một điểm số cho
+mỗi đặc trưng, tức trả về một vector số chứ không phải một đầu ra cùng loại với
+đầu ra của mô hình. Một vector như thế không phải một hàm
+$\mathcal{X} \to \mathcal{Y}$, nên nó không rơi vào định nghĩa lời giải thích của
+bài. Attribution chỉ lọt vào khung ấy qua đường mô hình thay thế: $g$ của LIME
+là một hàm đúng kiểu, và mô hình cộng tính của
+phương trình~\ref{eq:ch04-mo-hinh-cong-tinh} cũng vậy. \tn{Bản đồ
+nhiệt}{heatmap} của Grad-CAM thì không. Cho nên cái trần phủ đúng một nửa Phần~II, và phủ nửa ấy theo tư cách
+mô hình thay thế chứ không theo tư cách điểm số.
+
+Điều thứ hai bài không nói là bất cứ điều gì về các họ chỉ số của
+chương~\ref{ch:do-do-trung-thuc}. Nó không xác nhận deletion, không bác ROAR,
+không nói Sensitivity-n đo đúng hay đo sai. Nó không cần tới chúng để phát biểu
+kết quả của mình, và cũng không chạm tới chúng ở đâu. Đây là chỗ mà phép đếm chữ
+của mục~\ref{sec:ch13-cau-hoi-khong-can-thi-nghiem} có ích: một người đọc lướt
+có thể mang cái trần này về làm bằng chứng rằng lời giải thích nói chung không
+đáng tin, và bằng chứng ấy không có trong bài.
+
+\index{giới hạn lý thuyết!và chuỗi kiểm chứng}%
+Điều thứ ba là câu trả lời cho
+chương~\ref{ch:con-nguoi-vang-mat}, và câu trả lời là không. Chuỗi mà chương ấy
+mô tả là chuỗi các dụng cụ đo: mỗi phép kiểm chứng lại đòi một phép kiểm chứng
+khác đứng dưới nó, và câu hỏi là chuỗi ấy có đáy hay không. Cái trần của chương
+này không phải một dụng cụ đo. Nó không chấm điểm lời giải thích nào, không cần
+ground truth, và vì thế không đứng ở đâu trong chuỗi ấy cả. Nó là đáy của một
+chuỗi khác, chuỗi hỏi một bản rút gọn có thể tốt tới đâu, và hai chuỗi ấy gặp
+nhau ở tên gọi chứ không ở đối tượng.
+
+Nhưng nó thu hẹp được chuỗi kia một chỗ, và chỗ ấy đáng ghi vì
+chương~\ref{ch:khoang-trong-nghien-cuu} sẽ cần. Nếu có ngày lĩnh vực dựng được
+một dụng cụ đo độ trung thực đã kiểm định, thì dụng cụ ấy không thể có nhiệm vụ
+xác nhận rằng một lời giải thích đọc được trùng khớp với một mô hình phức tạp,
+bởi định lý~\ref{thm:ch13-khoang-cach-do-phuc-tap} đã nói trước rằng nó không
+trùng. Nhiệm vụ còn lại cho một dụng cụ như vậy là mô tả chỗ lệch: lệch ở đâu
+trong không gian đầu vào, lệch theo hướng nào, và chỗ lệch ấy có rơi vào vùng mà
+người dùng quan tâm hay không. Đó là một yêu cầu cụ thể hơn hẳn cái mà Phần~IV
+đã nêu tới giờ, và nó đến từ một định lý chứ không từ một phép đo.
+
+Cuối cùng, khung của bài để lộ một chỗ hổng mà chính bài đặt tên và không theo
+tiếp. Điều kiện \tn{không suy biến}{non-degenerate} tồn tại vì nếu thiếu nó thì
+một lời giải thích có
+thể lệch khỏi mô hình ở rất nhiều điểm mà vẫn giữ sai số dưới ngưỡng, do các chỗ
+lệch đều nhỏ hơn ngưỡng. Bài gọi chúng là các bất đồng vô hình và dùng điều kiện
+để loại chúng ra khỏi phát biểu. Với một mô hình hồi quy thật thì điều kiện ấy
+hỏng, nên các bất đồng vô hình có thật, và chúng là những chỗ mà một lời giải
+thích sai lệch mà không chỉ số nào dựa trên sai số đầu ra phát hiện được.
+
+\index{giới hạn lý thuyết!cái nó không ràng buộc|)}%

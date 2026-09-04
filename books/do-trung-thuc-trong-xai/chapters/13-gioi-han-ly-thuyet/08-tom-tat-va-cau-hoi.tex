@@ -1,0 +1,88 @@
+\begin{tomtat}
+\begin{itemize}
+  \item Bài báo của chương này chứng minh định lý và không đo gì. Đối tượng nó
+  chặn là sai số giữa đầu ra của lời giải thích và đầu ra của mô hình, tức độ
+  khớp; rà toàn văn 65 trang thì chữ \enquote{faithfulness} và chữ
+  \enquote{ground truth} không xuất hiện lần nào, \enquote{attribution} xuất
+  hiện một lần ở phần mở đầu, còn LIME và SHAP xuất hiện một lần, trong cùng
+  một câu ở trang 39.
+  \item Khung của bài đo độ đơn giản của một lời giải thích bằng độ phức tạp
+  Kolmogorov, tức độ dài chương trình ngắn nhất sinh ra nó, và biến
+  \enquote{dễ diễn giải} thành một hạn mức $b$ bit. Từ đó ra hai hàm đối ngẫu
+  nhau: $\varepsilon_f(b)$, sai số nhỏ nhất trong ngân sách $b$, và
+  $\kappa_f(\delta)$, ngân sách nhỏ nhất đạt sai số $\delta$.
+  Hình~\ref{fig:ch13-mien-kha-thi} vẽ cả hai cùng một lúc.
+  \item Cái trần là định lý~\ref{thm:ch13-khoang-cach-do-phuc-tap}, chứng minh
+  dài bốn dòng và không giả thiết gì về mô hình: một lời giải thích đơn giản hơn
+  mô hình phải lệch khỏi nó ở ít nhất một đầu vào. Thêm điều kiện
+  \tn{không suy biến}{non-degenerate}
+  thì chỗ lệch ấy lớn hơn ngưỡng $\delta$, nên ô ở góc
+  hình~\ref{fig:ch13-mien-kha-thi} rỗng. Định lý~\ref{thm:ch13-bo-ba-bat-kha},
+  \tn{bộ ba bất khả}{trilemma} trong quy định, là đúng lập luận ấy viết bằng
+  ngôn ngữ chính sách và không thêm toán học nào.
+  \item Cái trần cao bao nhiêu thì tùy lớp hàm. Với hàm Boole ngẫu nhiên, mọi
+  lời giải thích ngắn hơn gần trọn bảng chân trị đều sai một nửa số đầu vào. Với
+  hàm $L$-Lipschitz, chặn trên tăng theo hàm mũ của số chiều và theo đa thức của
+  nghịch đảo sai số, đó là lời nguyền số chiều đặt vào bài toán giải thích;
+  nhưng bài chỉ chứng minh được một chặn dưới tăng tuyến tính theo số chiều, nên
+  lời nguyền ấy là tính chất của phép dựng lưới chứ chưa phải của bài toán. Bài
+  phát biểu rằng hai chặn khớp nhau tới hằng số và sách không nhận phát biểu ấy.
+  Lối ra duy nhất trong bài là số chiều nội tại: nếu dữ liệu nằm
+  quanh một cấu trúc chiều thấp thì số mũ trong chặn trên đổi theo chiều ấy.
+  Bảng~\ref{tab:ch13-do-phuc-tap-lop-mo-hinh} là chỗ bài thay $K$ bằng phép đếm
+  tham số cho từng lớp mô hình, và mỗi ô của nó là một chặn trên chứ không phải
+  một giá trị. Sách cũng không dùng hệ quả 3.8 của bài, vì chứng minh của nó rút
+  chặn dưới cho sai số ra từ một chặn trên cho độ phức tạp, cùng kiểu hụt ấy.
+  \item Chỗ duy nhất bài chạm tới Phần~II là kết luận rằng lời giải thích cục bộ
+  rẻ hơn lời giải thích toàn cục theo hàm mũ. Phép so ấy đặt một độ dài mô tả
+  tương đối, đo khi chương trình được truy cập mô hình như một tiên tri, cạnh
+  một độ dài mô tả tuyệt đối; mà phần được tiên tri cho không chính là số hạng
+  trội của vế toàn cục. Bài phát biểu quy ước ấy trong chính định lý và không
+  mang nó vào phép so.
+  \item Cái trần nói được ba điều: có một cái sàn không phương pháp nào lách
+  được, cái sàn ấy đến từ phép đếm chương trình ngắn, và sự đánh đổi có tốc độ
+  đo được. Nó không nói gì về độ trung thực của định
+  nghĩa~\ref{def:ch01-do-trung-thuc}, vì sai số của nó đo trên đầu ra và điểm
+  tối ưu của nó, một chương trình tính đúng $f$, không có bảo đảm nào về cách mô
+  hình đi tới đầu ra. Nó cũng không phải đáy của chuỗi kiểm chứng mà
+  chương~\ref{ch:con-nguoi-vang-mat} để lại, vì nó không phải một dụng cụ đo.
+  Cái nó đổi được là yêu cầu đặt lên một dụng cụ tương lai: dụng cụ ấy không thể
+  có việc xác nhận trùng khớp, mà phải mô tả chỗ lệch.
+\end{itemize}
+\end{tomtat}
+
+\cauhoi
+\begin{cauhoids}
+  \item Điều kiện không suy biến hỏng với mô hình hồi quy nhận giá trị thực. Hãy
+  dựng một cặp $f$ và $g$ cụ thể trên $[0,1]$ sao cho $g(x) \ne f(x)$ tại mọi
+  $x$ mà vẫn có $\mathcal{E}_{\infty}(f,g) \le \delta$ với một $\delta$ nhỏ cho
+  trước, rồi cho biết trong bốn họ chỉ số của
+  chương~\ref{ch:do-do-trung-thuc}, họ nào phát hiện được chỗ lệch ấy và họ nào
+  không.
+  \item Mục~\ref{sec:ch13-tran-noi-gi} lập luận rằng một chương trình tính đúng
+  $f$ chưa chắc là một lời giải thích trung thực theo định
+  nghĩa~\ref{def:ch01-do-trung-thuc}. Hãy nêu một điều kiện đặt lên chương trình
+  ấy sao cho nếu thỏa thì nó trung thực, rồi cho biết điều kiện đó có phát biểu
+  được trong khung của bài báo hay không, và vì sao.
+  \item Định lý về độ phức tạp cục bộ đo độ dài mô tả khi chương trình được truy
+  cập mô hình như một tiên tri. Hãy phát biểu lại chặn cho trường hợp không có
+  tiên tri, tức tính cả chi phí mã hóa các giá trị hàm, rồi cho biết phép so với
+  chặn toàn cục còn lại gì.
+  \item Lối thoát theo số chiều nội tại giả định dữ liệu tụ quanh một cấu trúc
+  chiều thấp. Hãy nêu hai cách mà lối thoát ấy hỏng trong thực hành, một cách
+  quy về bản thân dữ liệu và một cách quy về việc sai số được đo dưới phân phối
+  nào, rồi cho biết cách thứ hai liên hệ thế nào với phản đối về đầu vào ngoài
+  phân phối ở mục~\ref{sec:ch08-huan-luyen-lai}.
+  \item Hệ quả 3.8 của bài rút một chặn dưới cho sai số từ một chặn trên cho độ
+  phức tạp. Hãy chỉ ra chính xác bước lập luận không đứng vững, rồi cho biết
+  phải có thêm kết quả nào thì kết luận của hệ quả mới theo được.
+  \item Định lý~\ref{thm:ch13-bo-ba-bat-kha} buộc một khung quy định bỏ một
+  trong ba đòi hỏi. Hãy chọn một đòi hỏi, mô tả một quy định thật sẽ trông ra
+  sao nếu bỏ nó, rồi cho biết chương nào trước đây trong sách cung cấp bằng
+  chứng về cái giá phải trả cho lựa chọn ấy.
+  \item Đọc mục 3.3 của \enquote{The Limits of AI Explainability: An Algorithmic
+  Information Theory Approach} của Rao~\autocite{p26limits}, phần mà chương này
+  không đọc. Hãy cho biết chặn theo thông tin tương hỗ ở đó mạnh hơn hay yếu hơn
+  định lý~\ref{thm:ch13-khoang-cach-do-phuc-tap}, và nêu một giả thiết mà nó cần
+  còn định lý~\ref{thm:ch13-khoang-cach-do-phuc-tap} thì không.
+\end{cauhoids}

@@ -1,0 +1,201 @@
+\section{Cái trần cao bao nhiêu}
+\label{sec:ch13-tran-cao-bao-nhieu}
+
+\index{giới hạn lý thuyết!độ cao theo lớp hàm|(}%
+Định lý~\ref{thm:ch13-khoang-cach-do-phuc-tap} nói rằng ô ở góc hình là rỗng
+nhưng không nói nó rỗng tới đâu, vì nó không giả thiết gì về $f$. Muốn biết cái
+trần cao bao nhiêu thì phải nói $f$ thuộc lớp hàm nào, và mục này đọc các chặn
+mà bài rút ra cho từng lớp. Trật tự đi từ trường hợp tệ nhất tới trường hợp có
+lối ra.
+
+\index{hàm ngẫu nhiên!không giải thích được}%
+Trường hợp tệ nhất là một hàm không có cấu trúc nào cả. Lấy $\mathcal{X}$ là tập
+mọi chuỗi $n$ bit, $\mathcal{Y} = \{0,1\}$, và lấy $f$ ngẫu nhiên đều trong số
+mọi hàm Boole trên $\mathcal{X}$. Bài chứng minh rằng với một hằng số
+$0 < \epsilon < 1$ cố định và mọi ngân sách $b \le (1-\epsilon)2^n$, hầu như
+chắc chắn theo phép chọn $f$, mọi hàm $g$ với $K(g) \le b$ đều sai trên gần đúng
+một nửa số đầu vào~\autocite{p26limits}. Nói cách khác, một lời giải thích không
+dùng gần trọn $2^n$ bit thì không hơn gì tung đồng xu.
+
+Chứng minh là một phép đếm và đáng viết ra vì nó cho thấy cái trần này đến từ
+đâu. Với $g$ cố định, mỗi đầu vào $x$ cho $f(x) = g(x)$ với xác suất một nửa và
+các đầu vào độc lập nhau, nên số chỗ trùng nhau tuân theo phân phối nhị thức và
+vượt quá một nửa một lượng cố định nào đó với xác suất nhỏ theo hàm mũ của
+$2^n$, theo chặn Chernoff. Số hàm $g$ phải xét thì không quá $2^{b+1}$, đúng
+phép đếm của
+mục~\ref{sec:ch13-ham-xap-xi}. Nhân hai đại lượng ấy lại theo chặn hợp: khi $b$
+nhỏ hơn $2^n$ một phần hằng số, số hàm ứng viên tăng chậm hơn xác suất từng hàm
+trượt giảm, nên tổng vẫn nhỏ. Cái trần ở đây không phải một tính chất tinh vi
+của hàm ngẫu nhiên, mà là chuyện có quá ít chương trình ngắn so với số hàm cần
+mô tả.
+
+Phải đặt kết quả ấy đúng chỗ, vì nó dễ bị đọc quá tay. Một mô hình đã huấn luyện
+không phải một hàm Boole ngẫu nhiên: nó được chọn ra bằng một quy trình tối ưu
+trên dữ liệu có cấu trúc, và bản thân trọng số của nó là một mô tả hữu hạn, nên
+$K(f)$ của nó nhỏ hơn hẳn $2^n$. Bài không tuyên bố ngược lại; câu bài viết là
+kết quả này có ý nghĩa với những hệ thống AI phức tạp mà hành vi có thể giống
+hàm ngẫu nhiên ở một số vùng của không gian đầu vào~\autocite{p26limits}. Phát
+biểu ấy là một phỏng đoán về mô hình thật chứ không phải một hệ quả của định lý,
+và bài không đưa bằng chứng nào cho nó.
+
+\index{hằng số Lipschitz}%
+Lớp hàm thứ hai gần thực tế hơn nhiều. Một hàm $f$ trên $[0,1]^d$ gọi là
+$L$-Lipschitz nếu $|f(x) - f(y)| \le L\|x-y\|_2$ với mọi $x, y$, tức tốc độ đổi
+đầu ra bị chặn bởi hằng số $L$. Nhiều mô hình học máy thỏa tính chất này, trong
+đó có mạng nơ-ron với trọng số bị chặn và hàm kích hoạt thích
+hợp~\autocite{p26limits}. Với lớp này bài dựng được chặn theo cả hai chiều.
+
+Chiều trên đến từ một phép dựng thẳng. Chia $[0,1]^d$ thành lưới đều gồm $m^d$
+hình hộp cạnh $1/m$, rồi lấy $g$ nhận giá trị $f$ tại tâm hộp trên toàn hộp ấy.
+Khoảng cách từ một điểm bất kỳ tới tâm hộp chứa nó không quá $\sqrt{d}/(2m)$,
+nên theo tính Lipschitz, sai số không quá $L\sqrt{d}/(2m)$; muốn nó dưới $\delta$
+thì lấy $m$ cỡ $L/\delta$. Mô tả $g$ tốn hai phần: độ phân giải lưới, tốn
+$\mathcal{O}(\log(L/\delta))$ bit, và một giá trị cho mỗi tâm hộp, tức $m^d$ giá
+trị, mỗi giá trị cần $\mathcal{O}(\log(L/\delta))$ bit độ chính xác. Cộng lại:
+\[
+  \kappa_f(\delta) \;=\; \mathcal{O}\!\left( \left(\frac{L}{\delta}\right)^{\!d} \log \frac{L}{\delta} \right).
+\]
+
+\index{lời nguyền số chiều}%
+Đọc công thức ấy theo hai biến thì ra hai câu khác nhau hẳn. Theo $\delta$, độ
+phức tạp tăng theo đa thức: muốn sai số nhỏ đi mười lần thì trả một cái giá chịu
+được. Theo $d$, nó tăng theo hàm mũ, và bài gọi đó là \tn{lời nguyền số
+chiều}{curse of dimensionality} đặt vào bài toán giải thích, cùng cái tên mà
+mục~\ref{sec:ch07-dieu-chua-giai-quyet} đã gặp ở chỗ khác~\autocite{p26limits}.
+Với một mô hình nhận đầu vào nghìn chiều, số hạng $(L/\delta)^d$ lớn tới mức
+không có nghĩa vật lý nào.
+
+Chiều dưới hỏi ngược lại: có phải mọi lời giải thích đều phải trả cái giá ấy,
+hay chỉ phép dựng lưới mới phải trả.
+
+\begin{theorem}[Chặn dưới cho hàm Lipschitz]
+\label{thm:ch13-chan-duoi-lipschitz}
+Với mọi số chiều $d \ge 1$, mọi hằng số $L > 0$ và mọi ngân sách
+$b \in \mathbb{N}$, tồn tại một hàm $L$-Lipschitz $f : [0,1]^d \to \mathbb{R}$
+sao cho mọi lời giải thích $g$ với $K(g) \le b$ đều có
+$\mathcal{E}_{\infty}(f,g) = \Omega\big(L \cdot 2^{-b/d}\big)$.
+\end{theorem}
+
+Định lý~\ref{thm:ch13-chan-duoi-lipschitz} là định lý 3.4 của
+bài~\autocite{p26limits}, và ý chứng minh lại là phép đếm cũ nhìn theo hình học.
+Một hàm $g$ trong ngân sách $b$ chia $[0,1]^d$ thành không quá $2^{b+1}$ vùng
+nhận giá trị khác nhau, nên theo nguyên lý ngăn kéo có ít nhất một vùng thể tích
+không dưới $2^{-(b+1)}$, và một vùng thể tích ấy trong $\mathbb{R}^d$ có đường
+kính không dưới cỡ $2^{-b/d}$ theo bất đẳng thức đẳng chu. Chọn $f$ biến thiên
+với độ dốc đúng bằng $L$ dọc theo đường kính ấy thì $f$ đổi một lượng cỡ
+$L \cdot 2^{-b/d}$ trong khi $g$ giữ một giá trị hằng, nên sai số không nhỏ hơn
+một nửa lượng đó.
+
+Bài phát biểu ngay sau đó rằng hai chặn khớp nhau tới hằng số, tức tồn tại
+những hàm Lipschitz mà sự đánh đổi của chúng đạt đúng chặn trên của phép dựng
+lưới~\autocite{p26limits}. Sách không nhận phát biểu ấy, và lý do đọc được bằng
+cách viết cả hai chặn theo cùng một biến. Ở ngân sách $b$, phép dựng lưới đạt
+sai số cỡ $L \cdot b^{-1/d}$, vì $b$ bit mua được cỡ $b$ ô lưới sau khi đã trả
+tiền mã hóa giá trị tại mỗi ô, còn định lý~\ref{thm:ch13-chan-duoi-lipschitz}
+chỉ cấm sai số nhỏ hơn cỡ $L \cdot 2^{-b/d}$. Một đại lượng giảm theo đa thức
+của $b$, một đại lượng giảm theo hàm mũ của $b$: khoảng cách giữa chúng không
+phải một hằng số. Chỗ hụt nằm ở mệnh đề 3.6 của bài, vốn viết lại chặn trên
+thành $\mathcal{O}(L \cdot 2^{-b/d})$ bằng cách cho rằng ngân sách $b$ mua được
+$2^{b}$ ô, tức bỏ qua chính khoản tiền mã hóa giá trị mà chứng minh của chặn
+trên đã tính. Đây là cùng một kiểu hụt với hệ quả 3.8 ở cuối mục này.
+
+Hệ quả cho chương là cụ thể và đáng nói ra, vì nó thu hẹp điều mục sau được
+phép kết luận. Chặn trên nói rằng giải thích một hàm Lipschitz \emph{có thể}
+tốn số bit tăng theo hàm mũ của số chiều. Chặn dưới, đọc theo chiều ngân sách,
+chỉ nói rằng nó tốn ít nhất cỡ $d \log(L/\delta)$ bit, tức tăng tuyến tính theo
+số chiều. Vậy lời nguyền số chiều ở đây là một tính chất của phép dựng lưới và
+của mọi phép dựng cùng kiểu, không phải một điều đã được chứng minh là không
+tránh được.
+
+Chú ý cả hai chặn dưới đều có dạng tồn tại. Chúng nói có những hàm Lipschitz
+khó tới mức đó, không nói mọi hàm Lipschitz đều thế. Hàm hằng và hàm tuyến tính
+là hàm Lipschitz và giải thích được rất rẻ; bài ghi rõ điều này ngay sau định
+lý~\autocite{p26limits}.
+
+\index{độ phức tạp Kolmogorov!xấp xỉ cho từng lớp mô hình}%
+Còn một khoảng cách nữa phải bắc cầu trước khi các chặn này chạm được thực
+hành. \tn{Độ phức tạp Kolmogorov}{Kolmogorov complexity} không tính
+được, nên $\kappa_f$ và
+$\varepsilon_f$ không tính được. Bài xử lý bằng cách thay $K$ bằng độ dài mã hóa
+của từng lớp mô hình cụ thể: với mỗi lớp, đếm thông tin tối thiểu cần để chỉ
+định một phần tử của lớp ấy. Bảng~\ref{tab:ch13-do-phuc-tap-lop-mo-hinh} chép
+năm kết quả của phép đếm đó.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Năm ước lượng mà bài dùng thay cho $K(g)$, chép từ mệnh đề 3.7 của
+  bài báo~\autocite{p26limits}. Bài gọi lập luận của mình là phác thảo chứng
+  minh chứ không phải chứng minh. Ở dòng cuối, bài đếm riêng trọng số và độ
+  chệch, viết chữ cái thứ hai là $b$; sách gộp chúng vào $w$ vì $b$ ở chương này
+  đã là ngân sách bit.}
+  \label{tab:ch13-do-phuc-tap-lop-mo-hinh}
+  \begin{tabular}{@{}llp{5cm}@{}}
+    \toprule
+    Lớp mô hình & Ước lượng $K(g)$ & Phụ thuộc vào \\
+    \midrule
+    Mô hình tuyến tính & $\mathcal{O}(n \log n)$ & $n$ \tn{đặc trưng}{feature} \\
+    Cây quyết định & $\mathcal{O}(|T| \log |T|)$ & $|T|$ nút \\
+    Danh sách luật & $\mathcal{O}(r\,l \log (r\,l))$ & $r$ luật, độ dài trung bình $l$ \\
+    Láng giềng gần nhất & $\mathcal{O}(m\,d \log (m\,d))$ & $m$ mẫu lưu, $d$ chiều \\
+    Mạng nơ-ron & $\mathcal{O}(w \log p + a)$ & $w$ tham số, mô tả kiến trúc dài $a$, độ chính xác $p$ bit \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Bảng ấy là chỗ toàn bộ phần lý thuyết đổi loại phát biểu, nên nó đáng một câu
+cảnh giác. Mỗi dòng là độ dài của một cách mã hóa mà bài tự chọn, tức một chặn
+trên cho $K$ của lớp ấy, không phải giá trị của $K$. Một mô hình tuyến tính mà
+mọi hệ số bằng nhau có $K$ nhỏ hơn $\mathcal{O}(n \log n)$ rất nhiều. Cho nên
+các chặn ở những mục sau, khi thay $K$ bằng cột giữa của bảng, chỉ giữ được
+chiều nào mà một chặn trên còn dùng được, và
+mục~\ref{sec:ch13-dieu-chua-giai-quyet} quay lại chỗ này.
+
+Bài rút hai hệ quả trực tiếp từ bảng. Với cây quyết định $|T|$ nút xấp xỉ một
+hàm có \tn{biến phân bị chặn}{bounded variation} $V(f)$, sai số là
+$\mathcal{O}\big(V(f) \cdot |T|^{-1/d}\big)$: cây càng lớn thì sai số càng nhỏ,
+nhưng tốc độ giảm chậm đi theo hàm mũ của số chiều~\autocite{p26limits}. Với
+mạng nơ-ron xấp xỉ một hàm $L$-Lipschitz tới sai số $\delta$, chặn là
+$\mathcal{O}\big((L/\delta)^d \log(L/\delta) + d \log d\big)$, tức cùng một dáng
+với phép dựng lưới ở trên~\autocite{p26limits}.
+
+Bài dành một mục riêng, mục 3.3, cho cùng cái trần nhìn từ phía lý thuyết thông
+tin của Shannon thay vì từ phía AIT: nó chặn sai số kỳ vọng theo khoảng cách
+giữa lượng thông tin tương hỗ mà $f$ mang và lượng mà $g$ mang được, rồi nối
+$\kappa_f$ với hàm tốc độ và độ méo của lý thuyết nén có mất
+mát~\autocite{p26limits}. Sách không đọc mục ấy, vì hai kết quả trong đó không
+đổi kết luận nào của chương và mục~\ref{sec:ch13-tran-noi-gi} lập luận trên cái
+trần chứ không trên đường tới nó; câu hỏi 7 ở cuối chương chỉ đường tới đó cho
+người đọc muốn đi tiếp.
+
+Bài còn một hệ quả thứ ba, cho mô hình tuyến tính, và sách không dùng nó. Hệ quả
+3.8 phát biểu rằng sai số của một mô hình tuyến tính $n$ đặc trưng xấp xỉ một
+hàm $L$-Lipschitz là $\Omega\big(L \cdot d^{1/2} \cdot n^{-1/d}\big)$. Chứng
+minh của nó đọc chặn dưới ấy ra từ chặn trên của phép dựng lưới, tức xử lý một
+$\mathcal{O}$ như thể nó là một $\Theta$: muốn một sàn cho sai số thì phải có
+một sàn cho $\kappa_f$, mà bài chỉ có một trần. Kết luận có thể vẫn đúng, nhưng
+không đúng theo đường ấy, và nó cũng không đúng dưới dạng ấy, vì sai số của mô
+hình tuyến tính khớp nhất với một $f$ cố định do khoảng cách từ $f$ tới lớp
+tuyến tính quyết định chứ không giảm dần khi thêm đặc trưng. Chỗ nào chương này
+cần một phát biểu về mô hình tuyến tính thì lấy từ định
+lý~\ref{thm:ch13-chan-duoi-lipschitz} cộng với dòng đầu của
+bảng~\ref{tab:ch13-do-phuc-tap-lop-mo-hinh}, hai kết quả mà bài có chứng minh:
+gán cho một mô hình tuyến tính $n$ đặc trưng ngân sách $b$ mà dòng ấy cho, thì
+tồn tại những hàm $L$-Lipschitz mà mọi mô hình tuyến tính trong ngân sách ấy đều
+mắc sai số ít nhất cỡ $L \cdot 2^{-b/d}$.
+
+\index{giả thuyết đa tạp}%
+Cuối mục là lối ra, và nó là kết quả lạc quan duy nhất trong bài. Các chặn ở
+trên đều tính theo $d$, số chiều của không gian đầu vào. Nhưng dữ liệu thật hiếm
+khi trải đều khắp không gian ấy; nó thường tụ quanh một cấu trúc chiều thấp hơn,
+điều mà giới học máy gọi là \tn{giả thuyết đa tạp}{manifold hypothesis}. Bài đo
+chiều của cấu trúc ấy bằng \tn{số chiều đếm hộp}{box-counting dimension}: nếu
+phủ tập giá của phân phối cần khoảng $\eta^{-d_B}$ hộp cạnh $\eta$ khi $\eta$
+tiến về không, thì tập ấy có số chiều đếm hộp $d_B$. Bài chứng minh rằng khi
+$d_B < d$, độ phức tạp cần cho sai số kỳ vọng $\delta$ dưới phân phối ấy là
+$\mathcal{O}\big((1/\delta)^{d_B} \log(1/\delta)\big)$~\autocite{p26limits}. Số
+mũ đổi từ $d$ sang $d_B$: cái quyết định giá của một lời giải thích là chiều nội
+tại của dữ liệu, không phải chiều của không gian chứa nó. Bài đưa một con số
+minh họa cho ý ấy: dữ liệu nghìn chiều nằm gần một đa tạp mười chiều thì số mũ
+là mười chứ không phải một nghìn~\autocite{p26limits}.
+
+\index{giới hạn lý thuyết!độ cao theo lớp hàm|)}%

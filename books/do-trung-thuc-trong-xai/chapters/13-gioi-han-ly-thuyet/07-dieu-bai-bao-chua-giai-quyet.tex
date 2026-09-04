@@ -1,0 +1,69 @@
+\section{Điều bài báo chưa giải quyết}
+\label{sec:ch13-dieu-chua-giai-quyet}
+
+Cái trần thu hẹp yêu cầu đặt lên một dụng cụ đo tương lai mà không thay thế được
+dụng cụ ấy, và nó để hở một chỗ mà chính bài đặt tên. Ngoài hai điều đó, bài còn
+để ngỏ bốn chỗ nữa, và ba trong bốn chỗ là do chính bài nêu.
+
+\index{độ phức tạp Kolmogorov!không tính được}%
+Chỗ thứ nhất là chỗ nặng nhất và bài chỉ nói nửa câu về nó. \tn{Độ phức tạp
+Kolmogorov}{Kolmogorov complexity} không tính được, nên $\varepsilon_f$,
+$\kappa_f$ và mọi chặn dựng trên chúng đều không tính được. Không ai cầm một mô
+hình và một lời giải thích rồi kiểm tra xem cặp ấy nằm trong hay ngoài
+\tn{miền khả thi}{feasibility region} của
+hình~\ref{fig:ch13-mien-kha-thi}. Bài bắc cầu bằng
+bảng~\ref{tab:ch13-do-phuc-tap-lop-mo-hinh}, thay $K$ bằng độ dài một cách mã
+hóa cho từng lớp mô hình, và tự gọi lập luận ấy là phác thảo chứng
+minh~\autocite{p26limits}. Cây cầu ấy chỉ chịu được tải theo một chiều: mỗi ô
+trong bảng là một chặn trên cho $K$, nên nó dùng được ở chỗ nào cần chặn trên và
+không dùng được ở chỗ nào cần chặn dưới. Đó đúng là chỗ hệ quả 3.8 sẩy chân, như
+mục~\ref{sec:ch13-tran-cao-bao-nhieu} đã ghi, và cái sẩy chân ấy nằm ngay tại
+điểm nối giữa lý thuyết và thực hành chứ không ở một góc phụ.
+
+Chỗ thứ hai là chỗ chương này đã nói ngay từ đầu: bài không chạy thí nghiệm nào.
+Bài tự xếp việc ấy vào công việc tương lai và còn nêu cụ thể thí nghiệm đầu tiên
+nên chạy, là khớp các hàm đa thức đơn giản bằng cây quyết định với độ phức tạp
+tăng dần rồi đối chiếu đường cong thu được với các chặn đã
+chứng minh~\autocite{p26limits}. Một thí nghiệm như thế không kiểm chứng được
+định lý, vì định lý đã đúng; cái nó kiểm chứng là những ước lượng của
+bảng~\ref{tab:ch13-do-phuc-tap-lop-mo-hinh}, tức đúng cây cầu vừa nói.
+
+Chỗ thứ ba là bước mô hình hóa mà mục~\ref{sec:ch13-ham-xap-xi} đã đánh dấu là
+quan trọng nhất trong bài. Toàn bộ khái niệm \enquote{dễ diễn giải} được quy về
+một con số bit, và không có gì trong bài hiệu chỉnh con số ấy. Không ai biết
+$b_{\text{người}}$ bằng bao nhiêu, và câu hỏi khó hơn là liệu nó có phải một con
+số hay không: người đọc không đọc chương trình, và hai lời giải thích cùng độ
+dài mô tả có thể dễ hiểu khác hẳn nhau tùy chúng nói về cái gì.
+Chương~\ref{ch:con-nguoi-vang-mat} đã cho thấy cảm nhận của người đổi cả dấu khi
+đổi lĩnh vực, nên giả định rằng nó rút gọn được về một hằng số là một giả định
+mạnh. Bài liệt kê việc xây những thước đo độ phức tạp bám sát quá trình nhận
+thức của con người hơn vào phần nghiên cứu tương lai của mình, cùng với việc
+khảo sát độ phức tạp tính toán của bài toán tìm lời giải thích tối ưu, việc đưa
+phân phối đầu vào vào khung một cách tường minh, việc đưa vào các khái niệm giải
+thích theo nhân quả và \tn{phản thực}{counterfactual}, và các mô hình giải thích
+động hoặc tương tác~\autocite{p26limits}.
+
+Chỗ thứ tư là quan sát của sách. Năm bài báo của danh mục mà Phần~IV đọc kỹ từ
+chương~\ref{ch:do-do-trung-thuc} tới đây, tức các bài 21 tới 25 của thang đọc,
+đều nêu cùng một thứ đang thiếu, một
+dụng cụ đo độ trung thực đã được kiểm định, và nêu từ những hướng khác nhau: đo
+thấy nó hỏng, ghi nhận rằng không có chuẩn dùng nó, gọi tên bước tiếp theo chưa
+ai làm, đếm xem phép kiểm chứng với người hiếm tới đâu. Bài này không nêu nó
+lần nào, và chỗ trống trong danh sách hạn chế của nó là một chỗ trống khác hẳn:
+cái nó thiếu là một đại lượng tính được thay cho $K$ và một thí nghiệm.
+Chương~\ref{ch:khoang-trong-nghien-cuu} lấy giao của các phát biểu hạn chế ấy,
+nên một bài không giao với các bài kia cũng là một dữ kiện, và dữ kiện ấy nói
+rằng cái trần nằm ngoài chuỗi lập luận mà phần còn lại của Phần~IV đang dựng.
+
+Định lý~\ref{thm:ch13-khoang-cach-do-phuc-tap} còn để lại một chỗ trống mà
+chương sau đi thẳng vào, và các bất đồng vô hình của
+mục~\ref{sec:ch13-tran-noi-gi} là nửa thứ hai của chỗ trống ấy. Định lý khẳng
+định rằng một lời giải thích đơn giản hơn mô hình phải lệch khỏi mô hình ở đâu
+đó, và nó không nói ở đâu; với nó, mọi chỗ lệch là như nhau. Nhưng chỗ lệch
+không như nhau với người đọc, và nhất là không như nhau với người được chọn nó.
+Nếu khoảng cách độ phức tạp buộc phải có sai số, thì một bên có quyền quyết định
+lời giải thích trông ra sao có thể dồn toàn bộ sai số ấy vào những chỗ không ai
+kiểm, chia nhỏ nó tới mức không chỉ số nào dựa trên sai số đầu ra thấy được, rồi
+trưng ra một lời giải thích sạch sẽ trên những chỗ có người nhìn.
+Chương~\ref{ch:giai-thich-duoi-tan-cong} đọc các công trình đã dựng đúng phép
+dồn ấy thành phương pháp tấn công.
