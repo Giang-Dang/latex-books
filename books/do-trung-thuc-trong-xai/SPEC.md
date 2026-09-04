@@ -619,6 +619,25 @@ keep the two in step.
   a SPEC rule saying which technical terms the cadence does not bind. "độ đo"
   is also the ordinary Vietnamese word for a measurement, so it is the first
   candidate the other open item on `Gloss.Exempt` anticipates.
+- **The dash convention is real for dotted and not settled for dashed.** Surveyed
+  across all seven figures 2026-09-04, after chapter 13's audit found figure 13.1
+  using dotted for three things while its caption named one. **Dotted means
+  "missing" in four chapters and never anything else**: chapters 10, 11, 12 and
+  13, each with a dotted node border and a dotted arrow carrying that one meaning
+  in two shapes. **Dashed has two meanings.** Chapter 08 sets it for a free
+  choice and chapter 13 follows; chapter 05, which predates both, uses it for the
+  integration step. Chapter 13's caption is accurate as written, because it cites
+  the convention *figure 8.1 sets* rather than claiming a book-wide one, but a
+  reader meeting chapter 05 first has met the other sense already. Settling this
+  means either rewording chapter 05's caption and figure to use another mark, or
+  recording that dashed carries two senses and that the marks are far enough
+  apart (an arrow against a box border) not to collide. **No machine check backs
+  this and none should.** A check on "one pattern, one style" was proposed after
+  chapter 13's audit and dropped once the survey ran: it fires on chapters 10, 11
+  and 12, where two styles share a pattern deliberately, and the narrower version
+  that avoids those never fires at all, not even on the figure 13.1 defect that
+  prompted it. The defect is about what a mark refers to, which is decision 22's
+  case: prose-only, and the audit carries it.
 - **`Gloss.Exempt` is empty.** Grows one measured term at a time as the gate
   finds ordinary-Vietnamese collisions. "chuỗi" is the likely first, and it
   collides with the subtitle's "chuỗi suy luận" - settle which side owns it
