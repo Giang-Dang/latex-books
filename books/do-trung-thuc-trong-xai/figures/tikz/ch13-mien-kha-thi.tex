@@ -1,0 +1,38 @@
+\begin{tikzpicture}[
+  every node/.style={font=\footnotesize, align=center},
+  axis/.style={-{Stealth[length=2mm]}, thick, black!70},
+  curve/.style={very thick, black!75},
+  cut/.style={thick, black!55, densely dashed},
+  point/.style={thick, black!55},
+  empty/.style={draw=black!45, dotted, thick, fill=black!2},
+  lbl/.style={font=\scriptsize, align=center, black!55},
+  tick/.style={font=\scriptsize, black!70}
+]
+  % the region above the curve: every (budget, error) pair an explanation can reach
+  \fill[black!7]
+    (0.55,4.2) .. controls (1.6,1.35) and (3.0,0.28) .. (6.2,0)
+    -- (7.1,0) -- (7.1,4.5) -- (0.55,4.5) -- cycle;
+
+  \draw[axis] (0,0) -- (7.6,0) node[tick, below left=1mm and 0mm] {$b$};
+  \draw[axis] (0,0) -- (0,4.9) node[tick, above left=0mm and 1mm] {$\delta$};
+
+  % the box no explanation reaches: budget under the human bound, error under the threshold
+  \draw[empty] (0,0) rectangle (2.1,0.62);
+
+  \draw[curve] (0.55,4.2) .. controls (1.6,1.35) and (3.0,0.28) .. (6.2,0);
+  \node[lbl, anchor=west, text width=20mm] at (3.5,1.15) {$\varepsilon_f(b)$};
+
+  \draw[cut] (2.1,0) -- (2.1,4.5);
+  \draw[cut] (0,0.62) -- (7.1,0.62);
+
+  \filldraw[black!75] (6.2,0) circle (1.5pt);
+
+  \node[tick, below=1.5mm] at (2.1,0) {$b_{\text{người}}$};
+  \node[tick, below=1.5mm] at (6.2,0) {$K(f)$};
+
+  \node[lbl, anchor=east, text width=26mm] at (7.6,3.3)
+    {miền khả thi: mọi cặp\\lấy được bằng một\\lời giải thích};
+  \node[lbl, anchor=west, text width=30mm] at (2.45,-1.05)
+    {ô rỗng: không lời giải thích nào\\vừa dưới $b_{\text{người}}$ bit\\vừa dưới sai số $\delta$};
+  \draw[point, -{Stealth[length=1.6mm]}] (2.6,-0.75) -- (1.2,-0.05);
+\end{tikzpicture}

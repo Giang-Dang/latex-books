@@ -1,3 +1,58 @@
-% Scope (SPEC table of contents): The algorithmic-information-theoretic ceiling on explainability, and what a bound does and does not say about practice. Paper 26.
+% Scope (SPEC table of contents): The algorithmic-information-theoretic ceiling
+% on explainability, and what a bound does and does not say about practice.
+% Paper 26.
+%
+% One boundary constrains everything this chapter says and it is stated in the
+% opener. Paper 26's error is the distance between the explanation's output and
+% the model's output, which is do khop under decision 49, and the word
+% "faithfulness" does not occur once in its 65 pages. The ceiling it proves is a
+% ceiling on approximation, not on faithfulness, and section 13.6 is where the
+% chapter says what that ceiling does and does not settle.
+%
+% The chapter also declines to build on one of the paper's own corollaries and
+% says so in section 13.4; research/ch13-gioi-han-ly-thuyet.md records why, along
+% with every numbered result cited by number here.
 \chapter{Giới hạn lý thuyết của giải thích}
 \label{ch:gioi-han-ly-thuyet}
+
+Chương~\ref{ch:con-nguoi-vang-mat} khép lại trên một câu hỏi mà hai bài báo của
+nó không đặt ra: chuỗi các phép kiểm chứng có đáy hay không. Mỗi lần một dụng cụ
+đo được đem ra kiểm, nó lại đòi một dụng cụ khác đứng dưới. \tn{Chỉ số trung
+thực}{faithfulness metric} đòi ground truth; ground truth dựng sẵn chỉ dựng được
+cho những nhiệm vụ có cấu trúc riêng; cảm nhận của người thì đổi dấu khi đổi
+lĩnh vực. Cả năm chương từ
+chương~\ref{ch:do-do-trung-thuc} tới đây đều đọc tình trạng ấy như một việc chưa
+ai làm, và cách đọc ấy giả định rằng nếu lĩnh vực chịu bỏ công thì việc sẽ xong.
+
+Chương này hỏi câu hỏi ngược lại, và hỏi bằng một loại bằng chứng mà Phần~IV
+chưa dùng lần nào. Bốn chương vừa qua đi tìm số đo: một điểm AUROC, một bảng
+phân loại, một hệ số tương quan. Bài báo của chương này không đo gì
+cả~\autocite{p26limits}. Nó định nghĩa lời giải thích là một hàm xấp xỉ mô
+hình, định nghĩa độ phức tạp của hàm ấy bằng độ dài chương trình ngắn nhất sinh
+ra nó, rồi chứng minh rằng hai đại lượng ấy không thể cùng nhỏ. Một kết quả như
+vậy không cần thí nghiệm nào để đứng vững, và cũng không có thí nghiệm nào bác
+được nó.
+
+Cái ranh giới đi kèm phải nói ngay ở đây thay vì để người đọc tự phát hiện, vì
+nó quyết định toàn bộ cách đọc chương. Sai số mà bài báo chặn là khoảng cách
+giữa đầu ra của lời giải thích và đầu ra của mô hình. Đó là độ khớp theo nghĩa
+mà mục~\ref{sec:ch10-mot-tu-khong-xuat-hien} đã tách ra, tức quan hệ giữa lời
+giải thích và các đầu ra của mô hình, chứ không phải \tn{độ
+trung thực}{faithfulness} của định
+nghĩa~\ref{def:ch01-do-trung-thuc}. Chữ \enquote{faithfulness} không xuất hiện
+lần nào trong 65 trang của bài, và chữ \enquote{ground truth} cũng vậy. Cho nên
+cái trần này là trần của một đại lượng khác với đại lượng mà Phần~IV đang truy,
+và câu hỏi thú vị không phải nó cao bao nhiêu mà là nó ràng buộc được gì ở tầng
+trên.
+
+Mục~\ref{sec:ch13-cau-hoi-khong-can-thi-nghiem} bắt đầu từ chỗ đó, ở loại bằng
+chứng mà bài báo đưa ra.
+
+\input{chapters/13-gioi-han-ly-thuyet/01-cau-hoi-khong-can-thi-nghiem}
+\input{chapters/13-gioi-han-ly-thuyet/02-loi-giai-thich-nhu-ham-xap-xi}
+\input{chapters/13-gioi-han-ly-thuyet/03-tran-va-cach-chung-minh}
+\input{chapters/13-gioi-han-ly-thuyet/04-tran-cao-bao-nhieu}
+\input{chapters/13-gioi-han-ly-thuyet/05-cuc-bo-va-toan-cuc}
+\input{chapters/13-gioi-han-ly-thuyet/06-tran-noi-gi-va-khong-noi-gi}
+\input{chapters/13-gioi-han-ly-thuyet/07-dieu-bai-bao-chua-giai-quyet}
+\input{chapters/13-gioi-han-ly-thuyet/08-tom-tat-va-cau-hoi}

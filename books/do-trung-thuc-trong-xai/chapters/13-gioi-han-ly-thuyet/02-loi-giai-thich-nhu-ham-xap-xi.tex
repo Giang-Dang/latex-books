@@ -1,0 +1,164 @@
+\section{Lời giải thích như một hàm xấp xỉ}
+\label{sec:ch13-ham-xap-xi}
+
+\index{lời giải thích!mô hình hóa thành hàm xấp xỉ|(}%
+Nếu với một kết quả dạng chặn thì chỗ cần soi là các định nghĩa chứ không phải
+phần chứng minh, thì phải có đủ bộ định nghĩa trước mắt đã. Mục này dựng chúng,
+và cả cái trần lẫn mọi giới hạn của nó đều nằm sẵn trong đây.
+
+Bài báo bắt đầu bằng hai định nghĩa ngắn. Mô hình cần giải thích là một hàm
+$f : \mathcal{X} \to \mathcal{Y}$ từ không gian đầu vào sang không gian đầu ra.
+Lời giải thích cho $f$ là một hàm $g : \mathcal{X} \to \mathcal{Y}$ xấp xỉ $f$
+và được coi là dễ diễn giải với con người theo một tiêu chí nào
+đó~\autocite{p26limits}. Hai định nghĩa ấy đặt ra hai đòi hỏi và bỏ ngỏ đúng một
+chỗ: cái gì làm cho một hàm là dễ diễn giải. Toàn bộ phần còn lại của bài là một
+câu trả lời cho chỗ bỏ ngỏ ấy, và câu trả lời là một hạn mức tính bằng bit.
+
+Nhưng trước khi tới hạn mức thì phải nói vì sao cần một thước đo độ phức tạp
+kiểu này, chứ không phải một thước đo hiển nhiên hơn. Cách hiển nhiên là đếm
+tham số: một mô hình tuyến tính mười hệ số thì đơn giản hơn một mạng nơ-ron
+triệu tham số. Phép đếm ấy hỏng ở chỗ nó phụ thuộc vào cách viết. Một ma trận
+một triệu phần tử mà mọi phần tử đều bằng nhau thì viết ra hết là một triệu số,
+mà mô tả bằng lời chỉ là một câu: lấy một số rồi lặp lại một triệu lần. Đếm tham
+số cho hai kết quả rất khác nhau cho cùng một đối tượng, tùy người đọc nhìn vào
+bản viết nào. Cái ta muốn đo là lượng thông tin thật sự cần để chỉ định hàm ấy,
+không phụ thuộc cách trình bày, và đó chính là đại lượng mà AIT đo.
+
+\index{độ phức tạp Kolmogorov}%
+Thước đo ấy là \tn{độ phức tạp Kolmogorov}{Kolmogorov complexity}, và định
+nghĩa của nó là định nghĩa 2.3 của bài~\autocite{p26limits}.
+
+\begin{definition}[Độ phức tạp Kolmogorov]
+\label{def:ch13-do-phuc-tap-kolmogorov}
+Cho một \tn{máy Turing phổ dụng}{universal Turing machine} $U$. Độ phức tạp
+Kolmogorov $K(g)$ của một hàm $g$ là độ dài, tính bằng bit, của chương trình
+ngắn nhất mà $U$ chạy được để tính $g$:
+\[
+  K(g) \;=\; \min_{p \in \{0,1\}^{*}} \{\, |p| \;:\; U(p,x) = g(x) \text{ với mọi } x \in \mathcal{X} \,\}.
+\]
+\end{definition}
+
+Định nghĩa~\ref{def:ch13-do-phuc-tap-kolmogorov} xử lý đúng ví dụ ma trận ở
+trên: chương trình
+ngắn nhất sinh ra ma trận toàn số giống nhau ngắn hơn hẳn chương trình liệt kê
+một triệu số, nên độ phức tạp Kolmogorov của nó nhỏ, bất kể người ta viết nó ra
+dưới dạng nào. Với mục đích của bài, đại lượng này được đọc là lượng tài nguyên
+nhận thức tối thiểu cần để nắm được hành vi của hàm.
+
+Một dấu hỏi hiện ra ngay: $K$ phụ thuộc vào máy $U$ đã chọn, mà có vô số máy phổ
+dụng. Bài dẫn định lý bất biến, một kết quả kinh điển của lý thuyết này, để trả
+lời: với hai máy phổ dụng bất kỳ $U_1$ và $U_2$, tồn tại một hằng số
+$c_{U_1,U_2}$ không phụ thuộc $g$ sao cho hai giá trị $K$ chênh nhau không quá
+hằng số ấy~\autocite{p26limits}. Chứng minh chỉ là viết một chương trình thông
+dịch: máy $U_2$ mô phỏng được $U_1$ bằng một đoạn mã cố định, nên bất kỳ chương
+trình nào cho $U_1$ cũng thành một chương trình cho $U_2$ dài hơn đúng độ dài
+đoạn mã ấy. Hằng số không đổi trong khi $K(g)$ tăng theo độ phức tạp của $g$,
+nên với những hàm đủ phức tạp thì việc chọn máy nào không còn quan trọng. Chú ý
+rằng lập luận này chỉ đúng theo nghĩa tiệm cận: với một hàm cụ thể và một hằng
+số đủ lớn, $K$ vẫn là một đại lượng xác định sai khác một lượng không kiểm soát
+được.
+
+Cùng lúc đó, $K$ không tính được. Không có thuật toán nào nhận vào một hàm và
+trả ra độ phức tạp Kolmogorov của nó, và đây là một trong những kết quả cổ điển
+nhất của lý thuyết. Bài báo ghi nhận điều này ở trang 6 và trả lời rằng $K$ ở
+đây đóng vai trò nền lý thuyết, còn với các lớp mô hình cụ thể thì nó xấp xỉ
+được, theo cách mà mục~\ref{sec:ch13-tran-cao-bao-nhieu} sẽ
+đọc~\autocite{p26limits}. Hệ quả của tình trạng ấy đối với việc dùng các chặn
+này trong thực hành là một chuyện riêng, và
+mục~\ref{sec:ch13-dieu-chua-giai-quyet} nói tới.
+
+\index{lớp khả diễn giải}%
+Với thước đo trong tay, hạn mức viết ra rất gọn. Với một ngưỡng
+$b \in \mathbb{N}$, đặt
+\[
+  \mathcal{G}_b \;=\; \{\, g : \mathcal{X} \to \mathcal{Y} \;\mid\; K(g) \le b \,\},
+\]
+tức tập mọi hàm mô tả được trong $b$ bit. Bài gọi đây là \tn{lớp khả diễn
+giải}{interpretability class} và đọc $b$ là dung lượng nhận thức mà người đọc có
+sẵn~\autocite{p26limits}. Đây là bước mô hình hóa quan trọng nhất trong cả bài,
+vì nó biến một khái niệm thuộc về con người thành một con số, và mọi kết quả về
+sau đều thừa hưởng cả sức mạnh lẫn điểm yếu của bước ấy.
+
+Một quan sát đếm được về lớp này sẽ dùng lại nhiều lần. Số chương trình dài
+không quá $b$ bit là $\sum_{i=0}^{b} 2^i = 2^{b+1} - 1$, và hai chương trình khác
+nhau có thể tính cùng một hàm nhưng một chương trình không tính được hai hàm,
+nên $|\mathcal{G}_b| \le 2^{b+1} - 1$~\autocite{p26limits}. Số hàm dễ đọc là hữu
+hạn và tăng theo hàm mũ của hạn mức, còn số hàm mà một mô hình có thể là thì lớn
+hơn thế rất nhiều. Mọi chặn định lượng của
+mục~\ref{sec:ch13-tran-cao-bao-nhieu} đều là phép đếm này viết cho tử tế; cái
+trần ở mục~\ref{sec:ch13-tran-va-chung-minh} thì đến từ một chỗ khác và mục ấy
+nói rõ chỗ nào.
+
+\index{sai số xấp xỉ}%
+Còn thiếu vế thứ hai: xấp xỉ dở tới mức nào. Bài đặt $\rho(y_1,y_2)$ là khoảng
+cách giữa hai đầu ra và định nghĩa hai cách đo sai số xấp xỉ, tức khoảng cách
+giữa lời giải thích và mô hình xét trên đầu ra~\autocite{p26limits}. Sai số kỳ
+vọng
+$\mathcal{E}_{\mathcal{D}}(f,g) = \mathbb{E}_{x \sim \mathcal{D}}[\rho(f(x),g(x))]$
+lấy trung bình chỗ lệch trên phân phối đầu vào $\mathcal{D}$, tức phân phối các
+đầu vào gặp trong thực tế. Sai số trường hợp xấu nhất
+$\mathcal{E}_{\infty}(f,g) = \sup_{x \in \mathcal{X}} \rho(f(x),g(x))$ lấy chỗ
+lệch lớn nhất trên toàn không gian. Vì trung bình không vượt quá cực đại nên
+$\mathcal{E}_{\mathcal{D}} \le \mathcal{E}_{\infty}$ với mọi $\mathcal{D}$: một
+bảo đảm về trường hợp xấu nhất kéo theo bảo đảm về trung bình, còn chiều ngược
+lại thì không. Phân biệt này không phải chi tiết kỹ thuật. Một lời giải thích
+đúng trên hầu hết đầu vào và sai hẳn trên một vùng nhỏ có sai số kỳ vọng nhỏ và
+sai số trường hợp xấu nhất lớn, mà vùng nhỏ ấy đúng là chỗ
+chương~\ref{ch:giai-thich-duoi-tan-cong} sẽ tìm tới.
+
+Hai đại lượng còn lại là hai cách nhìn cùng một sự đánh đổi, và bài đặt tên cho
+cả hai: \tn{hàm sai số giải thích}{explanation error function} và \tn{hàm độ
+phức tạp giải thích}{explanation complexity function}.
+
+\begin{definition}[Hàm sai số giải thích]
+\label{def:ch13-ham-sai-so}
+Với mô hình $f$, ngưỡng $b$ và một trong hai cách đo sai số $\mathcal{E}$,
+\[
+  \varepsilon_f(b) \;=\; \inf_{g \in \mathcal{G}_b} \mathcal{E}(f,g)
+\]
+là sai số nhỏ nhất mà một lời giải thích không quá $b$ bit đạt được.
+\end{definition}
+
+\begin{definition}[Hàm độ phức tạp giải thích]
+\label{def:ch13-ham-do-phuc-tap}
+Với mô hình $f$ và ngưỡng sai số $\delta > 0$,
+\[
+  \kappa_f(\delta) \;=\; \min \{\, b \in \mathbb{N} \;\mid\; \exists\, g \in \mathcal{G}_b : \mathcal{E}(f,g) \le \delta \,\}
+\]
+là số bit ít nhất đủ để đạt sai số không quá $\delta$.
+\end{definition}
+
+Hai định nghĩa này là định nghĩa 2.12 và 2.16 của bài~\autocite{p26limits}. Cái
+thứ nhất cố định ngân sách rồi hỏi sai số; cái thứ hai cố định sai số rồi hỏi
+ngân sách. Bài chứng minh chúng là hai nửa của một phát biểu: $\varepsilon_f(b)
+\le \delta$ khi và chỉ khi $b \ge \kappa_f(\delta)$~\autocite{p26limits}. Cả hai
+đều đơn điệu theo chiều dễ đoán, nới ngân sách thì sai số không tăng và nới sai
+số thì ngân sách không tăng, nên đồ thị của $\varepsilon_f$ là một đường không
+tăng và mọi thứ chương này nói đều đọc được trên đường ấy.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch13-mien-kha-thi}
+  \caption{Hai nét đứt là hai lựa chọn tự do, theo quy ước mà
+  hình~\ref{fig:ch08-vong-lap-do} đặt: người dùng chọn cả hạn mức bit lẫn ngưỡng
+  sai số. Nét chấm là thứ đang thiếu, theo quy ước mà
+  hình~\ref{fig:ch10-vong-bien-the} đặt: ô rỗng là chỗ mà không lời giải thích
+  nào của $f$ rơi vào được. Điểm $K(f)$ trên trục ngang là chỗ
+  đường cong chạm không, tức chỉ có một chương trình tính đúng $f$ mới giải
+  thích nó không sai chút nào. Bản vẽ của sách từ các định nghĩa 2.12, 2.16 và
+  4.2 của bài báo~\autocite{p26limits}, vốn không có hình nào.}
+  \label{fig:ch13-mien-kha-thi}
+\end{figure}
+
+Hình~\ref{fig:ch13-mien-kha-thi} vẽ nó. Trục ngang là ngân sách bit, trục dọc là
+sai số, đường cong là $\varepsilon_f$, và vùng phía trên đường cong là tập các
+cặp mà một lời giải thích thật sự lấy được: bài gọi đó là \tn{miền khả
+thi}{feasibility region} khi bàn tới quy định, và
+mục~\ref{sec:ch13-tran-noi-gi} dùng lại tên ấy. Hai đường đứt cắt hình là hai
+ràng buộc mà một người dùng có thể đặt ra: một hạn mức bit ứng với sức đọc của
+con người, và một ngưỡng sai số coi là chấp nhận được. Ô chữ nhật mà hai đường
+ấy cắt ra ở góc dưới bên trái nằm hoàn toàn dưới đường cong, nghĩa là rỗng.
+Mục~\ref{sec:ch13-tran-va-chung-minh} chứng minh rằng với những mô hình đủ phức
+tạp thì ô ấy rỗng thật.
+
+\index{lời giải thích!mô hình hóa thành hàm xấp xỉ|)}%

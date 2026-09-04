@@ -1,0 +1,84 @@
+\section{Cục bộ rẻ hơn toàn cục, và cái giá của phép so}
+\label{sec:ch13-cuc-bo-va-toan-cuc}
+
+\index{lời giải thích cục bộ!chi phí mô tả|(}%
+Mọi chặn của mục trước đều tính cho lời giải thích toàn cục, tức một hàm $g$
+phải bám $f$ trên cả không gian đầu vào. Nhưng mọi phương pháp mà Phần~II dựng
+đều là phương pháp cục bộ: LIME khớp một mô hình thay thế trong lân cận một điểm
+và SHAP chia công cho một dự đoán đơn lẻ. Mục này đọc phần bài báo dành cho chỗ
+khác nhau ấy, và đó cũng là chỗ duy nhất trong 65 trang mà bài nhắc tới hai
+phương pháp trên.
+
+Bài định nghĩa sai số cục bộ đúng như người ta chờ đợi: cho một điểm $x_0$, một
+bán kính $r$ và một ngân sách, lấy chỗ lệch lớn nhất giữa $f$ và $g$ trong quả
+cầu bán kính $r$ quanh $x_0$, rồi lấy cận dưới đúng trên mọi $g$ trong ngân
+sách~\autocite{p26limits}. Từ đó ra ngay một bổ đề mà bài ghi cho đủ: lấy trung
+bình sai số cục bộ ấy trên mọi điểm $x_0$ thì được một đại lượng không vượt quá
+sai số toàn cục, vì cận trên trong một quả cầu không lớn hơn cận trên trên cả
+không gian~\autocite{p26limits}. Giải thích cục bộ không khó hơn giải thích toàn
+cục, và câu ấy đúng vì lý do hình thức chứ không vì lý do nào sâu hơn.
+
+Kết quả thật nằm ở định lý tiếp theo, và phát biểu của nó có một mệnh đề mà mục
+này xoay quanh. Với $f$ là hàm $L$-Lipschitz và $N(x_0)$ là một lân cận nằm gọn
+trong quả cầu bán kính $r$, bài chứng minh rằng độ phức tạp cục bộ bằng
+$\mathcal{O}(1)$ khi $\delta \ge Lr$ và bằng $\mathcal{O}(d \log(Lr/\delta))$
+khi $\delta < Lr$; và bài viết rõ đại lượng ấy là độ dài mô tả ngắn nhất của một
+chương trình tính được lời giải thích với sai số dưới $\delta$ trong lân cận ấy,
+\emph{khi chương trình được truy cập $f$ như một tiên
+tri}~\autocite{p26limits}.
+
+Trường hợp thứ nhất dễ thấy và đáng viết ra vì nó cho biết cả hai vế đến từ đâu.
+Nếu ngưỡng sai số $\delta$ đã lớn hơn mức biến thiên tối đa $Lr$ của $f$ trong
+quả cầu, thì hàm hằng $g(x) = f(x_0)$ đã đủ, vì tính Lipschitz cho
+$|f(x) - f(x_0)| \le Lr \le \delta$ với mọi $x$ trong quả cầu. Chương trình mô
+tả $g$ chỉ cần nói: trả về $f(x_0)$. Nó không cần chứa giá trị $f(x_0)$, vì tiên
+tri cung cấp giá trị ấy khi được hỏi. Đó là lý do độ dài mô tả là hằng số.
+Trường hợp thứ hai làm cùng một việc với một lưới nhiều ô thay vì một ô, và các
+giá trị $f$ tại các ô cũng lấy từ tiên tri.
+
+Cuối phần chứng minh, bài so hai đại lượng và rút ra câu mà chương này phải đọc
+kỹ. Bài viết rằng với lời giải thích toàn cục trên một miền đường kính $D$, độ
+phức tạp có dáng $\mathcal{O}\big((LD/\delta)^d \, d \log(LD/\delta)\big)$, tức
+mũ theo $d$, trong khi độ phức tạp cục bộ chỉ là hàm lôgarit của tỉ số
+$Lr/\delta$, nên lời giải thích cục bộ có thể đơn giản hơn lời giải thích toàn
+cục theo hàm mũ~\autocite{p26limits}. Rồi ngay dưới đó, cách một nhận xét, bài
+kết luận: điều đó lý giải vì sao các phương pháp giải thích cục bộ như LIME và
+SHAP dễ xử lý hơn các phương pháp toàn cục~\autocite{p26limits}.
+
+Nhận xét của sách, không phải của bài: phép so ấy đặt cạnh nhau hai đại lượng
+không đo cùng một cách. Vế cục bộ là độ dài mô tả tương đối, đo khi đã có tiên
+tri; vế toàn cục là độ dài mô tả tuyệt đối, không có tiên tri nào. Mà số hạng
+trội trong mọi chặn toàn cục của mục~\ref{sec:ch13-tran-cao-bao-nhieu} chính là
+chi phí mã hóa các giá trị hàm tại các ô lưới, tức đúng phần mà vế cục bộ được
+tiên tri cho không. Hiệu số mũ giữa hai vế vì thế phần lớn là hiệu giữa hai quy
+ước đo, chứ không phải giữa hai bài toán. Bài tự phát biểu quy ước ấy hai trang
+trước đó, trong chính phát biểu của định lý, và không mang nó theo vào phép so.
+
+Đây không phải một mệnh đề sai và sách không gọi nó là sai. Định lý về độ phức
+tạp cục bộ đúng như đã phát biểu, với quy ước như đã phát biểu; chỗ hụt nằm ở
+câu so sánh và ở câu kết luận rút từ câu so sánh ấy. Còn một chỗ hụt nhỏ hơn
+trong cùng phần chứng minh, ghi lại cho đủ: sau khi đếm được
+$\mathcal{O}\big((Lr/\delta)^d \, d\log(Lr/\delta)\big)$ bit cho phép phủ, bài
+nói có thể cải thiện xuống $\mathcal{O}(d \log(Lr/\delta))$ bằng cách chia đôi
+đệ quy, với lý do là độ sâu đệ quy cỡ $\log(Lr/\delta)$ và mỗi mức tốn
+$\mathcal{O}(d)$ bit~\autocite{p26limits}. Phép đếm ấy là chi phí mô tả một
+đường đi xuống cây chia đôi, không phải chi phí mô tả cả cách phân hoạch, và
+phát biểu của định lý lấy con số sau khi cải thiện.
+
+\index{lời giải thích cục bộ!chi phí mô tả và độ trung thực}%
+Nhưng giả sử cứ nhận phép so ấy nguyên vẹn, thì nó nói gì với Phần~IV? Nó nói
+rằng khớp một hàm đơn giản với $f$ trong một lân cận nhỏ là việc rẻ. Điều ấy
+đúng, và nó đúng vì một lý do mà chương~\ref{ch:lime} đã dựng sẵn:
+mục~\ref{sec:ch03-khop-mo-hinh-thay-the} cho thấy LIME tối ưu hóa đúng đại lượng
+đó theo thiết kế, bằng cách cực tiểu một hàm mất mát có trọng số theo lân cận.
+Một định lý nói rằng đại lượng ấy nhỏ được thì xác nhận thiết kế của LIME chứ
+không xác nhận thêm điều gì. Còn câu hỏi của định
+nghĩa~\ref{def:ch01-do-trung-thuc}, tức lời giải thích ấy có phản ánh đúng cách
+mô hình đi tới đầu ra hay không, thì không nằm trong phát biểu nào của mục này.
+Chương~\ref{ch:lime-nao-dang-tin} đã đọc bốn mươi tám biến thể của LIME, hai
+phần ba trong số đó nhắm vào độ khớp hoặc \tn{tính ổn định}{stability}, và ghi
+rằng lĩnh vực
+không có cách xếp hạng chúng; một cái trần đặt lên độ khớp không đụng tới chỗ
+đó.
+
+\index{lời giải thích cục bộ!chi phí mô tả|)}%

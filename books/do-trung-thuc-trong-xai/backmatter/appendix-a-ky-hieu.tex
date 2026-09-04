@@ -66,8 +66,20 @@ $I$ & Một phép nhiễu cộng vào đầu vào trong định nghĩa infidelit
 $\mu_I$ & Phân phối sinh ra $I$, do người dùng chỉ số chọn & - & - & - & - \\
 $n$ & Cỡ tập con đặc trưng trong điều kiện Sensitivity-n & - & - & - & - \\
 $k$ & Số phần tử điểm cao nhất được giữ lại hoặc bỏ đi trong họ xóa dần & - & - & - & - \\
-$r$ & Hệ số tương quan Pearson giữa một chỉ số tự động và một chiều đánh giá của người & - & - & - & - \\
+$r$ & Hệ số tương quan Pearson giữa một chỉ số tự động và một chiều đánh giá của người. Chương~\ref{ch:gioi-han-ly-thuyet} dùng $r$ cho bán kính một lân cận và luôn viết nó bên trong $B_r(x_0)$, nên hai nghĩa không gặp nhau trên trang nào & - & - & - & - \\
 $R^2$ & Hệ số xác định của một mô hình dự báo, so với mốc luôn đoán giá trị trung bình; âm nghĩa là tệ hơn mốc ấy & - & - & - & - \\
+$\mathcal{X}$, $\mathcal{Y}$ & Không gian đầu vào và không gian đầu ra của mô hình & - & - & - & - \\
+$d$ & Số chiều của không gian đầu vào. Chương~\ref{ch:attribution-tu-nguyen-ly-dau} đặt nghĩa này và không ghi dòng cho nó; chương~\ref{ch:gioi-han-ly-thuyet} dùng lại nên dòng này ghi ở đây & - & - & - & - \\
+$K(f)$ & Độ phức tạp Kolmogorov của $f$, tức độ dài chương trình ngắn nhất tính $f$. Va với $K$ của LIME ở trên và sách giữ cả hai: độ phức tạp Kolmogorov luôn viết kèm đối số, còn $K$ của LIME luôn viết trần & - & - & - & - \\
+$b$ & Ngân sách bit đặt lên lời giải thích. Bài báo viết $k$, mà $k$ ở trên đã thuộc về số phần tử điểm cao của họ xóa dần & - & - & - & - \\
+$\mathcal{G}_b$ & Lớp khả diễn giải, tức $\mathcal{G}$ ở trên hạn chế xuống những hàm mô tả được trong $b$ bit. Bài báo viết $\mathcal{I}_k$, mà $\mathcal{I}$ đã thuộc về hàm ảnh hưởng của chương~\ref{ch:khung-hop-nhat} & - & - & - & - \\
+$\rho(y_1,y_2)$ & Khoảng cách giữa hai đầu ra. Bài báo viết $d$ cho đại lượng này lẫn cho số chiều, trên cùng một trang & - & - & - & - \\
+$\mathcal{E}_{\infty}$, $\mathcal{E}_{\mathcal{D}}$ & Sai số xấp xỉ theo trường hợp xấu nhất và theo kỳ vọng dưới phân phối $\mathcal{D}$. Bài báo viết phân phối là $D$, chữ mà LIME ở trên đã lấy cho hàm khoảng cách & - & - & - & - \\
+$\delta$ & Ngưỡng sai số chấp nhận được & - & - & - & - \\
+$\varepsilon_f(b)$ & Sai số nhỏ nhất đạt được trong ngân sách $b$, định nghĩa~\ref{def:ch13-ham-sai-so} & - & - & - & - \\
+$\kappa_f(\delta)$ & Ngân sách nhỏ nhất đủ để đạt sai số $\delta$, định nghĩa~\ref{def:ch13-ham-do-phuc-tap} & - & - & - & - \\
+$L$ & Hằng số Lipschitz của mô hình & - & - & - & - \\
+$d_B$ & Số chiều đếm hộp của tập giá của phân phối đầu vào & - & - & - & - \\
 \bottomrule
 \end{longtable}
 
@@ -85,3 +97,14 @@ $\phi_i$, $\psi_j$ và $\gamma_k$, còn sách giữ $j$ cho đặc trưng theo
 chương~\ref{ch:attribution-tu-nguyen-ly-dau} nên điểm dữ liệu nhận chỉ số $i$.
 Thứ hai, lân cận lấy mẫu của khung xấp xỉ hàm cục bộ: bài báo viết $\mathcal{Z}$,
 còn sách viết $\mathcal{N}_x$ vì $\mathcal{Z}$ đã thuộc về tập mẫu của LIME.
+
+Mười hai dòng cuối bảng thuộc chương~\ref{ch:gioi-han-ly-thuyet} và bốn trong số
+đó đổi tên so với bài báo của chương ấy~\autocite{p26limits}, vì bài dùng bốn
+chữ mà bảng này đã cấp cho thứ khác: $k$, $\mathcal{I}$, $D$ và $d$ theo nghĩa
+khoảng cách. Riêng $K$ thì không đổi, dù $K$ của LIME đã có sẵn ở trên: độ phức
+tạp Kolmogorov là ký hiệu chuẩn của cả một nhánh lý thuyết, đổi nó đi thì người
+đọc tìm không ra trong bất kỳ tài liệu nào về nhánh ấy, và hai nghĩa tách nhau
+bằng hình dạng chứ không bằng ngữ cảnh, vì một bên luôn có đối số còn một bên
+luôn không. Bài còn ký hiệu $\sigma_f$ cho độ tách đầu ra, dùng đúng hai lần
+trong cả bài, và sách không lấy ký hiệu ấy mà phát biểu điều kiện không suy biến
+bằng lời.
