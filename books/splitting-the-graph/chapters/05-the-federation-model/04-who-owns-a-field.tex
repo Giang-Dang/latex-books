@@ -24,8 +24,8 @@ owns:
 \begin{graphqlsdl}
 type Session @key(fields: "id") {
   id: ID!
-  ratings: [Rating!]!
   averageScore: Float
+  ratingCount: Int!
 }
 \end{graphqlsdl}
 

@@ -105,8 +105,8 @@ hook, and the value comes from what you hang on it.
 
 \index{directives!the three that carry authorization}%
 \code{@authenticated}, \code{@requiresScopes} and \code{@policy} let a subgraph
-state a requirement in its schema instead of in its resolvers, so the router
-can refuse a request before any subgraph is asked. Chapter~\ref{ch:entities-authorization}
+state a requirement in its schema as well as in its resolvers, so that the
+router can enforce it too. Chapter~\ref{ch:entities-authorization}
 is about the reason to care, which is not the one people expect: the entity
 route is a second door into every object in your graph, and a guard written on
 the field a client normally uses does not stand in front of it.

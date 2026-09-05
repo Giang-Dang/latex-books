@@ -95,6 +95,10 @@ extend type Query {
 }
 \end{graphqlsdl}
 
+\index{extend@\code{extend}!definition}%
+\code{extend} is GraphQL's own keyword for adding fields to a type declared
+elsewhere in the document, which is how a library contributes to a
+\code{Query} it does not own.
 \index{Any@\code{\_Any}!is a JSON object}%
 \code{\_Any} is deliberately shapeless. The specification says each item is
 \enquote{serialized as a generic JSON object, which enables the graph router to

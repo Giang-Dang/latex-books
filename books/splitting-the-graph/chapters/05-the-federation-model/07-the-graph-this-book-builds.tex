@@ -58,20 +58,14 @@ type Speaker @key(fields: "id") {
 \end{graphqlsdl}
 
 \index{Ratings subgraph!contributes to a type it does not own}%
-And Ratings declares a type it owns and a type it does not:
+And Ratings declares only a type it does not own, because everything it
+stores is about that type:
 
 \begin{graphqlsdl}
-type Rating @key(fields: "id") {
-  id: ID!
-  score: Int!
-  comment: String
-  session: Session!
-}
-
 type Session @key(fields: "id") {
   id: ID!
-  ratings: [Rating!]!
   averageScore: Float
+  ratingCount: Int!
 }
 \end{graphqlsdl}
 
@@ -94,8 +88,8 @@ type Session {
   startsAt: DateTime!
   durationMinutes: Int!
   speaker: Speaker
-  ratings: [Rating!]!
   averageScore: Float
+  ratingCount: Int!
 }
 \end{graphqlsdl}
 
