@@ -1,0 +1,164 @@
+\section{Phép dựng giàn: giấu thiên lệch sau phân phối nhiễu}
+\label{sec:ch14-phep-dung-gian}
+
+\index{phép dựng giàn|(}%
+Mục trước đã đặt quan hệ thứ nhất vào chỗ của nó: lời giải thích là nạn nhân.
+Phép tấn công dựng nên quan hệ ấy có tên là \tn{phép dựng giàn}{scaffolding},
+và nó do Slack cùng cộng sự đưa ra~\autocite{mfooling}. Bài ấy không nằm trong
+danh mục ba mươi hai bài của sách. Sách vẫn đọc nó trực tiếp và cấp cho nó một
+khóa trích dẫn riêng, vì hai mục tiếp theo lập luận trên chính phép dựng ấy, và
+bài duy nhất của danh mục có nói tới nó, bài của
+mục~\ref{sec:ch14-mot-phong-thu}, là một bài lặp lại thí nghiệm của nó rồi mở
+rộng. Đây là lần thứ hai sách trích ra ngoài danh mục, sau bảy khóa mà
+chương~\ref{ch:do-do-trung-thuc} phải thêm vì không bài nào trong danh mục định
+nghĩa một \tn{chỉ số trung thực}{faithfulness metric}.
+
+\index{phép dựng giàn!tình huống}%
+Tình huống mà bài đặt ra là tình huống của người kiểm tra. Một bên nào đó có mô
+hình $f$ dùng cho một quyết định quan trọng, chẳng hạn cho tại ngoại hay cho
+vay, và mô hình ấy thiên lệch. Khách hàng và cơ quan quản lý chỉ có quyền truy
+cập \tn{hộp đen}{black box}: họ đưa đầu vào, nhận đầu ra, rồi chạy LIME hoặc
+SHAP để xem mô hình dựa vào đâu. Nếu lời giải thích nêu ra một thuộc tính được
+bảo vệ thì mô hình không được duyệt. Mục tiêu của bên triển khai là giữ nguyên
+$f$ mà lời giải thích không nêu thuộc tính ấy.
+
+Cái khe hở mà phép tấn công chui qua đã được chương~\ref{ch:lime} và
+chương~\ref{ch:shap} mô tả đủ, tuy không ai gọi nó là khe hở. Cả LIME lẫn SHAP
+đều không đọc mô hình; chúng chỉ hỏi mô hình. LIME sinh một tập mẫu quanh $x$
+bằng cách thêm nhiễu, rồi khớp một mô hình tuyến tính lên các câu trả lời
+(mục~\ref{sec:ch03-sinh-lan-can}); SHAP thay các đặc trưng vắng mặt bằng giá
+trị lấy từ một
+\tn{phân phối nền}{background distribution} rồi hỏi mô hình về những đầu vào lai
+ấy (mục~\ref{sec:ch04-gia-tri-lien-minh-va-phan-phoi-nen}). Điểm chung là cả
+hai kết luận về hành vi của mô hình trên dữ liệu thật bằng cách hỏi nó về những
+điểm không phải dữ liệu thật.
+
+\index{đầu vào ngoài phân phối!làm chỗ dựa cho tấn công}%
+Bài kiểm chứng rằng khe hở ấy rộng bằng một thí nghiệm nhỏ, và thí nghiệm ấy là
+bước đầu tiên của phép tấn công chứ không phải một minh họa. Các tác giả lấy
+tập COMPAS, sinh nhiễu quanh từng điểm theo đúng cách LIME sinh, gộp dữ liệu
+thật với dữ liệu nhiễu rồi chiếu cả hai xuống hai thành phần chính đầu tiên.
+Hai đám mây tách nhau rõ~\autocite{mfooling}. Nói cách khác, một mẫu do LIME
+sinh ra không giống một điểm dữ liệu thật, và phân biệt chúng là một bài toán
+phân loại dễ. Chỗ này đã có tên trong sách: đó là \tn{đầu vào ngoài phân
+phối}{out-of-distribution input} mà mục~\ref{sec:ch08-huan-luyen-lai} đã gặp
+khi đọc phản đối của Hase và cộng sự nhắm vào các họ chỉ số. Ở đó, tính ngoài
+phân phối là một nguồn sai lệch mà người chạy chỉ số phải chịu. Ở đây nó là chỗ
+dựa: cái gì phân biệt được thì cũng lợi dụng được.
+
+Phần còn lại là một dòng. Bên tấn công giữ mô hình thiên lệch $f$, dựng thêm
+một mô hình vô hại $u$ chỉ dựa vào những \tn{đặc trưng}{feature} không tương
+quan với thuộc tính được bảo vệ, rồi công bố mô hình
+
+\begin{equation}
+\label{eq:ch14-phep-dung-gian}
+e(x) =
+\begin{cases}
+f(x), & \text{nếu } x \in \mathcal{X}_{\mathrm{dist}},\\
+u(x), & \text{nếu không,}
+\end{cases}
+\end{equation}
+
+trong đó $\mathcal{X}_{\mathrm{dist}}$ là tập những điểm dữ liệu thật, tức
+những đầu vào mà mô hình sẽ gặp khi chạy~\autocite{mfooling}. Ai quyết định một
+đầu vào có nằm trong tập ấy hay không là câu hỏi của đoạn sau. Bài viết mô hình
+vô hại là $\psi$; sách viết $u$, vì $\psi_i(x)$ ở phụ lục~\ref{app:ky-hieu} đã
+thuộc về \tn{attribution dữ liệu}{data attribution} của
+chương~\ref{ch:khung-hop-nhat}.
+
+\index{phép dựng giàn!bộ phát hiện ngoài phân phối}%
+Phân biệt hai nhánh trong phương trình~\ref{eq:ch14-phep-dung-gian} là việc của
+một bộ phân loại phụ mà bài gọi là
+\tn{bộ phát hiện ngoài phân phối}{out-of-distribution detector}. Nó được huấn
+luyện theo cách trực tiếp nhất có thể: lấy tập dữ liệu thật, sinh nhiễu quanh
+từng điểm theo đúng cách LIME sinh, gán nhãn \enquote{thật} cho tập gốc và
+\enquote{nhiễu} cho tập sinh, rồi khớp một mô hình có sẵn lên hai nhãn ấy. Trong
+thí nghiệm của bài, mô hình ấy là một rừng ngẫu nhiên một trăm
+cây~\autocite{mfooling}. Bộ phát hiện càng chính xác thì phương
+trình~\ref{eq:ch14-phep-dung-gian} càng định tuyến đúng, nên chất lượng của nó
+là tham số duy nhất quyết định phép tấn công thành công tới đâu, và
+mục~\ref{sec:ch14-mot-phong-thu} sẽ đọc đúng đường cong ấy.
+
+Điều đáng nhìn trong hình~\ref{fig:ch14-phep-dung-gian} là hai luồng câu hỏi đi
+vào bộ phát hiện ấy rồi ra ở hai nhánh khác nhau, và nhất là mũi tên chấm chấm
+từ người kiểm tra tới nhánh thiên lệch: đó là câu hỏi mà không ai đặt được.
+
+\begin{figure}[htbp]
+\centering
+\input{figures/tikz/ch14-phep-dung-gian}
+\caption{Hai luồng câu hỏi không nhận hai câu trả lời khác nhau; chúng bị
+phân biệt rồi định tuyến, và mỗi luồng chỉ gặp một nhánh. Phân phối nhiễu vẽ
+nét đứt vì nó là lựa chọn tự do thứ hai trong ba lựa chọn của
+mục~\ref{sec:ch08-vong-lap-chung}, và phép tấn công dựng trên đúng lựa chọn
+ấy.}
+\label{fig:ch14-phep-dung-gian}
+\end{figure}
+
+\index{phép dựng giàn!kết quả}%
+Kết quả thì rõ tới mức không cần một bảng nào. Bài chạy trên ba tập dữ liệu,
+đều là những tập mà thuộc tính được bảo vệ đã biết trước: COMPAS với 6172 bị
+cáo, Communities and Crime với 1994 cộng đồng, và German Credit với 1000 người
+vay~\autocite{mfooling}. Mô hình thiên lệch được dựng cực đoan có chủ ý, tức là
+nó dự đoán chỉ bằng thuộc tính được bảo vệ và không dùng gì khác. Với LIME và
+một đặc trưng đánh lạc hướng, lời giải thích chuyển đặc trưng quan trọng nhất
+từ thuộc tính được bảo vệ sang đặc trưng đánh lạc hướng ở 100 phần trăm số điểm
+kiểm tra của COMPAS và của Communities and Crime. Ở German Credit thì tỉ lệ là
+91 phần trăm, và đặc trưng nhận chỗ ấy không phải một đặc trưng dựng thêm mà là
+một đặc trưng có sẵn của bộ dữ liệu, tỉ lệ tiền vay trên thu
+nhập~\autocite{mfooling}. Với SHAP, cùng thiết lập ấy cho 100 phần trăm ở
+Communities and Crime, 84 phần trăm ở COMPAS và 85 phần trăm ở German
+Credit~\autocite{mfooling}.
+
+\index{độ chính xác cục bộ!cản phép tấn công}%
+Con số đáng đọc kỹ lại là con số nhỏ nhất. Khi bên tấn công dùng hai đặc trưng
+đánh lạc hướng thay vì một, SHAP không còn đẩy được thuộc tính được bảo vệ ra
+khỏi vị trí thứ nhất một cách đáng tin: tỉ lệ tụt xuống 67 phần trăm với COMPAS
+và 71 phần trăm với Communities and Crime~\autocite{mfooling}. Lý do mà bài đưa
+ra không phải một chi tiết cài đặt mà là một tiên đề, và là tiên đề mà
+chương~\ref{ch:shap} đã đọc kỹ. \tn{Độ chính xác cục bộ}{local accuracy} trong
+định nghĩa~\ref{def:ch04-ba-tinh-chat} buộc tổng các điểm số bằng hiệu giữa dự
+đoán tại $x$ và dự đoán trung bình dưới phân phối nền, nên khi không có một đặc
+trưng nào nổi hẳn lên thì SHAP phải rải điểm cho nhiều đặc trưng thay vì dồn
+cho một~\autocite{mfooling}. Việc rải ấy giữ cho thuộc tính được bảo vệ còn sót
+lại trong nhóm đầu bảng.
+
+Đây là một tính chất tốt sinh ra như tác dụng phụ. Không ai đặt độ chính xác
+cục bộ vào SHAP để chống lại một phép tấn công chưa tồn tại lúc tiên đề được
+viết, và bài cũng không nói rằng SHAP an toàn hơn LIME theo nghĩa nào ngoài
+nghĩa hẹp này. Điều nó cho thấy là chỗ chịu lực của một phương pháp attribution
+có thể nằm ở một ràng buộc toán học chứ không ở một biện pháp phòng thủ, và
+mục~\ref{sec:ch14-mot-phong-thu} sẽ đọc một biện pháp phòng thủ được thiết kế
+hẳn hoi để so.
+
+\index{phép dựng giàn!độ khớp của mô hình đối kháng}%
+Còn một con số nữa mà phép tấn công phải đạt thì mới có nghĩa, và nó là con số
+dễ bỏ qua. Mô hình $e$ được công bố phải hành xử đúng như $f$ trên dữ liệu
+thật, vì nếu không thì bên tấn công đã đánh mất chính cái thiên lệch mà họ muốn
+giữ. Bài đo tỉ lệ hai mô hình cho cùng dự đoán trên tập kiểm tra: với các mô
+hình đối kháng nhắm vào LIME thì tỉ lệ ấy là 100 phần trăm trên cả ba tập; với
+các mô hình nhắm vào SHAP thì là 91 phần trăm ở COMPAS, 80 phần trăm ở German
+Credit và 75 phần trăm ở Communities and Crime~\autocite{mfooling}. Đại lượng
+ấy là độ khớp theo nghĩa dòng đầu bảng~\ref{tab:ch01-bon-quan-he}, đo giữa hai
+mô hình chứ không giữa một lời giải thích và một mô hình. Bài dùng chính chữ
+\enquote{fidelity} cho nó.
+
+\index{phép dựng giàn!bền với siêu tham số}%
+Điều cuối cùng của mục này là điều khiến phép tấn công khó gạt đi như một hiện
+tượng của một cách cài đặt. Bài thử đổi các \tn{siêu tham số}{hyperparameter}
+mà người chạy LIME và SHAP hay đổi, và phép tấn công không suy chuyển. Độ rộng
+\tn{hàm nhân}{kernel} của LIME chạy từ $0.15\sqrt{M}$ tới $0.95\sqrt{M}$ quanh
+mặc định $0.75\sqrt{M}$, và các phép tấn công vẫn hiệu quả như nhau; đổi chuẩn
+khoảng cách từ $\ell_2$ sang $\ell_1$ cũng không đổi gì; với SHAP, đổi số cụm
+của phân phối nền từ mười sang năm hoặc mười lăm cũng vậy~\autocite{mfooling}.
+Một trường hợp thì đi ngược lại và đáng ghi: dùng phân phối nền toàn số không
+làm phép tấn công mạnh lên~\autocite{mfooling}, tức là lựa chọn nền mà
+mục~\ref{sec:ch04-gia-tri-lien-minh-va-phan-phoi-nen} đã gọi là chưa được kiểm
+định lại là lựa chọn đẩy người kiểm tra vào chỗ dễ bị lừa hơn.
+
+Bảy lựa chọn tự do mà mục~\ref{sec:ch03-cac-tham-so-tu-do} đếm được trong LIME
+vì thế không phải bảy chỗ để chỉnh cho phép tấn công hết tác dụng. Chúng nằm
+bên trong vùng mà phép tấn công đã bao trọn, bởi phép tấn công không nhắm vào
+một giá trị tham số nào mà nhắm vào điều đúng với mọi giá trị: rằng những điểm
+được hỏi không phải những điểm mà mô hình sẽ gặp khi chạy.
+
+\index{phép dựng giàn|)}%

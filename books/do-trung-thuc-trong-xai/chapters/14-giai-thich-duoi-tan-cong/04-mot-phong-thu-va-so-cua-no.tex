@@ -1,0 +1,106 @@
+\section{Một phòng thủ, và những con số của nó}
+\label{sec:ch14-mot-phong-thu}
+
+\index{SHLIME|(}%
+Mục trước đã lập luận rằng thiết lập của \tn{phép dựng giàn}{scaffolding} cho
+một điều kiện cần ở mức phương pháp. Bài báo đầu tiên của danh mục mà chương
+này đọc lấy đúng thiết lập ấy làm bàn thử nghiệm và hỏi câu tiếp theo: có cách
+nào ghép LIME với SHAP để phép tấn công khó thành hơn
+không~\autocite{p27shlime}.
+
+\index{SHLIME!bài báo là một bài lặp lại}%
+Loại bài phải nói trước, vì nó quyết định cách đọc mọi con số bên dưới. Bài dài
+bảy trang, sáu tác giả, và nửa đầu của nó là một phép lặp lại: các tác giả chạy
+lại thí nghiệm COMPAS của Slack và cộng sự bằng chính mã nguồn mà các tác giả
+kia công bố, và thu được kết quả gần trùng~\autocite{p27shlime}. Bài tự đặt cho
+mình phạm vi của một dự án có hạn định thời gian. Nó không có bảng kết quả nào;
+mọi phát biểu định lượng trong bài đều là một ngưỡng đọc ra từ một biểu đồ tán
+xạ. Đó không phải một lời chê, nhưng nó là điều kiện để đọc phần sau.
+
+\index{SHLIME!hai lỗ hổng bù nhau}%
+Quan sát mà bài xuất phát là quan sát về hình dạng của hai đường cong trong
+hình của Slack và cộng sự. Trục hoành là điểm F1 của
+\tn{bộ phát hiện ngoài phân phối}{out-of-distribution detector},
+tức là phép tấn công định tuyến đúng tới đâu; trục tung là tỉ lệ lời giải thích
+vẫn còn xếp thuộc tính được bảo vệ ở vị trí thứ nhất, tức là phép tấn công thất
+bại tới đâu. Hai đường cong có dáng khác nhau. LIME giữ nguyên mức cao cho tới
+một ngưỡng rồi sụp gần như thẳng đứng; SHAP bắt đầu tụt sớm hơn nhiều nhưng tụt
+từ từ~\autocite{p27shlime}. Bài đọc hai dáng ấy là hai điểm yếu bù nhau và đề
+xuất ghép hai phương pháp lại.
+
+Phép ghép mà bài đưa ra tên là BASIC SHLIME, và nó là một dòng: điểm số của mỗi
+đặc trưng là giá trị LIME của đặc trưng ấy nhân với giá trị SHAP của
+nó~\autocite{p27shlime}. Lý do bài đưa ra cho phép nhân cũng chỉ một câu, rằng
+giá trị SHAP nằm giữa 0 và 1 còn giá trị LIME thì không bị chặn và có thể âm,
+nên nhân hai bên lại là cách giữ được nhiều thông tin từ cả hai
+nhất~\autocite{p27shlime}.
+
+\index{SHLIME!câu về khoảng giá trị SHAP}%
+Câu ấy không đúng, và chương~\ref{ch:shap} là chỗ sách đã nói vì sao. Một
+\tn{giá trị Shapley}{Shapley value} có dấu, và độ chính xác cục bộ trong định
+nghĩa~\ref{def:ch04-ba-tinh-chat} ràng buộc \emph{tổng} các giá trị bằng hiệu
+giữa dự đoán tại $x$ và dự đoán trung bình, chứ không chặn từng giá trị vào
+đoạn đơn vị. Chính phần nền của bài, ba trang trước đó, viết mô hình cộng tính
+với các hệ số nhận giá trị trên toàn trục số thực~\autocite{p27shlime}, nên bài
+tự mâu thuẫn với mình chứ không chỉ nói khác sách. Chỗ này đáng ghi vì nó không
+dừng ở một câu viết hớ: cái mà phép nhân làm mất là dấu. Tích của hai số có dấu
+mang dấu của tích chứ không mang dấu của thừa số nào, nên một đặc trưng mà LIME
+cho điểm âm mạnh và SHAP cũng cho điểm âm mạnh sẽ nhận một điểm số dương lớn,
+xếp cùng chỗ với một đặc trưng mà cả hai đều cho điểm dương mạnh. Hai tình
+huống ấy là hai tình huống ngược nhau, và điểm số của BASIC SHLIME không phân
+biệt được chúng.
+
+\index{SHLIME!ba giá trị cho một ngưỡng}%
+Còn các con số thì phải xếp cạnh nhau mới thấy vấn đề, nên xếp chúng ra đây.
+Bài phát biểu ngưỡng sụp của LIME ba lần với ba giá trị. Trong đoạn nêu động
+cơ, một câu duy nhất viết rằng LIME trụ được cho tới những điểm F1 cao hơn, F1
+xấp xỉ 0.7, rồi bị lừa dễ dàng khi vượt ngưỡng ấy, F1 lớn hơn
+0.8~\autocite{p27shlime}. Trong đoạn thuật lại phép lặp lại thí nghiệm, cùng
+hiện tượng ấy được ghi là tăng vọt khi F1 vượt 0.75~\autocite{p27shlime}.
+Ngưỡng khởi phát của SHAP cũng có hai giá trị, F1 xấp xỉ 0.45 ở chỗ này và
+khoảng 0.5 ở chỗ kia~\autocite{p27shlime}.
+
+Rồi bài kết luận rằng BASIC SHLIME giữ được tỉ lệ lời giải thích còn xếp đúng
+thuộc tính được bảo vệ ở mức trên 0.8 cho một dải F1 rộng hơn và chỉ bắt đầu
+suy giảm rõ quanh F1 xấp xỉ 0.75~\autocite{p27shlime}. Con số 0.75 ấy nằm gọn
+bên trong khoảng 0.7 tới 0.8 mà chính bài đã dùng cho hiện tượng nó đang so
+sánh với. Bài không báo cáo một khoảng tin cậy nào, không báo cáo số lần chạy,
+và không có bảng nào để đối chiếu, nên không có cách nào tách cải thiện được
+tuyên bố ra khỏi độ tản mạn của chính phép đọc biểu đồ. Sách vì thế ghi nhận
+phép dựng và không nhận kết luận về cải thiện.
+
+\index{SHLIME!bài tự nói phép so không công bằng}%
+Phần công việc tương lai của bài nói cùng điều ấy bằng lời của chính các tác
+giả, và nói mạnh hơn. Câu thứ nhất ghi rằng bước tự nhiên tiếp theo là dựng một
+bộ phát hiện ngoài phân phối riêng cho SHLIME, và rằng sức mạnh của các kết quả
+hiện có bị hạn chế bởi chỗ không so sánh được độ bền của nó với LIME và SHAP
+riêng lẻ trên một thang công bằng~\autocite{p27shlime}. Đó là bài tự phát biểu
+rằng phép so mà kết luận của nó đứng trên không phải một phép so công bằng. Còn
+phần tóm tắt của bài thì viết rằng nhóm đánh giá nhiều cấu hình ghép và tìm ra
+những cấu hình cải thiện đáng kể việc phát hiện thiên lệch, cả hai đều ở số
+nhiều~\autocite{p27shlime}; phần thân bài đánh giá đúng một cấu hình, là BASIC
+SHLIME. Hai cách ghép khác có được nêu tên, nhưng một cách, lấy trung bình có
+trọng số, bị bài loại ngay tại chỗ vì làm mất thông tin của cả hai phía, còn
+cách kia thì để lại cho nghiên cứu sau~\autocite{p27shlime}. Không cách nào
+được đem ra đo.
+
+\index{SHLIME!không đo cái mà nó phải giữ}%
+Câu thứ hai trong phần công việc tương lai mới là câu đáng mang sang
+chương~\ref{ch:khoang-trong-nghien-cuu}, và nó khép mục này lại. Các tác giả
+ghi rằng nghiên cứu của họ tập trung vào độ bền của SHLIME trước loại tấn công
+này, rằng cũng cần xét xem nó làm tốt tới đâu ở chính nhiệm vụ diễn giải mà nó
+sinh ra để làm, và rằng việc so SHLIME với LIME và SHAP trên nhiều bộ dữ liệu
+là việc của nghiên cứu sau~\autocite{p27shlime}. Nói thẳng ra thì đây là một
+phương pháp giải thích được đề xuất, được đo bằng đúng một đại lượng là mức độ
+nó chống được một phép tấn công, và chưa từng được đo xem nó có giải thích được
+gì hay không.
+
+Hình dạng ấy đã có tên trong sách. Mục~\ref{sec:ch11-dieu-chua-giai-quyet} khép
+lại trên một vòng lặp không có bước loại: một phương pháp được đề xuất, được so
+với những phương pháp đã có trên một chỉ số do chính người đề xuất chọn, rồi
+được công bố. Ở đây vòng lặp ấy quay thêm một lần nữa, và lần này ở nhánh sửa
+chữa chứ không ở nhánh đề xuất phương pháp mới. Chỉ số do người đề xuất chọn là
+tỉ lệ chống tấn công, và cái bị bỏ ra ngoài phép đo là chính thứ mà công cụ tồn
+tại để làm.
+
+\index{SHLIME|)}%

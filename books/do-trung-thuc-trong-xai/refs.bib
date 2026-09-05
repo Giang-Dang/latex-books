@@ -290,23 +290,23 @@
 % 27 - 4-tier-c-robustness
 @online{p27shlime,
   author       = {Chauhan, Sam and Duguet, Estelle and Ramakrishnan, Karthik and Van Deventer, Hugh and Kruger, Jack and Subbaraman, Ranjan},
-  title        = {{SHLIME}: Foiling Adversarial Attacks Fooling {SHAP} and {LIME}},
+  title        = {{SHLIME}: Foiling adversarial attacks fooling {SHAP} and {LIME}},
   date         = {2025},
   eprint       = {2508.11053},
   eprinttype   = {arxiv},
-  urldate      = {2026-08-24},
-  note         = {Not yet read for this book; verify against the PDF before citing.},
+  urldate      = {2026-09-05},
+  note         = {Read arXiv:2508.11053v1 (2025-08-14) in full for chapter 14 on 2026-09-05, all 7 pages from the PDF. v1 is the only revision; metadata re-verified raw against the arXiv abstract page and the arXiv API. No journal-ref, and the Comments field reads only ``7 pages, 7 figures'', so the book cites the arXiv version and names no venue. The seeded title was title-cased and is corrected here: the source is sentence case after the colon. The paper replicates the COMPAS experiment of Slack et al. (key mfooling) using that paper's published code, then proposes BASIC SHLIME, the product of the LIME and the SHAP value per feature. It reports no table; every quantitative claim in it is a threshold read off a scatter plot. ``faithful'' occurs zero times. research/ch14-giai-thich-duoi-tan-cong.md records the three values it gives for one threshold, the false claim that SHAP values lie in the unit interval, the plural ``configurations'' its abstract promises against the one its body evaluates, and its own statement that the comparison was not made on a fair scale.},
 }
 
 % 28 - 4-tier-c-robustness
 @online{p28shapattack,
   author       = {Mollard, Frank and Becker, Marcus and Röhrbein, Florian},
-  title        = {Adversarial Evasion Attacks on Computer Vision Using {SHAP} Values},
+  title        = {Adversarial Evasion Attacks on Computer Vision using {SHAP} Values},
   date         = {2026},
   eprint       = {2601.10587},
   eprinttype   = {arxiv},
-  urldate      = {2026-08-24},
-  note         = {Not yet read for this book; verify against the PDF before citing.},
+  urldate      = {2026-09-05},
+  note         = {Read arXiv:2601.10587v3 (2026-04-10) in full for chapter 14 on 2026-09-05, all 15 pages from the PDF, whose own pagination runs 51--65 as symposium proceedings. The second corpus paper with more than one revision after paper 26: v1 2026-01-15, v2 2026-04-08, v3 2026-04-10, and the file's own stamp reads v3. Metadata re-verified raw against the arXiv abstract page and the arXiv API. No journal-ref; the Comments field reads ``10th bwHPC Symposium - September 25th \& 26th, 2024'' and the paper's running head confirms it, so the book cites the arXiv version on paper 22's precedent and names the venue once in the prose because it is a high-performance-computing symposium rather than an XAI or a security one. The ``Related DOI'' arXiv records has the 10.13140 prefix, which is ResearchGate's registrar for self-archived documents and is not a publisher DOI. The seeded title capitalised ``Using'' and is corrected. arXiv transliterates the third author as ``Roehrbein''; the PDF byline prints ``Röhrbein'' beside an ORCID and the byline wins, so this entry keeps the diacritic deliberately. ``faithful'' occurs zero times and ``attribution'' once. research/ch14-giai-thich-duoi-tan-cong.md records table 1 cell by cell and the place where equation 5 implements one of the two movements its own prose describes.},
 }
 
 % 29 - 4-tier-c-robustness
@@ -316,8 +316,8 @@
   date         = {2025},
   eprint       = {2509.00846},
   eprinttype   = {arxiv},
-  urldate      = {2026-08-24},
-  note         = {Not yet read for this book; verify against the PDF before citing.},
+  urldate      = {2026-09-05},
+  note         = {Read arXiv:2509.00846v1 (2025-08-31) in full for chapter 14 on 2026-09-05, all 8 pages from the PDF; the right column of p. 8 is the bibliography and was scanned only. v1 is the only revision; metadata re-verified raw against the arXiv abstract page and the arXiv API. No journal-ref; the Comments field reads ``Published in 2025 International Joint Conference on Neural Networks (IJCNN). IEEE, 2025'', and no IEEE DOI appears on the arXiv record, so none is given here. The seeded entry needed no correction at all, the fourth time that has happened. ``faithful'' occurs zero times; ``ground truth'' occurs seven times and every one of them refers to synthetic reference values rather than to explanation ground truth. Its real-world evaluation uses the insertion score, cited to Petsiuk et al. (key mrise). research/ch14-giai-thich-duoi-tan-cong.md records tables I to III cell by cell, the reconstruction showing that the column labelled RMSE is a sum of squared deviations, the theorem that states the missingness axiom and proves a different statement, and the false one-line extension of consistency to the normalised values.},
 }
 
 % 30 - 5-tier-d-concept-bottleneck
@@ -361,6 +361,20 @@
 % chapter about the faithfulness metric families and no corpus paper defines
 % one. Each note records the revision read and what was taken from it.
 % ---------------------------------------------------------------------------
+
+% mfooling belongs to chapter 14 rather than to chapter 08, and it is admitted on
+% the same rule: the scaffolding attack is the object of two of that chapter's
+% sections and no corpus paper contains it. Paper 27 replicates it, which is not
+% the same as defining it.
+@online{mfooling,
+  author       = {Slack, Dylan and Hilgard, Sophie and Jia, Emily and Singh, Sameer and Lakkaraju, Himabindu},
+  title        = {Fooling {LIME} and {SHAP}: Adversarial Attacks on Post hoc Explanation Methods},
+  date         = {2020},
+  eprint       = {1911.02508},
+  eprinttype   = {arxiv},
+  urldate      = {2026-09-05},
+  note         = {Read arXiv:1911.02508v2 (2020-02-03) in full for chapter 14 on 2026-09-05, all 7 pages, fetched from arXiv rather than from the corpus folder because this paper is not in the corpus (decision 34's second use). Two revisions exist and the book cites v2. arXiv's own record carries no journal-ref and no Comments field, so arXiv says nothing about where this was published; the PDF's own first page carries the ACM reference block for AIES '20 with publisher DOI 10.1145/3375627.3375830. That is decision 53's case, so the book cites the arXiv version and the venue stays in this note. Read for the scaffolding construction, the out-of-distribution detector it routes on, the three datasets, the shift rates, the fidelity of the adversarial classifier to the biased one, and the hyperparameter sweep that shows the attack does not depend on any LIME or SHAP setting. Every number chapter 14 prints from it is anchored in research/ch14-giai-thich-duoi-tan-cong.md.},
+}
 
 @online{mrise,
   author       = {Petsiuk, Vitali and Das, Abir and Saenko, Kate},

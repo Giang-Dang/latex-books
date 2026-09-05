@@ -82,6 +82,18 @@ $\varepsilon_f(b)$ & Sai số nhỏ nhất đạt được trong ngân sách $b$
 $\kappa_f(\delta)$ & Ngân sách nhỏ nhất đủ để đạt sai số $\delta$, định nghĩa~\ref{def:ch13-ham-do-phuc-tap} & - & - & - & - \\
 $L$ & Hằng số Lipschitz của mô hình & - & - & - & - \\
 $d_B$ & Số chiều đếm hộp của tập giá của phân phối đầu vào & - & - & - & - \\
+$e$ & Bộ phân loại đối kháng của phép dựng giàn, trả về $f(x)$ trên dữ liệu thật và $u(x)$ ở nơi khác. Định nghĩa~\ref{def:ch07-ham-attribution} dùng $e$ làm phần tử chạy trong tập $E$; hai cách dùng tách nhau bằng hình dạng, vì ở đây $e$ luôn có đối số còn ở đó nó luôn đứng sau dấu thuộc & - & - & - & - \\
+$\tilde{x}_i$ & Giá trị của điểm ảnh thứ $i$ sau khi bị sửa bởi phép tấn công né tránh; $x_i$ là giá trị của nó trước khi sửa, và $x$ vẫn là bức ảnh. Bài báo viết vế trái là $x'$, chữ mà dòng đầu bảng này đã cấp cho biểu diễn có thể diễn giải và không cho đổi nghĩa & - & - & - & - \\
+$u$ & Bộ phân loại vô hại mà phép dựng giàn trưng ra cho lời giải thích. Bài báo viết $\psi$, mà $\psi_i(x)$ ở trên đã thuộc về attribution dữ liệu của chương~\ref{ch:khung-hop-nhat} & - & - & - & - \\
+$\mathcal{X}_{\mathrm{dist}}$ & Phân phối dữ liệu thật mà mô hình sẽ chạy trên, tức tập con của $\mathcal{X}$ mà bộ phát hiện ngoài phân phối cố nhận ra & - & - & - & - \\
+$\varepsilon$ & Cường độ của một phép nhiễu đối kháng. Va với $\varepsilon_f(b)$ ở trên và sách giữ cả hai theo cách đã giữ cả hai nghĩa của $K$: cường độ nhiễu viết là $\varepsilon$ trong toàn ngành tấn công đối kháng, kể cả trong phương trình FGSM, và hai nghĩa tách nhau bằng hình dạng vì một bên luôn có chỉ số dưới cùng đối số còn một bên luôn viết trần & - & - & - & - \\
+$\tau$ & Ngưỡng đặt lên độ lớn của điểm số SHAP khi chọn điểm ảnh để sửa. Bài báo viết $v$, mà $v(S)$ ở trên đã thuộc về giá trị liên minh & - & - & - & - \\
+$\eta$ & Biên quanh hai đầu mút của thang giá trị điểm ảnh. Bài báo viết $h$, mà $h_x$ ở trên đã thuộc về ánh xạ từ biểu diễn về đầu vào & - & - & - & - \\
+$G$ & Đồ thị nhân quả giữa các đặc trưng. Không phải $\mathcal{G}$ ở trên, vốn là lớp mô hình dễ đọc. Sách cũng không đặt ký hiệu cho tập đỉnh và tập cạnh của $G$, vì $E$ ở trên đã thuộc về tập đối tượng mà một hàm attribution chấm điểm & - & - & - & - \\
+$W_i$ & Tổng hiệu ứng nhân quả của đặc trưng $i$ lên biến mục tiêu, cộng trên mọi đường đi trong $G$ & - & - & - & - \\
+$\lambda_i$ & Hệ số chiết khấu theo cường độ nhân quả, tỉ lệ với $\lvert W_i\rvert$ đã chuẩn hóa. Bài báo viết $\gamma_i$, mà $\gamma_k(x)$ ở trên đã thuộc về attribution thành phần & - & - & - & - \\
+$v_c(S)$ & Hàm giá trị của liên minh $S$ khi các đặc trưng ngoài liên minh được lấy theo cấu trúc nhân quả. Mở rộng của $v(S)$ ở trên, cùng đối tượng với một quy tắc điền khác & - & - & - & - \\
+$\phi^c_i$, $\phi^n_i$ & Điểm số Causal SHAP trước và sau bước chuẩn hóa về tổng cộng tính & - & - & - & - \\
 \bottomrule
 \end{longtable}
 
@@ -116,3 +128,16 @@ bằng hình dạng chứ không bằng ngữ cảnh, vì một bên luôn có �
 luôn không. Bài còn ký hiệu $\sigma_f$ cho độ tách đầu ra, dùng đúng hai lần
 trong cả bài, và sách không lấy ký hiệu ấy mà phát biểu điều kiện không suy biến
 bằng lời.
+
+Mười một dòng cuối thuộc chương~\ref{ch:giai-thich-duoi-tan-cong} và bốn trong
+số đó đổi tên so với bài báo của chúng, vì bốn chữ ấy đã được cấp cho thứ khác:
+$\psi$, $v$, $h$ và $\gamma$. Hai dòng thì đi theo hướng ngược lại và đáng ghi
+riêng. Ký hiệu $\varepsilon$ giữ cả hai nghĩa theo đúng cách $K$ giữ cả hai
+nghĩa ở trên, và đây là lần thứ hai bảng này dùng cách ấy: điều kiện vẫn là hai
+hình dạng không bao giờ chồng lên nhau cộng với một nghĩa đã chuẩn ở ngoài cuốn
+sách này. Còn $v_c(S)$ thì không phải một tên mới mà là $v(S)$ thêm chỉ số dưới,
+vì hai hàm chấm điểm cùng một liên minh và chỉ khác nhau ở quy tắc điền các đặc
+trưng vắng mặt. Đồ thị nhân quả nhận ký hiệu $G$ còn tập đỉnh và tập cạnh của nó
+thì không nhận ký hiệu nào, theo đúng lý do đã dùng cho attribution nối tầng của
+chương~\ref{ch:tro-choi-attribution}: viết ra bằng lời ngắn hơn và tránh được va
+chạm thay vì phải gỡ nó.

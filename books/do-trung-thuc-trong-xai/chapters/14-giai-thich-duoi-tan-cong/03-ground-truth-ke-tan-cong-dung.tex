@@ -1,0 +1,93 @@
+\section{Ground truth mà bên tấn công buộc phải dựng}
+\label{sec:ch14-ground-truth-ke-tan-cong}
+
+\index{ground truth!dựng qua thiết kế mô hình|(}%
+Mục trước đọc \tn{phép dựng giàn}{scaffolding} như bài báo của nó viết, tức là
+như một phép tấn công. Mục này đọc cùng thiết lập ấy theo hướng ngược lại, và
+chỗ ngược ấy là lý do chương này thuộc về Phần~IV chứ không thuộc về một phụ
+lục về an toàn.
+
+Phần~IV mắc kẹt từ chương~\ref{ch:do-do-trung-thuc} ở một chỗ: định
+nghĩa~\ref{def:ch01-do-trung-thuc} hỏi lời giải thích có phản ánh đúng những
+thứ mà hành vi của mô hình phụ thuộc vào hay không, và với một mô hình có sẵn
+thì không ai biết những thứ ấy là gì. Không biết thì không chấm điểm được, và
+mọi họ chỉ số của chương~\ref{ch:do-do-trung-thuc} tồn tại để né chỗ không biết
+ấy bằng cách đo một \tn{đại lượng thay thế}{proxy} nào đó.
+Chương~\ref{ch:chi-so-khong-do-do-trung-thuc} không né mà dựng: nó chọn những
+nhiệm vụ mà thiết kế của nhiệm vụ ép câu trả lời phải là gì, rồi chấm điểm chỉ
+số trên những nhiệm vụ ấy.
+
+\index{ground truth!buộc phải có để tấn công}%
+Thiết lập của Slack và cộng sự dựng cùng thứ đó bằng một đường khác. Mô hình
+thiên lệch $f$ trong thí nghiệm không phải một mô hình bắt được ngoài đời; các
+tác giả tự viết nó ra, và viết nó theo cách cực đoan nhất có thể, tức là nó dự
+đoán chỉ bằng thuộc tính được bảo vệ và không dùng gì khác~\autocite{mfooling}.
+Theo phương trình~\ref{eq:ch14-phep-dung-gian}, mô hình được công bố $e$ trùng
+với $f$ trên toàn bộ phân phối dữ liệu thật. Vậy trên mọi điểm thật, đầu ra của
+$e$ phụ thuộc vào đúng một đặc trưng, và ai cũng biết đặc trưng ấy là đặc trưng
+nào. Với một điểm dữ liệu thật, câu hỏi \enquote{lời giải thích trung thực cho
+$e$ ở đây phải nói gì} có một câu trả lời xác định, biết trước, và không cần
+đo.
+
+Chỗ đáng chú ý không phải là ground truth ấy tồn tại, mà là ai đã phải dựng nó
+và vì sao. Trong chương~\ref{ch:chi-so-khong-do-do-trung-thuc}, người dựng là
+người muốn kiểm định chỉ số, và họ phải trả giá bằng việc thu hẹp phạm vi vào
+những nhiệm vụ có cấu trúc riêng. Ở đây, người dựng là bên tấn công, và không
+phải vì họ muốn kiểm định gì cả: họ buộc phải biết mô hình của mình dựa vào cái
+gì thì mới giấu được cái ấy. Ground truth ở đây là phụ phẩm bắt buộc của phép
+tấn công.
+
+\index{ground truth!ba đường dựng}%
+Sách vì thế có ba đường dựng ground truth chứ không phải hai, và ba đường ấy
+khác nhau ở chỗ cái gì bị ép. Đường thứ nhất, của
+chương~\ref{ch:chi-so-khong-do-do-trung-thuc}, ép bằng thiết kế nhiệm vụ: nhiệm
+vụ được chọn sao cho lời giải đúng phải đi qua một bước nhất định. Đường thứ
+hai ép bằng thiết kế dữ liệu, và mục~\ref{sec:ch14-sua-bang-nhan-qua} sẽ gặp nó
+ở dạng những phương trình sinh dữ liệu tự viết. Đường thứ ba, đường của mục
+này, ép bằng thiết kế chính mô hình: mô hình được viết ra để chỉ phụ thuộc vào
+một thứ. Cái giá của ba đường cũng khác nhau, và cái giá của đường thứ ba là
+cái giá nặng nhất, nên nó phải nói ra ngay ở đây.
+
+\index{ground truth!giới hạn của đường thứ ba}%
+Kết luận rút được từ thiết lập ấy là kết luận về mô hình $e$, một mô hình được
+dựng riêng để đánh bại phương pháp giải thích. Nó không phải kết luận về những
+mô hình mà LIME và SHAP thường được đem đi giải thích. Nói cho chính xác: thí
+nghiệm chứng minh rằng tồn tại những mô hình mà LIME và SHAP giải thích sai, và
+chứng minh bằng cách trưng ra chúng. Nó không đo được LIME và SHAP sai bao
+nhiêu trên một mô hình bình thường, vì trên một mô hình bình thường thì không
+ai có ground truth, tức là đúng chỗ mắc kẹt ban đầu. Một phép tấn công cho ta
+ground truth và lấy đi tính đại diện, đổi cái này lấy cái kia.
+
+Ngay cả trong phạm vi hẹp ấy thì kết quả cũng không phải một con số vô nghĩa.
+Một chỉ số trung thực phải thỏa những điều kiện cần trước khi bàn tới mức độ,
+và mục~\ref{sec:ch08-dieu-kien-can} đã tách riêng loại phát biểu ấy khi đọc các
+\tn{phép thử ngẫu nhiên hóa}{randomization test}. Thiết lập của phép dựng giàn
+là một điều kiện cần cùng loại, phát biểu ở mức phương pháp thay vì ở mức chỉ
+số: một phương pháp attribution chỉ hỏi mô hình ở những điểm ngoài phân phối dữ
+liệu thì không phát hiện được một mô hình được dựng để hành xử khác nhau ở hai
+chỗ ấy, dù mô hình thiên lệch tới đâu. Đó là một phát biểu về mọi trường hợp
+chứ không về một tập dữ liệu, và nó không cần thêm thí nghiệm nào để đúng rộng
+hơn.
+
+\index{định nghĩa độ trung thực!tập can thiệp}%
+Đọc kỹ hơn một bước thì thấy vì sao phát biểu ấy lại nằm gọn trong khung mà
+chương~\ref{ch:giai-thich-de-lam-gi} đã dựng. Bảng~\ref{tab:ch01-bon-quan-he}
+ghi rằng độ trung thực so lời giải thích với những thứ mà hành vi phụ thuộc vào
+\emph{dưới một tập can thiệp đã nêu}, và cụm cuối cùng ấy mới là chỗ phép tấn
+công đứng. Lời giải thích mà LIME trả về cho $e$ không sai dưới tập can thiệp
+mà LIME dùng: dưới những \tn{phép nhiễu}{perturbation} ấy, $e$ thật sự chạy
+theo các đặc trưng đánh lạc hướng, và LIME thuật lại đúng. Nó chỉ sai khi ta
+hỏi về tập can thiệp khác, là những thay đổi nằm trong phân phối dữ liệu thật.
+Phép tấn công không phá được tính trung thực dưới một tập can thiệp cố định; nó
+tách hai tập can thiệp ra rồi đẩy chúng đi hai đường.
+
+Điều đó dẫn tới hệ quả mà mục~\ref{sec:ch14-dieu-chua-giai-quyet} sẽ dùng lại,
+nên nó được phát biểu ở đây một lần. Một chỉ số hay một phương pháp chỉ định
+nghĩa được độ trung thực tương đối với tập can thiệp của chính nó, và tập can
+thiệp ấy dựng trên hai lựa chọn tự do đầu trong ba lựa chọn của
+mục~\ref{sec:ch08-vong-lap-chung}. Cho nên câu \enquote{lời giải thích này
+trung thực} chưa phải một câu hoàn chỉnh chừng nào chưa nói trung thực dưới tập
+can thiệp nào, và phép dựng giàn là bằng chứng rằng chỗ khuyết ấy đủ rộng để
+lọt một mô hình phân biệt chủng tộc qua cửa kiểm tra.
+
+\index{ground truth!dựng qua thiết kế mô hình|)}%
