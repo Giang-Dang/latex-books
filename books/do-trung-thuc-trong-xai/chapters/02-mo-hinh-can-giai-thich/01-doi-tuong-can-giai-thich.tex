@@ -24,3 +24,42 @@ nó không hiển thị trực tiếp trọng số, biểu diễn trung gian hay
 giữa chúng với token đầu ra. Do đó, khi các phương pháp ở Phần~II che một phần đầu vào
 hoặc thay đổi một \tn{đặc trưng}{feature}, chúng đang kiểm tra hành vi đầu ra dưới một can
 thiệp đã chọn, chứ chưa mở được toàn bộ cơ chế bên trong.
+
+Một điều cần nói trước, vì nó quyết định cách đọc cả Phần~II. Các phương pháp
+mà Phần~II trình bày đều cần một đầu ra là \emph{một số}, và cần một đơn vị để
+can thiệp lên. Với dữ liệu bảng thì cả hai đều sẵn có; với ảnh và văn bản thì
+chúng phải được chọn, và lựa chọn ấy là một phần của lời giải thích chứ không
+phải chi tiết kỹ thuật. Bảng~\ref{tab:ch02-ba-loai-nhiem-vu} viết ra cả ba
+trường hợp.
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \caption{Ba loại nhiệm vụ mà cuốn sách đụng tới, và cái mà một phương pháp
+  attribution cần có ở mỗi loại. Cột giữa là đầu ra vô hướng được giải thích:
+  không phương pháp nào ở Phần~II giải thích trực tiếp một câu trả lời bằng văn
+  bản.}
+  \label{tab:ch02-ba-loai-nhiem-vu}
+  \begin{tabular}{@{}p{2cm}p{3cm}p{4cm}p{3cm}@{}}
+    \toprule
+    Loại dữ liệu & Đầu vào & Đầu ra vô hướng được giải thích & Đơn vị bị can
+    thiệp \\
+    \midrule
+    Bảng & Một vector các đặc trưng & Giá trị dự đoán, hoặc xác suất của một lớp
+    & Một cột \\
+    \addlinespace
+    Ảnh & Một lưới điểm ảnh & Điểm số của lớp được dự đoán & Một điểm ảnh, hoặc
+    một mảng điểm ảnh \\
+    \addlinespace
+    Văn bản & Một dãy token & Xác suất của token hoặc của nhãn đang xét & Một
+    token, hoặc một đoạn được đánh dấu \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Với một mô hình ngôn ngữ, cột thứ ba là chỗ phải dừng lại. Câu trả lời sinh ra
+là một dãy token, không phải một số, nên muốn dùng LIME hay SHAP trên nó thì
+phải chọn lấy một đại lượng vô hướng: xác suất mà mô hình gán cho một token cụ
+thể, hoặc cho một nhãn trong một nhiệm vụ phân loại đã đặt ra. Chọn đại lượng
+nào là chọn hành vi nào đang được giải thích, tức đúng vế thứ nhất mà
+định nghĩa~\ref{def:ch01-do-trung-thuc} đòi phải nêu rõ.

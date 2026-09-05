@@ -13,9 +13,14 @@ còn lại của định nghĩa thì giống nhau.
 \begin{definition}[Hàm attribution]
 \label{def:ch07-ham-attribution}
 Cho mô hình $f$, đầu vào kiểm tra $x$ và một tập đối tượng $E$. Một hàm
-attribution $g$ gán cho mỗi phần tử $e \in E$ một số thực, được diễn giải là
-mức đóng góp của $e$ vào đầu ra $f(x)$.
+attribution $\mathcal{A}_{f,x} : E \to \mathbb{R}$ gán cho mỗi phần tử
+$e \in E$ một số thực, được diễn giải là mức đóng góp của $e$ vào đầu ra
+$f(x)$.
 \end{definition}
+
+Chỉ số $f,x$ viết ra vì hàm attribution đổi khi đổi mô hình hoặc đổi điểm cần
+giải thích; miền của nó là tập đối tượng $E$ chứ không phải không gian đầu vào,
+và đó là chỗ nó khác với một mô hình thay thế.
 
 Ba cách chọn $E$ dẫn tới ba nhánh. Khi $E$ là tập các đặc trưng của đầu vào, ta
 có attribution đặc trưng, đối tượng của cả Phần~II và

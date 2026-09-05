@@ -51,6 +51,39 @@ loại. Bảng~\ref{tab:ch11-tach-hieu-ung} nói về một đa thức hai biế
 ước che đặc trưng đã cho sẵn, không nói về transformer mà mục~\ref{sec:ch11-ba-phep-do-va-ba-cai-nen}
 sẽ tới; một phương pháp tách sạch ở đây chưa vì thế mà tách sạch ở kia.
 
+Trước khi đọc bảng thì nên tự tính lấy một dòng, vì các phân số trong đó không
+phải số đo mà là hệ quả của định nghĩa, và một dòng tính ra thì cả bảng đọc
+được. Lấy dòng của serial Shapley value. Với hàm ở
+phương trình~\ref{eq:ch11-ham-vi-du}, baseline tại gốc và che nghĩa là đặt về
+không, giá trị của bốn liên minh là $0$, $x_1$, $0$ và $x_1 + T$. Giá trị
+Shapley bậc nhất vì thế bằng
+\[
+  \varphi_1 = \tfrac{1}{2}x_1 + \tfrac{1}{2}\big((x_1+T) - 0\big) = x_1 + \tfrac{T}{2},
+  \qquad
+  \varphi_2 = \tfrac{1}{2}\cdot 0 + \tfrac{1}{2}\big((x_1+T) - x_1\big) = \tfrac{T}{2} .
+\]
+Tương tác đã chia đôi ngay ở bước này, và đó là điều một phương pháp bậc nhất
+buộc phải làm: nó chỉ có hai chỗ để đặt một số.
+
+Phép nối tầng lấy $\varphi_1$ vừa tính và coi nó như một hàm mới của cùng hai
+đặc trưng, rồi chạy lại giá trị Shapley trên nó. Che đặc trưng thứ hai trong
+$\varphi_1 = x_1 + x_1x_2^2/2$ để lại $x_1$; che đặc trưng thứ nhất để lại
+không. Nên bốn liên minh của trò chơi tầng hai có giá trị $0$, $x_1$, $0$ và
+$x_1 + T/2$, và
+\[
+  \psi_1 = x_1 + \frac{T}{4}, \qquad \psi_2 = \frac{T}{4} .
+\]
+Đó là chỗ rò mà bảng ghi lại: thành phần được gán cho đặc trưng thứ hai bên
+trong attribution của đặc trưng thứ nhất bằng $T/4$, dù hiệu ứng riêng của đặc
+trưng thứ hai bằng không. Tại $x = (1,1)$ thì $T = 1$, nên hai số ấy là $1.25$
+và $0.25$.
+
+Meta-SV chia khác. Nó tách hiệu ứng riêng $x_1$ và $0$ ra khỏi tương tác, rồi
+chia phần tương tác thành hai nửa $T/2$ và $T/2$ theo hai chiều, nên tại
+$x = (1,1)$ phần riêng là $1$ và mỗi chiều tương tác là $0.5$. Hai cách chia
+cùng cộng lại bằng $f(x)$; cái khác nhau là tương tác được ghi vào một ô riêng
+hay bị đẩy vào các thành phần riêng.
+
 \begin{table}[tbp]
   \centering
   \small

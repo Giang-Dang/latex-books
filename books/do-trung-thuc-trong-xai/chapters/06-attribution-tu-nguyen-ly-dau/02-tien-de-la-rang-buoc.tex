@@ -15,6 +15,25 @@ mọi đầu vào. Đó là điều kiện thứ hai mà bài Integrated Gradien
 cạnh điều kiện chương~\ref{ch:attribution-theo-gradient} đã gọi bằng tên ấy,
 và hai điều kiện không trùng nhau.
 
+Phát biểu dưới đây nói tới phần dư Taylor, nên viết khai triển ra trước thì đọc
+được ngay. Cho $f$ khả vi liên tục hai lần và cho một điểm khai triển
+$a \in [0,1]^d$. Khai triển Taylor bậc nhất của $f$ tại $a$ là
+\[
+  f(x) \;=\; f(a) \;+\; \nabla f(a)^{\top}(x-a) \;+\; R_a(x),
+\]
+trong đó $R_a(x)$ gom mọi số hạng từ bậc hai trở lên, và
+$|R_a(x)| \le \tfrac{1}{2} M \lVert x-a \rVert^2$ với $M$ là chặn trên của độ
+cong, tức của chuẩn ma trận đạo hàm bậc hai trên đoạn nối $a$ với $x$.
+
+Hai số hạng ấy chia nhau hai việc, và đó là điều làm cho định lý có nội dung.
+Số hạng $\nabla f(a)^{\top}(x-a)$ là một tổng theo từng tọa độ: nó tách sẵn
+thành $d$ phần, phần thứ $j$ bằng $\partial_j f(a) \cdot (x_j - a_j)$, nên nó
+\emph{là} một attribution mà không cần thêm quy ước nào. Phần dư $R_a(x)$ thì
+không tách theo tọa độ được, vì nó chứa các số hạng chéo trong đó hai đặc trưng
+chỉ có tác dụng khi đi cùng nhau. Định lý nói ba tiên đề ép attribution về đúng
+phần tuyến tính ấy, lấy $a$ là baseline, cộng thêm một cách chia nào đó cho
+$R_a$.
+
 \begin{theorem}
 \label{thm:ch06-ba-tien-de}
 Với $f$ khả vi liên tục hai lần trên $[0,1]^d$, mọi attribution thỏa cả ba

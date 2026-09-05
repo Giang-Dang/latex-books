@@ -38,6 +38,30 @@ fidelity, còn bỏ phần điểm cao đi là đo tính cần, tức inverse fi
 insertion và sufficiency thuộc về fidelity, deletion và comprehensiveness thuộc
 về inverse fidelity.
 
+Một đường cong deletion đủ ngắn thì tính được bằng tay, và ví dụ mà Phần~II đã
+dùng cho đúng việc ấy. Vẫn $f(x_1,x_2) = x_1 + 2x_2 + x_1x_2$ tại $x = (1,1)$,
+xóa nghĩa là đặt đặc trưng về 0. Các \tn{giá trị Shapley}{Shapley value} mà
+mục~\ref{sec:ch04-tro-choi-chia-gia-tri} tính được xếp đặc trưng 2 trên đặc
+trưng 1, nên thứ tự xóa là đặc trưng 2 rồi đặc trưng 1. Đầu ra lần lượt là
+\[
+  f(1,1) = 4, \qquad f(1,0) = 1, \qquad f(0,0) = 0 .
+\]
+Đặt trục ngang là phần đặc trưng đã xóa, tức $0$, $1/2$, $1$, rồi lấy diện tích
+theo quy tắc hình thang:
+\[
+  \frac{4+1}{2}\cdot\frac{1}{2} \;+\; \frac{1+0}{2}\cdot\frac{1}{2}
+  \;=\; 1.5 .
+\]
+Xóa theo thứ tự ngược lại cho đầu ra $4$, $2$, $0$ và diện tích $2.0$. Đây là
+diện tích thô, chưa chia cho đầu ra ban đầu.
+
+Hai con số ấy nói đúng một điều: thứ tự do Shapley đưa ra cho diện tích nhỏ
+hơn thứ tự ngược, nên theo chiều đọc của deletion thì nó là thứ tự tốt hơn. Cái
+chúng không nói là $1.5$ có phải một giá trị tốt hay không, vì không có thang
+nào để so ngoài chính thứ tự ngược. Với hai đặc trưng thì chỉ có hai thứ tự và
+phép so là đủ; với $d$ đặc trưng thì có $d!$ thứ tự và con số này chỉ so được
+với những thứ tự mà ta chịu khó tính ra.
+
 Ô thứ hai, giá trị thay thế, là chỗ họ này để lộ vấn đề của nó, và điều đáng
 chú ý là chính các tác giả đã gặp vấn đề ấy nhưng không gọi nó là một lựa
 chọn. RISE

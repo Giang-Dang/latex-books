@@ -4,21 +4,28 @@
 \index{đánh giá phản thực}%
 \index{chỉ số đánh giá!ba lựa chọn tự do}%
 Nếu không có bảng nào để chép thì phải đọc từng bài báo, và việc đọc ấy cho một
-kết quả gọn hơn dự kiến. Các chỉ số dưới đây được đề xuất bởi những nhóm khác
+kết quả gọn hơn dự kiến. Một phần lớn các chỉ số được đề xuất bởi những nhóm khác
 nhau, ở thị giác máy tính và ở xử lý ngôn ngữ, dưới những cái tên không liên
-quan gì nhau, nhưng chúng chạy chung một vòng lặp. Hình~\ref{fig:ch08-vong-lap-do} vẽ vòng lặp ấy.
+quan gì nhau, lại chạy chung một vòng lặp. Hình~\ref{fig:ch08-vong-lap-do} vẽ vòng lặp ấy.
+Đó là vòng lặp của hai họ mà mục~\ref{sec:ch08-ho-xoa-dan} và
+mục~\ref{sec:ch08-huan-luyen-lai} đọc; hai họ còn lại của chương không chạy nó,
+và bảng~\ref{tab:ch08-bon-ho} ở cuối mục này đặt cả bốn cạnh nhau.
 
 \begin{figure}[htbp]
   \centering
   \input{figures/tikz/ch08-vong-lap-do}
-  \caption{Vòng lặp mà mọi chỉ số trong chương này đều chạy. Ba ô viền đứt là
-  ba chỗ mỗi chỉ số tự chọn lấy một cách làm; các họ chỉ số ở những mục sau khác
-  nhau đúng ở ba ô đó và giống nhau ở phần còn lại. Đây là bản gộp của sách,
+  \caption{Vòng lặp mà hai họ chỉ số dựa trên xếp hạng đều chạy, tức họ xóa dần
+  và họ huấn luyện lại. Ba ô viền đứt là
+  ba chỗ mỗi chỉ số tự chọn lấy một cách làm; hai họ ấy khác
+  nhau đúng ở ba ô đó và giống nhau ở phần còn lại. Họ tiên đề và phép thử điều
+  kiện cần không đi qua vòng lặp này, vì chúng không cần một thứ tự trên các đặc
+  trưng; bảng~\ref{tab:ch08-bon-ho} so cả bốn. Đây là bản gộp của sách,
   dựng từ thủ tục mà từng bài báo mô tả, không phải sơ đồ của bài nào.}
   \label{fig:ch08-vong-lap-do}
 \end{figure}
 
-Vòng lặp đi như sau. Lời giải thích cho một thứ tự trên các đặc trưng của $x$.
+Vòng lặp đi như sau, và bước đầu tiên của nó đã là một giả định về lời giải
+thích. Lời giải thích cho một thứ tự trên các đặc trưng của $x$.
 Ta lấy một tập con theo thứ tự ấy, thay giá trị của các đặc trưng trong tập con
 bằng một giá trị nào đó, chạy lại $f$ trên đầu vào đã sửa, rồi so đầu ra mới với
 đầu ra cũ. Chênh lệch là con số của chỉ số. Lập luận đằng sau nó ngắn và có sức
@@ -57,3 +64,50 @@ chương~\ref{ch:attribution-tu-nguyen-ly-dau} đã cho thấy hai câu hỏi ph
 khác nhau có thể cùng hợp lệ mà cho hai kết quả khác nhau. Khi ấy hai chỉ số
 xếp hạng ngược nhau không chứng tỏ một trong hai sai; chúng có thể đang đo hai
 đại lượng khác nhau, cả hai đều được gọi là độ trung thực.
+
+Bốn họ mà chương này đọc không cùng nằm trong vòng lặp trên, nên trước khi vào
+từng họ thì đáng đặt chúng cạnh nhau. Bảng~\ref{tab:ch08-bon-ho} làm việc đó
+theo bốn câu hỏi: chúng can thiệp vào cái gì, so cái gì với cái gì, số thô của
+chúng lớn thì nghĩa là tốt hay xấu, và cuối cùng chúng trả về cái gì.
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \caption{Bốn họ chỉ số của chương này. Chỉ hai họ đầu đi qua vòng lặp ở
+  hình~\ref{fig:ch08-vong-lap-do}, vì chỉ hai họ ấy cần một thứ tự trên các đặc
+  trưng. Cột \enquote{số thô lớn} nói chiều đọc trước khi chuẩn hóa, và nó
+  không cùng chiều giữa các họ, nên một con số trần không tự nói lên điều gì.}
+  \label{tab:ch08-bon-ho}
+  \begin{tabular}{@{}p{2cm}p{3cm}p{3cm}p{3cm}p{2cm}@{}}
+    \toprule
+    Họ & Can thiệp vào & Phép so & Số thô lớn & Trả về \\
+    \midrule
+    Xóa dần & Tập con các đặc trưng, chọn theo thứ hạng &
+    Đầu ra trước và sau khi che &
+    Tùy chiều xóa: xóa từ cao xuống thì lớn là xấu &
+    Một đường cong và diện tích dưới nó \\
+    \addlinespace
+    Huấn luyện lại & Tập đặc trưng, rồi huấn luyện lại mô hình &
+    Độ chính xác của mô hình cũ và mô hình mới &
+    Lớn là tốt cho lời giải thích &
+    Một mức tụt độ chính xác \\
+    \addlinespace
+    Tiên đề & Mọi tập con cỡ $n$, không xếp hạng &
+    Tổng attribution và chênh lệch đầu ra &
+    Lớn là xấu, vì đây là sai lệch &
+    Một sai số hoặc một hệ số tương quan \\
+    \addlinespace
+    Điều kiện cần & Trọng số mô hình hoặc nhãn huấn luyện &
+    Lời giải thích trước và sau khi ngẫu nhiên hóa &
+    Lớn là xấu: giống nhau nghĩa là không phụ thuộc mô hình &
+    Đạt hoặc không đạt, không phải một thứ hạng \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Cột cuối là cột dễ bị bỏ qua nhất và cũng là cột đổi cách dùng nhiều nhất. Ba
+họ đầu trả về một con số, nên chúng xếp hạng được các phương pháp; họ thứ tư trả
+về một phép kiểm đạt hay không đạt, nên nó loại được phương pháp mà không xếp
+hạng được phương pháp nào còn lại. Gộp cả bốn vào một bảng xếp hạng duy nhất là
+việc không làm được, và
+mục~\ref{sec:ch08-dieu-chua-giai-quyet} quay lại chỗ đó.

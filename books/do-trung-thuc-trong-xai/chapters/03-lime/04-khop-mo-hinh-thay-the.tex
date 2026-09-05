@@ -54,3 +54,57 @@ cuốn sách.
   \end{algorithmic}
 \end{algorithm}
 
+Quy trình ấy chạy hết trên một ví dụ đủ nhỏ để tính bằng tay, và cuốn sách quay
+lại đúng ví dụ này ở ba chương sau. Lấy
+\[
+  f(x_1,x_2) = x_1 + 2x_2 + x_1 x_2 ,
+\]
+cần giải thích tại $x = (1,1)$. \tn{Biểu diễn có thể diễn giải}{interpretable
+representation} là hai bit bật tắt
+từng \tn{đặc trưng}{feature}, và dựng lại đầu vào nghĩa là đặt đặc trưng bị tắt về 0. Với hai
+đặc trưng thì chỉ có bốn mẫu, nên ở đây tập $\mathcal{Z}$ là toàn bộ chúng chứ
+không phải một mẫu ngẫu nhiên; đó là lý do ví dụ tính được hết.
+
+Chọn $D$ là khoảng cách Euclid và $\sigma^2 = 1/\ln 2$, thì
+$\pi_x(z) = \exp(-D^2/\sigma^2)$ nhận đúng các giá trị trong bảng dưới. Độ rộng
+ấy được chọn cho số đẹp; nó là một cấu hình minh họa, không phải mặc định của
+LIME.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Bốn mẫu của ví dụ, tính từ $f(x_1,x_2) = x_1 + 2x_2 + x_1x_2$ với
+  $x = (1,1)$ và đặc trưng bị tắt đặt về 0. Bốn dòng là toàn bộ tập mẫu chứ
+  không phải một mẫu rút ngẫu nhiên, và các số là phép tính tay chứ không phải
+  kết quả chạy một thư viện nào.}
+  \label{tab:ch03-vi-du-bon-mau}
+  \begin{tabular}{@{}cccc@{}}
+    \toprule
+    $z'$ & $f(z)$ & $D(x,z)^2$ & $\pi_x(z)$ \\
+    \midrule
+    $(0,0)$ & $0$ & $2$ & $1/4$ \\
+    $(1,0)$ & $1$ & $1$ & $1/2$ \\
+    $(0,1)$ & $2$ & $1$ & $1/2$ \\
+    $(1,1)$ & $4$ & $0$ & $1$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Lấy $K = 2$, tức giữ cả hai đặc trưng, nên bước chọn biến không loại gì và chỉ
+còn bước khớp có trọng số. Mô hình thay thế là $g(z') = w_1 z'_1 + w_2 z'_2$,
+không có hệ số tự do, đúng dạng mà thuật toán trả về. Mẫu $(0,0)$ không góp gì
+vào phép khớp vì cả hai biến đều bằng không ở đó. Đạo hàm
+$\mathcal{L}$ theo $w_1$ và theo $w_2$ rồi cho bằng không, sau khi nhân hai vế
+với 2, cho hệ
+\[
+  3w_1 + 2w_2 = 9, \qquad 2w_1 + 3w_2 = 10 ,
+\]
+nên $w_1 = 7/5$ và $w_2 = 12/5$. Lời giải thích đọc được là: đặc trưng thứ hai
+quan trọng hơn đặc trưng thứ nhất, theo tỉ lệ $12$ trên $7$.
+
+Một chi tiết của kết quả ấy đáng dừng lại, vì nó là chỗ chương sau bắt đầu.
+Tại chính điểm cần giải thích, $g(1,1) = 19/5 = 3.8$, trong khi $f(1,1) = 4$.
+Mô hình thay thế không buộc phải trùng mô hình gốc ngay tại điểm được giải
+thích, và ở đây nó không trùng: tổng bình phương sai số có trọng số còn lại
+bằng $1/5$. Phép khớp tìm một mặt phẳng hợp nhất với bốn mẫu đã cân trọng số,
+không tìm một mặt phẳng đi qua một điểm.
+

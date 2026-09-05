@@ -21,10 +21,20 @@ g^{*} = \operatorname*{arg\,min}_{g \in \mathcal{G}}\;
 
 Bài báo gốc viết lân cận này là $\mathcal{Z}$; sách đổi sang $\mathcal{N}_x$ vì
 chương~\ref{ch:lime} đã gắn $\mathcal{Z}$ với tập mẫu của LIME, và
-phụ lục~\ref{app:ky-hieu} ghi lại phép đối chiếu đó. Chữ $g$ ở đây là mô hình
-dễ đọc, và hệ số của nó chính là các điểm số mà hàm attribution $g$ của
-định nghĩa~\ref{def:ch07-ham-attribution} gán, nên hai cách dùng cùng chỉ một
-đối tượng.
+phụ lục~\ref{app:ky-hieu} ghi lại phép đối chiếu đó.
+
+Chữ $g$ ở đây là mô hình dễ đọc, và nó không phải hàm attribution
+$\mathcal{A}_{f,x}$ của định nghĩa~\ref{def:ch07-ham-attribution}: $g$ nhận một
+đầu vào và trả một dự đoán, còn $\mathcal{A}_{f,x}$ nhận một đối tượng trong $E$
+và trả một điểm số. Quan hệ giữa hai hàm là quan hệ giữa một mô hình và các hệ
+số của nó, và nó chỉ viết ra được khi $\mathcal{G}$ đã được chọn. Với
+$\mathcal{G}$ là lớp tuyến tính trên biểu diễn nhị phân $z$, quan hệ ấy là
+\[
+  g(z) = \beta_0 + \sum_j \mathcal{A}_{f,x}(j)\, z_j ,
+\]
+tức các điểm số attribution đúng bằng các hệ số của $g$. Ngoài lớp tuyến tính
+thì không có công thức chung nào như vậy, và một $\mathcal{G}$ khác cho một cách
+đọc điểm số khác.
 
 Sức nặng của phương trình~\ref{eq:ch07-lfa} nằm ở số phương pháp mà nó chứa
 được. Tám phương pháp attribution đặc trưng quen thuộc đều là trường hợp

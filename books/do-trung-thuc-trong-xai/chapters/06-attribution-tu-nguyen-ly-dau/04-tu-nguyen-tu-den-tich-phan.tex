@@ -32,6 +32,27 @@ Vế phải là một tổng Riemann: giá trị hàm tại mỗi hộp nhân v�
 hộp ấy. Chỗ khác với tổng Riemann quen thuộc là trọng lượng không phải thể tích
 của hộp mà là số $\mu_{j,x}(R_k)$ do quy tắc nguyên tử gán.
 
+Trước khi sang bước cuối thì nên thấy vì sao $\mu_{j,x}$ không thể là một cách
+gán số tùy ý, và một vùng chia hai là đủ để thấy. Lấy $d = 1$, cắt $[0,1]$
+thành $R = [0,\tfrac{1}{2}]$ và $R' = (\tfrac{1}{2},1]$, rồi lấy $f$ là hàm hằng
+bằng $c$ trên cả khối. Hàm ấy viết được hai cách:
+\[
+  f = c\,\mathbf{1}_{[0,1]}
+    = c\,\mathbf{1}_{R} + c\,\mathbf{1}_{R'} .
+\]
+Áp tính tuyến tính vào cách viết thứ nhất cho
+$\varphi_j(x,f) = c\,\mu_{j,x}([0,1])$; áp vào cách viết thứ hai cho
+$c\,\mu_{j,x}(R) + c\,\mu_{j,x}(R')$. Hai con số ấy phải bằng nhau, vì chúng là
+attribution của cùng một hàm. Nên
+\[
+  \mu_{j,x}([0,1]) = \mu_{j,x}(R) + \mu_{j,x}(R') .
+\]
+Không ai áp đặt tính cộng ấy từ bên ngoài: nó bị chính tiên đề tuyến tính ép ra,
+ngay khi ta cho phép mô tả cùng một hàm bằng hai cách chia vùng khác nhau. Bước
+thứ tư đòi đúng tính chất này, chỉ mở rộng từ hai mảnh lên một dãy đếm được
+mảnh, và một cách gán trọng lượng thỏa điều đó, có thể nhận giá trị âm, chính là
+cái mà giải tích gọi là độ đo có dấu.
+
 Bước thứ tư lấy giới hạn khi lưới mịn dần, và để giới hạn ấy có nghĩa, bài báo
 cần hai điều. Thứ nhất, các số $\mu_{j,x}(R)$ mà quy tắc nguyên tử gán cho các
 hình hộp phải là giá trị của một
