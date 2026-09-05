@@ -11,8 +11,9 @@
   (định nghĩa~\ref{def:ch10-tinh-on-dinh}) và hiệu năng. Năm nhóm không độc lập:
   khảo sát nêu rằng tăng tính cục bộ có thể làm hiệu năng xấu đi, còn hạ hiệu
   năng có thể làm tính ổn định tốt lên. Nhóm thứ hai được khảo sát gọi là
-  \enquote{fidelity} theo nghĩa định nghĩa~\ref{def:ch01-do-trung-thuc} áp cho mô
-  hình thay thế, không phải theo nghĩa đại lượng phản thực của
+  \enquote{fidelity} và hỏi đầu ra của mô hình thay thế có bám đầu ra của mô hình
+  gốc trên vùng đã lấy mẫu hay không. Sách gọi đó là độ khớp, giữ nó tách khỏi
+  định nghĩa~\ref{def:ch01-do-trung-thuc} và tách khỏi đại lượng phản thực của
   chương~\ref{ch:khung-hop-nhat}.
   \item Trục thứ hai là bốn bước của quy trình: \tn{sinh đặc trưng}{feature
   generation}, \tn{sinh mẫu}{sample generation}, attribution đặc trưng, và
@@ -35,8 +36,8 @@
   \item Chữ \enquote{faithfulness} không xuất hiện lần nào trong phần thân bài, và
   \enquote{ground truth} cũng vậy. Bảng tính chất đánh giá 17 dòng của khảo sát mở
   đầu bằng \enquote{Correctness}, tức định nghĩa~\ref{def:ch01-do-trung-thuc} dưới
-  cái tên thứ ba sau faithfulness và fidelity, và không dòng nào kèm công thức
-  hay thủ tục tính. Một trong bốn hướng nghiên cứu mà khảo sát đề xuất là xây
+  một cái tên khác, còn chữ fidelity trong cùng bài chỉ độ khớp chứ không chỉ
+  khái niệm ấy; không dòng nào kèm công thức hay thủ tục tính. Một trong bốn hướng nghiên cứu mà khảo sát đề xuất là xây
   một khung đánh giá riêng cho LIME từ những chỉ số sẵn có; đọc cùng
   chương~\ref{ch:chi-so-khong-do-do-trung-thuc}, đó là xếp hạng 48 biến thể bằng
   một dụng cụ chưa ai kiểm định. Mối liên hệ ấy là của sách, không phải của
@@ -50,9 +51,14 @@
   LIME, còn mục~\ref{sec:ch10-bon-buoc} xếp chúng vào ba trong bốn bước. Hãy
   chỉ ra bước nào không nhận lựa chọn nào trong bảy lựa chọn ấy, rồi cho biết
   vì sao vẫn có những biến thể can thiệp vào bước đó.
-  \item Hãy lập luận rằng một phương pháp không ổn định thì không thể khớp tốt,
-  rồi cho biết chiều ngược lại có đúng không và vì sao. Điều đó nói gì về 10 kỹ
-  thuật mà bảng phân loại xếp vào cả nhóm tính ổn định lẫn nhóm độ khớp.
+  \item Lấy $f(x_1,x_2) = x_1$ và một tập dữ liệu mà mọi điểm đều có
+  $x_1 = x_2$. Hãy kiểm rằng $g_1 = x_1$ và $g_2 = x_2$ cùng khớp $f$ hoàn hảo
+  trên tập ấy. Từ đó cho biết mỗi phát biểu sau đúng hay sai, và vì sao: hai lời
+  giải thích khác nhau thì ít nhất một cái khớp sai; hai lời giải thích khác
+  nhau thì chúng không cùng trả lời một câu hỏi về phụ thuộc; một phương pháp
+  không ổn định thì con số độ khớp của nó không nói được gì về mô hình. Điều đó
+  nói gì về 10 kỹ thuật mà bảng phân loại xếp vào cả nhóm tính ổn định lẫn nhóm
+  độ khớp.
   \item Trong năm nhóm vấn đề, hiệu năng là nhóm có ít kỹ thuật nhất và cũng là
   nhóm dễ đo nhất. Hãy nêu hai cách giải thích khác nhau cho cặp sự kiện đó, một
   cách quy về giá trị khoa học của vấn đề và một cách quy về cách công trình

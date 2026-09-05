@@ -2,11 +2,9 @@
 \begin{itemize}
   \item Bài báo của chương này chứng minh định lý và không đo gì. Đối tượng nó
   chặn là sai số giữa đầu ra của lời giải thích và đầu ra của mô hình, tức độ
-  khớp; rà toàn văn 65 trang thì chữ \enquote{faithfulness} và chữ
-  \enquote{ground truth} không xuất hiện lần nào, \enquote{attribution} xuất
-  hiện một lần ở phần mở đầu, còn LIME và SHAP xuất hiện một lần, trong cùng
-  một câu ở trang 39.
-  \item Khung của bài đo độ đơn giản của một lời giải thích bằng độ phức tạp
+  khớp chứ không phải độ trung thực; chữ \enquote{faithfulness} và chữ
+  \enquote{ground truth} không xuất hiện lần nào trong 65 trang. Khung của bài
+  đo độ đơn giản của một lời giải thích bằng độ phức tạp
   Kolmogorov, tức độ dài chương trình ngắn nhất sinh ra nó, và biến
   \enquote{dễ diễn giải} thành một hạn mức $b$ bit. Từ đó ra hai hàm đối ngẫu
   nhau: $\varepsilon_f(b)$, sai số nhỏ nhất trong ngân sách $b$, và
@@ -22,17 +20,14 @@
   ngôn ngữ chính sách và không thêm toán học nào.
   \item Cái trần cao bao nhiêu thì tùy lớp hàm. Với hàm Boole ngẫu nhiên, mọi
   lời giải thích ngắn hơn gần trọn bảng chân trị đều sai một nửa số đầu vào. Với
-  hàm $L$-Lipschitz, chặn trên tăng theo hàm mũ của số chiều và theo đa thức của
-  nghịch đảo sai số, đó là lời nguyền số chiều đặt vào bài toán giải thích;
-  nhưng bài chỉ chứng minh được một chặn dưới tăng tuyến tính theo số chiều, nên
-  lời nguyền ấy là tính chất của phép dựng lưới chứ chưa phải của bài toán. Bài
-  phát biểu rằng hai chặn khớp nhau tới hằng số và sách không nhận phát biểu ấy.
-  Lối ra duy nhất trong bài là số chiều nội tại: nếu dữ liệu nằm
-  quanh một cấu trúc chiều thấp thì số mũ trong chặn trên đổi theo chiều ấy.
-  Bảng~\ref{tab:ch13-do-phuc-tap-lop-mo-hinh} là chỗ bài thay $K$ bằng phép đếm
-  tham số cho từng lớp mô hình, và mỗi ô của nó là một chặn trên chứ không phải
-  một giá trị. Sách cũng không dùng hệ quả 3.8 của bài, vì chứng minh của nó rút
-  chặn dưới cho sai số ra từ một chặn trên cho độ phức tạp, cùng kiểu hụt ấy.
+  hàm $L$-Lipschitz thì cả hai chặn cùng tăng theo hàm mũ của số chiều, nên lời
+  nguyền số chiều ở đây là tính chất của bài toán chứ không riêng của phép dựng
+  lưới. Lối ra duy nhất trong bài là số chiều nội tại của dữ liệu.
+  \item Hai chỗ chương này không nhận lập luận của bài. Chứng minh chặn dưới cho
+  hàm Lipschitz đếm số hàm nằm trong ngân sách rồi dùng con số ấy làm số vùng
+  giá trị của một hàm, hai đại lượng khác nhau; sách giữ phát biểu và thay chứng
+  minh bằng một phép đếm trên họ hàm chóp. Hệ quả 3.8 thì rút một chặn dưới cho
+  sai số ra từ một chặn trên cho độ phức tạp, và sách không dùng nó.
   \item Chỗ duy nhất bài chạm tới Phần~II là kết luận rằng lời giải thích cục bộ
   rẻ hơn lời giải thích toàn cục theo hàm mũ. Phép so ấy đặt một độ dài mô tả
   tương đối, đo khi chương trình được truy cập mô hình như một tiên tri, cạnh
@@ -53,6 +48,14 @@
 
 \cauhoi
 \begin{cauhoids}
+  \item Kiểm phép đếm của mục~\ref{sec:ch13-tran-cao-bao-nhieu} bằng số. Lấy
+  $d = 1$, $L = 1$ và $m = 8$, tức chia $[0,1]$ thành tám ô. Họ hàm chóp có bao
+  nhiêu phần tử, hai hàm khác dấu ở một ô cách nhau bao nhiêu theo chuẩn
+  $\lVert\cdot\rVert_{\infty}$, và ngân sách $b$ phải lớn cỡ nào thì phép đếm
+  mới chưa cấm việc xấp xỉ mọi hàm trong họ tới sai số $L/(3m)$? Sau đó trả lời
+  bằng lời: vì sao con số $2^{b+1}$ dùng đúng ở lập luận về hàm Boole ngẫu nhiên
+  nhưng dùng sai ở chứng minh chặn dưới của bài, và phát biểu của định
+  lý~\ref{thm:ch13-chan-duoi-lipschitz} có vì thế mà sai hay không?
   \item Điều kiện không suy biến hỏng với mô hình hồi quy nhận giá trị thực. Hãy
   dựng một cặp $f$ và $g$ cụ thể trên $[0,1]$ sao cho $g(x) \ne f(x)$ tại mọi
   $x$ mà vẫn có $\mathcal{E}_{\infty}(f,g) \le \delta$ với một $\delta$ nhỏ cho

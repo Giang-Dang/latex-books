@@ -30,6 +30,28 @@ $\mathcal{P}$, đúng các phần tử của $S$ đứng trước $i$. Vì vậy
 phương trình~\ref{eq:ch04-gia-tri-shapley} không ưu ái thứ tự nào. Nó chỉ yêu cầu ta biết
 giá trị thay đổi bao nhiêu khi $i$ được thêm vào sau mỗi liên minh có thể có.
 
+Với hai người chơi thì tổng ấy chỉ có hai số hạng cho mỗi người, nên tính được
+hết bằng tay. Lấy lại hàm và điểm của
+mục~\ref{sec:ch03-khop-mo-hinh-thay-the}: $f(x_1,x_2) = x_1 + 2x_2 + x_1x_2$ tại
+$x = (1,1)$, đặc trưng bị che đặt về 0. Đặt giá trị của một liên minh là đầu ra
+khi chỉ các đặc trưng trong liên minh giữ giá trị thật, tức
+\[
+  v(\varnothing) = 0, \quad v(\{1\}) = 1, \quad v(\{2\}) = 2,
+  \quad v(\{1,2\}) = 4 .
+\]
+Hai thứ tự tham gia có thể có. Nếu đặc trưng 1 vào trước, nó đóng góp
+$v(\{1\}) - v(\varnothing) = 1$; nếu nó vào sau, đóng góp
+$v(\{1,2\}) - v(\{2\}) = 2$. Trung bình hai số ấy cho $\phi_1 = 3/2$. Làm y hệt
+cho đặc trưng 2: đóng góp $2$ khi vào trước và $v(\{1,2\}) - v(\{1\}) = 3$ khi
+vào sau, nên $\phi_2 = 5/2$. Tổng hai giá trị bằng $4$, đúng bằng chênh lệch
+giữa đầu ra tại $x$ và đầu ra khi che cả hai đặc trưng, và đó là tiên đề hiệu
+quả đang làm việc.
+
+Chú ý cách đặt $v$ ở trên là một lựa chọn chứ không phải điều duy nhất làm
+được, vì \enquote{che một đặc trưng} không có một nghĩa sẵn.
+Mục~\ref{sec:ch04-gia-tri-lien-minh-va-phan-phoi-nen} quay lại đúng chỗ này và
+cho thấy đổi cách che thì đổi cả bài toán.
+
 \index{giá trị Shapley|(}%
 Kết quả cổ điển được xác định bởi bốn tiên đề: hiệu quả, đối xứng, người
 chơi rỗng và \tn{tính tuyến tính}{linearity}. Hiệu quả yêu cầu tổng phần chia bằng giá trị của

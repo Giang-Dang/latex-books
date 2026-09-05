@@ -37,6 +37,58 @@ lớp đầu ra, hay một vùng đầu vào? Thứ hai, can thiệp nào đư�
 cao? Khi hai công trình trả lời khác nhau cho hai câu này, kết quả của chúng
 không nhất thiết mâu thuẫn, vì chúng có thể đã đo hai quan hệ khác nhau.
 
+Một ví dụ nhỏ cho thấy phép can thiệp làm được gì và không làm được gì. Lấy
+\[
+  f(x_1,x_2) = x_1 + 2x_2 + x_1 x_2
+\]
+tại $x = (1,1)$, và lấy can thiệp là đặt một đặc trưng về 0. Che đặc trưng thứ
+nhất cho $f(0,1) = 2$, giảm 2 so với $f(1,1) = 4$; che đặc trưng thứ hai cho
+$f(1,0) = 1$, giảm 3. Vậy hành vi phụ thuộc vào cả hai đặc trưng dưới tập can
+thiệp này, và lời giải thích nào nói đặc trưng thứ hai không quan trọng là lời
+giải thích không trung thực ở đây.
+
+Cái ví dụ này không cho được là một cách chia điểm duy nhất. Hai độ giảm 2 và 3 cộng lại
+bằng 5, trong khi đầu ra chỉ đổi 4 giữa $(0,0)$ và $(1,1)$; phần dư nằm ở số
+hạng $x_1x_2$, tức ở chỗ hai đặc trưng chỉ có tác dụng khi đi cùng nhau. Nói
+một đặc trưng \emph{có} ảnh hưởng thì phép can thiệp trả lời được; nói nó đáng
+được bao nhiêu điểm thì phải thêm một quy ước nữa, và Phần~II là ba cách khác
+nhau để đặt ra quy ước ấy.
+
+Bốn chữ dưới đây bị dùng lẫn nhau thường xuyên trong tài liệu, nên
+bảng~\ref{tab:ch01-bon-quan-he} tách chúng ra một lần cho cả sách. Mỗi dòng là
+một quan hệ giữa hai đối tượng khác nhau, và đó là lý do không dòng nào suy ra
+được dòng nào.
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \caption{Bốn quan hệ mà cuốn sách giữ tách nhau. Cột cuối là những suy luận
+  không hợp lệ, mỗi cái đều xuất hiện trong tài liệu mà Phần~IV đọc.}
+  \label{tab:ch01-bon-quan-he}
+  \begin{tabular}{@{}p{2cm}p{4cm}p{3cm}p{3cm}@{}}
+    \toprule
+    Khái niệm & So cái gì với cái gì & Bằng chứng phù hợp & Không suy ra được \\
+    \midrule
+    Độ khớp & Đầu ra của mô hình thay thế với đầu ra của mô hình gốc, trên một
+    miền đã nêu rõ & Một sai số kèm miền đo & Rằng lời giải thích trung thực
+    dưới mọi can thiệp \\
+    \addlinespace
+    Độ trung thực & Lời giải thích với các phụ thuộc của hành vi, dưới một tập
+    can thiệp đã nêu rõ & Thí nghiệm can thiệp, hoặc ground truth dựng sẵn &
+    Rằng lời giải thích dễ hiểu hay ổn định \\
+    \addlinespace
+    Tính hợp lý & Lời giải thích với đánh giá của người đọc &
+    Nghiên cứu người dùng có nhiệm vụ và thang đo rõ & Rằng lời giải thích đúng
+    với mô hình \\
+    \addlinespace
+    \tn{Tính ổn định}{stability} & Hai lần chạy với nhau, dưới một phép biến đổi đã quy định &
+    Biến thiên giữa các lần chạy, với nguồn ngẫu nhiên đã nêu &
+    Rằng một kết quả ổn định là đúng, hay hai kết quả khác nhau thì có một cái
+    sai \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 Tính hợp lý và độ trung thực thường đi cùng nhau trong những ví dụ thuận lợi,
 vì vậy chúng dễ bị lẫn; nhưng chúng tách ra ngay khi lời giải thích kể một
 câu chuyện quen thuộc mà mô hình không hề dựa vào. Một phương pháp hậu nghiệm

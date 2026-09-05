@@ -26,13 +26,21 @@ mô hình thay thế quá đơn giản hoặc từ một biểu diễn
 
 Tên gọi của nhóm ấy cần một câu riêng, vì cùng một chữ tiếng Anh đang chỉ hai
 thứ khác nhau trong hai bài báo mà sách đều dẫn. Khảo sát gọi nhóm vấn đề trên là
-\enquote{fidelity}, và định nghĩa nó đúng bằng định nghĩa~\ref{def:ch01-do-trung-thuc}
-của sách áp cho \tn{mô hình thay thế cục bộ}{local surrogate}. Đó không phải
+\enquote{fidelity}, và cái nó hỏi là đầu ra của
+\tn{mô hình thay thế cục bộ}{local surrogate} có bám được đầu ra của mô hình gốc
+trên vùng quanh điểm cần giải thích hay không. Sách gọi quan hệ ấy là độ khớp,
+và giữ nó tách khỏi định nghĩa~\ref{def:ch01-do-trung-thuc}: độ khớp so hai đầu
+ra trên một miền đã nói rõ, còn độ trung thực so lời giải thích với những phụ
+thuộc của hành vi dưới một tập can thiệp đã nói rõ. Một mô hình thay thế khớp
+tốt trên miền đã lấy mẫu vẫn có thể chỉ sai đặc trưng mà hành vi phụ thuộc vào,
+nên độ khớp là bằng chứng đặt cạnh độ trung thực chứ không phải chính nó; đó là
+hai dòng đầu của bảng~\ref{tab:ch01-bon-quan-he}. Đó
+cũng không phải
 đại lượng fidelity của
 đánh giá \tn{phản thực}{counterfactual} mà chương~\ref{ch:khung-hop-nhat} đặt tên và
-chương~\ref{ch:do-do-trung-thuc} đọc kỹ. Sách vì vậy gọi nhóm vấn đề này bằng
-tiếng Việt, độ khớp, và giữ fidelity cho đại lượng đã có tên; chỗ duy nhất
-chương này viết chữ ấy nữa là khi nói về chính chữ ấy.
+chương~\ref{ch:do-do-trung-thuc} đọc kỹ. Chữ fidelity vì vậy được giữ cho đại
+lượng đã có tên ấy; chỗ duy nhất chương này viết chữ ấy nữa là khi nói về chính
+chữ ấy.
 
 Nhóm thứ ba là \tn{khả năng diễn giải}{interpretability}: cách trình bày lời
 giải thích có thể không
@@ -66,8 +74,9 @@ giải thích đổi giữa hai lần chạy, người đọc \enquote{không bi
 định bắt nguồn từ phần nào}, nên mất lòng tin vào phương pháp giải thích hoặc
 vào chính mô hình được giải thích~\autocite{p22whichlime}. Đó đúng là chỗ
 chương~\ref{ch:chi-so-khong-do-do-trung-thuc} dừng lại: hai lần chạy cho hai lời
-giải thích khác nhau thì ít nhất một trong hai là sai, và kết luận ấy không cần
-ground truth nào. Cái nó không cho biết là cái nào sai.
+giải thích khác nhau thì lời giải thích đang phụ thuộc vào một thứ nằm ngoài mô
+hình và đầu vào, và kết luận ấy không cần ground truth nào. Cái nó không cho
+biết là lần nào sai, hay có lần nào sai.
 
 Nhóm thứ năm là hiệu năng: sinh các mẫu đã nhiễu, gọi mô hình trên từng mẫu rồi
 khớp mô hình thay thế đều tốn thời gian. Ba bài báo được dẫn, ít nhất trong năm

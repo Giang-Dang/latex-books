@@ -4,7 +4,7 @@
   data/.style={draw=black!65, rounded corners=2pt, align=center,
     minimum width=3.1cm, minimum height=0.85cm, fill=black!15},
   arrow/.style={-{Stealth[length=2mm]}, draw=black!65, thick},
-  dashedarrow/.style={-{Stealth[length=2mm]}, draw=black!65, thick, dashed}
+  nhan/.style={font=\footnotesize, inner sep=1.5pt}
 ]
   \node[data] (base) {$x_0$: baseline};
   \node[box, right=10mm of base] (path) {Các điểm trên\\đoạn thẳng};
@@ -12,9 +12,9 @@
   \node[box, below=9mm of path] (ig) {Lấy tích phân gradient\\rồi phân bổ $F(x)-F(x_0)$};
   \draw[arrow] (base) -- (path);
   \draw[arrow] (path) -- (input);
-  \draw[dashedarrow] (path) -- (ig);
+  \draw[arrow] (path) -- node[nhan, right] {phép lấy giới hạn} (ig);
 
-  \node[data, below=21mm of base] (maps) {Bản đồ đặc trưng $A^k$};
+  \node[data, below=32mm of base] (maps) {Bản đồ đặc trưng $A^k$};
   \node[box, right=10mm of maps] (weights) {Gradient của $y^c$\\gộp theo không gian};
   \node[data, right=10mm of weights] (heat) {Bản đồ nhiệt\\cho lớp $c$};
   \draw[arrow] (maps) -- (weights);

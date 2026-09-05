@@ -9,10 +9,9 @@ quan trọng gồm Adding Mistakes, Early Answering, Filler Tokens và SCM; nhó
 trên \tn{tính hữu dụng ngữ nghĩa}{semantic utility} gồm Paraphrasing và
 Simulatability; nhóm dựa trên
 tham số chỉ có FUR; nhóm dựa trên attribution chỉ có
-CC-SHAP~\autocite{p21metrics}. Cần nói ngay một điều về hình thức trình bày:
-bài báo không viết công thức cho bất kỳ chỉ số nào trong tám chỉ số ấy mà mô tả
-tất cả bằng lời, nên sách cũng không phát biểu công thức nào thay nó, và chỉ
-mô tả lại bằng lời, mỗi chỉ số một câu, đủ để đọc bảng.
+CC-SHAP~\autocite{p21metrics}. Bài báo không viết công thức cho bất kỳ chỉ số
+nào trong tám chỉ số ấy mà mô tả tất cả bằng lời, nên sách cũng không phát biểu
+công thức nào thay nó.
 
 Bốn chỉ số của nhóm dựa trên mức quan trọng cùng can thiệp vào chuỗi rồi xem
 câu trả lời có đổi không. Early Answering cắt chuỗi ở những tiền tố ngày càng
@@ -99,15 +98,32 @@ một mẫu đã cân bằng nhãn, nhóm dựa trên mức quan trọng gán nh
 thực cho từ 90\% tới 96\% số trường hợp ở mức cả chuỗi, còn nhóm dựa trên tính
 hữu dụng ngữ nghĩa gán nhãn trung thực cho từ 94\% tới
 96\%~\autocite{p21metrics}. Nói cách khác, mỗi nhóm gần như luôn trả lời một
-đáp án cố định, và AUROC quanh 0.5 là hệ quả của
-\tn{độ chệch dự đoán}{prediction skew} ấy chứ không phải của nhiễu.
+đáp án cố định. Đó là \tn{độ chệch dự đoán}{prediction skew}, và nó đi cùng
+AUROC quanh 0.5 ở đây.
 
-Nếu các chỉ số cùng đo một đại lượng thì dù có sai chúng cũng phải sai giống
-nhau, nên mức đồng thuận giữa chúng là một phép kiểm độc lập. Đo bằng kappa
+Hai con số ấy tuy vậy đo hai thứ khác nhau, và cần tách ra trước khi đọc tiếp,
+vì tỷ lệ gán nhãn tại một ngưỡng cố định không suy ra được AUROC. AUROC chỉ nhìn
+thứ tự các điểm số, còn tỷ lệ gán nhãn nhìn các điểm số ấy đứng bên nào của một
+ngưỡng. Lấy bốn trường hợp với điểm số $0.4$, $0.3$, $0.2$, $0.1$, trong đó hai
+trường hợp đầu mang nhãn thật là trung thực và hai trường hợp sau không trung
+thực. Ngưỡng $0.5$ gán tất cả bốn thành không trung thực, tức sai một nửa số
+trường hợp và chệch hoàn toàn về một phía. Nhưng cả bốn cặp trung thực với không
+trung thực đều được xếp đúng thứ tự, không có cặp nào bằng điểm, nên AUROC bằng
+1. Một chỉ số có thể chệch hết cỡ tại ngưỡng $0.5$ mà vẫn xếp hạng hoàn hảo.
+
+Vậy độ chệch dự đoán giải thích các tỷ lệ 90\% tới 96\% ở trên, còn AUROC quanh
+0.5 là một phát biểu riêng: các điểm số không xếp được các trường hợp trung thực
+lên trên các trường hợp không trung thực. Hai quan sát cùng chỉ về một hướng ở
+đây, nhưng chúng là hai bằng chứng chứ không phải một.
+
+Mức đồng thuận giữa các chỉ số là một phép kiểm khác nữa. Đo bằng kappa
 của Cohen, phần lớn các cặp nằm quanh 0; ở mức cả chuỗi cặp cao nhất đạt 0.35,
-còn ở mức từng bước cặp cao nhất chỉ đạt 0.12. Các tác giả đọc nó đúng như
-vậy: mức đồng thuận trần ở 0.35 cho thấy chúng đo những tính chất khác
-nhau~\autocite{p21metrics}.
+còn ở mức từng bước cặp cao nhất chỉ đạt 0.12. Các tác giả đọc con số ấy là
+dấu hiệu các chỉ số đo những tính chất khác nhau~\autocite{p21metrics}. Sách
+thuật lại cách đọc ấy và dừng ở đó: đồng thuận thấp là một quan sát cần được
+giải thích, và đo những tính chất khác nhau chỉ là một trong các cách giải thích
+nó. Hai chỉ số cùng nhắm một đại lượng nhưng nhiễu nhiều và nhiễu độc lập nhau
+cũng cho kappa thấp, nên riêng con số này chưa tách được hai khả năng ấy.
 
 Còn một trục nữa mà bảng~\ref{tab:ch09-auroc} không thể hiện, và với người
 định dùng các chỉ số này để giám sát thì nó quyết định. CC-SHAP, tức chỉ số

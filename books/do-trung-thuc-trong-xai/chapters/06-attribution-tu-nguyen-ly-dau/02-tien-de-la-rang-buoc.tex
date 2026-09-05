@@ -15,6 +15,29 @@ mọi đầu vào. Đó là điều kiện thứ hai mà bài Integrated Gradien
 cạnh điều kiện chương~\ref{ch:attribution-theo-gradient} đã gọi bằng tên ấy,
 và hai điều kiện không trùng nhau.
 
+Phát biểu dưới đây nói tới phần dư Taylor, nên khai triển viết ra như sau. Cho
+$f$ khả vi liên tục hai lần và cho một điểm khai triển
+$a \in [0,1]^d$. Khai triển Taylor bậc nhất của $f$ tại $a$ là
+\[
+  f(x) \;=\; f(a) \;+\; \nabla f(a)^{\top}(x-a) \;+\; R_a(x),
+\]
+trong đó $R_a(x)$ gom mọi số hạng từ bậc hai trở lên, và
+$|R_a(x)| \le \tfrac{1}{2} \Lambda \lVert x-a \rVert^2$ với $\Lambda$ là chặn
+trên của độ cong, tức của chuẩn ma trận đạo hàm bậc hai trên đoạn nối $a$ với
+$x$.
+
+Hai số hạng ấy chia nhau hai việc. Số hạng $\nabla f(a)^{\top}(x-a)$ là một tổng
+theo từng tọa độ: nó tách sẵn
+thành $d$ phần, phần thứ $j$ bằng $\partial_j f(a) \cdot (x_j - a_j)$, nên nó
+\emph{là} một attribution mà không cần thêm quy ước nào. Phần dư $R_a(x)$ thì
+không có cách tách nào được chỉ định sẵn: nó chứa các số hạng chéo, trong đó hai
+đặc trưng chỉ có tác dụng khi đi cùng nhau, và chia một số hạng chéo cho hai đặc
+trưng là một quy ước chứ không phải một phép tính. Định lý nói ba tiên đề ép
+attribution về đúng phần tuyến tính ấy, cộng thêm một cách chia nào đó cho
+$R_a$. Chú ý điểm khai triển $a$ và baseline là hai thứ mà bài báo giữ riêng:
+phát biểu dưới đây lấy gradient tại một điểm khai triển và nhân với hiệu giữa
+đầu vào và baseline, và hai điểm ấy không buộc phải trùng nhau.
+
 \begin{theorem}
 \label{thm:ch06-ba-tien-de}
 Với $f$ khả vi liên tục hai lần trên $[0,1]^d$, mọi attribution thỏa cả ba
@@ -22,7 +45,8 @@ Với $f$ khả vi liên tục hai lần trên $[0,1]^d$, mọi attribution th�
 hiệu giữa đầu vào và baseline, tức dạng Gradient$\mathbin{\times}$Input tính
 theo baseline, cộng với attribution của phần dư Taylor bậc hai của $f$ quanh
 điểm ấy. Nếu attribution còn Lipschitz liên tục theo mô hình, nghĩa là đổi mô
-hình một chút thì attribution chỉ đổi một chút, phần dư ấy bị chặn bởi tích của
+hình một chút thì attribution chỉ đổi một chút, thì \emph{attribution của phần
+dư ấy} bị chặn bởi tích của
 hằng số Lipschitz, số chiều $d$ và độ cong lớn nhất của
 $f$~\autocite{p17firstprinciples}.
 \end{theorem}

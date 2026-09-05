@@ -10,6 +10,21 @@ tập dữ liệu để xếp hạng đặc trưng. Phép tổng hợp ấy chuy
 cục bộ thành một phát biểu toàn cục, nên nó cần một câu hỏi mới: độ bất định
 của con số tổng hợp là bao nhiêu?
 
+Hai chi tiết của phép tổng hợp ấy đáng thấy trên một ví dụ trước khi đọc phần
+hình thức. Giả sử trên một tập dữ liệu, đặc trưng $i$ nhận $\phi_i = +2$ ở một
+nửa số điểm và $\phi_i = -2$ ở nửa còn lại. Lấy trung bình có dấu thì được $0$,
+và bảng xếp hạng sẽ nói đặc trưng ấy không quan trọng; lấy trung bình trị tuyệt
+đối thì được $2$, và bảng nói nó quan trọng. Cùng một tập lời giải thích cục bộ,
+hai kết luận toàn cục ngược nhau, và cái chọn giữa chúng là quy ước tổng hợp chứ
+không phải dữ liệu. Đó là lý do thực hành lấy trị tuyệt đối hoặc bình phương, và
+là lý do phải nói rõ đang lấy cái nào.
+
+Chi tiết thứ hai là con số $2$ ấy được tính trên một mẫu hữu hạn, từ những
+$\phi_i$ bản thân chúng đã là ước lượng. Nên nó là một ước lượng của một đại
+lượng, và một ước lượng không có khoảng tin cậy thì không so được với ước lượng
+của một đặc trưng khác. Phần còn lại của mục này là công việc để có khoảng tin
+cậy ấy.
+
 Whitehouse, Sawarni và Syrgkanis gọi hàm $\phi_i(\cdot)$ ấy là đường cong
 SHAP, và đại lượng toàn cục mà họ xét là kỳ vọng của lũy thừa bậc $p$ của nó
 trên phân phối dữ liệu, $\mathbb{E}\,|\phi_i(X)|^p$, với $X$ là vector đặc
@@ -33,9 +48,9 @@ mà thống kê bán tham số gọi là \tn{hàm phụ}{nuisance function}: m�
 ước lượng trên đường đi tới đại lượng cần tính, nhưng bản thân nó không phải
 đích.
 
-Cách sửa của bài báo là một \tn{ước lượng khử chệch}{debiased estimator}. Vào
-trung bình thô, họ cộng thêm các số hạng hiệu chỉnh được thiết kế sao cho sai
-số bậc nhất của các hàm phụ triệt tiêu; ở đây có hai hàm phụ, đường cong SHAP
+Cách sửa của bài báo là một \tn{ước lượng khử chệch}{debiased estimator}. Các
+tác giả cộng vào trung bình thô những số hạng hiệu chỉnh, được thiết kế sao cho
+sai số bậc nhất của các hàm phụ triệt tiêu; ở đây có hai hàm phụ, đường cong SHAP
 và hàm hồi quy thật mà nó được dựng từ đó, nên cần hai số hạng hiệu chỉnh. Nhờ
 vậy điều kiện về tốc độ hội tụ nới ra, hàm phụ chỉ cần hội tụ với tốc độ căn
 bậc bốn của cỡ mẫu thay vì căn bậc hai, và phần sai số còn lại nhỏ đủ để ước
