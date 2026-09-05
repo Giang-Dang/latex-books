@@ -1,0 +1,85 @@
+\section{The Second Bill for a Shareable \code{node}}
+\label{sec:ch15-the-second-bill-for-a-shareable-node}
+
+\index{node@\code{node(id:)}!what the field has now cost twice|(}%
+Chapter~\ref{ch:composition} shipped a type interceptor of thirty-three lines
+so that \code{node} and \code{nodes} would carry \code{@shareable} and two
+subgraphs would compose. I argued the trade at the time: thirty-three lines to
+avoid promising four fields in order to keep a promise about two.
+
+\index{node@\code{node(id:)}!the runtime bill, from chapter 9}%
+Chapter~\ref{ch:second-third-subgraph} presented the first bill. With two node
+types in two services, \code{node(id:)} answers correctly only when the query
+names the owning type in a fragment, because the fragment is the only thing in
+the request the planner can route on. I said there that the graph ships as
+measured and that chapter~\ref{ch:satisfiability} would pick it up.
+
+\index{node@\code{node(id:)}!the composition bill}%
+This is the second bill, and it is larger, because the first one is at least
+visible to whoever sends the query.
+Section~\ref{sec:ch15-the-composition-that-passes} is the same field, the same
+directive and the same two subgraphs, costing a check that was supposed to be
+protecting the whole graph rather than one root field.
+
+\index{node@\code{node(id:)}!one mechanism, two costs}%
+It is one mechanism twice. \code{@shareable} says any subgraph declaring the
+field can resolve it, and neither of them can. At run time the router believes
+it and picks one. At composition the walk believes it and accepts either.
+
+\subsection{One of the Four Rejections, Measured}
+
+\index{node@\code{node(id:)}!declaring it in one subgraph only}%
+Chapter~\ref{ch:second-third-subgraph} listed four ways out of the runtime
+problem and rejected all four. The second was to declare \code{node} in one
+subgraph only, so that nothing collides and no \code{@shareable} is needed, and
+I rejected it on the ground that composition would pass and the failure would
+be identical. That was reasoning rather than a measurement, and the
+measurement disagrees with half of it.
+
+\index{node@\code{node(id:)}!the check comes back}%
+Take \code{node} and \code{nodes} out of the Speakers document, leave
+everything else alone, and the healthy graph composes exactly as it does today.
+Break the Ratings key again, with all four services in the graph, and the
+composer catches it, naming
+\code{query \{ node \{ ... on Session \} \}}: the route
+section~\ref{sec:ch15-the-route-it-named-is-one-of-six} got by taking the whole
+Speakers service out, now reached by taking two fields out of it. So that
+option is not neutral. It costs nothing at composition time on a working graph,
+and it buys back the check.
+
+\index{node@\code{node(id:)}!what it would cost at run time is not known}%
+What it costs at run time I have not measured. With one subgraph declaring the
+field, a \code{node(id:)} for a speaker has to be planned through the Sessions
+subgraph's copy, and whether that answers, errors or reaches the wrong service
+is a question I did not put to the router. I am not going to tell you it is the
+better arrangement on the strength of half a comparison.
+
+\subsection{Nobody Has Answered This}
+
+\index{node id!there is no published guidance, and it is not an oversight}%
+Chapter~\ref{ch:federation-model} recorded that this book federates on the
+global node id as my judgment, because Apollo publishes no guidance on using
+one as a key. That is still true and it is worth saying more precisely now.
+The question has been open on Apollo's own federation repository since October
+2021, under the title \enquote{Node query support in federated apollo server},
+and it was still open, with eleven comments on it, when I wrote this
+sentence~\autocite{apollonodeissue}.
+
+\index{node id!five years is a position}%
+Five years of an issue staying open is not the same as nobody having noticed.
+Relay's global object identification and federation's entity resolution are two
+answers to the question \emph{how do I refetch a thing by its identifier}, and
+a graph that adopts both has to decide which of them routes. This book decided,
+in chapter~\ref{ch:schema-design}, before there was a seam to route across.
+
+\index{node id!what I would tell you to do}%
+What I would do differently, having now paid for it twice: keep global object
+identification, because chapter~\ref{ch:schema-design}'s refetch story is worth
+having, and try declaring \code{node} in exactly one subgraph before sharing it
+across every subgraph that generates it. That is a judgment and I am labeling
+it as one, on the evidence in this section rather than on anything published.
+It buys back the check that section~\ref{sec:ch15-the-composition-that-passes}
+loses, at a runtime cost I have not measured and you would have to. Which is
+the honest version of a recommendation whose other half is still open on
+somebody else's issue tracker.
+\index{node@\code{node(id:)}!what the field has now cost twice|)}%

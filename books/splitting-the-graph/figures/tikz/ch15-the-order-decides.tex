@@ -1,0 +1,105 @@
+% The same four root fields, in two declaration orders, against the same broken
+% subgraph. Above, the composer finds nothing. Below, it finds the defect on
+% its second step.
+%
+% Same idiom as figures/tikz/ch01-one-field.tex, which fixes it, and drawn as
+% that file's two-lane timeline because the subject here is order and nothing
+% else. Direct sibling of figures/tikz/ch07-the-walk.tex: same left-to-right
+% axis, same ticks, same cross for a point the walk cannot pass. What is new is
+% a third kind of stage, and it needs a mark of its own.
+%
+% The three marks, and why each is the shape it is:
+%
+%   a vertical stroke   a field the composer actually walked
+%   a cross             the walk reaching a step it cannot take, from ch07
+%   a hollow square     a field skipped without being walked
+%
+% The hollow square is the addition. A skipped stage is not a blocked one and
+% must not read as a cross, and it is not a walked one either, so a stroke is
+% wrong as well. An empty box says the composer arrived and did nothing, which
+% is exactly what the record lookup does. Square rather than round because the
+% idiom has no rounded corners anywhere.
+%
+% The lower lane's axis stops after its second stage rather than running to the
+% end. That is not decoration: the composer returns at the first root field it
+% cannot walk, so the two fields after it are genuinely never looked at in that
+% run, and drawing them would say the opposite.
+%
+% No quotation marks anywhere in this file, including this comment block, per
+% SPEC decision 30 and the note at the head of ch07-the-walk.tex.
+%
+% Bare tikzpicture (house style): the figure environment, caption and label
+% live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  trunk/.style={draw, line width=0.4pt},
+  axis/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  tick/.style={draw, line width=0.4pt},
+  skip/.style={draw, line width=0.4pt, minimum width=2.4mm,
+    minimum height=2.4mm, inner sep=0pt},
+  event/.style={anchor=south, align=center, text width=30mm, inner sep=1pt},
+  outcome/.style={anchor=west, align=left, text width=32mm, inner sep=1pt},
+  lane/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  span/.style={draw, line width=0.4pt},
+]
+
+% ------------------------------------------------------------------- lane A
+\node[lane] at (0,14) {A. type Query as the service exports it};
+
+\draw[trunk] (0,0) -- (112,0);
+
+% node and nodes are walked. sessions and sessionById are not.
+\foreach \x in {14,44}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+\foreach \x in {74,102}{\node[skip] at (\x,0) {};}
+
+\node[event] at (14,3)  {node\\walked, and passes};
+\node[event] at (44,3)  {nodes};
+\node[event] at (74,3)  {sessions};
+\node[event] at (102,3) {sessionById};
+
+\draw[span] (6,-4) -- (6,-7) -- (52,-7) -- (52,-4);
+\node[spanlabel, text width=48mm] at (29,-8)
+  {shared with the speakers subgraph. Session is recorded on the way past, and
+   the field passes because that subgraph answered for its own type};
+
+\draw[span] (66,-4) -- (66,-7) -- (110,-7) -- (110,-4);
+\node[spanlabel, text width=44mm] at (88,-8)
+  {Session is already in the record, so neither is walked};
+
+\node[outcome] at (118,0) {composes.\\Nothing printed.};
+
+% ------------------------------------------------------------------- lane B
+\begin{scope}[shift={(0,-46)}]
+  % Higher than lane A's title: this lane's first event runs to three lines
+  % where lane A's runs to two, and at 14 the two collide.
+  \node[lane] at (0,18) {B. the same four fields, node and nodes declared last};
+
+  % Stops where the walk stops. Solid to the first stage, dashed into the
+  % second, and nothing after it.
+  \draw[trunk] (0,0) -- (14,0);
+  \draw[axis, dashed] (14,0) -- (44,0);
+
+  \draw[tick] (14,-1.5) -- (14,1.5);
+  \draw[tick] (42.8,-1.5) -- (45.2,1.5);
+  \draw[tick] (42.8,1.5) -- (45.2,-1.5);
+
+  \node[event] at (14,3) {sessions\\walked first};
+  \node[event] at (44,3) {into Session,\\and no further};
+
+  \node[event, text width=30mm, anchor=south] at (74,3)  {node};
+  \node[event, text width=30mm, anchor=south] at (102,3) {nodes};
+  \node[spanlabel, text width=44mm] at (88,-2)
+    {never reached: the check returns at the first root field it cannot walk};
+
+  \draw[span] (6,-6) -- (6,-9) -- (52,-9) -- (52,-6);
+  \node[spanlabel, text width=48mm] at (29,-10)
+    {nothing has been recorded yet, so the walk goes to ratings and finds no
+     key it may enter through};
+
+  \node[outcome] at (118,0) {fails, naming\\Query.sessions.};
+\end{scope}
+
+\end{tikzpicture}

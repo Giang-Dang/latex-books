@@ -1,13 +1,20 @@
-% Scope (SPEC.md, Table of contents): reading composition errors, and why the composer blames one route out of four that fail
+% Scope (SPEC.md, Table of contents): reading composition errors, and why the
+% composer blames one route out of four that fail. Corrected 2026-09-05 while
+% drafting: the number is six rather than four in this book's graph, and the
+% chapter found a second half larger than the first, that the check can be
+% talked out of the question entirely by a shareable root field returning an
+% interface (decisions 127 to 130).
 \chapter{Where Satisfiability Actually Fails}
 \label{ch:satisfiability}
 
-\emph{Not yet drafted.}
+A composition error names one blocked route out of the several that fail, and
+a composition that passes has not promised that any route works.
 
-% Chapter skeleton, SPEC decision 13. Five beats, this order:
-%   1. The one sentence  - what this chapter establishes, stated first.
-%   2. Show it          - the thing running, or in Part III the thing failing.
-%   3. Why it does that - the mechanism. All theory lives here (decision 14).
-%   4. Do it properly   - the complete, correct implementation.
-%   5. Summary box      - decision 21.
-% Section files are \input from here, numbered 01-, 02-, ... from the book root.
+\input{chapters/15-where-satisfiability-actually-fails/01-one-attribute-and-three-errors}
+\input{chapters/15-where-satisfiability-actually-fails/02-the-route-it-named-is-one-of-six}
+\input{chapters/15-where-satisfiability-actually-fails/03-what-the-walk-is-asking}
+\input{chapters/15-where-satisfiability-actually-fails/04-the-composition-that-passes}
+\input{chapters/15-where-satisfiability-actually-fails/05-three-fields-three-failures}
+\input{chapters/15-where-satisfiability-actually-fails/06-the-second-bill-for-a-shareable-node}
+\input{chapters/15-where-satisfiability-actually-fails/07-reading-one-properly}
+\input{chapters/15-where-satisfiability-actually-fails/08-summary}
