@@ -67,8 +67,9 @@ Ask the same dead service for \code{averageScore} instead:
 Same service, same outage, same fetch failure, same one statement in Sessions.
 The whole difference is that \code{averageScore} is \code{Float} and
 \code{ratingCount} is \code{Int!}, and chapter~\ref{ch:second-third-subgraph}
-declared both of them in one chapter, neither as a reliability decision. One of them is a client that renders the program with
-blank scores. The other is a client with nothing to render.
+declared both in the same file, neither as a reliability decision. One of them
+is a client that renders the program with blank scores. The other is a client
+with nothing to render.
 
 \index{errors!the second one is the propagation}%
 Count the errors as well. The good case has one, and it is the fetch. The bad
@@ -85,7 +86,7 @@ different shapes. Ratings contributes \code{ratingCount} and
 Sessions. Ask for \code{feedbackUrl} with Ratings stopped and the page empties
 exactly as it did above, with the path naming \code{feedbackUrl} instead.
 
-\index{@requires@\code{@requires}!two ways to fail}%
+\index{requires@\code{"@requires}!two ways to fail}%
 \code{feedbackUrl} is the worst of the three, because
 chapter~\ref{ch:second-third-subgraph} put it behind \code{@requires}. The
 router has to collect a title from Sessions before Ratings can be asked for the

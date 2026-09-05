@@ -75,20 +75,15 @@ section~\ref{sec:ch06-a-key-you-did-not-produce} is about.
 \subsection{The Projection Is Left Behind}
 
 \index{QueryContext@\code{QueryContext<T>}!not taken by the reference resolver}%
-One parameter is missing from the resolver below, and it is the one every
-other resolver in this book takes. A \code{QueryContext} can be injected into a
-reference resolver, and I am leaving it out on purpose. The reason is a
-measurement rather than a rule: this route has to answer a list of keys, and
-chapter~\ref{ch:router-n-plus-1} measures why a resolver that takes the
-projection cannot also answer that list in one statement. That chapter weighs
-the two and takes the batch. For now the consequence is enough.
-
 \index{projection!not taken by the entity route}%
-So the entity route runs without the projection
-chapter~\ref{ch:data-without-n-plus-1} put in, and
-section~\ref{sec:ch06-what-the-entity-route-costs} measures the difference. The
-comment in the resolver says so, rather than leaving a later reader to wonder
-whether the parameter was forgotten.
+One parameter is missing from the resolver below, and it is the one
+chapter~\ref{ch:data-without-n-plus-1} put on every resolver that goes to a
+table. A \code{QueryContext} can be injected into a reference resolver, and I
+am leaving it out on purpose: chapter~\ref{ch:router-n-plus-1} measures what
+this route pays for taking one, and
+section~\ref{sec:ch06-what-the-entity-route-costs} measures what it pays for
+not. The comment in the resolver says the parameter was left out rather than
+forgotten, and names the chapter that says why.
 
 \index{key@\code{[Key]}!on the record instead is silent}%
 One more placement is worth knowing before you copy the attributes onto a type
@@ -161,8 +156,8 @@ put in an API.
 \index{SessionType@\code{SessionType}!gains a reference resolver}%
 \code{SessionType.cs} takes the same shape and differs in the two ways this
 section has already named. It goes to the table directly rather than through a
-loader, because that is what its node resolver does, and it has no
-\code{QueryContext} because it cannot have one:
+loader, because that is what its node resolver does, and it takes no
+\code{QueryContext}, for the reason above:
 
 \begin{minted}[highlightlines={2-4,10-12,38-60}]{csharp}
 using GreenDonut.Data;
@@ -229,7 +224,7 @@ public static partial class SessionType
 \end{minted}
 
 \index{entities@\code{\_entities}!answering}%
-That compiles, and the entity route answers. The operation is one line and the
+That compiles, and the entity route answers. The operation is short and the
 chapter uses it several times, so it stands on its own here:
 
 \begin{minted}{graphql}

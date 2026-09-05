@@ -17,9 +17,9 @@ them to deliver autonomously and incrementally}~\autocite{apollofederation}.
 \index{subgraph}%
 \index{supergraph}%
 \index{router}%
-Each service publishes its own schema. A composer merges those schemas into one
-supergraph. A router serves the supergraph and calls the services to answer
-each part of a query.
+Each service publishes its own schema, and a service that does so is a
+subgraph. A composer merges those schemas into one supergraph. A router serves
+the supergraph and calls the subgraphs to answer each part of a query.
 
 Netflix says as much about why they moved: \enquote{We still wanted to keep the
 unified GraphQL schema of Studio API but decentralize the implementation of the

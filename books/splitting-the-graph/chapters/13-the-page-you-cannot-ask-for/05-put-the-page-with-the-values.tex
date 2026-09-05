@@ -3,8 +3,9 @@
 
 \index{entity reference!from search results|(}%
 What Search hands back is a reference to a session and not a copy of one. Its
-own \code{Session} is the stub shape chapter~\ref{ch:second-third-subgraph}
-wrote for the Sessions service's speakers, an opaque node id and nothing else:
+own \code{Session} is a stub holding the node id as a string, the way the
+Ratings service in chapter~\ref{ch:second-third-subgraph} held one, and
+nothing else:
 
 \begin{minted}{csharp}
 using HotChocolate.Types.Relay;

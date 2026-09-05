@@ -28,9 +28,9 @@ read next to the name of the table it came from. Once it leaves through the
 schema the table name is gone, and \code{1} is all the client has.
 
 \index{client!caching by identifier}%
+\index{typename@\code{\_\_typename}!definition}%
 A client that stores objects by identifier now has to decide whether those two
 are the same thing, and nothing in the response tells it.
-\index{typename@\code{\_\_typename}!definition}%
 The type name is available, through \code{\_\_typename}, a field every object
 in every GraphQL schema answers with the name of its own type, so a careful
 client can ask for it and pair the two and be safe. That is the point: the

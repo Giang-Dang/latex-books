@@ -23,16 +23,15 @@ well; it does not invent the first, and nothing in a plan could.
   \caption{The page is cut in the first step, by the service that owns the
   list, before any score exists to sort by. Hydration in the second step can
   decorate the rows it is handed and cannot bring back one the cut left out,
-  so a request sorted by a value the list owner does not hold gets a page that
-  owner chose for reasons of its own.}
+  so a request sorted by a value that service does not hold gets a page it
+  chose for reasons of its own.}
   \label{fig:ch13-two-page-orders}
 \end{figure}
 
 \index{query plan!no step replaces a row}%
 Read the measured plans for this graph with that split in mind. A root
 \code{Single} fetch produces a list. A later \code{BatchEntity} fetch fills
-one path on members of that list, and in this plan the path is
-\code{sessions.nodes.@.averageScore}.
+fields on members of that list, at the members' own position in the response.
 No step discards a member, reorders the rest, mints new cursors and goes
 back to the owner for a replacement row, and the reason is what a replacement
 would cost. Suppose Sessions hands back ten rows and six of them score too

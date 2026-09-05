@@ -22,9 +22,10 @@ to until Sessions has chosen the session.
 \index{provides@\code{"@provides}!needs the value already present}%
 \code{@provides} points the other way. It lets a resolver return a field it
 does not own, at one path, on the condition that the service already holds
-the value; the directive neither fetches it nor keeps it current, which
-chapter~\ref{ch:second-third-subgraph} gave as the reason this graph ships
-none. \code{@shareable} says two subgraphs can both resolve a field, and
+the value; the directive neither fetches it nor keeps it current, and holding
+the value means keeping a copy of a column in a service that does not own it,
+which is why chapter~\ref{ch:second-third-subgraph} shipped none.
+\code{@shareable} says two subgraphs can both resolve a field, and
 copies nothing into either of them. If Sessions genuinely maintained an
 average score of its own, marking both definitions shareable would describe
 that, and it would be the local column and not the annotation that made
@@ -33,15 +34,17 @@ how big a list may get, which chapter~\ref{ch:composition} already met and
 switched off; it says nothing about how the list is ordered.
 
 \index{search!is possible, and needs an owner}%
-Those are claims about this schema and not a verdict on federated graphs,
-which offer cross-domain search all the time. What a search surface needs is
-an owner that holds every value it filters and sorts by at the moment it cuts
-the page, and this graph does not have one yet.
+Those are claims about this schema and not a verdict on federation. What a
+search surface needs is an owner that holds every value it filters and sorts
+by at the moment it cuts the page, and this graph does not have one yet.
 
 \index{search!where to put the owner}%
+\index{projection!the other sense of the word}%
 There are two places it could go, and I built both. A complete projection
-inside Ratings produces the same page, the same SQL, the same statement counts
-and the same router plan as a separate service, and saves a process. It also
+inside Ratings, and projection here means a copy of the values to search by
+rather than chapter~\ref{ch:data-without-n-plus-1}'s narrowing of columns,
+produces the same page, the same shape of SQL, the same statement counts and
+the same router plan as a separate service, and saves a process. It also
 makes the service that stores scores the owner of a second domain, discovery,
 that has nothing to do with writing a score. The other place is a fourth
 subgraph, Search, which owns no session and no rating and holds a document

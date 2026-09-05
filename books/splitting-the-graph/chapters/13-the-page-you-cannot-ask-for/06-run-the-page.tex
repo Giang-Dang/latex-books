@@ -114,9 +114,9 @@ no opinion on it.
 The schema should say what that decision permits. If a rating submitted now
 may take a minute to move a session up the ranking, write that down and watch
 the lag. If a workflow needs to read its own write, an eventually updated
-projection is the wrong thing to build it on. A search index is not a free
-join; it is the same join moved to write time, and what it costs is that
-staleness becomes a domain concern rather than a database one.
+projection is the wrong thing to build it on. A search index moves the join
+to write time rather than removing it, and what that costs is that staleness
+becomes a domain concern rather than a database one.
 
 \index{cursor!stability is not the tie-breaker}%
 Nor would I call the cursor stable because it has a tie-breaker. The

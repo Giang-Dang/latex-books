@@ -2,8 +2,9 @@
 \label{sec:ch13-domain-that-can-ask}
 
 \index{search subgraph!complete projection|(}%
-Search is a read model and nothing more. It owns no \code{Session}, it answers
-questions about sessions out of a copy, and it is built from the same runtime,
+Search is a read model, a copy of other services' data kept only to be
+queried, and nothing more. It owns no \code{Session}, it answers questions
+about sessions out of that copy, and it is built from the same runtime,
 the same federation package, the same paging support and the same SQLite
 provider as the three services already running. The project file first:
 
@@ -144,8 +145,9 @@ public enum SessionSearchOrder
 \index{AsNoTracking@\code{AsNoTracking}}%
 The resolver does everything that matters inside one \code{IQueryable}, and
 the order of the calls is the point: the filter and the sort are on the query
-before \code{[UsePaging]} adds its slice, which is the same rule
-chapter~\ref{ch:data-without-n-plus-1} found for the projection.
+before \code{[UsePaging]} adds its slice, so the \code{LIMIT} lands under
+both in one statement, which is the thing
+chapter~\ref{ch:data-without-n-plus-1} said to check for.
 \code{AsNoTracking} is new in this book and is EF Core's way of being told
 that these rows will only ever be read, so it need not remember them for a
 later save. Both orderings end with \code{SessionId}.
@@ -181,6 +183,5 @@ public static class Query
 
 Notice what is absent. No call to Sessions, none to Ratings, none to the
 router: Search decides the page alone, because everything the decision needs
-is in its own table. That is the whole price of the projection, and the whole
-point of it.
+is in its own table. That is the price of the projection, and the point of it.
 \index{search subgraph!complete projection|)}%

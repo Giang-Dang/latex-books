@@ -18,8 +18,9 @@ owners, and the seam runs between them rather than through either.
 The second arrangement is the one that makes federation more than remote
 procedure calls. The Ratings service stores nobody's sessions and nobody's
 speakers, and it is nevertheless the right place for a session's ratings to
-live. So it declares \code{Session} too, carrying the key and the two fields it
-owns:
+live. So it declares \code{Session} too, carrying the key and two of the three
+fields chapter~\ref{ch:second-third-subgraph} gives it; the third needs a
+directive section~\ref{sec:ch05-the-directives} has not introduced yet:
 
 \begin{graphqlsdl}
 type Session @key(fields: "id") {

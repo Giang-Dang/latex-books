@@ -1,4 +1,4 @@
-% Scope (SPEC.md, Table of contents): the first service, implementation-first types, the schema it produces, and the development loop
+% Scope (SPEC.md, Table of contents): what the book assumes its reader knows, the first service, implementation-first types, the schema it produces, and the development loop
 \chapter{Hot Chocolate from Zero}
 \label{ch:hot-chocolate-zero}
 
@@ -8,6 +8,18 @@ something you read back rather than something you write and keep in step.
 That arrangement has a cost attached. Every public member is a schema field
 until you say otherwise, so the reader of your API sees the consequences of
 decisions you made for the compiler.
+
+\index{prerequisites}%
+From here on the book assumes three things of you. C\# and ASP.NET Core at the
+level of having shipped a controller: every file is printed in full, and none
+of the pages explain what a record, a builder or a middleware is. HTTP and
+JSON, because every request is printed as raw HTTP and every response as the
+JSON that came back. And GraphQL at the level of having sent one query and
+read one schema. Nothing assumes you have designed a schema, run a GraphQL
+service in production, or met federation before
+chapter~\ref{ch:do-you-need-this}. A term a reader at that level may not have
+met gets one clause the first time it appears, and the index carries every
+one of them.
 
 \input{chapters/02-hot-chocolate-from-zero/01-the-smallest-thing-that-runs}
 \input{chapters/02-hot-chocolate-from-zero/02-where-the-registration-comes-from}
