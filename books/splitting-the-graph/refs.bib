@@ -580,3 +580,83 @@
                   linked, 6769, was closed without being merged, checked with
                   gh pr view on the same date}
 }
+
+%--------------------------------------------------------------------------
+% Chapter 14 - One Field Fails and the Response Is Empty
+%--------------------------------------------------------------------------
+
+@online{graphqlrfc1065,
+  author       = {Gillam, Benjie},
+  title        = {{RFC}: {SemanticNonNull} type (null only on error)},
+  organization = {GitHub, graphql/graphql-spec},
+  number       = {1065},
+  date         = {2023-11-24},
+  url          = {https://github.com/graphql/graphql-spec/pull/1065},
+  urldate      = {2026-09-05},
+  addendum     = {A pull request, cited as the artifact under decision 39 rather
+                  than as an authority. State read with gh pr view on the access
+                  date: open, never merged, never closed, last updated
+                  2026-03-19, and that update is a label event applying stale
+                  rather than a comment. The project's own RFC tracker at
+                  rfcs.graphql.org puts it at stage RFC 0, strawman. The chapter
+                  says both that it is open and that the work moved on, because
+                  either half alone misleads}
+}
+
+@online{graphqlrfc1163,
+  author       = {Gillam, Benjie},
+  title        = {Error behaviors, including \code{onError} of null},
+  organization = {GitHub, graphql/graphql-spec},
+  number       = {1163},
+  date         = {2025-04-30},
+  url          = {https://github.com/graphql/graphql-spec/pull/1163},
+  urldate      = {2026-09-05},
+  addendum     = {The proposal the nullability working group's own closing note
+                  says the work landed on. Read with gh pr view on the access
+                  date: open, last updated 2026-09-03, and at stage RFC 1,
+                  proposal, one further along than 1065. Cited as the artifact}
+}
+
+@online{nullabilitywg,
+  author       = {{GraphQL Nullability Working Group}},
+  title        = {{GraphQL} Nullability Working Group},
+  organization = {GitHub, graphql/nullability-wg},
+  date         = {2026-02-05},
+  url          = {https://github.com/graphql/nullability-wg},
+  urldate      = {2026-09-05},
+  addendum     = {A standards body recording the closure of its own
+                  subcommittee, which decision 39 admits unsigned: it is the
+                  artifact rather than a claim about it. The README's archival
+                  note is what the chapter quotes, and it is the source for the
+                  claim that the work moved from 1065 to 1163. Fetched raw
+                  rather than through the repository page}
+}
+
+@online{staib2026hc16,
+  author   = {Staib, Michael},
+  title    = {What's new for {Hot} {Chocolate} 16},
+  date     = {2026-05-11},
+  url      = {https://chillicream.com/blog/2026/05/11/hot-chocolate-16/},
+  urldate  = {2026-09-05},
+  addendum = {A vendor's blog, and usable because it is bylined by a named
+              engineer at the company being described, which the Sources rule
+              requires and which the chapter states in the prose. Byline
+              confirmed by fetching the page rather than from a search result.
+              Cited for what the null error-handling mode does; that the
+              mechanism ships in 16.6.1 is measured here rather than taken
+              from him}
+}
+
+@online{stubailo2018,
+  author   = {Stubailo, Sashko},
+  title    = {Using nullability in {GraphQL}},
+  date     = {2018-06-05},
+  url      = {https://www.apollographql.com/blog/using-nullability-in-graphql},
+  urldate  = {2026-09-05},
+  addendum = {Bylined, so the vendor rule is met. The date is why the chapter
+              names it: the advice predates federation, and what this chapter
+              adds is what changes once a router merges several services into
+              one response. Apollo's current unsigned nullability guide argues a
+              position and is therefore barred under decision 39; it is recorded
+              in the research note and cited nowhere}
+}

@@ -1,0 +1,386 @@
+\section{The Exclamation Mark Nobody Typed}
+\label{sec:ch14-the-exclamation-mark-nobody-typed}
+
+\index{node@\code{node}!the plural field's wrapper|(}%
+Every non-null field so far has been one somebody wrote. There is one in this
+graph that nobody did.
+
+\begin{graphqlsdl}
+type Query {
+  "Fetches an object given its ID."
+  node("ID of the object." id: ID!): Node @shareable
+  "Lookup nodes by a list of IDs."
+  nodes("The list of node IDs." ids: [ID!]!): [Node]! @shareable
+}
+\end{graphqlsdl}
+
+\index{AddGlobalObjectIdentification@\code{AddGlobalObjectIdentification}!generates two different nullabilities}%
+Both fields come from \code{AddGlobalObjectIdentification()}, which
+chapter~\ref{ch:schema-design} called once and has not been thought about
+since. The singular field is nullable and the plural one is a non-null list of
+nullable items. Nobody in this book chose either, and the difference between
+them turns out to be the difference between losing a field and losing the
+response.
+
+\subsection{The Item Type Does Not Save You}
+
+\index{node@\code{node}!nullable items promise nothing}%
+\code{[Node]} inside \code{[Node]!} reads like a design that has already thought
+about partial failure: the list must be there, and any entry in it may be null,
+so one unreachable object should cost one entry. Stop the Speakers service and
+ask for one session and one speaker.
+
+\begin{minted}{graphql}
+query N($i: [ID!]!) {
+  nodes(ids: $i) {
+    __typename
+    ... on Speaker { name }
+    ... on Session { title }
+  }
+}
+\end{minted}
+
+The variable holds one session id and one speaker id, in that order:
+
+\begin{minted}{json}
+{"i": ["U2Vzc2lvbjox", "U3BlYWtlcjox"]}
+\end{minted}
+
+The router answers:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'speakers'."}],"data":null}
+\end{minted}
+
+\index{node@\code{node}!no path, no index, no partial list}%
+There is no list with a hole in it, and the error carries neither an index nor
+a path. The session in that request is answered by a service that is running,
+and asking for it alone proves it:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"nodes":[{"__typename":"Session","title":"Schemas That Outlive Their Authors"}]}}
+\end{minted}
+
+\index{router!fails the field rather than the entry}%
+The reason the mixed list does not degrade is that the router does not resolve
+\code{nodes} entry by entry. It plans one batched step per owning subgraph, and
+when a step has nowhere to go it fails the field rather than the entries under
+it. A failure attributed to the whole field lands on the field's own type, that
+type is \code{[Node]!}, and the walk from
+section~\ref{sec:ch14-how-far-a-null-climbs} takes it to \code{data}.
+
+\index{node@\code{node}!the singular field contains the same failure}%
+Now the singular field, same dead service, same speaker:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'speakers'."}],"data":{"node":null}}
+\end{minted}
+
+\index{blast radius!decided by the wrapper, not the failure}%
+Identical failure, identical error text, and the damage stops at the field
+because \code{node} is \code{Node} rather than \code{Node!}. Two generated
+fields, one line apart in the same schema, and the plural one is the one that
+can empty a response.
+
+\subsection{Reaching a Field You Did Not Declare}
+
+\index{TypeInterceptor@\code{TypeInterceptor}!the second thing it is needed for}%
+There is no signature to put a question mark on. \code{node} and \code{nodes}
+are generated and declared in no class of ours, which is the same wall
+chapter~\ref{ch:composition} hit when it needed to mark those two fields
+shareable and answered with a type interceptor. The field's type is settable on
+the configuration the interceptor is handed, so the same hook works for this:
+
+\begin{minted}{csharp}
+using HotChocolate.Configuration;
+using HotChocolate.Types.Descriptors;
+using HotChocolate.Types.Descriptors.Configurations;
+
+namespace Sessions;
+
+/// <summary>
+/// Makes the generated nodes field nullable, so that a subgraph it
+/// routes to being down costs the field rather than the response.
+/// </summary>
+// AddGlobalObjectIdentification generates node and nodes, and it
+// generates them with different nullability: node is Node, which may
+// hold a null, and nodes is [Node]!, which may not. The item type
+// inside that list is nullable and it does not help, because the
+// router resolves nodes as one batched step per owning subgraph and
+// fails the whole field when one of them is unreachable. A non-null
+// list with nowhere to put the failure propagates to its parent, and
+// the parent of a root field is the response.
+//
+// Neither field is declared in any class here, so there is no
+// signature to put a question mark on. This is the same problem
+// ShareNodeFields beside it solves for a directive, and the same hook
+// solves it: the field's Type is settable on the configuration.
+internal sealed class NullableNodesField : TypeInterceptor
+{
+    public override void OnBeforeCompleteType(
+        ITypeCompletionContext context,
+        TypeSystemConfiguration configuration)
+    {
+        if (configuration is not ObjectTypeConfiguration type
+            || type.Name != "Query")
+        {
+            return;
+        }
+
+        foreach (var field in type.Fields)
+        {
+            if (field.Name is "nodes")
+            {
+                field.Type = TypeReference.Parse(
+                    "[Node]", TypeContext.Output);
+            }
+        }
+    }
+}
+\end{minted}
+
+\index{TryAddTypeInterceptor@\code{TryAddTypeInterceptor}!registers the second one}%
+Registering it is one more line on the builder, below the
+chapter~\ref{ch:composition} one. Here is the Sessions service's
+\code{Program.cs} again, complete, with this chapter's line marked:
+
+\begin{minted}[highlightlines={37}]{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Sessions;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<ConferenceContext>(options =>
+{
+    options.UseSqlite("Data Source=conference.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+builder
+    .AddGraphQL()
+    .AddSessionsTypes()
+    .RegisterDbContextFactory<ConferenceContext>()
+    .AddQueryContext()
+    .AddPagingArguments()
+    .AddGlobalObjectIdentification()
+    .AddMutationConventions()
+    .AddApolloFederation()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false)
+    .TryAddTypeInterceptor<ShareNodeFields>()
+    .TryAddTypeInterceptor<NullableNodesField>();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<ConferenceContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{@shareable@\code{@shareable}!two subgraphs must agree on the type}%
+That is half the job, and I expected the composer to insist on the other half.
+\code{node} and \code{nodes} are shareable, which says two subgraphs can
+resolve the same field, and a field two subgraphs declare with different types
+does not look like one field. Soften it in Sessions, leave Speakers at
+\code{[Node]!}, and compose.
+
+\index{@shareable@\code{@shareable}!the composer takes the permissive type}%
+It composes. Exit zero, nothing printed, and the schema the router serves
+carries \code{[Node]}: handed two types for one shareable field, this composer
+takes the more permissive of them rather than refusing the pair. That is the
+third time in this book that this composer has accepted something a reader
+would expect it to stop, after the \code{@cost} weights of
+chapter~\ref{ch:composition} and the \code{@provides} preconditions of
+chapter~\ref{ch:second-third-subgraph}.
+
+\index{@shareable@\code{@shareable}!why both services change anyway}%
+Both services change anyway. A graph that is correct because a composer was
+lenient is a graph that breaks on the release where it stops being, and the
+half-softened version leaves the Speakers subgraph telling anyone who reads its
+schema a different story from the one the supergraph tells. So Speakers gets
+its own copy, exactly as it got its own \code{ShareNodeFields} in
+chapter~\ref{ch:second-third-subgraph}:
+
+\begin{minted}{csharp}
+using HotChocolate.Configuration;
+using HotChocolate.Types.Descriptors;
+using HotChocolate.Types.Descriptors.Configurations;
+
+namespace Speakers;
+
+/// <summary>
+/// Makes the generated nodes field nullable, so that a subgraph it
+/// routes to being down costs the field rather than the response.
+/// Declared again in this service rather than shared with the
+/// Sessions one, for the same reason ShareNodeFields is: both
+/// subgraphs export this field, so both have to soften it, and the
+/// two must agree or the composed field has two types.
+/// </summary>
+// AddGlobalObjectIdentification generates node and nodes, and it
+// generates them with different nullability: node is Node, which may
+// hold a null, and nodes is [Node]!, which may not. The item type
+// inside that list is nullable and it does not help, because the
+// router resolves nodes as one batched step per owning subgraph and
+// fails the whole field when one of them is unreachable. A non-null
+// list with nowhere to put the failure propagates to its parent, and
+// the parent of a root field is the response.
+//
+// Neither field is declared in any class here, so there is no
+// signature to put a question mark on. This is the same problem
+// ShareNodeFields beside it solves for a directive, and the same hook
+// solves it: the field's Type is settable on the configuration.
+internal sealed class NullableNodesField : TypeInterceptor
+{
+    public override void OnBeforeCompleteType(
+        ITypeCompletionContext context,
+        TypeSystemConfiguration configuration)
+    {
+        if (configuration is not ObjectTypeConfiguration type
+            || type.Name != "Query")
+        {
+            return;
+        }
+
+        foreach (var field in type.Fields)
+        {
+            if (field.Name is "nodes")
+            {
+                field.Type = TypeReference.Parse(
+                    "[Node]", TypeContext.Output);
+            }
+        }
+    }
+}
+\end{minted}
+
+\index{Program@\code{Program.cs}!the Speakers registration}%
+And that service's \code{Program.cs}, complete, with the same one line marked:
+
+\begin{minted}[highlightlines={65}]{csharp}
+using System.Text;
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Speakers;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<SpeakerContext>(options =>
+{
+    options.UseSqlite("Data Source=speakers.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+// A shared secret rather than a JWKS endpoint, because this book
+// stands up no identity provider and a reader has to be able to mint
+// a token and repeat every request in the chapter. The three
+// Validate flags are off for the same reason and are the three a
+// deployment turns on first. What is not negotiable is that the
+// router validates the same token against the same key: a subgraph
+// that trusts a header the router set, without checking it, has
+// moved the guard back out of the service again.
+builder.Services
+    .AddAuthentication()
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new()
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = false,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(SigningKey.Value))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+builder
+    .AddGraphQL()
+    // Without this the [Authorize] attributes compile, reach the
+    // schema as @authorize, and are never executed.
+    .AddAuthorization()
+    .AddSpeakersTypes()
+    .RegisterDbContextFactory<SpeakerContext>()
+    .AddQueryContext()
+    .AddPagingArguments()
+    .AddGlobalObjectIdentification()
+    .AddApolloFederation()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false)
+    .TryAddTypeInterceptor<ShareNodeFields>()
+    .TryAddTypeInterceptor<NullableNodesField>();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<SpeakerContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{node@\code{node}!after the change}%
+With the interceptor in both services, the mixed list against a stopped
+Speakers answers \code{\{"nodes":null\}} and leaves the rest of any response it
+appears in alone. That is not a fix for
+chapter~\ref{ch:second-third-subgraph}'s finding that \code{node(id:)} cannot
+route across a seam, which is a separate problem and still there. It is a fix
+for the blast radius when it fails.
+\index{node@\code{node}!the plural field's wrapper|)}%

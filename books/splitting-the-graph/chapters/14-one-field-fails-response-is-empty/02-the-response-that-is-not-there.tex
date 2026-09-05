@@ -1,0 +1,88 @@
+\section{The Response That Is Not There}
+\label{sec:ch14-the-response-that-is-not-there}
+
+\index{blast radius!the whole response}%
+The Ratings service has a root field of its own.
+Chapter~\ref{ch:second-third-subgraph} gave it one because every subgraph needs
+somewhere to put a query, and almost everything interesting that service knows
+is about a type it does not own. What was left was a total:
+
+\begin{graphqlsdl}
+type Query {
+  "How many scores this service holds, across every session."
+  ratingCount: Int!
+}
+\end{graphqlsdl}
+
+\index{non-null!a count that cannot fail}%
+That exclamation mark is defensible on every rule this book has given so far. A
+\code{COUNT} over a table this service owns is a value it can always produce.
+There is no missing row to worry about, no foreign key that might not match, no
+other team involved. Chapter~\ref{ch:schema-design} said to mark a field
+non-null when you can guarantee it from data you own, in the same process, with
+a constraint behind it, and this field clears that bar without an argument.
+
+Stop the service and ask for it.
+
+\begin{minted}{text}
+{"query":"{ ratingCount }"}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'ratings'."}],"data":null}
+\end{minted}
+
+\index{null propagation!reaching the data entry}%
+\code{data} is null. Not \code{data.ratingCount}: the entry itself. There was
+nowhere else for it to go, because the parent of a root field is the response.
+
+\subsection{And It Takes the Rest With It}
+
+\index{blast radius!another service's answer}%
+That is a small loss while the request asks for one field. Ask for two:
+
+\begin{minted}{text}
+{"query":"{ ratingCount sessions(first: 10) { nodes { title } } }"}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'ratings'."},
+{"message":"Cannot return null for non-nullable field 'Query.ratingCount'.",
+"path":["ratingCount"]}],
+"data":null}
+\end{minted}
+
+\index{statement count!the healthy service still paid}%
+The Sessions service is running. It was asked for the schedule, it issued its
+one statement, it read four rows, and every title was correct. None of that is
+in the response. A field on a stopped service, in a different process, owned by
+a different team, on a different database, emptied it.
+
+\index{blast radius!the two positions that matter}%
+In section~\ref{sec:ch14-four-sessions-for-one-dead-service} a non-null field
+inside somebody else's list cost that list. Here a non-null field at the root
+costs the response. Those are the only two sizes of collateral damage a
+federated graph has, and which one you get is decided by where in the
+supergraph the field sits rather than by anything about the failure.
+
+\index{HTTP 200!with no data at all}%
+Two hundred, incidentally, as it is for every response in this chapter. The
+router refuses a request outright only when it cannot verify a token, which is
+the 401 chapter~\ref{ch:entities-authorization} met; a graph that cannot answer
+is a success as far as the transport is concerned. A client that checks the
+status code sees one here, with no data in it.
+
+\subsection{What This Costs a Real Graph}
+
+\index{blast radius!at production scale}%
+Four sessions and a rating count is a small demonstration of a large problem.
+The graph in front of you has four services. A graph with forty has forty
+chances that somebody, on some team, marked a root field non-null for a reason
+that was locally correct, and any one of them turns a partial outage into a
+total one for every client whose query happens to mention that field.
+
+\index{ownership!a promise made in another team's file}%
+Nobody reviewing the Ratings service would catch it either. The field is a
+count over its own table. The reviewer who approves it is right about
+everything in front of them, and the consequence is in a file they have never
+opened, in a response shape that does not exist until a composer builds it.

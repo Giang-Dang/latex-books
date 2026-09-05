@@ -1,0 +1,100 @@
+\section{Four Sessions for One Dead Service}
+\label{sec:ch14-four-sessions-for-one-dead-service}
+
+\index{partial failure!when the field is not nullable|(}%
+Chapter~\ref{ch:second-third-subgraph} stopped the Speakers service and the
+graph kept working. Every title came back and every speaker was null, under an
+error naming the subgraph and the path it failed at. I called that the blast
+radius of a dead subgraph and said it was the set of fields that route to it,
+provided those fields are nullable.
+
+\index{errors!the response that chapter carries is the data half}%
+One correction to that page before this chapter builds on it. The response
+printed there is the \code{data} half and the first of its errors, and there
+are five: the fetch failure, and then one for each of the four sessions, because
+\code{Speaker.name} is \code{String!} and the router had no speaker to put a
+name on. All four of those stop at \code{speaker}, which is nullable, so the
+damage is what that chapter said it was. The count is not, and
+section~\ref{sec:ch14-how-far-a-null-climbs} needs it.
+
+Stop the Ratings service instead and ask for a field that is not.
+
+\begin{minted}{text}
+POST /graphql HTTP/1.1
+Host: localhost:3002
+Content-Type: application/json
+
+{"query":"{ sessions(first: 10) { nodes { title ratingCount } } }"}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'ratings' at Path 'sessions.nodes'."},
+{"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.ratingCount'.",
+"path":["sessions","nodes",0,"ratingCount"]}],
+"data":{"sessions":{"nodes":null}}}
+\end{minted}
+
+\index{blast radius!the whole page for one field}%
+The schedule is gone. Not the rating counts, the schedule: four sessions, their
+titles, their start times, everything a client would need to render the
+program, none of which the Ratings service has ever had anything to do with.
+The Sessions service answered correctly and its answer is not in the response.
+
+\index{statement count!work done and discarded}%
+It did the work, too. Chapter~\ref{ch:data-without-n-plus-1}'s interceptor
+prints one statement in the Sessions service while that request runs. The rows
+were read out of SQLite, the titles were in memory, and then a field belonging
+to a different service could not be null.
+
+\subsection{The Same Outage, One Exclamation Mark Apart}
+
+\index{nullability!the field that absorbs}%
+Ask the same dead service for \code{averageScore} instead:
+
+\begin{minted}{text}
+{"query":"{ sessions(first: 10) { nodes { title averageScore } } }"}
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'ratings' at Path 'sessions.nodes'."}],
+"data":{"sessions":{"nodes":[
+{"title":"Schemas That Outlive Their Authors","averageScore":null},
+{"title":"Reading a Query Plan","averageScore":null},
+{"title":"Paging Without Offsets","averageScore":null},
+{"title":"The Bank That Split Its Graph","averageScore":null}]}}}
+\end{minted}
+
+\index{partial failure!the good case and the bad one differ by one exclamation mark}%
+Same service, same outage, same fetch failure, same one statement in Sessions.
+The whole difference is that \code{averageScore} is \code{Float} and
+\code{ratingCount} is \code{Int!}, and chapter~\ref{ch:second-third-subgraph}
+declared both of them in one chapter, neither as a reliability decision. One of them is a client that renders the program with
+blank scores. The other is a client with nothing to render.
+
+\index{errors!the second one is the propagation}%
+Count the errors as well. The good case has one, and it is the fetch. The bad
+case has two, and the second is not a second failure: it is the consequence of
+the first, reported at the position that could not hold it.
+
+\subsection{Which Fields Are Loaded}
+
+\index{non-null!the fields this graph promises}%
+Three non-null fields in this graph cross a seam, and they cross it in two
+different shapes. Ratings contributes \code{ratingCount} and
+\code{feedbackUrl} to a \code{Session} it does not own. Search declares
+\code{session} on a document it does own and cannot fill it without asking
+Sessions. Ask for \code{feedbackUrl} with Ratings stopped and the page empties
+exactly as it did above, with the path naming \code{feedbackUrl} instead.
+
+\index{@requires@\code{@requires}!two ways to fail}%
+\code{feedbackUrl} is the worst of the three, because
+chapter~\ref{ch:second-third-subgraph} put it behind \code{@requires}. The
+router has to collect a title from Sessions before Ratings can be asked for the
+url at all, so the field has two services to depend on and one position to fail
+at.
+
+\index{blast radius!the shape of the collateral}%
+None of this is a router defect and none of it is a Hot Chocolate defect. It is
+the specification working exactly as chapter~\ref{ch:schema-design} described,
+across a seam that did not exist when those annotations were written. What
+changed is not the rule. It is how far the damage travels, and who pays for it.

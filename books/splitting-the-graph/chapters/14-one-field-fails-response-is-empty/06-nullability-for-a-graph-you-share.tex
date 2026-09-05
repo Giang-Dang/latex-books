@@ -1,0 +1,223 @@
+\section{Nullability for a Graph You Share}
+\label{sec:ch14-nullability-for-a-graph-you-share}
+
+\index{nullability!the federated rule|(}%
+Chapter~\ref{ch:schema-design} gave a rule: mark a field non-null when you can
+guarantee it from data you own, in the same process, with a constraint behind
+it. Every field in this chapter that emptied something passed that rule.
+\code{ratingCount} is a count over a table its service owns. It is still the
+field that emptied the response.
+
+\index{nullability!the second question}%
+So the rule is necessary and it is not sufficient, and the half it is missing is
+not about your service at all. The rule I use now has a second clause on it:
+mark a field non-null when the value is guaranteed from data you own, in the
+same process, with a constraint behind it, \emph{and} the position it occupies
+in the composed schema is one you are willing to empty when your service is
+down.
+
+\index{nullability!the advice that predates federation}%
+Half of that is old advice. Sashko Stubailo argued in 2018, before any of this
+tooling existed, that a field whose resolver fetches data asynchronously should
+be nullable, so that a service or database being unreachable is easier to deal
+with~\autocite{stubailo2018}. He was right, and he was writing about one
+server. The second clause is mine, and I state it as mine because I went
+looking for a published rule about the federated case and did not find one that
+clears this book's bar for a source.
+
+\index{nullability!two positions decide everything}%
+The positions that matter are the two this chapter has met. A field contributed
+to a type another service owns sits inside that service's list, and emptying it
+empties the list. A root field sits directly under the response, and emptying it
+empties the response. Everything else in a subgraph is comparatively cheap to
+get wrong.
+
+\subsection{What Moved, and What Did Not}
+
+\index{nullability!the fields that changed}%
+Five fields in this graph fail that second test, and all five give up their
+exclamation marks. The root field goes first, because it is the one that costs
+a whole response. Here is the Ratings service's \code{Query.cs} again,
+complete, with what moved marked:
+
+\begin{minted}[highlightlines={11,12,13,14,15,16,17,18,19}]{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Ratings;
+
+[QueryType]
+public static class Query
+{
+    /// <summary>
+    /// How many scores this service holds, across every session.
+    /// </summary>
+    // The question mark is the whole of chapter 14. A count over this
+    // service's own table is a value it can always produce, which is
+    // what the nullability rule of chapter 4 asks of a non-null field.
+    // Behind a router it is also a root field, and the nearest
+    // position above a root field that is allowed to hold a null is
+    // the response's own data entry. Declared non-null, this service
+    // being stopped discards every other service's answer in the same
+    // response along with it.
+    public static async Task<int?> GetRatingCountAsync(
+        RatingContext db,
+        CancellationToken ct)
+        => await db.Ratings.CountAsync(ct);
+}
+\end{minted}
+
+\index{nullability!the two fields on somebody else's type}%
+The same service contributes two more to a \code{Session} it does not own, and
+they are a different case. This file is long enough that what follows is the
+complete member rather than the whole of it, which is the other half of the
+rule this book prints changes under:
+
+\begin{minted}[highlightlines={4,5,6,7,8,9,10}]{csharp}
+    /// <summary>
+    /// How many scores this session has been left.
+    /// </summary>
+    // Nullable for a different reason than the root field above. This
+    // one is contributed to a type another service owns, so it rides
+    // inside that service's list. Non-null here does not empty the
+    // response; it empties the page of sessions the Sessions service
+    // answered correctly, because a list of non-null items has nowhere
+    // to put one null and goes null entirely.
+    public static async Task<int?> GetRatingCountAsync(
+        [Parent(nameof(Session.Key))] Session session,
+        IRatingsBySessionIdDataLoader ratingsBySessionId,
+        CancellationToken ct)
+        => (await ratingsBySessionId.LoadAsync(session.Key, ct))
+            ?.Length ?? 0;
+\end{minted}
+
+\index{@requires@\code{@requires}!the field with two ways to fail}%
+And the one beside it, which is the same change and the worse position, because
+the router cannot ask for this field at all until it has collected a title from
+a third service:
+
+\begin{minted}[highlightlines={8,9,10,11,12,13,15}]{csharp}
+    /// <summary>
+    /// Where an attendee goes to leave a score for this session.
+    /// </summary>
+    // The url is built from the session's title, and the title belongs
+    // to another service. @requires is what makes the router send it
+    // along with the key, and [External] on GetTitle above is what
+    // makes that declaration legal.
+    //
+    // Nullable on the same reasoning as ratingCount above, and the
+    // @requires makes it the worse case rather than a better one: this
+    // field cannot be answered unless the router has already collected
+    // a title from a third service, so it has two ways to fail and
+    // both of them land on somebody else's list.
+    [Requires("title")]
+    public static string? GetFeedbackUrl([Parent] Session session)
+        => "https://feedback.example/2026/" + Slug(session.Title);
+\end{minted}
+
+\index{nullability!a method that cannot return null and a schema that says it can}%
+The Search service's is the strangest of the five, because the method it sits
+on cannot return null and the schema now says it can:
+
+\begin{minted}[highlightlines={1,2,3,4,5,6,7,8}]{csharp}
+    // This method cannot return null and the schema says it can, which
+    // looks like an error and is the point. What the router puts in
+    // this position is not what this method returns: it is whatever
+    // the Sessions service answers for the key this method formats. A
+    // non-null here is a promise about that service's uptime, made by
+    // a service that has no way to keep it, and it costs the whole
+    // search page when Sessions is stopped.
+    public static Session? GetSession(
+        [Parent] SessionSearchDocument document,
+        INodeIdSerializer serializer)
+        => new(serializer.Format(nameof(Session), document.SessionId));
+\end{minted}
+
+\index{nullability!what a resolver returns is not what the position holds}%
+In one process the return type of a resolver is the type of the position it
+fills, so a method that cannot return null describes a field that cannot be
+null. Across a seam those come apart, and this method is where they do: it
+hands the router a key, and what lands in the response is whatever another
+service makes of that key.
+
+\index{nullability!the fields that stay non-null}%
+What does not move matters as much. A session's title, a speaker's name, and
+the rating count and start time on a search document all keep their exclamation
+marks. Each one is answered by the service that owns the row, out of a column
+with a constraint behind it, in a position that same service is responsible
+for. This is not an argument for a schema with no exclamation marks. It is an
+argument for putting them where you can keep them.
+
+\subsection{The Same Four Requests}
+
+\index{partial failure!the graph after the change}%
+Ratings stopped, and the request that lost the schedule:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'ratings' at Path 'sessions.nodes'."}],
+"data":{"sessions":{"nodes":[
+{"title":"Schemas That Outlive Their Authors","ratingCount":null},
+{"title":"Reading a Query Plan","ratingCount":null},
+{"title":"Paging Without Offsets","ratingCount":null},
+{"title":"The Bank That Split Its Graph","ratingCount":null}]}}}
+\end{minted}
+
+\index{errors!one, because there is nothing to propagate}%
+One error rather than two, everywhere in this section. The second error was
+never a second failure; it was the propagation, and there is nothing left to
+propagate.
+
+\index{partial failure!the response survives}%
+The root field, and the request that emptied everything:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'ratings'."}],
+"data":{"ratingCount":null,"sessions":{"nodes":[
+{"title":"Schemas That Outlive Their Authors"},
+{"title":"Reading a Query Plan"},
+{"title":"Paging Without Offsets"},
+{"title":"The Bank That Split Its Graph"}]}}}
+\end{minted}
+
+\index{statement count!the same work, now delivered}%
+The Sessions service spends the same one statement it always spent. The
+difference is that the reader gets what it read.
+
+\index{partial failure!the search page degrades}%
+And the other direction across the same seam. Stop Sessions rather than
+Ratings, and ask Search for the rating-descending page
+chapter~\ref{ch:cross-seam-paging} built:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'sessions' at Path 'searchSessions.nodes.@.session'."}],
+"data":{"searchSessions":{"nodes":[
+{"session":null,"averageScore":4.5},
+{"session":null,"averageScore":4}]}}}
+\end{minted}
+
+\index{partial failure!the ranking outlives the titles}%
+The ranking survives without the titles. Search still spends its one statement,
+the filter and the sort and the cut all happened, and what a client cannot do
+is name the two sessions it found. That is a degraded search page rather than
+no search page, and before this section it was no search page.
+
+\subsection{Where This Leaves the Client}
+
+\index{nullability!the bill the client pays}%
+None of this is free, and the bill goes to the client.
+Chapter~\ref{ch:schema-design} said so: make everything nullable and every field
+of every client grows a null check, paid forever against failures that mostly do
+not happen. This chapter has just made five fields nullable, and every client
+that reads them now needs a branch it did not need before.
+
+\index{nullability!the trade, stated plainly}%
+That is the trade, and I take it. A null check is a line of client code. A
+non-null field behind a seam is an outage in somebody else's service arriving
+as an empty response in yours, at a moment nobody chose, with a status code of
+200 on it. The first is annoying and the second is a page that does not render.
+
+\index{nullability!what would remove the trade}%
+What would be better is a schema that tells a client both things at once: this
+value is always present, and it may be missing if something went wrong. That is
+not a thing GraphQL can say today, and the next section is about the people
+trying to make it one.
+\index{nullability!the federated rule|)}%

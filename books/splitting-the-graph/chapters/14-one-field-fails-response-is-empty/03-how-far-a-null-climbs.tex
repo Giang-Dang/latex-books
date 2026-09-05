@@ -1,0 +1,105 @@
+\section{How Far a Null Climbs}
+\label{sec:ch14-how-far-a-null-climbs}
+
+\index{null propagation!the rule, restated across a seam|(}%
+Chapter~\ref{ch:schema-design} quoted the rule and walked it inside one
+service, and it has not changed~\autocite{graphqlspec2025}:
+
+\begin{quote}
+Since Non-Null response positions cannot be null, execution errors are
+propagated to be handled by the parent response position. If the parent
+response position may be null then it resolves to null, otherwise if it is a
+Non-Null type, the execution error is further propagated to its parent
+response position.
+\end{quote}
+
+\index{specification!where the climb stops being survivable}%
+What chapter~\ref{ch:schema-design} did not need is the sentence that closes
+that section~\autocite{graphqlspec2025}:
+
+\begin{quote}
+If every response position from the root of the request to the source of the
+execution error has a Non-Null type, then the \code{data} entry in the
+execution result should be null.
+\end{quote}
+
+\index{null propagation!nothing federated about it}%
+That is the whole mechanism behind section~\ref{sec:ch14-the-response-that-is-not-there}.
+There is nothing federated in either paragraph. A router that merges four
+services into one response has not changed the rule; it has changed how many
+positions the walk passes through and who wrote each of them.
+
+\subsection{The Walk, Three Times}
+
+\index{null propagation!where each of the three stops}%
+Take the three requests this chapter has sent and walk each one upward from
+where it failed. Figure~\ref{fig:ch14-the-climb-crosses} draws all three
+against the same tree.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch14-the-climb-crosses}
+  \caption{One stopped service, three requests, and the three different amounts
+  of the response it destroys. What decides each one is not the failure, which
+  is identical in all three, but the distance up to the first position whose
+  type is allowed to hold a null. On the left that is no distance at all. In
+  the middle it is two positions, and the list that finally absorbs it is the
+  whole page. On the right the failing field is a root field, so the only
+  position above it is the response, and the \code{sessions} beside it is a
+  sibling at the same depth that a running service answered correctly and that
+  goes anyway. A solid box is a position the response still has, whether or not
+  it holds anything: \code{nodes} in the middle and \code{data} on the right
+  are both present and both null.}
+  \label{fig:ch14-the-climb-crosses}
+\end{figure}
+
+\index{null propagation!the nullable field}%
+\code{averageScore} is \code{Float}. The router cannot fill it, the position may
+be null, and the walk ends before it starts. Four sessions, four nulls.
+
+\index{null propagation!through a list of non-null items}%
+\code{ratingCount} is \code{Int!} and cannot hold it, so the error goes to its
+parent, the \code{Session} at index zero. \code{nodes} is typed
+\code{[Session!]}, so the items may not be null either and the error keeps
+going. The parent of an item is the list, the list is nullable, and it stops
+there. The three sessions that had nothing wrong with them are gone because
+they were in the same list as the one that did.
+
+\index{null propagation!from a root field}%
+\code{ratingCount} at the root is \code{Int!} and its parent is the response.
+There is no position between them.
+
+\subsection{Two Things the Walk Explains}
+
+\index{errors!fewer errors for more damage}%
+The first is the error count, which runs the wrong way round. With Speakers
+stopped, a request for \code{speaker \{ name \}} across four sessions comes back
+with five errors: the fetch failure, and one
+\enquote{Cannot return null for non-nullable field} per session, at paths zero
+through three. The request that lost all four sessions to
+\code{ratingCount} carries two. Once the list is gone there are no positions
+left to report, so the response that lost the most says the least. Sorting an
+error log by count puts these exactly the wrong way up.
+
+\index{null propagation!the sibling branch is untouched}%
+The second is what survives. Ask for \code{pageInfo} beside the broken
+\code{nodes}, and the \code{data} half of the answer, under the same two errors
+as before, is this:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"sessions":{"nodes":null,"pageInfo":{"hasNextPage":false,"endCursor":"Mw=="}}}}
+\end{minted}
+
+\index{null propagation!stops at the common parent}%
+The cursor is intact. \code{pageInfo} is a sibling of \code{nodes} under
+\code{sessions}, and the climb stopped at \code{nodes} without ever reaching
+their common parent. So a client can be handed a page whose contents are null
+and whose pagination is fine, which is a shape worth knowing about before a
+client tries to advance through it.
+
+\index{null propagation!edges bubbles one level higher}%
+And asking through \code{edges} rather than \code{nodes} loses the same four
+sessions one position higher up, because \code{SessionsEdge.node} is
+\code{Session!} and absorbs nothing on the way past. Two spellings of the same
+query, two different things null in the response.
+\index{null propagation!the rule, restated across a seam|)}%
