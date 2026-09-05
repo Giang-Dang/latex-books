@@ -39,6 +39,7 @@ DEFAULT_PREAMBLE = r"""\documentclass[border=2pt]{standalone}
   Extension = .otf, UprightFont = *-regular, BoldFont = *-bold,
   ItalicFont = *-italic, BoldItalicFont = *-bolditalic,
 ]
+\usepackage{amsmath}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning, calc, fit}
 \begin{document}

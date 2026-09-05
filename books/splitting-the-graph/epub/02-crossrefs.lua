@@ -90,14 +90,20 @@ local function on_figure(fig)
   end
 end
 
+local function on_div(div)
+  if div.classes[1] == 'epub-figure' then on_figure(div) end
+end
+
 local function reference_target(text)
   return text:match('^%s*\\ref%s*{(.-)}%s*$')
 end
 
 function Pandoc(doc)
-  -- Pass one, in reading order: every heading and figure gets the number a
-  -- reader of the printed book would see beside it.
-  doc:walk { Header = on_header, Figure = on_figure }
+  -- Pass one, in reading order: every heading and rendered figure wrapper gets
+  -- the number a reader of the printed book would see beside it. The wrapper
+  -- carries the identifier so pandoc's EPUB splitter can route cross-chapter
+  -- links to the document containing the target.
+  doc:walk { Header = on_header, Div = on_div }
 
   -- Pass two: each \ref becomes a link.
   --

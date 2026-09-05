@@ -198,7 +198,13 @@ local function convert_figure(fig, figure_dir)
 
   local alt = pandoc.utils.stringify(fig.caption and fig.caption.long or {})
   local image = pandoc.Image({ pandoc.Str(alt) }, figure_dir .. '/' .. name .. '.svg')
-  return pandoc.Figure({ pandoc.Plain({ image }) }, fig.caption, fig.attr)
+  local rendered = pandoc.Figure(
+    { pandoc.Plain({ image }) }, fig.caption, pandoc.Attr())
+  -- Pandoc's EPUB splitter maps Div identifiers to their chapter files but
+  -- not Figure identifiers. Put the anchor on a wrapper so a reference from
+  -- another chapter becomes chNNN.xhtml#fig:... rather than a dead local link.
+  return pandoc.Div(
+    { rendered }, pandoc.Attr(fig.identifier, { 'epub-figure' }))
 end
 
 -- Display maths, and the one thing pandoc cannot do for itself here.
