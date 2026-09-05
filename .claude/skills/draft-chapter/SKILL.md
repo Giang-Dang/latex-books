@@ -1,6 +1,6 @@
 ---
 name: draft-chapter
-description: Drafts, outlines, continues, or revises a chapter, section, appendix, figure, or end-of-chapter lab for a book under books/ in this repo, following that book's SPEC.md. Use for any request to write or continue book content, however loosely phrased - "draft chapter 7", "continue the current book", "write the next section", "outline chapter 12", "add the lab to chapter 3", "this chapter needs a diagram". Also use when revising drafted prose for voice, or when updating a book's SPEC.md after a writing session.
+description: Drafts, outlines, continues, or revises a chapter, section, appendix, figure, or end-of-chapter lab for a book under books/ in this repo, following that book's SPEC.md. Use for any request to write or continue book content, however loosely phrased - "draft chapter 7", "continue the current book", "write the next section", "outline chapter 12", "add the lab to chapter 3", "this chapter needs a diagram". Also use when revising drafted prose for voice or for reading flow - "the reader loses the thread here", "this section does not follow from the last one", "a comprehension pass over chapters 1 to 9", "this term is used before it is defined", "the output blocks break the argument" - or when updating a book's SPEC.md after a writing session.
 ---
 
 # Draft a chapter
@@ -81,7 +81,9 @@ Read these before writing anything. Each one changes what the chapter may say.
   a repo to build and tag before prose, and `Listings:` says what a listing in
   this book may be. A book answering "none" to the first is a book where step 2
   never runs, and the second is then the only answer to where a listing came
-  from.
+  from. The SPEC also says, somewhere, who the book is for and what that reader
+  already knows; every sentence is judged against that reader, so find the
+  statement before drafting and ask the author if there is none.
 - `books/<name>/check-chapter.psd1`, if the book has one. It is the machine half
   of those writing rules, and which checks are live changes how you write: a
   book that leaves the spelling check off is a book whose variety nothing will
@@ -92,6 +94,13 @@ Read these before writing anything. Each one changes what the chapter may say.
 - **The previous drafted chapter's section files, end to end.** That is the voice
   specification. Paraphrasing a style guide produces a different voice; reading
   the actual prose does not.
+- **That chapter's closing paragraph, a second time, on its own.** It hands this
+  chapter something - a case, a question, an unresolved result - and the opener
+  answers it. A first draft that picks up a thread from the previous chapter's
+  middle leaves that promise standing, and no script sees it. If the opener
+  cannot answer it, change the closing paragraph in the same session. The
+  hand-off section of `references/reading-flow.md` has the rule and its cost
+  when chapters are drafted out of order.
 - Any research file the SPEC points at for this chapter.
 
 Then `grep -h '\\label{' chapters/*/ch.tex backmatter/*.tex` for the exact
@@ -148,6 +157,21 @@ The sequence matters more than any individual step.
 
    One chapter can span roles: the lab section of an otherwise chapter-role
    chapter is judged as a lab.
+
+   Draft in the order the reader can follow, not the order the material came
+   in: the hand-off answered in the opener, each section opening on the one
+   before, every term and symbol defined before its first use or pointed back
+   to where the book defined it, the behaviour shown before the concept that
+   explains it, and every printed block introduced by the sentence before it
+   and cut to what that sentence needs. A hard passage takes the room it needs,
+   the intermediate steps and an example the reader can compute, while easy
+   material stays at the level the tone profile sets.
+   `references/reading-flow.md` carries each rule with the failure it prevents,
+   and the line between a connective sentence, which stays, and the setup
+   paragraph the humanizer cuts. Nothing in `check-chapter.ps1` sees any of
+   this: drafting order prevents most of it and the audit's report item
+   catches the rest.
+
    Scaffold to convention: `chapters/NN-slug/ch.tex` holds `\chapter`, `\label`
    and a short opener, then `\input`s one file per section, with every path
    written from the book root.
@@ -164,7 +188,10 @@ The sequence matters more than any individual step.
    the context that wrote it is not this step: that reviewer accepted every
    claim once already and fills the gaps from memory. Verify each factual
    finding yourself before acting on it, and report the ones you reject along
-   with why. The audit is a lead, not a verdict.
+   with why. The audit is a lead, not a verdict. The auditor is also the first
+   reader the chapter meets, so the brief asks it where it lost the thread as
+   well as what is wrong; the context that wrote the chapter cannot answer
+   that question about its own prose.
 6. **Close out.** Rebuild after the audit fixes, run the check script again,
    update SPEC, then commit and push. One commit per logical change, subject in
    the repo's style: `draft: chapter NN, <chapter title>` for the prose,
@@ -236,6 +263,7 @@ Do not pass one of these without the previous one holding.
 | Companion code | Where the SPEC names a repo: its verification script passes and the chapter's tag is pushed |
 | Report | What the research settled posted before prose starts: the real schema, the measured numbers, whatever the sources and the machine disagreed about |
 | Prose | Every listing has the provenance the SPEC's `Listings:` line names, and nothing invented is presented as real code |
+| Reading flow | The opener answers the previous chapter's closing paragraph; every term and symbol is defined before first use or points to where the book defined it; every printed block is introduced, cut to what its sentence needs and separated from the next by prose; a scoping decision made in one section holds in every later one |
 | Build | `latexmk` exits 0; `pwsh scripts/check-chapter.ps1 books/<name>` exits 0 |
 | Audit | A subagent with no drafting context reported; every finding is fixed, or rejected on the record |
 | SPEC | Progress row, decisions, TOC and open items all reflect reality |
@@ -311,6 +339,11 @@ Load these when the task reaches them, not before.
 
 - `references/house-style.md` - LaTeX and prose conventions shared by books in
   this repo: citations, quoting, index entries, listings, figures, labels.
+- `references/reading-flow.md` - how a chapter stays followable by the reader
+  the SPEC describes: the hand-off, openers, defined before used, behaviour
+  before concept, the worked example, printed output, propagating a scoping
+  decision, and the correction-pass trap. Read before drafting the first
+  section, and again before a revision pass.
 - `references/companion-code.md` - the code-before-prose workflow, and the
   wave pattern that keeps parallel code work from colliding. Nothing in it
   applies to a book whose SPEC says "none" for companion code, so that book

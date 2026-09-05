@@ -52,7 +52,11 @@ because an exemption looks exactly like an inconsistency.
 drafted chapters depend on its current behaviour.
 
 Listings sit inline in the prose. They are not floats, carry no caption and no
-label, and the surrounding text introduces them.
+label, and the surrounding text introduces them: the sentence before a block
+names what the reader is to see in it, the block is cut to that, and two blocks
+never sit back to back without prose between. The printed-output section of
+`references/reading-flow.md` carries the rule and the caveat for a block the
+prose calls a capture.
 
 A book declares its listing environments in its SPEC, and adding one is a
 decision recorded there rather than a choice made mid-chapter. What the check

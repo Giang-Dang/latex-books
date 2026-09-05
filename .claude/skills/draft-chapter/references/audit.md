@@ -48,7 +48,9 @@ of the run, and that line rather than this list is what the brief passes on.
 
 Attention the auditor spends re-deriving those findings is attention it is not
 spending on the half no script can check: whether a sentence is true, whether
-the voice is the book's, whether a listing says what the prose claims it says.
+the voice is the book's, whether a listing says what the prose claims it says,
+and whether the reader the SPEC describes can follow the chapter from the pages
+before it.
 
 ## What not to send
 
@@ -105,9 +107,12 @@ Read before judging anything:
   books/<BOOK>/chapters/<previous drafted chapter folder>/*.tex
       - the voice specification. Take the voice from this prose, not from any
         description of it.
+      - and the hand-off: the chapter under audit opens on this chapter's
+        closing paragraph. Report an opener that does not answer it.
   AGENTS.md - repo-wide writing defaults (CLAUDE.md only imports it)
-  books/<BOOK>/SPEC.md - writing rules, decision log, and the TOC line for
-        this chapter
+  books/<BOOK>/SPEC.md - writing rules, decision log, the TOC line for this
+        chapter, and what it says about who the book is for. Judge
+        comprehension as that reader.
   books/<BOOK>/check-chapter.psd1 - the machine half of those writing rules
   .claude/skills/draft-chapter/references/house-style.md
   .claude/skills/<humanizer skill>/SKILL.md - apply its checklist. Judge each
@@ -125,10 +130,22 @@ bottom.
      does not trace to the research note, to the companion repo at that tag, or
      to a cited primary source. The research note is a claim too: a number
      recorded there with no way to reproduce it was not measured.
-  2. Violations of AGENTS.md, the SPEC writing rules or house-style. Include
+  2. Where the reader the SPEC describes loses the thread. A term or symbol
+     used before this chapter defines it or points to where the book did; a
+     derivation skipping the step that defines its object; a result
+     compressed into one sentence with several unexplained terms; a
+     reference ("this", "that view", "the next section") with no target the
+     reader can name; an opener that does not answer the previous chapter's
+     closing paragraph; a section that does not open on the one before; a
+     concept explained before the behaviour it explains has been shown; a
+     printed block that the sentence before it does not introduce, that
+     runs longer than what that sentence needs, or that sits directly
+     against another block with no prose between.
+     Quote the sentence where you first lost the thread, not the paragraph.
+  3. Violations of AGENTS.md, the SPEC writing rules or house-style. Include
      \ref targets that do not resolve, and a SPEC TOC line that no longer
      describes what the chapter actually does.
-  3. Voice drift from the previous chapter, and anything on the humanizer
+  4. Voice drift from the previous chapter, and anything on the humanizer
      checklist, each file judged under the tone role named above for it.
 
 Format: one line per finding - file:line, the quoted span, what is wrong, the
@@ -147,6 +164,15 @@ No praise, no summary, no restating what the chapter does well. If a category
 turns up nothing, say so in one line. Do not manufacture findings to fill it.
 ```
 
+The order is an argument, not a habit. Provenance stays first because a wrong
+fact carried by clear prose deceives the reader, while an opaque passage at
+least fails visibly. Comprehension comes second because a paragraph-level
+failure costs the reader the chapter's central construction, and because it is
+judged against a different reference from voice: the reader the SPEC describes,
+not the previous chapter's prose. Rules and voice come after because they are
+partly machine-checked already, or cheap to fix late. The bottom is what gets
+cut, so nothing that costs the reader the chapter goes there.
+
 In Claude Code, spawn the auditor as the `chapter-auditor` agent type: its
 definition under `.claude/agents/` enforces read-only tools and carries the
 standing rules, so the brief above is all it needs.
@@ -158,23 +184,27 @@ every catch it lists came from one fresh context reading everything. Stay with
 one.
 
 The exception is a chapter too big for one careful pass - many sections, many
-listings, many measured numbers - where the three report items start competing
-for the same attention. There the audit splits by lens into three fresh
+listings, many measured numbers - where the four report items start competing
+for the same attention. There the audit splits by lens into four fresh
 read-only subagents under the same brief discipline:
 
 - **A fact tracer**: the chapter plus the research note and the companion repo
   at the tag. Report item 1 only.
+- **A reader**: the chapter plus the SPEC's statement of who the book is for
+  and the previous drafted chapter's closing section. Report item 2 only,
+  judged as that reader and not as an expert: a term the auditor happens to
+  know is still undefined if the chapter has not defined it.
 - **A rules auditor**: the chapter plus AGENTS.md, the SPEC,
-  check-chapter.psd1 and house-style. Report item 2 only.
+  check-chapter.psd1 and house-style. Report item 3 only.
 - **A voice auditor**: the chapter plus the previous drafted chapter and the
-  humanizer file its roles resolve to. Report item 3 only.
+  humanizer file its roles resolve to. Report item 4 only.
 
 Each lens gets the template above minus the other lenses' reading list and
-report items, so the chapter under audit is the only reading all three share
-and the panel's total is close to one auditor's - the extra cost is two more
+report items, so the chapter under audit is the only reading all four share
+and the panel's total is close to one auditor's - the extra cost is three more
 reads of the chapter itself, which is what the length that triggered the
 split pays for. Panel members are never continued and never told of each
-other's findings; triage below is unchanged and works the union of the three
+other's findings; triage below is unchanged and works the union of the four
 reports.
 
 ## Triage
@@ -183,6 +213,14 @@ Verify each factual finding yourself before acting on it. The audit is a lead,
 not a verdict, and an auditor reading cold will sometimes call a deliberate
 decision a mistake - the decision log is the answer to that, not the draft's
 memory of why it did something.
+
+A comprehension finding is verified differently from a factual one. The
+question is not whether the sentence is true but whether the page defines what
+it uses before using it, so the answer is in the chapter and the pages before
+it, not in the research note. Fix it by adding the step, the definition, the
+antecedent or the example, never by adding a sentence that restates the
+passage. Then re-read the fix with the suspicion you brought to the defect: a
+session that has just found an error is at its least suspicious of the fix.
 
 **A finding you reject goes into the session report with the evidence that
 rejects it.** One line each. Silent dismissal is exactly how a biased reviewer
@@ -200,3 +238,4 @@ You are about to skip the subagent because:
 | "The chapter is short, or it is only a revision" | Length was never the argument for independence. |
 | "I know what the auditor would say" | That belief is the defect being corrected. |
 | "I will fold it into the final read-through" | The final read-through is done by the agent that wrote it. |
+| "The prose is clear to me" | You wrote it, so you hold every definition it skipped. The reader holds only the pages before this one. |

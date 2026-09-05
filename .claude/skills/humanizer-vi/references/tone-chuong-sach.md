@@ -20,6 +20,10 @@ và phát hiện cuối của chương đã làm cả hai việc đó. Bốn ph�
 nguyên văn; con số chỉ xuất hiện khi tác giả tự đo hoặc một nguồn nêu tên đã đo. "Nhanh hơn
 khoảng 40 lần" mà không có lần chạy nào đứng sau là câu mơ hồ đội lốt benchmark.
 
+**Liên kết:** `chặt` cắt đoạn dạo đầu, không cắt câu nối mục này với mục trước hay câu mở chương
+bám vào phát hiện cuối của chương trước. Mục nào mở bằng đề tài mới mà không móc vào mục trước
+đọc như một chuỗi bài rời, dù từng bài có hay đến đâu.
+
 ## Dấu vết riêng của tone này
 
 - **Mở chương kiểu giáo án:** "Trong chương này, chúng ta sẽ tìm hiểu..." là nhóm I phiên bản
@@ -32,6 +36,11 @@ khoảng 40 lần" mà không có lần chạy nào đứng sau là câu mơ h�
   được trả giá ngay trong trang sách.
 - **Chuyện nghề mài tròn cạnh:** chuyện không có hệ thống, phiên bản, thất bại cụ thể chỉ là
   trang trí. Giữ chuyện nào chốt được một dữ kiện người đọc dùng ngay.
+- **Quy chiếu không tiền ngữ:** "như đã thấy", "phần tiếp theo", "điều này" mà người đọc không
+  chỉ ra được đích. Nêu tên mục hoặc phát hiện.
+- **Bức tường output:** một khối kết quả chạy thả xuống sau "chạy lên ta được:" mà không nói
+  nhìn vào đâu, hoặc hai khối kề nhau không có văn xuôi ở giữa. Câu đứng trước khối nêu đúng
+  dòng cần nhìn; khối cắt còn những dòng mang dòng ấy.
 
 ## Trước và sau
 
