@@ -1,3 +1,70 @@
-% Scope (SPEC table of contents): Adversarial fooling of explanations, SHAP as an attack surface, causal structure as a partial repair. Papers 27, 28, 29.
+% Scope (SPEC table of contents): Explanations under attack. Three papers that
+% stand in three different relations to the word: the scaffolding attack that
+% hides a biased classifier from LIME and SHAP, read through the replication and
+% the ensemble defence of paper 27; SHAP turned into the weapon of a white-box
+% evasion attack in paper 28; and causal structure offered as a partial repair in
+% paper 29, which has no adversary in it at all. Papers 27, 28, 29, plus one key
+% from outside the corpus (decision 71) for the attack itself.
+%
+% The initialized TOC line read the three papers as three stages of one story and
+% they are not (decision 69). The chapter says so in section 14.1 rather than
+% letting the chapter title carry a claim about paper 29.
+%
+% Object and kind of claim, stated in the opener per decision 64: the word
+% "faithful" occurs zero times in all three papers, and none of them reports a
+% faithfulness measurement. What crosses to Part IV is named in section 14.7.
+% research/ch14-giai-thich-duoi-tan-cong.md records every number, the six
+% defects the chapter declines, and the last three entries of the chapter 18 log.
 \chapter{Giải thích dưới tấn công}
 \label{ch:giai-thich-duoi-tan-cong}
+
+Chương~\ref{ch:gioi-han-ly-thuyet} khép lại trên một chỗ trống mà chính định lý
+của nó mở ra. Định lý~\ref{thm:ch13-khoang-cach-do-phuc-tap} khẳng định rằng
+một lời giải thích đơn giản hơn mô hình phải lệch khỏi mô hình ở đâu đó, và nó
+dừng lại đúng ở chữ \enquote{đâu đó}: với nó, mọi chỗ lệch đều như nhau. Chỗ
+lệch thì không như nhau với người đọc, và nhất là không như nhau với bên được
+quyền chọn nó nằm ở đâu.
+
+Mục~\ref{sec:ch13-tran-noi-gi} đã cho chỗ trống ấy nửa thứ hai của nó. Khi điều
+kiện \tn{không suy biến}{non-degenerate} hỏng, chỗ lệch có thể chia nhỏ tới mức
+mọi chỉ số dựa trên sai số đầu ra đều không thấy, và
+chương~\ref{ch:gioi-han-ly-thuyet} gọi chúng là các bất đồng vô hình. Cộng hai
+nửa lại thì được một khả năng cụ thể: bên nào quyết định lời giải thích trông
+ra sao có thể dồn toàn bộ sai số bắt buộc ấy vào những chỗ không ai kiểm.
+Chương này đọc các công trình đã biến khả năng ấy thành phương pháp, và đọc cả
+một công trình đi sửa nó.
+
+Nhưng ba bài của chương không kể chung một câu chuyện, và điều đó phải nói ngay
+vì nhan đề chương gợi ý ngược lại. Ở bài thứ nhất, SHAP và LIME là thứ bị tấn
+công. Ở bài thứ hai, SHAP là thứ đi tấn công, và nạn nhân là một bộ phân loại
+ảnh. Ở bài thứ ba không có bên tấn công nào cả. Mục~\ref{sec:ch14-ba-quan-he}
+tách ba quan hệ ấy ra trước khi vào từng bài, vì gộp chúng lại là đọc sai cả
+ba.
+
+Cái ranh giới đi kèm cũng thuộc loại phải nói trước. Rà toàn văn cả ba bài, chữ
+\enquote{faithful} không xuất hiện lần nào trong bài nào. Trong bốn họ chỉ số
+của chương~\ref{ch:do-do-trung-thuc}, chỉ mỗi insertion có mặt, và chỉ ở bài
+thứ ba, nơi nó là dụng cụ dùng để chấm điểm chính phép sửa. Vậy không kết quả
+nào trong chương này là một phép đo \tn{độ trung thực}{faithfulness}, và ba đại
+lượng mà ba bài thật sự đo là ba đại lượng khác nhau: tỉ lệ lời giải thích còn
+nêu được thuộc tính được bảo vệ, tỉ lệ phân loại sai sau tấn công, và khoảng
+cách tới một tập giá trị tham chiếu dựng sẵn.
+
+Điều đáng đọc ở đây vì thế không nằm trong kết luận của bài nào, mà nằm ở một
+chỗ mà không bài nào chỉ ra. Muốn chấm điểm một lời giải thích thì phải biết mô
+hình thật sự dựa vào cái gì, và chương~\ref{ch:chi-so-khong-do-do-trung-thuc}
+đã phải dựng ground truth ấy bằng cách chọn nhiệm vụ. Phép tấn công của
+mục~\ref{sec:ch14-phep-dung-gian} dựng ra cùng thứ đó mà không ai định dựng, vì
+bên tấn công buộc phải biết mô hình của mình dựa vào cái gì thì mới giấu được.
+Mục~\ref{sec:ch14-ground-truth-ke-tan-cong} là chỗ chương này nói ra điều đó,
+và mục~\ref{sec:ch14-dieu-chua-giai-quyet} là chỗ nó cân xem điều đó đáng giá
+bao nhiêu.
+
+\input{chapters/14-giai-thich-duoi-tan-cong/01-ba-quan-he-voi-chu-tan-cong}
+\input{chapters/14-giai-thich-duoi-tan-cong/02-phep-dung-gian}
+\input{chapters/14-giai-thich-duoi-tan-cong/03-ground-truth-ke-tan-cong-dung}
+\input{chapters/14-giai-thich-duoi-tan-cong/04-mot-phong-thu-va-so-cua-no}
+\input{chapters/14-giai-thich-duoi-tan-cong/05-shap-lam-vu-khi}
+\input{chapters/14-giai-thich-duoi-tan-cong/06-sua-bang-cau-truc-nhan-qua}
+\input{chapters/14-giai-thich-duoi-tan-cong/07-dieu-ba-bai-bao-chua-giai-quyet}
+\input{chapters/14-giai-thich-duoi-tan-cong/08-tom-tat-va-cau-hoi}

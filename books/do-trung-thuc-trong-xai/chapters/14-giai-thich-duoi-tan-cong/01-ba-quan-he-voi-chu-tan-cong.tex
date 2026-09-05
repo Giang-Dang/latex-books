@@ -1,0 +1,58 @@
+\section{Ba quan hệ khác nhau với chữ \enquote{tấn công}}
+\label{sec:ch14-ba-quan-he}
+
+\index{tấn công!ba quan hệ với lời giải thích|(}%
+Phần mở đầu chương đã nêu rằng ba bài báo của chương đứng ở ba chỗ khác nhau so
+với chữ trong nhan đề. Mục này viết ba chỗ ấy ra thành ba phát biểu, vì mỗi
+phát biểu quyết định kết quả của bài tương ứng nói được về cái gì.
+
+\index{tấn công!SHAP và LIME là nạn nhân}%
+Quan hệ thứ nhất đặt lời giải thích vào vị trí nạn nhân. Một bên triển khai mô
+hình có một mô hình thiên lệch mà họ muốn đưa vào dùng, và có những người kiểm
+tra dùng LIME hoặc SHAP để soi mô hình ấy trước khi cho phép. Phép tấn công
+dựng một mô hình mới trả về đúng dự đoán thiên lệch trên dữ liệu thật, nhưng
+trả về điều gì khác khi bị LIME hoặc SHAP hỏi. Người kiểm tra nhận về một lời
+giải thích sạch sẽ về một mô hình vẫn thiên lệch nguyên vẹn.
+Mục~\ref{sec:ch14-phep-dung-gian} dựng lại phép ấy.
+
+\index{tấn công!SHAP là vũ khí}%
+Quan hệ thứ hai đảo chiều. Ở đó không ai lừa một lời giải thích cả; lời giải
+thích là công cụ trong tay bên tấn công. Bài báo của
+mục~\ref{sec:ch14-shap-lam-vu-khi} tính giá trị SHAP cho từng điểm ảnh của một
+bức ảnh, đọc ra những điểm ảnh mà mô hình phân loại dựa vào nhiều nhất, rồi sửa
+đúng những điểm ảnh ấy để mô hình phân loại sai. Nạn nhân là bộ phân loại, còn
+SHAP đứng ở chỗ mà một phép tấn công thông thường đặt gradient. Gọi SHAP là một
+mặt tấn công thì đúng với quan hệ thứ nhất và sai với quan hệ này: một mặt tấn
+công là chỗ hệ thống bị chọc vào, còn ở đây SHAP là thứ dùng để chọc.
+
+\index{tấn công!vắng mặt ở bài thứ ba}%
+Quan hệ thứ ba là không có quan hệ nào. Bài báo của
+mục~\ref{sec:ch14-sua-bang-nhan-qua} đề xuất một biến thể của SHAP dùng cấu
+trúc nhân quả, và chỗ hỏng mà nó sửa không do ai gây ra: SHAP không phân biệt
+được tương quan với nhân quả, nên khi hai đặc trưng tương quan mạnh, nó chia
+điểm cho cả hai dù chỉ một trong hai thật sự tác động lên đầu ra. Chỗ hỏng ấy
+có mặt trong mọi lần chạy bình thường và không cần bên tấn công nào. Chương giữ
+bài ấy ở đây vì nó là phép sửa duy nhất trong danh mục nhắm vào chính cơ chế mà
+quan hệ thứ nhất khai thác, chứ không vì nó nói về tấn công.
+
+Ba quan hệ ấy không phải ba chặng của một câu chuyện, và đọc chúng như vậy là
+cái bẫy mà nhan đề chương dựng sẵn. Một phép tấn công, một mặt bị tấn công, rồi
+một phép sửa: bộ ba ấy nghe liền mạch tới mức người đọc dễ gán cho bài thứ ba
+một bên tấn công mà nó không có, và gán cho bài thứ hai một nạn nhân mà nó không
+nhắm tới.
+
+\index{ground truth!dựng bởi bên tấn công}%
+Còn một điều nữa phải nói trước khi vào bài thứ nhất, vì nó là lý do chương này
+đáng đọc kỹ hơn nhan đề của nó gợi ý. Suốt từ chương~\ref{ch:do-do-trung-thuc}
+tới đây, khó khăn lặp đi lặp lại là không ai có ground truth: muốn chấm điểm
+một lời giải thích thì phải biết mô hình thật sự dựa vào cái gì, và với một mô
+hình có sẵn thì không ai biết. Chương~\ref{ch:chi-so-khong-do-do-trung-thuc}
+thoát ra bằng cách chọn những nhiệm vụ mà thiết kế của nhiệm vụ ép câu trả lời
+phải là gì, và mục~\ref{sec:ch09-doi-tuong-khac-nhau} đã ghi rằng cách dựng ấy
+là thứ chuyển được sang attribution đặc trưng. Phép tấn công của mục sau chuyển
+nó thật, và chuyển theo một đường không ai thiết kế: bên tấn công phải tự tay
+dựng mô hình thiên lệch thì mới tấn công được, nên bên ấy biết chính xác mô
+hình mình dựa vào đặc trưng nào. Ground truth có sẵn, không phải vì ai đó đi
+tìm nó, mà vì phép tấn công không chạy được nếu thiếu nó.
+
+\index{tấn công!ba quan hệ với lời giải thích|)}%
