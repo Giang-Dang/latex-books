@@ -66,6 +66,19 @@ Weighted sum of squared errors `= 1/5 = 0.2`.
 Adding an intercept changes the solution, so the chapter must keep the
 no-intercept form it already uses.
 
+**The chapter 03 review question uses the same example with a narrower kernel.**
+With `sigma^2 = 1/(2*ln 2)` the kernel becomes `4^(-D^2)`, so the four weights
+are `1`, `1/4`, `1/4`, `1/16`. Normal equations, multiplied through by 4:
+
+```
+5*w1 + 4*w2 = 17
+4*w1 + 5*w2 = 18
+```
+
+giving `w1 = 13/9` and `w2 = 22/9`, against `7/5` and `12/5` at the original
+width. Both coefficients rise while `f` is unchanged, which is the point of the
+question. Computed with exact rationals in the same session as the rest of E1.
+
 ### Chapter 04 - Shapley on the baseline game
 
 `v({}) = 0`, `v({1}) = 1`, `v({2}) = 2`, `v({1,2}) = 4`.
