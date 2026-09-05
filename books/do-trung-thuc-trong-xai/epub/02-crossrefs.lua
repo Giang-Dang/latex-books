@@ -15,10 +15,10 @@
 --   ch  137   sec  87   def  41   fig  38   eq  29
 --   app   8   tab   5   thm   2   prop  1   alg  1
 --
--- Headings and figures are numbered here. Theorem-family environments are not:
--- pandoc reads \newtheorem itself and has already written "Dinh nghia 1.1" into
--- the Div, so the number is taken from what it rendered rather than counted
--- again. Two counters that disagree is worse than one counter.
+-- Headings, figures and theorem-family environments are numbered here. Pandoc
+-- reads \newtheorem but resets its chapter counter at every \part, unlike the
+-- book class, so keeping its rendered number would turn chapter 11 into 4.x.
+-- One shared theorem counter per chapter matches macros.tex.
 
 local numbers = {}   -- identifier -> "3.2"
 local titles = {}    -- identifier -> heading text, for unnumbered targets
@@ -47,6 +47,7 @@ local chapter_label = nil
 local chapter_count, appendix_count = 0, 0
 local section_count, subsection_count = 0, 0
 local figure_count, equation_count, table_count, algorithm_count = 0, 0, 0, 0
+local theorem_count = 0
 
 -- \part opens the numbered body. The preface is a \chapter as well, but it
 -- sits in \frontmatter ahead of every part, and pandoc keeps no record of
@@ -60,6 +61,7 @@ end
 local function reset_chapter_counters()
   section_count, subsection_count = 0, 0
   figure_count, equation_count, table_count, algorithm_count = 0, 0, 0, 0
+  theorem_count = 0
 end
 
 local function on_header(header)
@@ -108,19 +110,32 @@ local function counted(id, count)
   end
 end
 
--- A theorem-family Div as pandoc builds it opens with a Para whose Strong
--- holds the name and the number it worked out: "Dinh nghia 1.1". That number
--- is the one the printed book shows, so it is read back rather than recomputed.
+-- A theorem-family Div contains a Strong whose text is the theorem name and
+-- the number pandoc worked out: "Dinh nghia 1.1". An equation in the opening
+-- paragraph can put that Strong inside another Div, so find it by walking the
+-- whole theorem instead of assuming a fixed block shape.
 local THEOREM_CLASSES = {
   definition = true, example = true, theorem = true,
   lemma = true, proposition = true, corollary = true, remark = true,
 }
 
-local function theorem_number(div)
-  local first = div.content[1]
-  if not (first and first.content) then return nil end
-  local text = pandoc.utils.stringify(first.content)
-  return text:match('([%d%.]+)')
+local function rewrite_theorem_number(div, number)
+  local rewritten = false
+  local result = pandoc.walk_block(div, {
+    Strong = function(strong)
+      if rewritten then return nil end
+      local text = pandoc.utils.stringify(strong.content)
+      local name = text:match('^(.-)%s+[%d%.]+$')
+      if not name then return nil end
+      local period = text:sub(-1) == '.' and '.' or ''
+      rewritten = true
+      return pandoc.Strong({ pandoc.Str(name .. ' ' .. number .. period) })
+    end,
+  })
+  if not rewritten then
+    error('02-crossrefs.lua: cannot find the theorem label to renumber')
+  end
+  return result
 end
 
 -- Every \label anywhere inside a block, in the order they appear.
@@ -159,7 +174,7 @@ end
 -- matters and doc:walk does not promise to visit a Header before the inlines
 -- of the paragraph beneath it.
 local function survey_blocks(blocks)
-  for _, block in ipairs(blocks) do
+  for index, block in ipairs(blocks) do
     local t = block.t
     if t == 'Header' then
       on_header(block)
@@ -174,7 +189,10 @@ local function survey_blocks(blocks)
       pending_header = nil
     elseif t == 'Div' then
       local class = block.classes[1]
-      if class == 'equation' then
+      if class == 'epub-figure' then
+        figure_count = figure_count + 1
+        counted(block.identifier, figure_count)
+      elseif class == 'equation' then
         equation_count = equation_count + 1
         counted(block.identifier, equation_count)
       elseif class == 'algorithm' then
@@ -183,12 +201,18 @@ local function survey_blocks(blocks)
       elseif class and THEOREM_CLASSES[class] then
         -- pandoc numbers these itself and leaves the \label loose inside, with
         -- no id on the Div. Attaching it is what makes 41 \ref{def:...} and
-        -- their neighbours resolvable at all.
+        -- their neighbours resolvable at all. Survey the contents as well:
+        -- a definition can contain a separately numbered equation.
         local found = labels_in(block)
+        theorem_count = theorem_count + 1
+        local number = chapter_label .. '.' .. theorem_count
+        block = rewrite_theorem_number(block, number)
+        blocks[index] = block
         if found[1] then
           block.identifier = found[1]
-          numbers[found[1]] = theorem_number(block) or ''
+          numbers[found[1]] = number
         end
+        survey_blocks(block.content)
       else
         survey_blocks(block.content)
       end

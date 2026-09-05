@@ -25,13 +25,17 @@ semantic markup - class="sourceCode csharp" against tex4ht's per-token
 from __future__ import annotations
 
 import argparse
+import posixpath
+import re
 import shutil
 import subprocess
 import sys
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 import booksource
 import figures
@@ -48,6 +52,7 @@ for stream in (sys.stdout, sys.stderr):
 # Where a book keeps the pandoc filters describing its own environments. Same
 # split as check-chapter.psd1: the script is shared, the policy is the book's.
 BOOK_FILTER_DIR = "epub"
+SHARED_FILTERS = [Path(__file__).with_name("tables.lua")]
 
 REQUIRED_TOOLS = {
     "pandoc": "converts the flattened LaTeX; the whole pipeline is built on it",
@@ -60,8 +65,153 @@ REQUIRED_TOOLS = {
 # be required - but a release that skipped its one validation step should say
 # so rather than passing quietly.
 OPTIONAL_TOOLS = {
-    "epubcheck": "validates the finished EPUB; without it nothing checks it",
+    "epubcheck": "validates full EPUB conformance; internal links are still checked",
 }
+
+
+class SourceError(RuntimeError):
+    """The flattened LaTeX cannot be prepared without losing structure."""
+
+
+def _is_comment_start(source: str, position: int) -> bool:
+    """Return whether the percent sign at *position* starts a TeX comment."""
+    backslashes = 0
+    position -= 1
+    while position >= 0 and source[position] == "\\":
+        backslashes += 1
+        position -= 1
+    return backslashes % 2 == 0
+
+
+def _brace_group(source: str, position: int) -> tuple[str, int]:
+    """Read one balanced brace group after *position*."""
+    while position < len(source) and source[position].isspace():
+        position += 1
+    if position == len(source) or source[position] != "{":
+        raise SourceError(r"\multicolumn must have three brace groups")
+
+    depth = 1
+    start = position + 1
+    position = start
+    while position < len(source) and depth:
+        if (source[position] == "\\" and position + 1 < len(source)
+                and source[position + 1] in "{}\\"):
+            position += 2
+            continue
+        if source[position] == "{":
+            depth += 1
+        elif source[position] == "}":
+            depth -= 1
+        position += 1
+    if depth:
+        raise SourceError(r"unclosed brace group after \multicolumn")
+    return source[start:position - 1], position
+
+
+def _prepare_table(table: str) -> str:
+    r"""Mark spanning cells and remove rules pandoc renders as text."""
+    multicolumn = r"\multicolumn"
+    cmidrule = r"\cmidrule"
+    pieces: list[str] = []
+    cursor = 0
+    while cursor < len(table):
+        if table[cursor] == "%" and _is_comment_start(table, cursor):
+            newline = table.find("\n", cursor)
+            if newline < 0:
+                pieces.append(table[cursor:])
+                break
+            pieces.append(table[cursor:newline + 1])
+            cursor = newline + 1
+            continue
+
+        if table.startswith(multicolumn, cursor):
+            position = cursor + len(multicolumn)
+            span_text, position = _brace_group(table, position)
+            _, position = _brace_group(table, position)
+            content, position = _brace_group(table, position)
+            try:
+                span = int(span_text)
+            except ValueError as failure:
+                raise SourceError(
+                    rf"\multicolumn span is not an integer: {span_text!r}"
+                ) from failure
+            if span < 1:
+                raise SourceError(rf"\multicolumn span must be positive: {span}")
+            pieces.append(
+                rf"\href{{epub-colspan:{span}}}{{{content}}}"
+                + " &" * (span - 1)
+            )
+            cursor = position
+            continue
+
+        if table.startswith(cmidrule, cursor):
+            position = cursor + len(cmidrule)
+            while position < len(table) and table[position].isspace():
+                position += 1
+            if position < len(table) and table[position] == "(":
+                option_end = table.find(")", position + 1)
+                if option_end < 0:
+                    raise SourceError(r"unclosed option after \cmidrule")
+                position = option_end + 1
+            _, cursor = _brace_group(table, position)
+            continue
+
+        pieces.append(table[cursor])
+        cursor += 1
+    return "".join(pieces)
+
+
+def prepare_tables(source: str) -> str:
+    r"""Prepare actual table environments without rewriting comments or code.
+
+    Pandoc leaves a whole table as raw LaTeX when it sees ``\multicolumn``.
+    Lua filters run after that parse and cannot recover the float's caption or
+    label. Spanning cells therefore become temporary links before parsing;
+    ``tables.lua`` consumes those markers and restores their column spans.
+    """
+    table_begin = re.compile(r"\\begin\{(tabular|longtable)\}")
+    verbatim_names = {"verbatim", "Verbatim", "lstlisting", "minted"}
+    verbatim_names.update(re.findall(r"\\newminted\[([^]]+)\]", source))
+
+    pieces: list[str] = []
+    cursor = 0
+    while cursor < len(source):
+        if source[cursor] == "%" and _is_comment_start(source, cursor):
+            newline = source.find("\n", cursor)
+            if newline < 0:
+                pieces.append(source[cursor:])
+                break
+            pieces.append(source[cursor:newline + 1])
+            cursor = newline + 1
+            continue
+
+        if source.startswith(r"\begin{", cursor):
+            name, after_begin = _brace_group(source, cursor + len(r"\begin"))
+            if name in verbatim_names:
+                end_marker = rf"\end{{{name}}}"
+                end = source.find(end_marker, after_begin)
+                if end < 0:
+                    raise SourceError(f"unclosed verbatim environment {name}")
+                end += len(end_marker)
+                pieces.append(source[cursor:end])
+                cursor = end
+                continue
+
+        match = table_begin.match(source, cursor)
+        if match:
+            name = match.group(1)
+            end_marker = rf"\end{{{name}}}"
+            end = source.find(end_marker, match.end())
+            if end < 0:
+                raise SourceError(f"unclosed table environment {name}")
+            end += len(end_marker)
+            pieces.append(_prepare_table(source[cursor:end]))
+            cursor = end
+            continue
+
+        pieces.append(source[cursor])
+        cursor += 1
+    return "".join(pieces)
 
 
 # ---------------------------------------------------------------------------
@@ -292,10 +442,11 @@ def filters_for(book: Book) -> list[Path]:
 
 
 def build(book: Book, work: Path, verbose: bool) -> Path:
-    filters = filters_for(book)
+    filters = [*SHARED_FILTERS, *filters_for(book)]
     work.mkdir(parents=True, exist_ok=True)
 
     flat, read = booksource.flatten(book.path)
+    flat = prepare_tables(flat)
     flat_path = work / "flat.tex"
     flat_path.write_text(flat, encoding="utf-8")
     print(f"    flattened {len(read)} files ({len(flat):,} characters)")
@@ -362,6 +513,60 @@ def summarise(epub: Path) -> None:
           f"{body.count('<pre')} code listings, {len(images)} images, "
           f"{body.count('#ch:') + body.count('#sec:') + body.count('#fig:')} "
           f"cross-references")
+
+
+class _LinkCollector(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.identifiers: set[str] = set()
+        self.hrefs: list[str] = []
+
+    def handle_starttag(self, tag: str,
+                        attrs: list[tuple[str, str | None]]) -> None:
+        for name, value in attrs:
+            if name == "id" and value:
+                self.identifiers.add(value)
+            elif name == "href" and value:
+                self.hrefs.append(value)
+
+
+def validate_internal_links(epub: Path) -> None:
+    """Reject links whose archive member or XHTML fragment does not exist."""
+    print("    validating internal links")
+    with zipfile.ZipFile(epub) as archive:
+        members = set(archive.namelist())
+        documents: dict[str, _LinkCollector] = {}
+        for name in members:
+            if not name.endswith(".xhtml"):
+                continue
+            collector = _LinkCollector()
+            collector.feed(archive.read(name).decode("utf-8"))
+            documents[name] = collector
+
+    broken: list[str] = []
+    for source, collector in documents.items():
+        for href in collector.hrefs:
+            target = urlsplit(href)
+            if target.scheme or target.netloc:
+                continue
+            path = unquote(target.path)
+            destination = source if not path else posixpath.normpath(
+                posixpath.join(posixpath.dirname(source), path))
+            if destination not in members:
+                broken.append(f"{source}: {href} (missing file)")
+                continue
+            if target.fragment:
+                fragment = unquote(target.fragment)
+                document = documents.get(destination)
+                if document is None or fragment not in document.identifiers:
+                    broken.append(f"{source}: {href} (missing fragment)")
+
+    if broken:
+        detail = "\n".join(f"  {item}" for item in broken[:20])
+        extra = "" if len(broken) <= 20 else f"\n  ...and {len(broken) - 20} more"
+        raise SystemExit(
+            f"internal link validation rejected {epub.name}:\n{detail}{extra}"
+        )
 
 
 def validate(epub: Path) -> None:
@@ -453,11 +658,13 @@ def main() -> int:
                 shutil.rmtree(work)
             try:
                 epub = build(book, work, args.verbose)
-            except (booksource.FlattenError, figures.FigureError) as failure:
+            except (booksource.FlattenError, figures.FigureError,
+                    SourceError) as failure:
                 # These say precisely what went wrong and where. A traceback
                 # on top of that only buries it.
                 raise SystemExit(f"{book.name}: {failure}") from None
             summarise(epub)
+            validate_internal_links(epub)
             validate(epub)
             shutil.copyfile(epub, root / "dist" / f"{book.name}.epub")
             updated.append(book.name)
