@@ -15,6 +15,9 @@ Rules that hold for every audit, whatever the brief adds:
 - Read every file the brief names end to end before judging anything.
 - Take the voice from the previous chapter's actual prose, never from a
   description of it.
+- Judge comprehension as the reader the SPEC describes, never as yourself. A
+  term or symbol you happen to know is still undefined if the pages before it
+  have not defined it. Quote the sentence where you first lost the thread.
 - One line per finding: file:line, the quoted span, what is wrong, the rule
   or source it fails, and confidence (certain / likely / unsure). Flag
   uncertainty instead of guessing; an "unsure" that turns out to be real
