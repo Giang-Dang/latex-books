@@ -1,0 +1,62 @@
+\section{The Router Cannot Help You}
+\label{sec:ch14-the-router-cannot-help-you}
+
+\index{router!subgraph error propagation|(}%
+The obvious next move is to go looking for a switch. The router is the thing
+turning four services into one response, so the router ought to be the place to
+say what happens when one of them is missing. It has a configuration block with
+almost exactly the right name.
+
+\index{router!the keys the block accepts}%
+\code{subgraph\_error\_propagation} is real, and
+chapter~\ref{ch:enter-the-router}'s trick finds its shape without any
+documentation: the router validates \code{config.yaml} against a JSON schema
+and refuses to start on a property that schema does not declare, naming the
+path it rejected. Feed it an invented key under that block and it names the
+block. The keys it does accept cover which errors reach a client and how much
+of each one survives the trip: a \code{mode} of \code{wrapped} or
+\code{pass-through}, whether the failing service is named, whether locations
+and extensions are kept, which extension fields are allowed through, and
+whether a subgraph's HTTP status is passed along.
+
+\index{router!what the block does not reach}%
+None of it changes anything in this chapter. Run the two requests from
+section~\ref{sec:ch14-the-response-that-is-not-there} with the mode left at its
+default and again with \code{pass-through}, against the same stopped Ratings
+service, and the two responses are byte for byte identical.
+
+\index{router!errors a subgraph returns, not errors about a subgraph}%
+The reason is in the block's own name, read carefully. It propagates errors
+\emph{from} a subgraph: the ones a running service puts in its own response
+body. A service that is not listening never produces a body, so there is
+nothing for the block to reshape and the router writes the only sentence it
+can. \enquote{Failed to fetch from Subgraph 'ratings'.} is not a formatted
+subgraph error. It is the router reporting that there was no subgraph error
+because there was no subgraph.
+
+\index{router!what the block does reach}%
+The contrast is easy to produce, because chapter~\ref{ch:entities-authorization}
+left a field in this graph that a running service refuses. Ask for
+\code{Speaker.email} with no token and the Speakers service answers, in its own
+body, with an authorization error. Under the default mode the router wraps that:
+the client gets one error naming the subgraph, carrying the original inside its
+extensions along with the service name and the status. Under
+\code{pass-through} the subgraph's own error surfaces directly, with its path
+and its \code{AUTH\_NOT\_AUTHENTICATED} code where a client can branch on them.
+That is a real and useful difference, and it is a difference about a service
+that answered.
+
+\index{blast radius!not a routing concern}%
+So the block is worth setting, and it is worth setting for
+chapter~\ref{ch:blame-routing}'s reasons rather than this chapter's. It decides
+how much a client learns about a failure. It has nothing to say about how much
+of the response that failure destroys, because that was decided by the schema,
+before any of these services started.
+
+\index{blast radius!the one place it is decided}%
+So there is no operational answer to any of this. A router setting will not fix
+it, and neither will a retry, a circuit breaker or a health check. The amount
+of a response that one service's outage takes with it is a property of the
+composed schema, and the only place to change it is the annotations in the
+subgraphs that built it.
+\index{router!subgraph error propagation|)}%

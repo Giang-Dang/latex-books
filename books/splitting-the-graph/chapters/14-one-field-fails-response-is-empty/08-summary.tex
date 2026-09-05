@@ -1,0 +1,22 @@
+\begin{problemsummary}
+{A subgraph stops answering and a client gets an empty page, or an empty
+response, at HTTP 200. The fields that routed to the stopped service are not
+the only thing missing: a list of sessions another service answered correctly
+is gone, or the whole \code{data} entry is null with a healthy service's work
+in it.}
+{A non-null position cannot hold the failure, so it passes to its parent, and
+the parent passes it on until something is allowed to be null. Across a seam
+that walk runs through types other teams wrote. A non-null field contributed to
+a type you do not own costs the owner's whole list; a non-null root field costs
+the response, because the only position above it is \code{data}. No router
+setting changes any of this: \code{subgraph\_error\_propagation} reshapes errors
+a running subgraph returns and has nothing to reshape for one that is stopped.}
+{Mark a field non-null only where you can keep the promise and can afford to
+empty the position it sits in. In practice that means every field your service
+contributes to somebody else's type is nullable, and so is every root field,
+including \code{Query.nodes}, which
+\code{AddGlobalObjectIdentification()} generates as \code{[Node]!} and which
+needs a type interceptor to soften. Fields you own outright keep their
+exclamation marks. The client pays a null check, and the schema stops
+converting one team's outage into everyone's.}
+\end{problemsummary}

@@ -1,13 +1,20 @@
-% Scope (SPEC.md, Table of contents): non-null error propagation, blast radius, designing for partial failure, and @semanticNonNull
+% Scope (SPEC.md, Table of contents): non-null error propagation, blast radius,
+% designing for partial failure, and what became of @semanticNonNull. The TOC
+% line was corrected 2026-09-05 while drafting: the directive is superseded
+% rather than merely unratified (decision 122), the blast radius has exactly
+% two sizes and the larger one costs the whole response (decision 119), and no
+% router setting reaches it (decision 121).
 \chapter{One Field Fails and the Response Is Empty}
 \label{ch:null-blast-radius}
 
-\emph{Not yet drafted.}
+A non-null field is a promise about a service's uptime, and behind a router
+the promise is not always yours to keep.
 
-% Chapter skeleton, SPEC decision 13. Five beats, this order:
-%   1. The one sentence  - what this chapter establishes, stated first.
-%   2. Show it          - the thing running, or in Part III the thing failing.
-%   3. Why it does that - the mechanism. All theory lives here (decision 14).
-%   4. Do it properly   - the complete, correct implementation.
-%   5. Summary box      - decision 21.
-% Section files are \input from here, numbered 01-, 02-, ... from the book root.
+\input{chapters/14-one-field-fails-response-is-empty/01-four-sessions-for-one-dead-service}
+\input{chapters/14-one-field-fails-response-is-empty/02-the-response-that-is-not-there}
+\input{chapters/14-one-field-fails-response-is-empty/03-how-far-a-null-climbs}
+\input{chapters/14-one-field-fails-response-is-empty/04-the-exclamation-mark-nobody-typed}
+\input{chapters/14-one-field-fails-response-is-empty/05-the-router-cannot-help-you}
+\input{chapters/14-one-field-fails-response-is-empty/06-nullability-for-a-graph-you-share}
+\input{chapters/14-one-field-fails-response-is-empty/07-the-directive-that-would-fix-this}
+\input{chapters/14-one-field-fails-response-is-empty/08-summary}

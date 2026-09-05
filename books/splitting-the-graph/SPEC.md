@@ -107,7 +107,24 @@ cuts the requested page before Sessions hydrates the chosen entity keys. The
 measured request costs one Search statement and one batched Sessions statement;
 Ratings and Speakers cost none. `verify.ps1` is at 422 assertions on `main`.
 
-Next action: chapter 14, the non-null blast radius.
+Chapter 14 collects the debt chapters 2, 3, 4, 8, 9 and 12 all forward-referenced
+to it. Chapter 4's nullability rule turns out to be necessary and not
+sufficient: `Ratings.Query.ratingCount` met it exactly, being a count over a
+table that service owns, and stopping that service empties the whole response,
+including the half the Sessions service answered correctly at the cost of a
+real statement. Behind a router the blast radius is a property of the composed
+schema rather than of the service, and the two positions that decide it are a
+field contributed to somebody else's type, which costs their whole list, and a
+root field, whose only parent is `data`. Five fields give up their exclamation
+marks, one of which nobody wrote: `AddGlobalObjectIdentification()` generates
+`Query.nodes` as `[Node]!` and it needs a type interceptor to soften, in both
+subgraphs that export it. No router setting reaches any of this (decision 121).
+The `@semanticNonNull` open item is closed and the TOC line corrected: the
+directive is superseded rather than merely unratified, and what Hot Chocolate
+ships under its name changes the printed schema and nothing about execution
+(decision 122). `verify.ps1` is at 451 assertions on `main`.
+
+Next action: chapter 15, where satisfiability actually fails.
 
 **Why this book exists.** It is the second book in this library on federated
 GraphQL in .NET, and it exists because the first one,
@@ -263,6 +280,14 @@ and why, in the row.
 | 116 | A search projection is complete before it is current | Search carries one row per Session, including the unrated session with a null average and count zero. Grouping Ratings alone would omit it. Every order ends with `SessionId` for a deterministic tie-breaker. Neither fact promises cross-request snapshot stability, and the book names ingestion lag and cursor movement as unimplemented product concerns rather than federation behavior. |
 | 117 | Chapter 13 preserves the original Sessions surface byte for byte | The new behavior lives behind `searchSessions`. `Sessions.Query.GetSessions`, its start-time ordering, the four-row seed and the original paging arguments do not move, because decision 101's broken-loader demonstration depends on the resulting `1, 1, 2, 3` speaker sequence. Cross-seam sorting is added rather than retrofitted onto that root. |
 | 118 | Chapter 13 issues no HotChocolate 14 callout | The accepted mechanism is an additional Search service, and decision 47 keeps `hc14` to code a callout quotes. There is no version-specific claim to make: the list-ownership mechanism is established on the current four-service graph. `ch13-hc14` therefore tags the unchanged branch and its unchanged 214 assertions, on the same footing as chapters 9 through 12 when their new service behavior was outside that branch. |
+| 119 | Decision 59's rule is necessary and not sufficient, and this is the federated half | Chapter 4 said a field is non-null where the value is guaranteed from data you own, in the same process, with a constraint behind it. `Ratings.Query.ratingCount` met that exactly, being a `COUNT` over a table its own service owns, and it is the field that empties the response. What decision 59 could not see is that after composition the field's *position* is written by other teams, so the rule gains a second test: **and the position it occupies in the composed schema is one you are willing to empty when your service is down.** Measured 2026-09-05 at the canonical four-session page, with Ratings stopped: a non-null field contributed to a type another service owns costs that service's whole list, four sessions for one field, while the Sessions service still spends its one statement reading them; a non-null **root** field costs the entire `data` entry, taking a healthy service's answer in the same response with it. Those are the only two sizes, and the second is the chapter. Five fields move (`Ratings.Query.ratingCount`, `Ratings.Session.ratingCount`, `Ratings.Session.feedbackUrl`, `Search.SessionSearchDocument.session`, `Query.nodes`) and everything a service owns outright stays non-null, because a schema with no exclamation marks is the failure decision 59 already rejected. Recorded as an amendment rather than a replacement: decision 59 is still right about one service. |
+| 120 | The one non-null root field nobody wrote, and the interceptor that reaches it | `AddGlobalObjectIdentification()` generates `Query.node` as `Node` and `Query.nodes` as `[Node]!`, and the difference decides whether a dead subgraph costs a field or the response. **The nullable item type protects nothing**, measured 2026-09-05: the router plans one batched step per owning subgraph and fails the whole field when one is unreachable, so a mixed `nodes(ids:)` naming one live and one stopped service answers `data: null` with no path and no index, while the singular `node(id:)` hitting the identical failure answers `{"node": null}`. Neither field is declared in any class, which is the wall decision 74 hit for `@shareable`, and the answer is the same hook: `ObjectFieldConfiguration.Type` is settable, so `NullableNodesField` rewrites it with `TypeReference.Parse("[Node]", TypeContext.Output)`. **Both subgraphs that export the field carry a copy**, because the field is shareable and two subgraphs declaring it with different types have not declared the same field. Not established: whether the registration offers an option that does this without an interceptor; none was found and the search was not exhaustive. |
+| 121 | The router's error configuration cannot reach a stopped subgraph | Measured 2026-09-05. `subgraph_error_propagation` is real at router 0.341.0 and its key set was confirmed against the running binary by decision 83's refusal-as-probe method. It changes nothing in chapter 14: `wrapped` and `pass-through` answer **byte for byte identically** for both the list request and the root field while Ratings is stopped. The block reshapes errors a *responding* subgraph returns inside its own body, and a service that is not listening never produces one, so `Failed to fetch from Subgraph 'x'` is fixed router behavior. Proved by contrast against chapter 12's guarded field, which a running service refuses: there the two modes differ exactly as documented, wrapped nesting the original under `extensions.errors` and pass-through surfacing it with its own `path` and `AUTH_NOT_AUTHENTICATED` code. The consequence the chapter states: the amount of a response one outage destroys is decided by the schema, and there is no operational lever for it. Two internal contradictions in the router's own artifacts are recorded in the research note and printed nowhere, because neither was isolated behaviorally: the config schema and the documentation page disagree on the default of `omit_locations`, and `statusCode` appeared under a minimal config that never set `propagate_status_codes`. |
+| 122 | `@semanticNonNull` is described, not shipped, and the TOC line was wrong about what it is | The open item chapter 4 opened, closed by measuring and by reading the repositories rather than the documentation. **The directive is superseded, not merely unratified.** Specification PR 1065 is open, never merged, never closed, and was labelled stale on 2026-03-19 at stage RFC 0; the GraphQL Nullability Working Group archived itself on 2026-02-05 and its closing note records that the work landed on PR 1163, `onError`, at stage RFC 1 and discussed two days before this chapter was drafted. Neither name appears in the September 2025 edition or the current working draft. **What Hot Chocolate 16.6.1 ships under the directive's name is an export-time rewrite**, `schema export --semantic-non-null`, which strips `!` from query-side output fields and applies the directive, leaves the mutation root field and every argument type untouched, and changes nothing about execution. It composes at `wgc` 0.129.9 and reaches the schema the router serves, and the composer substitutes its own stricter definition of the directive's `levels` argument for the one the subgraph declared, which is the **third** vendor disagreement in this book after decisions 73 and 88. The runtime half is `ErrorHandlingMode`, read off an `onError` request property, which is an implementation of the unmerged PR 1163 shipped ahead of it, and which replaced a v15 schema-level option that was removed. The book ships neither, because both live inside one service and every request in it since chapter 8 goes to a router written in Go. |
+| 123 | A version may be named in a sentence when the sentence is about that version | Decision 35 reads that no chapter names a version outside appendix A, and its reason is that bumping the toolchain should be one edit. Chapters 7 and 12 already print `14.3.1` and `16.6.1` in prose, and chapter 14 does it twice more, so the rule as written has been diverged from three times and is better narrowed than quietly broken again. The narrowing: a version a chapter states **about the toolchain** goes in appendix A, and a version a chapter names **as the subject of the claim** may be written in the sentence, because the claim is that these two versions differ and a sentence that will not say which is not making it. This is the same shape as decisions 42, 63, 78 and 82, which carved out a build file's pins, an SDL document's `@link`, a version an artifact records about itself, and a config format's own version. What is still barred is naming a version as a way of pinning the toolchain, which is what appendix A is re-verified for. |
+| 124 | Chapter 14 issues a HotChocolate 14 callout, the first since chapter 8 | The five chapters before it declined one (decisions 64, 91, 98, 103, 111, 118), each because the thing being taught did not exist on that branch or did not differ there. Chapter 14 is the opposite case and the difference is small enough to state exactly: the propagation rule is the specification's and is identical on both versions, and the fields the chapter softens belong to services `hc14` does not carry, so the only version-specific claim is that `schema export --semantic-non-null` does not exist on 14.3.1. Decision 11 wants that compiled rather than read off a release note, so `verify.ps1` runs both halves: the flag is in the help text on 16.6.1 and absent on 14.3.1, where passing it anyway is refused by name. `ch14-hc14` tags an unchanged tree at 216 assertions, up from 214 by exactly that pair. |
+| 125 | Chapter 9's printed half-down response is trimmed, and chapter 14 corrects it in its own text | Found by chapter 14's cold audit, which noticed that chapter 9 prints one error for a request chapter 14 says produces five. It resolves against chapter 9. Measured at tag `ch09` itself, in a throwaway worktree built and composed from that tag's own three services: **five** errors, with a byte-identical `data` half. `Speaker.name` is `String!` and the router has no speaker to put a name on, so each of the four rows raises its own propagation error before stopping at the nullable `speaker`. So the listing was trimmed to its first error when it was written rather than overtaken by a later chapter. **Why nothing caught it:** `check-listings.ps1` compares whole-file *source* listings against the repository and says nothing about a printed response, and no assertion in `verify.ps1` read an errors array for length. Both gaps are now closed for this request. Chapter 14 states the corrected count in its first section rather than repeating the claim, which is the same move decision 96 made when chapter 10 found a chapter 6 claim false. Whether to amend chapter 9's own page is open. |
+| 126 | A shareable field typed two ways composes, and the composer takes the permissive one | Chapter 14 drafted the claim that softening `Query.nodes` in Sessions alone would leave the composer with two answers, the audit flagged it as unmeasured, and running it proved it wrong. Measured 2026-09-05 at `wgc` 0.129.9: the half-softened graph composes, exit zero, nothing printed, and `engineConfig.graphqlSchema` carries `[Node]` rather than `[Node]!`. Handed two types for one shareable field this composer takes the more permissive rather than refusing the pair. That is the **third** time this composer has accepted what a reader would expect it to stop, after decision 73's `@cost` and decision 88's `@provides`, and it is why a prediction of composer strictness is never safe by analogy in this book. The book still softens both subgraphs, for two reasons the chapter states: a graph that is correct only because a composer was lenient breaks on the release where it stops being, and a half-softened Speakers subgraph tells anyone reading its own schema a different story from the supergraph. `verify.ps1` generates both inputs into the temp directory and asserts both halves, rather than committing a copy of another service's exported schema into `graph/`, which decision 75 keeps for what `wgc` reads and which would go stale the first time that service changed. |
 
 
 ## Version baseline
@@ -326,7 +351,7 @@ session. Chapter folders in `chapters/` carry the same scope lines.
 11. **Right Data, Wrong Entity** - `_entities` must answer in representation order, and what silently wrong data looks like when it does not. **Confirmed 2026-08-24 while drafting**, with one clause added rather than changed: the chapter is equally about why nothing catches it, because the router validates only the length of the answer (decision 100) and this book's own seed makes the failure invisible on every page it prints (decision 101).
 12. **`_entities` Never Asks Who You Are** - the guard on the root field that the entity route walks straight past. **Confirmed 2026-08-25 while drafting**, with two clauses added rather than changed: there are three doors and not two, because `node(id:)` reaches the same rows for the same reason, and the correction a reader reaches next is worse than the mistake, because `[Authorize]` on the reference resolver emits no directive at all (decision 106). The fix half of the chapter is the router's, which has to be told separately to verify a token and to forward it (decision 108).
 13. **The Page You Cannot Ask For** - filtering, sorting and paginating across a seam; why no directive fixes it, and the dedicated search domain as the escape
-14. **One Field Fails and the Response Is Empty** - non-null error propagation, blast radius, designing for partial failure, and `@semanticNonNull`
+14. **One Field Fails and the Response Is Empty** - non-null error propagation, blast radius, designing for partial failure, and what became of `@semanticNonNull`. **Corrected 2026-09-05 while drafting**, which is what the open item on that directive asked for. The scope line assumed a directive a reader could adopt; it is an unratified RFC that has been superseded by a different proposal, and what Hot Chocolate ships under the name rewrites the exported schema without changing execution. The chapter says what it now is and watches the proposal that replaced it (decision 122). Two clauses added rather than changed: the blast radius has exactly two sizes and the larger one costs the whole response (decision 119), and no router setting reaches it (decision 121).
 15. **Where Satisfiability Actually Fails** - reading composition errors, and why the composer blames one route out of four that fail
 16. **The Subgraph That Broke Everyone** - breaking changes as the highest availability risk, schema checks as a gate, and the REST-shaped schema nobody uses
 17. **Nobody Owns That Field** - ownership, governance, and schema evolution as a social problem wearing an API problem's clothes
@@ -365,7 +390,7 @@ Status values: not-started / outlined / drafted / reviewed / final.
 | 11 | drafted | Note at `research/ch11-right-data-wrong-entity.md`. Four tags, `verify.ps1` PASS on each: `ch11` (main, 353 assertions, unchanged source), `ch11-misordered` (40, the hand-written loader filling the results span by row rather than by key, decision 51), `ch11-handwritten` (353, the corrected hand-written loader run against main's own script, decision 104) and `ch11-hc14` (214, an unchanged tree). The chapter changes no line of the example, because the example was already right; what it adds is the request that would have caught the defect. Carries the deliberately broken listing the TOC owed, under decision 22's carve-out. Three findings are larger than the chapter: the source generator makes this failure unreachable and reinterprets a list return rather than rejecting it (decision 99), the router validates the length of an entity answer and nothing else (decision 100), and this book's seed hides the failure completely, so the chapter is about why every page still looked right (decision 101). Settled decisions 99 to 104 and opened four open items. 12 pages. |
 | 12 | drafted | Note at `research/ch12-entities-never-asks-who-you-are.md`. Six tags, `verify.ps1` PASS on each: `ch12` (main, 389 assertions), `ch12-rootguard` (20, `[Authorize]` on `Query.speakers` and nothing else), `ch12-inertguard` (13, the same attribute on the reference resolver, emitting no directive at all), `ch12-routeronly` (17, the federation directive with no subgraph guard behind it), `ch12-noforward` (17, main's C# with the router's `headers` block removed) and `ch12-hc14` (214, an unchanged tree). The book's first authorization, its first bearer token, and the first request in it that the router answers with something other than 200. `Speaker` gains one guarded column rather than a guarded type, which is what keeps every request chapters 9 to 11 print answerable without a credential (decision 105). Three findings outrank the chapter: the correction a reader reaches next is inert and silent (decision 106), a field guard costs the row while a type guard costs nothing (decision 107), and the router's own directive filters the answer after the subgraph has already read it (decision 109). Settled decisions 105 to 113 and opened five open items. The audit found nine things, seven of them real; the two rejected are recorded with their evidence at the end of the note. Four of the seven were files the chapter changed and never printed, which is decision 15 and the first of the three failures this book exists to fix, so decision 113 puts a check behind it. 16 pages, four of them the files the audit added. |
 | 13 | drafted | Note at `research/ch13-the-page-you-cannot-ask-for.md`. Tags `ch13` (main-equivalent, 422 assertions) and `ch13-hc14` (unchanged, 214), `verify.ps1` PASS on both. Search becomes the fourth subgraph and owns a complete discovery projection, including the unrated session. A filtered rating-descending page costs one Search statement and one batched Sessions statement; Ratings and Speakers cost none. The plan is Search `Single` followed by Sessions `BatchEntity`. The original Sessions root and seed remain unchanged under decision 117. Settled decisions 114 to 118 and closed the fourth-subgraph open item. `check-listings.ps1` matches all 23 mapped listings. 11 pages. |
-| 14 | not-started | |
+| 14 | drafted | Note at `research/ch14-one-field-fails-response-is-empty.md`. Three tags, `verify.ps1` PASS on each: `ch14` (main, 451 assertions), `ch14-nonnull` (449, the state the chapter argues against, decision 51) and `ch14-hc14` (216, an unchanged tree). Five fields lose their exclamation marks, and the graph degrades instead of emptying. Three findings outrank the chapter: chapter 4's rule is necessary and not sufficient once a router is in the middle (decision 119), the one non-null root field nobody wrote is generated by `AddGlobalObjectIdentification()` and its nullable item type protects nothing (decision 120), and `subgraph_error_propagation` cannot reach a stopped subgraph at all (decision 121). Settled decisions 119 to 126, closed the `@semanticNonNull` open item and opened six. The audit found nine things and two of them outrank their sections: chapter 9 prints a trimmed response (decision 125), and a claim this chapter made about the composer was wrong in the composer's favour (decision 126). The book's first HotChocolate 14 callout since chapter 8, and it is about a command-line flag rather than about the graph. 15 pages. |
 | 15 | not-started | |
 | 16 | not-started | |
 | 17 | not-started | No code. Prose and figures only. |
@@ -578,20 +603,61 @@ An unresolved question, and the condition that unblocks it.
   its `Query` is not partial. Unblocked by finding the generator feature the
   requirement is actually about, at which point it is a sentence in chapter 2
   and possibly a change to `Query.cs`.
-- **Chapter 14's scope line names `@semanticNonNull`, and 16.6.1 does not work
-  that way.** Established while drafting chapter 4 and recorded in its research
-  note. The directive is in no published edition of the GraphQL specification:
-  it is an open, unmerged RFC on the specification repository, PR 1065, opened
-  2023-11-24 and still open. In 16.6.1 it exists only as an **export-time
-  rewrite** of a schema that is otherwise ordinary, through
-  `schema export --semantic-non-null`, `RewriteToSemanticNonNull` and a
-  `MapGraphQLSemanticNonNullSchema()` endpoint. Alongside it the same version
-  carries a `HotChocolate.Language.ErrorHandlingMode` on every request object,
-  which is a per-request mechanism rather than a schema one. **Chapter 4 claims
-  none of this** and mentions the directive nowhere. Unblocked by outlining
-  chapter 14, at which point the TOC line either keeps the directive with an
-  accurate account of what it now is, or names what replaced it. Do not
-  reconcile this from memory: the RFC and Hot Chocolate have both moved twice.
+- **Whether to amend chapter 9's printed half-down response.** Decision 125
+  records that it prints one error where the graph answers five, measured at
+  its own tag, so the listing was trimmed when it was written. Chapter 14
+  corrects the count in its own first section, which is what decision 96 did in
+  the same position, and `verify.ps1` now asserts count and paths so it cannot
+  drift again. What is open is the page itself: replacing that listing means
+  re-typesetting a response in a chapter three parts back, and the correction
+  is already in print one chapter later. My inclination is to fix it, because
+  it is one listing rather than five historical tags, which is what made
+  decision 96's equivalent expensive. Unblocked by deciding, not by measuring.
+- **Whether anything else the book prints as a response is trimmed.**
+  Decision 125's defect survived two gates because neither looks at a printed
+  response body: `check-listings.ps1` compares whole-file source listings, and
+  `scripts/check-chapter.ps1`'s verbatim family only fires when the prose calls
+  a listing a capture, which chapter 9's does not. Every JSON block in the book
+  is a candidate and nobody has swept them. Unblocked by extending
+  `check-listings.ps1` to map response blocks to a request in `verify.ps1` the
+  way it already maps source blocks to a tag, which is a real piece of work and
+  is the natural place for it, since the map from a listing to its provenance
+  is already that script's job.
+- **Whether the two vendors' `@semanticNonNull(levels:)` disagreement matters.**
+  Closed the larger item this came out of: decision 122 settles what the
+  directive is and chapter 14 prints it. What is left is narrower and is the
+  third vendor disagreement in the book after decisions 73 and 88. Hot
+  Chocolate's rewritten document declares `levels: [Int!]`, a nullable list;
+  the composed schema `wgc` 0.129.9 produces declares `levels: [Int!]!`,
+  substituting a definition of its own rather than carrying through the one it
+  was handed. Both compose and the directive reaches the schema the router
+  serves, so nothing fails. Which side drifted was not established and no
+  chapter says. Unblocked by finding the normative definition, which is
+  appendix C's territory, in the same place decision 88's `@provides` question
+  already waits.
+- **What the router does with a semantic-non-null supergraph at run time.**
+  The composition was measured and no service was ever served from it: the
+  four schemas were copied to a scratch directory, one replaced with the
+  rewritten form, and `wgc` run on the copies. Whether the router honours the
+  directive, ignores it, or reports it to a client is unknown, and chapter 14
+  claims only what it measured. Unblocked by exporting the real Sessions schema
+  that way and starting the graph on it, which is cheap and was out of the
+  chapter's scope because the book ships neither mechanism (decision 122).
+- **Whether `ErrorHandlingMode` survives the router.** `onError` is a property
+  of a request a client sends to a Hot Chocolate server, and every request in
+  this book since chapter 8 goes to a router written in Go which forwards a
+  query rather than a client's envelope. The enum was read out of the shipped
+  assembly and never exercised. This is the question that decides whether the
+  trade decision 119 accepts can be bought back, so it is worth more than its
+  size. Unblocked by sending `onError` to the router and seeing whether
+  anything reaches a subgraph, and then by whether WunderGraph documents a
+  position on the proposal.
+- **Whether `AddGlobalObjectIdentification()` can produce a nullable `nodes`
+  without an interceptor.** Decision 120 ships a type interceptor because no
+  option was found, and the search was not exhaustive. It matters only for
+  tidiness, and it matters a little for chapter 20, which will be looking at
+  what a subgraph should declare. Unblocked by reading the registration's own
+  options surface.
 - **Whether `nodes` can be made to batch.** Chapter 4 measured it: two ids cost
   two statements even when both are sessions, because the field resolves each
   id on its own. A node resolver that goes through a DataLoader gets batching
@@ -747,7 +813,15 @@ An unresolved question, and the condition that unblocks it.
   chapter 11's demonstration quietly stops demonstrating: `ch11-misordered` would
   start failing a request the book prints as correct. Nothing checks this across
   chapters. Unblocked by outlining chapter 13, which should read decision 101
-  before it touches the ordering of anything.
+  before it touches the ordering of anything. **Chapters 13 and 14 both left it
+  alone**, and chapter 14 found the trap that hides underneath it: the four
+  databases are gitignored, `EnsureCreated` seeds an empty one and does nothing
+  to an existing one, and chapter 4's `rescheduleSession` moves a session's
+  `StartsAt`. `verify.ps1` deletes all four before every run and is therefore
+  safe; a standalone harness that forgets to answers the schedule as speakers
+  `1, 1, 3, 2` and looks entirely reproducible doing it. Chapter 14's first
+  measurement pass was wrong that way and was caught by comparing against this
+  row. Anything measuring outside `verify.ps1` deletes the databases first.
 - **Why the router's pre-fetch field authorization did not stop the fetch.**
   `enable_pre_fetch_field_authorization` exists at router 0.341.0, defaults to
   false, is accepted by the config schema, and its documentation says it

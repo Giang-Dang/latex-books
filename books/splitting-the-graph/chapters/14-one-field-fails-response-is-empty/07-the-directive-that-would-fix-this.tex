@@ -1,0 +1,154 @@
+\section{The Directive That Would Fix This}
+\label{sec:ch14-the-directive-that-would-fix-this}
+
+\index{semantic nullability!the shape of the missing feature|(}%
+The trade at the end of the last section is not a law of nature. It exists
+because GraphQL's type modifier has to answer two questions with one character.
+\enquote{Can this value be absent in a correct response} and \enquote{can this
+value be missing because something broke} are different questions, and \code{!}
+answers both at once.
+
+\index{semantic nullability!what a client actually wants}%
+A client wants both answers separately. It wants to know that
+\code{Session.title} is always there, so its generated types can say so and no
+branch is needed. It also wants a response with a broken service in it to arrive
+with a hole rather than an empty page. Those are compatible wishes and nothing
+in the language expresses them.
+
+\index{semantic nullability!the working group's own summary}%
+That is what the specification's nullability work has been about, and
+\code{@semanticNonNull} is the name most of the writing about it uses. The name
+is doing less work than it looks like. What it refers to has moved twice since
+it was proposed, and none of it is in a published specification.
+
+\subsection{Where the Proposal Actually Is}
+
+\index{semantic nullability!the RFC, and its state}%
+The RFC that named the directive is pull request 1065 on the specification
+repository, opened by Benjie Gillam on 24 November
+2023~\autocite{graphqlrfc1065}. It is still open. It has never been merged, it
+has never been closed, and in March 2026 it was marked stale; the project's own
+RFC tracker lists it at the first of its stages, strawman.
+
+\index{semantic nullability!where the work went instead}%
+Reading only that would give the wrong impression, because a stalled pull
+request usually means nobody cared. The opposite happened. The GraphQL
+Nullability Working Group archived itself in February 2026, and its closing note
+says where the work went~\autocite{nullabilitywg}:
+
+\begin{quote}
+Many thanks to everyone who contributed the many discussions and that made it
+possible to land on the current \textbf{service capabilities} + \code{onError}
+proposal.
+\end{quote}
+
+\index{onError@\code{onError}!the proposal that replaced the directive}%
+That proposal is pull request 1163, by the same author, and it is a different
+shape entirely~\autocite{graphqlrfc1163}. Rather than annotating the schema, it
+lets the client say, per request, what it wants done with an error: propagate
+it in the usual way, or put a null at the field that failed and report the error
+beside it. It sits one stage further along, and where 1065 has not been touched
+in months except to be marked stale, 1163 was still being edited two days
+before I wrote this.
+
+\index{semantic nullability!nothing is in a published edition}%
+Neither is in a published edition of the specification. Searching the September
+2025 edition and the current working draft for either name finds nothing.
+
+\subsection{What Hot Chocolate 16 Actually Ships}
+
+\index{semantic nullability!an export-time rewrite}%
+The directive exists in Hot Chocolate 16, and it is not a runtime feature. It
+is a flag on the schema export:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+  --semantic-non-null          Rewrite the exported schema to strip non-null
+                               wrappers from output fields and apply the
+                               @semanticNonNull directive instead.
+\end{minted}
+
+\index{semantic nullability!what the rewrite produces}%
+Run it and every output field on the query side loses its exclamation mark and
+gains a directive, bare for a single value and carrying a level for a list where
+only the items were non-null. The rewritten document declares the directive
+itself at the bottom. Two things it leaves alone, both of which the name would
+lead you to expect it to touch: the mutation root field keeps its non-null
+payload, and argument types are untouched throughout. It is a rewrite of what
+the query side returns, not of the schema.
+
+\index{semantic nullability!it changes nothing about execution}%
+Nothing about the running service changes. The same requests get the same
+responses, propagate the same way, and empty the same lists. The document is
+for a client's code generator, so that
+generated types can say \enquote{present unless something broke} while the wire
+keeps the nullable shape that lets a response degrade.
+
+\index{semantic nullability!the router serves it}%
+It composes, which surprised me. \code{wgc} takes a rewritten subgraph document
+without complaint and the directive survives into the schema the router serves,
+so this is a thing a graph could actually adopt. One detail is worth recording
+because it is the third time in this book that two vendors have described the
+same directive differently: the document Hot Chocolate writes declares the
+directive's argument as a nullable list, and the composed schema declares it as
+a non-null one. The composer is substituting a definition of its own rather than
+carrying through the one it was given.
+
+\index{ErrorHandlingMode@\code{ErrorHandlingMode}!the runtime half}%
+The runtime half is in the same release under a different name. Hot Chocolate
+16.6.1 reads an \code{onError} property off the request body, taking
+\code{PROPAGATE} or \code{NULL}, and there is a server-side default beside a
+switch controlling whether a client may override it. Michael Staib describes
+what the second value does on ChilliCream's blog~\autocite{staib2026hc16}:
+
+\begin{quote}
+With \code{onError: "NULL"}, Hot Chocolate stops null propagation, returns
+\code{null} at the field that failed, and still reports the error.
+\end{quote}
+
+\index{ErrorHandlingMode@\code{ErrorHandlingMode}!ahead of the specification}%
+That is an implementation of pull request 1163, on the wire, in a shipped
+release, while the pull request is unmerged and one stage into a process with
+several. It also replaced something: version 15 had a server-wide switch that
+turned the same non-propagating behavior on for every request, and the
+migration notes say it was removed in favor of the proposal. So the setting
+moved from the server to the request, which is the difference between an
+operator choosing and a client choosing.
+
+\subsection{Why This Book Ships Neither}
+
+\index{semantic nullability!why the graph does not adopt it}%
+Both mechanisms live inside one service. \code{onError} is a property of a
+request a client sends to a Hot Chocolate server, and every request in this book
+since chapter~\ref{ch:enter-the-router} is sent to a router written in Go. What
+the router does with an error is the router's, and it forwards a query rather
+than a client's envelope. Making that end-to-end is a question about two
+products agreeing, and neither of them has answered it in a released version.
+
+\index{semantic nullability!what a reader should do about it}%
+So the honest position is the one this chapter has already taken. Put the
+question marks where a promise can be kept, accept the null check on the client,
+and watch pull request 1163 rather than the directive, because the directive is
+the part of this that has already been superseded once. When the two halves
+arrive together, the trade at the end of
+section~\ref{sec:ch14-nullability-for-a-graph-you-share} stops being a trade,
+and a schema will be able to tell a client that a value is always there and that
+this response is missing it.
+
+\begin{onhc14}
+\index{semantic nullability!absent on 14}%
+There is no such flag. On 14.3.1 the schema export command takes an output path
+and a schema name and nothing else, and passing the flag anyway is refused by
+name:
+
+\begin{minted}{text}
+Unrecognized command or argument '--semantic-non-null'.
+\end{minted}
+
+Nothing else in this chapter is a version difference. The propagation rule is
+the specification's and behaves the same on both. Three of the five fields this
+chapter softens belong to services that branch does not carry at all, and the
+two on the Sessions service are not ported to it, because
+appendix~\ref{app:hc14} keeps that branch to the code a callout quotes and no
+callout quotes them.
+\end{onhc14}
+\index{semantic nullability!the shape of the missing feature|)}%
