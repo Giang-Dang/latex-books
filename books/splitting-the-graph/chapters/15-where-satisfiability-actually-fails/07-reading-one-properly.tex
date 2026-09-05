@@ -1,0 +1,79 @@
+\section{Reading One Properly}
+\label{sec:ch15-reading-one-properly}
+
+\index{resolvability!how to read one of these|(}%
+Four things to do with a resolvability error, in this order. None of them
+starts with the query it printed.
+
+\index{resolvability!start at the second reason line}%
+Start at the second reason line. It names the type and the field, and it names
+the subgraph that declares them, which is the file to open. The path above it
+is where the composer was standing rather than where the mistake is, and in
+this chapter's own example it names a service that has nothing to do with
+either.
+
+\index{resolvability!ask about the key}%
+Then ask that subgraph one question: can the router get in? A contributed
+field is answered by sending that service a representation, so the type it
+hangs off needs a key the router is allowed to enter through. Look for
+\code{resolvable: false} first, because it is the argument that says no and the
+one whose English reads like something else. If the key is fine, ask whether
+the type has one at all, and whether the fields named in it are the ones the
+other subgraph can supply.
+
+\index{resolvability!the rule for resolvable: false}%
+The rule I use for that argument is not about who owns the rows. It is about
+what the type carries. A stub that declares nothing but the key exists so
+another type can point at it, and nothing will ever be fetched from it, so it
+takes \code{resolvable: false}. A subgraph that contributes even one field to
+the type will be sent representations of it, and its key has to be enterable.
+The Sessions service's \code{Speaker} is the first kind. The Search service's
+\code{Session} is the first kind. The Ratings service's \code{Session} is the
+second, and it is the second whether or not that service owns a single row.
+
+\index{resolvability!fix, then compose again, then compose again}%
+Third, compose again and expect another one. The check returns at the first
+root field it cannot walk, so a clean run after one fix is not evidence that
+there was one problem. I compose until it passes twice: once after the fix, and
+once after that, having changed nothing.
+
+\subsection{And Do Not Read a Pass as a Result}
+
+\index{resolvability!what a pass is worth}%
+The fourth thing is the one this chapter exists for.
+Section~\ref{sec:ch15-the-composition-that-passes} is a graph that composes
+cleanly and answers five hundred, and nothing about the input announces which
+of those two you are going to get.
+
+\index{resolvability!what a pass does establish}%
+That is not an argument for ignoring the check. A failure is real every time
+and is worth fixing before anything else, and merging, which is the pass that
+cannot be skipped, is doing its own job throughout. What a pass establishes is
+that the composer found no contradiction it was looking for. It does not
+establish that a plan exists for every field, and after this chapter I would
+not describe it to a colleague as though it did.
+
+\index{resolvability!the shape that defeats the check}%
+The specific shape to know about is a root field that returns an interface and
+is declared shareable in more than one subgraph. If your graph has one, and a
+graph with global object identification on more than one service has one
+whether anybody chose it or not, then any entity reachable through that
+interface can be walked into and left unresolved without a word. That is a
+narrow condition and it is not an exotic one.
+
+\index{resolvability!what to do about it}%
+Two things help, and neither is a setting. Compose the pairs: a subgraph and
+the one service it contributes fields to, on their own, without whatever else
+is in the graph, which is a small enough input that the walk has nowhere else
+to go. And test the fields rather than the composition, because
+section~\ref{sec:ch15-three-fields-three-failures} is what an approved graph
+does when it is wrong, and every one of those three answers would have been
+caught by one request per contributed field.
+
+\index{resolvability!the check the composer cannot run}%
+Which is the uncomfortable summary. Composition reads files and never calls a
+service, and chapter~\ref{ch:composition} treated that as a feature: it is why
+a subgraph does not have to be running to be composed. It is also the reason
+the strongest check on a graph is not composition. It is a request, sent to a
+router, for a field somebody contributed to somebody else's type.
+\index{resolvability!how to read one of these|)}%

@@ -1,0 +1,25 @@
+\begin{problemsummary}
+{A composition error names a query you did not write, through a service you did
+not touch, and stops at a field that looks correct. Or the graph composes at
+exit zero and a field answers HTTP 500, or answers a different field's value,
+or comes back null with no \code{errors} key at all.}
+{The check asks whether a field can be reached at all, not whether each route
+to it works, so it reports one route out of however many fail and picks the one
+it happened to be walking. The route it picks moves with the rest of the graph:
+which other subgraphs are in \code{graph.yaml}, the order their lines are
+written in, and the order root fields are declared inside one document all
+change the message without changing the defect. And the check can be satisfied
+without finding a route at all: a root field returning an interface, declared
+\code{@shareable} in two subgraphs, is accepted when either subgraph answers
+for its own types, which records the entity as visited and waves every later
+route to it through.}
+{Read the second reason line first, because it names the subgraph to open, and
+treat the printed path and the entity ancestor's subgraph as working rather
+than as diagnosis. Put \code{resolvable: false} on a key only where the type
+carries nothing but that key: a subgraph contributing one field to a type will
+be sent representations of it and has to be enterable, whether or not it owns a
+row. Then stop treating a pass as proof. Compose each contributing subgraph
+against the one service it hangs its fields on, and send one request per
+contributed field through the router, which is the only check in this book that
+catches all three of the failures above.}
+\end{problemsummary}

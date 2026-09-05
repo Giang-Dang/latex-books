@@ -1,0 +1,118 @@
+\section{Three Fields, Three Failures}
+\label{sec:ch15-three-fields-three-failures}
+
+\index{resolvability!what the approved graph does at run time|(}%
+The config that came out of the last section is a file a router will load, so
+start the three services and point one at it. Ask for the first of the three
+fields, by the first of the six routes.
+
+\begin{minted}{graphql}
+{ sessions(first: 10) { nodes { title averageScore } } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"internal server error"}]}
+\end{minted}
+
+\index{HTTP 500!the first one in this book}%
+Five hundred, and nothing in this book has answered one before. Every response
+chapter~\ref{ch:null-blast-radius} printed was a two hundred with the problem
+in the envelope, and the one refusal chapter~\ref{ch:entities-authorization}
+met was a four hundred and one from the router about a token. This is neither.
+The router took a request it advertises, planned it, and could not.
+
+\index{HTTP 500!on every route}%
+All six routes answer the same way, the mutation included. The router's log
+says why, and it says it twice in two different vocabularies. For the four
+routes that reach \code{Session} through an ordinary field:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+printOperation planner id: 1: validation failed: external: Cannot query field
+"averageScore" on type "Query"., locations: [], path: [query]
+\end{minted}
+
+\index{router!the planner falls back to the root type}%
+With no entity route into the Ratings service, the planner built the only other
+kind of request it knows how to send to a subgraph: a query on that subgraph's
+\code{Query} type. There is no \code{Query.averageScore}, so its own validation
+caught the operation before it went out. For the two routes through
+\code{node}, the log says something else:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+could not resolve a field: internal: nodesResolvableVisitor: could not select
+the datasource to resolve Query.node on path query.node
+\end{minted}
+
+\index{router!has a resolvability check of its own}%
+The router has a resolvability check of its own, it runs at request time, and
+here it is finding exactly what the composer's did not.
+
+\subsection{The Field That Answers the Wrong Question}
+
+\index{ratingCount@\code{ratingCount}!a valid query against the wrong field}%
+Ask for \code{ratingCount} instead. Same service, same defect, same route, and
+now a two hundred:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'ratings' at Path 'sessions.nodes', Reason: no data or errors in response.","extensions":{"statusCode":200}}],
+"data":{"sessions":{"nodes":[
+{"title":"Schemas That Outlive Their Authors","ratingCount":null},
+{"title":"Reading a Query Plan","ratingCount":null},
+{"title":"Paging Without Offsets","ratingCount":null},
+{"title":"The Bank That Split Its Graph","ratingCount":null}]}}}
+\end{minted}
+
+\index{query plan!the root field sent at a list position}%
+The plan is where this gets interesting. The second step of it, with the
+fields that are not the point removed:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"kind":"Single","path":"sessions.nodes","subgraphName":"ratings",
+ "query":"{\n    ratingCount\n}"}
+\end{minted}
+
+\index{ratingCount@\code{ratingCount}!the collision is the whole difference}%
+The router sent \code{\{ ratingCount \}} to the Ratings service: the root
+field, the one chapter~\ref{ch:null-blast-radius} made nullable, at a path
+inside a list of sessions. It is the same fallback that produced the five
+hundred, and this time it validated, because the Ratings service happens to
+have a root field with the name of the one the router wanted. A name collision
+between a root field and a field on a type is the entire difference between a
+loud failure and a query that runs and answers about the wrong thing.
+
+\subsection{The One That Says Nothing}
+
+\index{feedbackUrl@\code{feedbackUrl}!four nulls and no error}%
+The third field is the quiet one:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"sessions":{"nodes":[
+{"title":"Schemas That Outlive Their Authors","feedbackUrl":null},
+{"title":"Reading a Query Plan","feedbackUrl":null},
+{"title":"Paging Without Offsets","feedbackUrl":null},
+{"title":"The Bank That Split Its Graph","feedbackUrl":null}]}}}
+\end{minted}
+
+\index{feedbackUrl@\code{feedbackUrl}!no errors key at all}%
+Two hundred, every url null, and no \code{errors} key. Not an empty one. There
+is nothing in the response to tell a client that anything happened.
+
+\index{requires@\code{"@requires}!plans an entity fetch with no entity route}%
+\code{feedbackUrl} is the field chapter~\ref{ch:second-third-subgraph} put
+behind \code{@requires}, and that is why it behaves differently: the router
+plans a \code{BatchEntity} step for it, carrying an \code{\_entities} query and
+a fragment collecting \code{title}, and sends that to a service whose exported
+schema has no \code{\_entities} field on it. The fetch comes back with nothing
+usable and the position is nullable, so the position gets a null.
+
+\index{resolvability!one defect, three failure modes}%
+One defect. One line of C\#. Three fields on one type in one service, and three
+different things happen: a five hundred, a valid query against a different
+field, and silence. What sorts them is not the mistake, which is identical for
+all three. It is whether a root field of the same name exists to fall back to,
+and whether the field carries a \code{@requires}.
+
+\index{composition!approved all of it}%
+And a composition step approved all of it, at exit zero, with nothing on
+standard output.
+\index{resolvability!what the approved graph does at run time|)}%
