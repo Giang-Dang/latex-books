@@ -1,0 +1,98 @@
+\begin{tomtat}
+\begin{itemize}
+  \item Ba bài báo của chương đứng ở ba chỗ khác nhau so với chữ trong nhan đề,
+và gộp chúng lại là đọc sai cả ba: ở bài thứ nhất lời giải thích là nạn nhân, ở
+bài thứ hai nó là vũ khí nhắm vào một bộ phân loại ảnh, còn ở bài thứ ba không
+có bên tấn công nào và chỗ hỏng được sửa là một chỗ hỏng thống kê. Chữ
+  \enquote{faithful} không xuất hiện lần nào trong cả ba bài, và trong bốn họ
+chỉ số của chương~\ref{ch:do-do-trung-thuc} chỉ mỗi insertion có mặt, ở bài thứ
+ba, nơi nó là dụng cụ dùng để chấm điểm phép sửa.
+  \item \tn{Phép dựng giàn}{scaffolding} của phương trình~\ref{eq:ch14-phep-dung-gian} công bố một
+mô hình trả về dự đoán thiên lệch trên dữ liệu thật và một mô hình vô hại trên
+những điểm đã nhiễu, rồi để một
+  \tn{bộ phát hiện ngoài phân phối}{out-of-distribution detector} chọn nhánh. Nó
+không nhắm vào một giá trị tham số nào của LIME hay SHAP mà nhắm vào điều đúng
+với mọi giá trị, rằng những điểm được hỏi không phải những điểm mô hình sẽ chạy
+trên, nên đổi siêu tham số không gỡ được. Chỗ SHAP cầm cự khá hơn khi có hai
+đặc trưng đánh lạc hướng đến từ độ chính xác cục bộ của định
+nghĩa~\ref{def:ch04-ba-tinh-chat}, tức từ một tiên đề chứ không từ một biện
+pháp phòng thủ.
+  \item Thiết lập ấy dựng ra một ground truth cho attribution đặc trưng, và dựng
+bằng đường thứ ba: không phải qua thiết kế nhiệm vụ như
+chương~\ref{ch:chi-so-khong-do-do-trung-thuc}, cũng không phải qua thiết kế dữ
+liệu, mà qua thiết kế chính mô hình, vì bên tấn công buộc phải biết mô hình của
+mình dựa vào cái gì. Cái giá là tính đại diện: kết luận rút ra là kết luận về
+một mô hình được dựng riêng để đánh bại phương pháp. Đọc theo
+bảng~\ref{tab:ch01-bon-quan-he} thì phép tấn công không phá tính trung thực
+dưới một tập can thiệp cố định, nó tách hai tập can thiệp ra rồi đẩy chúng đi
+hai đường.
+  \item Sáu chỗ chương này không nhận lập luận của nguồn. Bài thứ nhất phát biểu
+ngưỡng sụp của LIME bằng ba giá trị khác nhau rồi báo cáo phương pháp của mình
+suy giảm ở một giá trị nằm giữa ba giá trị ấy, và tự ghi trong phần công việc
+tương lai rằng phép so ấy không công bằng; nó còn dựng phép ghép trên một câu
+sai về khoảng giá trị của SHAP, và phép nhân mà câu ấy biện hộ làm mất dấu của
+điểm số. Ở bài thứ hai, phương trình~\ref{eq:ch14-tan-cong-shap} chỉ làm một
+trong hai chiều dịch chuyển mà lời văn quanh nó mô tả, vì nhánh được chọn theo
+giá trị điểm ảnh chứ không theo dấu của điểm số. Ở bài thứ ba, định lý về tính
+vắng mặt chứng minh một phát biểu khác với tiên đề nó mang tên, và câu nói rằng
+tính nhất quán cũng đúng cho điểm số đã chuẩn hóa thì sai, vì hệ số chuẩn hóa
+phụ thuộc vào mô hình còn tính nhất quán so hai mô hình.
+  \item Cột nhãn RMSE trong bảng kết quả tổng hợp của bài thứ ba là tổng bình
+phương sai lệch chứ không phải căn của trung bình bình phương: cách đọc ấy dựng
+lại mười một trong mười hai ô, hai ô trong đó đúng trọn bốn chữ số thập phân.
+Hai cách đọc đồng biến với nhau nên mọi thứ hạng giữ nguyên và kết luận của bài
+đứng vững; cái sai là cái nhãn.
+  \item Cả ba phương pháp trong chương đều là phương pháp hậu nghiệm, và cả ba
+bài đều xoay quanh cùng một chỗ: điểm số chỉ có được bằng cách hỏi mô hình về
+những đầu vào đã bị thay hoặc bị che, tức những đầu vào không phải dữ liệu
+thật. Yêu cầu mà chương để lại cho một dụng cụ tương lai là yêu cầu công bố tập
+can thiệp, và nó khớp với yêu cầu mà mục~\ref{sec:ch13-tran-noi-gi} rút ra từ
+một cái trần lý thuyết.
+\end{itemize}
+\end{tomtat}
+
+\cauhoi
+\begin{cauhoids}
+  \item Mục~\ref{sec:ch14-ground-truth-ke-tan-cong} lập luận rằng lời giải thích
+mà LIME trả về cho mô hình $e$ không sai dưới tập can thiệp của chính LIME. Hãy
+phát biểu lại định nghĩa~\ref{def:ch01-do-trung-thuc} với tập can thiệp viết
+tường minh thành một đối số, rồi cho biết dưới cách phát biểu ấy thì phép dựng
+giàn còn là một phản ví dụ về độ trung thực hay đã thành một phản ví dụ về một
+thứ khác, và thứ khác ấy là gì.
+  \item Bài của mục~\ref{sec:ch14-mot-phong-thu} ghép LIME với SHAP bằng phép
+nhân. Hãy lấy một đặc trưng mà LIME cho điểm $-0.6$ và SHAP cho điểm $-0.5$,
+một đặc trưng khác mà cả hai cho $0.6$ và $0.5$, rồi tính điểm số BASIC SHLIME
+cho cả hai. Sau đó đề xuất một cách ghép khác giữ được dấu, và cho biết cách ấy
+còn giữ được tính chất nào trong ba tính chất của định
+nghĩa~\ref{def:ch04-ba-tinh-chat} hay không.
+  \item Phương trình~\ref{eq:ch14-tan-cong-shap} chọn nhánh theo giá trị điểm
+ảnh chứ không theo dấu của $\phi$. Hãy viết lại nó sao cho nó làm đúng cả hai
+chiều dịch chuyển mà lời văn của bài mô tả, rồi cho biết phiên bản viết lại có
+cần thêm giả thiết nào về quan hệ giữa giá trị điểm ảnh và dấu của $\phi$ hay
+không.
+  \item Mục~\ref{sec:ch14-shap-lam-vu-khi} đọc tỉ lệ phân loại sai như một phép
+đo về bộ điểm số đã dẫn đường cho phép tấn công. Hãy chỉ ra phép đo ấy giống họ
+xóa dần của mục~\ref{sec:ch08-ho-xoa-dan} ở những chỗ nào và khác ở những chỗ
+nào, rồi cho biết phản đối về đầu vào ngoài phân phối ở
+mục~\ref{sec:ch08-huan-luyen-lai} có áp được vào nó hay không, và vì sao.
+  \item Giá trị tham chiếu trong nửa thí nghiệm tổng hợp của
+mục~\ref{sec:ch14-sua-bang-nhan-qua} được lấy bằng cách chạy SHAP trên một tập
+đặc trưng đã rút gọn. Hãy nêu một phương pháp attribution giả định sẽ đạt điểm
+hoàn hảo theo cách chấm ấy mà vẫn không trung thực theo định
+nghĩa~\ref{def:ch01-do-trung-thuc}, rồi cho biết phải đổi cách dựng giá trị
+tham chiếu thế nào để loại nó.
+  \item Sách bác câu nói rằng tính nhất quán vẫn đúng sau bước chuẩn hóa. Hãy
+dựng một phản ví dụ bằng số: hai mô hình $f$ và $f'$, ba đặc trưng, các điểm số
+trước chuẩn hóa và hai giá trị $f(x)$, $f'(x)$ sao cho một đặc trưng có điểm số
+trước chuẩn hóa tăng mà điểm số sau chuẩn hóa giảm.
+  \item Ba đường dựng ground truth mà mục~\ref{sec:ch14-ground-truth-ke-tan-cong}
+liệt ra ép ba thứ khác nhau: thiết kế nhiệm vụ, thiết kế dữ liệu, thiết kế mô
+hình. Hãy xếp ba đường theo mức độ mà kết luận rút ra từ chúng nói được về
+những mô hình ngoài đời, rồi cho biết chương nào trong sách cung cấp bằng chứng
+cho chỗ xếp của mỗi đường.
+  \item Đọc phần \enquote{Detecting OOD Samples} trong \enquote{Fooling LIME and
+SHAP: Adversarial Attacks on Post hoc Explanation Methods} của Slack và cộng
+sự~\autocite{mfooling}, nơi mô tả cách dựng bộ phát hiện ngoài phân phối. Hãy
+cho biết bên kiểm tra có thể làm gì với chính phân phối nhiễu của mình để phép
+tấn công khó thành hơn, và vì sao cách ấy không phải một lời giải chung.
+\end{cauhoids}

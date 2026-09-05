@@ -172,6 +172,20 @@
                   a convention rather than a requirement}
 }
 
+@online{relayconnections,
+  title        = {{GraphQL} Cursor Connections Specification},
+  organization = {relay.dev},
+  url          = {https://relay.dev/graphql/connections.htm},
+  urldate      = {2026-09-05},
+  addendum     = {No byline: the specification document itself, cited under
+                  decision 39 for what it requires of a connection and of an
+                  edge. Read while it was open: it requires {\code{edges}} and
+                  {\code{pageInfo}} on the connection and {\code{node}} and
+                  {\code{cursor}} on the edge, and the word {\code{nodes}}
+                  appears nowhere in it, which is the point chapter 3 makes
+                  about that field being Hot Chocolate's}
+}
+
 @online{graphqlspec2025,
   author       = {{GraphQL Foundation}},
   title        = {{GraphQL} Specification, September 2025 Edition},
@@ -659,4 +673,24 @@
               one response. Apollo's current unsigned nullability guide argues a
               position and is therefore barred under decision 39; it is recorded
               in the research note and cited nowhere}
+}
+
+%--------------------------------------------------------------------------
+% Chapter 15 - Where Satisfiability Actually Fails
+%--------------------------------------------------------------------------
+
+@online{apollonodeissue,
+  title        = {Node query support in federated apollo server},
+  organization = {GitHub, apollographql/federation},
+  number       = {1067},
+  date         = {2021-10-08},
+  url          = {https://github.com/apollographql/federation/issues/1067},
+  urldate      = {2026-09-05},
+  addendum     = {An issue, cited as the artifact under decision 39 rather than
+                  as an authority: it is evidence that the question has been
+                  asked of the people who would answer it and has not been
+                  answered, which is what the chapter claims about it and
+                  nothing more. State read with gh api on the access date:
+                  open, opened 2021-10-08, eleven comments. No comment in the
+                  thread is quoted or relied on}
 }

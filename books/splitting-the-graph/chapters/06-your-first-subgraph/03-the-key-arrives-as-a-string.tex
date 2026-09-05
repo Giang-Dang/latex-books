@@ -72,23 +72,18 @@ what the resolver came for. \code{nodeId.TypeName} is the string
 and ignore the second, which is the ordinary thing to do and which
 section~\ref{sec:ch06-a-key-you-did-not-produce} is about.
 
-\subsection{The Projection Does Not Come With You}
+\subsection{The Projection Is Left Behind}
 
-\index{QueryContext@\code{QueryContext<T>}!cannot be injected here}%
-One more parameter does not work, and it is the one every other resolver in this
-book takes. A \code{QueryContext} cannot be injected into a reference resolver.
-Adding it compiles, the schema builds, the service starts, and the first
-\code{\_entities} request comes back as an unexpected execution error with no
-exception in any log to explain it. I am describing that response rather than
-printing it, because a service in that state is not a state this book ships and
-nothing here can reproduce it for you.
-
-\index{projection!is absent from the entity route}%
-So the entity route runs without the projection
-chapter~\ref{ch:data-without-n-plus-1} put in, and
-section~\ref{sec:ch06-what-the-entity-route-costs} measures the difference. The
-resolver below does not have one, and the comment in it says why rather than
-leaving a later reader to wonder whether it was forgotten.
+\index{QueryContext@\code{QueryContext<T>}!not taken by the reference resolver}%
+\index{projection!not taken by the entity route}%
+One parameter is missing from the resolver below, and it is the one
+chapter~\ref{ch:data-without-n-plus-1} put on every resolver that goes to a
+table. A \code{QueryContext} can be injected into a reference resolver, and I
+am leaving it out on purpose: chapter~\ref{ch:router-n-plus-1} measures what
+this route pays for taking one, and
+section~\ref{sec:ch06-what-the-entity-route-costs} measures what it pays for
+not. The comment in the resolver says the parameter was left out rather than
+forgotten, and names the chapter that says why.
 
 \index{key@\code{[Key]}!on the record instead is silent}%
 One more placement is worth knowing before you copy the attributes onto a type
@@ -161,10 +156,10 @@ put in an API.
 \index{SessionType@\code{SessionType}!gains a reference resolver}%
 \code{SessionType.cs} takes the same shape and differs in the two ways this
 section has already named. It goes to the table directly rather than through a
-loader, because that is what its node resolver does, and it has no
-\code{QueryContext} because it cannot have one:
+loader, because that is what its node resolver does, and it takes no
+\code{QueryContext}, for the reason above:
 
-\begin{minted}[highlightlines={2-4,10-12,38-59}]{csharp}
+\begin{minted}[highlightlines={2-4,10-12,38-60}]{csharp}
 using GreenDonut.Data;
 using HotChocolate.ApolloFederation.Resolvers;
 using HotChocolate.ApolloFederation.Types;
@@ -204,11 +199,12 @@ public static partial class SessionType
 
     /// <summary>
     /// Answers one representation from the entity route. Two things
-    /// differ from the node resolver above, and neither is a choice.
-    /// The key arrives as the undecoded node id string, so this method
-    /// decodes it. And a QueryContext cannot be injected here, so there
-    /// is no projection and every column is selected. One statement per
-    /// representation is what chapter 10 measures and then fixes.
+    /// differ from the node resolver above. The key arrives as the
+    /// undecoded node id string, so this method decodes it. And no
+    /// QueryContext is taken, so every column is selected; one can be
+    /// injected here, and chapter 10 measures why this route takes a
+    /// batch instead. One statement per representation is what that
+    /// chapter fixes.
     /// </summary>
     [GraphQLIgnore]
     public static async Task<Session?> ResolveSessionReferenceAsync(
@@ -228,7 +224,7 @@ public static partial class SessionType
 \end{minted}
 
 \index{entities@\code{\_entities}!answering}%
-That compiles, and the entity route answers. The operation is one line and the
+That compiles, and the entity route answers. The operation is short and the
 chapter uses it several times, so it stands on its own here:
 
 \begin{minted}{graphql}

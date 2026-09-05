@@ -1,0 +1,172 @@
+\section{The Composition That Passes}
+\label{sec:ch15-the-composition-that-passes}
+
+\index{resolvability!the graph that composes and cannot be served|(}%
+Section~\ref{sec:ch15-the-route-it-named-is-one-of-six} took Speakers out of
+\code{graph.yaml} and the composer still refused. Put Speakers back and take
+Search out instead, which leaves the three services
+chapter~\ref{ch:second-third-subgraph} finished with, before Search existed.
+Same broken Ratings document, one subgraph entry different from a graph that
+has just produced three errors. Compose it.
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+Router execution config successfully written to ".../graph/router.json".
+\end{minted}
+
+\index{resolvability!exit zero on an unservable graph}%
+It composes. Exit zero, nothing printed, and no mention of the three fields
+that were unresolvable in the graph this one differs from by a single
+subgraph.
+
+\index{router execution config!carries the contradiction openly}%
+The config it wrote is not hiding anything. Chapter~\ref{ch:composition} opened
+one of these and read the datasource entries; the Ratings entry now holds both
+halves of the contradiction, in one object:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+"keys": [{"typeName": "Session", "selectionSet": "id",
+          "disableEntityResolver": true}],
+"rootNodes": [{"typeName": "Query", "fieldNames": ["ratingCount"]},
+              {"typeName": "Session",
+               "fieldNames": ["averageScore", "ratingCount",
+                              "feedbackUrl", "id"],
+               "externalFieldNames": ["title"]}]
+\end{minted}
+
+\index{router execution config!three fields and no door}%
+Three fields the router is told this service resolves, and beside them the flag
+chapter~\ref{ch:second-third-subgraph} introduced, saying the router may not
+send it an entity. The composer wrote both, in one file, in one pass, and
+called the graph good.
+
+\subsection{What Buys the Silence}
+
+\index{node@\code{node(id:)}!the field that changes the answer}%
+One document decides whether these three subgraphs pass or fail, and it is not
+the broken one. It is Speakers, which declares no \code{Session} anywhere in
+it. Change it one piece at a time, holding the other two fixed, and the check
+turns on and off:
+
+\begin{center}
+\begin{tabular}{l l}
+\toprule
+The Speakers document declares & Composition \tabularnewline
+\midrule
+\code{node} and \code{nodes}, \code{Speaker implements Node} & passes
+  \tabularnewline
+\addlinespace
+neither, \code{implements Node} kept & fails \tabularnewline
+\addlinespace
+neither, \code{implements Node} removed & fails \tabularnewline
+\addlinespace
+both, \code{implements Node} removed & passes \tabularnewline
+\addlinespace
+\code{node} alone & passes \tabularnewline
+\addlinespace
+\code{nodes} alone & fails \tabularnewline
+\bottomrule
+\end{tabular}
+\end{center}
+
+\index{node@\code{node(id:)}!the singular field alone does it}%
+The singular \code{node(id: ID!): Node} in a second subgraph is what silences
+the check. \code{nodes}, which differs from it only in returning \code{[Node]}
+rather than \code{Node}, does not. Neither does implementing the interface
+without declaring the field.
+
+\index{node@\code{node(id:)}!an interface with nothing behind it works too}%
+Row four is the one to sit with. \code{Speaker} no longer implements
+\code{Node} there, so that subgraph's \code{Node} has no object type behind it
+at all and its \code{node} field can return nothing whatsoever. The composer
+notices, says so, and then composes the unresolvable graph anyway:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+Subgraph "speakers": The Interface "Node" is used as an output type without at least one Object type implementation
+defined in the schema.
+\end{minted}
+
+\index{resolvability!a warning about the wrong thing}%
+That is a warning about a subgraph with no rows in it, standing in for an error
+about three fields that cannot be fetched.
+
+\subsection{Two Fields, Moved Down One File}
+
+\index{resolvability!declaration order decides the answer}%
+The order the root fields are written in decides it too, and this is the
+demonstration I would show anybody who thinks a passing composition is a
+result. Take the Sessions document exactly as the service exports it. Move
+\code{node} and \code{nodes} from the top of \code{type Query} to the bottom of
+the same type. Same fields, same types, same directives, same document
+otherwise. Compose the same three subgraphs again, and here is the path with
+the first of its four reason lines:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+The field "averageScore" is unresolvable at the following path:
+ query {
+  sessions {
+   edges {
+    node {
+     averageScore <--
+    }
+   }
+  }
+ }
+This is because:
+ - The root type field "Query.sessions" is defined in the following subgraph: "sessions".
+\end{minted}
+
+\index{resolvability!the control run}%
+And with the Ratings key put back the way it belongs, that same reordered
+document composes exactly as the original does. So the reordering is not the
+defect. The reordering is what decides whether the defect is found.
+
+\index{figure!the order decides}%
+Figure~\ref{fig:ch15-the-order-decides} is the two documents side by side.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch15-the-order-decides}
+  \caption{The same four root fields, in two orders, against the same broken
+  subgraph. Above, the two shared fields are checked first: \code{node} records
+  \code{Session} on the way past and then passes, because the other subgraph
+  declaring it answered for its own type, and the two fields that follow are
+  waved through on the strength of that record rather than walked. Below, the
+  fields that would have been waved through are checked first, with nothing
+  recorded yet, and the first of them fails; the composer returns there, so the
+  two fields after it are never looked at. Neither the graph nor the mistake is
+  different between the two lanes.}
+  \label{fig:ch15-the-order-decides}
+\end{figure}
+
+\subsection{Why}
+
+\index{resolvability!the record is written on touch}%
+The composer keeps a record of the entities it has walked into, so that a graph
+with a cycle in it does not walk forever. An entity in that record is skipped
+when the walk reaches it again. What decides whether an entity goes into the
+record is being \emph{visited}, and what the code comment beside the check says
+is that only a resolvable one can be in there. Those are different claims, and
+the gap between them is this whole section.
+
+\index{shareable@\code{"@shareable}!an OR across subgraphs}%
+\code{Query.node} is declared by two subgraphs, so the composer treats it as
+one field with two answers and accepts it if either of them works. Walking the
+Sessions answer records \code{Session} and then fails, because ratings is
+unreachable from it. Walking the Speakers answer succeeds, for \code{Speaker},
+which has nothing to do with the question. The field passes. \code{Session}
+stays in the record, marked as visited and never resolved, and \code{sessions},
+\code{sessionById} and the mutation payload all reach it afterwards and are
+skipped.
+
+\index{resolvability!vacuous truth}%
+Row four of the table above falls out of the same reading. An abstract type
+with no implementations has nothing to check, and a walk over nothing succeeds.
+
+\index{resolvability!the reading was tested before it was believed}%
+That reading is mine, of a composer somebody else wrote, and it earns its place
+here by predicting something. Move the shared field below the unshared ones and
+nothing is in the record when they are checked, so the answer should change.
+It does, which is the experiment two subsections up. Nobody reorders a schema
+for its own sake; the reorder is in this chapter because it is the run that
+would have gone the other way if the explanation were wrong.
+\index{resolvability!the graph that composes and cannot be served|)}%

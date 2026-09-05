@@ -155,10 +155,15 @@ public static partial class SessionType
 \end{minted}
 
 \index{Parent@\code{[Parent]}}%
+\index{resolver!definition}%
 \code{[Parent]} is the whole of the mechanism. It marks the parameter that
 receives the object this field is being resolved on, so the method is an
 ordinary static function taking a \code{Session} and returning a
-\code{Speaker}. That is worth pausing on, because it is the same shape you will
+\code{Speaker}.
+A method that computes one field's value is what GraphQL calls a resolver,
+and every method in this chapter that reaches the schema is one;
+\code{GetSpeaker} is the first that has to be handed something to work from.
+That is worth pausing on, because it is the same shape you will
 write in chapter~\ref{ch:first-subgraph} to resolve an entity the router asks
 for by key, and the same shape that quietly issues one query per parent in
 chapter~\ref{ch:router-n-plus-1}. This one runs against a list in memory, so it

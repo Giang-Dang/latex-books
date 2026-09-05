@@ -57,7 +57,7 @@ whole time. \code{Parse} returned a \code{NodeId} carrying two parts, and
 section~\ref{sec:ch06-the-key-arrives-as-a-string} spent one of them. Here is
 the session's type class again, using both:
 
-\begin{minted}[highlightlines={54-64}]{csharp}
+\begin{minted}[highlightlines={55-65}]{csharp}
 using GreenDonut.Data;
 using HotChocolate.ApolloFederation.Resolvers;
 using HotChocolate.ApolloFederation.Types;
@@ -97,11 +97,12 @@ public static partial class SessionType
 
     /// <summary>
     /// Answers one representation from the entity route. Two things
-    /// differ from the node resolver above, and neither is a choice.
-    /// The key arrives as the undecoded node id string, so this method
-    /// decodes it. And a QueryContext cannot be injected here, so there
-    /// is no projection and every column is selected. One statement per
-    /// representation is what chapter 10 measures and then fixes.
+    /// differ from the node resolver above. The key arrives as the
+    /// undecoded node id string, so this method decodes it. And no
+    /// QueryContext is taken, so every column is selected; one can be
+    /// injected here, and chapter 10 measures why this route takes a
+    /// batch instead. One statement per representation is what that
+    /// chapter fixes.
     /// </summary>
     [GraphQLIgnore]
     public static async Task<Session?> ResolveSessionReferenceAsync(

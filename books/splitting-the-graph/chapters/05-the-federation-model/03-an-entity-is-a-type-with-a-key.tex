@@ -57,7 +57,7 @@ type Speaker @key(fields: "id") {
 \end{graphqlsdl}
 
 \index{stub!a type declared for its key alone}%
-One field, and it is there so that the value can be written down. This is the
+That is a stub: one field, there so that the value can be written down. This is the
 thing section~\ref{sec:ch05-the-join-you-cannot-see} predicted: the key stops
 being an integer in a call stack and becomes a field with a name, a type and a
 promise attached. Chapter~\ref{ch:data-without-n-plus-1} took a foreign key out
@@ -79,7 +79,10 @@ The good news arrives from a chapter that was not thinking about federation at
 all. Chapter~\ref{ch:schema-design} gave every entity a global node id, derived
 from the type name and the primary key by a rule both services can run.
 \code{U3BlYWtlcjox} is \code{Speaker:1} in every process that computes it the
-same way. The book already has its keys.
+same way. The book already has its keys. Using them as federation keys is my
+judgment rather than anything Apollo publishes, which says nothing either way
+about a global id as a key, and chapter~\ref{ch:second-third-subgraph} presents
+the bill for the call.
 
 \subsection{The Route the Key Opens}
 
@@ -95,6 +98,10 @@ extend type Query {
 }
 \end{graphqlsdl}
 
+\index{extend@\code{extend}!definition}%
+\code{extend} is GraphQL's own keyword for adding fields to a type declared
+elsewhere in the document, which is how a library contributes to a
+\code{Query} it does not own.
 \index{Any@\code{\_Any}!is a JSON object}%
 \code{\_Any} is deliberately shapeless. The specification says each item is
 \enquote{serialized as a generic JSON object, which enables the graph router to

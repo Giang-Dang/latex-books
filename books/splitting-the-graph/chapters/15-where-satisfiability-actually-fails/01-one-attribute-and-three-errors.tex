@@ -1,0 +1,96 @@
+\section{One Attribute, and Three Subgraphs in the Error}
+\label{sec:ch15-one-attribute-and-three-errors}
+
+\index{resolvability!the mistake this chapter opens on|(}%
+Chapter~\ref{ch:null-blast-radius} ended on a graph whose failures are decided
+by the schema, with no operational lever anywhere near them. This chapter is
+about the step that is supposed to check that schema, and it starts by getting
+one wrong.
+
+\index{resolvable@\code{resolvable: false}!the argument that reads like modesty}%
+Chapter~\ref{ch:composition} said in one sentence that \code{resolvable: false}
+is the right thing to say about a type you only point at and the wrong thing to
+say about a type you contribute fields to.
+Chapter~\ref{ch:second-third-subgraph} then used it correctly, on the
+\code{Speaker} stub: the Sessions service names the type so that
+\code{Session.speaker} has one, declares which field identifies a speaker, and
+writes \code{[Key("id", false)]} to say it cannot turn such a key back into
+anything. One sentence and one correct use is not much to hold an argument that
+reads like modesty. Read in English it says \emph{this service does not own
+these rows}, which is true of the Sessions service and true of the next service
+a reader will apply it to, where it is also wrong.
+
+\index{Ratings subgraph!does not own Session rows either}%
+The Ratings service does not own \code{Session} rows either. It holds scores,
+and everything interesting it knows is about a type another team maintains. So
+put the same argument on its key, in \code{SessionType.cs}, and take the
+\code{[ReferenceResolver]} attribute off with it, because a key nothing may
+enter through has nothing to route to a resolver.
+
+\index{Ratings subgraph!what the exported schema loses}%
+The exported schema changes in two places rather than one. The key gains its
+argument, and \code{\_entities} and the \code{\_Entity} union disappear from the
+document entirely, because a service nothing may enter has no entity route to
+publish. Chapter~\ref{ch:second-third-subgraph} recorded that from the other
+side, on the stub, where it was the point rather than a surprise.
+
+Compose the graph.
+
+\subsection{Three Errors, and Where They Point}
+
+\index{composition!one error per unresolvable field}%
+It fails three times, once for each field Ratings contributes to a
+\code{Session} it can no longer be asked about. The three blocks are identical
+apart from the field name. Here is the first, with the box \code{wgc} draws
+around it stripped:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+The field "averageScore" is unresolvable at the following path:
+ query {
+  searchSessions {
+   edges {
+    node {
+     session {
+      averageScore <--
+     }
+    }
+   }
+  }
+ }
+This is because:
+ - The root type field "Query.searchSessions" is defined in the following subgraph: "search".
+ - The field "Session.averageScore" is defined in the following subgraph: "ratings".
+ - The entity ancestor "Session" in subgraph "sessions" has no accessible target entities (resolvable @key directives)
+in the subgraphs where "Session.averageScore" is defined.
+ - The type "Session" is not a descendant of any other entity ancestors that can provide a shared route to access
+"averageScore".
+\end{minted}
+
+\index{composition!three subgraphs in one error}%
+Count the subgraphs in that message. The path starts in \code{search}. The
+entity ancestor is in \code{sessions}. The field is in \code{ratings}. Three
+services, and I changed one line in the third of them.
+
+\index{composition!where the fix actually is}%
+The line that names the file to open is the second of the four, and it is the
+least dramatic thing on the page. Everything above it describes a query nobody
+sent, through a service that has nothing wrong with it, and the arrow at the
+end of that query points at a field sitting exactly where it belongs.
+
+\index{composition!reading it from the bottom}%
+The path is the composer showing its working, and the working is not the
+diagnosis. The second reason line is the one that names a type, a field and the
+subgraph that declares them, and that subgraph is the file to open.
+Chapter~\ref{ch:composition} pointed at the third line instead, and both are
+right about different things: the third says what is wrong in the composer's
+vocabulary, and the second says where.
+Section~\ref{sec:ch15-reading-one-properly} is the rest of the procedure.
+
+\index{Search subgraph!a bystander in somebody else's error}%
+Chapter~\ref{ch:cross-seam-paging} built the Search service, and it is in this
+message because its discovery documents carry a \code{session} field that
+reaches the type. It is a bystander. It has no opinion about ratings, it does
+not know the Ratings service exists, and taking it out of the graph changes
+what this message says without changing one character of the mistake. The next
+section is about how much it changes.
+\index{resolvability!the mistake this chapter opens on|)}%

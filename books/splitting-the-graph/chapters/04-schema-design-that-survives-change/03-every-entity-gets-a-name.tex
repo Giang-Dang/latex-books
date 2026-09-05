@@ -165,12 +165,16 @@ type Speaker implements Node {
 \end{graphqlsdl}
 
 \index{Node@\code{Node}!the book's first interface}%
+\index{inline fragment!definition}%
 That is the book's first interface, and nothing in this chapter asked for one.
 An interface is a promise that every type implementing it carries those
 fields, and the only reason \code{node} can exist is that \code{Node} makes
 the promise: a field returning an interface is a field whose concrete type the
-client discovers at run time, which is why every query against \code{node}
-carries either \code{\_\_typename} or an inline fragment.
+client discovers at run time, which is why a query against \code{node} that
+wants more than the id carries either \code{\_\_typename} or an inline
+fragment. An inline fragment is the \code{... on Session \{ title \}} form,
+and it selects its fields only when the object turns out to be that type; the
+next subsection sends one.
 
 \index{nodes@\code{nodes}!is Hot Chocolate's own}%
 \code{nodes} is Hot Chocolate's, not the specification's. The specification
@@ -263,6 +267,7 @@ knowing before you write the client code that has to tell a user what went
 wrong.
 
 \index{node id!wrong type resolves silently}%
+\index{variables!definition}%
 The third case is the one to actually worry about, because nothing fails.
 Feed \code{node} a well-formed speaker id under a fragment expecting a
 session. The operation:
@@ -276,7 +281,9 @@ query N($id: ID!) {
 }
 \end{minted}
 
-sent with \code{\{"id": "U3BlYWtlcjox"\}} as its variables, which is speaker~1:
+sent with \code{\{"id": "U3BlYWtlcjox"\}} as its variables, the JSON object a
+client sends beside an operation to fill in the names that start with a
+dollar sign. That id is speaker~1:
 
 \begin{minted}{text}
 {"data":{"node":{"__typename":"Speaker"}}}
@@ -346,9 +353,12 @@ existing clients are not broken by the change), but the fields should be
 appropriately treated in documentation and tooling.
 \end{quote}
 
+\index{introspection!definition}%
 \index{introspection!hides deprecated fields by default}%
-Tooling is where the change lands. Introspect the \code{Query} type and
-\code{sessionById} is not in the list; ask again with
+Tooling is where the change lands. Every GraphQL schema will describe itself
+to a client that asks, through the \code{\_\_schema} and \code{\_\_type}
+fields, and that is what introspection means. Introspect the \code{Query}
+type and \code{sessionById} is not in the list; ask again with
 \code{fields(includeDeprecated: true)} and it appears, with
 \code{isDeprecated} true and the reason string attached. That is what makes an
 editor stop offering the field, a schema check flag a new query against it, and

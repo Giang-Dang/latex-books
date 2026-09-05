@@ -9,9 +9,11 @@ with the list. Column count does not grow, which is why it is second, but it is
 paid on every row of every request forever.
 
 \index{QueryContext@\code{QueryContext<T>}}%
+\index{selection set!definition}%
 The fix is a parameter. \code{QueryContext<Session>} is Hot Chocolate handing
-the resolver the client's selection set in a form \code{IQueryable} understands,
-and \code{With} applies it:
+the resolver the client's selection set, which is the set of fields inside the
+braces the client wrote, in a form \code{IQueryable} understands, and
+\code{With} applies it:
 
 \begin{minted}[highlightlines={1,14,18,27,29}]{csharp}
 using GreenDonut.Data;
@@ -210,8 +212,8 @@ chapter~\ref{ch:hot-chocolate-zero} is where that stopped being surprising.
 A default page of two is absurd for a real service and useful for a book with
 four sessions in it, since it makes the second page exist.
 
-The schema gains the Relay shape, named after the field. The exported file
-carries a description on every field and argument below, plus the
+The schema gains a connection, with its types named after the field. The
+exported file carries a description on every field and argument below, plus the
 \code{@listSize} and \code{@cost} directives on \code{sessions}; the
 definitions are quoted here without them, because the shape is the point and
 chapter~\ref{ch:hot-chocolate-zero} already showed what the descriptions look
@@ -236,6 +238,18 @@ type SessionsEdge {
   node: Session!
 }
 \end{graphqlsdl}
+
+\index{connection!definition}%
+\index{Relay!cursor connections specification}%
+That shape is a connection, and it comes from Relay, Facebook's GraphQL
+client, whose cursor connections specification asks for two fields on the
+connection and two on each edge~\autocite{relayconnections}. A connection
+wraps the page rather than returning it: \code{edges} holds the items, each
+paired with the cursor that names its position so that a client can ask for
+the page after any of them, and \code{pageInfo} says whether there is more.
+\code{nodes} is not in that specification. It is Hot Chocolate's shortcut for
+a client that wants the items and has no use for their cursors, and it is the
+one every request in this book reads.
 
 \index{breaking change!introduced by paging}%
 Every query written against this service before now is broken. \code{sessions

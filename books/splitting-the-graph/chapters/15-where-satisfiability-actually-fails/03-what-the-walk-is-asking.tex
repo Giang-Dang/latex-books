@@ -1,0 +1,82 @@
+\section{What the Walk Is Actually Asking}
+\label{sec:ch15-what-the-walk-is-asking}
+
+\index{resolvability!the question behind the message|(}%
+Chapter~\ref{ch:composition} described this check as a walk out from each root
+field, and said the message is a trace of where the walk got stuck. That is
+still true and it is not enough to read one of these, because it leaves the
+impression that the printed path is the subject. The path is a byproduct. The
+subject is a field, and the question is whether any route to it exists.
+
+\index{resolvability!an existence question has one answer}%
+An existence question has one answer, so it gets one report. Six broken routes
+to one field produce one error about that field, carrying whichever route the
+walk was on when it ran out of moves. Three fields, three errors. That is the
+whole of why
+section~\ref{sec:ch15-the-route-it-named-is-one-of-six} happens, and it is
+worth holding onto, because the shape of the message argues against it: a query
+with an arrow in it looks like a claim about that query.
+
+\index{resolvability!the check stops at the first failing root field}%
+The composer also stops. It walks the root fields in order and returns on the
+first one that fails, so the rest of the schema is not examined in that run.
+Fix what it names, compose again, and a second failure you have not seen yet
+can be waiting behind the first. That is a property of this composer rather
+than of the idea: the check as the Composite Schemas draft writes it is a stack
+of paths, popped one at a time~\autocite{compositeschemasspec}, and an
+algorithm shaped like that has no particular reason to keep going after an
+answer. What each implementation does about it is the implementation's.
+
+\subsection{What an Entity Ancestor Is}
+
+\index{entity ancestor!the term the message uses}%
+Two of the four reason lines use a phrase that appears nowhere in a schema:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+ - The entity ancestor "Session" in subgraph "sessions" has no accessible target entities (resolvable @key directives)
+in the subgraphs where "Session.averageScore" is defined.
+\end{minted}
+
+\index{entity ancestor!is the last entity the walk stood on}%
+An entity ancestor is the last entity the walk was standing on before it
+reached the field it could not get to. Getting from there to the field means
+crossing into another service, and the only crossing federation offers is a key
+you are allowed to enter through. That is what an \emph{accessible target
+entity} is: a copy of the same type, in a subgraph that declares a key without
+\code{resolvable: false} on it. The fourth line then reports that no other
+entity above this one offers a crossing either, which is the composer saying it
+looked for a way round and found none.
+
+\index{entity ancestor!need not be on the path it printed}%
+What the phrase does not tell you is that the subgraph it names need not be on
+the path above it. In the four-service error the path runs through
+\code{search} and the ancestor is in \code{sessions}. Both services declare a
+\code{Session}, both of them fail to reach ratings from it, and both are
+correct. The name in the sentence is whichever of the two the composer visited
+first, which is subgraph order in \code{graph.yaml}, which is why
+section~\ref{sec:ch15-the-route-it-named-is-one-of-six} could change it by
+reversing four lines of configuration.
+
+\index{entity ancestor!read it as a type, not as an address}%
+So read that line as a claim about the \emph{type} and treat the subgraph name
+as a hint. \code{Session} cannot get to ratings from anywhere. Which of its
+copies the composer was holding when it said so is not information about your
+graph.
+
+\subsection{Two Passes, and Only One of Them Is Load-Bearing}
+
+\index{resolvability!still separable from merging}%
+Chapter~\ref{ch:composition} established that composition is two passes and
+that the second can be switched off, which is still the case: put
+\code{--disable-resolvability-validation} on the command and all three errors
+go away and a config is written. The command's help still carries the flag on
+\code{wgc} 0.129.9, though the reference page for the command no longer lists
+it and documents it under a different command instead.
+
+\index{resolvability!a graph composed with the flag}%
+A graph composed that way is a graph where some field answers at run time with
+something no composition warned about, and
+section~\ref{sec:ch15-three-fields-three-failures} is a catalog of what that
+looks like. I would not use the flag. What matters more is the next section,
+where the check reaches the same outcome on its own.
+\index{resolvability!the question behind the message|)}%

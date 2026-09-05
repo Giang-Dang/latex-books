@@ -1,14 +1,18 @@
 \begin{problemsummary}
-{In the measured \code{sessions} plan, the connection can return remote fields
-on each node but cannot use them to filter, sort, or paginate. Asking for the
-first row by a remote score returns the first row in Sessions' local order.}
-{The list owner chooses membership, order, cursors, and the page
-before later entity fetches hydrate remote fields. \code{@requires},
-\code{@provides}, \code{@shareable}, and \code{@listSize} describe other
-capabilities; none supplies a distributed relational paging protocol.}
-{Put the discovery surface in a domain that owns a complete
-projection of every filter and ordering value. Here Search filters and slices
-locally, returns Session keys, and Sessions hydrates the selected entities in
-one batch. Treat projection freshness and cross-request cursor stability as
-explicit product guarantees, not router behavior.}
+{A paged list sorted or filtered by a field another service contributes comes
+back in the list owner's own order, at HTTP 200 with no error. Ask
+\code{sessions} for the first row by \code{averageScore} and you get the first
+row of the schedule with its score attached, and nothing in the schema lets
+you ask for anything else.}
+{The service that owns the list cuts the page before any entity fetch runs,
+out of the values it holds, and a later fetch can only decorate the rows the
+cut kept. \code{@requires}, \code{@provides}, \code{@shareable} and
+\code{@listSize} each describe something else, and none of them hands the
+list owner a value before its resolver runs.}
+{Give the search surface to a service that holds every value it filters and
+sorts by. Here a fourth subgraph, Search, keeps a complete projection, filters
+and cuts the page in one statement, and hands Session keys to Sessions, which
+hydrates them in one batch. What that service now owns is the projection's
+completeness, its freshness and its ordering, and the schema should say what
+each of those promises.}
 \end{problemsummary}

@@ -74,6 +74,12 @@ taken on 0.129.9. `verify.ps1` asserts the version rather than accepting
 whatever is installed, because the chapter quotes the composer's error text
 and another version may word it differently.
 
+The chapter prints the install as `npm install -g wgc`, unpinned, and points
+at appendix A for the version, under SPEC decision 35; added by the 2026-09-05
+reading-flow pass, which found the tool used on the page before it had been
+installed on one. Chapter 8's "chapter 7 added `wgc` through npm" is true
+from that pass onward rather than before it.
+
 ### The router version, for chapter 8
 
 Not npm. The Cosmo Router ships as a container image at

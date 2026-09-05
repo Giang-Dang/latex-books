@@ -2,11 +2,12 @@
 \label{sec:ch05-the-graph-this-book-builds}
 
 \index{conference example!split into three|(}%
-Three services, and the split is the obvious one: whoever stores the rows owns
-the type. Sessions keeps what chapter~\ref{ch:schema-design} left it. Speakers
-takes the other table. Ratings is new, and it exists because a service that
-contributes to a type it does not own is the arrangement this model is for, and
-a two-service example never shows it.
+Three services to begin with, and the split is the obvious one: whoever stores
+the rows owns the type. Sessions keeps what chapter~\ref{ch:schema-design} left
+it. Speakers takes the other table. Ratings is new, and it exists because a
+service that contributes to a type it does not own is the arrangement this
+model is for, and a two-service example never shows it. A fourth arrives in
+chapter~\ref{ch:cross-seam-paging}, for the reason this chapter closes on.
 
 \index{Sessions subgraph!what it declares}%
 Here is the Sessions subgraph, elided as in
@@ -58,20 +59,14 @@ type Speaker @key(fields: "id") {
 \end{graphqlsdl}
 
 \index{Ratings subgraph!contributes to a type it does not own}%
-And Ratings declares a type it owns and a type it does not:
+And Ratings declares only a type it does not own, because everything it
+stores is about that type:
 
 \begin{graphqlsdl}
-type Rating @key(fields: "id") {
-  id: ID!
-  score: Int!
-  comment: String
-  session: Session!
-}
-
 type Session @key(fields: "id") {
   id: ID!
-  ratings: [Rating!]!
   averageScore: Float
+  ratingCount: Int!
 }
 \end{graphqlsdl}
 
@@ -94,14 +89,16 @@ type Session {
   startsAt: DateTime!
   durationMinutes: Int!
   speaker: Speaker
-  ratings: [Rating!]!
   averageScore: Float
+  ratingCount: Int!
 }
 \end{graphqlsdl}
 
 \index{supergraph!carries no federation directives}%
 No \code{@key}. No second declaration. Nothing saying that two of those fields
-are answered by a service which has never heard of a conference schedule. The
+are answered by a service which has never heard of a conference schedule, and
+nothing will say so about the third that service adds in
+chapter~\ref{ch:second-third-subgraph} either. The
 directives did their work at composition and are gone from what the client
 reads, which is the correct outcome and the reason
 chapter~\ref{ch:blame-routing} exists: a client that cannot see the seam cannot
