@@ -38,11 +38,14 @@ scalar FieldSet
 \index{resolvable@\code{resolvable: false}!says do not come in here}%
 Ratings owns \code{averageScore} and contributes it to a \code{Session} it does
 not own, which is the arrangement chapter~\ref{ch:federation-model} said this
-example exists to show. The mistake is the argument on the key.
-\code{resolvable: false} tells the composer that this subgraph declares the key
-so that its own fields can hang off the type, and that nothing should try to
-enter through it. Ratings also exports no \code{node} field, so there is no
-other door.
+example exists to show. The mistake is the argument on the key, and it is a
+mistake here rather than in general. \code{resolvable: false} tells the
+composer that this subgraph declares the key so that its own fields can hang
+off the type, and that nothing should try to enter through it. That is the
+right thing to say about a type you only point at, and the wrong thing to say
+about a type you contribute fields to, because those fields can then be
+reached from nowhere. Ratings also exports no \code{node} field, so there is
+no other door.
 
 \index{composition!merging succeeds and serving would not}%
 Merge those two documents and nothing collides. \code{Session} gains a field,

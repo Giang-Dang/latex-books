@@ -716,13 +716,29 @@ Chapter 8 could not stage this with one service. Stop Speakers and ask for
 titles and names:
 
 ```json
-{"errors":[{"message":"Failed to fetch from Subgraph 'speakers' at Path 'sessions.nodes.@.speaker'."}],
+{"errors":[
+  {"message":"Failed to fetch from Subgraph 'speakers' at Path 'sessions.nodes.@.speaker'."},
+  {"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.speaker.name'.",
+   "path":["sessions","nodes",0,"speaker","name"]},
+  ... the same for indexes 1, 2 and 3 ...],
  "data":{"sessions":{"nodes":[{"title":"...","speaker":null}, ...]}}}
 ```
 
-HTTP 200. Every title present, every `speaker` null, one error naming the
-subgraph and the path. A query that does not cross the broken seam
-(`title ratingCount`) is completely unaffected and carries no error key at all.
+HTTP 200. Every title present, every `speaker` null, and **five** errors: one
+naming the subgraph and the path, then one propagation error per row, because
+`Speaker.name` is `String!` and the climb stops at the nullable `speaker`. A
+query that does not cross the broken seam (`title ratingCount`) is completely
+unaffected and carries no error key at all.
+
+**Corrected 2026-09-05.** The chapter printed this response with its first
+error only; chapter 14's audit caught it (SPEC decision 125) and the
+reading-flow pass replaced the listing with the whole body. Re-captured on
+that date at tag `ch09` (as amended for the reference resolver comment, SPEC
+decision 127), in a throwaway worktree: the three services built and started
+with Speakers then stopped, the graph composed with `wgc` 0.129.9, the request
+sent to the router at 3002, and the raw body saved. The five messages, their
+order and the four paths are byte for byte what the chapter now prints;
+`verify.ps1` on `main` asserts the count and the paths at every run.
 
 This is the concrete form of SPEC decision 59's reasoning: `speaker` stayed
 nullable because Sessions cannot guarantee a value from data it does not own,

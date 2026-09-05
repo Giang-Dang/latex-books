@@ -8,14 +8,13 @@ error naming the subgraph and the path it failed at. I called that the blast
 radius of a dead subgraph and said it was the set of fields that route to it,
 provided those fields are nullable.
 
-\index{errors!the response that chapter carries is the data half}%
-One correction to that page before this chapter builds on it. The response
-printed there is the \code{data} half and the first of its errors, and there
-are five: the fetch failure, and then one for each of the four sessions, because
+\index{errors!five for one dead service}%
+That page carries five errors, and
+section~\ref{sec:ch14-how-far-a-null-climbs} needs the count: the fetch
+failure, and then one for each of the four sessions, because
 \code{Speaker.name} is \code{String!} and the router had no speaker to put a
 name on. All four of those stop at \code{speaker}, which is nullable, so the
-damage is what that chapter said it was. The count is not, and
-section~\ref{sec:ch14-how-far-a-null-climbs} needs it.
+damage is what that chapter said it was.
 
 Stop the Ratings service instead and ask for a field that is not.
 
