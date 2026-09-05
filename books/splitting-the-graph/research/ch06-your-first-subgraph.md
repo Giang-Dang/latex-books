@@ -106,6 +106,13 @@ string `Speaker` or `Session`, read out of the same base64).
 
 ### `QueryContext<T>` cannot be injected into a reference resolver
 
+**Superseded.** Chapter 10 measured on the same 16.6.1 that it can be
+injected and does project (SPEC decision 96); what this section records was
+never re-derived and its cause is unknown. The chapter's claim and the
+listing comment carrying it were corrected on 2026-09-05 at every tag that
+prints the file (decision 127). The section is kept as the record of what was
+observed, not as a finding.
+
 Measured, and the failure mode is the reason it is in the chapter.
 `QueryContext<Session>` in the parameter list compiles, builds a schema, starts
 the service, and then answers the first `_entities` request with
@@ -633,7 +640,9 @@ Measured, in the order the chapter would have got them wrong.
   Measured twice, once with `[ID]` and once with `[ID<Speaker>]`.
 - **That `QueryContext<T>` can be injected into a reference resolver.** It
   cannot. It compiles, builds a schema, starts the service, and fails at request
-  time with `Unexpected Execution Error` and no logged exception.
+  time with `Unexpected Execution Error` and no logged exception. **Wrong:**
+  chapter 10 measured that it can (decision 96); see the superseded section
+  above. Left in the list so the reversal is visible.
 - **That `EntityResolverType` is required on `[ReferenceResolver]`.** It is not,
   when the named method is in the same class. Removed from both resolvers, and
   the schema and every assertion were unchanged.

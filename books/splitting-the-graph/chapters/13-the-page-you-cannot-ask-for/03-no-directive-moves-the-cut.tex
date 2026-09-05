@@ -1,41 +1,54 @@
 \section{No Directive Moves the Cut}
 \label{sec:ch13-no-directive-moves-the-cut}
-\index{federation directives!page ownership}%
 
-Federation directives describe capabilities and dependencies. None of the
-directives in this graph gives Sessions remote rating values before its list
-resolver runs~\autocite{apollodirectives}.
+\index{federation directives!page ownership|(}%
+The next place to look is the directive vocabulary of
+chapter~\ref{ch:federation-model}, because every one of those directives
+describes what a subgraph can reach or depends on, and this looks like a
+dependency. I went through the four this graph could use, and none of them
+hands Sessions a score before its list resolver
+runs~\autocite{apollodirectives}.
 
-As chapter~\ref{ch:second-third-subgraph} showed, \code{@requires} is the
-tempting one. It built \code{feedbackUrl} in Ratings from a title owned by
-Sessions. The plan added \code{title} to a representation and then ran the
-field resolver. Applied here, it could help a field resolver compute another
-field. It does not turn a root \code{IQueryable<Session>} into a query over a
-remote ratings table.
+\index{requires@\code{"@requires}!does not reach a root field}%
+\code{@requires} is the tempting one, because
+chapter~\ref{ch:second-third-subgraph} used it for something that looks close:
+\code{feedbackUrl} in Ratings is built from a title Sessions owns, and the
+plan collected the title into the representation before the field resolver
+ran. That is a field resolver being handed a value about the object it is
+already resolving. It does nothing for a root field that has to choose its
+objects first, and there is no representation of a session to attach a score
+to until Sessions has chosen the session.
 
-\code{@provides} points the other way. It says that a resolver can return a
-normally external field at a particular path. The service must already possess
-the value. The directive neither fetches it nor keeps it current.
+\index{provides@\code{"@provides}!needs the value already present}%
+\code{@provides} points the other way. It lets a resolver return a field it
+does not own, at one path, on the condition that the service already holds
+the value; the directive neither fetches it nor keeps it current, and holding
+the value means keeping a copy of a column in a service that does not own it,
+which is why chapter~\ref{ch:second-third-subgraph} shipped none.
+\code{@shareable} says two subgraphs can both resolve a field, and
+copies nothing into either of them. If Sessions genuinely maintained an
+average score of its own, marking both definitions shareable would describe
+that, and it would be the local column and not the annotation that made
+filtering possible. And \code{@listSize} is the cost analyzer's description of
+how big a list may get, which chapter~\ref{ch:composition} already met and
+switched off; it says nothing about how the list is ordered.
 
-\code{@shareable} says that more than one subgraph can resolve a field. It
-does not copy the field into those subgraphs. If Sessions genuinely maintained
-an average score, marking both definitions shareable could describe that
-capability. The local value, not the annotation, would make filtering possible.
+\index{search!is possible, and needs an owner}%
+Those are claims about this schema and not a verdict on federation. What a
+search surface needs is an owner that holds every value it filters and sorts
+by at the moment it cuts the page, and this graph does not have one yet.
 
-\code{@listSize} is demand-control metadata. It helps an engine estimate the
-size and cost of a list. It does not define relational ordering or a distributed
-cursor protocol.
-
-These are claims about this schema, not a declaration that federated graphs
-cannot offer cross-domain search. They can. The search surface needs an owner
-that has the values at the moment it chooses the page.
-
-There are two plausible places to put that owner. A complete projection inside
-Ratings produces the same page, SQL, statement counts, and router plan as a
-separate service. That option saves a process but makes Ratings own rating
-writes and a second discovery domain.
-
-I prefer the honest boundary: a fourth Search subgraph. It owns no canonical
-Session. It owns a denormalized document used to find Sessions. The extra
-process is real cost, and so is keeping the projection fresh. Hiding those
-facts inside Ratings would not remove them.
+\index{search!where to put the owner}%
+\index{projection!the other sense of the word}%
+There are two places it could go, and I built both. A complete projection
+inside Ratings, and projection here means a copy of the values to search by
+rather than chapter~\ref{ch:data-without-n-plus-1}'s narrowing of columns,
+produces the same page, the same shape of SQL, the same statement counts and
+the same router plan as a separate service, and saves a process. It also
+makes the service that stores scores the owner of a second domain, discovery,
+that has nothing to do with writing a score. The other place is a fourth
+subgraph, Search, which owns no session and no rating and holds a document
+built from both for one purpose, finding sessions. That costs a process, and
+it costs whatever keeps the document fresh, and I take it, because hiding
+those two bills inside Ratings would not have made them smaller.
+\index{federation directives!page ownership|)}%

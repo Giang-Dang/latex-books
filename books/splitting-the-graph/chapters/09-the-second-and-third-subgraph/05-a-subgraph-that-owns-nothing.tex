@@ -282,10 +282,10 @@ trace, no log line and nothing at startup to say why.
 
 \index{Unexpected Execution Error@\code{Unexpected Execution Error}!means a resolver threw}%
 \code{Unexpected Execution Error} is what Hot Chocolate says when a resolver
-throws and nothing has been configured to tell you more. It is worth learning to
-read as one thing: a resolver asked the container for something and was handed
-a null. Chapter~\ref{ch:first-subgraph} met the same message from the same
-cause, trying to inject a \code{QueryContext} into a reference resolver.
+throws and nothing has been configured to tell you more. Here it means one
+thing: a resolver asked the container for something and was handed a null.
+Section~\ref{sec:ch09-what-sessions-keeps} got the same sentence out of a stub
+advertising a key it cannot resolve, and the message never says which.
 
 Here is the whole file:
 
