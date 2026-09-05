@@ -1,8 +1,8 @@
 \section{Run the Page}
 \label{sec:ch13-run-the-page}
-\index{statement count!search page}%
 
-The new root can express the request that \code{sessions} could not:
+\index{statement count!search page|(}%
+The new root field asks the question \code{sessions} could not:
 
 \begin{minted}{graphql}
 query SearchPage($minimumScore: Float, $first: Int) {
@@ -21,8 +21,7 @@ query SearchPage($minimumScore: Float, $first: Int) {
 }
 \end{minted}
 
-With \code{minimumScore} set to 4.0 and \code{first} set to 2, the router
-returns:
+With \code{minimumScore} at 4.0 and \code{first} at 2, the router answers:
 
 \begin{minted}[fontsize=\footnotesize]{json}
 {
@@ -55,14 +54,15 @@ returns:
 }
 \end{minted}
 
-The first row is now the 4.5 session. More important, \code{hasNextPage} is
-about the filtered ordering, not the schedule ordering that happened to be
-available elsewhere.
+The first row is the 4.5 session at last. \code{hasNextPage} is the more
+interesting field, because it is false about this ranking and this filter,
+and not about the schedule that \code{sessions} happens to page.
 
-The Search log proves where the cut occurred. Its SQL filters by average score,
-orders that column descending, then orders by session id before applying the
-limit. The id tie-breaker is inside the same statement as the limit. It is not
-a repair step in the router.
+\index{statement count!the cut is in one statement}%
+The Search log says where the cut happened. Its one statement filters by
+average score, orders by that column descending and then by session id, and
+applies the limit, all inside the same \code{SELECT}; the tie-breaker is in
+the statement with the limit and not in a repair step somewhere in the router.
 
 \begin{center}
 \begin{tabular}{@{}lr@{}}
@@ -77,43 +77,54 @@ Speakers & 0 \\
 \end{tabular}
 \end{center}
 
-The Sessions statement is one batched entity lookup for the two chosen keys.
-Ratings is absent because the averages used for discovery came from the Search
-projection. Speakers is absent because the request did not select a speaker.
+Sessions spent its one statement on a batched entity lookup for the two chosen
+keys, which is chapter~\ref{ch:router-n-plus-1}'s loader doing its job.
+Ratings spent nothing, because the averages that ranked the page came out of
+the Search projection and not out of the ratings table. Speakers spent nothing
+because nobody asked for a speaker.
 
-The plan has a \code{Sequence} with two children. The first is a
-\code{Single} fetch from Search, subgraph id 3. The second is a
-\code{BatchEntity} fetch from Sessions, subgraph id 0, and it declares that
-it waits for fetch 0. Reversing those two steps would recreate the original
-problem. The plan places them in the only order that can answer the request.
+\index{query plan!the list owner goes first}%
+The plan is a \code{Sequence} of two steps again, in the other order from
+section~\ref{sec:ch13-cut-happens-first}: a \code{Single} fetch to Search,
+subgraph~3, and then a \code{BatchEntity} fetch to Sessions, subgraph~0,
+declaring that it waits for the first. Swap them and the opening of this
+chapter comes back. The planner put them in the only order that answers the
+request, because the list owner is now the service that holds the values.
 
-An unfiltered request is a separate completeness check. In rating-descending
-order the four averages are 4.5, 4.0, 3.0, and null. The unrated session is
-still discoverable and reports a rating count of 0. A projection built only by
-grouping existing rating rows would silently lose it.
+\index{search document!the unrated session is still found}%
+Drop the filter and the same field is a completeness check. In
+rating-descending order the four averages come back as 4.5, 4.0, 3.0 and null,
+so the session nobody rated is still there, last, with a count of zero, which
+is the row a projection grouped out of the ratings table would have lost
+without a word.
+\index{statement count!search page|)}%
 
 \subsection{The Consistency Bill}
 \label{sec:ch13-consistency-bill}
-\index{search projection!freshness}%
 
-The deterministic seed isolates execution mechanics. A real system needs an
-update path from schedule and rating changes into the projection. That might
-be event-driven, a change-data-capture pipeline, or a periodic rebuild. The
-choice belongs to the product's freshness requirement; Federation does not
-choose it.
+\index{search projection!freshness|(}%
+The seed is fixed, which is what lets this chapter measure the mechanism and
+nothing else. A real system needs a path from a schedule change or a new
+rating into the projection, and that path is a product decision: events,
+change data capture off the two source tables, or a rebuild on a timer,
+chosen by how stale the product can stand for discovery to be. Federation has
+no opinion on it.
 
-The API should say what that requirement permits. If a newly submitted rating
-may take a minute to affect discovery, document and monitor that lag. If a
-booking workflow requires read-your-write behavior, this eventually updated
-projection may be the wrong mechanism for that workflow. A search index is not
-a free join. It moves the join to write or ingestion time and makes staleness a
-domain concern.
+\index{search projection!staleness is a domain concern}%
+The schema should say what that decision permits. If a rating submitted now
+may take a minute to move a session up the ranking, write that down and watch
+the lag. If a workflow needs to read its own write, an eventually updated
+projection is the wrong thing to build it on. A search index is not a free
+join; it is the same join moved to write time, and what it costs is that
+staleness becomes a domain concern rather than a database one.
 
-I also would not call the cursor stable merely because it has a deterministic
-tie-breaker. The tie-breaker orders one snapshot. If scores change between two
-requests, members can move across a cursor boundary. Snapshot tokens or a
-versioned index are different features, and this chapter has not implemented
-either.
+\index{cursor!stability is not the tie-breaker}%
+Nor would I call the cursor stable because it has a tie-breaker. The
+tie-breaker fixes the order of one snapshot, and if a score changes between
+two requests a session can cross a cursor boundary in either direction.
+Snapshot tokens and a versioned index are the features that would stop that,
+and this chapter has built neither.
 
-That is the full trade: the graph gains a page it can honestly answer, and the
-Search domain gains responsibility for completeness, freshness, and ordering.
+That is the whole trade. The graph gains a page it can answer honestly, and
+one service takes on completeness, freshness and ordering as things it owns.
+\index{search projection!freshness|)}%

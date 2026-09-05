@@ -2,8 +2,13 @@
 \chapter{The Page You Cannot Ask For}
 \label{ch:cross-seam-paging}
 
-For this graph's existing \code{sessions} connection, the list owner must have
-every value used to filter, order, and cut the page.
+A page is cut by the service that owns the list, out of values that service
+holds, so a page sorted by a score another service owns is a page this graph
+cannot ask for.
+
+Chapter~\ref{ch:federation-model} promised this bill when it drew the seam
+between Sessions and Ratings. This chapter presents it, shows why no directive
+moves it, and pays it with a fourth service.
 
 \input{chapters/13-the-page-you-cannot-ask-for/01-the-wrong-first-row}
 \input{chapters/13-the-page-you-cannot-ask-for/02-the-cut-happens-first}

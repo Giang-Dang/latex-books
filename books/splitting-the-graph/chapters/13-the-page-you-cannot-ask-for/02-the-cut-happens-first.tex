@@ -1,39 +1,51 @@
 \section{The Cut Happens First}
 \label{sec:ch13-cut-happens-first}
-\index{query plan!page cut before hydration}%
 
-The plan explains the result without any special case for pagination. The
-router first asks Sessions for one row. It can then build a Session
-representation and ask Ratings for the score of that row. By the time Ratings
-answers, membership has already been decided.
+\index{query plan!page cut before hydration|(}%
+Ask for the plan, the way chapter~\ref{ch:enter-the-router} taught, and it
+explains the answer with no special case for paging anywhere in it. The first
+step is a \code{Single} fetch to Sessions for one row. The second is a
+\code{BatchEntity} fetch to Ratings, carrying a representation of that row,
+for its score. By the time Ratings is asked anything, which session is on the
+page has been decided by a service that never saw a score.
 
-The two paths in figure~\ref{fig:ch13-two-page-orders} separate operations that
-a flat GraphQL response makes easy to confuse. Hydration fills fields on chosen
-objects. Discovery chooses the objects. The router is good at the first. It
-does not invent the second.
+\index{hydration and discovery}%
+Two operations are hiding in what looks like one flat response, and
+figure~\ref{fig:ch13-two-page-orders} pulls them apart. Choosing which objects
+are on the page is discovery. Filling in fields on objects already chosen is
+hydration. Everything the router has done since
+chapter~\ref{ch:second-third-subgraph} is the second, and it does the second
+well; it does not invent the first, and nothing in a plan could.
 
 \begin{figure}[htbp]
   \centering
   \input{figures/tikz/ch13-two-page-orders}
-  \caption{In the measured plan, hydration cannot repair a page cut against
-  the wrong ordering. The list owner must see the ordering values first.}
+  \caption{The page is cut in the first step, by the service that owns the
+  list, before any score exists to sort by. Hydration in the second step can
+  decorate the rows it is handed and cannot bring back one the cut left out,
+  so a request sorted by a value the list owner does not hold gets a page that
+  owner chose for reasons of its own.}
   \label{fig:ch13-two-page-orders}
 \end{figure}
 
-That distinction is visible in the measured plans for this graph. A root
-\code{Single} fetch produces a list. A later \code{BatchEntity}
-fetch receives representations for members of that list and fills a path such
-as \code{sessions.nodes.@.averageScore}. There is no plan node that discards
-members, reorders them, creates new cursors, and asks the root owner for a
-replacement row.
+\index{query plan!no step replaces a row}%
+Read the measured plans for this graph with that split in mind. A root
+\code{Single} fetch produces a list. A later \code{BatchEntity} fetch fills
+one path on members of that list, and in this plan the path is
+\code{sessions.nodes.@.averageScore}.
+No step discards a member, reorders the rest, mints new cursors and goes
+back to the owner for a replacement row, and the reason is what a replacement
+would cost. Suppose Sessions hands back ten rows and six of them score too
+low. Returning four rows breaks \code{first: 10}. Fetching ten more does not
+settle it, because the next ten may score too low as well, and a router that
+kept going would need a scan protocol, a stable sort, ownership of the cursors
+and a rule for when to stop, spanning two services and agreed by both. None of
+that follows from a client selecting a field.
 
-The missing replacement matters. Imagine Sessions returns ten rows and the
-router removes six whose scores are too low. Returning four rows violates
-\code{first: 10}. Fetching ten more is not generally sufficient because the
-next ten might also fail. The router would need a scan protocol, stable sort
-semantics, cursor ownership, and a termination rule spanning two services.
-None of that follows from selecting a field.
-
-For a connection with this plan shape, I use a strict rule: its owner controls
-membership, filtering, ordering, cursors, and the slice. Remote entity fields
-may decorate the members. They do not participate in choosing them.
+\index{list owner!the rule}%
+So the rule I use for a connection with this plan shape is strict. The service
+that owns the list owns its membership, its filtering, its ordering, its
+cursors and the slice, and I call it the list owner from here on. A field
+another service contributes may decorate the members. It takes no part in
+choosing them.
+\index{query plan!page cut before hydration|)}%
