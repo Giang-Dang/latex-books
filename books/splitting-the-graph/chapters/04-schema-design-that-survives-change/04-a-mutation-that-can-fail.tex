@@ -191,8 +191,8 @@ after the mutation, and the argument itself is called \code{input}. That is
 not decoration: an argument list is positional in the schema's grammar and
 adding to it is awkward, while an input object grows a field without any
 existing query changing. The shape is Relay's, and Relay's current
-documentation no longer mentions the \code{clientMutationId} that used to
-travel with it. Nothing generates one here.
+documentation no longer mentions the \code{clientMutationId} field its older
+editions asked every mutation to carry. Nothing generates one here.
 
 \index{payload!success field is nullable}%
 The payload's \code{session} field is nullable, and the method returns

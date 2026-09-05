@@ -1,0 +1,162 @@
+\section{SHAP làm vũ khí}
+\label{sec:ch14-shap-lam-vu-khi}
+
+\index{tấn công né tránh|(}%
+Hai mục vừa rồi đặt LIME và SHAP ở phía bị tấn công. Bài báo của mục này đảo
+chiều mũi tên: ở đây SHAP nằm trong tay bên tấn công, và nạn nhân là một bộ
+phân loại ảnh~\autocite{p28shapattack}.
+
+\index{tấn công né tránh!định nghĩa}%
+Loại tấn công mà bài dựng có tên riêng và cần phân biệt với hai loại kia. Một
+phép \tn{tấn công né tránh}{evasion attack} sửa đầu vào ở giai đoạn suy luận,
+sau khi mô hình đã huấn luyện xong, sao cho mô hình phân loại sai mà mắt người
+không thấy khác biệt; nó khác phép tấn công đầu độc, vốn sửa dữ liệu huấn
+luyện. Bài đặt mình ở kịch bản \tn{hộp trắng}{white-box}, tức là bên tấn công
+có mô hình trong tay~\autocite{p28shapattack}. Chỗ so sánh của bài là Fast
+Gradient Sign Method, viết tắt FGSM, phép tấn công né tránh quen thuộc nhất: nó
+cộng vào đầu vào một lượng nhỏ theo dấu của gradient hàm mất mát, tức là đi
+ngược chiều gradient descent~\autocite{p28shapattack}.
+
+Ý của bài là thay gradient bằng giá trị SHAP. Lý do mà bài nêu là một lý do về
+lượng: gradient chỉ cho biết chiều, nên FGSM nhân dấu của gradient với một hằng
+số và bỏ qua độ lớn của ảnh hưởng, còn giá trị SHAP mang theo cả độ lớn, nên
+bên tấn công sửa ít điểm ảnh hơn và phép sửa kín đáo
+hơn~\autocite{p28shapattack}.
+
+\index{tấn công né tránh!hình cánh bướm}%
+Bước tiếp theo là quan sát thực nghiệm mà cả phép tấn công dựng trên, và nó
+đáng đọc kỹ vì nó là quan sát về quan hệ giữa giá trị của một điểm ảnh và điểm
+số SHAP của nó chứ không phải về bản thân điểm số. Bài tính giá trị SHAP cho
+từng điểm ảnh trên hàng trăm ảnh, rồi vẽ điểm số ấy theo giá trị của chính điểm
+ảnh, đã chuẩn hóa về đoạn từ 0 tới 1. Chồng nhiều ảnh lên nhau thì hiện ra một
+hình mà bài gọi là hình cánh bướm: điểm số SHAP gần bằng không ở khoảng giữa
+của thang giá trị và tản ra hai bên khi giá trị tiến về hai đầu mút. Với hai bộ
+dữ liệu ảnh màu, vùng gần như trung hòa nằm quanh 0.4; với MNIST thì nó thấp
+hơn, quanh 0.3 hoặc dưới~\autocite{p28shapattack}.
+
+Đọc quan sát ấy theo hướng bên tấn công thì được một phép sửa: đẩy những điểm
+ảnh có ảnh hưởng mạnh về phía vùng trung hòa, và như thế là rút đi thông tin mà
+mô hình dựa vào. Bài phát biểu phép sửa bằng hai phương trình, và cả hai đều
+cần tới điểm số SHAP của điểm ảnh đang xét, mà từ đây viết là $\phi$. Phương
+trình thứ nhất đặt ra điều kiện chọn: gọi $V$ là mệnh đề $\phi_i \ge \tau$ hoặc
+$\phi_i \le -\tau$, tức độ lớn của điểm số vượt một ngưỡng $\tau$. Phương trình
+thứ hai nói sửa thế nào, và nó chỉ chạm tới những điểm ảnh vừa thỏa $V$ vừa nằm
+sát một trong hai đầu mút của thang giá trị, cách đầu mút không quá một biên
+$\eta$. Viết $x_i$ cho giá trị của điểm ảnh thứ $i$ trong ảnh $x$ và
+$\tilde{x}_i$ cho giá trị của nó sau khi sửa:
+
+\begin{equation}
+\label{eq:ch14-tan-cong-shap}
+\tilde{x}_i = x_i + \varepsilon \cdot
+\begin{cases}
+-\lvert\phi_i\rvert, & \text{nếu } x_i \ge 1-\eta \text{ và } V,\\
+\phantom{-}\lvert\phi_i\rvert, & \text{nếu } x_i \le \eta \text{ và } V,
+\end{cases}
+\end{equation}
+
+với $\varepsilon$ là \tn{cường độ tấn công}{attack
+intensity}~\autocite{p28shapattack}. Bài viết vế trái là $x'$, chữ mà
+chương~\ref{ch:lime} đã cấp cho \tn{biểu diễn có thể diễn giải}{interpretable
+representation} và mà phụ lục~\ref{app:ky-hieu} cấm đổi nghĩa, nên sách viết
+$\tilde{x}_i$ và giữ $x$ cho chính bức ảnh. Bài cũng viết ngưỡng là $v$ và biên
+là $h$; sách đổi cả hai, vì $v(S)$ ở phụ lục~\ref{app:ky-hieu} đã thuộc về giá
+trị liên minh của chương~\ref{ch:shap} và $h_x$ thuộc về ánh xạ từ biểu diễn về
+đầu vào của cùng chương ấy. Ký hiệu $\varepsilon$ thì sách giữ nguyên như bài
+viết, dù chương~\ref{ch:gioi-han-ly-thuyet} đã có $\varepsilon_f(b)$: cường độ
+nhiễu đối kháng viết là $\varepsilon$ trong toàn bộ ngành ấy, kể cả trong
+phương trình FGSM mà bài trích lại, và hai nghĩa tách nhau bằng hình dạng vì
+một bên luôn có chỉ số dưới cùng đối số còn một bên luôn viết trần.
+
+\index{tấn công né tránh!phương trình không khớp lời văn}%
+Phương trình~\ref{eq:ch14-tan-cong-shap} không làm hết những gì lời văn quanh
+nó mô tả, và chỗ lệch phải nói ra vì phần sau dựa vào cái phương trình làm chứ
+không dựa vào cái lời văn hứa. Lời văn viết rằng phép sửa đẩy những điểm ảnh có
+điểm số SHAP dương ra khỏi các vùng ảnh hưởng mạnh \emph{và} đẩy những điểm ảnh
+có điểm số âm về phía hai đầu mút~\autocite{p28shapattack}. Phương trình chỉ
+làm vế thứ nhất. Nhánh nào được chọn là do giá trị $x_i$ của điểm ảnh quyết
+định, chứ không do dấu của $\phi_i$: một điểm ảnh sát 1 bị trừ đi và một điểm
+ảnh sát 0 được cộng vào, cả hai đều dịch về giữa thang, và dấu của $\phi_i$ đã
+bị dấu trị tuyệt đối xóa mất. Điều kiện $V$ cũng đối xứng theo dấu ấy, vì nó
+nhận cả $\phi_i$ rất dương lẫn $\phi_i$ rất âm. Sách ghi lại cả hai, cái bài
+viết và cái phương trình làm, theo đúng cách
+mục~\ref{sec:ch05-integrated-gradients} đã xử lý một mệnh đề mà giả thiết của
+nguồn không đỡ nổi kết luận của chính nó, và chỉ dùng phần mà phương trình đỡ
+được.
+
+\index{tấn công né tránh!kết quả}%
+Bài chạy phép tấn công trên bốn bộ dữ liệu với ba kiến trúc cách xa nhau, cốt
+để kết quả không lệ thuộc vào một kiến trúc. Hai bộ ảnh màu, Animal Faces và
+Woman and Man Faces, dùng chung một mạng tích chập ba tầng khoảng bảy mươi sáu
+nghìn tham số; Cats and Dogs Filtered dùng học chuyển giao từ EfficientNetB7
+với hơn sáu mươi sáu triệu tham số; còn MNIST, bộ ảnh xám khác hẳn ba bộ kia,
+dùng một mạng hai tầng tích chập~\autocite{p28shapattack}. Trong
+bảng~\ref{tab:ch14-ti-le-phan-loai-sai}, chỗ cần nhìn là cặp tỉ lệ ở mỗi dòng,
+và nhất là dòng duy nhất mà cặp ấy đảo chiều.
+
+\begin{table}[htbp]
+\centering
+\caption{Tỉ lệ phân loại sai sau tấn công, FGSM đặt cạnh phép tấn công bằng giá
+trị SHAP, cùng cường độ $\varepsilon$ mà mỗi bên cần. Hai thang $\varepsilon$
+không so sánh với nhau được vì chúng nhân với hai đại lượng khác nhau. Ở ba bộ
+đầu, $\varepsilon$ được chọn sao cho phép sửa còn khó thấy bằng mắt; ở MNIST
+thì bài ghi rằng không giấu được, nên hai bên chỉ được chỉnh cho mức lộ ngang
+nhau. Cột cuối là độ chính xác của chính mô hình trước khi bị tấn công, để thấy
+cả bốn mô hình đều là mô hình tốt. Số liệu từ bảng 1 của bài
+báo~\autocite{p28shapattack}.}
+\label{tab:ch14-ti-le-phan-loai-sai}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Bộ dữ liệu & FGSM & $\varepsilon$ & Tấn công SHAP & $\varepsilon$ & Độ chính xác mô hình \\
+\midrule
+Animal Faces & 52\% & 0.2 & 73\% & 50 & 99.5\% \\
+Cats and Dogs Filtered & 98\% & 0.01 & 89\% & 80 & 98\% \\
+MNIST & 34\% & 0.2 & 60\% & 1.5 & 99\% \\
+Woman and Man Faces & 69\% & 0.2 & 98\% & 60 & 97\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Phép tấn công bằng SHAP thắng ở ba bộ trên bốn và thua ở bộ còn lại, Cats and
+Dogs Filtered, với 89 phần trăm so với 98 phần trăm. Cho nên câu đọc được từ
+bảng không phải câu rằng phép tấn công mới luôn mạnh hơn. Câu mà bài phát biểu
+hẹp hơn thế và bảng đỡ được: tỉ lệ của FGSM trải từ 34 tới 98 phần trăm còn tỉ
+lệ của phép tấn công SHAP trải từ 60 tới 98, nên phép tấn công bằng SHAP cho
+kết quả ổn định hơn~\autocite{p28shapattack}. Phần tóm tắt của bài nói rõ điều
+kiện mà nó nhắm tới, là những tình huống gradient bị
+che~\autocite{p28shapattack}: khi gradient triệt tiêu, bùng nổ hoặc tản mát thì
+hướng mà FGSM đọc được không còn mang thông tin, trong khi giá trị SHAP không
+đọc hàm mất mát nên không chịu ảnh hưởng ấy.
+
+\index{tấn công né tránh!là một phép đo về attribution}%
+Còn một cách đọc bảng~\ref{tab:ch14-ti-le-phan-loai-sai} nữa mà bài không đưa
+ra, và nó là quan sát của sách. Chữ \enquote{faithful} không xuất hiện lần nào
+trong bài, và bài chỉ nhắc tới attribution đặc trưng đúng một lần, trong phần
+nền. Nhưng phép tấn công chỉ chạy được nếu giá trị SHAP chỉ đúng vào những điểm
+ảnh mà mô hình thật sự dựa vào: sửa nhầm chỗ thì mô hình không đổi kết luận. Tỉ
+lệ phân loại sai vì thế cũng là một phép đo về chất lượng của chính bộ điểm số
+đã dẫn đường cho phép sửa.
+
+Đại lượng ấy có mấy tính chất mà không họ chỉ số nào của
+chương~\ref{ch:do-do-trung-thuc} có đủ cùng lúc. Nó không cần ground truth, vì
+mô hình tự chấm điểm bằng đầu ra của chính nó. Nó không cần thang quy ước, vì
+phân loại sai hay không là một sự kiện quan sát được. Và nó không tự chọn phép
+nhiễu cho có lợi, vì phép nhiễu ở đây phải đạt một mục tiêu độc lập là đổi được
+kết luận của mô hình. Về hình dạng thì nó chính là họ xóa dần của
+mục~\ref{sec:ch08-ho-xoa-dan} chạy dưới dạng đối kháng: cùng một vòng lặp là bỏ
+đi thông tin ở những chỗ điểm cao rồi xem mô hình đổi bao nhiêu, chỉ khác ở chỗ
+người chạy có mục tiêu và có ngân sách nhiễu.
+
+\index{mức quan trọng!đo được qua tấn công}%
+Chỗ dừng của cách đọc ấy cũng phải nói ra trong cùng một hơi, vì bỏ qua nó là
+mắc đúng lỗi mà bài báo neo chẩn đoán. Cái mà tỉ lệ phân loại sai chứng thực là
+\tn{mức quan trọng}{importance}, tức tính chất ảnh hưởng nhân quả mà
+mục~\ref{sec:ch09-chan-doan} đã tách riêng ra và giữ cách khỏi độ trung thực:
+sửa những điểm ảnh này thì đầu ra đổi, cho nên điểm số có bắt được ảnh hưởng.
+Nó không nói rằng bộ điểm số phản ánh đúng quá trình mô hình dùng để tới đầu
+ra, và với một mạng tích chập thì hai điều ấy cách nhau khá xa. Gộp chúng lại
+là đúng phép gộp mà bài báo neo của
+chương~\ref{ch:chi-so-khong-do-do-trung-thuc} chẩn đoán trên \tn{chuỗi suy
+luận}{chain of thought}, nên sách để phép đo này ở đúng chỗ của nó: một điều
+kiện cần đo được rẻ, không phải một phép đo độ trung thực.
+
+\index{tấn công né tránh|)}%

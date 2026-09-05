@@ -1,10 +1,12 @@
 \section{A Domain That Can Ask}
 \label{sec:ch13-domain-that-can-ask}
-\index{search subgraph!complete projection}%
 
-Search is a small read model, not another owner for Session. Its project uses
-the same runtime, federation package, paging support, and SQLite provider as
-the existing services:
+\index{search subgraph!complete projection|(}%
+Search is a read model, a copy of other services' data kept only to be
+queried, and nothing more. It owns no \code{Session}, it answers questions
+about sessions out of that copy, and it is built from the same runtime,
+the same federation package, the same paging support and the same SQLite
+provider as the three services already running. The project file first:
 
 \begin{minted}[fontsize=\footnotesize]{xml}
 <Project Sdk="Microsoft.NET.Sdk.Web">
@@ -32,7 +34,8 @@ the existing services:
 </Project>
 \end{minted}
 
-The fourth local port is 5004:
+It pins the fourth port, 5004, for the reason
+chapter~\ref{ch:hot-chocolate-zero} pinned the first:
 
 \begin{minted}{json}
 {
@@ -51,8 +54,15 @@ The fourth local port is 5004:
 }
 \end{minted}
 
-The read-model row carries everything needed to decide the page. The integer
-key stays out of the schema; clients receive a Session entity instead.
+\index{search document!what it carries}%
+The document is one row per session, carrying everything a page decision
+needs: when the session starts, its average, and how many scores went into
+that average. The integer key stays out of the schema behind
+\code{[GraphQLIgnore]}, as chapter~\ref{ch:hot-chocolate-zero} taught, because
+a client is going to be handed a \code{Session} entity rather than a number.
+I have left the doc comments off the records in this service, which is why
+the schema it exports carries no descriptions where every earlier service's
+does; the graph in front of you is a demonstration, and yours is not.
 
 \begin{minted}{csharp}
 namespace Search;
@@ -64,8 +74,10 @@ public sealed record SessionSearchDocument(
     int RatingCount);
 \end{minted}
 
-The seed is deliberately complete. Session 4 has no ratings, but it still has
-a search document. A ratings table alone could not produce that row.
+\index{search document!complete before current}%
+The seed is deliberately complete. Session~4 has no ratings and still has a
+document, with a null average and a count of zero, which is the row a
+projection grouped out of the ratings table alone could never produce.
 
 \begin{minted}{csharp}
 namespace Search;
@@ -86,9 +98,11 @@ public static class SessionSearchData
 }
 \end{minted}
 
-The primary key is also the final ordering key. That turns equal start times or
-equal scores into one deterministic order. It does not promise a snapshot
-across separate requests; rows can still change between pages.
+\index{ordering!the tie-breaker}%
+\code{SessionId} is the primary key and, in the resolver below, the last
+ordering key as well, so two equal start times or two equal scores still come
+out in one fixed order. What that does not promise is a snapshot: a row can
+still change between one page and the next.
 
 \begin{minted}{csharp}
 using Microsoft.EntityFrameworkCore;
@@ -128,9 +142,15 @@ public enum SessionSearchOrder
 }
 \end{minted}
 
-The resolver performs the important operations in one \code{IQueryable}.
-Filtering and ordering happen before Hot Chocolate applies the paging
-arguments. Both orders end with \code{SessionId}.
+\index{AsNoTracking@\code{AsNoTracking}}%
+The resolver does everything that matters inside one \code{IQueryable}, and
+the order of the calls is the point: the filter and the sort are on the query
+before \code{[UsePaging]} adds its slice, so the \code{LIMIT} lands under
+both in one statement, which is the thing
+chapter~\ref{ch:data-without-n-plus-1} said to check for.
+\code{AsNoTracking} is new in this book and is EF Core's way of being told
+that these rows will only ever be read, so it need not remember them for a
+later save. Both orderings end with \code{SessionId}.
 
 \begin{minted}{csharp}
 using Microsoft.EntityFrameworkCore;
@@ -161,6 +181,7 @@ public static class Query
 }
 \end{minted}
 
-Notice what is absent: no call to Sessions, Ratings, or the router. Search can
-decide the page locally because its projection already has the decision
-values. That is the price and the point of the projection.
+Notice what is absent. No call to Sessions, none to Ratings, none to the
+router: Search decides the page alone, because everything the decision needs
+is in its own table. That is the price of the projection, and the point of it.
+\index{search subgraph!complete projection|)}%

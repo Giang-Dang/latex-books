@@ -19,6 +19,10 @@ ECONOMY in `SKILL.md` for the four tests.
 the author measured it or a named source did; "about 40x faster" with no run behind it is a §5
 weasel wearing a benchmark.
 
+**Linking:** `tight` cuts the setup paragraph, not the sentence that ties a section to the one
+before it or a chapter opener to the previous chapter's last finding. A section that opens on a
+new topic with no hook to the last one reads as a stack of essays, however good each is.
+
 ## Tells specific to this tone
 
 - **The lecture opener.** "In this chapter, we will explore..." is §28 in book form. Open with the
@@ -33,6 +37,11 @@ weasel wearing a benchmark.
   stopped doing X after it cost me a weekend" beats "X is considered bad practice" (§5).
 - **War stories with rounded corners.** A story with no specific system, version, or failure is
   decoration. Keep the stories that end in a fact the reader can use.
+- **The orphaned pointer.** "as we saw", "the next section", "this" with no target the reader
+  can name. Name the section or the finding.
+- **The wall of output.** A captured block dropped in after "running it gives:" with nothing
+  saying what to look at, or two blocks back to back with no prose between. The sentence before
+  a block names the one line that matters; the block is cut to the lines that carry it.
 
 ## Before and after
 

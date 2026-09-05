@@ -1,9 +1,11 @@
 \section{Put the Page with the Values}
 \label{sec:ch13-put-page-with-values}
-\index{entity reference!from search results}%
 
-Search returns references to Sessions rather than copying canonical titles into
-its public contract. Its local Session shape is only an opaque node id:
+\index{entity reference!from search results|(}%
+What Search hands back is a reference to a session and not a copy of one. Its
+own \code{Session} is a stub holding the node id as a string, the way the
+Ratings service in chapter~\ref{ch:second-third-subgraph} held one, and
+nothing else:
 
 \begin{minted}{csharp}
 using HotChocolate.Types.Relay;
@@ -13,8 +15,9 @@ namespace Search;
 public sealed record Session([property: ID] string Id);
 \end{minted}
 
-The key is not resolvable here. Search can identify a Session, but the router
-must ask Sessions to hydrate it.
+The key is declared \code{resolvable: false}, exactly as the speaker stub was,
+because Search can name a session and cannot answer for one; the router has to
+take the key to Sessions for the title.
 
 \begin{minted}{csharp}
 using HotChocolate.ApolloFederation.Types;
@@ -26,8 +29,11 @@ namespace Search;
 public static partial class SessionType;
 \end{minted}
 
-The document resolver formats the integer database key as the same global node
-id used everywhere else in the graph:
+\index{INodeIdSerializer@\code{INodeIdSerializer}!Format}%
+The field that hands the key over formats the integer out of the document into
+the global node id every other service in the graph would produce for it;
+\code{Format} is the other half of the \code{Parse} that
+chapter~\ref{ch:first-subgraph} called:
 
 \begin{minted}{csharp}
 using HotChocolate.Types.Relay;
@@ -44,8 +50,9 @@ public static partial class SessionSearchDocumentType
 }
 \end{minted}
 
-That produces a composed shape in which discovery data and canonical entity
-data remain distinguishable:
+Composed, a search document carries its own three fields beside a
+\code{Session} that is still the Sessions service's, so a client can tell
+discovery data from the entity it points at:
 
 \begin{graphqlsdl}
 type SessionSearchDocument {
@@ -56,8 +63,12 @@ type SessionSearchDocument {
 }
 \end{graphqlsdl}
 
-I keep the statement interceptor in this service too. Without a separate log,
-the claim that paging happened locally would be guesswork.
+\index{StatementLog@\code{StatementLog}!the fourth copy}%
+The statement interceptor from chapter~\ref{ch:data-without-n-plus-1} goes in
+here as well, shorter than the copy the other three services carry and doing
+the same job, because the claim that the page was cut inside this service is
+a claim about which service issued a statement, and only a log in this
+process can make it.
 
 \begin{minted}{csharp}
 using System.Data.Common;
@@ -95,9 +106,11 @@ public sealed class StatementLog : DbCommandInterceptor
 }
 \end{minted}
 
-The host is the same explicit stack used by the other subgraphs. Paging
-arguments are enabled before federation, cost defaults remain disabled for the
-composer, and the database is created from the deterministic seed.
+\code{Program.cs} takes the Ratings service's shape rather than the Sessions
+one, for the reason chapter~\ref{ch:second-third-subgraph} gave: this service
+owns no node, so it cannot switch on global object identification and
+registers the node id serializer by hand. The cost defaults are off for the
+composer's sake, and the database is created from the seed above.
 
 \begin{minted}{csharp}
 using ChilliCream.Nitro.App;
@@ -147,8 +160,8 @@ app.MapGraphQL().WithOptions(options =>
 app.RunWithGraphQLCommands(args);
 \end{minted}
 
-Finally, composition gets the fourth input. This is the complete
-\code{graph/graph.yaml}, not a patch:
+Then composition gets its fourth input. Here is \code{graph/graph.yaml} again
+in full, with the new entry marked:
 
 \begin{minted}[highlightlines={15,16,17,18}]{yaml}
 version: 1
@@ -171,9 +184,9 @@ subgraphs:
       file: ../src/Search/schema.graphql
 \end{minted}
 
-The router config does not change, but a service addition is exactly when I
-want to reprint it. There is still one static execution artifact and one
-router process:
+The router's own file does not change, and a fourth service is exactly the
+moment to read it again, because nothing in it names a service. One composed
+artifact and one router process, whatever the count behind them:
 
 \begin{minted}{yaml}
 version: "1"
@@ -226,5 +239,6 @@ headers:
         named: Authorization
 \end{minted}
 
-The fourth subgraph changes graph ownership, not the router's configuration
-model.
+Adding a subgraph changed who owns what in the graph and nothing about how the
+router is told to serve it.
+\index{entity reference!from search results|)}%

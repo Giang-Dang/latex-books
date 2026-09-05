@@ -210,6 +210,17 @@ type Speaker {
 }
 ```
 
+**Amended 2026-09-05.** The chapter's map now shows the two Ratings fields
+as `averageScore` and `ratingCount`, with no `Rating` type and no `ratings`
+list, because that is what chapter 9 built and a reader carrying this map into
+chapter 9 met a different graph (SPEC decision 132). The scratch composition
+above was not re-run with the new names; what stands behind the map now is
+the real composition `verify.ps1` performs on `main` at every run, whose
+`engineConfig.graphqlSchema` carries exactly those two fields on `Session`
+beside the six Sessions owns (chapter 9 note, "The plan grows a second step").
+Field count unchanged at eight. `feedbackUrl`, the third Ratings field, is
+left to chapter 9 because it needs `@requires`, and the chapter says so.
+
 `Session` carries eight fields contributed by two services, and nothing in the
 composed type says which service contributed which. That is the artifact the
 chapter's last section is about.

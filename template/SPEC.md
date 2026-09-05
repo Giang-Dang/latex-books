@@ -47,6 +47,10 @@ reads as a decision.
 - **Voice:** name the voice, even when it is AGENTS.md's first-person
   practitioner, because the draft-chapter skill reads this line to pick a
   humanizer tone profile and has nothing to go on without it.
+- **Reader:** who the book is for and what they already know when they open
+  it. The draft-chapter skill judges every sentence, and briefs its auditor to
+  judge every sentence, against this reader: a term this reader has not met is
+  undefined until the book defines it, however familiar it is to the author.
 - **Economy:** how much the book says, named even when it is AGENTS.md's tight,
   for the same reason. The tone profile carries a level already, so this line
   exists to override it: name it when the book wants something other than what

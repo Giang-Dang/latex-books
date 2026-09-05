@@ -17,8 +17,8 @@
         string. \code{[ID<T>]} does not decode it and does not complain; it
         yields zero and the entity comes back null.
   \item The entity route is not \code{node(id:)} with a different spelling. It
-        takes a different argument, it cannot be given a
-        \code{QueryContext<T>}, and without one the projection is gone: six
+        takes a different argument, it is given no
+        \code{QueryContext<T>} here, and without one the projection is gone: six
         columns come back where the node route asked for one. Whether a batch
         of representations costs one statement or one each is decided by what
         is behind your resolver, which is the whole of

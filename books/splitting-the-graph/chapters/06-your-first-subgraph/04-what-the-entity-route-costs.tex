@@ -24,9 +24,9 @@ LIMIT 1
 \index{projection!absent from the entity route}%
 One column against six, for the same field of the same row. Nothing about the
 query differed. What differed is the parameter list:
-section~\ref{sec:ch06-the-key-arrives-as-a-string} could not give the reference
-resolver a \code{QueryContext}, so the projection
-chapter~\ref{ch:data-without-n-plus-1} built has no way to reach it. Six columns
+section~\ref{sec:ch06-the-key-arrives-as-a-string} gave the reference resolver
+no \code{QueryContext}, so the projection
+chapter~\ref{ch:data-without-n-plus-1} built does not reach it. Six columns
 is the whole row of a small table. On a wide one it is every column you have,
 fetched to answer a question about one of them.
 
@@ -65,8 +65,8 @@ Figure~\ref{fig:ch06-two-routes} is the pair of routes drawn against each other.
   \caption{The same row, reached twice. The stages line up because the two
   routes do the same work in the same order; what differs is what each resolver
   is handed. Lane~A is given a decoded integer and a projection, and asks for
-  one column. Lane~B is given a string, decodes it itself, has no projection to
-  be given, and asks for six. The braces mark where the decoding happens, and
+  one column. Lane~B is given a string, decodes it itself, is given no
+  projection, and asks for six. The braces mark where the decoding happens, and
   they sit under different stages on purpose: that shift is the only structural
   difference between the lanes, and the source of both others.}
   \label{fig:ch06-two-routes}
@@ -76,6 +76,6 @@ Figure~\ref{fig:ch06-two-routes} is the pair of routes drawn against each other.
 It is tempting to read the entity route as \code{node(id:)} with a different
 spelling, since both take a global id and return the object it names. They are
 different code with different properties, and this chapter has now found three
-differences: what the resolver is handed, what it may inject, and what it costs.
+differences: what the resolver is handed, what it takes, and what it costs.
 Chapter~\ref{ch:entities-authorization} finds the fourth and most expensive one.
 \index{entity route!compared with the node route|)}%

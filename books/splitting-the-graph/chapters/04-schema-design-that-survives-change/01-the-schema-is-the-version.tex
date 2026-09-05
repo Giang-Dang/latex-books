@@ -28,17 +28,21 @@ read next to the name of the table it came from. Once it leaves through the
 schema the table name is gone, and \code{1} is all the client has.
 
 \index{client!caching by identifier}%
+\index{typename@\code{\_\_typename}!definition}%
 A client that stores objects by identifier now has to decide whether those two
-are the same thing, and nothing in the response tells it. The type name is
-available, through \code{\_\_typename}, so a careful client can pair the two and
-be safe. That is the point: the schema has pushed a decision onto every client
+are the same thing, and nothing in the response tells it.
+The type name is available, through \code{\_\_typename}, a field every object
+in every GraphQL schema answers with the name of its own type, so a careful
+client can ask for it and pair the two and be safe. That is the point: the
+schema has pushed a decision onto every client
 that the server could have settled once, and the server is the one that knows
 there are two tables.
 
 \index{sessionById@\code{sessionById}!cannot be fixed in place}%
 Now try to fix it. \code{sessionById(id: Int!)} takes an integer, so an
 identifier that carries its type is a different type, a different argument and
-a different field. Change it and every stored query breaks. Add a second field
+a different field. Change it and every query a client has already written
+breaks. Add a second field
 beside it and the schema has two ways to fetch a session forever. There is no
 third option, because there is no version number to raise. A REST service can
 ship \code{/v2/sessions} and let \code{/v1} rot; a GraphQL service has one

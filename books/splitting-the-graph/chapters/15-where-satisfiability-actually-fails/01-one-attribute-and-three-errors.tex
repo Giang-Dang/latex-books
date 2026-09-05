@@ -2,13 +2,23 @@
 \label{sec:ch15-one-attribute-and-three-errors}
 
 \index{resolvability!the mistake this chapter opens on|(}%
-Chapter~\ref{ch:second-third-subgraph} taught an argument that reads like
-modesty. The Sessions service names \code{Speaker} so that
-\code{Session.speaker} has a type, declares which field identifies one, and
-then writes \code{[Key("id", false)]} to say it cannot turn such a key back
-into anything. Read in English, that argument says \emph{this service does not
-own these rows}, and that reading is correct about the Sessions service and
-wrong about the next service a reader will apply it to.
+Chapter~\ref{ch:null-blast-radius} ended on a graph whose failures are decided
+by the schema, with no operational lever anywhere near them. This chapter is
+about the step that is supposed to check that schema, and it starts by getting
+one wrong.
+
+\index{resolvable@\code{resolvable: false}!the argument that reads like modesty}%
+Chapter~\ref{ch:composition} said in one sentence that \code{resolvable: false}
+is the right thing to say about a type you only point at and the wrong thing to
+say about a type you contribute fields to.
+Chapter~\ref{ch:second-third-subgraph} then used it correctly, on the
+\code{Speaker} stub: the Sessions service names the type so that
+\code{Session.speaker} has one, declares which field identifies a speaker, and
+writes \code{[Key("id", false)]} to say it cannot turn such a key back into
+anything. One sentence and one correct use is not much to hold an argument that
+reads like modesty. Read in English it says \emph{this service does not own
+these rows}, which is true of the Sessions service and true of the next service
+a reader will apply it to, where it is also wrong.
 
 \index{Ratings subgraph!does not own Session rows either}%
 The Ratings service does not own \code{Session} rows either. It holds scores,

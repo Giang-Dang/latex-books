@@ -2,8 +2,30 @@
 \label{sec:ch07-the-graph-that-does-not-compose}
 
 \index{composition!what the composer reads|(}%
-The composer is a command-line tool and it takes one input file. Here is the
-whole of it, for a graph with one subgraph in it:
+\index{wgc@\code{wgc}!installing it}%
+The composer is a command-line tool called \code{wgc}, and it comes from npm
+rather than NuGet, so this is the first thing in the book that needs Node
+installed:
+
+\begin{minted}{text}
+npm install -g wgc
+\end{minted}
+
+That installs whatever is current. The version table in
+appendix~\ref{app:toolchain} pins the release this book's error text was
+captured with, and a later one may word an error differently, so add \code{@}
+and that number to the command if you want the text on these pages word for
+word.
+
+\index{repository layout}%
+It takes one input file, and where that file lives is the first time the
+layout of the whole project matters. Everything this book builds sits in one
+tree: one folder per service under \code{src}, so \code{src/Sessions} is the
+project chapter~\ref{ch:hot-chocolate-zero} created and the next two services
+go beside it; \code{graph} for what the composer reads and the one file it
+writes; and \code{router} for the one file chapter~\ref{ch:enter-the-router}
+adds. Here is the whole of the input, for a
+graph with one subgraph in it:
 
 \begin{minted}{yaml}
 version: 1

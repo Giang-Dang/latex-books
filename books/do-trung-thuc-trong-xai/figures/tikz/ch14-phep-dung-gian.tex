@@ -1,0 +1,35 @@
+\begin{tikzpicture}[
+  every node/.style={font=\footnotesize, align=center},
+  box/.style={draw=black!65, rounded corners=2pt, fill=black!5,
+    minimum width=30mm, minimum height=11mm},
+  routebox/.style={box, draw=black!85, line width=1pt, fill=black!12,
+    minimum width=32mm},
+  branchbox/.style={box, fill=black!16, minimum width=26mm},
+  freechoice/.style={draw=black!55, dashed, thick, rounded corners=2pt,
+    fill=white, minimum width=30mm, minimum height=11mm},
+  flow/.style={-{Stealth[length=2mm]}, thick, black!70},
+  never/.style={-{Stealth[length=2mm]}, thick, black!45, dotted},
+  lbl/.style={font=\scriptsize, align=center, black!55}
+]
+  \node[box]        (user)    at (0,1.9)    {Người dùng cuối\\hỏi điểm thật $x$};
+  \node[box]        (audit)   at (0,-1.0)   {Người kiểm tra\\chạy LIME hoặc SHAP};
+  \node[freechoice] (perturb) at (0,-3.3)   {Phân phối nhiễu:\\lựa chọn tự do};
+
+  \node[routebox]   (route)   at (5.4,0.45) {Bộ phát hiện\\ngoài phân phối};
+
+  \node[branchbox]  (f)       at (10.4,1.9) {$f$: thiên lệch};
+  \node[branchbox]  (u)       at (10.4,-1.0){$u$: vô hại};
+
+  \draw[flow] (user)    -- (route);
+  \draw[flow] (audit)   -- (route);
+  \draw[flow] (perturb) -- (audit);
+  \draw[flow] (route)   -- (f);
+  \draw[flow] (route)   -- (u);
+
+  \node[lbl] at (7.9,1.6)  {điểm thật};
+  \node[lbl] at (7.9,-0.8) {mẫu đã nhiễu};
+
+  \draw[never] (audit.west) -- (-2.4,-1.0) -- (-2.4,3.3) -- (10.4,3.3)
+    -- (f.north);
+  \node[lbl] at (4.0,3.6) {câu hỏi không ai đặt được};
+\end{tikzpicture}

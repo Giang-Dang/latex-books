@@ -662,9 +662,24 @@ Recorded so no later chapter re-derives them.
 
 ## Sources
 
-Only three carry anything, and none of them carries a claim the chapter states
-as fact - all three are cited or used as artifacts, in the sense SPEC decision
+Only four carry anything, and none of them carries a claim the chapter states
+as fact - all four are cited or used as artifacts, in the sense SPEC decision
 39 allows, and every place the compiler disagreed is recorded above.
+
+### The Relay cursor connections specification
+
+*GraphQL Cursor Connections Specification*, relay.dev, accessed 2026-09-05.
+https://relay.dev/graphql/connections.htm
+
+Added by the 2026-09-05 reading-flow pass, which found the paging section
+naming a connection, edges, cursors and `pageInfo` with no sentence saying
+what a connection is. Unsigned, and cited as the artifact rather than as a
+claim about one: the chapter says only what the document requires. Read while
+it was open: a connection type "must have fields named `edges` and
+`pageInfo`", an edge type "must have fields named `node` and `cursor`", and
+the word `nodes` appears nowhere in it. So `nodes` on `SessionsConnection` is
+Hot Chocolate's convenience rather than the specification's, which is what the
+chapter now says.
 
 ### The DataLoader documentation
 

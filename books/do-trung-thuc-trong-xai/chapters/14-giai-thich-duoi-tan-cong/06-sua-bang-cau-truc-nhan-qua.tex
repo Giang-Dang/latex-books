@@ -1,0 +1,166 @@
+\section{Sửa bằng cấu trúc nhân quả}
+\label{sec:ch14-sua-bang-nhan-qua}
+
+\index{Causal SHAP|(}%
+Cả hai phép tấn công vừa đọc đều đi qua cùng một bước: để có điểm số SHAP thì
+phải hỏi mô hình về những đầu vào có đặc trưng bị thay hoặc bị che, và những
+đầu vào ấy không phải dữ liệu thật. Ở mục~\ref{sec:ch14-phep-dung-gian} đó là
+cái khe hở bị khai thác; ở mục~\ref{sec:ch14-shap-lam-vu-khi} đó chỉ là chi phí
+phải trả để tính điểm số. Bài báo cuối của chương nhắm vào chính bước ấy, và
+nhắm vào nó mà không có bên tấn công nào trong câu chuyện.
+
+\index{Causal SHAP!chỗ hỏng nó sửa}%
+Chỗ hỏng mà bài nêu bắt đầu từ một giả định mà chương~\ref{ch:shap} đã ghi và
+chưa gỡ. Muốn tính giá trị của một liên minh thiếu vài đặc trưng thì phải điền
+giá trị vào những chỗ thiếu, và cách điền phổ biến nhất là lấy chúng độc lập
+với những đặc trưng còn lại. Khi các đặc trưng thật sự phụ thuộc nhau, cách
+điền ấy dựng ra những điểm dữ liệu không thể tồn tại, và bài lấy một ví dụ y
+khoa để nói điều đó cụ thể: hút thuốc gây ung thư phổi, hút thuốc cũng khiến
+người ta uống nhiều cà phê hơn, nên uống cà phê tương quan với ung thư phổi mà
+không gây ra nó. SHAP thường chia điểm cho cả hút thuốc lẫn uống cà
+phê~\autocite{p29causalshap}.
+
+\index{Causal SHAP!hai bước sửa}%
+Phép sửa gồm hai bước cộng một bước dọn dẹp, và cả ba đều cần một đồ thị nhân
+quả mà bài không giả định là có sẵn mà đi tìm từ dữ liệu. Việc tìm ấy do thuật
+toán Peter-Clark, viết tắt PC, đảm nhận: nó bắt đầu từ đồ thị đầy đủ rồi lần
+lượt bỏ cạnh giữa những cặp biến độc lập có điều kiện, sau đó định hướng phần
+cạnh mà dữ liệu định hướng được~\autocite{p29causalshap}. Sách viết đồ thị ấy
+là $G$ và gọi các đỉnh, các cạnh bằng lời, vì $E$ ở phụ lục~\ref{app:ky-hieu}
+đã thuộc về tập đối tượng mà một \tn{hàm attribution}{attribution function}
+chấm điểm.
+
+Bước thứ nhất đổi cách điền. Thay vì lấy các đặc trưng ngoài liên minh độc lập,
+bài lấy chúng theo phân phối mà cấu trúc nhân quả quy định khi các đặc trưng
+trong liên minh đã bị can thiệp. Gọi cha của một biến là những biến có cạnh
+hướng thẳng vào nó trong $G$, thì quy tắc là: biến nào không có cha thì giữ
+nguyên phân phối của riêng nó, còn biến nào có cha thì được sinh ra theo giá
+trị mà các cha của nó đang nhận. Hàm giá trị thu được, bài viết là $v_c(S)$, vì
+thế không sinh ra những điểm không thể tồn tại~\autocite{p29causalshap}. Đây là
+cùng một $v(S)$ của chương~\ref{ch:shap} với một quy tắc điền khác, chứ không
+phải một đại lượng mới, nên sách giữ chữ cũ và thêm chỉ số dưới.
+
+\index{cường độ nhân quả}%
+Bước thứ hai chiết khấu điểm số theo
+\tn{cường độ nhân quả}{causal strength}. Thuật toán IDA, viết tắt
+của intervention calculus when the DAG is absent, ước lượng tổng hiệu ứng nhân
+quả $W_i$ của từng đặc trưng lên biến mục tiêu, và bước ấy cần một thứ mà PC
+không cho: PC trả về đồ thị chứ không trả về độ mạnh của từng cạnh. IDA lấp chỗ
+ấy bằng hồi quy, ước lượng trọng số của mỗi cạnh từ dữ liệu, rồi nhân các trọng
+số dọc theo từng đường đi từ đặc trưng tới mục tiêu và cộng các đường lại. Hai
+thuật toán vì thế chạy nối nhau chứ không độc lập. Bài đặt một hệ số tỉ lệ với
+$\lvert W_i\rvert$ đã chuẩn hóa và nhân nó vào trọng số Shapley, nên một đặc
+trưng không có đường đi nào tới mục tiêu nhận hệ số bằng
+không~\autocite{p29causalshap}. Sách viết hệ số ấy là $\lambda_i$; bài viết
+$\gamma_i$, chữ mà chương~\ref{ch:khung-hop-nhat} đã cấp cho \tn{attribution
+thành phần}{component attribution}.
+
+Phép nhân ấy phá mất độ chính xác cục bộ, nên bước dọn dẹp là chuẩn hóa lại
+tổng các điểm số về đúng hiệu giữa dự đoán tại $x$ và dự đoán trung
+bình~\autocite{p29causalshap}. Bước chuẩn hóa này nhỏ và dễ lướt qua, nhưng nó
+là chỗ mà phần đánh giá lý thuyết của bài mắc, nên nó được nêu ra ở đây trước
+khi tới đó.
+
+\index{Causal SHAP!ba định lý}%
+Bài chứng minh rằng ba tính chất của định nghĩa~\ref{def:ch04-ba-tinh-chat} vẫn
+còn. Hai trong ba chứng minh đứng vững và một thì không, nên phải tách ra.
+
+Độ chính xác cục bộ đúng, và đúng vì bước chuẩn hóa đặt nó vào bằng định nghĩa:
+chứng minh của bài là một dòng ước lược~\autocite{p29causalshap}. Tính chất ấy
+vì thế không phải một tính chất mà phép dựng giành được, mà là một tính chất
+được áp đặt, và đọc nó như bằng chứng rằng phép dựng đúng là đọc sai.
+
+\index{Causal SHAP!định lý tính vắng mặt}%
+\tn{Tính vắng mặt}{missingness} thì bài phát biểu một đằng và chứng minh một nẻo. Ở phần nêu ba
+tính chất, bài viết tính vắng mặt theo nghĩa quen thuộc, rằng một đặc trưng
+thiếu giá trị phải nhận điểm số bằng không. Định lý mà bài chứng minh nói rằng
+một đặc trưng không nằm trong đồ thị nhân quả, hoặc nằm trong đồ thị mà không
+có đường đi tới biến mục tiêu, thì nhận điểm số bằng
+không~\autocite{p29causalshap}. Chứng minh ấy đúng với điều nó phát biểu, và
+điều nó phát biểu không phải tính vắng mặt: vắng mặt khỏi đồ thị nhân quả không
+phải vắng mặt của một giá trị đặc trưng. Sách ghi cả hai và không nhận rằng
+tiên đề đã được giữ lại.
+
+\index{Causal SHAP!tính nhất quán không sống sót phép chuẩn hóa}%
+\tn{Tính nhất quán}{consistency} là chỗ nặng nhất. Bài chứng minh nó cho điểm số trước chuẩn hóa,
+rồi viết một câu rằng dễ thấy hai định lý sau cũng đúng cho điểm số đã chuẩn
+hóa~\autocite{p29causalshap}. Với tính vắng mặt thì đúng thật, vì kết luận là
+số không và số không sống sót mọi phép nhân với số dương. Với tính nhất quán
+thì không. Tính nhất quán là một phát biểu so hai mô hình $f$ và $f'$, còn hệ
+số chuẩn hóa lại phụ thuộc vào mô hình, vì nó chứa $f(x)$ và tổng các điểm số
+chưa chuẩn hóa của chính mô hình ấy. Hai vế của bất đẳng thức vì thế bị nhân
+với hai hệ số khác nhau, nên bất đẳng thức trước chuẩn hóa không kéo theo bất
+đẳng thức sau chuẩn hóa. Nói gọn lại: đúng bước mua được độ chính xác cục bộ là
+bước làm mất tính nhất quán, và bài không thấy chỗ đánh đổi ấy vì nó gộp hai
+định lý vào một câu.
+
+\index{Causal SHAP!ground truth tổng hợp}%
+Phần thí nghiệm chia làm hai nửa, và nửa thứ nhất là đường dựng ground truth
+thứ hai mà mục~\ref{sec:ch14-ground-truth-ke-tan-cong} đã hẹn. Hai bộ dữ liệu
+tổng hợp, một bộ về nguy cơ ung thư phổi và một bộ về nguy cơ tim mạch, đều do
+bài tự sinh ra từ các phương trình mà bài viết ra: nguy cơ ung thư phổi bằng
+hai lần mức hút thuốc cộng 1.2 lần mức căng thẳng cộng nhiễu, và ở bộ kia thì
+chỉ số khối cơ thể đứng giữa như một biến gây nhiễu chung. Quan hệ nhân quả
+trong dữ liệu vì thế là quan hệ do chính các tác giả đặt
+vào~\autocite{p29causalshap}. Giá trị tham chiếu để so thì lấy bằng cách chạy
+SHAP trên một tập đặc trưng đã rút gọn, chỉ gồm những đặc trưng có đường nhân
+quả trực tiếp tới mục tiêu~\autocite{p29causalshap}.
+
+Chỗ ấy đáng dừng lại một câu. Cái được gọi là ground truth ở đây không phải một
+đại lượng độc lập với phương pháp đang được chấm; nó là kết quả của chính SHAP,
+chạy trên tập đặc trưng mà người thí nghiệm đã chọn sẵn là tập đúng. Vậy phép
+đánh giá hỏi một câu hẹp hơn câu nó có vẻ hỏi: nó hỏi mỗi biến thể có tiến gần
+tới SHAP-trên-những-đặc-trưng-đúng hay không, chứ không hỏi biến thể ấy có phản
+ánh đúng mô hình hay không.
+
+\index{Causal SHAP!cột nhãn sai}%
+Năm mốc so sánh mà bài chọn đều là biến thể của SHAP chứ không có LIME:
+Independent SHAP, KernelSHAP, On Manifold SHAP, Shapley Flow và
+ASV~\autocite{p29causalshap}. Trong phạm vi câu hỏi hẹp ở trên thì Causal SHAP
+thắng, và cột số dùng để tuyên bố điều đó có một chỗ sai mà sách kiểm ra được.
+
+Bài in một cột nhãn là RMSE, tức căn của trung bình bình phương sai lệch so với
+giá trị tham chiếu, và Causal SHAP đạt 0.0167 trên bộ ung thư phổi so với
+1.6357 của Independent SHAP đứng ngay sau~\autocite{p29causalshap}. Dựng lại
+phép tính từ chính các ô trong bảng thì con số ấy không phải một RMSE mà là
+tổng bình phương sai lệch, chưa chia cho số đặc trưng và chưa lấy căn. Trên bộ
+ung thư phổi, hai đặc trưng có giá trị tham chiếu là hút thuốc và căng thẳng.
+Independent SHAP chấm chúng 3.9467 và 0.1031 so với hai giá trị tham chiếu
+5.2171 và 0.2507, nên hai sai lệch là $-1.2704$ và $-0.1476$; tổng bình phương
+của chúng bằng 1.6357, đúng tới chữ số thập phân thứ tư của ô đã in, trong khi
+căn của trung bình bình phương thì bằng 0.9044 và không khớp ô nào. Cách đọc ấy
+dựng lại mười một trong mười hai ô của bảng, mỗi ô đúng trong phạm vi sai số mà
+bốn chữ số thập phân cho phép sau khi bình phương, và hai ô thì đúng trọn bốn
+chữ số. Mười một lần khớp như vậy không còn là trùng hợp.
+
+Đúng một ô không dựng lại được: Shapley Flow ở khối ung thư phổi, bảng in
+8.8037 còn phép tính cho 9.3459. Sách nêu nó ra và dừng ở đó, vì mọi cách đọc
+khác đã thử đều không cho ra con số của bảng. Chỗ ấy không kéo theo gì cả: cái
+nhãn sai không đổi kết luận nào, bởi tổng bình phương và căn của trung bình
+bình phương là hai hàm đồng biến của nhau, nên mọi thứ tự trong bảng giữ nguyên
+dưới cả hai cách đọc và Causal SHAP vẫn thấp nhất ở cả hai bộ. Đây đúng là
+trường hợp mà chương~\ref{ch:gioi-han-ly-thuyet} đã phải học một lần: một phép
+suy luận hỏng cho phép bác phép suy luận ấy chứ không cho phép bác kết luận.
+
+\index{insertion!dùng để chấm điểm phép sửa}%
+Nửa thứ hai của phần thí nghiệm chạy trên hai bộ dữ liệu y sinh thật, một bộ về
+hội chứng ruột kích thích và một bộ về ung thư đại trực tràng, và ở đó không
+còn giá trị tham chiếu nào, nên bài phải mượn một dụng cụ đo. Dụng cụ nó mượn
+là insertion: thêm dần các đặc trưng từ quan trọng nhất tới ít quan trọng nhất
+theo thứ hạng mà mỗi phương pháp đưa ra, rồi đo AUROC, cross entropy và điểm
+Brier ở từng bước~\autocite{p29causalshap}. Causal SHAP đạt AUROC 0.8594 trên
+bộ thứ nhất và 0.6271 trên bộ thứ hai, cao nhất ở cả hai. Trên bộ thứ hai nó
+cũng đứng đầu ở hai chỉ số còn lại; trên bộ thứ nhất thì On Manifold SHAP hơn
+nó một chút ở cả cross entropy lẫn điểm Brier, chênh nhau ở chữ số thập phân
+thứ tư~\autocite{p29causalshap}.
+
+Bài gọi insertion là một chỉ số chuẩn dùng để đánh giá attribution đặc
+trưng~\autocite{p29causalshap}, và chữ \enquote{chuẩn} ấy đúng theo nghĩa nhiều
+người dùng. Nó không đúng theo nghĩa đã được kiểm định, và cả
+chương~\ref{ch:do-do-trung-thuc} lẫn
+chương~\ref{ch:chi-so-khong-do-do-trung-thuc} tồn tại để tách hai nghĩa ấy ra.
+Vậy phép sửa duy nhất trong chương này, ở nửa thí nghiệm duy nhất chạy trên dữ
+liệu thật, được chấm điểm bằng đúng loại dụng cụ mà Phần~IV vừa dành sáu chương
+để nói là chưa ai kiểm.
+
+\index{Causal SHAP|)}%
