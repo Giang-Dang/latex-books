@@ -18,13 +18,14 @@ Thừa số $x_i-x_{0i}$ biến độ dốc thành phần thay đổi theo tọa
 phương trình~\ref{eq:ch05-integrated-gradients} không đọc riêng độ dốc ở $x$;
 nó cộng các độ dốc gặp trên cả hành trình từ $x_0$ đến $x$.
 
-Tích phân ấy tính được bằng tay trên ví dụ mà hai chương trước đã dùng. Vẫn
-$f(x_1,x_2) = x_1 + 2x_2 + x_1x_2$, vẫn $x = (1,1)$, và lấy $x_0 = (0,0)$ làm
+Tích phân ấy tính được bằng tay trên ví dụ mà hai chương trước đã dùng. Ở đó
+đầu ra cần giải thích chính là giá trị của hàm, nên $F$ trùng với $f$ của ví dụ:
+$F(x_1,x_2) = x_1 + 2x_2 + x_1x_2$, vẫn $x = (1,1)$, và lấy $x_0 = (0,0)$ làm
 baseline. Đoạn thẳng giữa hai điểm là $(\alpha,\alpha)$, và trên đoạn ấy
 \[
-  \frac{\partial f}{\partial x_1} = 1 + x_2 = 1 + \alpha,
+  \frac{\partial F}{\partial x_1} = 1 + x_2 = 1 + \alpha,
   \qquad
-  \frac{\partial f}{\partial x_2} = 2 + x_1 = 2 + \alpha .
+  \frac{\partial F}{\partial x_2} = 2 + x_1 = 2 + \alpha .
 \]
 Thừa số $x_i - x_{0i}$ bằng 1 cho cả hai tọa độ, nên
 \[
@@ -32,7 +33,7 @@ Thừa số $x_i - x_{0i}$ bằng 1 cho cả hai tọa độ, nên
   \qquad
   \operatorname{IG}_2 = \int_0^1 (2+\alpha)\,d\alpha = \frac{5}{2},
 \]
-và tổng bằng $4$, đúng bằng $f(x) - f(x_0)$.
+và tổng bằng $4$, đúng bằng $F(x) - F(x_0)$.
 
 Đặt cạnh đó gradient đọc riêng tại $x$, tức $(1 + x_2,\, 2 + x_1) = (2,3)$, tổng
 bằng 5. Con số 5 ấy không phải một phép tính sai: nó trả lời câu hỏi đầu ra đổi
@@ -57,12 +58,17 @@ $[0,1]$. Khi đó tổng các attribution Integrated Gradients bằng chênh l�
 \end{equation}
 \end{proposition}
 
-Mệnh đề~\ref{prop:ch05-tinh-day-du} là \tn{tính đầy đủ}{completeness}. Nó là
-định lý cơ bản của giải tích Lebesgue áp cho đường đi trong không gian đầu
-vào. Hai giả thiết chia nhau hai việc: tính khả vi hầu khắp nơi cho phép viết
-$g'$ theo các đạo hàm riêng của $F$, còn liên tục tuyệt đối là điều kiện đủ
-để $\int_0^1 g'$ bằng $g(1)-g(0)$.
+Mệnh đề~\ref{prop:ch05-tinh-day-du} là \tn{tính đầy đủ}{completeness}, và hai
+giả thiết của nó chia nhau hai việc. Tính khả vi hầu khắp nơi cho phép viết $g'$
+theo các đạo hàm riêng của $F$. Liên tục tuyệt đối là điều kiện đủ để
+$\int_0^1 g'$ bằng $g(1)-g(0)$; đọc thô thì nó đòi $g$ không được tích lũy thay
+đổi trên một tập nhỏ tới mức đạo hàm không nhìn thấy, và với một mạng nơ-ron
+thông thường thì điều kiện ấy luôn thỏa. Người đọc chỉ cần chừng ấy để dùng
+mệnh đề.
+
 \paragraph{Đọc sâu: vì sao điều kiện phải là liên tục tuyệt đối.}
+Phát biểu đầy đủ của mệnh đề là định lý cơ bản của giải tích Lebesgue áp cho
+đường đi trong không gian đầu vào.
 Phần còn lại của mục này kiểm lại giả thiết của mệnh đề và không cần thiết để
 dùng Integrated Gradients; người đọc muốn đi thẳng sang cách chọn baseline có
 thể sang mục~\ref{sec:ch05-baseline} rồi quay lại. Điều cần mang theo là

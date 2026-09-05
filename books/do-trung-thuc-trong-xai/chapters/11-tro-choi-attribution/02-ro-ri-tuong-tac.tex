@@ -62,20 +62,24 @@ Shapley bậc nhất vì thế bằng
 Tương tác đã chia đôi ngay ở bước này, và đó là điều một phương pháp bậc nhất
 buộc phải làm: nó chỉ có hai chỗ để đặt một số.
 
-Phép nối tầng lấy $\varphi_1$ vừa tính và coi nó như một hàm mới của cùng hai
-đặc trưng, rồi chạy lại giá trị Shapley trên nó. Che đặc trưng thứ hai trong
-$\varphi_1 = x_1 + x_1x_2^2/2$ để lại $x_1$; che đặc trưng thứ nhất để lại
-không. Nên bốn liên minh của trò chơi tầng hai có giá trị $0$, $x_1$, $0$ và
+Phép nối tầng của phương trình~\ref{eq:ch11-noi-tang} lấy $\varphi_1$ vừa tính
+và coi nó như một hàm mới của cùng hai đặc trưng, rồi chạy lại giá trị Shapley
+trên nó. Che đặc trưng thứ hai trong
+$\varphi_1(\cdot,f) = x_1 + x_1x_2^2/2$ để lại $x_1$; che đặc trưng thứ nhất để
+lại không. Nên bốn liên minh của trò chơi tầng hai có giá trị $0$, $x_1$, $0$ và
 $x_1 + T/2$, và
 \[
-  \psi_1 = x_1 + \frac{T}{4}, \qquad \psi_2 = \frac{T}{4} .
+  \varphi_1\bigl(x,\ \varphi_1(\cdot,f)\bigr) = x_1 + \frac{T}{4},
+  \qquad
+  \varphi_2\bigl(x,\ \varphi_1(\cdot,f)\bigr) = \frac{T}{4} .
 \]
 Đó là chỗ rò mà bảng ghi lại: thành phần được gán cho đặc trưng thứ hai bên
 trong attribution của đặc trưng thứ nhất bằng $T/4$, dù hiệu ứng riêng của đặc
 trưng thứ hai bằng không. Tại $x = (1,1)$ thì $T = 1$, nên hai số ấy là $1.25$
 và $0.25$.
 
-Meta-SV chia khác. Nó tách hiệu ứng riêng $x_1$ và $0$ ra khỏi tương tác, rồi
+Meta-SV, phương pháp mà mục~\ref{sec:ch11-tro-choi-dung-tren-attribution} đọc
+kỹ, chia khác. Nó tách hiệu ứng riêng $x_1$ và $0$ ra khỏi tương tác, rồi
 chia phần tương tác thành hai nửa $T/2$ và $T/2$ theo hai chiều, nên tại
 $x = (1,1)$ phần riêng là $1$ và mỗi chiều tương tác là $0.5$. Hai cách chia
 cùng cộng lại bằng $f(x)$; cái khác nhau là tương tác được ghi vào một ô riêng

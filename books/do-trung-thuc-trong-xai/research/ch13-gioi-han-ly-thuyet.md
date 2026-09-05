@@ -276,6 +276,15 @@ a plain $\delta$, described in words as a threshold chosen small.
 
 ## Four places the paper does not support itself
 
+**A fifth was found on 2026-09-05, in the proof of theorem 3.4 itself, and it
+changes what entry 3 below concludes.** This note calls theorem 3.4 "a valid
+lower bound" and builds on it in two places. The statement is fine; the paper's
+proof of it is not, and once it is replaced the bounds in entry 3 turn out to
+match after all, so the chapter's rebuttal of remark 3.5 was an overcorrection.
+Both the defect and the replacement argument are in
+`research/ch01-13-reading-flow.md`, and the decision log carries them as
+decisions 66 and 62c. Read that file alongside entry 3 below.
+
 Recorded so the next session does not re-derive them, and because decision 40
 set the standard: a textbook that cites propositions by number cannot print one
 that is false.
@@ -383,12 +392,24 @@ p. 24, and remark 3.5 rests on the p. 24 side.
 **What this costs the chapter.** A first draft of section 13.4 printed "chặn
 trên và chặn dưới vì thế khớp nhau tới hằng số: số mũ theo $d$ là bản chất của
 bài toán chứ không phải của cách dựng", unattributed, and section 13.6 and the
-tomtat repeated it. All three are now corrected: the chapter states both bounds
-in the budget variable, names remark 3.5 as the paper's claim, declines it, and
-draws the narrower conclusion that the curse of dimensionality here is a property
-of the grid construction rather than something proved unavoidable. This is
-decision 62's class, and it is the third instance of it in one paper after
-corollary 3.8 and theorem 3.15's comparison.
+tomtat repeated it. All three were corrected in that session: the chapter stated
+both bounds in the budget variable, named remark 3.5 as the paper's claim,
+declined it, and drew the narrower conclusion that the curse of dimensionality
+here is a property of the grid construction rather than something proved
+unavoidable. This is decision 62's class, and it is the third instance of it in
+one paper after corollary 3.8 and theorem 3.15's comparison.
+
+**Superseded 2026-09-05, and the correction is the interesting part.** The
+critique of proposition 3.6's `N ~ 2^k` step above stands. The narrower
+conclusion drawn from it does not. Theorem 3.4's own proof turned out to be
+invalid too, and replacing it with a packing argument gives
+`kappa_f(delta) = Omega((L/delta)^d)`, which matches theorem 3.2's upper bound in
+the exponent. So the curse of dimensionality *is* intrinsic in the worst case,
+remark 3.5's conclusion is right even though its route is not, and the chapter
+now says so. **Having caught the paper printing an unsupported claim, that
+session rejected the claim rather than only its derivation, and nothing in the
+drafting or the audit caught the overcorrection because it read as caution.**
+Full derivation in `research/ch01-13-reading-flow.md`; decisions 66 and 62c.
 
 ### 4. Lemma 2.21's second case assumes a hypothesis the lemma does not have
 

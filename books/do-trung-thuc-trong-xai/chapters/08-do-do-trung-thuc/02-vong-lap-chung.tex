@@ -54,8 +54,8 @@ kiểm tra, hay một đại lượng đo sau khi đã huấn luyện lại mô 
 Ba lựa chọn ấy nhân với nhau, và mỗi tổ hợp là một chỉ số có tên riêng trong
 tài liệu. Đó là lý do bốn mục tiếp theo xếp các chỉ số theo họ chứ không theo
 tên: đọc theo tên thì chúng là một danh sách rời rạc, còn đọc theo ba ô viền đứt
-thì chỉ có vài họ, và sự khác nhau giữa hai họ luôn quy về việc chúng điền gì
-vào ba ô ấy.
+thì hai họ đầu gọn lại thành vài biến thể, và sự khác nhau giữa chúng quy về
+việc chúng điền gì vào ba ô ấy.
 
 Một hệ quả cần ghi ngay, vì nó là hình thức tổng quát của lời phê phán mà cả
 Phần~IV sẽ triển khai. Không ô nào trong ba ô có một cách điền đúng theo nghĩa
@@ -75,8 +75,9 @@ chúng lớn thì nghĩa là tốt hay xấu, và cuối cùng chúng trả về
   \footnotesize
   \caption{Bốn họ chỉ số của chương này. Chỉ hai họ đầu đi qua vòng lặp ở
   hình~\ref{fig:ch08-vong-lap-do}, vì chỉ hai họ ấy cần một thứ tự trên các đặc
-  trưng. Cột \enquote{số thô lớn} nói chiều đọc trước khi chuẩn hóa, và nó
-  không cùng chiều giữa các họ, nên một con số trần không tự nói lên điều gì.}
+  trưng. Cột \enquote{số thô lớn} nói chiều đọc trước khi chuẩn hóa; nó không
+  cùng chiều giữa các họ, không cùng chiều ngay trong họ xóa dần, và với họ cuối
+  thì không có số nào để đọc. Một con số trần vì vậy không tự nói lên điều gì.}
   \label{tab:ch08-bon-ho}
   \begin{tabular}{@{}p{2cm}p{3cm}p{3cm}p{3cm}p{2cm}@{}}
     \toprule
@@ -84,22 +85,26 @@ chúng lớn thì nghĩa là tốt hay xấu, và cuối cùng chúng trả về
     \midrule
     Xóa dần & Tập con các đặc trưng, chọn theo thứ hạng &
     Đầu ra trước và sau khi che &
-    Tùy chiều xóa: xóa từ cao xuống thì lớn là xấu &
-    Một đường cong và diện tích dưới nó \\
+    Không cùng chiều trong họ: diện tích deletion nhỏ là tốt, còn
+    comprehensiveness lớn là tốt &
+    Một đường cong và diện tích dưới nó với deletion và insertion; một hiệu số
+    với hai chỉ số của ERASER \\
     \addlinespace
     Huấn luyện lại & Tập đặc trưng, rồi huấn luyện lại mô hình &
-    Độ chính xác của mô hình cũ và mô hình mới &
+    Độ chính xác sau khi bỏ theo thứ hạng và sau khi bỏ theo thứ tự ngẫu nhiên &
     Lớn là tốt cho lời giải thích &
     Một mức tụt độ chính xác \\
     \addlinespace
-    Tiên đề & Mọi tập con cỡ $n$, không xếp hạng &
+    Tiên đề & Mọi tập con cỡ $n$ với Sensitivity-n; một phép nhiễu rút từ
+    $\mu_I$ với infidelity. Không xếp hạng &
     Tổng attribution và chênh lệch đầu ra &
-    Lớn là xấu, vì đây là sai lệch &
-    Một sai số hoặc một hệ số tương quan \\
+    Với infidelity, lớn là xấu, vì đây là sai lệch &
+    Một sai số với infidelity; với Sensitivity-n là mức khớp giữa hai đại lượng
+    ấy \\
     \addlinespace
     Điều kiện cần & Trọng số mô hình hoặc nhãn huấn luyện &
     Lời giải thích trước và sau khi ngẫu nhiên hóa &
-    Lớn là xấu: giống nhau nghĩa là không phụ thuộc mô hình &
+    Không có số thô: hai kết quả giống nhau là hỏng, khác nhau là qua &
     Đạt hoặc không đạt, không phải một thứ hạng \\
     \bottomrule
   \end{tabular}

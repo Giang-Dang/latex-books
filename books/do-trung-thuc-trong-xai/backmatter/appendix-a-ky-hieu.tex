@@ -30,6 +30,7 @@ $z'$ & Một biểu diễn đã nhiễu dùng để lấy mẫu & $z'$ & Liên m
 $z$ & Đầu vào gốc được dựng lại từ $z'$ & $z$ & - & - & - \\
 $g$ & Mô hình giải thích dễ đọc, nhận một đầu vào và trả một dự đoán & $g$ & $g$ & - & - \\
 $\mathcal{A}_{f,x}$ & Hàm attribution của định nghĩa~\ref{def:ch07-ham-attribution}, nhận một đối tượng trong $E$ và trả một điểm số; với $\mathcal{G}$ tuyến tính thì các điểm số ấy là hệ số của $g$ & - & - & - & - \\
+$\Lambda$ & Chặn trên của độ cong trong khai triển Taylor ở chương~\ref{ch:attribution-tu-nguyen-ly-dau}, tức của chuẩn ma trận đạo hàm bậc hai. Không dùng $M$, vì $M$ ở trên đã thuộc về số đặc trưng trong biểu diễn giải thích & - & - & - & - \\
 $\pi_x$ & Hàm nhân cho trọng số & $\pi_x$ & $\pi_{x'}$ & - & - \\
 $\mathcal{Z}$ & Tập mẫu cùng đầu ra và trọng số & $\mathcal{Z}$ & $Z$ & - & - \\
 $S$ & Một liên minh đặc trưng & - & $S$ & - & - \\
@@ -52,7 +53,7 @@ $\mu_{j,x}$ & Độ đo chọn cách lấy trung bình cho đặc trưng $j$ t�
 $E$ & Tập đối tượng mà một hàm attribution gán điểm: đặc trưng, điểm huấn luyện hoặc thành phần & - & - & - & - \\
 $\mathcal{D}_{\mathrm{train}}$ & Tập dữ liệu huấn luyện & - & - & - & - \\
 $\theta^{*}$ & Tham số của mô hình sau huấn luyện & - & - & - & - \\
-$\mathcal{L}(x,\theta)$ & Mất mát của mô hình với tham số $\theta$ tại một điểm $x$; $\nabla_{\theta}$ là gradient theo tham số & - & - & - & - \\
+$\mathcal{L}(x,\theta)$ & Mất mát của mô hình với tham số $\theta$ tại một điểm $x$; $\nabla_{\theta}$ là gradient theo tham số. Chương~\ref{ch:lime} dùng cùng chữ cho một đối tượng khác, $\mathcal{L}(f,g,\pi_x)$, hàm mất mát cục bộ có trọng số của LIME; hai cách dùng tách nhau bằng bộ đối số và không gặp nhau trong một chương nào & - & - & - & - \\
 $\psi_i(x)$ & Attribution của điểm huấn luyện thứ $i$ tại đầu vào $x$ & - & - & - & - \\
 $c_k$ & Một thành phần bên trong mô hình & - & - & - & - \\
 $\gamma_k(x)$ & Attribution của thành phần $c_k$ tại đầu vào $x$ & - & - & - & - \\

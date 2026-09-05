@@ -3,9 +3,12 @@
 
 \index{KernelSHAP}%
 Sau khi đã chọn cách gán giá trị cho liên minh, ta vẫn phải tính các
-\tn{giá trị Shapley}{Shapley value} đó. Khi có $M$ đặc trưng,
-phương trình~\ref{eq:ch04-gia-tri-shapley} đòi hỏi xem nhiều
-liên minh. KernelSHAP viết cùng bài toán ấy dưới dạng hồi quy có trọng số: nó
+\tn{giá trị Shapley}{Shapley value} đó. Khi có $M$ đặc trưng, tổng trong
+phương trình~\ref{eq:ch04-gia-tri-shapley} chạy trên mọi tập con của $M-1$ đặc
+trưng còn lại, tức $2^{M-1}$ số hạng cho mỗi đặc trưng. Với hai đặc trưng thì
+đó là hai số hạng và tính tay được, như mục~\ref{sec:ch04-tro-choi-chia-gia-tri}
+đã làm; với hai mươi đặc trưng thì đã là hơn nửa triệu, và mỗi số hạng còn cần
+một lần gọi mô hình. KernelSHAP viết cùng bài toán ấy dưới dạng hồi quy có trọng số: nó
 khớp mô hình của phương trình~\ref{eq:ch04-mo-hinh-cong-tinh} vào các giá trị
 $f_x(z')$ trên các liên minh $z'$ bằng bình phương tối thiểu có trọng số, tức
 cực tiểu hóa $\sum_{z'}\pi_{x'}(z')\,[f_x(z')-g(z')]^2$, trong đó trọng số
@@ -36,7 +39,12 @@ liên minh đưa vào hồi quy trước hết phải được gán giá trị b
 mục~\ref{sec:ch04-gia-tri-lien-minh-va-phan-phoi-nen}. Vì vậy,
 KernelSHAP không loại bỏ giả định về dữ liệu; hàm nhân Shapley chỉ bảo đảm
 rằng, với các giá trị liên minh đã cho, phép hồi quy trả về đúng cách chia mà
-phương trình~\ref{eq:ch04-gia-tri-shapley} định nghĩa.
+phương trình~\ref{eq:ch04-gia-tri-shapley} định nghĩa. Bảo đảm ấy là bảo đảm khi
+hồi quy chạy trên toàn bộ $2^M$ liên minh. Trong thực hành người ta lấy mẫu một
+phần, và bài báo xếp KernelSHAP vào nhóm phương pháp xấp xỉ không phụ thuộc mô
+hình, với ưu điểm là cần ít lần gọi mô hình hơn để đạt cùng mức chính
+xác~\autocite{p10shap}. Vậy con số nhận được là một ước lượng, và số liên minh
+được lấy mẫu là một lựa chọn nữa của người dùng.
 
 \begin{figure}[htbp]
   \centering

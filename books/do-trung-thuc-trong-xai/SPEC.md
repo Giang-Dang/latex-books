@@ -118,9 +118,37 @@ conclusion.** The rest was reading path rather than correctness. Chapters 01 to
 five of them; four chapters reached for maths the book had not built, so each
 now builds it just before it is needed; and chapter 01 states what it assumes
 the reader knows. The dash-convention open item closed on the way past
-(decision 67). The 2026-09-05 build is 172 pages against the 162 of 2026-09-04,
+(decision 67).
+
+**Four cold auditors read the thirteen chapters in four groups, and the
+session's own additions were where most of the findings landed.** That is worth
+recording plainly, because the pass was a correction pass and it introduced
+defects of exactly the kind it was correcting. Chapter 09's second worked
+labelling case was built on a multiple-choice question, which is the one design
+the diversionary setting excludes and which section 9.3 says so on the page.
+Chapter 08's scoping of the measurement loop was made in section 8.2 and not
+propagated, so four later passages went on asserting what 8.2 had just denied,
+and three cells of the new table 8.1 were wrong about direction or return type.
+The three-factor reading of the influence function in chapter 07 swapped loss
+for prediction, curvature for steepness, and up-weighting for down-weighting.
+The measure ladder in chapter 06 concluded countable additivity from a finite
+cut. Chapter 13's packing bound, which is existential, was restated
+universally two paragraphs after it was derived. Chapter 11's derivation
+introduced a symbol that decision 58 had deliberately refused, and appendix A
+had already bound to something else. All are fixed. **The general lesson, and
+it is the same one decision 62c records at the level of argument: a session
+that has just found an error is at its least suspicious of the fix.**
+
+Three findings were checked and rejected. The Collatz framing of the first
+labelling case is consistent with section 9.3's own description of bottleneck
+steps, so it stays. `nhãn đúng` in section 8.6 refers to a dataset's correct
+labels rather than to explanation ground truth, which is not what the Cohesion
+ledger's rule is about. And the `đáp án đúng` slip reported in section 8.1 does
+not appear in the file.
+
+The 2026-09-05 build is 174 pages against the 162 of 2026-09-04,
 no overfull boxes, no undefined references, prose gate clean, and the rendered
-pages inspected. Those ten pages are worked examples, four maths ladders and
+pages inspected. Those twelve pages are worked examples, four maths ladders and
 three tables, added to chapters that were already drafted; they are the first
 increase in this book that did not come from reading another paper, and the
 length open item below should read them that way rather than as a sixth data
@@ -208,7 +236,7 @@ settled row is re-opened only by recording what changed and why, in the row.
 | 65 | **`Độ khớp`, `độ trung thực`, `tính hợp lý` and `tính ổn định` are four relations and the book states them once, in a table** | Chapter 10 had said the survey's fidelity group *is* definition 1.2 applied to a local surrogate, while chapter 13 kept output error separate from definition 1.2. Both sentences were defensible on their own and they contradict each other, which is what a reader hits when the same Vietnamese word carries two relations. Settled by naming what each relation compares: `độ khớp` compares two outputs on a stated domain, `độ trung thực` compares an explanation with the behaviour's dependencies under a stated intervention set, `tính hợp lý` compares an explanation with a reader's judgement, `tính ổn định` compares two runs. Table 1.1 holds the four rows plus, for each, the inference it does not license; chapters 10 and 13 now cite that table instead of restating the relation. Decision 49 stands: it settled the *word*, and this row settles the *relation* the word names. |
 | 66 | **A source's proof can fail while its statement holds, and the book then supplies a proof rather than dropping the result** | Decision 62 covers a source claim the book declines to build on. Paper 26's theorem 3.4 is a different case and needed its own rule. Its statement is fine; its proof, p. 22-23, counts the functions of complexity at most `k` by lemma 2.9 and then reuses that count as the number of value regions of one such function, which the identity map refutes, and it fixes `g` before constructing `f`, which inverts the theorem's quantifier order. The book keeps the statement, prints the two defects in the reading-critically passage, and proves the result with a packing argument over bump functions that uses only the count lemma 2.9 does supply. The rule: where a source's statement survives its broken proof and an elementary argument is available, the book gives the argument as its own and says so, rather than either repeating the proof or discarding a true result. Where no such argument is available, decision 62 applies instead and the book declines. Derivation in `research/ch01-13-reading-flow.md`. |
 | 62c | **Decision 62b's third clause is superseded: the Lipschitz bounds do match, and the curse of dimensionality is intrinsic** | 62b concluded from the gap between `L*2^(-b/d)` and `L*b^(-1/d)` that remark 3.5 was wrong and that the exponential dependence on `d` was an artefact of the grid construction. The first half stands and the second does not. The packing argument of decision 66 gives `kappa_f(delta) = Omega((L/delta)^d)`, i.e. error `Omega(L*b^(-1/d))` at budget `b`, which matches theorem 3.2's upper bound in the exponent and differs from it by a logarithmic factor. So remark 3.5's conclusion is right and only its route is broken: it reads the conclusion off theorem 3.4, which is far too weak to carry it, and proposition 3.6's `N ~ 2^k` step remains a genuine error that the book still refuses. Sections 13.4, 13.6 and the tomtat are rewritten accordingly. **What this cost, and the lesson: the draft's overcorrection was as wrong as the claim it was correcting.** Having caught the paper printing an unsupported claim, the session rejected the claim itself rather than only its derivation, and no audit caught it because the rejection read as caution. A wrong derivation licenses rejecting the derivation, not the conclusion. |
-| 67 | **The dash convention is settled: dotted means missing, dashed means a free choice, and an operation arrow is solid with a label** | The open item recorded the survey and left the call. Dotted already meant "missing" in chapters 10 to 13 and nothing else. Dashed meant "a free choice" in chapters 08 and 13 and "the integration step" in chapter 05, which predates both. Settled the way that leaves the convention with no exceptions: figure 5.1's integration arrow becomes a solid arrow carrying the label `phép lấy giới hạn`, and its caption names the label instead of the stroke. The two senses of dashed are gone rather than documented, so chapter 13's caption now cites a convention that genuinely holds book-wide. No machine check backs this, per decision 22 and the survey's own finding that every candidate check either fires on the deliberate cases or never fires at all. |
+| 67 | **The dash convention is settled: dotted means missing, dashed means a free choice, and an operation arrow is solid with a label** | The open item recorded the survey and left the call. Dotted already meant "missing" in chapters 10 to 13 and nothing else. Dashed meant "a free choice" in chapters 08 and 13 and "the integration step" in chapter 05, which predates both. Settled the way that leaves the convention with no exceptions: figure 5.1's integration arrow becomes a solid arrow carrying the label `phép lấy giới hạn`, and its caption names the label instead of the stroke. The two senses of dashed are gone rather than documented, so chapter 13's caption now cites a convention that genuinely holds book-wide. No machine check backs this, per decision 22 and the survey's own finding that every candidate check either fires on the deliberate cases or never fires at all. Inspecting the rendered page for this change also turned up a pre-existing collision in the same figure, the Integrated Gradients box overlapping the Grad-CAM row, which no gate can see and which the vertical separation now fixes. **Worth keeping as a habit: the figure whose caption you are editing is the figure to look at on the page.** |
 | 68 | **Chapter 07's attribution function gets its own symbol** | The definition of the attribution function and the local-function-approximation surrogate both used `g`, and section 7.5 reconciled them by asserting they were "the same object". They are not: one maps the object set `E` to the reals, the other maps the input space to a prediction. The scores being the surrogate's coefficients is a relation that holds only when the interpretable class is linear. The attribution function becomes `\mathcal{A}_{f,x}`, with its domain written into the definition; `g` stays the surrogate; the relation is printed as an equation with its condition attached. Appendix A's row asserted the merge and is corrected. This reverses a call the appendix had recorded, which is what a decision row is for. |
 
 ## Version baseline

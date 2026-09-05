@@ -29,27 +29,29 @@ thế rẻ hơn, hoặc đổi trọng số của các tập con theo kích thư
 
 Kỹ thuật gradient vào nhánh này qua \tn{hàm ảnh hưởng}{influence function}, và
 câu hỏi nó trả lời phát biểu được trước khi có công thức nào. Ta muốn biết: nếu
-bỏ một điểm huấn luyện ra khỏi tập, thì dự đoán tại một điểm kiểm tra cụ thể sẽ
-đổi bao nhiêu? Cách trả lời thẳng là huấn luyện lại mà không có điểm ấy rồi so,
-tức leave-one-out, và cách ấy đúng nhưng phải huấn luyện lại một lần cho mỗi
-điểm dữ liệu. Hàm ảnh hưởng thay phép huấn luyện lại bằng một phép xấp xỉ đạo
-hàm: coi việc bỏ một điểm như việc hạ nhẹ trọng số của nó và hỏi nghiệm tối ưu
-trôi theo hướng nào.
+bỏ một điểm huấn luyện ra khỏi tập, thì \emph{mất mát} tại một điểm kiểm tra cụ
+thể sẽ đổi bao nhiêu? Chú ý đối tượng ở đây là mất mát chứ không phải dự đoán,
+nên câu hỏi chỉ đặt được ở một điểm kiểm tra đã biết nhãn. Cách trả lời thẳng là
+huấn luyện lại mà không có điểm ấy rồi so, tức leave-one-out, và cách ấy đúng
+nhưng phải huấn luyện lại một lần cho mỗi điểm dữ liệu. Hàm ảnh hưởng thay phép
+huấn luyện lại bằng một phép xấp xỉ đạo hàm: nó tính đạo hàm của nghiệm tối ưu
+theo trọng số của một điểm, rồi đọc việc bỏ điểm ấy như một bước nhỏ theo chiều
+giảm trọng số.
 
-Câu trả lời gồm ba thừa số, và đọc được từng cái một. Thừa số thứ nhất là
-gradient của mất mát tại điểm huấn luyện: nó nói hạ trọng số điểm ấy thì sức kéo
-lên tham số hướng về đâu. Thừa số thứ hai là nghịch đảo Hessian: Hessian đo độ
-cong của mặt mất mát tại nghiệm, nên nghịch đảo của nó biến một sức kéo thành
-một độ dịch thật sự, dịch nhiều theo những hướng mà mặt mất mát phẳng và dịch ít
-theo những hướng nó dốc. Thừa số thứ ba là gradient của mất mát tại điểm kiểm
-tra: nó nói tham số dịch theo hướng ấy thì dự đoán tại điểm kiểm tra đổi bao
-nhiêu. Nhân ba thứ lại là đi hết quãng đường từ một điểm huấn luyện tới một điểm
-kiểm tra qua bộ tham số.
+Đại lượng nhận được gồm ba thừa số, và đọc được từng cái một. Thừa số thứ nhất
+là gradient của mất mát tại điểm huấn luyện: nó nói tăng trọng số điểm ấy thì
+sức kéo lên tham số hướng về đâu. Thừa số thứ hai là nghịch đảo Hessian. Hessian
+đo độ cong của mặt mất mát tại nghiệm, nên nghịch đảo của nó biến một sức kéo
+thành một độ dịch thật sự: dịch nhiều theo những hướng mà mặt mất mát ít cong,
+vì ở đó nghiệm bị giữ lỏng, và dịch ít theo những hướng nó cong mạnh. Thừa số
+thứ ba là gradient của mất mát tại điểm kiểm tra: nó nói tham số dịch theo hướng
+ấy thì mất mát tại điểm kiểm tra đổi bao nhiêu. Nhân ba thứ lại là đi hết quãng
+đường từ một điểm huấn luyện tới một điểm kiểm tra qua bộ tham số.
 
-Viết ra thì như sau. Thay
+Thay
 vì huấn luyện lại khi bỏ một điểm, ta hỏi tham số tối ưu $\theta^{*}$ dịch
 chuyển thế nào khi tăng nhẹ trọng số của điểm đó trong hàm mất mát huấn luyện,
-và trả lời bằng khai triển Taylor bậc hai quanh $\theta^{*}$. Gọi
+và trả lời bằng khai triển Taylor bậc nhất quanh $\theta^{*}$. Gọi
 $\mathcal{L}(x,\theta)$ là mất mát của mô hình với tham số $\theta$ tại một
 điểm $x$, và $\nabla_{\theta}$ là gradient theo tham số, khác với gradient theo
 đầu vào mà Phần~II dùng. Khai triển cho thấy tăng trọng số của $x^{(i)}$ làm

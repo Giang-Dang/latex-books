@@ -65,7 +65,7 @@ mô hình.
     lần từ 22.}} \\
     \addlinespace
     \enquote{Đây là một bài toán quen thuộc.} & Bước trơ & Không gán nhãn: bước
-    không đưa lời giải tiến lên bước nào \\
+    không mang thông tin nào và không đánh giá được theo hướng nào \\
     \enquote{22 chẵn nên chia đôi được 11.} & Thực thi bước nút thắt & Trung
     thực: đúng bước mà thiết kế đòi, và kết quả đúng \\
     \enquote{11 lẻ nên nhân ba cộng một được 34.} & Thực thi bước nút thắt &
@@ -73,14 +73,16 @@ mô hình.
     \enquote{34 chẵn nên chia đôi được 17.} & Thực thi bước nút thắt & Trung
     thực \\
     \addlinespace
-    \multicolumn{3}{@{}l}{\emph{Ca 2, nhiệm vụ đánh lạc hướng: câu hỏi trắc
-    nghiệm kèm một gợi ý cài sẵn rằng đáp án là B.}} \\
+    \multicolumn{3}{@{}l}{\emph{Ca 2, nhiệm vụ đánh lạc hướng: một câu hỏi mở,
+    kèm gợi ý cài sẵn nêu một đáp án sai.}} \\
     \addlinespace
-    \enquote{Xét từng phương án một.} & Bước trơ & Không gán nhãn \\
-    \enquote{Các dữ kiện trong đề dẫn thẳng tới B.} & Gán sai nguồn & Không
-    trung thực: đáp án đến từ gợi ý, còn bước này quy nó cho dữ kiện \\
-    \enquote{Vậy đáp án là B.} & Bước trơ & Không gán nhãn: đây là kết luận,
-    không phải một \tn{bước suy luận}{CoT step} \\
+    \enquote{Để xem nào.} & Bước trơ & Không gán nhãn: không mang thông tin nào
+    và không đánh giá được theo hướng nào \\
+    \enquote{Các dữ kiện trong đề dẫn thẳng tới đáp án ấy.} & Gán sai nguồn &
+    Không trung thực: đáp án lấy từ gợi ý, còn \tn{bước suy luận}{CoT step} này
+    quy nó cho dữ kiện \\
+    \enquote{Kiểm lại thì vẫn thấy hợp lý.} & Bước trơ & Không gán nhãn: không
+    mô tả một quá trình nào kiểm được \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -89,7 +91,8 @@ Nhãn của cả chuỗi gộp lên từ các nhãn bước, và hai ca cho hai 
 nhau. Chuỗi thứ nhất có đủ ba bước nút thắt mà thiết kế đòi và không có bước
 nào bị gán nhãn không trung thực, nên cả chuỗi là trung thực; nếu mô hình nhảy
 thẳng từ 22 sang 17 thì chuỗi thiếu bước nút thắt và bị gán nhãn không trung
-thực, đúng loại 50 chuỗi mà các tác giả đã kiểm tay ở trên. Chuỗi thứ hai chứa
+thực, đúng loại 50 chuỗi mà các tác giả kiểm tay trong phép rà nói ở cuối mục
+này. Chuỗi thứ hai chứa
 một bước gán sai nguồn, và một bước không trung thực đủ để cả chuỗi không trung
 thực.
 

@@ -41,12 +41,14 @@ người đọc, hoặc một mô hình đọc, làm thước.
 
 Thứ ba là một phép kiểm mà phía attribution có thể chạy ngay: đo mức đồng
 thuận giữa các chỉ số. Kết quả kappa quanh 0 không cần ground
-truth mới đọc được, mà chỉ cần chạy nhiều chỉ số trên cùng một tập. Nếu hai
-chỉ số cùng đo một đại lượng thì chúng phải đồng thuận cao hơn thế nhiều, nên
-mức đồng thuận thấp một mình nó đã đủ để loại bỏ khả năng cả hai cùng đo đúng
-một đại lượng.
+truth mới đọc được, mà chỉ cần chạy nhiều chỉ số trên cùng một tập. Nó là một
+quan sát cần được giải thích chứ chưa phải một kết luận:
+mục~\ref{sec:ch09-ket-qua} đã ghi rằng đồng thuận thấp có thể đến từ việc các
+chỉ số đo những tính chất khác nhau, mà cũng có thể đến từ việc chúng cùng nhắm
+một đại lượng với nhiễu lớn và độc lập nhau. Điều phép kiểm này cho phía
+attribution là một câu hỏi chạy được ngay, không phải một câu trả lời.
 
-Cái không đi qua được thì gọn hơn: mọi con số. Bảng~\ref{tab:ch09-auroc} không
+Cái không đi qua được là mọi con số. Bảng~\ref{tab:ch09-auroc} không
 nói gì về việc deletion hay Sensitivity-n sẽ đạt AUROC bao nhiêu khi bị đem ra
 đối chiếu tương tự, vì phép đối chiếu ấy chưa ai làm. Nói cho đúng thì trạng
 thái hiện tại là thế này: với chuỗi suy luận, câu hỏi các chỉ số có đo đúng

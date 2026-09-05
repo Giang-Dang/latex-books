@@ -28,11 +28,13 @@ $\mathcal{A}_{f,x}$ của định nghĩa~\ref{def:ch07-ham-attribution}: $g$ nh�
 đầu vào và trả một dự đoán, còn $\mathcal{A}_{f,x}$ nhận một đối tượng trong $E$
 và trả một điểm số. Quan hệ giữa hai hàm là quan hệ giữa một mô hình và các hệ
 số của nó, và nó chỉ viết ra được khi $\mathcal{G}$ đã được chọn. Với
-$\mathcal{G}$ là lớp tuyến tính trên biểu diễn nhị phân $z$, quan hệ ấy là
+$\mathcal{G}$ là lớp tuyến tính trên biểu diễn nhị phân $z'$ mà
+chương~\ref{ch:lime} đã dựng, quan hệ ấy là
 \[
-  g(z) = \beta_0 + \sum_j \mathcal{A}_{f,x}(j)\, z_j ,
+  g(z') = \beta_0 + \sum_j \mathcal{A}_{f,x}(j)\, z'_j ,
 \]
-tức các điểm số attribution đúng bằng các hệ số của $g$. Ngoài lớp tuyến tính
+trong đó $\beta_0$ là hệ số tự do, tức các điểm số attribution đúng bằng các hệ
+số còn lại của $g$. Ngoài lớp tuyến tính
 thì không có công thức chung nào như vậy, và một $\mathcal{G}$ khác cho một cách
 đọc điểm số khác.
 
@@ -42,8 +44,9 @@ riêng của nó, gồm Occlusion, KernelSHAP, Vanilla Gradients, Gradient$\math
 Integrated Gradients, SmoothGrad, LIME và C-LIME. Chúng dùng chung một lớp mô
 hình tuyến tính $\mathcal{G}$ và chỉ khác nhau ở hai chỗ: lấy mẫu từ lân cận
 nào, và đo sai lệch bằng hàm mất mát nào~\autocite{p18unified}. Một mẫu $\xi$
-tác động lên $x$ theo một trong hai cách, nhân từng thành phần để che bớt đầu
-vào hoặc cộng vào để làm nhiễu nó. Occlusion lấy
+tác động lên $x$ theo một trong ba cách mà bảng của bài liệt kê: nhân từng thành
+phần để che bớt đầu vào, cộng vào để làm nhiễu nó, hoặc nhân cả vector với một
+số vô hướng. Occlusion lấy
 mẫu bằng vector one-hot ngẫu nhiên và đo bằng sai số bình phương; KernelSHAP
 cũng đo bằng sai số bình phương nhưng lấy mẫu theo \tn{hàm nhân Shapley}{Shapley kernel};
 LIME lấy mẫu theo một \tn{hàm nhân}{kernel} mũ; còn nhóm gradient thì đo bằng

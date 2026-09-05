@@ -110,9 +110,22 @@ Phát biểu thì vẫn đúng, và một phép đếm khác cho nó. Chia $[0,1
   \qquad h = \frac{L}{2m},
 \]
 với $t_c$ là tâm ô. Mỗi chóp là hàm $L$-Lipschitz, và giá của nó là quả cầu bán
-kính $h/L = 1/(2m)$ quanh tâm, nằm gọn trong ô, nên các giá rời nhau. Với mỗi
-vector dấu $s \in \{-1,+1\}^{m^d}$ đặt $f_s = \sum_c s_c \varphi_c$. Mỗi $f_s$
-là $L$-Lipschitz, và hai hàm khác dấu ở ô $c$ thì lệch nhau $2h = L/m$ ngay tại
+kính $h/L = 1/(2m)$ quanh tâm, nằm gọn trong ô, nên phần trong của các giá rời
+nhau. Với mỗi
+vector dấu $s \in \{-1,+1\}^{m^d}$ đặt $f_s = \sum_c s_c \varphi_c$.
+
+Mỗi $f_s$ vẫn là $L$-Lipschitz, và chỗ này đáng viết ra vì nó không phải hệ quả
+của riêng việc các giá rời nhau. Lấy hai điểm $u$ và $v$. Nếu cả hai nằm trong
+cùng một giá thì chỉ một cái chóp khác không ở đó và bất đẳng thức là bất đẳng
+thức của chóp ấy. Nếu chúng nằm ở hai giá khác nhau thì đoạn thẳng nối chúng cắt
+qua vùng mà mọi chóp đều bằng không, nên
+$|f_s(u) - f_s(v)| \le |f_s(u)| + |f_s(v)|$, và mỗi số hạng lại không vượt quá
+$L$ nhân khoảng cách từ điểm ấy tới biên giá của nó. Cộng hai khoảng cách ấy lại
+thì không vượt quá $\lVert u - v \rVert_2$. Điều làm cho lập luận chạy là chiều
+cao $h$ đã chọn: nó đúng bằng $L$ nhân bán kính giá, nên chóp chạm không đúng
+lúc chạm biên ô.
+
+Hai hàm khác dấu ở ô $c$ thì lệch nhau $2h = L/m$ ngay tại
 tâm ô ấy, nên
 \[
   \lVert f_s - f_{s'} \rVert_{\infty} \;\ge\; \frac{L}{m}
@@ -138,19 +151,27 @@ Chặn vừa dựng mạnh hơn chặn của bài, vì $b^{-1/d}$ lớn hơn h�
 kéo theo phát biểu của định lý~\ref{thm:ch13-chan-duoi-lipschitz}. Đó là lý do
 sách giữ định lý và bỏ chứng minh.
 
-Hệ quả cho chương là cụ thể. Ở ngân sách $b$, phép dựng lưới đạt sai số cỡ
+Hệ quả cho chương là cụ thể, và phải phát biểu đúng dạng lượng từ. Ở ngân sách
+$b$, phép dựng lưới đạt sai số cỡ
 $L \cdot b^{-1/d}$ nhân thêm một thừa số lôgarit, vì $b$ bit mua được cỡ $b$ ô
-lưới sau khi đã trả tiền mã hóa giá trị tại mỗi ô; phép đếm vừa rồi cấm mọi lời
-giải thích xuống dưới cỡ $L \cdot b^{-1/d}$. Hai chặn khớp nhau ở số mũ và chỉ
-cách nhau thừa số lôgarit ấy. Đọc theo $\delta$ thì câu gọn hơn: giải thích một
-hàm Lipschitz trong sai số $\delta$ tốn ít nhất cỡ $(L/\delta)^d$ bit. Vậy lời
+lưới sau khi đã trả tiền mã hóa giá trị tại mỗi ô, và điều đó đúng với
+\emph{mọi} hàm $L$-Lipschitz. Phép đếm vừa rồi đi chiều ngược lại và chỉ nói về
+\emph{một} hàm: trong họ hàm chóp có một hàm mà không lời giải thích nào trong
+ngân sách hạ được sai số xuống dưới cỡ $L \cdot b^{-1/d}$. Ghép hai chiều lại
+thì trường hợp xấu nhất của lớp Lipschitz có sai số đúng cỡ $L \cdot b^{-1/d}$,
+sai khác một thừa số lôgarit và một hằng số phụ thuộc $d$.
+
+Đọc theo $\delta$ thì câu gọn hơn: có những hàm $L$-Lipschitz mà giải thích
+chúng trong sai số $\delta$ tốn ít nhất cỡ $(L/\delta)^d$ bit. Vậy lời
 nguyền số chiều ở đây không phải một tính chất riêng của phép dựng lưới, mà là
-tính chất của chính bài toán.
+tính chất của chính bài toán trong trường hợp xấu nhất. Nó không nói mọi hàm
+Lipschitz đều đắt như thế, và đoạn cuối mục này quay lại đúng chỗ ấy.
 
 Nhận xét 3.5 của bài kết luận đúng chỗ này: hai chặn khớp nhau, và sự phụ thuộc
 hàm mũ vào số chiều là không tránh được trong trường hợp tổng quát~\autocite{p26limits}.
-Cái bài không có là con đường tới kết luận ấy. Nhận xét đọc nó ra từ định lý 3.4,
-vốn quá yếu để đỡ được, và mệnh đề 3.6 thì viết chặn trên thành
+Cái bài không có là con đường tới kết luận ấy. Nhận xét đọc nó ra từ định lý 3.4
+của bài, tức định lý~\ref{thm:ch13-chan-duoi-lipschitz} ở trên, vốn quá yếu để
+đỡ được, và mệnh đề 3.6 thì viết chặn trên thành
 $\mathcal{O}(L \cdot 2^{-b/d})$ bằng cách cho rằng ngân sách $b$ mua được $2^{b}$
 ô, tức bỏ qua chính khoản tiền mã hóa giá trị mà chứng minh chặn trên đã tính.
 Bước ấy sai, và sách không dùng nó; điều sách nhận là kết luận, với phép đếm ở
