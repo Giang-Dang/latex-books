@@ -77,6 +77,23 @@ thông tin hơn. Trên Heart Disease thì tương quan yếu đều và không �
 nghĩa ở mọi cặp, dấu thì lẫn lộn. Độ lệch chuẩn trung bình của các hệ số tương
 quan giữa ba bộ dữ liệu là 0.31~\autocite{p25userperception}.
 
+Hai cách đọc dấu vừa thuật lại là của bài báo, và chúng không khớp với thang mà
+chính bài báo đặt ra. Mục~\ref{sec:ch12-mot-phep-doi-chieu} đã ghi thang ấy: 1
+là câu trả lời tích cực nhất, nên điểm càng nhỏ càng tốt. Với quy ước đó, tương
+quan âm giữa sparsity và điểm gộp nghĩa là sparsity càng cao thì điểm càng nhỏ,
+tức người dùng càng hài lòng, ngược với câu \enquote{thích những lời giải thích
+đổi ít đặc trưng}; cách đọc dấu dương ở Obesity Levels lệch theo đúng kiểu ấy.
+Hai câu của bài chỉ đứng vững nếu điểm đã được đảo mã trước khi tính tương quan.
+Bài không nói ở đâu rằng có bước đảo mã, và cũng không công bố mã nguồn hay dữ
+liệu để kiểm. Sách vì vậy dừng ở chỗ ghi nhận: chiều sở thích của người dùng
+trong hai bộ dữ liệu ấy là điều chưa xác định được từ những gì bài in ra, và
+sách không chọn giúp một cách mã hóa để lấp chỗ trống.
+
+Điều đáng nói là kết luận của mục này không phụ thuộc vào chỗ trống ấy. Việc các
+hệ số \emph{đổi dấu} khi chuyển bộ dữ liệu là một quan sát về sự không nhất
+quán, và nó giữ nguyên dù quy ước mã hóa có là chiều nào, miễn là cùng một quy
+ước được dùng cho cả ba bộ.
+
 Con số 0.31 ấy là con số quan trọng nhất trong cả mục này, quan trọng hơn
 $r = 0.307$ ở trên, và lý do thì nằm ở chỗ một dụng cụ đo được dùng để làm gì.
 Một chỉ số tương quan yếu với \tn{cảm nhận của người dùng}{user perception}

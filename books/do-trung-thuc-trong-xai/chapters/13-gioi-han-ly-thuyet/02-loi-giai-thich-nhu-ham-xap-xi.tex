@@ -106,6 +106,23 @@ lại thì không. Phân biệt này không phải chi tiết kỹ thuật. Mộ
 sai số trường hợp xấu nhất lớn, mà vùng nhỏ ấy đúng là chỗ
 chương~\ref{ch:giai-thich-duoi-tan-cong} sẽ tìm tới.
 
+Hai dòng số học cho thấy khoảng cách giữa hai đại lượng có thể lớn tùy ý. Lấy
+không gian đầu vào chỉ gồm hai điểm $a$ và $b$, với $f(a) = 0$, $f(b) = 1$, và
+lấy $g$ là hàm hằng bằng không. Cho phân phối đặt khối lượng $1-\epsilon$ vào
+$a$ và $\epsilon$ vào $b$. Khi ấy
+\[
+  \mathcal{E}_{\mathcal{D}}(f,g) = (1-\epsilon)\cdot 0 + \epsilon \cdot 1
+  = \epsilon,
+  \qquad
+  \mathcal{E}_{\infty}(f,g) = \max(0,1) = 1 .
+\]
+Chọn $\epsilon$ nhỏ tùy ý thì sai số kỳ vọng nhỏ tùy ý trong khi sai số xấu nhất
+vẫn bằng 1. Vì vậy một chỗ lệch, dù lệch hẳn, không bác được một bảo đảm về sai
+số trung bình chừng nào chưa nói khối lượng xác suất tại chỗ lệch ấy là bao
+nhiêu. Trường hợp $\epsilon = 0$ đẩy điều đó tới cùng: sai số kỳ vọng bằng không
+trong khi hai hàm vẫn khác nhau tại $b$, nên mọi phát biểu về sai số kỳ vọng chỉ
+có nghĩa khi $\mathcal{D}$ đã được nói rõ.
+
 Hai đại lượng còn lại là hai cách nhìn cùng một sự đánh đổi, và bài đặt tên cho
 cả hai: \tn{hàm sai số giải thích}{explanation error function} và \tn{hàm độ
 phức tạp giải thích}{explanation complexity function}.

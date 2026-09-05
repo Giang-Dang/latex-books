@@ -17,8 +17,13 @@ ba; 27 kỹ thuật còn lại mang đúng một~\autocite{p22whichlime}.
 Hai con số đầu đáng dừng lại. Độ khớp và tính ổn định gộp lại chiếm 43 trong 70
 lượt gán, và nếu đếm theo kỹ thuật thay vì theo lượt gán thì đúng 32 trong 48 kỹ
 thuật, tức hai phần ba, nhắm vào ít nhất một trong hai nhóm ấy. Theo cách sách
-đọc hai nhóm ấy, độ khớp là \tn{độ trung thực}{faithfulness} của mô hình thay
-thế, còn tính ổn định là điều kiện cần của nó.
+đọc hai nhóm ấy, độ khớp hỏi đầu ra của mô hình thay thế có trùng đầu ra của mô
+hình gốc trên vùng đã lấy mẫu hay không, còn tính ổn định hỏi hai lần chạy có
+cho cùng một lời giải thích hay không. Cả hai đều là câu hỏi về lời giải thích
+đặt cạnh mô hình, nhưng không câu nào là \tn{độ trung thực}{faithfulness} của
+định nghĩa~\ref{def:ch01-do-trung-thuc}: một mô hình thay thế trùng đầu ra trên
+vùng đã lấy mẫu vẫn có thể xếp sai đặc trưng nào là đặc trưng mà hành vi phụ
+thuộc vào, ngay khi can thiệp đi ra ngoài vùng ấy.
 Nói cách khác, hai phần ba công sức của cả nhánh nghiên cứu đổ vào đúng chỗ mà
 chương~\ref{ch:lime} đã chỉ ra là chưa được xác nhận, nên có thể nói lĩnh vực
 biết LIME có vấn đề ở đó và biết từ lâu.
@@ -33,10 +38,21 @@ làm nhất. Bốn nhóm đông người làm hơn đều là những nhóm mà 
 Con số 21 kỹ thuật mang từ hai chữ cái trở lên xác nhận điều nói ở cuối
 mục~\ref{sec:ch10-nam-nhom-van-de}, lần này từ phía dữ liệu. Cặp hay gặp nhất là tính ổn
 định đi với độ khớp, 10 kỹ thuật, và theo cách sách đọc cơ chế thì điều đó hợp
-lý: hai lần
-chạy cho hai mô hình thay thế khác nhau thì hai mô hình ấy không thể cùng là
-lời giải thích đúng cho cùng một quyết định, nên chữa được tính ổn định là điều
-kiện cần để nói gì về độ khớp. Kỹ thuật
+lý: cái khác nhau giữa hai lần chạy là mẫu ngẫu nhiên chứ không phải mô hình hay
+đầu vào, nên hai mô hình thay thế khác nhau ở đó chênh nhau vì một thứ không
+thuộc về mô hình. Chữa được tính ổn định vì vậy là điều kiện cần để một con số
+độ khớp nói được điều gì về mô hình.
+
+Chú ý điều ấy chưa cho biết lần chạy nào sai, và cũng chưa cho biết có lần nào
+sai. Lấy $f(x_1,x_2) = x_1$ và một tập dữ liệu mà mọi điểm đều có $x_1 = x_2$.
+Hai mô hình thay thế $g_1(x_1,x_2) = x_1$ và $g_2(x_1,x_2) = x_2$ khớp đầu ra
+của $f$ hoàn hảo trên toàn bộ tập ấy, nhưng hệ số của chúng chỉ vào hai đặc
+trưng khác nhau. Không mô hình nào trong hai khớp sai trên dữ liệu đang xét; cái
+tách chúng ra chỉ xuất hiện khi được phép can thiệp lên $x_2$ độc lập với $x_1$,
+tức khi bước ra ngoài vùng dữ liệu. Vậy từ \enquote{hai lời giải thích khác
+nhau} suy ra \enquote{ít nhất một lời giải thích khớp sai} là một bước không
+hợp lệ; điều suy ra được là hai lời giải thích ấy không cùng trả lời một câu hỏi
+về phụ thuộc. Kỹ thuật
 duy nhất mang ba chữ cái là B-LIME, nhắm cùng lúc vào tính ổn định, độ khớp và
 khả năng diễn giải~\autocite{p22whichlime}.
 

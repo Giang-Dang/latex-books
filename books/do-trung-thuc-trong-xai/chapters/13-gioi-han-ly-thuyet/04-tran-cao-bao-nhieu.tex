@@ -77,35 +77,85 @@ $\mathcal{E}_{\infty}(f,g) = \Omega\big(L \cdot 2^{-b/d}\big)$.
 \end{theorem}
 
 Định lý~\ref{thm:ch13-chan-duoi-lipschitz} là định lý 3.4 của
-bài~\autocite{p26limits}, và ý chứng minh lại là phép đếm cũ nhìn theo hình học.
-Một hàm $g$ trong ngân sách $b$ chia $[0,1]^d$ thành không quá $2^{b+1}$ vùng
-nhận giá trị khác nhau, nên theo nguyên lý ngăn kéo có ít nhất một vùng thể tích
-không dưới $2^{-(b+1)}$, và một vùng thể tích ấy trong $\mathbb{R}^d$ có đường
-kính không dưới cỡ $2^{-b/d}$ theo bất đẳng thức đẳng chu. Chọn $f$ biến thiên
-với độ dốc đúng bằng $L$ dọc theo đường kính ấy thì $f$ đổi một lượng cỡ
-$L \cdot 2^{-b/d}$ trong khi $g$ giữ một giá trị hằng, nên sai số không nhỏ hơn
-một nửa lượng đó.
+bài~\autocite{p26limits}. Sách giữ phát biểu ấy nhưng không giữ chứng minh của
+bài, nên mục này đọc chứng minh ấy trước, rồi dựng một chứng minh khác.
 
-Bài phát biểu ngay sau đó rằng hai chặn khớp nhau tới hằng số, tức tồn tại
-những hàm Lipschitz mà sự đánh đổi của chúng đạt đúng chặn trên của phép dựng
-lưới~\autocite{p26limits}. Sách không nhận phát biểu ấy, và lý do đọc được bằng
-cách viết cả hai chặn theo cùng một biến. Ở ngân sách $b$, phép dựng lưới đạt
-sai số cỡ $L \cdot b^{-1/d}$, vì $b$ bit mua được cỡ $b$ ô lưới sau khi đã trả
-tiền mã hóa giá trị tại mỗi ô, còn định lý~\ref{thm:ch13-chan-duoi-lipschitz}
-chỉ cấm sai số nhỏ hơn cỡ $L \cdot 2^{-b/d}$. Một đại lượng giảm theo đa thức
-của $b$, một đại lượng giảm theo hàm mũ của $b$: khoảng cách giữa chúng không
-phải một hằng số. Chỗ hụt nằm ở mệnh đề 3.6 của bài, vốn viết lại chặn trên
-thành $\mathcal{O}(L \cdot 2^{-b/d})$ bằng cách cho rằng ngân sách $b$ mua được
-$2^{b}$ ô, tức bỏ qua chính khoản tiền mã hóa giá trị mà chứng minh của chặn
-trên đã tính. Đây là cùng một kiểu hụt với hệ quả 3.8 ở cuối mục này.
+Ý của bài đi theo hình học. Một hàm $g$ trong ngân sách $b$ được cho là chia
+$[0,1]^d$ thành không quá $2^{b+1}$ vùng nhận giá trị khác nhau, nên theo nguyên
+lý ngăn kéo có ít nhất một vùng thể tích không dưới $2^{-(b+1)}$; một vùng thể
+tích ấy trong $\mathbb{R}^d$ có đường kính không dưới cỡ $2^{-b/d}$ theo bất
+đẳng thức đẳng chu; chọn $f$ biến thiên với độ dốc đúng bằng $L$ dọc theo đường
+kính ấy thì $f$ đổi một lượng cỡ $L \cdot 2^{-b/d}$ trong khi $g$ giữ một giá
+trị hằng.
 
-Hệ quả cho chương là cụ thể và đáng nói ra, vì nó thu hẹp điều mục sau được
-phép kết luận. Chặn trên nói rằng giải thích một hàm Lipschitz \emph{có thể}
-tốn số bit tăng theo hàm mũ của số chiều. Chặn dưới, đọc theo chiều ngân sách,
-chỉ nói rằng nó tốn ít nhất cỡ $d \log(L/\delta)$ bit, tức tăng tuyến tính theo
-số chiều. Vậy lời nguyền số chiều ở đây là một tính chất của phép dựng lưới và
-của mọi phép dựng cùng kiểu, không phải một điều đã được chứng minh là không
-tránh được.
+Hai bước trong lập luận ấy không đứng được.
+
+Bước thứ nhất là phép đếm. Con số $2^{b+1}$ đếm \emph{số hàm} có độ phức tạp
+không quá $b$, đúng như bổ đề mà mục~\ref{sec:ch13-ham-xap-xi} đã dùng. Nó không
+nói gì về số vùng giá trị của một hàm trong số ấy. Hàm đồng nhất $g(x) = x$ có
+mô tả dài đúng một hằng số và nhận vô hạn giá trị khác nhau trên $[0,1]$: ngân
+sách nhỏ không buộc một hàm phải là hàm hằng từng khúc. Chính con số $2^{b+1}$
+đã xuất hiện ở đầu mục này và ở đó nó đúng, vì nó chặn số ứng viên $g$ trong một
+chặn hợp. Chỗ hụt là mang con số ấy sang làm số mảnh của một phép chia miền.
+
+Bước thứ hai là thứ tự lượng từ. Phát biểu nói \emph{tồn tại} một $f$ sao cho
+\emph{mọi} $g$ trong ngân sách đều sai nhiều. Lập luận lại cố định $g$ trước, rồi
+dựng $f$ từ vùng mà chính $g$ ấy sinh ra và từ đường kính của vùng đó. Cái nhận
+được là \enquote{với mọi $g$ tồn tại một $f$}, yếu hơn và không cho định lý.
+
+Phát biểu thì vẫn đúng, và một phép đếm khác cho nó. Chia $[0,1]^d$ thành $m^d$
+ô cạnh $1/m$, và trong mỗi ô $c$ đặt một cái chóp
+\[
+  \varphi_c(x) \;=\; \max\!\big(0,\; h - L\lVert x - t_c \rVert_2\big),
+  \qquad h = \frac{L}{2m},
+\]
+với $t_c$ là tâm ô. Mỗi chóp là hàm $L$-Lipschitz, và giá của nó là quả cầu bán
+kính $h/L = 1/(2m)$ quanh tâm, nằm gọn trong ô, nên các giá rời nhau. Với mỗi
+vector dấu $s \in \{-1,+1\}^{m^d}$ đặt $f_s = \sum_c s_c \varphi_c$. Mỗi $f_s$
+là $L$-Lipschitz, và hai hàm khác dấu ở ô $c$ thì lệch nhau $2h = L/m$ ngay tại
+tâm ô ấy, nên
+\[
+  \lVert f_s - f_{s'} \rVert_{\infty} \;\ge\; \frac{L}{m}
+  \qquad \text{khi } s \ne s'.
+\]
+
+Họ ấy có $2^{m^d}$ hàm. Giả sử mọi hàm $L$-Lipschitz đều được một $g$ nào đó với
+$K(g) \le b$ xấp xỉ trong sai số $\delta$. Nếu một $g$ phục vụ được cả $f_s$ lẫn
+$f_{s'}$ thì $\lVert f_s - f_{s'} \rVert_{\infty} \le 2\delta$, nên khi
+$2\delta < L/m$ hai vector dấu khác nhau buộc phải dùng hai $g$ khác nhau. Lấy
+$\delta \le L/(3m)$ thì phép gán $f_s \mapsto g$ là đơn ánh, do đó
+$2^{m^d} \le 2^{b+1}$, tức $m^d \le b+1$. Chọn
+$m = \lfloor L/(3\delta) \rfloor$ và đọc lại theo $\delta$:
+\[
+  \kappa_f(\delta) \;\ge\; \Big\lfloor \frac{L}{3\delta} \Big\rfloor^{d} - 1
+  \;=\; \Omega\!\left( \left(\frac{L}{\delta}\right)^{\!d} \right)
+\]
+cho một hàm $f$ nào đó trong họ vừa dựng. Thứ tự lượng từ lần này đúng ngay
+trong cách lập luận: phép đếm chỉ thẳng ra rằng \emph{có} một $f$ đánh bại
+\emph{mọi} $g$ trong ngân sách.
+
+Chặn vừa dựng mạnh hơn chặn của bài, vì $b^{-1/d}$ lớn hơn hẳn $2^{-b/d}$, và nó
+kéo theo phát biểu của định lý~\ref{thm:ch13-chan-duoi-lipschitz}. Đó là lý do
+sách giữ định lý và bỏ chứng minh.
+
+Hệ quả cho chương là cụ thể. Ở ngân sách $b$, phép dựng lưới đạt sai số cỡ
+$L \cdot b^{-1/d}$ nhân thêm một thừa số lôgarit, vì $b$ bit mua được cỡ $b$ ô
+lưới sau khi đã trả tiền mã hóa giá trị tại mỗi ô; phép đếm vừa rồi cấm mọi lời
+giải thích xuống dưới cỡ $L \cdot b^{-1/d}$. Hai chặn khớp nhau ở số mũ và chỉ
+cách nhau thừa số lôgarit ấy. Đọc theo $\delta$ thì câu gọn hơn: giải thích một
+hàm Lipschitz trong sai số $\delta$ tốn ít nhất cỡ $(L/\delta)^d$ bit. Vậy lời
+nguyền số chiều ở đây không phải một tính chất riêng của phép dựng lưới, mà là
+tính chất của chính bài toán.
+
+Nhận xét 3.5 của bài kết luận đúng chỗ này: hai chặn khớp nhau, và sự phụ thuộc
+hàm mũ vào số chiều là không tránh được trong trường hợp tổng quát~\autocite{p26limits}.
+Cái bài không có là con đường tới kết luận ấy. Nhận xét đọc nó ra từ định lý 3.4,
+vốn quá yếu để đỡ được, và mệnh đề 3.6 thì viết chặn trên thành
+$\mathcal{O}(L \cdot 2^{-b/d})$ bằng cách cho rằng ngân sách $b$ mua được $2^{b}$
+ô, tức bỏ qua chính khoản tiền mã hóa giá trị mà chứng minh chặn trên đã tính.
+Bước ấy sai, và sách không dùng nó; điều sách nhận là kết luận, với phép đếm ở
+trên làm chỗ dựa. Hệ quả 3.8 ở cuối mục này hụt theo cùng một kiểu và không được
+cứu như vậy.
 
 Chú ý cả hai chặn dưới đều có dạng tồn tại. Chúng nói có những hàm Lipschitz
 khó tới mức đó, không nói mọi hàm Lipschitz đều thế. Hàm hằng và hàm tuyến tính
@@ -177,11 +227,11 @@ không đúng theo đường ấy, và nó cũng không đúng dưới dạng �
 hình tuyến tính khớp nhất với một $f$ cố định do khoảng cách từ $f$ tới lớp
 tuyến tính quyết định chứ không giảm dần khi thêm đặc trưng. Chỗ nào chương này
 cần một phát biểu về mô hình tuyến tính thì lấy từ định
-lý~\ref{thm:ch13-chan-duoi-lipschitz} cộng với dòng đầu của
-bảng~\ref{tab:ch13-do-phuc-tap-lop-mo-hinh}, hai kết quả mà bài có chứng minh:
-gán cho một mô hình tuyến tính $n$ đặc trưng ngân sách $b$ mà dòng ấy cho, thì
-tồn tại những hàm $L$-Lipschitz mà mọi mô hình tuyến tính trong ngân sách ấy đều
-mắc sai số ít nhất cỡ $L \cdot 2^{-b/d}$.
+lý~\ref{thm:ch13-chan-duoi-lipschitz}, với phép đếm ở đầu mục làm chỗ dựa, cộng
+với dòng đầu của bảng~\ref{tab:ch13-do-phuc-tap-lop-mo-hinh}: gán cho một mô
+hình tuyến tính $n$ đặc trưng ngân sách $b$ mà dòng ấy cho, thì tồn tại những
+hàm $L$-Lipschitz mà mọi mô hình tuyến tính trong ngân sách ấy đều mắc sai số ít
+nhất cỡ $L \cdot b^{-1/d}$.
 
 \index{giả thuyết đa tạp}%
 Cuối mục là lối ra, và nó là kết quả lạc quan duy nhất trong bài. Các chặn ở
