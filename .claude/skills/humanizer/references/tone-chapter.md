@@ -42,6 +42,12 @@ new topic with no hook to the last one reads as a stack of essays, however good 
 - **The wall of output.** A captured block dropped in after "running it gives:" with nothing
   saying what to look at, or two blocks back to back with no prose between. The sentence before
   a block names the one line that matters; the block is cut to the lines that carry it.
+- **The absence apologia.** A paragraph, or a whole subsection, explaining what the author did
+  not run, could not stand up, or has not seen: "here is what it does on my machine", "I am not
+  going to describe a report I have not seen", "because nobody ran it". The reader wants to know
+  what the tool does. Say that, from its published documentation, and cite the page. State a
+  requirement as a requirement, not as a confession, and never print an output block whose only
+  content is a command declining to run.
 
 ## Before and after
 
