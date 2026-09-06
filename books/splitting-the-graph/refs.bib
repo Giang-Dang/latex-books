@@ -272,7 +272,13 @@
                   of provides. The page is unversioned and now lists directives
                   postdating v2.6; the three chapter 9 uses carry a Federation
                   v1.0 minimum-version badge, so their definitions are the ones
-                  in force at the version this book pins}
+                  in force at the version this book pins.
+                  Re-fetched 2026-09-06 for chapter 17, which quotes it on what
+                  override indicates and on only one subgraph being allowed to
+                  override a field, and cites it for the definition of
+                  composeDirective and for its optional label argument. Also
+                  read for an absence the chapter states: the page lists no
+                  directive that records a team, an owner or a contact}
 }
 
 @online{compositeschemasspec,
@@ -821,4 +827,151 @@
                   VMs and bare metal, which the body gives no instructions
                   for, so the chapter says what is documented rather than what
                   is promised}
+}
+
+%--------------------------------------------------------------------------
+% Chapter 17 - Nobody Owns That Field
+%--------------------------------------------------------------------------
+
+@online{apollovaluetypes,
+  title        = {Value Types in {Apollo} {Federation}},
+  organization = {Apollo GraphQL documentation},
+  url          = {https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/sharing-types},
+  urldate      = {2026-09-06},
+  addendum     = {Unsigned, and admitted under decision 39 as the normative
+                  statement of what an implementation must do with the
+                  directive rather than as an argument about an outcome. Cited
+                  for one rule, that a field shareable in any subgraph must be
+                  shareable or external in every subgraph defining it or
+                  composition fails, which this chapter measured the composer
+                  enforcing in both directions. The same page carries the
+                  weaker sibling claim, that resolvers for a shared field must
+                  behave identically or queries return inconsistent results;
+                  the chapter quotes WunderGraph's wording of that one instead,
+                  because it is the composer this book runs}
+}
+
+@online{cosmoshareable,
+  title        = {{\ttfamily @shareable}},
+  organization = {WunderGraph, Cosmo documentation},
+  url          = {https://cosmo-docs.wundergraph.com/federation/directives/shareable},
+  urldate      = {2026-09-06},
+  addendum     = {Unsigned, admitted under decision 39 on the same footing as
+                  the other Cosmo directive pages. Cited for the sentence
+                  placing responsibility for identical resolution on the
+                  developer, and for the word indeterminately, which is this
+                  vendor's own and is sharper than Apollo's inconsistent
+                  results}
+}
+
+@online{apollocontracts,
+  title        = {Create a {Contract}},
+  organization = {Apollo GraphQL documentation},
+  url          = {https://www.apollographql.com/docs/graphos/platform/schema-management/delivery/contracts/create},
+  urldate      = {2026-09-06},
+  addendum     = {Unsigned, same footing. Cited for the division of labour
+                  between the two directives: @tag says whether a type or
+                  field is included in or excluded from a contract schema, and
+                  @inaccessible is what removes it from the source variant's
+                  API schema and every contract schema at once. The page also
+                  states that its own instructions need an organization member
+                  holding an Org Admin or Graph Admin role, which is the
+                  control-plane requirement stated in the vendor's own words}
+}
+
+@online{cosmocontracts,
+  title        = {Schema {Contracts}},
+  organization = {WunderGraph, Cosmo documentation},
+  url          = {https://cosmo-docs.wundergraph.com/studio/schema-contracts},
+  urldate      = {2026-09-06},
+  addendum     = {Unsigned, same footing. Cited for two things the chapter
+                  measured independently and wanted the vendor's name for: that
+                  a tagged element has @inaccessible applied to it by
+                  composition, and that the config carries a router schema
+                  which keeps such fields for query planning beside a client
+                  schema which does not. The second is the key this chapter
+                  found appearing in the execution config, and this page is
+                  where it is named}
+}
+
+@online{cosmoproposals,
+  title        = {Proposals},
+  organization = {WunderGraph, Cosmo documentation},
+  url          = {https://cosmo-docs.wundergraph.com/concepts/proposals},
+  urldate      = {2026-09-06},
+  addendum     = {Unsigned, same footing. Cited for what the feature is, a
+                  collection of changes to a federated graph reviewed before it
+                  ships, for the five checks the page says run automatically
+                  against one, and for the sentence naming COSMO\_API\_KEY as
+                  what a non-interactive run needs, which is the same
+                  control-plane requirement chapter 16 recorded for the schema
+                  check}
+}
+
+@online{cosmogrouprules,
+  title        = {Group {Rules}},
+  organization = {WunderGraph, Cosmo documentation},
+  url          = {https://cosmo-docs.wundergraph.com/studio/groups/group-rules},
+  urldate      = {2026-09-06},
+  addendum     = {Unsigned, same footing. Cited for the four levels roles are
+                  scoped at and for the four role names at the subgraph level,
+                  which the chapter uses to make the point that the vocabulary
+                  is permissions rather than ownership. The word owner does not
+                  appear on the page}
+}
+
+@online{neuse2024featureflags,
+  author   = {Neuse, Jens},
+  title    = {Announcing {Graph} {Feature} {Flags} for {GraphQL} {Federation}},
+  date     = {2024-07-04},
+  organization = {WunderGraph},
+  url      = {https://wundergraph.com/blog/announcing_graph_feature_flags_for_graphql_federation},
+  urldate  = {2026-09-06},
+  addendum = {Bylined by a co-founder of the company whose router this book
+              runs, so the Sources rule is met and the prose names him. Cited
+              for his description of Apollo's progressive override, and for
+              WunderGraph placing its own answer to the same problem in a
+              different mechanism, which is the reason the composer this book
+              pins has no label argument on the directive. He is describing a
+              competitor's feature and selling his own, and the chapter says
+              so. The page carries an edit date of 2026-07-27 beside the
+              publication date}
+}
+
+@online{hutter2022search,
+  author   = {Hutter, Alex and Jhaveri, Falguni and Sayeebaba, Senthil},
+  title    = {How {Netflix} {Content} {Engineering} makes a federated graph
+              searchable},
+  date     = {2022-04-12},
+  organization = {Netflix TechBlog},
+  url      = {https://netflixtechblog.com/how-netflix-content-engineering-makes-a-federated-graph-searchable-5c0c1c7d7eaf},
+  urldate  = {2026-09-06},
+  addendum = {An engineering blog rather than a vendor's, bylined by three
+              named engineers at the company being described, which is what
+              the Sources rule asks and what the prose states. Cited for two
+              passages: that three core entities of that graph are each owned
+              by separate engineering teams, and that the owner of an index
+              built over other teams' entities cannot resolve errors in them
+              independently. Medium answered a direct fetch from this machine
+              with 403, so the byline was read out of the page's own
+              og:description meta tag and the date out of its JSON-LD, in a
+              raw retrieval of the same url}
+}
+
+@online{talegaonkar2022governance,
+  author   = {Talegaonkar, Isha},
+  title    = {Schema governance approaches for {GraphQL}},
+  date     = {2022-08-11},
+  organization = {Walmart Global Tech},
+  url      = {https://medium.com/walmartglobaltech/schema-governance-approaches-for-graphql-68eaf32a48c0},
+  urldate  = {2026-09-06},
+  addendum = {An engineering blog rather than a vendor's, bylined by a named
+              engineer at the company being described. Cited for the collision
+              two teams create by defining the same type, for the point in the
+              cycle at which they find out, and for the phrase schema owner,
+              which is a term the tool her team built has and the toolchain
+              underneath it does not. Medium refused a direct fetch from this
+              machine, so the text is a reader-proxy render of the same url;
+              the byline shows there as a profile handle and the full name was
+              confirmed against the author's own public profiles}
 }

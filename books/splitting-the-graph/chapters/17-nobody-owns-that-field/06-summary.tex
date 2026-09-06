@@ -1,0 +1,29 @@
+\begin{problemsummary}
+{A field that has answered for months starts coming back null, with
+\code{Failed to fetch from Subgraph} naming a service that never owned it. Or
+a type gains a field nobody on the owning team wrote, and the first they hear
+of it is a client asking for it. Both states composed at exit zero and printed
+nothing, and neither moved the schema a client reads.}
+{Nothing in the toolchain records an owner. There is no such directive in
+Apollo Federation, no such word in the Composite Schemas draft, and no such
+property in the router execution config, where a subgraph is an id, a name and
+a routing url. What the composer has instead is a rule about routes, and the
+shape of that rule decides which mistakes it catches. Two subgraphs declaring
+one field leaves two candidates and no way to choose, so it is refused unless
+every subgraph declaring it says \code{@shareable}, which takes both teams.
+One subgraph taking a field off another with \code{@override} leaves exactly
+one candidate, so it is accepted with nothing printed, no edit to the other
+document, and a composed schema that is byte for byte the one before it.}
+{Put the record where the document is: a code-ownership file over each
+subgraph's schema is the only gate in the chain that a human reads, and it
+fires on the thing that actually happens, which is somebody changing a file.
+Treat a field you add to another team's type as a change to their type and
+review it as one, because the composer will not tell them. Move a field in
+order, resolver first, then the \code{@override}, then the origin's copy, and
+delete the directive when the migration ends, since a stale one composes
+forever and reads like a migration still in flight. Give the shared root type
+an owner by convention, because seven root fields from four services will not
+acquire one otherwise. What is sold for the rest of it, contracts from both
+vendors and schema proposals from Cosmo, needs the same control plane the
+schema check needed.}
+\end{problemsummary}

@@ -1,0 +1,101 @@
+\section{The One Thing It Asks Permission For}
+\label{sec:ch17-the-one-thing-it-asks-permission-for}
+
+\index{shareable@\code{"@shareable}!the one refusal in this chapter|(}%
+There is a third edit, and it is smaller than either in
+section~\ref{sec:ch17-the-field-nobody-approved}. Take the
+\code{@override(from: "sessions")} off and leave the declaration standing.
+Ratings now says it has an \code{abstract} on \code{Session}, and so does
+Sessions, and neither says anything else. Compose:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+The Object "Session" defines the same fields in multiple subgraphs without the "@shareable" directive:
+ The field "abstract" is defined in the following subgraphs: "sessions", "ratings".
+ However, it is not declared "@shareable" in any of them.
+\end{minted}
+
+\index{composition!the shape of the one refusal}%
+Exit one. Two services claim one field, the composer has no rule for choosing
+between them, and it stops. That is the entire ownership check in Apollo
+Federation, and it is worth reading for what it actually says. It says that
+two answers to one question is a state the composer cannot plan a route out
+of. It has no opinion at all about whether Ratings had any business declaring
+the field.
+
+\subsection{Both Sides Have to Say the Word}
+
+\index{shareable@\code{"@shareable}!one document is not enough}%
+The obvious repair is to mark the field \code{@shareable}, and the interesting
+question is where. Put it on the Sessions copy alone, so that the service that
+owns the rows has consented and the newcomer has not, and the composer refuses
+again. Its first line is the one above, unchanged; these two are what has
+grown a distinction:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+ The field "abstract" is defined and declared "@shareable" in the following subgraph: "sessions".
+ However, it is not declared "@shareable" in the following subgraph: "ratings".
+\end{minted}
+
+\index{shareable@\code{"@shareable}!the refusal is symmetric}%
+Put it on the Ratings copy alone instead and the same message comes back with
+the two names exchanged. Both directions refuse, which is the answer to the
+question worth asking: there is no asymmetry here to exploit. The service that
+owns the rows cannot unilaterally invite a second owner, and a second owner
+cannot unilaterally invite itself. Apollo states the rule as a
+rule~\autocite{apollovaluetypes}:
+
+\begin{quote}
+If a type or field is marked \code{@shareable} in any subgraph, it must be
+marked either \code{@shareable} or \code{@external} in every subgraph that
+defines it. Otherwise, composition fails.
+\end{quote}
+
+\index{composition!enforcing what the vendor documents}%
+And this composer does exactly that, which is worth saying out loud after four
+chapters of it going its own way. Chapter~\ref{ch:composition} found it
+refusing a \code{@cost} weight over a type its own definition disagreed with
+Hot Chocolate about, chapter~\ref{ch:second-third-subgraph} found it waving
+through a \code{@provides} whose precondition Apollo says is a composition
+error, chapter~\ref{ch:null-blast-radius} found it taking the more permissive
+of two types for one shareable field, and chapter~\ref{ch:satisfiability}
+found it approving a graph with no route through it at all. Here it enforces
+the documented rule in both directions and reports which side is missing. Write
+both words and the graph composes at exit zero, with both subgraphs recorded
+as able to answer the field.
+
+\subsection{What Sharing Actually Promises}
+
+\index{shareable@\code{"@shareable}!nothing checks that the two agree}%
+What neither vendor will do for you is the part that matters. Composition
+checks that the two declarations have the same shape. Nothing checks, and
+nothing can check, that the two resolvers return the same value. WunderGraph
+says so in the reference page for the directive~\autocite{cosmoshareable}:
+
+\begin{quote}
+However, it is the developer's responsibility to ensure that any such field
+definitions always resolve identically, regardless of which subgraph is
+ultimately resolving the field. Failure to make each resolver identical would
+cause different data to be returned indeterminately.
+\end{quote}
+
+\index{shareable@\code{"@shareable}!the promise this book already broke}%
+This book has been carrying a field like that since
+chapter~\ref{ch:composition}. \code{Query.node} is shareable in two subgraphs,
+because chapter~\ref{ch:composition} shipped a type interceptor to make it so,
+and
+chapter~\ref{ch:second-third-subgraph} then measured that neither subgraph can
+keep the promise: Sessions resolves \code{node(id:)} for a session, Speakers
+for a speaker, and three requests for the same id disagree with each other
+depending on how the client wrote the fragment. \enquote{Indeterminately} is
+exactly the word. Chapter~\ref{ch:satisfiability} collected the second bill
+for the same declaration, when the shareable root field turned out to buy
+silence out of the resolvability check.
+
+\index{ownership!consent to share, none to take}%
+So the shape of the whole mechanism is this. To have two owners of a field,
+both documents must say so, in a word a human types, and the composer will not
+proceed until they agree. To have a different owner of a field, one document
+says so and nobody else is consulted at all. Consent is required for the
+arrangement where the two teams have to talk anyway, and not required for the
+one where a value silently starts coming from somewhere else.
+\index{shareable@\code{"@shareable}!the one refusal in this chapter|)}%

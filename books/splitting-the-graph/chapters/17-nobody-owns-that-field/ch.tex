@@ -1,13 +1,18 @@
-% Scope (SPEC.md, Table of contents): ownership, governance, and schema evolution as a social problem wearing an API problem's clothes
+% Scope (SPEC.md, Table of contents): ownership, governance, and schema
+% evolution as a social problem wearing an API problem's clothes. Confirmed
+% 2026-09-06 while drafting, with one clause added rather than changed: the
+% composer demands consent from every declaring subgraph before two may share
+% a field and demands nothing from anybody before one takes a field off
+% another, which is measured rather than argued.
 \chapter{Nobody Owns That Field}
 \label{ch:ownership}
 
-\emph{Not yet drafted.}
+Composition has no word for an owner, so the only question it can ask about a
+field two teams both want is whether it can still plan a route to it.
 
-% Chapter skeleton, SPEC decision 13. Five beats, this order:
-%   1. The one sentence  - what this chapter establishes, stated first.
-%   2. Show it          - the thing running, or in Part III the thing failing.
-%   3. Why it does that - the mechanism. All theory lives here (decision 14).
-%   4. Do it properly   - the complete, correct implementation.
-%   5. Summary box      - decision 21.
-% Section files are \input from here, numbered 01-, 02-, ... from the book root.
+\input{chapters/17-nobody-owns-that-field/01-the-field-nobody-approved}
+\input{chapters/17-nobody-owns-that-field/02-the-one-thing-it-asks-permission-for}
+\input{chapters/17-nobody-owns-that-field/03-what-the-config-calls-a-subgraph}
+\input{chapters/17-nobody-owns-that-field/04-handing-a-field-over}
+\input{chapters/17-nobody-owns-that-field/05-writing-it-down-somewhere-else}
+\input{chapters/17-nobody-owns-that-field/06-summary}

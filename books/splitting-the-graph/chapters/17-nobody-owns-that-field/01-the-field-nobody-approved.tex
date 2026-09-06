@@ -1,0 +1,152 @@
+\section{The Field Nobody Approved}
+\label{sec:ch17-the-field-nobody-approved}
+
+\index{ownership!the word the toolchain does not have|(}%
+Chapter~\ref{ch:breaking-changes} closed on a type three services declare and
+none of them owns. I used the word \emph{owns} there the way everybody uses
+it, as though it named something. It does not name anything the toolchain
+holds. There is no owner in the composed schema, none in the router execution
+config, none in the Apollo Federation directive set, and the word appears
+nowhere in the Composite Schemas draft
+chapter~\ref{ch:federation-model} decided against building on. What a team
+means by it is real, and it lives entirely in the conversation they have with
+each other.
+
+\index{ownership!two edits to one document}%
+So take two edits that a team could make on a Tuesday afternoon, both to the
+Ratings document, both without opening either of the other three. The Ratings
+service owns no session row; chapter~\ref{ch:second-third-subgraph} gave it
+three fields on a \code{Session} it enters through a key. The four services
+themselves are untouched in every run below, and only the document handed to
+the composer differs.
+
+\subsection{A Field on Somebody Else's Type}
+
+\index{Session type@\code{Session} type!a fourth service field}%
+The first edit adds a field. \code{flagged: Boolean}, on the Ratings copy of
+\code{Session}, of the kind a moderation feature needs. Compose the four
+documents and the composer answers as it answers everything in
+chapter~\ref{ch:breaking-changes} that is not a routing problem:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+Router execution config successfully written to ".../router.json".
+\end{minted}
+
+\index{composition!accepts a field on a type the service owns no row of}%
+Exit zero. The composed schema gains exactly two lines, the description and
+the field, so \code{Session} in the graph every client reads now carries a
+field the Sessions team never wrote:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+206a207,208
+>   """Whether this session was flagged by a moderator."""
+>   flagged: Boolean
+\end{minted}
+
+\index{ownership!adding a field asks nobody}%
+\code{diff} writes an addition as \code{a}, so that first line is saying two
+lines arrived after line 206 and nothing else moved. The Sessions document was
+read on the way, because composition reads all four, and it was not consulted.
+Nothing in the merge asks whether the team that defines \code{Session} wanted
+a field it never declared, because nothing in the merge has a way to ask. And
+this half is not even a complaint: it is the property
+chapter~\ref{ch:do-you-need-this} sold federation on. Your deployment, yours
+alone, and a field you can add without a meeting.
+
+\subsection{A Field That Was Already Somebody Else's}
+
+\index{override@\code{"@override}!one line takes a field}%
+The second edit is different in kind and identical in cost. \code{Session}
+already has an \code{abstract}, declared in
+chapter~\ref{ch:hot-chocolate-zero} and answered out of the Sessions service's
+own table ever since. Declare it in
+the Ratings document with one directive on it, \code{@override(from:
+"sessions")}, which is Apollo's mechanism for moving a field from one subgraph
+to another~\autocite{apollodirectives}. Compose the same four documents, the
+Sessions one still byte for byte what the service exports:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+Router execution config successfully written to ".../router.json".
+\end{minted}
+
+\index{composition!a field changes hands at exit zero}%
+Exit zero, and the same one line. What changed is inside the config, in the
+list each subgraph carries of the fields it is recorded as able to answer for
+\code{Session}:
+
+\begin{center}
+\footnotesize
+\begin{tabular}{l l}
+\toprule
+Subgraph & Fields of \code{Session} it can answer \tabularnewline
+\midrule
+\code{sessions}, before & \code{id}, \code{speaker}, \code{title},
+  \code{abstract}, \code{startsAt}, \code{durationMinutes} \tabularnewline
+\code{sessions}, after & \code{id}, \code{speaker}, \code{title},
+  \code{startsAt}, \code{durationMinutes} \tabularnewline
+\addlinespace
+\code{ratings}, before & \code{averageScore}, \code{ratingCount},
+  \code{feedbackUrl}, \code{id} \tabularnewline
+\code{ratings}, after & \code{abstract}, \code{averageScore},
+  \code{ratingCount}, \code{feedbackUrl}, \code{id} \tabularnewline
+\bottomrule
+\end{tabular}
+\end{center}
+
+\index{supergraph!a change of owner does not reach it}%
+\code{abstract} has left one service and arrived at another. And the schema a
+client reads is byte for byte the one it was before the edit: 247 lines,
+\code{diff} silent, every field in the same position with the same type and
+the same description. A client cannot see this change. It cannot introspect it
+either, which is what separates it from every change in
+chapter~\ref{ch:breaking-changes}: there, the schema moved and no check said
+so, and here nothing moves at all except a routing table nobody outside the
+graph ever reads.
+
+\subsection{What the Router Does With It}
+
+\index{override@\code{"@override}!is a claim, not a transfer}%
+\code{@override} is a claim. Composition takes the claim on trust: it never
+asks the Ratings service whether it can produce an abstract. Nothing in
+composition asks a service anything at all, which is what makes it runnable on
+a laptop with the graph switched off and is not a defect. It does mean that
+the first thing in the whole system to check the claim is a request.
+
+\index{HTTP 200!a field with a new owner and no data behind it}%
+Start a router on that config, with the same four unmodified services behind
+it, and send the page query this book has printed since
+chapter~\ref{ch:data-without-n-plus-1}, with one field added:
+
+\begin{minted}{graphql}
+{ sessions(first: 10) { nodes { title abstract } } }
+\end{minted}
+
+\index{DOWNSTREAM\_SERVICE\_ERROR@\code{DOWNSTREAM\_SERVICE\_ERROR}!a field the new owner never had}%
+Here is the \code{errors} half of what comes back, with the \code{locations}
+array and the \code{data} key left out to keep the two messages next to each
+other. The outer one is the router's and the inner one is the Ratings service
+answering it:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'ratings' at Path 'sessions.nodes'.","extensions":{"errors":[{"message":"The field `abstract` does not exist on the type `Session`.","extensions":{"code":"DOWNSTREAM_SERVICE_ERROR"}}],"serviceName":"ratings","statusCode":200}}]}
+\end{minted}
+
+\index{HTTP 200!the graph still answers the rest of the page}%
+Two hundred, as everything in chapter~\ref{ch:breaking-changes} was. The
+\code{data} key that block leaves out is intact: four sessions, every title
+where it was, and \code{abstract} null on all four. One field of one type
+stopped working, in a graph nobody deployed a line of code to, and the two
+sentences that say so are one inside the other.
+
+\index{ownership!nobody moved the data}%
+Nobody moved the data. That is the whole of what happened: a directive said
+the Ratings service resolves \code{abstract} now, four documents composed
+around the claim, a router loaded the result, and the service behind it has
+never heard of the field. In a real migration the resolver ships first and the
+directive follows, and the reason that ordering is a convention rather than a
+rule is that nothing between the edit and the request enforces it.
+
+\index{composition!refused nothing in this section}%
+Two edits, one document each, and the composer refused neither. It does refuse
+something, and what it refuses is where this chapter turns.
+\index{ownership!the word the toolchain does not have|)}%
