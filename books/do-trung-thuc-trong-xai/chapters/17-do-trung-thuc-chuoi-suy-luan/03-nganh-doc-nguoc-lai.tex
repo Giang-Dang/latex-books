@@ -1,0 +1,98 @@
+\section{Ngành xếp chuỗi suy luận vào nhóm tự diễn giải được}
+\label{sec:ch17-nganh-doc-nguoc-lai}
+
+\index{diễn giải nội tại!chuỗi suy luận bị xếp vào đây|(}%
+Mục trước đếm ba lần bài mở đường từ chối tuyên bố về khả năng diễn giải. Mục
+này đọc một khảo sát xuất bản ba năm sau đó, và chỗ nó xếp chuỗi suy luận là
+đúng chỗ mà ba lần từ chối kia loại trừ.
+
+\index{diễn giải nội tại!ba nhóm của khảo sát}%
+Khảo sát ấy hỏi mô hình ngôn ngữ giúp được gì cho việc giải thích các mô hình AI,
+và nó chia các kỹ thuật thành ba nhóm:
+\tn{giải thích hậu nghiệm}{post-hoc explanation}, diễn giải nội tại, và giải
+thích lấy con người làm trung tâm~\autocite{p16llmxai}.
+\tn{Diễn giải nội tại}{intrinsic interpretability} là nhóm mà hình 2 của bài mô
+tả bằng một dòng, thiết kế mô hình ngôn ngữ sao cho nó tự diễn giải được, và cho
+hai ví dụ: kiến trúc mô hình trong suốt, và khả năng diễn giải dựa trên
+\tn{cơ chế chú ý}{attention mechanism}. Chuỗi suy luận không có mặt trong hình.
+Nó vào nhóm ấy ở phần thân, trang 4~\autocite{p16llmxai}:
+
+\begin{quote}
+Một kỹ thuật đáng chú ý trong nhóm này là suy luận theo chuỗi suy luận, kỹ thuật
+chia các bài toán phức tạp thành những bước nhỏ hơn, dễ quản lý hơn, cho phép mô
+hình đi theo một tiến trình logic tới kết luận.%
+\footnote{Nguyên văn: \enquote{A notable technique in this category is Chain of
+Thought (CoT) reasoning [38], which breaks down complex problems into smaller,
+manageable steps, allowing models to follow a logical progression toward
+conclusions.}}
+\end{quote}
+
+Nghĩa của nước đi ấy là gì thì phải đọc theo định nghĩa của chính nhóm. Một
+phương pháp hậu nghiệm được kiểm bằng cách hỏi nó có phản ánh đúng mô hình
+không; đó là toàn bộ Phần~IV. Một mô hình \emph{tự} diễn giải được thì không cần
+phép kiểm ấy, vì cấu trúc của nó đã là lời giải thích. Xếp chuỗi suy luận vào
+nhóm thứ hai, do đó, không phải một cách sắp xếp cho gọn danh mục. Nó là lời
+tuyên bố rằng ở đây không có gì phải đối chiếu.
+
+\index{diễn giải nội tại!khảo sát dẫn ai cho nước đi ấy}%
+Đáng chú ý là bài dẫn ai cho câu vừa trích. Số hiệu trong ngoặc không trỏ về bài
+mở đường mà trỏ về một khảo sát khác về chuỗi suy luận, của Chu và cộng
+sự~\autocite{p16llmxai}. Bài mở đường \emph{có} nằm trong danh mục tài liệu của
+khảo sát, dưới đúng nhan đề của nó, nên đây không phải chuyện không biết tới.
+Câu phụ lục C.2 mà mục~\ref{sec:ch17-bai-mo-duong} trích nằm trong một bài mà
+khảo sát này có trên kệ và không mở tới.
+
+\index{diễn giải nội tại!bảng 1 dẫn bài đo ngược lại}%
+Chỗ hỏng thật thì nằm trong một bảng. Bảng 1 của khảo sát, trang 6, tóm tắt cả
+bài thành mười dòng, mỗi dòng một chủ đề, một cột ý chính và một cột nguồn. Dòng
+\enquote{Intrinsic interpretability} có cột ý chính ghi \enquote{Chain of thought
+reasoning, guided templates for logical progression} và cột nguồn liệt kê sáu số
+hiệu~\autocite{p16llmxai}. Một trong sáu số ấy trỏ về bài của Lanham và cộng sự,
+nhan đề \emph{Measuring Faithfulness in Chain-of-Thought Reasoning}. Rà toàn văn
+bài khảo sát, số hiệu ấy xuất hiện đúng hai lần: một lần trong ô bảng vừa nói, và
+một lần trong chính mục danh mục tài liệu của nó. Nó không xuất hiện lần nào
+trong phần thân.
+
+Nghĩa là bài duy nhất trên kệ của khảo sát từng đo xem chuỗi suy luận có trung
+thực hay không được dẫn đúng một lần, để chống đỡ cho lời khẳng định rằng chuỗi
+suy luận làm mô hình tự diễn giải được, và kết quả nó đo thì không được nhắc.
+
+\index{diễn giải nội tại!bài Lanham đo được gì}%
+Sách đọc bài ấy, vì không đọc thì không phán được câu vừa rồi. Đây là lần thứ tư
+sách phải mở một bài ngoài danh mục 32 bài, sau bảy khóa của
+chương~\ref{ch:do-do-trung-thuc}, một khóa của
+chương~\ref{ch:giai-thich-duoi-tan-cong} và một khóa của
+chương~\ref{ch:nut-that-khai-niem}, và lý do lần này là lý do của lần thứ ba: một
+bài trong danh mục nói một điều \emph{về} một bài khác, và chương phải xử câu ấy.
+Bài của Lanham và cộng sự can thiệp vào chuỗi suy luận, chẳng hạn bằng cách chèn
+lỗi vào giữa chuỗi hoặc viết lại chuỗi bằng lời khác, rồi xem dự đoán của mô hình
+đổi thế nào. Kết quả đo của nó nằm trong một câu của phần tóm
+tắt~\autocite{mcotfaith}:
+
+\begin{quote}
+Khi các mô hình trở nên lớn hơn và có năng lực hơn, chúng sinh ra suy luận
+\emph{kém trung thực hơn} trên hầu hết các nhiệm vụ chúng tôi khảo sát.%
+\footnote{Nguyên văn: \enquote{As models become larger and more capable, they
+produce less faithful reasoning on most tasks we study.}}
+\end{quote}
+
+Câu ấy một mình thì dễ bị đọc quá tay, nên phải đọc kèm câu kết luận của cùng
+phần tóm tắt, và sách in cả hai vì mỗi câu chặn một cách đọc sai khác nhau:
+
+\begin{quote}
+Nhìn chung, kết quả của chúng tôi gợi ra rằng chuỗi suy luận \emph{có thể} trung
+thực nếu các điều kiện như quy mô mô hình và nhiệm vụ được chọn cẩn thận.%
+\footnote{Nguyên văn: \enquote{Overall, our results suggest that CoT can be
+faithful if the circumstances such as the model size and task are carefully
+chosen.}}
+\end{quote}
+
+\index{diễn giải nội tại!chuỗi suy luận bị xếp vào đây|)}%
+Câu thứ hai giữ cho câu thứ nhất khỏi bị đọc quá tay, và sách in nó vì đúng lý do
+ấy. Bài không kết luận rằng chuỗi suy luận không trung thực; nó kết luận rằng độ
+trung thực của chuỗi phụ thuộc vào mô hình nào và nhiệm vụ nào. Nhưng phụ thuộc
+vào mô hình chính là điều một kỹ thuật \emph{tự} diễn giải được không được phép
+có: nếu tính chất ấy đổi theo quy mô, và đổi theo chiều xấu đi, thì nó không phải
+tính chất của cách nhắc mà là tính chất của từng cặp mô hình và nhiệm vụ, và cần
+đo ở từng cặp. Đó là lời phát biểu hẹp và đúng, và nó đủ để bác dòng bảng: bài
+được dẫn ở đó không ủng hộ cái nó được dẫn để ủng hộ.

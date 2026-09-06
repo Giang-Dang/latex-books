@@ -1,0 +1,35 @@
+\begin{tikzpicture}[
+  every node/.style={font=\footnotesize, align=center},
+  known/.style={draw=black!85, line width=1pt, fill=black!12,
+    minimum width=32mm, minimum height=9mm},
+  unknown/.style={draw=black!55, dotted, thick, fill=white,
+    minimum width=38mm, minimum height=9mm},
+  route/.style={draw=black!65, rounded corners=2pt, fill=black!5,
+    minimum width=40mm, minimum height=20mm, text width=38mm,
+    font=\scriptsize},
+  flow/.style={-{Stealth[length=2mm]}, thick, black!70},
+  thinflow/.style={-{Stealth[length=1.6mm]}, black!55},
+  lbl/.style={font=\scriptsize, align=center, black!55}
+]
+  \node[known]   (gt)  at (1.7,4.3) {vế trái:\\lời giải thích};
+  \node[unknown] (dep) at (8.3,4.3) {vế phải: cái mà hành vi\\phụ thuộc vào};
+
+  \draw[flow] (gt.east) -- (dep.west);
+  \node[lbl] at (5.0,4.95) {định nghĩa~\ref{def:ch01-do-trung-thuc} so hai bên};
+
+  \node[route] (r1) at (0,0.4)
+    {\textbf{một phương pháp bên ngoài}\\[1mm]
+     nhận mô hình và đầu vào, chạy riêng, rồi tính ra lời giải thích};
+  \node[route] (r2) at (5.6,0.4)
+    {\textbf{chính mô hình}\\[1mm]
+     in chuỗi suy luận và đáp án trong cùng một lượt sinh; không có phương pháp nào chạy riêng};
+
+  \draw[thinflow] (r1.north) -- (0,2.6);
+  \draw[thinflow] (r2.north) -- (5.6,2.6);
+  \draw[black!55] (0,2.6) -- (5.6,2.6);
+  \draw[flow] (1.7,2.6) -- (gt.south);
+  \node[lbl] at (2.8,3.15) {hai chỗ vế trái có thể tới từ};
+
+  \node[lbl] at (0,-1.55)   {các phương pháp của Phần~II};
+  \node[lbl] at (5.6,-1.55) {chương này};
+\end{tikzpicture}
