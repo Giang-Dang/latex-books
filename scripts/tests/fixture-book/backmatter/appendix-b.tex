@@ -4,6 +4,12 @@
 %
 % Chapter 02 has a block and no folder, which is the ordinary case for a book
 % whose glossary runs ahead of its drafting.
+%
+% Two rows are here for Gloss.WarnNested and are used by no prose file, so
+% they stay invisible to every other check: 'widget frame' nests chapter 01's
+% 'widget' and must be reported, and 'flanged' contains 'flange' mid-word and
+% must not be, which is what separates the boundary rule from a substring
+% test.
 \chapter{Glossary}
 \label{app:glossary}
 
@@ -26,6 +32,7 @@ widget & widget-thing & translate \\
 Term & Original & Decision \\
 \midrule
 sprocket & sprocket-thing & translate \\
+widget frame & widget-frame & translate \\
 \bottomrule
 \end{tabular}
 
@@ -37,5 +44,6 @@ sprocket & sprocket-thing & translate \\
 Term & Decision \\
 \midrule
 flange & keep \\
+flanged & keep \\
 \bottomrule
 \end{tabular}

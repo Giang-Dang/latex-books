@@ -402,10 +402,12 @@
     # masking. Renaming without updating this costs you the exemption silently.
     # Code        - inline code spans. Their contents are exempt from the quote,
     #               dash, contraction, spelling and number checks.
-    # Quoted      - quotation macros. Their contents are exempt from the dash,
+    # Quoted      - quotation macros. Their contents are exempt from the
     #               contraction and spelling checks, because quoted words are
     #               someone else's; they are deliberately not exempt from the
-    #               quote check, so nested quotations still use the macro.
+    #               quote check, so nested quotations still use the macro, nor
+    #               from the dash check, because -- is a LaTeX instruction
+    #               rather than a word anyone can be quoted as writing.
     # Identifiers - macros whose argument is a name rather than English, so that
     #               a label, a path or a citation key is never read as a
     #               contraction or a misspelling.
@@ -440,6 +442,10 @@
     # KeepPattern  - the heading that opens the block of terms the book does not
     #                translate. Optional; it only sharpens a message, because
     #                glossing a term the book keeps as is sets it beside itself.
+    # WarnNested   - report each pair of glossary terms where one is nested
+    #                inside the other. Off by default: the pairs are a book's
+    #                own vocabulary until a new row makes one of them a
+    #                mistake, so this earns its keep when a block is added.
     # Exempt       - terms that are also ordinary words in the book's language,
     #                where a gloss helps nobody. Keep it short: an exception
     #                list carrying most of a check's signal is a list, not a
@@ -452,6 +458,7 @@
     #     BlockPattern = ''
     #     KeepPattern  = ''
     #     Exempt       = @()
+    #     WarnNested   = $false
     # }
     #
     # THIS BOOK: on from init, against appendix B, which the SPEC's gloss

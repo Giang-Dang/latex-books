@@ -200,6 +200,14 @@ $Expected = @(
     # a displayed quotation is somebody else's words. Exact comparison makes
     # their silence a test rather than an absence.
     "chapters/01-triggers/06-dashes.tex:4: [dash] en/em dash ligature in prose; reword or use ASCII punctuation"
+    # Line 7 is the same ligature inside \enquote{}. Macros.Quoted masks that
+    # span for the contraction and spelling checks, and deliberately not for
+    # this one: -- is a LaTeX instruction rather than a word someone can be
+    # quoted as writing, and it sets the same banned dash either way. Line 9
+    # is the other half of the same rule and is expected to stay silent, so
+    # that a future widening of the mask fails here rather than in a book:
+    # \code{--no-restore} is a flag, and Macros.Code still exempts it.
+    "chapters/01-triggers/06-dashes.tex:7: [dash] en/em dash ligature in prose; reword or use ASCII punctuation"
     "chapters/01-triggers/07-numbers.tex:7: [number] '9.99' is in no research/ note; measure it, or record where it came from"
     # 3.14 appears only in research/README.md, which documents the folder and is
     # deliberately not counted as a note.
@@ -431,6 +439,54 @@ foreach ($case in $WiringCases) {
         Write-Host "    expected to remain: $($want -join ', ')"
         Write-Host "    actually remained:  $($got -join ', ')"
     }
+}
+
+# Gloss.WarnNested cannot be a wiring row either, and for the opposite reason:
+# it defaults off, so it silences nothing and the loop above would pass on a
+# switch wired to nothing at all. Turning it on is the only thing that proves
+# it, and what it must add is exactly one pair.
+#
+# The glossary holds two nested pairs by construction and only one of them is
+# a collision: 'widget' matches inside 'widget frame' on a letter boundary,
+# and 'flange' sits inside 'flanged' with a letter after it and does not.
+# Reporting two here means the check fell back to a substring test.
+# Invoke-BookFixture keeps only the finding lines, and the policy line has to
+# be read from the same run, so this writes the config and calls the raw form.
+$nestedConfig = New-BookConfig @{
+    Gloss = $BaseSections.Gloss -replace '\s*\}$', "; WarnNested = `$true }"
+}
+Set-Content -LiteralPath $bookPolicy -Value $nestedConfig -Encoding utf8
+try {
+    $nestedRun = (Invoke-CheckerRaw $bookFix).Lines
+} finally {
+    Remove-Item -LiteralPath $bookPolicy -Force -ErrorAction SilentlyContinue
+}
+$nestedPrefix = 'scripts/tests/' + (Split-Path -Leaf $bookFix)
+$nested = @($nestedRun |
+    Where-Object { $_ -like "$nestedPrefix/*" -and $_ -like '*[[]gloss-nested]*' } |
+    ForEach-Object { $_.Substring($nestedPrefix.Length + 1) })
+$NestedExpected = @(
+    "backmatter/appendix-b.tex: [gloss-nested] 'widget' (chapter 1) is nested " +
+    "inside 'widget frame' (chapter 2); every use of the longer term counts " +
+    'as a use of the shorter one too'
+)
+if (Compare-Findings 'fixture-book with Gloss.WarnNested' $NestedExpected $nested) {
+    # And the run has to admit the check ran, for the reason the captured
+    # exemption does: a gate doing more than its printed policy says is the
+    # same problem as one doing less.
+    if (@($nestedRun | Where-Object { $_ -like '*gloss=*+nested*' }).Count -eq 0) {
+        Write-Fail 'the policy line did not report that WarnNested was on'
+    } else {
+        Write-Host '[ok]   gloss: WarnNested reports the nested pair, not the mid-word one'
+    }
+}
+
+# The other half of default-off: with the switch absent the pair is not
+# reported, so a book that never asks for this check never sees it.
+if (@((Invoke-BookFixture @{}) | Where-Object { $_ -like '*[[]gloss-nested]*' }).Count -ne 0) {
+    Write-Fail 'gloss-nested fired without Gloss.WarnNested being set'
+} else {
+    Write-Host '[ok]   gloss: WarnNested is off until a book asks for it'
 }
 
 # Spelling.Variants cannot be a wiring row: every spelling finding carries the

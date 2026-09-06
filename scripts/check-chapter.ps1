@@ -247,6 +247,15 @@ function Get-DefaultPolicy {
         # book is written in, where the cadence would set a parenthesis after a
         # word nobody needs translated. It is a list rather than a switch so
         # that using it costs a line naming the term.
+        #
+        # WarnNested reads the term list against itself rather than the prose.
+        # The check below matches term by term, so where one term is a
+        # substring of another every use of the longer term is also a use of
+        # the shorter one, and it is the shorter term's owning chapter that
+        # gets blamed for the cadence. Off by default and worth turning on
+        # when a glossary block is added rather than left on, because the
+        # pairs it reports are a book's existing vocabulary until they are
+        # not: it is a tripwire on the next row, not a defect list.
         Gloss        = [ordered]@{
             Enabled      = $true
             Glossary     = ''
@@ -254,6 +263,7 @@ function Get-DefaultPolicy {
             BlockPattern = ''
             KeepPattern  = ''
             Exempt       = @()
+            WarnNested   = $false
         }
 
         # TikZ style names that pgfkeys has already taken. house-style.md has
@@ -1043,8 +1053,24 @@ function Get-GlossaryTerms {
         }
         if ($KeepPattern -and $line -match $KeepPattern) { $chapter = $null; $isKeep = $true; continue }
 
+        # booktabs alone is enough for a tabular, where \midrule opens the rows
+        # and \bottomrule closes them. A block long enough to need a longtable
+        # breaks that, because a longtable declares its repeated header and its
+        # footer *before* the body and each declaration is made of the same
+        # rules: \toprule, a header row, \midrule, \endfirsthead, then the
+        # same again for \endhead, then \bottomrule, \endlastfoot, and only
+        # then the rows. Reading that as booktabs picks up the header row as a
+        # term and then stops at the footer's \bottomrule, which is how one
+        # book's entire keep-in-the-original block stayed invisible to this
+        # check while the printed count sat at one.
+        #
+        # So: \toprule opens a declaration and closes the body, and the four
+        # \end... markers close a declaration. Whatever follows the last of
+        # them is the body, which is why they open row state rather than
+        # closing it.
         if ($line -match '^\\midrule') { $inRows = $true; continue }
-        if ($line -match '^\\(bottomrule|end\{tabular\})') { $inRows = $false; continue }
+        if ($line -match '^\\end(firsthead|head|foot|lastfoot)\b') { $inRows = $true; continue }
+        if ($line -match '^\\(toprule|bottomrule|end\{tabular\}|end\{longtable\})') { $inRows = $false; continue }
         if (-not $inRows) { continue }
         if ($line -notmatch '\\\\\s*$') { continue }
 
@@ -1340,9 +1366,16 @@ function Format-Policy {
 
     # $glossary is already $null when the family is off for either reason, so
     # one expression covers "Enabled = $false" and "no Glossary named".
+    # Both counts, because only the first one is checked and a session that
+    # adds rows to the keep block needs to see its edit land. One book read a
+    # stationary "N terms" after adding six keep rows and had to subtract to
+    # work out that the figure had never counted them.
     if ($glossary) {
         $ex = $policy.Gloss.Exempt.Count
-        $bits += "gloss=$($glossary.Owner.Count) terms$(if ($ex) { "($ex exempt)" })"
+        $glossBit = "gloss=$($glossary.Owner.Count) owned+$($glossary.Keep.Count) keep"
+        if ($ex) { $glossBit += "($ex exempt)" }
+        if ($policy.Gloss.WarnNested) { $glossBit += '+nested' }
+        $bits += $glossBit
     } else { $bits += 'gloss=off' }
 
     if ($policy.Figures.Enabled) {
@@ -1754,8 +1787,19 @@ foreach ($f in $texFiles) {
             }
         }
 
-        # 8. dash: runs of exactly 2-3 hyphens read as en/em dashes in prose
-        if ($policy.Dashes.Enabled -and $prose -match '(?<!-)---?(?!-)') {
+        # 8. dash: runs of exactly 2-3 hyphens read as en/em dashes in prose.
+        #
+        # Reads $noCode and not $prose, so inline code is exempt and a
+        # quotation is not. The quoting mask exists because the words inside
+        # a quotation are someone else's, which is a reason the contraction
+        # and spelling checks stand down and is not a reason this one does:
+        # -- is a LaTeX instruction rather than a character a source can
+        # contain, and it sets the same banned dash inside \enquote{} as
+        # outside it. The displayed quotation environments already work this
+        # way, and the comment on $quoteEnvs above has said so all along; a
+        # chapter shipped a quoted -- past this gate before the code caught
+        # up with it.
+        if ($policy.Dashes.Enabled -and $noCode -match '(?<!-)---?(?!-)') {
             Add-Finding $f.FullName $lineNo 'dash' 'en/em dash ligature in prose; reword or use ASCII punctuation'
         }
 
@@ -1851,6 +1895,37 @@ foreach ($f in $charFiles) {
 # to the glossary at all. The glossary is the source of truth, so a term in
 # neither it nor a gloss call is indistinguishable from ordinary prose. That
 # stays a reading job, and gloss-orphan below closes only the cheap half of it.
+
+# Before the walk, the list against itself. A pair here does not mean either
+# term is wrong; it means the walk below cannot tell them apart, so the
+# shorter one's chapter answers for both. One chapter nearly bound a term
+# containing an earlier chapter's, which would have charged this chapter with
+# borrowing a term it never writes.
+#
+# Both lists, and both directions: a term nested inside a keep-in-the-original
+# row collides exactly as one nested inside another translated term.
+if ($glossary -and $policy.Gloss.WarnNested) {
+    $nestOwner = @{}
+    foreach ($t in $glossary.Owner.Keys) { $nestOwner[$t] = "chapter $($glossary.Owner[$t])" }
+    foreach ($t in $glossary.Keep) { if (-not $nestOwner.ContainsKey($t)) { $nestOwner[$t] = 'the keep-as-is list' } }
+
+    # The same boundary rule the walk uses, not a substring test: a term is
+    # only really hidden inside another when it would match there, and a
+    # plain IndexOf reports every short name that happens to sit inside a
+    # longer word.
+    $nestTerms = @($nestOwner.Keys | Sort-Object)
+    foreach ($short in $nestTerms) {
+        $re = '(?i)(?<!\p{L})' + [regex]::Escape($short) + '(?!\p{L})'
+        foreach ($long in $nestTerms) {
+            if ($long.Length -le $short.Length) { continue }
+            if ($long -notmatch $re) { continue }
+            Add-Finding $glossPath 0 'gloss-nested' (
+                "'$short' ($($nestOwner[$short])) is nested inside '$long' " +
+                "($($nestOwner[$long])); every use of the longer term counts " +
+                'as a use of the shorter one too')
+        }
+    }
+}
 
 if ($glossary -and $glossary.Owner.Count -gt 0) {
     $glossMacro = $policy.Gloss.Macro
