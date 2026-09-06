@@ -1,0 +1,106 @@
+\begin{tomtat}
+\begin{itemize}
+  \item Khi lời giải thích do chính mô hình in ra cùng đáp án, vế trái của
+định nghĩa~\ref{def:ch01-do-trung-thuc} đổi chủ, và bốn thứ đổi theo: không còn
+tập can thiệp nào để công bố, lời giải thích và đáp án ra đời từ cùng một quá
+trình nên vừa mô tả vừa gây ra, lời giải thích là văn bản nên khẳng định được
+những điều không có thật, và đối tượng đã đổi một lần rồi. Bài neo xếp chuỗi
+few-shot tuyến tính nguyên bản vào cùng lớp với bản đồ chú ý và xếp chuỗi của mô
+hình suy luận ra ngoài lớp ấy, nên hỏi một chuỗi có trung thực không thì phải hỏi
+thêm chuỗi của loại mô hình nào.
+  \item Bài đưa chuỗi suy luận vào ngành đã ba lần từ chối tuyên bố nó giải thích
+được mô hình: phần trong ngoặc của tính chất thứ hai nói việc mô tả đầy đủ các
+tính toán nâng đỡ một đáp án vẫn là câu hỏi mở, bài chọn động từ
+\enquote{bắt chước} thay vì gọi chuỗi là lời giải thích, và phụ lục C.2 gọi khả
+năng diễn giải là hệ quả phụ chứ không phải mục tiêu. Trong 43 trang, chữ
+\enquote{faithfulness} xuất hiện đúng hai lần, một lần trong một nhan đề được
+trích và một lần trong danh sách các năng lực trồi lên theo quy mô, còn chữ
+\enquote{unfaithful} không lần nào.
+  \item Khảo sát về mô hình ngôn ngữ cho XAI xếp chuỗi suy luận vào nhóm
+\tn{diễn giải nội tại}{intrinsic interpretability},
+tức nhóm tự diễn giải được nên không phải đối chiếu, và dẫn cho
+nước đi ấy một khảo sát khác chứ không phải bài mở đường, dù bài mở đường có trong
+danh mục tài liệu của nó. Ô nguồn của dòng bảng ấy dẫn bài đo độ trung thực của
+chuỗi suy luận, và bài được dẫn kết luận rằng mô hình càng lớn và càng mạnh thì
+suy luận sinh ra càng kém trung thực, và rằng chuỗi \emph{có thể} trung thực nếu
+chọn cẩn thận mô hình và nhiệm vụ. Số hiệu ấy xuất hiện đúng hai lần trong cả bài
+khảo sát, một lần trong ô bảng và một lần trong danh mục tài liệu.
+  \item Cùng khảo sát ấy đặt độ trung thực vào cột định lượng và không đưa ra
+công thức, ngưỡng, thủ tục hay điểm số nào để tính nó trong cả 18 trang; ô ví dụ
+của dòng ấy mô tả một hệ thống chứ không phải một con số, chữ \enquote{unfaithful}
+không xuất hiện lần nào, và năm khó khăn mà mục hạn chế liệt kê không có khó khăn
+nào là việc không ai kiểm được điều ấy. Bài của Jacovi và Goldberg thì được xếp ở
+dòng tính hợp lý trong bảng, trong khi phần thân dẫn nó đúng một lần và dẫn đúng.
+Mười hai con số duy nhất của bài, ở bảng~\ref{tab:ch17-saliency}, đo một quan hệ
+khác, gọi tên một mô hình khác với hình của chính nó, và không đơn điệu theo quy
+mô ở đúng chỗ hai mô hình bị xếp chung nhóm.
+  \item Khảo sát 2026 về suy luận nêu chỗ nghi ba lần, vẽ hình 27 đặt độ trung
+thực dưới mặt nước, và gọi tên ba họ dụng cụ, cả ba đều nằm trong bốn chỉ số mà
+bảng~\ref{tab:ch09-auroc} đã đem ra kiểm. Nhưng câu định nghĩa trong hình ấy hỏi
+chuỗi suy luận có gây ra đáp án hay không, tức là hỏi mức quan trọng chứ không
+hỏi độ trung thực, và đó là phép lẫn mà chẩn đoán trung tâm của bài neo nói tới,
+lần này nằm ngay trong một định nghĩa được in ra.
+  \item Chiều của phép chuyển ngược với chiều mà chữ \enquote{chuyển} của
+mục~\ref{sec:ch01-luan-de-cua-sach} gợi ra, và bằng chứng nằm trong sách:
+mục~\ref{sec:ch09-doi-tuong-khac-nhau} đã ghi rằng ở phía
+chuỗi suy luận câu hỏi đã được hỏi bằng thực nghiệm và câu trả lời là không, còn
+ở phía attribution đặc trưng thì chưa ai hỏi. Phép đối chiếu không đi từ Phần~IV
+sang đây; nó bắt đầu ở đây. Chỗ hổng của chương này vì thế không phải chỗ thiếu
+bằng chứng mà là chỗ bằng chứng đã có không tới được hai khảo sát viết về cùng
+đối tượng.
+\end{itemize}
+\end{tomtat}
+
+\cauhoi
+\begin{cauhoids}
+  \item Mục~\ref{sec:ch17-loi-giai-thich-tu-viet} nêu bốn hệ quả của việc vế trái
+đổi chủ, và cả bốn đều được viết ra như những chỗ làm việc kiểm một
+\tn{lời giải thích tự sinh}{self-explanation}
+khó hơn kiểm một bản đồ nhiệt. Hãy chọn một trong bốn và lập luận theo chiều
+ngược lại: nêu một điều mà người kiểm \emph{làm được} với một chuỗi suy luận và
+không làm được với một bản đồ nhiệt, đúng vì hệ quả ấy. Nếu bạn cho rằng hệ quả
+mình chọn không cho lợi thế nào thì nói vì sao.
+  \item Mục~\ref{sec:ch17-bai-mo-duong} đọc phần trong ngoặc của tính chất thứ
+hai như một lời rào về độ trung thực. Hãy viết lại tính chất thứ hai ấy \emph{bỏ}
+phần trong ngoặc đi, rồi cho biết câu còn lại tuyên bố điều gì mà câu đầy đủ
+không tuyên bố, và mục~\ref{sec:ch17-nganh-doc-nguoc-lai} tìm thấy câu rút gọn ấy
+ở đâu.
+  \item Bài mở đường dùng chữ \enquote{faithfulness} đúng hai lần trong 43 trang
+và một lần là trong dãy các năng lực trồi lên theo quy mô. Hãy đọc câu ấy trong
+ngữ cảnh của nó và cho biết nghĩa ở đó gần với dòng nào của
+bảng~\ref{tab:ch01-bon-quan-he} nhất, hoặc vì sao nó không gần dòng nào.
+  \item Mục~\ref{sec:ch17-cho-dat-do-trung-thuc} xếp ba điều kiện của khảo sát
+vào ba chỗ khác nhau và nói điều kiện thứ hai không rơi vào dòng nào của
+bảng~\ref{tab:ch01-bon-quan-he}. Hãy dựng một ví dụ, có thể trên hàm chạy suốt
+sách, trong đó một lời giải thích thỏa điều kiện thứ hai mà vi phạm điều kiện thứ
+nhất, rồi nói ví dụ ấy chứng minh điều gì về việc ghép ba điều kiện bằng chữ
+\enquote{và}.
+  \item Bảng~\ref{tab:ch17-saliency} có mười hai giá trị. Hãy cho biết cần đổi
+đúng một giá trị nào, thành số nào, để thứ hạng theo cột ngữ cảnh dài trở nên đơn
+điệu giảm theo số tham số, rồi cho biết việc phải đổi một giá trị để cứu một câu
+kết luận nói lên điều gì về câu kết luận ấy.
+  \item Mục~\ref{sec:ch17-bai-neo-tro-ve} dựng một chuỗi ba bước trên
+$f(x_1,x_2) = x_1 + 2x_2 + x_1x_2$ tại $(1,1)$, và cho thấy chuỗi ấy có thể có
+mọi bước trung thực mà cả chuỗi không trung thực. Hãy dựng chuỗi đi theo chiều
+ngược lại trên cùng hàm ấy tại $(0,1)$: một chuỗi \emph{không} thỏa điều kiện thứ
+hai của định nghĩa~\ref{def:ch09-chuoi-trung-thuc} nhưng đường suy luận trong nó
+lại là đường mô hình đã đi. Nếu bạn cho rằng không dựng được thì hãy nói vì sao.
+  \item Hình 27 của khảo sát 2026 định nghĩa độ trung thực bằng câu hỏi dấu vết
+có gây ra đáp án hay không, và liệt kê ba họ dụng cụ dưới câu ấy. Hãy cho biết,
+với mỗi họ trong ba họ, nó đo được tính chất nào trong hai tính chất mà
+mục~\ref{sec:ch09-dinh-nghia-lai} tách ra, rồi cho biết có họ nào trong ba đo
+được điều kiện thứ nhất của định nghĩa~\ref{def:ch09-chuoi-trung-thuc} hay không.
+  \item Mục~\ref{sec:ch17-chieu-cua-phep-chuyen} đặt điều kiện thứ năm lên một
+dụng cụ đo tương lai và nói nó khác bốn điều kiện trước ở chỗ không đòi công bố
+thêm gì. Hãy chọn một trong tám chỉ số mà mục~\ref{sec:ch09-ket-qua} liệt kê và
+cho biết dưới điều kiện thứ năm thì chỉ số ấy phải khai điều gì, rồi cho biết
+việc khai điều ấy có đổi điểm AUROC của nó trong bảng~\ref{tab:ch09-auroc} hay
+không.
+  \item Đọc mục 2.1 và mục 6, phần \enquote{Monitorability}, trong
+\enquote{Faithfulness Metrics Don't Measure Faithfulness: A Meta-Evaluation with
+Ground Truth} của Gur-Arieh và cộng sự~\autocite{p21metrics}. Hãy phát biểu đề
+nghị thay độ trung thực bằng \tn{khả năng giám sát}{monitorability}
+dưới dạng một câu nêu rõ nó bỏ
+điều gì và giữ điều gì, rồi cho biết bảy chương của Phần~IV có làm cho đề nghị ấy
+mạnh lên hay yếu đi, và vì sao.
+\end{cauhoids}

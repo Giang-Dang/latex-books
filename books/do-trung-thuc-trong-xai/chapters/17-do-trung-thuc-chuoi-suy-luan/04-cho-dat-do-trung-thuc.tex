@@ -1,0 +1,123 @@
+\section{Chỗ khảo sát ấy đặt độ trung thực}
+\label{sec:ch17-cho-dat-do-trung-thuc}
+
+\index{độ trung thực!một ô bảng không có dụng cụ nào sau lưng|(}%
+Mục trước cho thấy khảo sát xếp chuỗi suy luận vào nhóm không cần đối chiếu. Mục
+này hỏi khảo sát ấy làm gì với chính chữ độ trung thực, vì nó có một mục dành
+riêng cho việc đánh giá lời giải thích và trong mục ấy chữ này có mặt.
+
+\index{độ trung thực!phép chia định tính với định lượng}%
+Khảo sát chia việc đánh giá làm hai loại, định tính và định
+lượng~\autocite{p16llmxai}. Bên định tính có hai tiêu chí, mức dễ hiểu với người
+đọc và mức điều khiển được của lời giải thích. Bên định lượng cũng có hai, và
+đó là \tn{độ trung thực}{faithfulness} với
+\tn{tính hợp lý}{plausibility}. Phép chia này chính là phép chia mà
+mục~\ref{sec:ch01-do-trung-thuc-va-tinh-hop-ly} dựng, nên tới đây thì khảo sát
+đang đứng đúng chỗ.
+
+\index{độ trung thực!ba điều kiện của khảo sát}%
+Định nghĩa mà khảo sát đưa ra có ba điều kiện, và ba điều kiện ấy không cùng
+nói về một quan hệ. Bài viết rằng một lời giải thích trung thực phải khớp với ít
+nhất ba thứ: logic bên trong và quan hệ nhân quả mà mô hình xác lập; cách mô
+hình được thiết kế và dữ liệu mô hình được huấn luyện trên; và việc quyết định
+của mô hình có tái lập được bằng những đặc trưng mà lời giải thích nêu ra hay
+không~\autocite{p16llmxai}.
+
+Đọc ba điều kiện ấy theo bảng~\ref{tab:ch01-bon-quan-he} thì chúng rơi vào ba
+chỗ khác nhau. Điều kiện thứ nhất là dòng độ trung thực, đúng
+định nghĩa~\ref{def:ch01-do-trung-thuc}. Điều kiện thứ ba là một phép thử tái
+lập, tức là hình dạng của họ sufficiency ở
+mục~\ref{sec:ch08-ho-xoa-dan}, nên nó là một điều kiện cần chứ không phải một
+định nghĩa. Điều kiện thứ hai thì không rơi vào dòng nào cả: khớp với cách mô
+hình được thiết kế và với dữ liệu huấn luyện là một quan hệ giữa lời giải thích
+và bối cảnh huấn luyện, và bảng~\ref{tab:ch01-bon-quan-he} không có dòng cho nó,
+vì không có suy diễn nào về hành vi của mô hình đi ra từ nó. Một lời giải thích
+hoàn toàn khớp với dữ liệu huấn luyện vẫn có thể mô tả sai cái mô hình đã dùng ở
+một đầu vào cụ thể.
+
+\index{độ trung thực!ô định lượng không có gì định lượng}%
+Chỗ đáng ghi nhất thì nằm trong bảng 2 của khảo sát, trang 8. Bảng ấy có bốn
+dòng, một dòng cho mỗi tiêu chí, với bốn cột: loại, tên tiêu chí, mô tả, và ví
+dụ. Dòng độ trung thực nằm bên \enquote{Quantitative}, mô tả của nó là mức chính
+xác trong việc biểu diễn quá trình ra quyết định bên trong mô hình, và ô ví dụ
+của nó ghi một hệ chẩn đoán y khoa cho thấy những đặc trưng của bệnh nhân và các
+trọng số của chúng~\autocite{p16llmxai}. Ô ví dụ của một tiêu chí định lượng mô
+tả một bức tranh về một hệ thống, không phải một con số.
+
+Đó không phải chuyện của riêng ô bảng. Rà cả 18 trang, khảo sát không đưa ra
+công thức nào, ngưỡng nào, thủ tục nào hay điểm số nào để tính đại lượng mà bảng
+2 gọi là độ trung thực. Nó cũng không ở đâu nói rằng chưa có cách tính. Chữ
+\enquote{unfaithful} không xuất hiện lần nào trong toàn bài, nên trường hợp tiêu
+chí ấy không đạt cũng không có tên. Và mục hạn chế của khảo sát, mục 7, liệt kê
+năm khó khăn của việc giải thích bằng mô hình ngôn ngữ, gồm dữ liệu nhạy cảm,
+chuẩn mực xã hội khác nhau, dữ liệu nhiều nguồn, độ phức tạp của mô hình, và
+thiên lệch trong mô hình ngôn ngữ; không khó khăn nào trong năm khó khăn ấy là
+việc không ai kiểm được lời giải thích có trung thực hay không.
+
+\index{độ trung thực!nguồn chuẩn bị xếp sang dòng khác}%
+Còn một chi tiết trong cùng bảng ấy và sách nêu nó hẹp đúng bằng cái nó là. Ô
+nguồn của dòng tính hợp lý dẫn hai số hiệu, và một trong hai trỏ về bài của
+Jacovi và Goldberg, nhan đề \emph{Towards faithfully interpretable NLP systems:
+How should we define and evaluate faithfulness?}~\autocite{p16llmxai}. Đó là bài
+mà mục~\ref{sec:ch09-dinh-nghia-lai} gọi là nguồn của định nghĩa được dùng rộng
+rãi nhất về độ trung thực, và là bài mà định nghĩa~\ref{def:ch01-do-trung-thuc}
+truy về. Trong bảng, nó đứng ở dòng bên cạnh.
+
+Chỗ đặt ấy không phải một chỗ lệch riêng của cái bảng. Phần thân dẫn chính bài
+ấy hai lần, và hai lần theo hai cách khác nhau. Lần thứ nhất, trang 6, dẫn đúng:
+ở đó nó được dẫn cho ý rằng một lời giải thích trông dễ hiểu với người vẫn có thể
+không đúng với logic thật của mô hình, tức là chính phép phân biệt giữa hai tiêu
+chí. Lần thứ hai, trang 7, nằm trong đúng đoạn định nghĩa tính hợp lý, làm nguồn
+cho ví dụ về một mô hình dự báo khí hậu đưa ra lời giải thích dựa trên các nguyên
+lý khí tượng đã được thiết lập~\autocite{p16llmxai}. Nghĩa là nhãn dòng trong
+bảng không mâu thuẫn với phần thân; nó theo đúng cách dùng thứ hai. Điều sách nói
+vì thế hẹp hơn một lời buộc tội và cứng hơn một nhận xét về cái bảng: trong cả
+bài, nguồn kinh điển của định nghĩa độ trung thực chỉ xuất hiện ở phía tính hợp
+lý, trừ đúng một câu vẽ ranh giới giữa hai phía.
+
+\index{độ trung thực!những con số duy nhất của khảo sát}%
+Khảo sát có in số, và những con số ấy nằm ở một mục khác. Mục 8 so sánh các điểm
+số saliency của sáu mô hình ngôn ngữ dưới hai độ dài ngữ cảnh, và giải thích rằng
+kỹ thuật saliency giúp nhận ra những phần của một lời giải thích được sinh ra,
+chẳng hạn từ hoặc cụm từ, khớp nhất với ground truth~\autocite{p16llmxai}.
+Bảng~\ref{tab:ch17-saliency} chép lại mười hai con số ấy từ hình 4 của bài.
+
+Bảng ấy nói ba điều. Thứ nhất, đại lượng được đo là mức khớp giữa những chỗ được
+làm nổi bật trong một lời giải thích và một văn bản tham chiếu, nên theo
+bảng~\ref{tab:ch01-bon-quan-he} nó là một đại lượng bên tính hợp lý; đó là cách
+đọc của sách và bài không nói vậy. Thứ hai, phần thân gọi mô hình ở dòng cuối là
+OLMO (1B) trong khi hình 4 của chính bài dán nhãn dòng ấy là Olmo (7B), và hai
+con số thì khớp~\autocite{p16llmxai}. Thứ ba, bài đọc bảng này thành một câu về
+quy mô, rằng khoảng cách giữa các mô hình cho thấy tầm quan trọng của kích thước,
+kiến trúc và cách huấn luyện, và xếp Vicuna với Mistral vào cùng một nhóm điểm
+thấp; nhưng Mistral ở 7 tỉ tham số đạt 0.68, cao hơn Vicuna ở 13 tỉ với 0.57 và
+chỉ kém Cohere ở 54 tỉ với 0.71 đúng 0.03. Thứ hạng không đơn điệu theo quy mô,
+và chỗ đảo nằm đúng giữa hai mô hình mà bài xếp chung nhóm.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Mười hai điểm số saliency của hình 4 trong khảo sát về mô hình ngôn
+  ngữ cho XAI, chép theo đúng nhãn mà hình đặt cho từng dòng. Phần thân của bài
+  gọi mô hình ở dòng cuối là OLMO (1B). Thứ hạng theo cột ngữ cảnh dài không đơn
+  điệu theo số tham số: Mistral ở 7 tỉ đứng trên Vicuna ở 13 tỉ.}
+  \label{tab:ch17-saliency}
+  \begin{tabular}{@{}lrr@{}}
+    \toprule
+    Mô hình, theo nhãn của hình & Ngữ cảnh dài & Ngữ cảnh ngắn \\
+    \midrule
+    ChatGPT (175B)  & 0.84 & 0.56 \\
+    Llamav2 (70B)   & 0.75 & 0.53 \\
+    Cohere (54B)    & 0.71 & 0.56 \\
+    Vicuna (13B)    & 0.57 & 0.51 \\
+    Mistral (7B)    & 0.68 & 0.50 \\
+    Olmo (7B)       & 0.45 & 0.29 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\index{độ trung thực!một ô bảng không có dụng cụ nào sau lưng|)}%
+Gộp lại thì khảo sát này đứng ở đúng chỗ mà bảy chương của Phần~IV mô tả, chỉ
+khác là nó đứng đó cho một họ lời giải thích khác. Nó gọi tên tiêu chí, đặt tiêu
+chí ấy vào cột định lượng, không cấp dụng cụ nào để tính, và những con số duy
+nhất nó in ra thì đo một quan hệ khác. Điều mục sau đọc là một khảo sát nhìn thấy
+chỗ hổng ấy và gọi tên ba họ dụng cụ cho nó.

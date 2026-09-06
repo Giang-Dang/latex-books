@@ -1,0 +1,94 @@
+\section{Lời giải thích do chính mô hình viết}
+\label{sec:ch17-loi-giai-thich-tu-viet}
+
+\index{lời giải thích tự sinh!khác gì lời giải thích hậu nghiệm|(}%
+Phần mở đầu chương vừa nói vế trái của phép so sánh đổi chủ. Mục này nói đổi chủ
+thì kéo theo những gì, vì bốn hệ quả của nó là bốn thứ mà sáu mục sau đều dựa
+vào.
+
+\index{lời giải thích tự sinh!định nghĩa dùng trong chương}%
+Trước hết phải đặt tên cho thứ đang bàn. Một
+\tn{lời giải thích tự sinh}{self-explanation}, trong chương này, là đoạn văn bản
+mô tả một quá trình mà chính mô hình in ra cùng với đáp án, chứ không phải do
+một thủ tục bên ngoài dựng lên sau khi đáp án đã có. \tn{Chuỗi suy luận}{chain-of-thought}
+mà mục~\ref{sec:ch02-chuoi-suy-luan} mô tả là dạng thường gặp nhất của nó, và là
+dạng duy nhất chương này đọc. Chữ \enquote{tự sinh} nói về nguồn gốc của đoạn
+văn bản chứ không nói nó đúng: một lời giải thích tự sinh vẫn có thể mô tả một
+quá trình chưa từng xảy ra, và mục~\ref{sec:ch17-bai-neo-tro-ve} tính ra một ví
+dụ như vậy.
+
+Hình~\ref{fig:ch17-hai-nguon-cua-ve-trai} đặt hai nguồn ấy cạnh nhau. Bên trái là
+hình dạng của các phương pháp mà Phần~II dựng: LIME, SHAP, Integrated Gradients
+và Grad-CAM đều là một thủ tục chạy riêng, nhận mô hình và đầu vào rồi trả về một
+lời giải thích. Bên phải là hình dạng của chương này. Hai chương của sách không
+nằm gọn ở cột nào: chương~\ref{ch:chi-so-khong-do-do-trung-thuc} đọc một bài mà
+vế trái đã là chuỗi suy luận, tức đã ở cột phải, và
+chương~\ref{ch:nut-that-khai-niem} đọc những mô hình mà vế trái là một tầng của
+chính mô hình chứ không phải đầu ra của thủ tục nào. Chỗ đứng lệch của chương
+đầu là chuyện mà mục~\ref{sec:ch17-chieu-cua-phep-chuyen} quay lại.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch17-hai-nguon-cua-ve-trai}
+  \caption{Vế phải của định nghĩa~\ref{def:ch01-do-trung-thuc} không đổi giữa
+  hai cột, và cả hai cột đều không biết nó. Cái đổi là vế trái: bên trái nó là
+  đầu ra của một thủ tục có thể hỏi han được, bên phải nó là một phần đầu ra của
+  chính mô hình. Mọi hệ quả trong mục này đến từ chỗ mũi tên bên phải không đi
+  qua hộp nào.}
+  \label{fig:ch17-hai-nguon-cua-ve-trai}
+\end{figure}
+
+\index{lời giải thích tự sinh!bốn hệ quả}%
+Hệ quả thứ nhất là không còn tham số nào để hỏi.
+Mục~\ref{sec:ch14-dieu-chua-giai-quyet} đặt lên mọi dụng cụ đo tương lai một yêu
+cầu, rằng một phương pháp phải nói điểm số của nó tương đối với tập can thiệp
+nào, và yêu cầu ấy giả định có một phương pháp để mà hỏi. Ở đây không có. LIME có
+bảy lựa chọn tự do mà mục~\ref{sec:ch03-cac-tham-so-tu-do} đếm ra, Integrated
+Gradients có baseline mà mục~\ref{sec:ch05-baseline} đọc, SHAP có
+\tn{phân phối nền}{background distribution};
+một chuỗi suy luận không có cái nào trong số ấy. Điều đó không làm bài toán dễ
+đi. Nó bỏ đi luôn cả chỗ để sửa: khi một lời giải thích hậu nghiệm sai, hỏi được
+lựa chọn nào đã làm nó sai, còn ở đây không có lựa chọn nào để hỏi.
+
+Hệ quả thứ hai là lời giải thích và cái được giải thích ra đời cùng lúc, từ cùng
+một quá trình. Một \tn{bản đồ nhiệt}{heatmap} được tính sau khi mô hình đã dự
+đoán xong, nên
+việc tính nó không đổi dự đoán. Một chuỗi suy luận thì nằm trong ngữ cảnh mà đáp
+án được sinh ra, nên nó vừa có thể mô tả cái đã xảy ra vừa có thể là nguyên nhân
+của cái sắp xảy ra. Hai vai ấy không tách được bằng cách đọc chuỗi, và
+mục~\ref{sec:ch17-khao-sat-biet-cho-hong} cho thấy một khảo sát năm 2026 gộp
+đúng hai vai này lại thành một định nghĩa.
+
+Hệ quả thứ ba là lời giải thích bây giờ là văn bản, nên nó khẳng định được những
+điều không có thật. Một vector điểm số không nói được câu nào sai: nó gán cho mỗi
+\tn{đặc trưng}{feature} một con số, và con số ấy hoặc phản ánh đúng cái mô hình
+dùng hoặc không. Một câu tiếng Anh thì nói được rằng mô hình đã nhớ lại một cuốn sách lịch
+sử, và câu ấy sai theo một kiểu mà không họ chỉ số nào của
+chương~\ref{ch:do-do-trung-thuc} được thiết kế để bắt.
+
+\index{lời giải thích tự sinh!đối tượng đã đổi một lần}%
+Hệ quả thứ tư là hệ quả mà chương này tìm ra và nó nằm ở chỗ khác với ba hệ quả
+trên: đối tượng đã đổi một lần rồi, giữa lúc bài mở đường viết ra nó và lúc bài
+neo của sách đo nó. Bài neo ghi thẳng điều ấy khi nó viết lại các định nghĩa:
+định nghĩa được dùng rộng rãi nhất về độ trung thực được dựng cho những phương
+pháp có mục đích sinh ra một lời giải thích mạch lạc và tự chứa về hành vi của
+mô hình, ví dụ bản đồ chú ý, các điểm số saliency, và \emph{những chuỗi suy luận
+few-shot tuyến tính nguyên bản của Wei và cộng sự}; còn chuỗi suy luận của các mô
+hình suy luận hiện nay là những lời nói dài mà mô hình phát ra trong lúc giải một
+nhiệm vụ, chứa nhiều bước không nối trực tiếp với dự đoán và có bước không liên
+quan gì tới nó~\autocite{p21metrics}.
+
+Câu ấy đáng dừng lại, vì nó nói rằng hai thứ mang cùng một tên không cùng một
+loại. Chuỗi của bài mở đường là một lời giải thích theo nghĩa cũ, ngắn, tuyến
+tính, viết ra để dẫn tới đáp án, và bài neo xếp nó vào cùng lớp với bản đồ chú ý.
+Chuỗi của một mô hình suy luận là dấu vết của việc giải bài, dài, rẽ nhánh, có
+đoạn bỏ đi giữa chừng, và bài neo xếp nó ra ngoài lớp ấy.
+
+\index{lời giải thích tự sinh!khác gì lời giải thích hậu nghiệm|)}%
+Mục~\ref{sec:ch09-dinh-nghia-lai} đọc chính đoạn văn ấy, và đọc nó để tách chuỗi
+suy luận khỏi đối tượng của Phần~II, nên hai thứ đầu trong danh sách là hai thứ
+chương ấy cần. Thứ ba mang tải ở đây và không mang tải ở đó, vì nó cho thấy ranh
+giới còn chạy cả bên trong chuỗi suy luận. Điều cần giữ từ đây là một câu: khi
+hỏi một chuỗi suy luận có trung thực không, phải hỏi thêm chuỗi của loại mô hình
+nào, và mục~\ref{sec:ch17-bai-neo-tro-ve} nói chỗ nào trong sách chịu ảnh hưởng
+vì câu ấy.

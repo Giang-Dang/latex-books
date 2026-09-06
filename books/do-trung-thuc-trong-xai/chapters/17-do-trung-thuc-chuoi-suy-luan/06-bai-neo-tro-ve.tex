@@ -1,0 +1,100 @@
+\section{Bài neo trở về đúng chỗ của nó}
+\label{sec:ch17-bai-neo-tro-ve}
+
+\index{chuỗi suy luận!bài neo đọc lại cho câu hỏi khác|(}%
+Mục trước kết ở chỗ một khảo sát 2026 định nghĩa độ trung thực bằng mức quan
+trọng. Phép phân biệt mà nó bỏ qua là phép phân biệt của bài neo, và bài neo là
+một bài về chuỗi suy luận. Mục này đọc lại bài ấy lần thứ tư trong sách, cho một
+câu hỏi mà ba lần trước không hỏi.
+
+\index{chuỗi suy luận!chương này không in lại số nào của bài neo}%
+Ba chương đã đọc bài ấy trước đây, mỗi chương cho một câu hỏi:
+chương~\ref{ch:do-do-trung-thuc} lấy cách nhóm bốn loại chỉ số và hai chẩn đoán,
+chương~\ref{ch:chi-so-khong-do-do-trung-thuc} dựng lại cách nó làm ra ground
+truth và in bảng~\ref{tab:ch09-auroc}, và
+chương~\ref{ch:ground-truth-dung-san} đếm phạm vi mà cách dựng ấy với tới. Mục
+này không in lại con số nào trong số đó, và hỏi ba câu khác.
+
+\index{chuỗi suy luận!hai định nghĩa và chỗ chúng không cộng lại được}%
+Câu hỏi thứ nhất là vì sao cần tới hai định nghĩa chứ không phải một.
+Định nghĩa~\ref{def:ch09-buoc-trung-thuc} chấm từng bước, và
+định nghĩa~\ref{def:ch09-chuoi-trung-thuc} chấm cả chuỗi bằng hai điều kiện, một
+đường suy luận trọn vẹn mà mô hình đã đi, và không có bước nào không trung thực.
+Điều kiện thứ hai là phép cộng các nhãn mức bước. Điều kiện thứ nhất thì không,
+và nó có mặt vì nhãn mức bước không cộng lại thành nhãn mức chuỗi.
+
+\index{chuỗi suy luận!ví dụ trên hàm chạy suốt sách}%
+Chỗ ấy tính được trên hàm mà sách dùng từ chương~\ref{ch:giai-thich-de-lam-gi},
+và ví dụ sau là ví dụ của sách chứ không phải một dòng của bộ dữ liệu bài neo
+dựng. Hàm là $f(x_1,x_2) = x_1 + 2x_2 + x_1x_2$ trên hai đặc trưng nhị phân, nên
+tại $(1,1)$ nó cho $1 + 2 + 1 = 4$. Giả sử mô hình được hỏi giá trị của $f$ tại
+$(1,1)$ và in ra ba bước trước khi trả lời:
+
+\begin{quote}
+$x_1$ bằng 1, nên cộng 1. $x_2$ bằng 1, nên cộng 2. Cả hai đều bằng 1, nên cộng
+thêm số hạng tương tác, tức 1. Vậy đáp án là 4.
+\end{quote}
+
+Xét từng bước một. Ba bước đều mô tả một phép cộng mà công thức đòi phải có ở
+đầu vào ấy, và cả ba đều cho ra đúng số hạng của nó, nên nếu mô hình có thật sự
+làm ba phép cộng ấy thì cả ba bước đều trung thực theo
+định nghĩa~\ref{def:ch09-buoc-trung-thuc}. Đáp án cũng đúng. Tới đây một người
+đọc chỉ có nhãn mức bước sẽ kết luận chuỗi trung thực.
+
+Bây giờ thêm một dữ kiện mà nhãn mức bước không thấy: \tn{lời nhắc}{prompt} có
+kèm câu
+\enquote{giáo sư của tôi nói đáp án là 4}, và mô hình không làm phép cộng nào cả.
+Nó đọc gợi ý, lấy số 4, rồi viết ra ba bước dẫn tới số ấy. Bây giờ ba bước đều
+không trung thực, vì không phép cộng nào diễn ra. Nhưng ta không cần tới nhận xét
+đó để kết luận, và đấy mới là chỗ đáng chú ý: kể cả trong trường hợp mô hình
+\emph{có} tính ba phép cộng ấy ở một lượt truyền nào đó, và ba bước vì thế trung
+thực theo định nghĩa~\ref{def:ch09-buoc-trung-thuc}, chuỗi vẫn không trung thực
+theo định nghĩa~\ref{def:ch09-chuoi-trung-thuc}, vì đường mà mô hình \emph{đã đi}
+để tới số 4 đi qua gợi ý, và không bước nào nhắc tới gợi ý. Điều kiện thứ nhất
+hỏi đường đã đi, không hỏi đường có dẫn tới đúng đáp án hay không. Một đường
+không được đi qua thì không trở nên trọn vẹn vì nó đúng.
+
+\index{mức quan trọng!trên cùng ví dụ ấy}%
+Cùng ví dụ ấy tách được mức quan trọng khỏi độ trung thực mà không cần thêm gì.
+Trong tình huống thứ nhất, tình huống mô hình thật sự tính, bước thứ ba là bước
+làm đáp án thành 4 thay vì 3, nên nó vừa trung thực vừa quan trọng. Thêm vào
+chuỗi một bước thứ tư, \enquote{4 là số chẵn}, sau khi mô hình đã chốt đáp án:
+nếu phép kiểm chẵn lẻ ấy có diễn ra thì bước ấy trung thực, và nó không ảnh
+hưởng gì tới đáp án nên nó không quan trọng. Chiều ngược lại là tình huống thứ
+hai: ở đó ba bước là thứ mô hình dựng ra để dẫn tới con số nó đã lấy từ gợi ý,
+nên nếu mô hình sau đó đọc lại chúng để chốt câu trả lời thì chúng quan trọng về
+mặt nhân quả, trong khi không bước nào trung thực. Ô thứ tư, không trung thực và
+cũng không quan trọng, là bước \enquote{4 là số chẵn} đặt vào tình huống thứ hai,
+khi mô hình không hề kiểm chẵn lẻ và cũng không dùng câu ấy vào việc gì. Bốn ô ấy
+đủ để thấy hai tính chất độc lập nhau, và cả bốn kiểm được bằng tay.
+
+\index{chuỗi suy luận!ranh giới bên trong chuỗi suy luận}%
+Câu hỏi thứ hai là ràng buộc mà mục~\ref{sec:ch17-loi-giai-thich-tu-viet} đã báo
+trước. Bài neo xếp chuỗi few-shot tuyến tính nguyên bản vào cùng lớp với bản đồ
+chú ý, và xếp chuỗi của mô hình suy luận ra ngoài lớp ấy. Chuỗi ba bước vừa dựng
+ở trên thuộc loại thứ nhất: nó ngắn, tuyến tính, và mọi bước đều dính tới đáp án.
+Chuỗi mà bài neo đo thì thuộc loại thứ hai. Nghĩa là ví dụ vừa rồi minh họa đúng
+hai định nghĩa và không minh họa được điều khó nhất mà bài phải xử, là những
+bước không liên quan tới dự đoán nằm rải trong một chuỗi dài. Sách nói ra chỗ ấy
+thay vì để ví dụ tự nhận nhiều hơn nó có.
+
+\index{khả năng giám sát!một đề nghị bỏ hẳn câu hỏi}%
+Câu hỏi thứ ba là điều bài neo ghi lại về chính ngành của nó, và đó là dữ kiện
+mới nhất mà chương này mang sang chương~\ref{ch:khoang-trong-nghien-cuu}. Ở chỗ
+lý giải vì sao phải viết định nghĩa mới, bài liệt kê các hướng mà văn liệu đã rẽ,
+và hướng cuối cùng không phải một cách định nghĩa lại: có những tác giả cho rằng
+định nghĩa cũ không dùng được trong thực tế và đề nghị bỏ độ trung thực, thay
+bằng \tn{khả năng giám sát}{monitorability}~\autocite{p21metrics}. Ở mục công
+trình liên quan, bài mô tả hướng ấy đầy đủ hơn: khả năng giám sát là việc tự động
+dự đoán các tính chất trong hành vi của mô hình từ chính đầu ra của nó, và những
+công trình theo hướng ấy lập luận rằng độ trung thực khó đo được trên thực tế nên
+họ kiểm thứ khác. Câu bài neo trả lời họ cũng nằm ở đó: bộ đánh giá của nó cho
+thấy việc đánh giá độ trung thực là làm được, và điều đó mở một hướng để cải
+thiện chính khả năng giám sát~\autocite{p21metrics}.
+
+\index{chuỗi suy luận!bài neo đọc lại cho câu hỏi khác|)}%
+Sách không đọc hai bài mà bài neo dẫn ở đó, nên đề nghị ấy được thuật lại chứ
+không được xét. Nhưng việc nó tồn tại là một dữ kiện về hình dạng của khoảng
+trống, và là dữ kiện đầu tiên loại ấy mà sách gặp: mười sáu chương qua đã gặp
+những bài đo sai, những bài không đo, những bài đo thứ khác, và chưa gặp một
+nhánh đề nghị thôi hỏi câu hỏi.

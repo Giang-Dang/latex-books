@@ -1,0 +1,101 @@
+\section{Bài mở đường nói gì, và từ chối nói gì}
+\label{sec:ch17-bai-mo-duong}
+
+\index{chuỗi suy luận!bài mở đường tự đặt giới hạn|(}%
+Mục trước khép lại ở chỗ đối tượng đã đổi một lần kể từ bài mở đường. Mục này
+quay về chính bài ấy, vì trước khi hỏi ngành đã đọc nó thế nào thì phải biết nó
+viết gì. Bài này chương~\ref{ch:mo-hinh-can-giai-thich} đã đọc một lần, cho câu
+hỏi chuỗi suy luận là gì; ở đây nó được đọc cho một câu hỏi khác, là bài có
+tuyên bố chuỗi suy luận giải thích được mô hình hay không.
+
+\index{chuỗi suy luận!bốn tính chất hấp dẫn}%
+Bài nêu bốn tính chất hấp dẫn của cách nhắc này, ở trang 3, và tính chất thứ hai
+là tính chất duy nhất nói về việc hiểu mô hình~\autocite{p06cot}. Nó được viết ra
+như sau, kể cả phần trong ngoặc:
+
+\begin{quote}
+Thứ hai, một chuỗi suy luận cung cấp một khung nhìn diễn giải được vào hành vi
+của mô hình, gợi ra \emph{cách mà nó có thể đã} đi tới một đáp án cụ thể và cho
+cơ hội gỡ lỗi chỗ đường suy luận đi sai (\emph{mặc dù việc mô tả đầy đủ những
+tính toán của một mô hình nâng đỡ cho một đáp án vẫn là một câu hỏi mở}).%
+\footnote{Nhấn mạnh là của sách. Nguyên văn: \enquote{Second, a chain of thought
+provides an interpretable window into the behavior of the model, suggesting how
+it might have arrived at a particular answer and providing opportunities to debug
+where the reasoning path went wrong (although fully characterizing a model's
+computations that support an answer remains an open question).}}
+\end{quote}
+
+Hai chỗ rào trong một câu, và cả hai đều mang tải. \enquote{Có thể đã} nói rằng
+chuỗi gợi ra một lời kể chứ không xác lập nó. Phần trong ngoặc thì nói thẳng
+rằng việc đối chiếu chuỗi với những tính toán thật là chuyện chưa ai làm được,
+tức là đúng vế phải của định nghĩa~\ref{def:ch01-do-trung-thuc}. Sách trích cả
+câu chứ không trích mệnh đề đầu, vì mệnh đề đầu đứng một mình chính là cách đọc
+mà mục~\ref{sec:ch17-nganh-doc-nguoc-lai} sẽ tìm thấy.
+
+\index{chuỗi suy luận!bài từ chối gọi nó là lời giải thích}%
+Bài còn từ chối một chuyện nữa, và lần này là từ chối một cái tên. Ở trang 3, khi
+giới thiệu ví dụ đầu tiên, bài viết rằng chuỗi suy luận trong trường hợp ấy trông
+giống một lời giải và có thể được đọc như một lời giải, nhưng các tác giả vẫn
+chọn gọi nó là chuỗi suy luận để giữ được ý rằng nó \emph{bắt chước} một quá
+trình nghĩ theo từng bước~\autocite{p06cot}. Động từ mà bài chọn cho quan hệ giữa
+văn bản và quá trình là \enquote{bắt chước}, chứ không phải một động từ nào nói
+rằng văn bản ghi lại quá trình.
+
+\index{chuỗi suy luận!khả năng diễn giải là hệ quả phụ}%
+Câu dứt khoát nhất thì nằm ở mục C.2 của phụ lục, trang 24, chỗ bài tách mình
+khỏi một dòng nghiên cứu khác. Dòng ấy là các lời giải thích bằng ngôn ngữ tự
+nhiên, với mục đích cải thiện
+\tn{khả năng diễn giải}{interpretability} của mạng nơ-ron. Bài phân biệt mình với
+dòng ấy bằng hai điểm~\autocite{p06cot}. Điểm thứ nhất là thứ tự: lời giải thích
+bằng ngôn ngữ tự nhiên được sinh ra \emph{hoặc cùng lúc với, hoặc sau} tiên đoán
+cuối cùng, còn chuỗi suy luận thì đi trước đáp án. Vế \enquote{cùng lúc với} phải
+giữ nguyên, vì mục~\ref{sec:ch17-loi-giai-thich-tu-viet} vừa dựng hệ quả thứ hai
+của nó trên chính chỗ đồng thời ấy. Điểm thứ hai là mục đích, và bài phát biểu nó
+như sau:
+
+\begin{quote}
+Và trong khi lời giải thích bằng ngôn ngữ tự nhiên chủ yếu nhắm tới việc cải
+thiện khả năng diễn giải của mạng nơ-ron, mục tiêu của cách nhắc theo chuỗi suy
+luận là cho phép mô hình phân rã các nhiệm vụ suy luận nhiều chặng thành nhiều
+bước; \emph{khả năng diễn giải chỉ là một hệ quả phụ}.%
+\footnote{Nhấn mạnh là của sách. Nguyên văn của vế đầu: \enquote{And while NLE
+aims mostly to improve neural network interpretability (Rajagopal et al., 2021),
+the goal of chain-of-thought prompting is to allow models to decompose multi-hop
+reasoning tasks into multiple steps}; bài nối thẳng sang vế sau bằng một gạch
+ngang dài không có khoảng trắng hai bên, rồi viết
+\enquote{interpretability is just a side effect.}}
+\end{quote}
+
+Chỗ đứng của câu này đáng ghi lại, vì nó quyết định câu ấy nặng đến đâu. Nó không
+phải một lời khiêm tốn đặt trong phần hạn chế, mà là câu bài dùng để nói mình
+khác dòng kia ở chỗ nào. Nghĩa là bài không chỉ tránh tuyên bố về khả năng diễn
+giải; nó lấy việc không nhắm tới khả năng diễn giải làm dấu hiệu nhận dạng của
+chính đóng góp mình.
+
+\index{chuỗi suy luận!hai hạn chế bài tự ghi}%
+Phần hạn chế nêu bốn điểm và hai trong số đó thuộc về chương này. Điểm thứ nhất
+viết rằng tuy chuỗi suy luận mô phỏng quá trình nghĩ của người suy luận, điều ấy
+không trả lời câu hỏi mạng nơ-ron có thật sự đang \enquote{suy luận} hay không,
+và các tác giả để ngỏ câu hỏi ấy~\autocite{p06cot}. Điểm thứ ba viết rằng không
+có gì bảo đảm các đường suy luận là đúng, nên một chuỗi được sinh ra có thể dẫn
+tới cả đáp án đúng lẫn đáp án sai~\autocite{p06cot}; câu này
+mục~\ref{sec:ch02-chuoi-suy-luan} đã dẫn.
+
+\index{chuỗi suy luận!một chữ vắng mặt}%
+Còn một dữ kiện nữa và nó là dữ kiện mạnh nhất trong mục này. Rà toàn văn 43
+trang, sau khi nối các chỗ ngắt dòng có gạch nối và chuẩn hóa khoảng trắng, chữ
+\enquote{faithfulness} xuất hiện đúng hai lần và chữ \enquote{unfaithful} không
+lần nào. Lần thứ nhất nằm trong danh mục tài liệu, bên trong nhan đề một bài
+được trích. Lần thứ hai nằm ở trang 16, trong một dãy đặt trong ngoặc liệt kê
+các năng lực trồi lên theo quy mô: hiểu ngữ nghĩa, ánh xạ ký hiệu, bám chủ đề,
+khả năng số học, và \enquote{faithfulness}~\autocite{p06cot}. Nghĩa ở đó là một năng lực mà
+mô hình được cho là có, không phải một quan hệ giữa lời giải thích và tính toán,
+nên nó không phải nghĩa của định nghĩa~\ref{def:ch01-do-trung-thuc}.
+
+\index{chuỗi suy luận!bài mở đường tự đặt giới hạn|)}%
+Vậy bài đưa chuỗi suy luận vào ngành đã nói ba lần rằng nó không tuyên bố chuỗi
+ấy giải thích mô hình: một lần bằng phần trong ngoặc của tính chất thứ hai, một
+lần bằng việc chọn chữ \enquote{bắt chước} thay cho chữ \enquote{lời giải
+thích}, và một lần bằng câu gọi khả năng diễn giải là hệ quả phụ. Nó cũng chưa
+một lần dùng chữ chỉ tính chất mà sách này bàn. Điều mục sau đọc là chuyện xảy ra
+sau đó.

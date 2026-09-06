@@ -1,3 +1,72 @@
-% Scope (SPEC table of contents): Chain-of-thought as self-explanation; the Part IV critique transferred to LLMs explaining themselves. Papers 06, 08, 16.
+% Scope (SPEC table of contents): Chuỗi suy luận đọc như lời giải thích do chính
+% mô hình viết ra, và chiều thật của phép chuyển giữa Phần IV và câu hỏi ấy.
+% Chương đọc bài 06 cho điều bài mở đường tuyên bố và điều nó từ chối, bài 16
+% cho cách ngành xếp chuỗi suy luận vào nhóm mô hình tự diễn giải được, bài 08
+% cho chỗ khảo sát 2026 đặt độ trung thực và dụng cụ nó gọi tên, và bài 21 đọc
+% lại cho một câu hỏi mà chương 09 không hỏi: một chuỗi suy luận là cái gì.
+% Một khóa ngoài danh mục, mcotfaith, theo quyết định 76 và 85.
+%
+% Dòng TOC khởi tạo đọc "the Part IV critique transferred to LLMs explaining
+% themselves", và động từ ấy sai chiều: phép đối chiếu với ground truth đã được
+% chạy ở phía chuỗi suy luận và chưa được chạy ở phía attribution đặc trưng.
+% Mục 9.7 đã ghi đúng câu ấy từ tám chương trước. Dòng ấy cũng nêu ba bài không
+% chuyển gì và bỏ tên bài duy nhất trong danh mục đã đo. Đây là kiểu hỏng thứ
+% năm của một dòng TOC và mục 17.7 nói ra nó trên trang.
+%
+% Đối tượng và hạng của khẳng định, theo quyết định 64: bài 06 dùng chữ
+% "faithfulness" đúng hai lần và không lần nào theo nghĩa định nghĩa 1.2; bài 16
+% không dùng chữ "unfaithful" lần nào; bài 08 định nghĩa độ trung thực bằng
+% chính thứ mà bài 21 gọi là mức quan trọng.
+% research/ch17-do-trung-thuc-chuoi-suy-luan.md ghi mọi con số, năm chỗ hỏng
+% chương này nêu, và hai bài chương này cố tình không thêm khóa.
 \chapter{Độ trung thực của chuỗi suy luận}
 \label{ch:do-trung-thuc-chuoi-suy-luan}
+
+Câu mà mục~\ref{sec:ch16-ba-cai-gia} giao lại cho chương này hỏi rằng khi lời
+giải thích do chính mô hình viết ra thì cái được đem so với hành vi là ai nói.
+Câu trả lời ngắn: là chính mô hình, và đó là chỗ khác nhau duy nhất, nhưng nó
+kéo theo mọi thứ còn lại. Với các phương pháp mà Phần~II dựng và Phần~IV mổ, vế
+trái của định nghĩa~\ref{def:ch01-do-trung-thuc} do một thủ tục bên ngoài tính
+ra, nên hỏi được nó tính bằng gì và với những tham số nào. Ở đây vế trái là một
+đoạn văn bản mà mô hình in ra trong cùng lượt sinh đã in ra đáp án. Không có thủ
+tục nào để hỏi, và cũng không có ai ngoài mô hình đứng sau lời ấy.
+
+\index{chuỗi suy luận!chương này lập luận gì}%
+Điều chương này lập được là chiều của phép chuyển. Luận đề ở
+mục~\ref{sec:ch01-luan-de-cua-sach} kể bốn đường mà văn liệu phê phán chỉ tới, và
+đường thứ tư là \emph{chuyển} cả câu hỏi sang chuỗi suy luận;
+mục~\ref{sec:ch16-ba-cai-gia} nhắc lại chữ ấy khi giao chương này cho người đọc.
+Chữ ấy chỉ sai một chỗ, và chỗ ấy là chiều.
+Mục~\ref{sec:ch09-doi-tuong-khac-nhau} đã viết ra sự thật từ tám chương trước:
+với chuỗi suy luận, câu hỏi các chỉ
+số có đo đúng thứ ghi trên mặt đồng hồ hay không đã được hỏi bằng thực nghiệm và
+câu trả lời là không; với attribution đặc trưng, câu hỏi ấy chưa ai hỏi. Phép
+đối chiếu không đi từ Phần~IV sang đây. Nó bắt đầu ở đây, và Phần~IV là phía
+còn đang chờ.
+
+\index{chuỗi suy luận!món nợ của chương 02}%
+Chương này cũng thu một món nợ. Mục~\ref{sec:ch02-chuoi-suy-luan} khép lại bằng
+câu rằng khi một hệ thống trả lời tốt hơn nhờ được yêu cầu trình bày bước trung
+gian thì ta có bằng chứng về một thay đổi hành vi, chứ chưa có bằng chứng rằng
+văn bản trung gian là lời giải thích trung thực về cơ chế bên trong. Mười lăm
+chương sau, ba trong bốn bài của chương vẫn để câu ấy nguyên, mỗi bài theo một
+cách khác nhau, và bài thứ tư trả lời nó bằng phép đo mà
+chương~\ref{ch:chi-so-khong-do-do-trung-thuc} đã đọc.
+
+Ranh giới phải nói trước, như tám chương trước đã nói. Bài mở đường về chuỗi
+suy luận dùng chữ \enquote{faithfulness} đúng hai lần trong 43 trang và không
+lần nào theo nghĩa
+định nghĩa~\ref{def:ch01-do-trung-thuc}; khảo sát về việc dùng mô hình ngôn ngữ
+để giải thích không dùng chữ \enquote{unfaithful} lần nào; và khảo sát 2026 về
+suy luận thì dùng chữ \enquote{faithfulness} nhưng định nghĩa nó bằng một quan
+hệ khác. Ba chỗ ấy không phải ba lỗi rời nhau, và
+mục~\ref{sec:ch17-chieu-cua-phep-chuyen} đọc chúng cùng nhau.
+
+\input{chapters/17-do-trung-thuc-chuoi-suy-luan/01-loi-giai-thich-tu-viet}
+\input{chapters/17-do-trung-thuc-chuoi-suy-luan/02-bai-mo-duong-tu-choi}
+\input{chapters/17-do-trung-thuc-chuoi-suy-luan/03-nganh-doc-nguoc-lai}
+\input{chapters/17-do-trung-thuc-chuoi-suy-luan/04-cho-dat-do-trung-thuc}
+\input{chapters/17-do-trung-thuc-chuoi-suy-luan/05-khao-sat-biet-cho-hong}
+\input{chapters/17-do-trung-thuc-chuoi-suy-luan/06-bai-neo-tro-ve}
+\input{chapters/17-do-trung-thuc-chuoi-suy-luan/07-chieu-cua-phep-chuyen}
+\input{chapters/17-do-trung-thuc-chuoi-suy-luan/08-tom-tat-va-cau-hoi}
