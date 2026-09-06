@@ -143,7 +143,15 @@ rule (e.g. \enquote{22 -> 11 -> 34 -> 17 -> 52 -> ...}), while for
 `graph_traversal` they are the per-edge transition and state-update events.}
 The paper also states outright that not every step needs identifying:
 \enquote{we do not need to identify every step required to complete each task,
-only bottleneck steps that inform our ground-truth labels.}
+only bottleneck steps which inform our ground-truth labels.}
+
+**Two corrections made by chapter 16's session, 2026-09-06, both from re-reading
+the rendered pages.** The sentence just above is on **page 5, in the main text**,
+not on the appendix A.1 page this entry files it under, and it reads `which`
+rather than `that`. Neither string reached the manuscript. Also: the paper's
+conclusion opens on **page 10**, not page 9, so the pages-read line in refs.bib
+and in this file ("main text 1-9, references 10-17, appendices 18-31") is off by
+one at both seams; references run 10 to 18 and appendix A opens on 18.
 
 Validation of the outright setting, p. 5 and appendix A.1 p. 19: the models are
 prefilled with an empty CoT and forced to answer directly; over **100** randomly

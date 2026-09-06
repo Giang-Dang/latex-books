@@ -288,7 +288,7 @@ filling it.**
   comments: `It is important that evaluation scenarios are crafted realistically
   to their intended target use case.`
 - Section 4.1, page 5, on who the subjects are: `in many of the papers, the
-  authors do not disclose the subjects' expertise, knowledge, education, or
+  authors do not disclose the subjects' expertise, workplace, education, or
   relationship to the authors. We found ourselves asking: who are the evaluation
   subjects? If we know nothing about these users' backgrounds, or potential
   motivations to call an XAI technique 'good,' one might argue this introduces
@@ -298,9 +298,25 @@ filling it.**
   while `the end-users of these XAI techniques are intended to be cybersecurity
   experts, pilots, doctors, and so on`. The paper concedes the difficulty:
   `Of course, it can be difficult to assemble domain experts to test methods and
-  tools, especially domain experts who are not working on the tool with you.`
+  tools, especially domain experts who you are not working on the tool with.`
   And: `we observed a number of papers only having two or three domain experts
   as part of the evaluation`.
+
+  **Both of the two quotes above were re-verified against the rendered page by
+  chapter 16's session on 2026-09-06 and both had been transcribed wrong here.**
+  The first read `expertise, knowledge, education`; the page reads `expertise,
+  workplace, education`. The second read `domain experts who are not working on
+  the tool with you`; the page reads `domain experts who you are not working on
+  the tool with`. Neither string ever reached the manuscript, so nothing shipped
+  wrong, but a note is what the next session quotes from. Same session: figure 2
+  and its caption are on **page 4**, not page 5 as this file records below; the
+  two counts 13 and 3 also appear in the page 5 body, in different words.
+
+  **And the paper does not stop at conceding that difficulty.** The sentence
+  immediately after the first one is `Regardless, it is difficult to trust
+  generalizable claims about explainability when the participant pool is very
+  small or dissimilar to the target users.` See the section on paper 24's
+  rebuttal in `ch16-ba-loi-thoat.md`, which chapter 16 turns on.
 - Section 4.2, page 5, on Rudin's distinction: `explainable` as a post-hoc
   treatment of an otherwise black-box model, `interpretable` as stemming from
   model design grounded in expert domain understanding. A number of papers
