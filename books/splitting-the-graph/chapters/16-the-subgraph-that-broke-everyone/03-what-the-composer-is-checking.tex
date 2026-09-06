@@ -1,0 +1,160 @@
+\section{What the Composer Is Actually Checking}
+\label{sec:ch16-what-the-composer-is-checking}
+
+\index{composition!what it is asking, and what it is not|(}%
+Three edits composed cleanly in
+section~\ref{sec:ch16-three-changes-and-one-status-code}, which invites the
+reading that the composer is lax. It is not. It is answering a question, the
+question is a good one, and it is not this one. The way to see that is to give
+it fourteen edits and watch which two it stops.
+
+\index{composition!fourteen edits, one at a time}%
+Each row below is one change to one document, with the other three left
+exactly as the services export them, composed as a four-subgraph graph. The
+third column is where that change sits on the list
+section~\ref{sec:ch16-the-change-this-book-already-shipped} took out of
+\code{graphql-js}.
+
+\begin{center}
+\footnotesize
+\begin{tabular}{l l l}
+\toprule
+Change to one document & Composition & On the list as \tabularnewline
+\midrule
+remove \code{Query.sessionById} & exit 0 & \code{FIELD\_REMOVED}
+  \tabularnewline
+remove \code{Session.abstract} & exit 0 & \code{FIELD\_REMOVED}
+  \tabularnewline
+rename \code{Session.title} to \code{name} & \textbf{exit 1} &
+  \code{FIELD\_REMOVED} \tabularnewline
+\code{Session.title} loses its \code{!} & exit 0 & \code{FIELD\_CHANGED\_KIND}
+  \tabularnewline
+\code{Session.durationMinutes} loses its \code{!} & exit 0 &
+  \code{FIELD\_CHANGED\_KIND} \tabularnewline
+\code{sessions} gains \code{track: String!} & exit 0 &
+  \code{REQUIRED\_ARG\_ADDED} \tabularnewline
+\code{sessionById(id: Int!)} becomes \code{ID!} & exit 0 &
+  \code{ARG\_CHANGED\_KIND} \tabularnewline
+remove \code{Session.startsAt} & exit 0 & \code{FIELD\_REMOVED}
+  \tabularnewline
+widen the \code{@key} to \code{"id title"} & \textbf{exit 1} & not on it
+  \tabularnewline
+remove \code{Speaker.bio} & exit 0 & \code{FIELD\_REMOVED} \tabularnewline
+\code{Speaker.name} loses its \code{!} & exit 0 & \code{FIELD\_CHANGED\_KIND}
+  \tabularnewline
+\code{Session.averageScore} becomes \code{Int} & exit 0 &
+  \code{FIELD\_CHANGED\_KIND} \tabularnewline
+remove \code{Session.ratingCount} & exit 0 & \code{FIELD\_REMOVED}
+  \tabularnewline
+remove \code{Query.searchSessions} & exit 0 & \code{FIELD\_REMOVED}
+  \tabularnewline
+\bottomrule
+\end{tabular}
+\end{center}
+
+\index{composition!twelve of fourteen say nothing}%
+Twelve of the fourteen compose, and each of the twelve printed the success
+line and nothing else. Every one of those twelve is on the breaking list.
+
+\index{composition!the two it refuses are not the two you would guess}%
+The two it refuses are on the other side of the ledger. One of them, the
+rename, is on the list as well. The other, widening a key, is not on it at
+all: a \code{@key} is a federation directive rather than something a client
+can select, and no client will ever know the difference. So the composer
+stopped one change no client can see and passed twelve that break one.
+
+\index{composition!the row worth arguing about}%
+One row is worth arguing about and
+section~\ref{sec:ch16-the-gate-and-what-it-needs} has the vendors' own answer
+to the argument. \code{sessionById(id: Int!)} becoming \code{id: ID!} is
+\code{ARG\_CHANGED\_KIND} because the two named types differ, and a reader who
+knows that \code{ID} accepts an integer will want to say it is harmless. A
+schema check will still call it breaking, and Apollo's documentation says
+plainly why: validation does not have the information to establish that it is
+not.
+
+\subsection{Why Those Two, and Not the Reasons You Would Predict}
+
+\index{composition!the rename fails at the far end}%
+Both refusals are worth reading, because neither fails where you would look.
+Rename \code{Session.title} in the Sessions document and the message is not
+about the rename:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+The Object "Session" is invalid because the following field definition is declared "@external" on all instances of
+that field:
+ "title" in subgraph "ratings"
+At least one instance of a field definition must always be resolvable (and therefore not declared "@external").
+\end{minted}
+
+\index{external@\code{"@external}!the last declaration standing}%
+Chapter~\ref{ch:second-third-subgraph} gave the Ratings document a copy of
+\code{title} marked \code{@external}, so that \code{feedbackUrl} could
+\code{@requires} it.
+Rename the Sessions copy and that borrowed declaration becomes the only
+declaration of a field by that name anywhere, which the composer refuses
+categorically. It is not complaining about the \code{@requires} selection set
+and it is not complaining about Sessions. It is complaining that a field
+exists which nobody can resolve, in the subgraph that was only ever borrowing
+it.
+
+\index{key@\code{"@key}!widening it cuts somebody else's route}%
+Widening the key fails somewhere else again. Add \code{title} to the Sessions
+\code{@key} and Ratings still declares \code{@key(fields: "id")} on its own
+\code{Session}, so it can no longer satisfy the stricter key and the route
+Search had into Sessions through Ratings is cut. Four errors come back, one
+per orphaned field, in exactly the shape
+chapter~\ref{ch:satisfiability} spent a chapter reading: \code{speaker},
+\code{abstract}, \code{startsAt} and \code{durationMinutes}, all named at a
+path through \code{searchSessions}, with \code{ratings} as the entity ancestor.
+
+\index{composition!both refusals are about routing}%
+So the two refusals are one refusal, arrived at twice: the composer could not
+plan a route, which is the only question it was ever asked.
+
+\subsection{Every Question It Can Ask Is a Question About the Files}
+
+\index{composition!reads four documents and nothing else}%
+Chapter~\ref{ch:composition} described composition as two passes, a merge and
+a walk, and chapter~\ref{ch:satisfiability} spent its length on the second.
+What both passes have in common is their input. Four documents go in. Nothing
+else does. \code{wgc router compose} does not call a service, which
+chapter~\ref{ch:composition} treated as a feature and still is, and it does
+not read a client, which nobody has ever offered as a feature because nobody
+has ever offered it at all.
+
+\index{composition!a client operation is in no file}%
+So every question it can answer is a question the four files answer. Can these
+types merge. Does every field have somewhere it can be resolved from. Is there
+a path from each root field to each leaf. \emph{Was this field being used} is
+not that kind of question. The operation that uses it is in a mobile
+application somebody shipped a while ago, or in a dashboard in another
+repository, or in a script written once and scheduled. It is not in the four
+documents, it is not in the repository the four documents live in, and no
+amount of reading them harder will produce it.
+
+\index{figure!where a change fails}%
+Figure~\ref{fig:ch16-two-places-a-change-can-fail} is the two outcomes on one
+timeline.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch16-two-places-a-change-can-fail}
+  \caption{The same shape of edit, to the same document, ending in two places.
+  Above, the composer refuses and nothing is deployed, because both halves of
+  the question it asked were in the documents it was handed. Below, the
+  composition passes, the router loads the config, and the failure waits for a
+  request the graph had no copy of. The distance between the two crosses is a
+  deployment, and everything that makes a breaking change expensive is in that
+  gap.}
+  \label{fig:ch16-two-places-a-change-can-fail}
+\end{figure}
+
+\index{composition!a pass is a pass on one question}%
+None of this is an argument against composing. A refusal is real every time,
+and chapter~\ref{ch:satisfiability} already said what a pass is worth on its
+own terms. What this section adds is narrower and worse: a composer that
+answered its own question perfectly would still pass all twelve of the changes
+above, because the thing they break was never in the room. Which is the
+question the next section takes to the people who sell an answer to it.
+\index{composition!what it is asking, and what it is not|)}%

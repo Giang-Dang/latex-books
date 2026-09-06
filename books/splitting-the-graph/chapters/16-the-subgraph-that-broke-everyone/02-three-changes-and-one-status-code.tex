@@ -1,0 +1,130 @@
+\section{Three Changes, and One Status Code}
+\label{sec:ch16-three-changes-and-one-status-code}
+
+\index{breaking change!what a client actually receives|(}%
+Section~\ref{sec:ch16-the-change-this-book-already-shipped} is a change that
+answers correctly, which makes it the hardest of the three to feel. So take
+three edits to the Sessions document, one at a time, compose each into a
+config and point a router at it. The four services behind that router are
+untouched in every run, and that is worth stopping on: for two of the three
+edits, the router refuses the request against its own copy of the composed
+schema and never asks a service anything. The whole failure lives in a
+document.
+
+\subsection{The Deprecated Field, Removed}
+
+\index{deprecation!the removal chapter 4 refused to make}%
+Chapter~\ref{ch:schema-design} deprecated \code{sessionById} and said that
+deleting it instead would break every client still asking, on the deployment,
+with no warning. Twelve chapters later the field is still there and the reason
+to remove it has only got better. Take it out of the document, with its
+\code{@deprecated} block, and compose:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+Router execution config successfully written to ".../router.json".
+\end{minted}
+
+\index{composition!approves a field removal}%
+Exit zero. Nothing else printed, and nothing else to print: the field belonged
+to one subgraph, no \code{@key} named it, no \code{@requires} named it, and
+the graph merges exactly as it did before.
+
+\index{deprecation!the client that did not read the reason}%
+Now a client that never read the reason string, sending what it has sent since
+chapter~\ref{ch:schema-design}:
+
+\begin{minted}{graphql}
+{ sessionById(id: 1) { title } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Cannot query field \"sessionById\" on type \"Query\".","path":["query"]}]}
+\end{minted}
+
+\index{HTTP 200!a removed field is still a 200}%
+Two hundred. Not a four hundred, not a four oh four. An \code{errors} array,
+no \code{data} key at all, and a status line that a client library will hand
+back as success.
+
+\subsection{The Argument Nobody Had Yesterday}
+
+\index{breaking change!a required argument added}%
+The second edit adds a required argument. \code{sessions} takes four paging
+arguments and none of them is mandatory; give it a fifth, \code{track:
+String!}, with no default, as a team would while adding a filter they consider
+obviously necessary. It composes at exit zero, and the composed schema carries
+\code{sessions(track: String!, first: Int, after: String, last: Int, before:
+String)}.
+
+\index{breaking change!the query this book has printed since chapter 3}%
+The query that breaks is the one this book has printed since
+chapter~\ref{ch:data-without-n-plus-1}:
+
+\begin{minted}{graphql}
+{ sessions(first: 10) { nodes { title } } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"argument: track is required on field: sessions but missing","path":["query"]}]}
+\end{minted}
+
+\index{HTTP 200!a required argument is still a 200}%
+Two hundred again, and it is worth putting this beside the misspelled field
+chapter~\ref{ch:hot-chocolate-zero} sent. That one came back from Hot
+Chocolate with a \code{locations} array, an \code{extensions} object and a
+link to the clause of the specification it was enforcing. This one has a
+\code{path} and nothing else.
+
+\index{HTTP 200!the same failure was a 400 before the router}%
+And the status code moved. Chapter~\ref{ch:hot-chocolate-zero}'s validation
+error answered four hundred, which is that chapter's own measurement. Send the
+same class of mistake to the Sessions service on its own port today and it
+still answers 400. Send it through the router and it is a 200. Same graph,
+same mistake, two status codes, decided by which process the request happened
+to reach. A client that branches on the status line was right about this graph
+until chapter~\ref{ch:enter-the-router} put a router in front of it, and has
+been wrong ever since.
+
+\index{breaking change!nothing was removed}%
+Nobody removed anything here. The field is still there, still returns the same
+connection, and every client that ever called it is refused.
+
+\subsection{The One With No Signal At All}
+
+\index{breaking change!the change that answers correctly}%
+The third edit is the one chapter~\ref{ch:null-blast-radius} already made,
+applied to one more field: take the exclamation mark off the title of a
+session. It composes at exit zero, and the same page query answers:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"data":{"sessions":{"nodes":[{"title":"Schemas That Outlive Their Authors"},{"title":"Reading a Query Plan"},{"title":"Paging Without Offsets"},{"title":"The Bank That Split Its Graph"}]}}}
+\end{minted}
+
+\index{breaking change!byte for byte the old answer}%
+Byte for byte the answer the unchanged graph gives, because every row in this
+seed has a title. Introspect the field and the schema has moved: \code{title}
+comes back as a plain \code{SCALAR} named \code{String}, where \code{id},
+\code{startsAt} and \code{durationMinutes} in the same response still come back
+\code{NON\_NULL} with the named type underneath.
+
+\index{breaking change!nothing announces it}%
+Nothing announces it. Not the composition, not the router when it loads the
+config, not the request, not the router's log. A client that generated its
+types from the old schema and has not introspected since keeps a guarantee the
+graph stopped making, and nothing at all happens until the day some row has a
+null title. Then a null arrives where the generated code has no branch, in a
+release nobody connected to a schema change made months earlier by a team the
+client's authors have never met.
+
+\index{breaking change!the three sit on one scale}%
+Three edits, and they are the same kind of thing at three distances. The
+removed field fails immediately and loudly enough that somebody will see it.
+The required argument fails immediately and could plausibly be caught by
+whoever added it, because the query it breaks is the obvious one. The
+nullability change fails at a moment nobody can predict, in a client nobody
+told, and the only trace is a null.
+
+\index{HTTP 200!every failure in this book, again}%
+And all three come back two hundred. The graph has one way to say no to a
+client, and it is the same way it says yes.
+\index{breaking change!what a client actually receives|)}%

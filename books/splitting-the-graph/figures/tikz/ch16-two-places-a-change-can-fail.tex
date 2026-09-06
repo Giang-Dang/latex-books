@@ -1,0 +1,100 @@
+% The same shape of edit to the sessions subgraph, twice: a renamed field the
+% composer refuses at compose time, and a removed field it lets straight
+% through. The point is where each failure lands on the timeline, not what
+% either edit looks like, which is why this is a timeline and not a box
+% diagram.
+%
+% Same idiom as figures/tikz/ch01-one-field.tex, which fixes it: two lanes,
+% x=1mm/y=1mm, ticks above a single-weight axis, event nodes anchored south,
+% a span bracket under the stage a label needs to explain. The outcome node
+% at the right of each lane is figures/tikz/ch15-the-order-decides.tex's
+% outcome style, including that file's choice to place both lanes' outcome
+% nodes at the same x position even though lane A's axis stops well short of
+% it: the blank run-in says as much as the text does.
+%
+% The cross mark on both lanes is figures/tikz/ch07-the-walk.tex's mark for a
+% step that goes wrong at that point. It is used a little differently here
+% than in ch07 or in ch15's hollow square: neither lane draws a dashed
+% lead-in. Dashing already means, in both of those figures, a stage nobody
+% actually walked. Every stage in this figure did happen; the composer really
+% ran, the request really went out. So the axis stays solid right up to the
+% cross in both lanes, and only the cross mark itself, not the line beneath
+% it, carries the meaning. Lane A's axis simply ends there (house style: draw
+% only the stages a run actually reaches), while lane B's runs on past its
+% cross to the same right margin as lane A's outcome column, because the
+% request that fails is still the last event on that lane, not an aborted one.
+%
+% No quotation marks anywhere in this file, including this comment block, per
+% the note at the head of ch07-the-walk.tex and repeated in
+% ch15-the-order-decides.tex.
+%
+% Bare tikzpicture (house style): the figure environment, caption and label
+% live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  axis/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  tick/.style={draw, line width=0.4pt},
+  event/.style={anchor=south, align=center, text width=30mm, inner sep=1pt},
+  outcome/.style={anchor=west, align=left, text width=32mm, inner sep=1pt},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  lane/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+]
+
+% ------------------------------------------------------------------- lane A
+% Both lane titles sit at 17 rather than at ch01's 13, because the first
+% event in each lane runs to four lines where ch01's ran to two, and at 13
+% the title and the label collide.
+\node[lane] at (0,17) {A. a change the composer refuses};
+
+% Solid the whole way: the composer does run compose, and fails there. The
+% axis stops short of the cross so that its arrowhead points into the cross
+% rather than being drawn underneath it, and nothing is drawn past it.
+\draw[axis] (0,0) -- (41,0);
+\draw[tick] (14,-1.5) -- (14,1.5);
+\draw[tick] (42.8,-1.5) -- (45.2,1.5);
+\draw[tick] (42.8,1.5) -- (45.2,-1.5);
+
+\node[event, text width=34mm] at (14,3)
+  {edit the sessions document\\(rename Session.title to Session.name)};
+\node[event, text width=26mm] at (44,3) {wgc router compose\\exit 1};
+
+\draw[span] (7,-4) -- (7,-7) -- (51,-7) -- (51,-4);
+\node[spanlabel, text width=40mm] at (29,-8)
+  {the composer can answer this: the rename and the read it breaks are both
+   in the four documents it composes};
+
+\node[outcome] at (118,0) {refused. Nothing\\deployed.};
+
+% ------------------------------------------------------------------- lane B
+\begin{scope}[shift={(0,-50)}]
+  \node[lane] at (0,17) {B. the same shape of change, waved through};
+
+  \draw[axis] (0,0) -- (99,0);
+  \foreach \x in {14,44,74}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+  \draw[tick] (100.8,-1.5) -- (103.2,1.5);
+  \draw[tick] (100.8,1.5) -- (103.2,-1.5);
+
+  % No chapter number in the printed text: the book writes those as a
+  % cross-reference, and a figure cannot. It says long deprecated instead,
+  % which is what the reader needs here anyway.
+  \node[event, text width=34mm] at (14,3)
+    {edit the sessions document\\(remove Query.sessionById, long
+     deprecated)};
+  \node[event, text width=30mm] at (44,3)
+    {wgc router compose\\exit 0, nothing printed};
+  \node[event, text width=20mm] at (74,3) {the router\\loads it};
+  \node[event, text width=26mm] at (102,3)
+    {a client sends\\the old query};
+
+  \draw[span] (95,-4) -- (95,-7) -- (109,-7) -- (109,-4);
+  \node[spanlabel, text width=34mm] at (102,-8)
+    {the operation that fails is in nobody's repository, so no check
+     before this point had it to run against};
+
+  \node[outcome] at (118,0) {HTTP 200, and\\an errors array.};
+\end{scope}
+
+\end{tikzpicture}

@@ -1,0 +1,76 @@
+% One schema change, one axis, three checks measured against it: what each
+% one can actually see over the change's life, and where the two that exist
+% locally leave a gap that lines up exactly with the failure in the sibling
+% figure ch16-two-places-a-change-can-fail.tex.
+%
+% Same idiom as figures/tikz/ch01-one-field.tex: x=1mm/y=1mm, a single-weight
+% axis with ticks, event nodes anchored south above it, a span bracket under
+% the stages a label needs to explain. One lane, not two, because there is
+% one change here, not two compared side by side; the span bracket is simply
+% used three times, at three depths, so the brackets that overlap in x do not
+% collide in y. No cross mark appears anywhere in this figure: nothing on
+% this axis is a step a walk cannot take, only three different fields of
+% view over the same four stages, so ch07-the-walk.tex's mark for a blocked
+% step has no work to do here.
+%
+% The third bracket is the one addition. Dashing already means, in
+% ch07-the-walk.tex and ch15-the-order-decides.tex, a span nobody actually
+% walks; this figure reuses that meaning for a check nobody has written.
+% It is also left open at the right, with no closing tick, rather than drawn
+% as a complete bracket: a closed bracket over stages 1 to 2 would say a
+% check exists that covers exactly that span, and it does not. The check
+% this label describes would need to see stage 4, the operations clients
+% actually send, while it is standing at stage 1, and nothing between those
+% two points is on this axis today. An open end says the span is unclosed,
+% which is the whole claim; closing it, even with a different mark, would
+% say the opposite.
+%
+% No quotation marks anywhere in this file, including this comment block,
+% per the note at the head of ch07-the-walk.tex and repeated in
+% ch15-the-order-decides.tex.
+%
+% Bare tikzpicture (house style): the figure environment, caption and label
+% live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  axis/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  tick/.style={draw, line width=0.4pt},
+  event/.style={anchor=south, align=center, text width=28mm, inner sep=1pt},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  gap/.style={draw, line width=0.4pt, dashed},
+]
+
+\draw[axis] (0,0) -- (146,0);
+\foreach \x in {15,54,93,131}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+
+\node[event] at (15,3)  {you edit your\\subgraph document};
+\node[event] at (54,3)  {composition merges\\four documents};
+\node[event] at (93,3)  {the router loads\\the config};
+\node[event, text width=32mm] at (131,3)
+  {a client sends an\\operation it wrote\\last year};
+
+% ------------------------------------------------- the two checks that exist
+\draw[span] (47,-4) -- (47,-7) -- (61,-7) -- (61,-4);
+\node[spanlabel, text width=40mm] at (54,-8)
+  {composition. Reads the four documents and nothing else, so every
+   question it can ask is a question about them};
+
+\draw[span] (124,-4) -- (124,-7) -- (138,-7) -- (138,-4);
+\node[spanlabel, text width=40mm] at (131,-8)
+  {the router validates the operation. Correct, and after the
+   deployment, in somebody else's request};
+
+% ------------------------------------------- the check nobody has written
+% Dashed throughout, and open at the right: no closing tick at stage 2,
+% because the span this check would need does not close on this axis.
+\draw[gap] (15,-22) -- (15,-25);
+\draw[gap] (15,-25) -- (54,-25);
+\node[spanlabel, text width=48mm] at (34,-26)
+  {the check that would have caught it. Needs the operation on the right of
+   this axis while standing at the edit on the left, and nothing in this book
+   has it};
+
+\end{tikzpicture}

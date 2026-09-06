@@ -1,0 +1,27 @@
+\begin{problemsummary}
+{A client that has not changed starts getting \code{Cannot query field} or
+\code{argument is required}, at HTTP 200, with an \code{errors} array and no
+\code{data} key, after somebody else deployed a subgraph. Or nothing visible
+happens at all: a field that was non-null is nullable now, every response is
+still correct, and a null arrives months later in a client with no branch for
+it.}
+{Composition reads the subgraph documents and nothing else, so every question
+it can answer is a question about them. Whether a field is still being
+selected is not one: the operation lives in a mobile release, a dashboard or a
+script, outside the repository the documents live in. Of fourteen one-line
+edits composed against this book's graph, twelve pass at exit zero with
+nothing printed, and every one of those twelve is on the reference
+implementation's breaking-change list. The two the composer refuses are both
+routes it could not plan, and one of them breaks no client at all.}
+{Diff the composed schema rather than the subgraph document: compose what is
+published, compose the candidate, and diff \code{engineConfig.graphqlSchema}
+out of the two configs, which costs two commands you already run and reports
+the change in the schema clients actually read. That answers which of the
+sixteen categories you are in and not whether it matters, so pair it with an
+operation corpus replayed through a router on the candidate config, knowing
+that a corpus your own team maintains moves with your schema. The comparison
+neither of those makes is against real client traffic, and both vendors sell
+that as a control plane with a seven-day default window; when you cannot name
+your clients any more, that record is the only way anyone has to answer the
+question.}
+\end{problemsummary}

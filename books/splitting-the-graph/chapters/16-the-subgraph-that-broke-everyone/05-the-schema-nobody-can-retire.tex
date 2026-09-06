@@ -1,0 +1,148 @@
+\section{The Schema Nobody Can Retire}
+\label{sec:ch16-the-schema-nobody-can-retire}
+
+\index{schema growth!what a missing usage record does to a schema|(}%
+Section~\ref{sec:ch16-the-gate-and-what-it-needs} left the second comparison
+unanswerable without a control plane: is anybody still asking for this field.
+A team that cannot answer that does not stop working. They make a decision
+instead, the same decision every time, and after two years the schema has a
+shape.
+
+\index{deprecation!the field this book still carries}%
+This book has already made it once. \code{sessionById} was deprecated in
+chapter~\ref{ch:schema-design}, with a reason string naming its replacement,
+and twelve chapters later it is still in the schema and still answering.
+Nothing about that is negligence. The
+question that would retire it is whether anybody still sends it, and this
+graph has no way to find out, so the safe answer and the lazy answer are the
+same answer and I took it.
+
+\index{schema growth!removal needs a fact nobody has}%
+Add a field and no client can break, because no client selects a field it has
+never heard of. Remove one and you need a fact you do not have. Two moves,
+one of them free and one of them requiring evidence nobody collected, applied
+by every team for as long as the graph lives.
+
+\subsection{One Query Type, Four Teams}
+
+\index{Query type@\code{Query} type!seven fields, four owners}%
+Federation sharpens this in a way that is easy to miss, because the shared
+thing does not look shared. Here is every root field in this book's
+supergraph, and the subgraph that declares it:
+
+\begin{center}
+\footnotesize
+\begin{tabular}{l l}
+\toprule
+Root field & Declared by \tabularnewline
+\midrule
+\code{node} & \code{sessions} and \code{speakers} \tabularnewline
+\code{nodes} & \code{sessions} and \code{speakers} \tabularnewline
+\code{sessions} & \code{sessions} \tabularnewline
+\code{sessionById} & \code{sessions} \tabularnewline
+\code{speakers} & \code{speakers} \tabularnewline
+\code{ratingCount} & \code{ratings} \tabularnewline
+\code{searchSessions} & \code{search} \tabularnewline
+\addlinespace
+\code{rescheduleSession} & \code{sessions} \tabularnewline
+\bottomrule
+\end{tabular}
+\end{center}
+
+\index{Query type@\code{Query} type!nobody owns it}%
+Seven fields on \code{Query} and one on \code{Mutation}, from four services,
+and no service owns the type they sit on. Each of those teams can add a field
+to it without asking anybody, which is the thing
+chapter~\ref{ch:do-you-need-this} promised and delivered: your deployment,
+yours alone. Removing one is the same deployment and it is not yours alone at
+all.
+
+\index{Query type@\code{Query} type!one of the seven is retired in name}%
+And one of those seven is already retired in name only, in a graph this book
+built from nothing over fifteen chapters, with one author, no other teams and
+no clients at all.
+
+\subsection{What That Grows Into}
+
+\index{REST-shaped schema!what the phrase means}%
+The shape this converges on is what I call a REST-shaped schema: one where the
+root fields are a list of endpoints, each added for one caller, because adding
+was the only safe move available. It is not a schema anybody designed. It is
+the residue of two years of that decision, and the tell is that the root field
+names read like screens rather than like a domain.
+
+\index{REST-shaped schema!the second-order cost}%
+The cost is not the size. A large schema is not a problem by itself, and
+chapter~\ref{ch:cross-seam-paging} added a whole service to this graph on
+purpose. The cost is that a field added for one caller carries no statement
+about who else may use it, so within a year it has other callers, and now it
+cannot be changed either. Each new field starts free and becomes load-bearing
+without anybody deciding that it should.
+
+\index{REST-shaped schema!what it looks like at scale}%
+Nikhil Patel, an engineer at Whatnot, published what the far end of this looks
+like on a graph much larger than the one in this book: over 2,600 unused
+fields, of which nearly 200 were root queries and
+mutations~\autocite{patel2025bloat}. His account of why nobody had cleaned
+them up is the same argument this chapter has been making, arrived at from
+production rather than from a composer:
+
+\begin{quote}
+Older versions of our mobile apps may still call queries that have long been
+removed from the main branch, and admin tooling dashboards often execute
+queries entirely outside our primary repositories. That means static analysis
+can't tell the whole story.
+\end{quote}
+
+\index{REST-shaped schema!static analysis is the wrong tool}%
+Nearly two hundred root fields nobody uses, and the reason they survived is
+that the repository does not contain the callers. Reading harder does not help.
+Section~\ref{sec:ch16-what-the-composer-is-checking} said the same thing about
+the composer and this is the same sentence one layer out: the operation is not
+in your source tree, so no tool that reads your source tree will find it.
+
+\subsection{What to Do About It Before It Happens}
+
+\index{REST-shaped schema!the record is the fix}%
+The fix is the usage record, and this section exists because a team that does
+not have one should know what they are choosing. Everything else on the
+subject is mitigation, and I would still do all of it.
+
+\index{schema design!prefer an argument to a new root field}%
+Prefer an argument on an existing field to a new root field. A caller who
+needs the schedule filtered by track is asking for
+\code{sessions(track:)}, and chapter~\ref{ch:cross-seam-paging} put a whole
+discovery service behind exactly that instinct rather than adding a
+\code{sessionsForTrackPage}. The argument is discoverable by the next caller
+who wants the same thing. A field named after one screen is not.
+
+\index{deprecation!name the replacement and then look for the traffic}%
+Deprecate with a date, not only a reason.
+Chapter~\ref{ch:schema-design} argued that the reason string is the whole user
+interface of a deprecation and that it should name the replacement. That
+still holds and it is not sufficient, because a reason with no date is a
+reason with no plan behind it, and \code{sessionById} is the proof. Put the
+month you intend to remove it in the string, and then be honest with yourself
+that you will not remove it in that month unless somebody is collecting the
+traffic.
+
+\index{schema design!a root field is the most expensive kind}%
+And treat a root field as the most expensive thing in the schema. It is
+reachable by every client, it is the only position whose parent is
+\code{data}, which chapter~\ref{ch:null-blast-radius} measured the cost of,
+and once four teams share one \code{Query} type it is the field nobody can
+argue about without a meeting. Fields on a type you own are cheap. The shared
+root is not.
+
+\index{ownership!the type four services write to and nobody owns}%
+Which leaves the word I have been using as though it were settled. Every
+recommendation in this section rests on knowing which fields are yours, and
+the table two subsections up has four services writing to one \code{Query}
+type that belongs to none of them. \code{Session} is worse. Three services
+declare it: Sessions holds the rows, Ratings hangs three fields off a key it
+can be entered through, and Search points at it with a stub. Ratings owns no
+session and can put a field on \code{Session} tomorrow without telling
+anybody, and Search could do the same by changing one argument. Composition
+will merge all of it without asking whose type it is, and the next chapter is
+what happens when somebody has to decide.
+\index{schema growth!what a missing usage record does to a schema|)}%

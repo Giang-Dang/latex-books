@@ -1,0 +1,216 @@
+\section{The Gate, and What It Needs}
+\label{sec:ch16-the-gate-and-what-it-needs}
+
+\index{schema check!the tool that exists|(}%
+Section~\ref{sec:ch16-what-the-composer-is-checking} ends on a question the
+composer cannot be asked, so ask the tool that was built to answer it. Cosmo
+ships one, \code{wgc subgraph check}, a subcommand of the same binary this
+book has composed with since chapter~\ref{ch:composition}. Here is what it
+does on this machine:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+Organization slug is not set. Please run `wgc auth login` to set the organization slug.
+\end{minted}
+
+\index{schema check!needs a control plane}%
+Exit one. The same message comes back from \code{wgc proposal create}, from
+\code{wgc subgraph fix} and from
+\code{wgc federated-graph check}.
+That is not a missing flag. The command's own help says what it is
+doing, and the giveaway is the last four words: it checks for breaking changes
+and composition errors \emph{across all connected federated graphs}. Knowing
+which graphs are connected, and what schema each of them is currently serving,
+is what a control plane is for, and \code{wgc router compose} has been the
+exception rather than the rule all along. Its help says so too, in a sentence
+this book has been quietly relying on since
+chapter~\ref{ch:composition}: it composes locally
+\enquote{without a control-plane connection}.
+
+\subsection{What the Check Is Actually Comparing}
+
+\index{schema check!two comparisons, not one}%
+The interesting half is not that it needs a server. It is what the server is
+holding. A schema check makes two comparisons. The first is a diff, between
+the candidate document you hand it and the one the control plane already has
+for that subgraph, across every graph that subgraph is part of, which is what
+the help text means by composition errors in the plural. The second is the one
+nothing local can do. It takes the changes the first found and asks whether
+any client actually used them.
+
+\index{schema check!the traffic comes from the router}%
+Where the traffic comes from is the router. Cosmo's documentation is plain
+about it and about what follows~\autocite{cosmochecks}:
+
+\begin{quote}
+This is done by sending schema usage traffic to Cosmo Cloud from your routers.
+If you propose a breaking change and no active clients use the affected schema
+changes the check will pass.
+\end{quote}
+
+\index{schema check!seven days by default}%
+The window is seven days by default and is a namespace setting. So a field
+nobody has selected in a week is a field you may delete, and a client that
+runs a report on the first of the month is a client the check has never heard
+of. That is a policy dial rather than a defect, and it is one worth setting
+deliberately, because the default is a week and quarterly things exist.
+
+\index{schema check!directives are not tracked}%
+One limit in the same document deserves more attention than its two sentences
+suggest, given how much of this book's graph is directives:
+
+\begin{quote}
+Currently, we do not track the usage of directives. This means that changing or
+deleting directives will always be detected as a non-breaking change, even if
+clients are using them.
+\end{quote}
+
+\index{schema check!the option that turns the traffic off}%
+And there is a flag for the case where you do not want the second comparison
+at all, which is the honest way to read what the first one is worth on its
+own: \code{--skip-traffic-check}, described in the help as skipping the check
+for client traffic, after which any breaking change fails the run. That is
+the setting for a graph whose clients you cannot enumerate, and it converts
+the tool from a question about your users into a question about your schema.
+
+\index{schema check!Apollo's is the same shape}%
+Apollo's is the same tool with different nouns. \code{rover subgraph check}
+needs an API key, a schema already published to their service, and a graph
+ref, which is their name for the identifier of one graph and one variant of
+it. It diffs against the published schema and then against operations executed
+inside a window that is also seven days by default. Its categories are keyed to usage rather than to
+shape, so its own definition of a removed field is a field \emph{used by at
+least one operation}. And its reference page concedes something I have not
+seen a vendor concede often~\autocite{apollochecksref}:
+
+\begin{quote}
+In some cases, in-place updates are compatible with affected clients at runtime
+(such as a type rename or a conversion from an object to an interface that uses
+the same fields). However, schema checks still marks these as breaking changes,
+because validation does not have enough information to ensure that they are
+safe.
+\end{quote}
+
+\index{schema check!false positives on purpose}%
+A check that reports safe changes as breaking, on purpose, because it cannot
+tell. I would rather have that than the alternative, and it is worth knowing
+before the first argument about a check that is wrong.
+
+\subsection{Why This Book Does Not Run One}
+
+\index{control plane!what self-hosting it costs}%
+So I should say why this book has no such report in it, rather than leave the
+absence to be read as an oversight. Cosmo is open source and the control plane
+can be self-hosted. What self-hosting it means, in WunderGraph's own
+documentation, is Docker Compose on a laptop or Kubernetes with a Helm chart
+in production, standing up a Node service, PostgreSQL, Redis, ClickHouse, an
+S3-compatible object store, Keycloak with a PostgreSQL of its own, a CDN
+server, an OpenTelemetry collector and a metrics
+collector~\autocite{cosmoselfhosted}. This book's running example has four
+processes, four SQLite files and one downloaded binary, and it has no
+container in it anywhere, which was settled before
+chapter~\ref{ch:do-you-need-this} was written and has held ever since.
+
+\index{control plane!the honest position}%
+So I am not going to stand one up to write a chapter, and I am not going to
+describe a report I have not seen. What I can tell you is what the command
+needs, which is measured, and what it compares, which is documented. What this
+chapter does not contain is Cosmo's own verdict on
+chapter~\ref{ch:null-blast-radius}'s five fields, because nobody ran it.
+
+\subsection{The Half You Can Build Without One}
+
+\index{schema check!compose twice and diff}%
+The first comparison needs no server at all, and
+section~\ref{sec:ch16-the-change-this-book-already-shipped} is it, performed
+as a procedure rather than as a demonstration. Compose the four documents you
+have published. Compose the four you are about to publish. Pull
+\code{engineConfig.graphqlSchema} out of each config and diff them. Two
+invocations of a command you already run and one diff, and the report is the
+five changed lines that section prints.
+
+\index{schema check!diff the composed schema, not the subgraph}%
+Diff the composed schema rather than the subgraph document, and the reason is
+in those five lines. Six moved across the four documents and five fields
+moved in the supergraph, because \code{Query.nodes} is declared twice and
+merged once. A per-subgraph diff would have reported six changes to a schema
+that has five, and it would have missed the general case entirely: a field can
+change in the composed schema because a \emph{different} subgraph changed. The
+supergraph is what a client reads, so the supergraph is what you diff.
+
+\index{schema check!why the vendor takes one document and you compose two}%
+That is not a disagreement with \code{wgc subgraph check}, which takes one
+subgraph document and nothing else. It can, because a control plane is holding
+the other three and the schema they last composed to. With nothing holding
+them, you compose both sides yourself, which is the whole of the difference
+and is two commands rather than one.
+
+\index{schema check!the half that stays hard}%
+What that does not give you is the second comparison, and I want to be exact
+about how far short it falls. The diff tells you which of the sixteen
+categories you are in. It cannot tell you whether it matters, and in practice
+the argument about a removal is never about the category.
+
+\index{operation corpus!is not a population of clients}%
+What stands in for the second comparison, with no control plane behind you, is
+a corpus of operations you keep yourself and replay through a router started on
+the candidate config. Build it. It is worth having and it is not the same
+thing, for the reason
+section~\ref{sec:ch16-the-change-this-book-already-shipped} gave: a corpus
+maintained by the people who change the schema moves when the schema moves. It
+is a regression suite, and a regression suite tells you that the graph still
+does what you meant. A population of clients tells you what somebody else
+meant, and only one of those two is on your machine.
+
+\index{figure!what each check can see}%
+Figure~\ref{fig:ch16-what-each-check-can-see} is the three checks against the
+life of one change.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch16-what-each-check-can-see}
+  \caption{Three checks over the life of one schema change, and the two that
+  run locally cover the wrong parts of it. Composition reads the four
+  documents when they merge, and can ask nothing outside them. The router
+  validates the operation correctly and does it at the far end, after the
+  deployment, in somebody else's request. The third span is drawn open at its
+  right because nothing in this book closes it: a check that stopped the edit
+  would have to know, while you are still editing, what a client is going to
+  send. A control plane is a service that closes that span by keeping the
+  operations for you.}
+  \label{fig:ch16-what-each-check-can-see}
+\end{figure}
+
+\subsection{What I Would Do}
+
+\index{breaking change!my judgment on the risk}%
+I think a breaking change is the largest availability risk a federated graph
+carries, larger than a subgraph outage and larger than anything in
+chapter~\ref{ch:blame-routing}. I state that as my judgment, because I looked
+for a published account of a federated graph taken down by a schema change and
+found none from anybody running one at scale. The reasoning is the one this
+chapter measured. An outage ends when the service comes back, and
+chapter~\ref{ch:null-blast-radius} showed the graph degrading around one rather
+than emptying. A breaking change does not end. It is deployed, it composes,
+it serves, and every client that meets it is broken until somebody ships a
+release, which for a mobile application is a number of weeks decided by
+somebody else.
+
+\index{breaking change!the vendor who agrees, and what he sells}%
+Stefan Avram, a co-founder of WunderGraph, calls it \enquote{the scariest
+failure mode}, a field removed or a type renamed or an argument made
+required, slipping into production and taking a client
+down~\autocite{avram2026federation}. He is right and he sells the product that
+catches it, which is why his sentence is here as agreement rather than as
+evidence.
+
+\index{schema check!what to run, in order}%
+So, concretely, in the order I would add them. Diff the composed schema on
+every change, because it costs two compositions and it turns a class of
+mistake into a line of output. Keep an operation corpus and run it through a
+router on the candidate config, knowing exactly what it is: your operations,
+not your clients'. And when the graph has enough clients that you cannot name
+them, that is the point at which the thing a control plane sells you, a record
+of what was actually asked for, stops being a convenience. It is the only way
+anyone has to answer the question, and everything in this chapter is evidence
+that the question does not answer itself.
+\index{schema check!the tool that exists|)}%

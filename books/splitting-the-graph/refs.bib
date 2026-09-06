@@ -694,3 +694,96 @@
                   open, opened 2021-10-08, eleven comments. No comment in the
                   thread is quoted or relied on}
 }
+
+%--------------------------------------------------------------------------
+% Chapter 16 - The Subgraph That Broke Everyone
+%--------------------------------------------------------------------------
+
+@online{graphqljsbreaking,
+  title        = {graphql-js, \texttt{src/utilities/findBreakingChanges.ts}},
+  organization = {GitHub, graphql/graphql-js},
+  version      = {v16.14.2},
+  url          = {https://raw.githubusercontent.com/graphql/graphql-js/v16.14.2/src/utilities/findBreakingChanges.ts},
+  urldate      = {2026-09-06},
+  addendum     = {The reference implementation's own source, cited under
+                  decision 39 as the artifact rather than as a claim about it:
+                  it is where the sixteen-member list of breaking changes is
+                  actually defined, and the specification defines no such list
+                  at all. Fetched raw and read line by line rather than
+                  summarised, because a summarising pass over the same file
+                  reported the non-null rule backwards. At v17.0.2 the file is
+                  gone and the same logic sits in findSchemaChanges.ts under a
+                  third category, SafeChangeType; the enum members this chapter
+                  names are identical in both}
+}
+
+@online{cosmochecks,
+  title        = {Schema {Checks}},
+  organization = {WunderGraph, Cosmo documentation},
+  url          = {https://cosmo-docs.wundergraph.com/studio/schema-checks},
+  urldate      = {2026-09-06},
+  addendum     = {Unsigned, and admitted under decision 39 as a vendor's
+                  reference documentation for what its own tool does rather
+                  than as an argument about an outcome. Cited for three
+                  mechanical facts: that operation checks need the router to
+                  report usage to the control plane, that the default window is
+                  the last seven days, and that directive usage is not tracked
+                  at all}
+}
+
+@online{apollochecksref,
+  title        = {Schema {Checks} {Reference}},
+  organization = {Apollo GraphQL documentation},
+  url          = {https://www.apollographql.com/docs/graphos/platform/schema-management/checks/reference},
+  urldate      = {2026-09-06},
+  addendum     = {Unsigned, admitted on the same footing as the Cosmo page
+                  above and for the same kind of fact. Cited for the sentence
+                  conceding that some in-place updates are safe at run time and
+                  are reported as breaking anyway, because validation cannot
+                  tell}
+}
+
+@online{patel2025bloat,
+  author   = {Patel, Nikhil},
+  title    = {Eliminating {GraphQL} {Schema} {Bloat} with {AI} (So You Do Not Have To)},
+  date     = {2025-11-18},
+  url      = {https://medium.com/whatnot-engineering/eliminating-graphql-schema-bloat-with-ai-so-you-dont-have-to-5f6ae84d0ee1},
+  urldate  = {2026-09-06},
+  addendum = {An engineering blog rather than a vendor's, bylined by a named
+              engineer at the company being described, which is what the
+              Sources rule asks and what the prose states. Medium refused both
+              a direct fetch and a raw request from this machine, so the text
+              quoted is the Wayback Machine snapshot of 2026-07-14 rather than
+              the live page, and the byline was confirmed inside that snapshot
+              rather than from the publication's own meta tag, which credits
+              only the publication}
+}
+
+@online{avram2026federation,
+  author       = {Avram, Stefan},
+  title        = {A Comprehensive Overview of {GraphQL} {Federation} in Open Source},
+  organization = {WunderGraph},
+  url          = {https://wundergraph.com/blog/a-brief-overview-of-open-source-graphql-federation},
+  urldate      = {2026-09-06},
+  addendum     = {Bylined by a co-founder of the company whose router this book
+                  runs, so the Sources rule is met and the prose names him.
+                  What the prose also has to say is that he is selling the
+                  thing his sentence argues for, which is why the chapter
+                  states its own reason beside his rather than resting on it.
+                  Byline read out of the page's JSON-LD}
+}
+
+@online{cosmoselfhosted,
+  title        = {Self-hosted},
+  organization = {WunderGraph, Cosmo documentation},
+  url          = {https://cosmo-docs.wundergraph.com/self-hosted},
+  urldate      = {2026-09-06},
+  addendum     = {Unsigned, and admitted under decision 39 on the same footing
+                  as the schema-checks page: a vendor describing how its own
+                  product is installed rather than arguing an outcome. Cited
+                  for the two deployment paths it documents and for the
+                  component list. The page's own front matter also promises
+                  VMs and bare metal, which the body gives no instructions
+                  for, so the chapter says what is documented rather than what
+                  is promised}
+}
