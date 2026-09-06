@@ -1,0 +1,38 @@
+\begin{tikzpicture}[
+  every node/.style={font=\footnotesize, align=center},
+  box/.style={draw=black!65, rounded corners=2pt, fill=black!5,
+    minimum width=24mm, minimum height=12mm},
+  shown/.style={draw=black!85, line width=1pt, fill=black!12,
+    minimum width=30mm, minimum height=9mm},
+  hidden/.style={draw=black!55, dotted, thick, fill=white,
+    minimum width=30mm, minimum height=9mm},
+  flow/.style={-{Stealth[length=2mm]}, thick, black!70},
+  thinflow/.style={-{Stealth[length=1.6mm]}, black!55},
+  lbl/.style={font=\scriptsize, align=center, black!55}
+]
+  \node[box] (enc) at (0,0) {Bộ mã hóa\\khái niệm};
+
+  \node[shown]  (top) at (4.6,0.45)  {trạng thái khái niệm $k$};
+  \node[hidden] (bot) at (4.6,-0.45) {thông tin thêm về $y$};
+  \node[draw=black!85, line width=1pt, rounded corners=2pt,
+        fit=(top)(bot), inner sep=1.6mm] (cell) {};
+  \node[lbl, left=1.5mm of cell, text width=13mm] {một số\\$\hat c_k$};
+
+  \node[box] (head) at (9.4,0) {Đầu\\phân loại};
+  \node[box, minimum width=14mm] (out) at (12.3,0) {$\hat y$};
+
+  \node[lbl, left=2mm of enc] {$x$};
+
+  \draw[flow] (enc.east) -- (cell.west);
+  \draw[flow] (cell.east) -- (head.west);
+  \draw[flow] (head) -- (out);
+
+  \node[lbl, above=1.5mm of top, text width=44mm]
+    {người giám sát đọc được chừng này};
+  \node[lbl, below=1.5mm of bot, text width=44mm]
+    {và không đọc được chừng này};
+
+  \draw[thinflow] (2.2,-2.3) -- (2.2,0.45) -- (top.west);
+  \node[lbl] at (2.2,-2.7) {can thiệp};
+  \node[lbl] at (7.4,-2.7) {đặt $\hat c_k$ về giá trị thật $c_k$;\\ô dưới đi theo, vì nó là cùng một số};
+\end{tikzpicture}

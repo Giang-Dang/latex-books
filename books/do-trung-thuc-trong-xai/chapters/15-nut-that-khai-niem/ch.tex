@@ -1,3 +1,73 @@
-% Scope (SPEC table of contents): Concept bottleneck models, concept leakage as the CBM analogue of unfaithfulness, CBMs meet sparse autoencoders. Papers 30, 31, 32.
+% Scope (SPEC table of contents): Concept bottleneck models; concept leakage,
+% which this book reads as the bottleneck analogue of unfaithfulness and says so
+% as the book's own claim, since no paper of the chapter makes it; an
+% information-theoretic instrument for leakage that is validated against an
+% independent criterion, which is the thing Part IV said the field did not have;
+% the field's own catalogue of nine weaknesses, of which leakage is one; and
+% sparse autoencoders meeting the bottleneck, where interpretability and
+% steerability are measured separately and come apart. Papers 30, 31, 32.
+%
+% The initialized TOC line named less than the papers contain (decision 74),
+% which is decision 59's failure mode a second time: it names leakage and misses
+% the measurement of it. Section 15.4 is where that correction lands.
+%
+% Object and kind of claim, stated in the opener per decision 64: `faithful`
+% occurs zero times in the body of all three papers, and what paper 30 measures
+% is how much a displayed concept hides, not whether an attribution names the
+% right features. research/ch15-nut-that-khai-niem.md records every number, the
+% book's own arithmetic on two of the papers' own tables, and the four defects
+% the chapter declines.
 \chapter{Mô hình nút thắt khái niệm và rò rỉ}
 \label{ch:nut-that-khai-niem}
+
+Mười bốn chương vừa qua đều đứng ngoài mô hình mà hỏi vào. Chỗ chung mà
+mục~\ref{sec:ch14-dieu-chua-giai-quyet} rút ra từ ba bài của
+chương~\ref{ch:giai-thich-duoi-tan-cong} là mọi câu hỏi ấy chỉ đặt được ở những
+đầu vào đã bị thay hoặc bị che, tức những đầu vào không phải dữ liệu thật, và
+đó là chỗ mà cả \tn{phép dựng giàn}{scaffolding} lẫn phép tấn công bằng SHAP đi
+qua. Phần~V mở bằng một lớp mô hình bỏ hẳn tư thế ấy.
+
+\tn{Mô hình nút thắt khái niệm}{concept bottleneck model} không huấn luyện xong
+rồi mới đi hỏi. Nó ép luồng tính toán đi qua một tầng mà mỗi đơn vị được huấn
+luyện để nhận đúng một khái niệm do con người đặt tên, rồi dự đoán nhãn chỉ từ
+tầng ấy. Người giám sát đọc các giá trị ở tầng ấy như đọc một bảng số, và không
+phải hỏi mô hình ở đâu cả, vì không có câu hỏi nào để đặt: những đại lượng cần
+đọc nằm sẵn trên đường đi.
+
+Chương này đọc cái giá của lối thoát ấy, và cái giá nằm ở chỗ tầng ấy có thể
+mang nhiều hơn cái nó nói. Hiện tượng ấy tên là \tn{rò rỉ}{leakage}: mô hình cất
+thêm thông tin về nhãn vào chính các giá trị khái niệm, đầu phân loại đọc phần
+thông tin thêm ấy, và người giám sát thì không. Ba bài của chương định nghĩa nó,
+đo nó, xếp nó cạnh tám chỗ yếu khác của cùng một họ mô hình, rồi mang nó sang
+một họ thứ hai nơi các khái niệm không do ai đặt tên trước.
+
+Cái mới ở chương này không phải bản thân rò rỉ mà là dụng cụ đo nó. Từ
+chương~\ref{ch:do-do-trung-thuc} tới chương~\ref{ch:giai-thich-duoi-tan-cong},
+lời buộc tội lặp đi lặp lại của Phần~IV là các chỉ số của ngành chưa bao giờ
+được kiểm định: không ai đối chiếu chúng với một tiêu chí độc lập, vì không ai
+có tiêu chí ấy. Bài của mục~\ref{sec:ch15-do-ro-ri} có. Nó đề xuất hai điểm số,
+đối chiếu chúng với một đại lượng đo được mà nó không tự chọn, cho thấy hai điểm
+số cũ hỏng ở chỗ nào, và làm được như vậy vì trong bối cảnh này ground truth có
+sẵn: các khái niệm đã được người ta gán nhãn trong chính bộ dữ liệu.
+Mục~\ref{sec:ch15-dung-cu-duoc-kiem} là chỗ chương cân xem điều đó đáng giá bao
+nhiêu, và cân cả những chỗ nó không với tới.
+
+Ranh giới đi kèm cũng phải nói trước, vì đây là lần thứ sáu sách gặp nó. Rà toàn
+văn cả ba bài, chữ \enquote{faithful} không xuất hiện lần nào trong phần thân
+của bài nào. Đại lượng mà bài thứ nhất đo là lượng thông tin thừa mà một giá trị
+khái niệm mang, chứ không phải quan hệ giữa một lời giải thích và mô hình theo
+định nghĩa~\ref{def:ch01-do-trung-thuc}; đại lượng mà bài thứ ba đo là mức độ
+một nơ-ron có tên gọi và mức độ ép nơ-ron ấy làm đổi đầu ra, tức
+\tn{mức quan trọng}{importance} theo nghĩa
+mục~\ref{sec:ch09-doi-tuong-khac-nhau} đã tách ra. Câu nói rằng rò rỉ là bản sao
+của độ trung thực trong họ mô hình này là câu của sách chứ không của bài nào, và
+mục~\ref{sec:ch15-ro-ri} phát biểu nó kèm chỗ nó dừng.
+
+\input{chapters/15-nut-that-khai-niem/01-khai-niem-dat-vao-trong-mo-hinh}
+\input{chapters/15-nut-that-khai-niem/02-ro-ri-khai-niem}
+\input{chapters/15-nut-that-khai-niem/03-do-ro-ri}
+\input{chapters/15-nut-that-khai-niem/04-mot-dung-cu-duoc-kiem-dinh}
+\input{chapters/15-nut-that-khai-niem/05-nguyen-nhan-va-cai-gia}
+\input{chapters/15-nut-that-khai-niem/06-phan-con-lai-cua-danh-muc}
+\input{chapters/15-nut-that-khai-niem/07-doc-duoc-khong-phai-dieu-khien-duoc}
+\input{chapters/15-nut-that-khai-niem/08-tom-tat-va-cau-hoi}

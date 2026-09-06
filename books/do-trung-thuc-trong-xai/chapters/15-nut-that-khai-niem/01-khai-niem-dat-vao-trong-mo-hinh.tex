@@ -1,0 +1,84 @@
+\section{Khái niệm đặt vào trong mô hình}
+\label{sec:ch15-khai-niem-trong-mo-hinh}
+
+\index{mô hình nút thắt khái niệm!kiến trúc|(}%
+Phần mở đầu chương đã nói lối thoát của Phần~V nằm ở chỗ nào. Mục này dựng lại
+kiến trúc thực hiện lối thoát ấy, vì mọi thứ còn lại của chương, kể cả chỗ hỏng,
+đều đọc từ ba chi tiết của kiến trúc: cái gì được trưng ra, cái gì được huấn
+luyện, và cái gì đi qua đâu.
+
+Một \tn{mô hình nút thắt khái niệm}{concept bottleneck model}, từ đây viết tắt
+là CBM, nhận đầu vào $x$ và trả nhãn dự đoán $\hat y$ qua đúng hai chặng. Chặng thứ nhất là bộ mã hóa khái niệm, ánh xạ $x$ thành một vector
+các giá trị kích hoạt. Chặng thứ hai là đầu phân loại, nhận vector ấy và trả
+$\hat y$. Cái làm chặng thứ nhất khác một tầng ẩn thông thường là nó có nhãn
+riêng: bộ dữ liệu, ngoài nhãn nhiệm vụ $y$, còn kèm một tập khái niệm $\mathcal{C}$
+do con người gán, và với mỗi điểm dữ liệu thì mỗi khái niệm $k$ trong $\mathcal{C}$
+có một giá trị thật $c_k$. Sách viết $\hat c_k$ cho giá trị mà bộ mã hóa dự đoán
+cho khái niệm ấy. Trong ba bài của chương, $c_k$ luôn nhị phân, nghĩa là khái
+niệm ấy có mặt hay vắng mặt ở điểm dữ liệu đang xét.
+
+\index{mô hình nút thắt khái niệm!ví dụ y sinh}%
+Ví dụ mà bài của mục~\ref{sec:ch15-do-ro-ri} dùng làm cảnh nền là chẩn đoán ung
+thư: $x$ là ảnh sinh thiết, các khái niệm là những thứ bác sĩ vẫn đọc ra từ ảnh
+ấy như độ ác tính của khối u, còn $y$ là khuyến nghị điều trị. Bác sĩ nhìn vào
+bảng $\hat c_k$ và thấy mô hình đang đọc ra những gì; nếu một giá trị sai thì sửa
+nó rồi chạy lại đầu phân loại. Toàn bộ sức hấp dẫn của họ mô hình này nằm trong
+hai câu vừa rồi, và phần còn lại của chương là chuyện hai câu ấy đúng tới đâu.
+
+\index{attribution thành phần!khái niệm là thành phần được đặt tên}%
+Đặt cạnh khung của chương~\ref{ch:khung-hop-nhat} thì thấy ngay lối thoát này
+làm gì. Mục~\ref{sec:ch07-ba-doi-tuong} chia attribution thành ba bài toán theo
+đối tượng được chấm điểm, và bài toán thứ ba chấm điểm cho các thành phần $c_k$
+bên trong mô hình. Khó khăn của bài toán ấy chưa bao giờ là tính điểm số mà là
+đọc nó: một thành phần bên trong một mạng đã huấn luyện không có tên, nên biết
+nó quan trọng cũng không nói lên điều gì. Nút thắt khái niệm đảo ngược thứ tự.
+Nó không đi tìm tên cho thành phần có sẵn mà dựng thành phần theo tên có sẵn,
+nên ký hiệu $c_k$ ở đây là đúng ký hiệu của chương~\ref{ch:khung-hop-nhat} chứ
+không phải một chữ trùng nhau: cùng một đối tượng, thêm ràng buộc rằng nó phải
+khớp một khái niệm đã được gán nhãn.
+
+\index{mô hình nút thắt khái niệm!ba cách huấn luyện}%
+Có ba cách huấn luyện hai chặng ấy, và ba cách cho ba mô hình khác
+nhau~\autocite{p30leakage}. Huấn luyện độc lập thì bộ mã hóa học từ $c_k$ và đầu
+phân loại học từ $c_k$, mỗi bên một mất mát riêng, không bên nào thấy bên kia.
+Huấn luyện tuần tự thì bộ mã hóa học trước như trên, còn đầu phân loại học từ
+$\hat c_k$ mà bộ mã hóa đã học xong trả ra. Huấn luyện đồng thời thì cả hai chặng
+tối ưu chung một mất mát,
+\[
+  \beta \, \mathcal{L}_c(\hat c, c) + \mathcal{L}_y(\hat y, y) ,
+\]
+với $\mathcal{L}_c$ là mất mát trên khái niệm, $\mathcal{L}_y$ là mất mát trên
+nhãn, và $\beta \ge 0$ là trọng số quyết định việc học khái niệm nặng bao nhiêu
+so với việc học nhiệm vụ. Bài báo viết trọng số ấy là $\lambda$, chữ mà
+chương~\ref{ch:giai-thich-duoi-tan-cong} đã cấp cho hệ số chiết khấu nhân quả.
+Đặt $\beta = 0$ thì mất mát trên khái niệm biến mất và mô hình trở thành một mô
+hình đầu cuối bình thường có một tầng thắt ở giữa.
+
+\index{mô hình nút thắt khái niệm!ba cách mã hóa}%
+Chọn cách huấn luyện xong thì còn một lựa chọn nữa, là $\hat c_k$ mang giá trị
+gì. Ba lựa chọn thông dụng là bit nhị phân, xác suất trong khoảng từ 0 đến 1, và
+logit, tức số thực không chặn. Bài của mục~\ref{sec:ch15-do-ro-ri} đặt tên cho ba
+tổ hợp mà nó dùng suốt: mô hình cứng là huấn luyện độc lập cộng mã hóa nhị phân,
+mô hình mềm là huấn luyện đồng thời cộng mã hóa xác suất, và mô hình logit là
+huấn luyện đồng thời cộng mã hóa logit. Ba tên ấy sẽ trở lại ở mọi mục sau, nên
+chúng gộp cả cách huấn luyện lẫn cách mã hóa chứ không chỉ nói
+về kiểu số.
+
+\index{mô hình nút thắt khái niệm!hai nhánh có giám sát và không giám sát}%
+Cả ba tổ hợp ấy nằm ở một đầu của một dải rộng hơn. Khảo sát của
+mục~\ref{sec:ch15-phan-con-lai} chia họ mô hình khái niệm thành hai nhánh theo
+việc có nhãn khái niệm hay không~\autocite{p31cbmrisks}. Nhánh có giám sát là
+nhánh vừa mô tả: khái niệm do người gán nhãn, nên người ta biết mỗi đơn vị của
+tầng thắt phải nhận cái gì, đổi lại là chi phí gán nhãn. Nhánh không giám sát
+học các khái niệm thẳng từ nhiệm vụ, không có nhãn khái niệm nào, nên rẻ và mở
+rộng được, đổi lại là không ai đặt trước ý nghĩa cho một đơn vị nào và việc diễn
+giải chúng để lại cho người dùng. Hai bài đầu của chương làm việc trên nhánh thứ
+nhất; mục~\ref{sec:ch15-doc-duoc-dieu-khien-duoc} chuyển sang nhánh thứ hai, và
+sẽ thấy chỗ hỏng đổi hình dạng chứ không biến mất.
+
+\index{mô hình nút thắt khái niệm!kiến trúc|)}%
+Một chi tiết cuối, vì nó là chỗ mà cả chương xoay quanh. Trong ba cách huấn
+luyện, chỉ cách thứ nhất tách hẳn việc học khái niệm khỏi việc học nhiệm vụ. Ở
+hai cách kia, mất mát trên nhãn có đường tác động lên bộ mã hóa: đặt giá trị nào
+vào $\hat c_k$ để đầu phân loại đoán đúng $y$ là một câu hỏi mà phép tối ưu được
+phép trả lời. Mục sau đọc câu trả lời mà nó đưa ra.

@@ -327,8 +327,8 @@
   date         = {2025},
   eprint       = {2504.14094},
   eprinttype   = {arxiv},
-  urldate      = {2026-08-24},
-  note         = {Not yet read for this book; verify against the PDF before citing.},
+  urldate      = {2026-09-06},
+  note         = {Read arXiv:2504.14094v3 (2026-03-24) for chapter 15 on 2026-09-06: pages 1-25 in full, body plus appendix A, with pages 26-39 scanned only. Three revisions exist (v1 2025-04-18, v2 2025-05-19, v3 2026-03-24) and the book cites v3, so this is the third corpus paper on which decision 15's clause does work. The record was re-verified raw against the arXiv abstract page on 2026-09-06; the arXiv API returned HTTP 429 to every request that day, so the abstract page is the only source this time and the research note records that deviation. No journal-ref, no publisher DOI, and the Comments field reads ``39 pages, 25 figures'' and names no venue, so the chapter cites the arXiv version and names no venue. The seeded entry needed no correction, the fifth time that has happened; only the note and the urldate changed. Read for the CBM and CEM architectures, the definition of leakage and its two types, the shortcomings of the concept evaluation scores and of OIS and NIS, the CTL and ICL scores with the Leakage Criterion, tables 1 to 3, the four causes of leakage, the CEM analysis including alignment leakage, and the design guidance of section 9. research/ch15-nut-that-khai-niem.md anchors every number the chapter prints from it, and records the one claim the chapter declines: ``systematically outperform OIS across all datasets'' holds for CTL on all eight datasets and fails for ICL on three of them, by the paper's own table 2.},
 }
 
 % 31 - 5-tier-d-concept-bottleneck
@@ -338,8 +338,8 @@
   date         = {2025},
   eprint       = {2506.04237},
   eprinttype   = {arxiv},
-  urldate      = {2026-08-24},
-  note         = {Not yet read for this book; verify against the PDF before citing.},
+  urldate      = {2026-09-06},
+  note         = {Read arXiv:2506.04237v1 (2025-05-25) for chapter 15 on 2026-09-06: pages 1-6 in full, pages 7-10 bibliography scanned only. v1 is the only revision. Record re-verified raw against the arXiv abstract page on 2026-09-06, the arXiv API being unreachable that day: no journal-ref and no Comments row at all, so arXiv says nothing about where this was published, which is paper 27's case, and the chapter cites the arXiv version with no venue. Note the lower-case b in ``Concept-based'' against paper 30's ``Concept-Based''; the seeded entry had both right and needed no correction, the sixth time that has happened. Runs no experiment of its own, so every number in it belongs to someone else. Read for the split into supervised and unsupervised concept learning, the five supervised and four unsupervised limitations, table 1 of ten architectures against six properties, and the three future directions, none of which is about measurement. The chapter declines one sentence of section 4.1, that hard concept representations cause significantly more leakage than soft ones: the source it cites for that states the opposite direction, and research/ch15-nut-that-khai-niem.md carries both quotations.},
 }
 
 % 32 - 5-tier-d-concept-bottleneck
@@ -349,8 +349,8 @@
   date         = {2025},
   eprint       = {2512.10805},
   eprinttype   = {arxiv},
-  urldate      = {2026-08-24},
-  note         = {Not yet read for this book; verify against the PDF before citing.},
+  urldate      = {2026-09-06},
+  note         = {Read arXiv:2512.10805v2 (2026-03-30) for chapter 15 on 2026-09-06: pages 1-10 in full, body plus appendix sections A and B, with pages 11-15 scanned only. Two revisions exist (v1 2025-12-11, v2 2026-03-30) and the book cites v2, the fourth corpus paper with more than one. Record re-verified raw against the arXiv abstract page on 2026-09-06, the arXiv API being unreachable that day: no journal-ref, but the Comments field reads ``CVPR 2026''. That is decision 48's case, an acceptance recorded in Comments and nowhere else, so the chapter cites the arXiv version and the venue stays in this note. The seeded entry needed no correction, the seventh time. Read for the interpretability and steerability scores, the four quadrants over the 65,536 SAE neurons, the concept-coverage counts, the CB-SAE construction with its three objectives, tables 1 and 2, and the limitations in appendix A. The chapter reproduces one reported figure: the ``+14.0\%'' steerability gain on LLaVA-MORE is the sum of its two per-metric gains where the other five figures in the same sentence are their mean, so the value under the paper's own rule is +7.0\% and the abstract's +14.5\% headline becomes +12.2\%. research/ch15-nut-that-khai-niem.md carries the reconstruction, and every ranking in the paper is unchanged by it.},
 }
 
 % ---------------------------------------------------------------------------
@@ -374,6 +374,21 @@
   eprinttype   = {arxiv},
   urldate      = {2026-09-05},
   note         = {Read arXiv:1911.02508v2 (2020-02-03) in full for chapter 14 on 2026-09-05, all 7 pages, fetched from arXiv rather than from the corpus folder because this paper is not in the corpus (decision 34's second use). Two revisions exist and the book cites v2. arXiv's own record carries no journal-ref and no Comments field, so arXiv says nothing about where this was published; the PDF's own first page carries the ACM reference block for AIES '20 with publisher DOI 10.1145/3375627.3375830. That is decision 53's case, so the book cites the arXiv version and the venue stays in this note. Read for the scaffolding construction, the out-of-distribution detector it routes on, the three datasets, the shift rates, the fidelity of the adversarial classifier to the biased one, and the hyperparameter sweep that shows the attack does not depend on any LIME or SHAP setting. Every number chapter 14 prints from it is anchored in research/ch14-giai-thich-duoi-tan-cong.md.},
+}
+
+% mclm belongs to chapter 15 and widens the trigger a third time. Decision 34
+% admitted a key because no corpus paper defines the thing; decision 71 because
+% the only corpus paper that touches it merely replicates it. Here paper 31
+% states this paper's central comparison in the wrong direction, and the chapter
+% cannot say so without reading it.
+@online{mclm,
+  author       = {Mahinpei, Anita and Clark, Justin and Lage, Isaac and Doshi-Velez, Finale and Pan, Weiwei},
+  title        = {Promises and Pitfalls of Black-Box Concept Learning Models},
+  date         = {2021},
+  eprint       = {2106.13314},
+  eprinttype   = {arxiv},
+  urldate      = {2026-09-06},
+  note         = {Read arXiv:2106.13314v1 (2021-06-24) in full for chapter 15 on 2026-09-06, all 13 pages, fetched from arXiv rather than from the corpus folder because this paper is not in the corpus. One revision only; no journal-ref and no venue block on the paper's own first page. Read because paper 31 section 4.1 reports its comparison of hard against soft concept representations in the wrong direction: section 3 and appendix C establish that soft representations always outperform hard ones on the downstream task, which is the direction of more leakage in soft. Section 4's paragraph "Soft Versus Hard Concept Representations" separately concludes that leakage may always be an issue regardless of the form of concept representation, which is a claim about a different quantity from paper 30's excess over an annotated set and does not contradict it. research/ch15-nut-that-khai-niem.md carries both quotations, the reading that separates the two quantities, and one charge against paper 30 that the cold audit made this session withdraw.},
 }
 
 @online{mrise,

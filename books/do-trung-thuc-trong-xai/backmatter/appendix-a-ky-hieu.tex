@@ -55,7 +55,7 @@ $\mathcal{D}_{\mathrm{train}}$ & Tập dữ liệu huấn luyện & - & - & - & 
 $\theta^{*}$ & Tham số của mô hình sau huấn luyện & - & - & - & - \\
 $\mathcal{L}(x,\theta)$ & Mất mát của mô hình với tham số $\theta$ tại một điểm $x$; $\nabla_{\theta}$ là gradient theo tham số. Chương~\ref{ch:lime} dùng cùng chữ cho một đối tượng khác, $\mathcal{L}(f,g,\pi_x)$, hàm mất mát cục bộ có trọng số của LIME; hai cách dùng tách nhau bằng bộ đối số và không gặp nhau trong một chương nào & - & - & - & - \\
 $\psi_i(x)$ & Attribution của điểm huấn luyện thứ $i$ tại đầu vào $x$ & - & - & - & - \\
-$c_k$ & Một thành phần bên trong mô hình & - & - & - & - \\
+$c_k$ & Một thành phần bên trong mô hình. Ở chương~\ref{ch:nut-that-khai-niem} thành phần ấy là một khái niệm đã được gán nhãn trong bộ dữ liệu, nên $c_k$ ở đó là giá trị thật của khái niệm thứ $k$: cùng đối tượng, thêm ràng buộc rằng nó phải khớp một cái tên có sẵn & - & - & - & - \\
 $\gamma_k(x)$ & Attribution của thành phần $c_k$ tại đầu vào $x$ & - & - & - & - \\
 $\mathcal{I}(x^{(i)},x)$ & Ảnh hưởng của điểm huấn luyện $x^{(i)}$ lên mất mát tại $x$ & - & - & - & - \\
 $\mathcal{N}_x$ & Lân cận quanh $x$ để lấy mẫu trong xấp xỉ hàm cục bộ & - & - & - & - \\
@@ -94,6 +94,11 @@ $W_i$ & Tổng hiệu ứng nhân quả của đặc trưng $i$ lên biến mụ
 $\lambda_i$ & Hệ số chiết khấu theo cường độ nhân quả, tỉ lệ với $\lvert W_i\rvert$ đã chuẩn hóa. Bài báo viết $\gamma_i$, mà $\gamma_k(x)$ ở trên đã thuộc về attribution thành phần & - & - & - & - \\
 $v_c(S)$ & Hàm giá trị của liên minh $S$ khi các đặc trưng ngoài liên minh được lấy theo cấu trúc nhân quả. Mở rộng của $v(S)$ ở trên, cùng đối tượng với một quy tắc điền khác & - & - & - & - \\
 $\phi^c_i$, $\phi^n_i$ & Điểm số Causal SHAP trước và sau bước chuẩn hóa về tổng cộng tính & - & - & - & - \\
+$\hat c_k$ & Giá trị kích hoạt mà bộ mã hóa khái niệm dự đoán cho khái niệm thứ $k$. Mở rộng của $c_k$ ở trên chứ không phải một đại lượng trùng tên: cùng khái niệm, một bên là nhãn thật và một bên là thứ mô hình đọc ra & - & - & - & - \\
+$\mathcal{C}$ & Tập khái niệm được gán nhãn trong bộ dữ liệu, với $\lvert\mathcal{C}\rvert$ là số khái niệm. Bài báo của chương~\ref{ch:nut-that-khai-niem} viết số ấy là $k$, mà $k$ ở trên đã thuộc về số phần tử điểm cao của họ xóa dần & - & - & - & - \\
+$H(z)$ & Entropy của biến ngẫu nhiên $z$, tính bằng bit & - & - & - & - \\
+$I(z,w)$ & Thông tin tương hỗ giữa hai biến ngẫu nhiên. Va với $I$ của chương~\ref{ch:do-do-trung-thuc} ở trên và sách giữ cả hai, theo đúng cách đã giữ cả hai nghĩa của $K$ và của $\varepsilon$: thông tin tương hỗ luôn đi kèm hai đối số còn phép nhiễu của infidelity luôn viết trần, và $I$ là ký hiệu chuẩn của cả lý thuyết thông tin & - & - & - & - \\
+$\beta$ & Trọng số đặt lên mất mát khái niệm khi huấn luyện đồng thời một mô hình nút thắt khái niệm. Bài báo viết $\lambda$, mà $\lambda_i$ ở trên đã thuộc về hệ số chiết khấu nhân quả của chương~\ref{ch:giai-thich-duoi-tan-cong} & - & - & - & - \\
 \bottomrule
 \end{longtable}
 
@@ -141,3 +146,19 @@ trưng vắng mặt. Đồ thị nhân quả nhận ký hiệu $G$ còn tập đ
 thì không nhận ký hiệu nào, theo đúng lý do đã dùng cho attribution nối tầng của
 chương~\ref{ch:tro-choi-attribution}: viết ra bằng lời ngắn hơn và tránh được va
 chạm thay vì phải gỡ nó.
+
+Năm dòng cuối thuộc chương~\ref{ch:nut-that-khai-niem} và chúng cho thấy cả ba
+cách gỡ va chạm mà bảng này đã dùng, mỗi cách một lần. Đổi tên: trọng số giám
+sát khái niệm nhận $\beta$ vì bài báo viết $\lambda$ và $\lambda_i$ đã có chủ, và
+số khái niệm không nhận ký hiệu riêng mà viết là $\lvert\mathcal{C}\rvert$ vì bài
+báo viết $k$ và $k$ cũng đã có chủ. Mở rộng dòng có sẵn: $\hat c_k$ nằm dưới
+$c_k$ theo đúng cách $v_c(S)$ nằm dưới $v(S)$, và dòng $c_k$ được viết lại cho
+nói rõ chương~\ref{ch:nut-that-khai-niem} thu hẹp nó thế nào. Và giữ cả hai
+nghĩa theo hình dạng: $I(z,w)$ là lần thứ ba bảng này dùng cách ấy, sau $K$ và
+$\varepsilon$, với đúng hai điều kiện đã đặt ra ở đó, rằng hai hình dạng không
+bao giờ chồng lên nhau và rằng một nghĩa đã là chuẩn ở ngoài cuốn sách này. Bài
+báo còn viết bộ mã hóa khái niệm là $g$ và đầu phân loại là $f$, hai chữ mà bảng
+này đã cấp cho mô hình giải thích dễ đọc và cho mô hình cần giải thích; sách
+không đổi tên hai thứ ấy mà gọi chúng bằng lời và không cấp ký hiệu nào, theo
+đúng lý do đã dùng cho attribution nối tầng. Điểm can thiệp cũng vậy: bài báo
+viết $S_{int}$, mà $S$ là liên minh của chương~\ref{ch:shap}.
