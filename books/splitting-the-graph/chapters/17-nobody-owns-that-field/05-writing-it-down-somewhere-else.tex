@@ -1,0 +1,170 @@
+\section{Writing It Down Somewhere Else}
+\label{sec:ch17-writing-it-down-somewhere-else}
+
+\index{ownership!where the record can actually live|(}%
+Section~\ref{sec:ch17-handing-a-field-over} ends on a directive I would not
+ship. There is one I would, and it is the only thing in the whole set that
+lets a subgraph change what a client sees of somebody else's field.
+
+\index{inaccessible@\code{"@inaccessible}!one document takes a field off the menu}%
+Mark the shared \code{abstract} \code{@inaccessible} in the Ratings document
+alone. That composes at exit zero, and the config that comes out has grown a
+key it did not have before.
+
+\index{router execution config!a third key, and a second pair}%
+Chapter~\ref{ch:composition} already pulled two schemas out of this file, the
+composed \code{graphqlSchema} and the \code{serviceSdl} that keeps each
+subgraph's own document whole beside it. This is a third key and a different
+pair. \code{graphqlSchema} is what the router plans against and what
+chapter~\ref{ch:breaking-changes} diffed, and until this edit it was the only
+client-facing document any config in this book carried. Now
+\code{graphqlClientSchema} sits beside it, nine lines shorter. Two of the nine
+are the hidden field and its description. The rest is a client schema being a
+client schema: the directive definitions go, and so do the descriptions inside
+the \code{ApplyPolicy} enum that chapter~\ref{ch:entities-authorization} put
+in the supergraph without anybody asking for it. WunderGraph's own contracts
+page names the pair and says which is which~\autocite{cosmocontracts}: the
+router schema keeps such fields because query planning still needs them, and
+the client schema is what introspection and clients are given.
+
+\index{inaccessible@\code{"@inaccessible}!hiding is not a routing question}%
+So one team can remove a field from the public schema by editing its own
+document. That is the exception to
+section~\ref{sec:ch17-what-the-config-calls-a-subgraph}, which said every
+directive here answers a routing question, and it is an exception for a
+reason: hiding a field is not a routing question, the composer has no route to
+lose over it, and so it does that one without asking anybody either.
+
+\subsection{The Governance Products, and What They Need}
+
+\index{tag@\code{"@tag}!what contracts are built out of}%
+\code{@tag} is the other half of that machinery and it is inert on its own. It
+labels schema elements, and a \emph{contract} is a named filter over those
+labels: the elements tagged for removal come out of the composed schema, with
+\code{@inaccessible} applied to them on the way, and what a given audience is
+served is the smaller document that results~\autocite{cosmocontracts}. Cosmo
+creates one with \code{wgc contract create}. Apollo builds the same feature out
+of the same two directives, and describes the division between them in one
+sentence: \code{@tag} on a type or field says whether to include or exclude it
+from a contract schema, and \code{@inaccessible} is what you reach for instead
+when you want it gone from every schema the graph serves, contracts and source
+alike~\autocite{apollocontracts}.
+
+\index{control plane!contracts and proposals both need one}%
+Both are control-plane features, in the sense
+chapter~\ref{ch:breaking-changes} established for the schema check: the
+subcommands authenticate through \code{COSMO\_API\_KEY}, which for Cosmo Cloud
+arrives with the account~\autocite{cosmocli}. So does \code{wgc proposal},
+which is Cosmo's other governance product in the same CLI: a proposal is a
+schema change published for review before it is published for real, and the
+review runs five checks against it, composition, breaking changes, lint,
+pruning, and the operation impact that needs the recorded client traffic
+chapter~\ref{ch:breaking-changes} priced~\autocite{cosmoproposals}. That is
+the shape of the thing this
+chapter has been describing the absence of, and it is sold rather than
+shipped, for the same reason chapter~\ref{ch:breaking-changes} could not run a
+check: the record it works from lives on a server.
+
+\index{ownership!access control is not ownership}%
+The nearest thing either vendor has to an owner is access control. Cosmo
+scopes roles at four levels, organization, namespace, federated graph and
+subgraph, and at the subgraph level the roles are admin, publisher, checker
+and viewer~\autocite{cosmogrouprules}. That is genuinely useful and it is a
+different statement. Publisher is a permission, not a claim about whose type
+it is, and a team holding it on the Ratings subgraph has, by that grant alone,
+everything it needs to make both of the edits in
+section~\ref{sec:ch17-the-field-nobody-approved}.
+
+\subsection{What This Costs Teams Who Are Not Me}
+
+\index{ownership!the collision two teams find at the gateway}%
+The failure has a published shape. Isha Talegaonkar, an engineer at Walmart
+Global Tech, wrote up the schema governance tooling her team built for exactly
+this and named the problem in one line~\autocite{talegaonkar2022governance}:
+
+\begin{quote}
+Teams may end up creating the same \emph{Type} as another team, which can lead
+to conflicts after integration in the federated gateway.
+\end{quote}
+
+\index{ownership!nobody finds out until the gateway}%
+And the cost, a few lines further down the same post, is when they find out:
+\enquote{developers go through the entire Software Development Life Cycle
+(SDLC) before noticing the collisions}. Her team's answer was a linter with a
+collision checker in it, run in the development cycle rather than at the
+gateway, reporting to what the post calls the schema owner. That is a term
+their tool has and the toolchain under it does not.
+
+\index{ownership!the owner who cannot fix their own errors}%
+The other shape is not a collision at all, and Netflix published it while
+describing something else. Alex Hutter, Falguni Jhaveri and Senthil Sayeebaba
+wrote about making a federated graph searchable, over a graph whose \enquote{three
+core entities} are each \enquote{owned by separate engineering teams}, and the
+paragraph worth reading twice is in their list of open
+problems~\autocite{hutter2022search}:
+
+\begin{quote}
+The owner of the index is often required to follow up with other domain teams
+regarding errors in related entities and be in the unenviable position of not
+being able to do much to resolve the issues independently.
+\end{quote}
+
+\index{ownership!responsibility without the ability to act}%
+That is ownership as it actually lands. Somebody owns the thing the user
+complains about, and the data behind half of it belongs to teams they can
+only write to. It is the position chapter~\ref{ch:blame-routing} is about
+arriving one layer up, and no directive in this chapter would help them.
+
+\subsection{What I Would Do}
+
+\index{ownership!my judgment on what it costs}%
+Ownership is what kills federation projects, ahead of every mechanical failure
+in part III of this book. That is my judgment and it cites nobody: I looked
+for a published account of a team arguing about who owns a field in a
+federated graph, across eleven engineering blogs and the GraphQLConf
+schedules, and the two above are the closest anybody comes. Nobody writes that
+one up. The reasoning is what this chapter measured. Every mechanical failure
+here has a message, a status code or a count attached to it, and somebody can
+be handed it. An ownership failure produces exit zero and a config, and the
+first artifact of it is a meeting.
+
+\index{ownership!the document is a file, so use what files have}%
+So write the owner where the document is. Every edit in this chapter went
+through one file, in one repository, and a review on that file is the only
+gate in the entire chain that a human reads. A code-ownership file over
+\code{schema.graphql} does more for this than any directive, because it is the
+one mechanism that fires on the thing that actually happened: somebody changed
+a document.
+
+\index{ownership!a field on their type is a change to their type}%
+Treat a field you add to somebody else's type as a change to their type,
+because it is one and the composer will not tell them.
+Chapter~\ref{ch:second-third-subgraph} gave Ratings three fields on
+\code{Session} and that was the right design; what makes it right is that the
+fields are ratings data, hanging off a key. A field on their type whose data
+is theirs is a duplicate with a directive on it, which is
+section~\ref{sec:ch17-handing-a-field-over}'s \code{@provides} argument again.
+
+\index{ownership!the shared root needs one owner by convention}%
+Give the root type an owner by convention, since it will not have one any
+other way. Chapter~\ref{ch:breaking-changes} counted seven root fields from
+four services on one \code{Query} that none of them owns, in a graph with one
+author and no clients. Whoever that owner is, their job is the naming and the
+argument about whether a caller needs a new root field or an argument on an
+existing one, which is the choice chapter~\ref{ch:breaking-changes} traced a
+schema's whole shape back to.
+
+\index{override@\code{"@override}!and delete it when it is done}%
+And when a field does change hands, do it in the order
+section~\ref{sec:ch17-handing-a-field-over} gives, and then go back and delete
+the directive. It composes forever whether or not it still means anything, so
+the only thing that will ever remove it is somebody remembering.
+
+\index{ownership!the question the next chapter asks at run time}%
+All of that assumes you can say whose field it is once somebody asks. That is
+the easy version of the question, because a schema change has a document and a
+commit behind it and somebody typed both. The hard version arrives at run time
+and it is the next chapter's: the graph is slow, one request crossed four
+services, and the composed schema says which of them answers each field and
+nothing whatever about which of them took the time.
+\index{ownership!where the record can actually live|)}%

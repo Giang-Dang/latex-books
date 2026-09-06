@@ -1,0 +1,101 @@
+\section{What the Config Calls a Subgraph}
+\label{sec:ch17-what-the-config-calls-a-subgraph}
+
+\index{router execution config!what it records about a subgraph|(}%
+Section~\ref{sec:ch17-the-one-thing-it-asks-permission-for} ends on an
+asymmetry that looks arbitrary until you go and read what the composer
+produces. Then it stops being arbitrary, because the file it writes has no
+place to put an owner and every place to put a route.
+
+\index{router execution config!a subgraph is three properties}%
+Chapter~\ref{ch:composition} pulled this file apart the first time. A subgraph
+in it is one object, and this is the whole of it:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{ "id": "2", "name": "ratings", "routingUrl": "http://localhost:5003/graphql" }
+\end{minted}
+
+\index{ownership!not a property of anything in the file}%
+A name and an address. No team, no owner, no contact, no repository. Beside it
+sits the datasource entry, which carries the entity keys that service can be
+entered through, the fields it declares a \code{@requires} on, and two lists of
+type names and field names. Every one of those is a statement about where a
+value can be fetched from. \emph{Whose} it is is not a property of anything in
+the file, which is why the two edits in
+section~\ref{sec:ch17-the-field-nobody-approved} left it looking exactly as
+healthy as it looked before.
+
+\subsection{The Question the Composer Is Asking}
+
+\index{composition!every directive is about a route}%
+Go back through the five directives this book uses to describe a seam and the
+pattern holds across all of them. \code{@key} says which fields let a service
+be entered at a type. \code{@external} says a declaration is a borrowed copy
+that this service cannot answer. \code{@requires} says a field cannot be
+resolved until another service has produced something first. \code{@shareable}
+says more than one service can answer, and \code{@override} says the one that
+answers is now this one. Five directives, and all five are answers to
+\emph{where does the router go for this value}. The book uses two others that
+are not, \code{@authenticated} from chapter~\ref{ch:entities-authorization} and
+\code{@inaccessible} in section~\ref{sec:ch17-writing-it-down-somewhere-else},
+and both are about whether a client may have the value rather than where it
+comes from. Neither is about whose it is either.
+
+\index{ownership!routing and ownership overlap and are not the same}%
+Which is not a criticism. That question has to be answered and no other tool
+in the stack can answer it. The trouble is that routing and ownership overlap
+enough to be confused for one another, and they come apart at exactly the
+place this chapter is about. Two teams answering one field is a routing
+problem and an ownership problem at once, so the composer stops and both teams
+find out. One team answering a field the other used to answer is an ownership
+problem and not a routing problem at all, because there is still exactly one
+route and it merely goes somewhere else, so nothing stops and nobody finds
+out.
+
+\index{figure!two ways a field changes hands}%
+Figure~\ref{fig:ch17-two-ways-to-move-a-field} is the two routes to the same
+routing-table entry.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch17-two-ways-to-move-a-field}
+  \caption{The same field ending up answerable by the ratings service, twice.
+  Above, two subgraphs share it, and the composer withholds the route until
+  both documents say \code{@shareable}, so the change cannot land without the
+  other team's editor open. Below, one subgraph takes it, and the single
+  compose that approves the change reads the other team's document without
+  needing anything from it. The routing table ends up saying almost the same
+  thing either way; the difference is entirely in who had to be in the room.}
+  \label{fig:ch17-two-ways-to-move-a-field}
+\end{figure}
+
+\subsection{Where the Specifications Stand}
+
+\index{ownership!absent from the specification too}%
+This is not a gap in one composer. Apollo's directive reference lists no
+directive that records a team, an owner or a contact. What it does list is
+\code{@composeDirective}, whose whole job is to tell composition that
+\enquote{all uses of a particular custom type system directive in the subgraph
+schema should be preserved in the supergraph schema} rather than dropped on
+the way through~\autocite{apollodirectives}. So the answer exists and it is
+worth knowing, and it is also an exact statement of the position: if you want
+an owner in your schema, you define the directive and the meaning yourself,
+and the toolchain agrees to carry it without ever reading it.
+
+\index{Composite Schemas specification!does not use the word}%
+The specification chapter~\ref{ch:federation-model} declined to build on is
+in the same place. Search the Composite Schemas draft for \emph{owner} or
+\emph{ownership} and neither word occurs
+anywhere~\autocite{compositeschemasspec}. A
+specification that added an owner would have to say what an implementation
+must do differently when it reads one, and there is no answer to that: an
+owner is not a routing fact, so a router has nothing to do with it.
+
+\index{ownership!lives outside the toolchain}%
+Which leaves the record where it started, in the heads of the people who work
+on the graph, or in whatever they wrote down themselves.
+Section~\ref{sec:ch17-writing-it-down-somewhere-else} is about where to put it.
+First, though, the directive that does move a field, used properly, because
+there is a right way to do what section~\ref{sec:ch17-the-field-nobody-approved}
+did wrong.
+\index{router execution config!what it records about a subgraph|)}%

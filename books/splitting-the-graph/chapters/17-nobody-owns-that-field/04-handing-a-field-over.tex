@@ -1,0 +1,139 @@
+\section{Handing a Field Over}
+\label{sec:ch17-handing-a-field-over}
+
+\index{override@\code{"@override}!the migration it exists for|(}%
+Section~\ref{sec:ch17-the-field-nobody-approved} used \code{@override} to do
+something nobody should do, which is not an argument against the directive.
+It is the mechanism the specification offers for the thing every federated
+graph eventually needs, moving a field from the service that has it to the
+service that should. Apollo's reference says exactly
+that~\autocite{apollodirectives}: it \enquote{indicates that an object field is
+now resolved by this subgraph instead of another subgraph where it is also
+defined}. Used in order, it works.
+
+\index{override@\code{"@override}!the order the steps have to go in}%
+The order is the whole of it, and none of it is enforced. The destination
+service implements the field and deploys, so that something can answer it.
+Then its document publishes the declaration with \code{@override(from:)} on it,
+which is the step composition approves. Then the origin service removes its
+copy, at whatever later date suits it, because until then the field has two
+declarations and only one route. Composition sits in the middle of that
+sequence and can see one step of it. Whether the first ever happened is the
+question section~\ref{sec:ch17-the-field-nobody-approved} answered with a
+request, and the answer took a deployment to arrive.
+
+\subsection{The Restriction That Is Enforced}
+
+\index{override@\code{"@override}!only one subgraph may take a field}%
+One rule around the directive is checked, and it is the rule that would
+otherwise leave the composer with the problem
+section~\ref{sec:ch17-the-one-thing-it-asks-permission-for} is about. Apollo
+states it as \enquote{only one subgraph can \code{@override} any given field.
+If multiple subgraphs attempt to \code{@override} the same field, a
+composition error occurs}~\autocite{apollodirectives}. Put the same
+\code{@override(from: "sessions")} on \code{Session.abstract} in both the
+Ratings and the Search documents and \code{wgc} refuses, saying that the
+directive must be declared on one single instance of a field and naming both
+subgraphs.
+
+\index{override@\code{"@override}!which is a routing rule again}%
+Which is the same rule as the shareable one wearing different words. Two
+services taking a field leaves two candidates and no way to choose, so it
+stops. One service taking a field leaves one, so it does not.
+
+\subsection{The Half This Composer Does Not Have}
+
+\index{override@\code{"@override}!progressive, and who ships it}%
+Apollo's reference carries a second argument on the directive, \code{label},
+optional, whose purpose is to split traffic between the two services while a
+migration is in flight~\autocite{apollodirectives}. Hot Chocolate ships it:
+\code{OverrideAttribute} in \code{HotChocolate.ApolloFederation} carries a
+\code{Label} beside its \code{From}, and the doc comment on the attribute
+points at Apollo's own page for what a percentage label means. So a .NET
+subgraph author can write it, and the document that service exports will carry
+it.
+
+\index{override@\code{"@override}!the composer refuses the label}%
+Put the same directive and the same definition into the Ratings document by
+hand, which is what that service would have exported, and compose the four:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+The subgraph "ratings" could not be federated for the following reason:
+The 1st instance of the directive "@override" declared on coordinates "Session.abstract" is invalid for the following
+reason:
+ The definition for "@override" does not define the following argument that is provided: "label".
+\end{minted}
+
+\index{override@\code{"@override}!the document defines it and is overruled}%
+The document does define it, and this is the definition it carries:
+
+\begin{graphqlsdl}
+directive @override(from: String!, label: String) on FIELD_DEFINITION
+\end{graphqlsdl}
+
+That is what the composer declines to read. It holds a definition of its own,
+that definition has one argument, and it substitutes it. This is
+the fourth time in this book that the two libraries have disagreed about the
+shape of a directive, after the cost weight in chapter~\ref{ch:composition},
+the \code{@provides} precondition in
+chapter~\ref{ch:second-third-subgraph} and the semantic-non-null levels
+argument in chapter~\ref{ch:null-blast-radius}.
+
+\index{override@\code{"@override}!Cosmo's answer is a different mechanism}%
+This one has a stated reason rather than a drift. Jens Neuse, a co-founder of
+WunderGraph, describes progressive override as Apollo's feature, one that
+\enquote{allows you to annotate a field with the \code{@override} directive
+and an additional \code{label} argument to gradually move ownership of a field
+from one Subgraph to another}, and puts Cosmo's own answer somewhere
+else~\autocite{neuse2024featureflags}: a feature flag over a whole alternative
+subgraph, enabled for a fraction of traffic, rather than an argument on a
+field. He is describing the product he sells, and he is describing it
+accurately in both directions. What it means for a reader on this stack is
+plain enough: the incremental migration Apollo documents is not available, and
+the field changes hands in one deployment.
+
+\subsection{Two Ways to Leave It Wrong}
+
+\index{override@\code{"@override}!a mistyped subgraph name}%
+The name in \code{from} is the subgraph's, the one \code{graph.yaml} gives it,
+and getting it wrong is not reported as getting it wrong.
+\code{@override(from: "session")}, singular, is an easy thing to type, and
+what it does is nothing at all: the directive fails to apply and what comes
+back is the refusal from
+section~\ref{sec:ch17-the-one-thing-it-asks-permission-for}, that two subgraphs
+define \code{abstract} and neither declares it shareable. The message names
+neither the directive nor the string that was typed. A reader who has just
+written an override and gets a message about \code{@shareable} has to work out
+for themselves that those are the same event.
+
+\index{override@\code{"@override}!outlives the field it took}%
+And at the far end of a migration the directive stops meaning anything and
+nothing says so. Delete \code{abstract} from the Sessions document, which is
+the last step and the correct one, and the Ratings copy still reads
+\code{@override(from: "sessions")}, pointing at a declaration that no longer
+exists in a service that no longer has the field. That composes at exit zero.
+The directive is now a comment, it looks like configuration, and the next
+person to read that document will believe there is a migration in progress.
+
+\subsection{The Directive This Book Does Not Ship}
+
+\index{provides@\code{"@provides}!why the book has none}%
+Chapter~\ref{ch:second-third-subgraph} met \code{@provides} and shipped none,
+and the reason belongs here. The directive is a routing optimization: it tells
+the router that this particular path through the graph can produce some of
+another service's fields locally, so the entity fetch can be skipped. Its
+preconditions are the problem. The provided field has to be declared
+\code{@external} where it is provided and \code{@shareable} in at least one
+other subgraph that defines it, which means the service that owns none of the
+column is nonetheless declaring the column, and some other service has agreed
+in writing that a second answer to that field is fine.
+
+\index{provides@\code{"@provides}!a copy of somebody else's column}%
+That is a copy of somebody else's data living in your service, with a schema
+declaration to match, so that a fetch can be avoided. It is the exact
+duplication chapter~\ref{ch:second-third-subgraph} removed from the Sessions
+service when it moved the speaker rows out. I would rather pay the fetch. A
+graph where three services carry declarations of each other's columns is a
+graph where the question this chapter opens with, who owns this field, has no
+answer left at all.
+\index{override@\code{"@override}!the migration it exists for|)}%

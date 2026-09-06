@@ -1,0 +1,124 @@
+% Two ways abstract moves from one subgraph to another, measured against wgc
+% 0.129.9 and the book's four exported subgraph documents. Above, two teams
+% share the field and the composer withholds the route until both of them
+% agree. Below, one team takes the field outright and the composer asks
+% nobody. Both routes end at the same routing-table entry in the composed
+% config, and in both the schema a client reads never changes; the difference
+% the picture argues is entirely in what happens before that entry is
+% written, and who is consulted while it happens.
+%
+% Same idiom as figures/tikz/ch01-one-field.tex, which fixes it: x=1mm/y=1mm,
+% ticks above a single-weight axis, event nodes anchored south with manual
+% line breaks rather than relying on the text width to wrap. The axis, tick,
+% event, span and spanlabel styles, and the outcome style's placement of both
+% lanes' outcome nodes at one shared x position, are copied from
+% figures/tikz/ch16-two-places-a-change-can-fail.tex, which in turn takes the
+% outcome style from figures/tikz/ch15-the-order-decides.tex.
+%
+% Two departures from ch16, both because the two lanes here are not the same
+% shape as ch16's:
+%
+%   1. Lane A's cross does not end the lane. In ch16 a cross marks a walk
+%      reaching a point it cannot pass, and the axis stops there because
+%      nothing after it happened. Here the composer's refusal is not the end
+%      of the story, it is the mechanism doing its job: it sends the change
+%      back, both teams mark the field shareable, and the second compose
+%      succeeds. So the axis is drawn as one continuous stroke from the first
+%      event to the last, and the cross is laid across it exactly the way an
+%      ordinary tick already crosses the axis without breaking it. Only the
+%      shape of the mark changes, not the line beneath it.
+%
+%   2. Lane B carries no cross mark at all. Every other two-lane timeline in
+%      this book puts a cross on both lanes; this figure puts one only on
+%      lane A, because nothing on lane B goes wrong anywhere along it, and
+%      that absence is the second half of the finding, not an oversight.
+%
+% Lane B's axis also stops noticeably short of the shared outcome column,
+% the same device ch16 uses for its refused lane: the blank run-in says
+% nobody had anything further to do.
+%
+% Spacing note. The first draft put five events on lane A at 22mm apart and
+% the labels collided on the page, which the printed proof caught and the
+% build log did not, since a node overlapping its neighbour is not an
+% overfull box. Two things fixed it: the two shareable edits became one
+% event, because what the lane argues is that both documents have to move
+% rather than in which order, and the remaining ticks went to 32mm with the
+% event text width at 30mm. Anything wider than the tick spacing collides,
+% so a later edit that lengthens a label has to move the ticks with it.
+%
+% No quotation marks anywhere in this file, including this comment block, per
+% the note at the head of ch07-the-walk.tex and repeated in
+% ch15-the-order-decides.tex.
+%
+% Bare tikzpicture (house style): the figure environment, caption and label
+% live at the call site in the section file.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  axis/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  tick/.style={draw, line width=0.4pt},
+  event/.style={anchor=south, align=center, text width=30mm, inner sep=1pt},
+  outcome/.style={anchor=west, align=left, text width=32mm, inner sep=1pt},
+  span/.style={draw, line width=0.4pt},
+  spanlabel/.style={anchor=north, align=center, inner sep=2pt},
+  lane/.style={anchor=west, font=\sffamily\scriptsize\itshape},
+]
+
+% ------------------------------------------------------------------- lane A
+\node[lane] at (0,20) {A. sharing a field needs both teams};
+
+% One continuous stroke from the first event to the last: the refusal at
+% x=46 is not where the walk stops, so the axis does not stop there either.
+\draw[axis] (0,0) -- (112,0);
+
+\draw[tick] (14,-1.5) -- (14,1.5);
+\draw[tick] (44.8,-1.5) -- (47.2,1.5);
+\draw[tick] (44.8,1.5) -- (47.2,-1.5);
+\draw[tick] (78,-1.5) -- (78,1.5);
+\draw[tick] (106,-1.5) -- (106,1.5);
+
+\node[event, text width=28mm] at (14,3)
+  {ratings adds abstract\\to its own document};
+\node[event, text width=26mm] at (46,3)
+  {wgc router compose\\exit 1, refused};
+\node[event, text width=30mm] at (78,3)
+  {both teams add shareable\\to their own documents};
+\node[event, text width=24mm] at (106,3)
+  {wgc router\\compose, exit 0};
+
+\draw[span] (30,-4) -- (30,-7) -- (94,-7) -- (94,-4);
+\node[spanlabel, text width=44mm] at (62,-8)
+  {the composer asks whether both declaring subgraphs agree to share the
+   field, and consent is what it needs before it grants the route};
+
+\node[outcome] at (120,0) {both documents moved,\\so both teams knew.};
+
+% ------------------------------------------------------------------- lane B
+\begin{scope}[shift={(0,-50)}]
+  \node[lane] at (0,20) {B. taking a field needs nobody};
+
+  % Stops well short of the outcome column: nothing happens after the field
+  % is served, and nobody is asked along the way, which is the point of the
+  % lane, so the blank run-in is doing some of the arguing.
+  \draw[axis] (0,0) -- (98,0);
+  \foreach \x in {14,46,82}{\draw[tick] (\x,-1.5) -- (\x,1.5);}
+
+  \node[event, text width=28mm] at (14,3)
+    {ratings adds abstract\\with @override\\(from: sessions)};
+  \node[event, text width=30mm] at (46,3)
+    {wgc router compose\\exit 0, nothing printed};
+  \node[event, text width=26mm] at (82,3)
+    {the router loads it\\and serves the field};
+
+  \draw[span] (2,-4) -- (2,-7) -- (58,-7) -- (58,-4);
+  \node[spanlabel, text width=44mm] at (30,-8)
+    {the same question has one route and one answer, so nothing is asked of
+     anybody};
+
+  \node[outcome] at (120,0)
+    {one document moved,\\and the team that owned\\the field was never
+     asked.};
+\end{scope}
+
+\end{tikzpicture}
