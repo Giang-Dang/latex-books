@@ -1,0 +1,152 @@
+\section{The Change This Book Already Shipped}
+\label{sec:ch16-the-change-this-book-already-shipped}
+
+\index{breaking change!the one this book made|(}%
+Chapter~\ref{ch:satisfiability} ended on a request as the only check that
+catches what composition misses. It is, and there is a difficulty in it that
+chapter had no reason to raise. The requests I can send are the ones I thought
+of. The requests that decide whether a change is safe are the ones somebody
+else already shipped, in an application I have never seen, against a schema
+they read a year ago.
+
+\index{breaking change!chapter 14 made one}%
+Chapter~\ref{ch:null-blast-radius} made such a change. Five fields gave up
+their exclamation marks so that a stopped service would cost a page rather
+than a response, and I still think the argument in that chapter is right. It is
+also a breaking change to every client that had read those fields as
+guaranteed, and nothing in this book noticed. The composition wrote a config at
+exit zero. The router served it. Every request the book prints still answers.
+
+\subsection{Five Fields, and Nothing Said}
+
+\index{supergraph!the schema a client actually reads}%
+The thing a client reads is not any of the four documents the services export.
+It is the composed schema the router serves, which
+chapter~\ref{ch:composition} pulled out of the router execution config as
+\code{engineConfig.graphqlSchema}. Compose the graph as
+chapter~\ref{ch:cross-seam-paging} left it, compose it again as
+chapter~\ref{ch:null-blast-radius} left it, and put the two composed documents
+side by side. Both are 247 lines, and five of those lines differ. This is what
+\code{diff} prints for them, the line under \code{<} being the schema before
+and the line under \code{>} the schema now:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+18c18
+<   ): [Node]!
+---
+>   ): [Node]
+48c48
+<   ratingCount: Int!
+---
+>   ratingCount: Int
+182c182
+<   session: Session!
+---
+>   session: Session
+210c210
+<   ratingCount: Int!
+---
+>   ratingCount: Int
+212c212
+<   feedbackUrl: String!
+---
+>   feedbackUrl: String
+\end{minted}
+
+\index{breaking change!five fields, six lines}%
+Five lines in the composed schema, and six across the four documents that
+produced it, because two subgraphs declare \code{Query.nodes} and composition
+merges the two declarations into one field. Two of the five are root fields, \code{nodes} and
+\code{ratingCount}. Two more are the fields Ratings contributes to a
+\code{Session} it does not own, \code{ratingCount} again and
+\code{feedbackUrl}. The fifth is the entity a Search document hydrates.
+
+\index{ratingCount@\code{ratingCount}!two fields of that name}%
+One field that looks like a sixth is not.
+\code{SessionSearchDocument.ratingCount} is still \code{Int!}, because the
+Search service owns that column and answers it out of its own projection. Two
+fields in this supergraph are called \code{ratingCount} and only one of them
+moved.
+
+\index{composition!prints nothing about a changed type}%
+Neither composition said anything. Exit zero both times, and the whole of what
+either printed is the line chapter~\ref{ch:satisfiability} already showed, the
+one naming the file it wrote. There was never a mechanism by which it could
+have said more: \code{wgc router compose} is handed one set of documents and
+has never seen another, so it is not comparing anything. It is not a diff
+that came back empty. It is not a diff.
+
+\subsection{Where the List of Breaking Changes Actually Lives}
+
+\index{breaking change!the specification does not define it}%
+I went looking for the definition and it is not where I expected. The GraphQL
+specification does not define a breaking change. The word appears twice in the
+type system section, once about custom scalar specification urls and once in
+the deprecation prose chapter~\ref{ch:schema-design} quotes, and in neither
+place as a category. There is no list.
+
+\index{breaking change!graphql-js defines the list}%
+What everything downstream uses is a TypeScript enum in the reference
+implementation. \code{graphql-js} ships \code{findBreakingChanges}, and beside
+it a \code{BreakingChangeType} with sixteen members~\autocite{graphqljsbreaking}:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+TYPE_REMOVED, TYPE_CHANGED_KIND, TYPE_REMOVED_FROM_UNION,
+VALUE_REMOVED_FROM_ENUM, REQUIRED_INPUT_FIELD_ADDED,
+IMPLEMENTED_INTERFACE_REMOVED, FIELD_REMOVED, FIELD_CHANGED_KIND,
+REQUIRED_ARG_ADDED, ARG_REMOVED, ARG_CHANGED_KIND, DIRECTIVE_REMOVED,
+DIRECTIVE_ARG_REMOVED, REQUIRED_DIRECTIVE_ARG_ADDED,
+DIRECTIVE_REPEATABLE_REMOVED, DIRECTIVE_LOCATION_REMOVED
+\end{minted}
+
+\index{breaking change!a dangerous category beside it}%
+A second enum of six sits next to it, \code{DangerousChangeType}, for changes
+that break a client only if it made an assumption it was not entitled to: a
+value added to an enum, a type added to a union, an optional argument added.
+The split is worth keeping, because most of what a team argues about lives in
+the second list.
+
+\index{FIELD\_CHANGED\_KIND@\code{FIELD\_CHANGED\_KIND}!what chapter 14 did}%
+Chapter~\ref{ch:null-blast-radius}'s change is \code{FIELD\_CHANGED\_KIND}.
+The function that decides it walks a field's type, and this is the branch that
+answers for a field which used to be non-null, with the comment the file
+carries on it:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+if (isNonNullType(oldType)) {
+  // if they're both non-null, make sure the underlying types are compatible
+  return (
+    isNonNullType(newType) &&
+    isChangeSafeForObjectOrInterfaceField(oldType.ofType, newType.ofType)
+  );
+}
+\end{minted}
+
+\index{nullability!the output rule and the input rule are opposite}%
+The old type is non-null and the new one is not, so the conjunction fails and
+the change is unsafe. A comment further down the same file says the other
+direction plainly: moving from nullable to non-null is safe. That is for an
+output field. For an argument or an input field the same file carries the
+mirror image, that moving from non-null to nullable is the safe direction. A
+field that stops promising breaks a caller. An argument that stops demanding
+does not. One \code{!} in two positions, and the rule reverses.
+
+\subsection{And the Tests Moved With It}
+
+\index{breaking change!the tests move with the schema}%
+Three things failed to notice that change at the top of this section: the
+composition, the router, and every request in this book. There is a fourth,
+and it is the part I would not have volunteered. A schema has tests, and the
+tests assert the schema. When I softened those five fields, the change that
+softened them also rewrote every assertion that named them, because a change
+that leaves them alone does not pass and therefore does not ship. That is not
+a lapse of discipline. It is the only shape such a change can have.
+
+\index{breaking change!why your own tests cannot tell you}%
+Which is why a suite of operations kept by the team that owns the schema
+cannot tell that team it has broken somebody. The operations move when the
+schema moves, in the same change, by the same hand, so nothing in the suite is
+older than the edit, and being older than the edit is the whole of what would
+make it evidence. Nobody found out here. The next section is what finding out
+looks like when somebody does.
+\index{breaking change!the one this book made|)}%

@@ -1,13 +1,19 @@
-% Scope (SPEC.md, Table of contents): breaking changes as the highest availability risk, schema checks as a gate, and the REST-shaped schema nobody uses
+% Scope (SPEC.md, Table of contents): breaking changes as the highest
+% availability risk, schema checks as a gate, and the REST-shaped schema
+% nobody uses. Confirmed 2026-09-06 while drafting, with two clauses added
+% rather than changed: the book had already shipped a breaking change two
+% chapters earlier and every gate in it passed (decision 140), and the gate
+% both vendors sell is the same gate and needs a control plane this book's
+% own containerless rule cannot stand up (decision 142).
 \chapter{The Subgraph That Broke Everyone}
 \label{ch:breaking-changes}
 
-\emph{Not yet drafted.}
+Nothing in a federated graph holds the operations its clients send, so the
+change that breaks all of them is the one every check in this book passes.
 
-% Chapter skeleton, SPEC decision 13. Five beats, this order:
-%   1. The one sentence  - what this chapter establishes, stated first.
-%   2. Show it          - the thing running, or in Part III the thing failing.
-%   3. Why it does that - the mechanism. All theory lives here (decision 14).
-%   4. Do it properly   - the complete, correct implementation.
-%   5. Summary box      - decision 21.
-% Section files are \input from here, numbered 01-, 02-, ... from the book root.
+\input{chapters/16-the-subgraph-that-broke-everyone/01-the-change-this-book-already-shipped}
+\input{chapters/16-the-subgraph-that-broke-everyone/02-three-changes-and-one-status-code}
+\input{chapters/16-the-subgraph-that-broke-everyone/03-what-the-composer-is-checking}
+\input{chapters/16-the-subgraph-that-broke-everyone/04-the-gate-and-what-it-needs}
+\input{chapters/16-the-subgraph-that-broke-everyone/05-the-schema-nobody-can-retire}
+\input{chapters/16-the-subgraph-that-broke-everyone/06-summary}
