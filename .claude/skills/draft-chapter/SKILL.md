@@ -330,6 +330,17 @@ them. Treat any number you did not personally run as unverified. The incidents
 behind one book's own rules are recorded in its SPEC decision log and open
 items, not here.
 
+A page anchor is a claim like any other, and it is read off the page rather
+than off an extraction. Extracting a two-column paper reflows the columns, so
+where a passage sits in that output is not the page it prints on, and an
+anchor taken from the output is wrong in a way that survives every gate and
+reads as authoritative. Check once per paper whether its printed page numbers
+match its PDF page indices, because they usually do, sometimes do not, and
+sometimes there are no printed numbers at all; record which numbering the
+research file is using. Two consecutive chapters have had to correct anchors
+in earlier chapters' notes, and one wrong anchor had already reached a
+manuscript.
+
 Vendor sources are usable only when a named engineer is named in the prose, so
 check the byline rather than the domain.
 

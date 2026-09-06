@@ -393,10 +393,12 @@
     # masking. Renaming without updating this costs you the exemption silently.
     # Code        - inline code spans. Their contents are exempt from the quote,
     #               dash, contraction, spelling and number checks.
-    # Quoted      - quotation macros. Their contents are exempt from the dash,
+    # Quoted      - quotation macros. Their contents are exempt from the
     #               contraction and spelling checks, because quoted words are
     #               someone else's; they are deliberately not exempt from the
-    #               quote check, so nested quotations still use the macro.
+    #               quote check, so nested quotations still use the macro, nor
+    #               from the dash check, because -- is a LaTeX instruction
+    #               rather than a word anyone can be quoted as writing.
     # Identifiers - macros whose argument is a name rather than English, so that
     #               a label, a path or a citation key is never read as a
     #               contraction or a misspelling.
@@ -423,6 +425,10 @@
     #                sharpens a message: a gloss on a keep-in-English term sets
     #                "bias (bias)", which is a different mistake from glossing a
     #                term nobody put in the appendix.
+    # WarnNested   - report each pair of glossary terms where one is nested
+    #                inside the other. Off by default: the pairs are this
+    #                book's own vocabulary until a new row makes one of them
+    #                a mistake, so it earns its keep when a block is added.
     # Exempt       - terms that are also ordinary Vietnamese, where a gloss
     #                helps nobody. Keep it short: an exception list carrying
     #                most of a check's signal is a list, not a check.
@@ -434,6 +440,7 @@
     #     BlockPattern = ''
     #     KeepPattern  = ''
     #     Exempt       = @()
+    #     WarnNested   = $false
     # }
     #
     # THIS BOOK: on, against appendix B, which decision 16 already makes the
