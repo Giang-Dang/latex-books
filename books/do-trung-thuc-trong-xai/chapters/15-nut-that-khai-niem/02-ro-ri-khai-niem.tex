@@ -1,0 +1,154 @@
+\section{Rò rỉ khái niệm}
+\label{sec:ch15-ro-ri}
+
+\index{rò rỉ!hiện tượng quan sát được|(}%
+Mục trước khép lại trên một câu hỏi mà phép tối ưu được phép trả lời: đặt giá
+trị nào vào $\hat c_k$ để đầu phân loại đoán đúng $y$. Mục này đọc câu trả lời,
+và đọc nó trước ở chỗ nhìn thấy được chứ không ở chỗ định nghĩa.
+
+\index{rò rỉ!phân bố giá trị kích hoạt}%
+Cảnh nhìn thấy được là phân bố các giá trị $\hat c_1$ trên tập kiểm
+tra~\autocite{p30leakage}. Bài của mục~\ref{sec:ch15-do-ro-ri} lấy một nhiệm vụ
+đúng hai khái niệm
+nhị phân, nhãn là $y = c_1$ hoặc $c_2$, rồi huấn luyện ba mô hình trên đó: một
+mô hình cứng, và hai mô hình mềm với $\beta$ đặt ở mức trung bình rồi ở mức rất
+thấp. Với mô hình cứng, phân bố của $\hat c_1$ có hai cụm nằm gần 0 và gần 1,
+tức gần đúng phân bố nhị phân của $c_1$. Với mô hình mềm ở mức $\beta$ trung
+bình, hai cụm ấy tách tiếp: bên trong cụm gần 1 xuất hiện thêm cấu trúc, và cấu
+trúc ấy phân biệt được theo giá trị của khái niệm còn lại và theo nhãn. Với mô
+hình mềm ở mức $\beta$ rất thấp, phân bố của $\hat c_1$ giống phân bố của $y$
+hơn là giống phân bố của $c_1$.
+
+Một đại lượng được huấn luyện để nhận khái niệm
+thứ nhất, và trên tập kiểm tra nó phân bố như nhãn nhiệm vụ. Người giám sát nhìn
+vào cột ấy, thấy một số trong khoảng từ 0 đến 1, và đọc nó như \enquote{mô hình
+tin khái niệm thứ nhất có mặt tới mức này}. Cách đọc ấy sai, không phải vì con
+số vô nghĩa mà vì nó mang hai thứ chồng lên nhau và người đọc chỉ được kể về
+một.
+
+\index{rò rỉ!định nghĩa}%
+Hiện tượng ấy có tên. \tn{Rò rỉ}{leakage} xảy ra khi mô hình cất thêm thông tin vào các giá
+trị khái niệm học được, ngoài chính trạng thái của khái niệm, và đầu phân loại
+dùng phần thông tin thêm ấy để đoán nhãn. Nó có lợi cho phép tối ưu, vì mất mát
+trên nhãn giảm mà mất mát trên khái niệm không tăng bao nhiêu, nên phép tối ưu
+tìm ra nó mà không cần ai bảo. Cái nó phá là điều duy nhất mà cả họ mô hình này
+được xây để bảo đảm: rằng đọc bảng $\hat c_k$ là đọc được lý do mô hình ra quyết
+định. Chữ ấy đã xuất hiện một lần trong sách với nghĩa khác, ở
+\tn{rò rỉ tương tác}{interaction leakage} của
+chương~\ref{ch:tro-choi-attribution}, nơi cái rò đi từ một hiệu ứng tương tác
+sang một \tn{hiệu ứng riêng}{pure individual effect} bên trong một bảng điểm số.
+Hai hiện tượng khác nhau
+mang cùng một chữ tiếng Anh, và trong chương này thì \enquote{rò rỉ} viết không
+kèm bổ ngữ luôn chỉ hiện tượng vừa mô tả.
+
+\index{rò rỉ!hai loại}%
+Bài ấy chia rò rỉ thành hai loại theo chỗ thông tin thêm ấy nói về cái
+gì. \tn{Rò rỉ khái niệm-nhiệm vụ}{concepts-task leakage} là khi $\hat c_k$ mang
+thêm thông tin về nhãn $y$;
+đây là loại chính, vì nó là loại trực tiếp giúp mô hình đoán nhiệm vụ tốt hơn.
+\tn{Rò rỉ liên khái niệm}{interconcept leakage} là khi $\hat c_k$ mang thêm thông tin về những khái niệm
+khác. Loại thứ hai thường phụ hơn, và nó không hoàn toàn vô ích cho mô hình:
+biết $\hat c_2$ từ $\hat c_1$ cho mô hình một đường vòng để vẫn đoán đúng nhiệm
+vụ khi một khái niệm bị nhận sai.
+
+\index{rò rỉ!hiện tượng quan sát được|)}%
+Hai chữ \enquote{thêm} trong hai câu vừa rồi cần một mốc so sánh, và mốc ấy là
+điều làm cả khung này chạy được. Trong một bộ dữ liệu có gán nhãn khái niệm,
+lượng thông tin mà khái niệm thật $c_k$ mang về nhãn thật $y$ là một đại lượng
+tính được, không phụ thuộc vào mô hình nào. Nó là mốc. Nếu giá trị học được
+$\hat c_k$ mang nhiều thông tin về $y$ hơn mốc ấy, phần chênh là thông tin mà mô
+hình đã tự thêm vào, vì dữ liệu không có sẵn để mà thêm. Mục~\ref{sec:ch15-do-ro-ri}
+biến câu ấy thành hai điểm số.
+
+\index{rò rỉ!can thiệp mất chỗ dựa}%
+Hình~\ref{fig:ch15-nut-that-va-ro-ri} vẽ cùng một chuyện ở chỗ nó xảy ra, và vẽ
+kèm hệ quả mà mục~\ref{sec:ch15-dung-cu-duoc-kiem} sẽ dùng làm dụng cụ đo. Một
+đơn vị của tầng thắt mang hai phần: phần trạng thái khái niệm, thứ người giám
+sát đọc được, và phần thông tin thêm, thứ người giám sát không đọc được vì không
+có cột nào cho nó. Đầu phân loại đọc cả hai. Khi người giám sát can thiệp, tức
+đặt $\hat c_k$ về giá trị thật $c_k$, thì phần dưới biến mất cùng phần trên, vì
+chúng là cùng một con số. Đầu phân loại vốn đã học cách trông cậy vào phần dưới
+nay không còn nó, nên độ chính xác nhiệm vụ có thể tụt đi sau một phép can thiệp
+đúng. Đó là dấu hiệu thô nhất của rò rỉ và cũng là dấu hiệu dễ hiểu nhất: sửa
+cho mô hình một chỗ sai mà nó lại đoán tệ hơn.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch15-nut-that-va-ro-ri}
+  \caption{Rò rỉ không đi vòng qua tầng thắt mà đi xuyên qua nó. Khung ngoài là
+  một đơn vị của tầng thắt, tức đúng một con số $\hat c_k$, và hai ô bên trong
+  là hai phần thông tin mà con số ấy chở chứ không phải hai đường đi: người giám
+  sát đọc được ô trên và không có cột nào cho ô dưới, còn đầu phân loại nhận cả
+  khung. Bảng khái niệm vì thế vẫn đầy đủ về hình thức trong khi đã thiếu về nội
+  dung, và không phép kiểm nào trên bảng ấy phát hiện được. Ô dưới vẽ nét chấm
+  theo quy ước của sách cho thứ vắng mặt khỏi cái được trưng ra.}
+  \label{fig:ch15-nut-that-va-ro-ri}
+\end{figure}
+
+\index{ví dụ chạy suốt sách!ngưỡng hóa thành nhiệm vụ nhị phân}%
+Nhiệm vụ hai khái niệm ở trên tính được bằng tay, và nó chính là hàm mà sách đã
+dùng từ chương~\ref{ch:giai-thich-de-lam-gi}. Hàm ấy là
+$f(x_1,x_2) = x_1 + 2x_2 + x_1x_2$ trên hai \tn{đặc trưng}{feature} bật tắt,
+nhận bốn giá trị
+$0$, $1$, $2$ và $4$ tại bốn tổ hợp. Lấy ngưỡng tại $1$, nghĩa là đặt $y = 1$
+khi $f \ge 1$, thì $y$ bằng 0 đúng ở tổ hợp $(0,0)$ và bằng 1 ở ba tổ hợp còn
+lại: đó là phép hoặc của hai đặc trưng, tức đúng nhiệm vụ mà bài báo dùng làm ví
+dụ. Hai đặc trưng của hàm chạy suốt sách trở thành hai khái niệm, và ngưỡng biến
+một hàm số thực thành một nhiệm vụ phân loại nhị phân.
+
+Còn thiếu một giả thiết nữa mới tính được, và nó là giả thiết của sách chứ không
+của bài báo: lấy $c_1$ và $c_2$ độc lập, mỗi cái bằng 0 hoặc 1 với xác suất như
+nhau. Bộ dữ liệu tổng hợp của bài báo sinh hai khái niệm có tương quan, nên các
+con số dưới đây minh họa cách đo chứ không phải là con số bài báo báo cáo.
+
+Với giả thiết ấy thì $y = 0$ chỉ ở một trong bốn tổ hợp, nên $y$ bằng 1 với xác
+suất $3/4$. Entropy của nhãn là
+\[
+  H(y) = -\tfrac{3}{4}\log_2\tfrac{3}{4} - \tfrac{1}{4}\log_2\tfrac{1}{4}
+       = 0.811 \text{ bit} .
+\]
+Ở đây $H$ là entropy, đo lượng bất định của một biến ngẫu nhiên tính bằng bit.
+Biết $c_1 = 1$ thì $y$ chắc chắn bằng 1, nên bất định còn lại bằng 0; biết
+$c_1 = 0$ thì $y$ bằng $c_2$, nên bất định còn lại bằng đúng 1 bit. Trung bình
+hai trường hợp cho $0.5$ bit, và lượng thông tin mà $c_1$ mang về $y$ là phần
+bất định bị xóa đi,
+\[
+  I(c_1, y) = H(y) - 0.5 = 0.311 \text{ bit} .
+\]
+Ký hiệu $I$ với hai đối số là thông tin tương hỗ, đại lượng đo phần bất định của
+biến này mà biết biến kia xóa được. Chương~\ref{ch:do-do-trung-thuc} dùng chữ
+$I$ trần cho một \tn{phép nhiễu}{perturbation} trong định nghĩa infidelity; hai
+nghĩa tách nhau bằng hình dạng, vì thông tin tương hỗ luôn đi kèm hai đối số còn
+phép nhiễu kia luôn đứng một mình.
+
+Chia cho $H(y)$ để con số không phụ thuộc thang đo của nhãn, mốc của khái niệm
+thứ nhất trên nhiệm vụ này là
+\[
+  \frac{I(c_1, y)}{H(y)} = \frac{0.311}{0.811} = 0.384 .
+\]
+Một mô hình cứng học đúng khái niệm cho $\hat c_1 = c_1$, nên tỉ số của nó cũng
+là $0.384$ và phần chênh bằng 0. Ở đầu kia, một giá trị học được đã thành bản
+sao hoàn hảo của nhãn mang trọn $H(y)$, nên tỉ số bằng 1 và phần chênh là
+$1 - 0.384 = 0.616$. Vậy trên nhiệm vụ này, phần chênh chạy trong khoảng từ 0
+tới $0.616$, và biết một mô hình đứng ở đâu trong khoảng ấy là biết bao nhiêu
+phần thông tin trong cột $\hat c_1$ không nói về khái niệm thứ nhất. Với hai
+khái niệm độc lập thì $I(c_1,c_2) = 0$, nên mốc liên khái niệm bằng 0 và
+\emph{mọi} mức phụ thuộc học được giữa $\hat c_1$ và $\hat c_2$ đều là rò rỉ.
+
+\index{độ trung thực!rò rỉ là bản sao trong họ mô hình nào}%
+Bây giờ mới nói được câu mà nhan đề chương gợi ra, và nói kèm chỗ nó dừng. Đọc
+theo bảng~\ref{tab:ch01-bon-quan-he}, rò rỉ đúng là họ hàng của
+\tn{độ trung thực}{faithfulness}
+theo định nghĩa~\ref{def:ch01-do-trung-thuc}: cả hai đều so cái được trưng ra
+với cái mà mô hình thật sự dựa vào, và cả hai đều hỏng theo cùng một kiểu, là
+cái được trưng ra thiếu chứ không sai. Nhưng ba chỗ khác nhau đủ lớn để không
+được gộp. Thứ nhất, ở đây cái được trưng ra không phải một lời giải thích do một
+phương pháp bên ngoài dựng lên mà là một tầng của chính mô hình, nên không có
+tập can thiệp nào phải công bố theo yêu cầu mà
+mục~\ref{sec:ch14-dieu-chua-giai-quyet} để lại. Thứ hai, rò rỉ là một đại lượng
+định nghĩa so với một tập khái niệm đã gán nhãn: đổi tập khái niệm thì mốc đổi
+theo, nên nó nói \enquote{cột này mang thêm bao nhiêu so với tập ấy} chứ không
+nói \enquote{mô hình thật sự dựa vào cái gì}. Thứ ba, không bài nào trong ba bài
+của chương gọi nó là độ trung thực, và chữ \enquote{faithful} không xuất hiện
+lần nào trong phần thân của bài nào. Câu ở đầu mục này là câu của sách, và nó
+đứng được đúng tới đây.

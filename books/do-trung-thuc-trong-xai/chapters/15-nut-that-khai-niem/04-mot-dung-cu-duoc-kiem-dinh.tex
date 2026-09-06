@@ -1,0 +1,177 @@
+\section{Một dụng cụ có kiểm định}
+\label{sec:ch15-dung-cu-duoc-kiem}
+
+\index{kiểm định chỉ số!ở họ mô hình khái niệm|(}%
+Tiêu chí mà mục trước khép lại cho phép nói mô hình nào rò rỉ hơn mô hình nào,
+và nó nói được như vậy vì người ta đã chấp nhận rằng hai điểm số ấy đo rò rỉ.
+Mục này hỏi câu mà cả Phần~IV đã hỏi bảy lần và chưa lần nào nhận được câu trả
+lời: lấy gì làm bằng chứng cho chỗ chấp nhận ấy. Bài báo đưa ba lập luận, và ba
+lập luận ấy không cùng hạng.
+
+\index{kiểm định chỉ số!lập luận thứ nhất, độ nhạy}%
+Lập luận thứ nhất là \tn{độ nhạy}{sensitivity}, theo nghĩa thống kê của chữ ấy chứ không theo
+nghĩa tiên đề mà chương~\ref{ch:attribution-theo-gradient} đã cấp cho nó: một
+dụng cụ nhạy là dụng cụ báo khác nhau khi hai vật khác nhau.
+Mục~\ref{sec:ch15-do-ro-ri} đã dùng lập luận này: cặp mô hình có sáu điểm đánh
+giá lệch nhau không quá $0.005$ mà
+\tn{điểm số can thiệp}{intervention score} lệch
+$0.301$ được hai điểm số mới tách ra đúng chiều, trong khi OIS thì không, vì
+khoảng tin cậy của OIS trên cặp ấy rộng tới mức chồng lên nhau. Lập luận này cho
+thấy hai điểm số mới thấy được thứ mà các điểm đánh giá thông thường không thấy.
+
+\index{kiểm định chỉ số!lập luận thứ hai và chỗ nó vòng lại}%
+Lập luận thứ hai là hai điểm số \tn{rò rỉ}{leakage} tắt trên mô hình cứng. Bài báo huấn luyện mô
+hình cứng trên tám bộ dữ liệu, ở cả chế độ khái niệm ít tương quan lẫn chế độ
+khái niệm tương quan mạnh, và cả CTL lẫn ICL đều không lệch khỏi 0 một cách có ý
+nghĩa ở bộ nào; OIS thì lệch ở cả tám. Lập luận này yếu hơn hai lập luận kia và
+đáng nói rõ vì sao, vì chính Phần~IV đã dạy cách đọc kiểu này. Mô hình cứng được
+tuyên là không rò rỉ \emph{theo định nghĩa}: huấn luyện độc lập tách hẳn việc học
+khái niệm khỏi việc học nhãn, và phép nhị phân hóa trước khi vào đầu phân loại
+ép giá trị học được về đúng giá trị thật, nên phần chênh của
+định nghĩa~\ref{def:ch15-hai-diem-so} bằng 0 do cách dựng chứ không do quan sát.
+Một điểm số báo khác 0 ở đó là một điểm số không khớp định nghĩa, và đó đúng là
+điều đáng chê ở OIS, nhưng nó là phép kiểm \tn{tính nhất quán}{consistency} của
+khung với chính nó
+chứ không phải phép đối chiếu với thứ gì bên ngoài khung.
+
+\index{rò rỉ!một nguồn chung bị đọc sai}%
+Chữ \enquote{theo định nghĩa} ở trên chịu được sức nặng bao nhiêu thì có một
+cách kiểm, và cách ấy dẫn ra ngoài danh mục. Cả bài của mục này lẫn khảo sát của
+mục~\ref{sec:ch15-phan-con-lai} đều dẫn một bài báo thứ tư, bài của Mahinpei và
+cộng sự về những hứa hẹn và cạm bẫy của mô hình học khái niệm
+\tn{hộp đen}{black box}~\autocite{mclm}, và khảo sát nói về nó một điều mà đọc
+bài gốc thì thấy ngược.
+
+Khảo sát viết rằng bài ấy tìm ra biểu diễn cứng rò rỉ nhiều hơn hẳn biểu diễn
+mềm. Phụ lục C của bài gốc viết ngược lại: khi thêm dần các khái niệm ngẫu nhiên,
+tính dự báo của biểu diễn cứng có tăng, còn tính dự báo của biểu diễn mềm tăng
+nhiều hơn, và \enquote{các biểu diễn mềm này luôn cho kết quả tốt hơn biểu diễn
+cứng khi dùng trong nhiệm vụ phía sau}~\autocite{mclm}. Nhan đề mục 3 của bài
+cũng nói vậy, rằng chỗ rò rỉ thông tin ngoại lai là \emph{trong biểu diễn mềm}.
+Vậy câu ấy của khảo sát sai chiều, và mục~\ref{sec:ch15-phan-con-lai} sẽ trở lại
+xem điều đó nói gì về một khảo sát.
+
+\index{rò rỉ!hai đại lượng khác nhau cùng một tên}%
+Nhưng bài gốc cũng không nói mô hình cứng an toàn, và đây mới là nửa có ích. Mục
+4 của nó viết rằng ai đó có thể muốn dùng luôn biểu diễn cứng cho xong, rồi bác
+chính ý ấy: ngay cả một số vừa phải những khái niệm cứng ngẫu nhiên và vô nghĩa
+cũng nắm được nhiều thông tin về phân bố dữ liệu hơn người ta tưởng, nên
+\enquote{rò rỉ thông tin có thể luôn là một vấn đề với các mô hình học khái niệm
+hộp đen, bất kể dạng biểu diễn khái niệm}~\autocite{mclm}. Câu ấy và chữ
+\enquote{theo định nghĩa} của bài mục này không mâu thuẫn nhau, vì chúng nói về
+hai đại lượng khác nhau mang cùng một tên. Phần chênh của
+định nghĩa~\ref{def:ch15-hai-diem-so} đo so với một tập khái niệm đã gán nhãn cố
+định, nên với tập ấy giữ nguyên thì mô hình cứng cho phần chênh bằng 0. Bài gốc
+thì thêm khái niệm vào rồi hỏi cả tập mang bao nhiêu thông tin về phân bố dữ
+liệu, một câu hỏi mà phần chênh không đặt ra và không trả lời được. Sách giữ
+phát biểu của bài, ghi rằng nó đúng trong phạm vi định nghĩa của chính nó, và
+giữ nguyên đánh giá rằng lập luận thứ hai là phép kiểm nhất quán chứ không phải
+phép kiểm định.
+
+\index{kiểm định chỉ số!lập luận thứ ba, đối chiếu với điểm số can thiệp|(}%
+Lập luận thứ ba mới là phép kiểm định, và nó là lập luận mà cả Phần~IV đi tìm.
+Bài báo huấn luyện nhiều mô hình mềm và mô hình logit trên mỗi bộ dữ liệu, ở cả
+hai chế độ tương quan và ở nhiều mức $\beta$, rồi đối chiếu ba điểm số với
+điểm số can thiệp. Phép đối chiếu ấy phải đi vòng, vì mỗi điểm số của mỗi mô
+hình không phải một con số mà là một con số kèm sai số: nó được đánh giá lại 5
+lần trên mỗi mô hình, và năm lần ấy không cho cùng một giá trị. Bài xử lý chỗ đó
+bằng cách coi mỗi điểm số là một phân bố chuẩn quanh giá trị trung bình của năm
+lần, rút 10 nghìn mẫu từ phân bố ấy, và tính hệ số tương quan Pearson $r$ giữa
+điểm số và điểm số can thiệp riêng cho từng mẫu. Kết quả là 10 nghìn giá trị $r$
+thay vì một, và bước cuối gộp chúng lại thành một ước lượng kèm giá trị $p$ bằng
+một quy tắc gộp có sẵn của thống kê, quy tắc Rubin, vốn được dựng để cộng đúng
+hai nguồn sai số: sai số trong từng mẫu và sai số giữa các mẫu.
+Bảng~\ref{tab:ch15-tuong-quan-diem-so} là kết quả.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Hệ số tương quan Pearson $r$ giữa ba điểm số rò rỉ và điểm số can thiệp,
+  kèm giá trị $p$, trên tám bộ dữ liệu~\autocite{p30leakage}. Ba bộ đầu có khái
+  niệm ít tương quan, ba bộ giữa có khái niệm tương quan mạnh, hai bộ cuối là dữ
+  liệu thật. CTL vượt OIS ở cả tám dòng; ICL thì không, và ba dòng nó thua nằm ở
+  bộ thứ hai, thứ năm và thứ sáu.}
+  \label{tab:ch15-tuong-quan-diem-so}
+  \begin{tabular}{@{}lcccccc@{}}
+    \toprule
+    & \multicolumn{2}{c}{CTL} & \multicolumn{2}{c}{ICL} & \multicolumn{2}{c}{OIS} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+    Bộ dữ liệu & $r$ & $p$ & $r$ & $p$ & $r$ & $p$ \\
+    \midrule
+    TabularToy(0.25) & 0.75 & $3.4\times10^{-3}$ & 0.69 & $1.4\times10^{-2}$ & 0.49 & $1.2\times10^{-1}$ \\
+    dSprites(0)      & 0.83 & $1.1\times10^{-3}$ & 0.68 & $1.5\times10^{-2}$ & 0.70 & $1.1\times10^{-2}$ \\
+    3dshapes(0)      & 0.84 & $4.2\times10^{-5}$ & 0.86 & $2.4\times10^{-5}$ & 0.82 & $2.0\times10^{-4}$ \\
+    \addlinespace
+    TabularToy(0.75) & 0.54 & $4.9\times10^{-2}$ & 0.51 & $1.1\times10^{-1}$ & 0.27 & $4.1\times10^{-1}$ \\
+    dSprites(4)      & 0.67 & $1.9\times10^{-2}$ & 0.48 & $1.2\times10^{-1}$ & 0.55 & $7.4\times10^{-2}$ \\
+    3dshapes(5)      & 0.79 & $3.9\times10^{-4}$ & 0.69 & $3.5\times10^{-2}$ & 0.70 & $6.5\times10^{-3}$ \\
+    \addlinespace
+    CUB              & 0.72 & $9.0\times10^{-3}$ & 0.67 & $2.1\times10^{-2}$ & 0.44 & $1.1\times10^{-1}$ \\
+    HAM10K           & 0.49 & $1.8\times10^{-2}$ & 0.41 & $5.4\times10^{-2}$ & $-0.06$ & $7.7\times10^{-1}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\index{kiểm định chỉ số!chỗ bài báo nói quá bảng của mình}%
+Bảng ấy nói được một điều mạnh và một điều yếu hơn điều mà bài báo viết. Điều
+mạnh là CTL: nó tương quan với điểm số can thiệp cao hơn OIS ở cả tám bộ, kể cả ở
+HAM10K nơi OIS xuống $-0.06$, và giá trị $p$ của nó dưới $0.05$ ở cả tám, chỗ sát
+nhất là TabularToy(0.75) với $4.9\times10^{-2}$. Điều yếu hơn là ICL. Bài báo
+viết rằng hai điểm số \enquote{vượt OIS một cách hệ thống trên mọi bộ dữ liệu},
+và bảng của chính nó bác câu ấy ở ba dòng: dSprites(0) cho ICL $0.69$ so với OIS
+$0.70$, dSprites(4) cho $0.48$ so với $0.55$, và 3dshapes(5) cho $0.69$ so với
+$0.70$. Đọc theo giá trị $p$ thì ICL cũng thua ở đúng ba dòng ấy. Sách giữ phát
+biểu cho CTL, bỏ phần về ICL, và không dùng ICL làm bằng chứng ở bất cứ đâu
+trong chương. Không kết luận nào của bài phụ thuộc vào chỗ ấy: hai câu ngay sau
+đó trong chính bài đã phát biểu đúng phần yếu hơn, rằng CTL thường tương quan
+mạnh hơn ICL và có ý nghĩa ở mọi bộ dữ liệu.
+
+\index{kiểm định chỉ số!lập luận thứ ba, đối chiếu với điểm số can thiệp|)}%
+\index{ground truth!đường thứ tư, gán nhãn sẵn trong dữ liệu}%
+Điều làm phép kiểm định ấy chạy được không nằm trong khung thông tin nào cả, mà
+nằm ở chỗ bộ dữ liệu có gán nhãn khái niệm. Sách đã đi qua ba đường dựng ground
+truth và mục~\ref{sec:ch14-ground-truth-ke-tan-cong} đã đếm chúng: thiết kế
+nhiệm vụ ở chương~\ref{ch:chi-so-khong-do-do-trung-thuc}, thiết kế dữ liệu, và
+thiết kế mô hình ở chương~\ref{ch:giai-thich-duoi-tan-cong}. Đây là đường thứ
+tư, và nó là đường rẻ nhất trong bốn, vì không ai phải dựng gì cả: khi bộ dữ
+liệu đã có 112 thuộc tính gán tay cho mỗi bức ảnh chim, thì lượng thông tin mà
+mỗi thuộc tính mang về loài chim là một đại lượng tính thẳng từ bảng nhãn. Cả hai
+mốc trong định nghĩa~\ref{def:ch15-hai-diem-so} đến từ chỗ ấy, và điểm số can thiệp
+cũng vậy.
+
+\index{kiểm định chỉ số!ba chỗ phép kiểm định không với tới}%
+Ba chỗ mà phép kiểm định ấy không với tới, và chương nêu cả ba vì bỏ chỗ nào thì
+mục này thành lời khen. Thứ nhất, tiêu chí dùng để kiểm định không phải một tiêu
+chí tốt, chỉ là một tiêu chí độc lập. Mục~\ref{sec:ch15-do-ro-ri} đã liệt các
+chỗ hỏng của điểm số can thiệp theo lời chính bài báo, và bốn chỗ ấy không mất đi
+khi nó được dùng làm mốc: một dụng cụ đối chiếu tốt với một tiêu chí đặc hiệu mà
+không nhạy thì kế thừa đúng tính đặc hiệu ấy. Nói được là hai điểm số bắt được
+những gì điểm số can thiệp bắt được, và không nói được gì về những gì
+điểm số can thiệp bỏ sót.
+
+Thứ hai, phép ước lượng thông tin tương hỗ có độ chệch phụ thuộc số chiều của
+biến, nên hai đại lượng ước lượng trên hai biểu diễn khác số chiều thì không trừ
+nhau được. Với mô hình mà giá trị khái niệm là một số như ba loại của
+mục~\ref{sec:ch15-khai-niem-trong-mo-hinh} thì không sao, vì cả giá trị học được
+lẫn nhãn thật đều là một số. Với kiến trúc mà mỗi khái niệm mang cả một vector,
+lớp mô hình mà mục~\ref{sec:ch15-nguyen-nhan} đọc, thì phép trừ trong
+định nghĩa~\ref{def:ch15-hai-diem-so} không thực hiện được, và bài báo phải bỏ
+mốc đi, giữ lại vế đầu. Cái còn lại sau khi bỏ mốc không phải điểm số rò rỉ mà
+là lượng thông tin thô, so được giữa các mô hình cùng dạng và không so được với
+0.
+
+Thứ ba là ranh giới mà phần mở đầu chương đã nêu và đây là chỗ nó cụ thể ra.
+Thứ được kiểm định là một điểm số rò rỉ, tức một điểm số đo cột $\hat c_k$ mang
+thêm bao nhiêu so với một tập khái niệm đã gán nhãn. Nó không phải một chỉ số độ
+trung thực, và bảy chương của Phần~IV vẫn ở nguyên chỗ chúng đứng: không có
+dòng nào trong bảng~\ref{tab:ch15-tuong-quan-diem-so} nói gì về deletion, về
+insertion, hay về việc một điểm số attribution có nêu đúng đặc trưng mà mô hình
+dựa vào hay không. Điều chương này thêm vào là một mẫu, rằng có tồn tại một hoàn
+cảnh trong ngành nơi một dụng cụ đo được đối chiếu với một tiêu chí độc lập, và
+hoàn cảnh ấy có một đặc điểm nhận dạng được: ground truth nằm sẵn trong bộ dữ
+liệu chứ không phải do ai dựng.
+
+\index{kiểm định chỉ số!ở họ mô hình khái niệm|)}%
+Đặc điểm ấy là thứ chương~\ref{ch:ground-truth-dung-san} nhận, và nhận kèm câu
+hỏi hiển nhiên đi theo: một bộ dữ liệu có gán nhãn khái niệm thì đắt tới mức
+nào, và khi tập khái niệm ấy thiếu thì chuyện gì xảy ra. Mục sau trả lời vế thứ
+hai.

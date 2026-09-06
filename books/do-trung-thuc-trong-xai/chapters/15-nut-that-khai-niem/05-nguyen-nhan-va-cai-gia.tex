@@ -1,0 +1,127 @@
+\section{Bốn nguyên nhân và cái giá của lối thoát}
+\label{sec:ch15-nguyen-nhan}
+
+\index{rò rỉ!bốn nguyên nhân|(}%
+Mục trước để lại câu hỏi về chuyện gì xảy ra khi tập khái niệm thiếu. Có một
+dụng cụ đo rồi thì câu ấy trả lời được bằng số, và bài báo trả lời cả nó lẫn ba
+câu cùng loại: bốn quyết định thiết kế nào làm \tn{rò rỉ}{leakage} tăng, và tăng
+bao nhiêu~\autocite{p30leakage}.
+
+\index{rò rỉ!nguyên nhân thứ nhất, giám sát khái niệm quá nhẹ}%
+Nguyên nhân thứ nhất là trọng số $\beta$ đặt quá thấp. Đây là nguyên nhân dễ
+đoán nhất, vì $\beta$ thấp nghĩa là phép tối ưu ít bị phạt khi giá trị khái niệm
+lệch khỏi nhãn khái niệm, nên nó tự do dùng cột ấy vào việc khác. Đo trên nhiều
+bộ dữ liệu ở ba mức $\beta$, cả hai điểm số đều giảm khi $\beta$ tăng, đúng chiều
+người ta chờ. Điều không ai chờ nằm ở hai đầu. Rò rỉ không về 0 khi $\beta$ tăng
+mà chạm một mức sàn khác 0, và mức sàn ấy riêng cho từng lớp mô hình. Còn khi
+$\beta$ lên quá cao, khoảng $\beta \ge 10$ trong các thí nghiệm của bài, mô hình
+dồn hết vào việc học khái niệm và việc học nhiệm vụ hỏng, nên độ chính xác nhiệm
+vụ tụt hoặc rò rỉ tăng trở lại. Mỗi lớp mô hình vì thế có một khoảng $\beta$ tối
+ưu, và hai điểm số dùng để tìm khoảng ấy.
+
+\index{rò rỉ!nguyên nhân thứ hai, mã hóa quá giàu}%
+Nguyên nhân thứ hai là cách mã hóa giàu hơn mức cần. Khi nhãn khái niệm là bit
+nhị phân mà giá trị học được là xác suất thực hay logit, phần dư thừa ấy là chỗ
+trống, và phép tối ưu lấp nó. Bài báo phát biểu hai điều ở đây, và cả hai đều về
+mô hình logit so với mô hình mềm. Mức sàn nói ở trên cao hơn hẳn với mô hình
+logit. Và tăng $\beta$ kém hiệu quả hơn ở mô hình logit, nghĩa là không mua lại
+được bằng giám sát cái mà cách mã hóa đã cho không. Cặp mô hình của
+mục~\ref{sec:ch15-do-ro-ri} là một trường hợp cụ thể của cả hai: cùng bộ dữ
+liệu, cùng mức $\beta$, chỉ khác cách mã hóa, và
+\tn{điểm số can thiệp}{intervention score} lệch $0.301$.
+Ở mức $\beta$ rất thấp thì khác biệt ấy biến mất, vì ở đó cách mã hóa nào cũng
+rò rỉ nặng như nhau, không cách nào bị ràng buộc gì.
+
+\index{rò rỉ!nguyên nhân thứ ba, tập khái niệm thiếu}%
+Nguyên nhân thứ ba là tập khái niệm không đủ để giải nhiệm vụ. Khi bỏ bớt một
+phần đáng kể các khái niệm được gán nhãn, thông tin cần cho nhiệm vụ không còn
+nằm trọn trong tập ấy, nên mô hình cất phần thiếu vào những khái niệm còn lại.
+Cách đo mức thiếu là huấn luyện riêng một đầu phân loại trên khái niệm thật rồi
+xem nó đạt tới đâu: trên CUB, con số ấy là $1.000$ với tập đầy đủ 112 thuộc tính
+và $0.836$ với tập đã rút gọn. Theo tiêu chí của
+mục~\ref{sec:ch15-do-ro-ri}, rò rỉ tăng ở 14 trong 15 lớp mô hình huấn luyện
+trên tập khái niệm thiếu, và chênh lệch rõ nhất ở các mức $\beta$ thấp và trung
+bình.
+
+\index{rò rỉ!nguyên nhân thứ tư, đầu phân loại quá nghèo}%
+Nguyên nhân thứ tư đối xứng với nguyên nhân thứ ba và ít hiển nhiên hơn: đầu
+phân loại quá nghèo để học quan hệ giữa khái niệm và nhãn. Chỗ khó xử là đầu
+phân loại tuyến tính lại chính là lựa chọn mà người ta chuộng, vì một tầng tuyến
+tính trên bảng khái niệm cho một lời giải thích đọc thẳng ra được từ trọng số.
+Nhưng nếu nhãn thật là một hàm phi tuyến của các khái niệm thì tầng ấy không
+biểu diễn nổi, và phép tối ưu bù bằng cách bóp méo chính các giá trị khái niệm
+cho tới khi một hàm tuyến tính của chúng khớp được nhãn. Đo trên các bộ dữ liệu
+đã sửa nhãn thành hàm phi tuyến của khái niệm, rò rỉ tăng ở 7 trong 9 lớp mô
+hình, và tăng $\beta$ nói chung không bù lại được.
+
+\index{rò rỉ!bốn nguyên nhân|)}%
+Bốn nguyên nhân ấy không nằm cùng một hạng với nhau, và
+mục~\ref{sec:ch15-phan-con-lai} sẽ thấy khảo sát của ngành xếp chúng khác. Hai
+nguyên nhân đầu là \tn{siêu tham số}{hyperparameter}: người dựng mô hình chọn
+được, và hai điểm số
+chỉ ra chọn thế nào. Hai nguyên nhân sau là chuyện dữ liệu và chuyện nhiệm vụ,
+và không siêu tham số nào gỡ được. Đó là chỗ mà cái giá của lối thoát bắt đầu
+hiện ra.
+
+\index{CEM!rò rỉ theo thiết kế|(}%
+Cái giá ấy rõ nhất ở kiến trúc được coi là bước tiến của họ mô hình này. CEM,
+tức mô hình nhúng khái niệm, thay mỗi giá trị khái niệm bằng một cặp vector, một
+cho trạng thái có mặt và một cho trạng thái vắng mặt, rồi trộn hai vector theo
+xác suất khái niệm và đưa vector trộn vào đầu phân loại. Lý do người ta dựng nó
+là hiệu năng: CEM đạt độ chính xác nhiệm vụ cao hơn hẳn mô hình nút thắt thông
+thường, thường ngang mô hình đầu cuối không có tầng thắt nào, và vì thế được xem
+là đã gỡ được thế đánh đổi giữa độ chính xác và tính diễn giải được.
+
+\index{CEM!thông tin đi tự do từ đầu vào tới nhãn}%
+Bài báo đọc nó theo chiều ngược, và lập luận nằm ở chỗ giám sát đặt vào đâu.
+Trong CEM, mất mát trên khái niệm chỉ tác động lên xác suất khái niệm, còn thứ
+thật sự đi vào đầu phân loại là vector trộn, và không có mất mát nào đặt lên
+vector ấy. Nên trong lượt truyền xuôi, một lượng thông tin tùy ý được phép chảy
+từ đầu vào tới dự đoán nhãn, miễn là hai vector sinh ra vẫn đủ dự báo được cái
+bit khái niệm. Nói cách khác,
+\tn{rò rỉ khái niệm-nhiệm vụ}{concepts-task leakage} ở đây không phải một tai
+nạn của phép tối ưu mà là thứ kiến trúc chừa sẵn chỗ cho. Đo thì thấy đúng vậy:
+lượng thông tin mà vector trộn mang về nhãn đi cùng chiều với độ chính xác nhiệm
+vụ, trong khi độ chính xác khái niệm thì không, nghĩa là hiệu năng của CEM đến
+từ phần thông tin thêm chứ không từ phần khái niệm. Cùng hướng với điều ấy là một
+kết quả mà chính các tác giả CEM báo cáo: bỏ tới 90 phần trăm số khái niệm được
+gán nhãn của CUB, độ chính xác nhiệm vụ của CEM gần như không đổi.
+
+\index{CEM!rò rỉ liên khái niệm tăng theo giám sát}%
+\tn{Rò rỉ liên khái niệm}{interconcept leakage} ở CEM còn đi ngược quy luật của mục trên. Ở mô hình nút thắt
+thông thường, tăng $\beta$ làm cả hai điểm số giảm. Ở CEM, tăng giám sát khái
+niệm làm vector trộn dự báo khái niệm của chính nó tốt hơn, đúng như mong muốn,
+nhưng đồng thời làm nó dự báo các khái niệm khác cũng tốt hơn, tức rò rỉ liên
+khái niệm tăng. Đo trên xác suất khái niệm thì hai điểm số vẫn giảm như ở mô hình
+thường; đo trên vector trộn thì không. Vậy thông tin rò rỉ
+không mất đi mà chuyển chỗ, từ xác suất khái niệm sang vector, và vector là chỗ
+mà đầu phân loại thật sự đọc. Nên với CEM không có giá trị siêu tham số nào vừa
+cải thiện việc học khái niệm vừa giảm rò rỉ liên khái niệm.
+
+\index{CEM!rò rỉ căn chỉnh}%
+Bài báo còn tìm ra một dạng rò rỉ thứ ba, đặt tên là
+\tn{rò rỉ căn chỉnh}{alignment leakage}, và nó chỉ
+xuất hiện ở mô hình được huấn luyện kèm can thiệp. CEM trong lúc huấn luyện thỉnh
+thoảng bị đặt xác suất khái niệm về giá trị thật, để nó quen với việc bị can
+thiệp. Mô hình có thể học cách lợi dụng điều đó: sinh ra vector \enquote{đúng
+phía} dự báo nhãn tốt hơn vector phía kia, nên can thiệp làm hiệu năng tăng mà
+không phải vì khái niệm được sửa đúng. Đo trên năm bộ dữ liệu thì hiện tượng ấy
+vắng mặt ở ba và có mặt rõ ở hai, và ở hai bộ có nó thì nó mạnh hơn khi giám sát
+khái niệm và tần suất can thiệp lúc huấn luyện đều cao. Hệ quả cho mục~\ref{sec:ch15-dung-cu-duoc-kiem}
+là hệ quả đã nói ở đó: với kiến trúc kiểu này thì hiệu năng khi can thiệp thôi
+không còn đo rò rỉ nữa.
+
+\index{CEM!rò rỉ theo thiết kế|)}%
+\index{mô hình nút thắt khái niệm!cái giá của lối thoát}%
+Mục 9 của bài báo gom bốn nguyên nhân thành một quy trình thiết kế, và quy
+trình ấy khác các quy trình cùng loại ở chỗ nó chịu dừng. Bước đầu là kiểm xem tập khái
+niệm có đủ dự báo nhiệm vụ không, bằng cách huấn luyện vài đầu phân loại trên
+khái niệm thật, bắt đầu từ tầng tuyến tính. Nếu ngay cả kiến trúc phức tạp tùy ý
+cũng không đạt độ chính xác đủ cao thì tập khái niệm thiếu, và bài báo viết rằng
+khi không kiếm thêm được nhãn khái niệm thì phải kết luận nhiệm vụ ấy không phù
+hợp với lối tiếp cận theo khái niệm trên bộ dữ liệu đang có. Câu ấy là cái giá
+của lối thoát viết ra thành một dòng, và nó do chính người đề xuất khung viết.
+Các bước sau chọn cách mã hóa không giàu hơn mức cần, rồi chọn $\beta$ trong
+khoảng tối ưu; và bài báo ghi rằng ngay cả khi làm hết như vậy, rò rỉ ở mô hình
+mềm thường vẫn không tránh được, chỉ là ở mức mà mô hình dựa vào nó ít hơn dựa
+vào giá trị khái niệm.

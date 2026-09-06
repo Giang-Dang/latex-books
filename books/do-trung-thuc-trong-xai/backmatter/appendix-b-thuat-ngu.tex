@@ -271,6 +271,24 @@ cường độ nhân quả & causal strength \\
 
 \medskip
 
+\textbf{Chương 15}
+
+\begin{tabular}{@{}lp{7cm}@{}}
+\toprule
+Thuật ngữ & Tiếng Anh \\
+\midrule
+mô hình nút thắt khái niệm & concept bottleneck model \\
+rò rỉ & leakage \\
+rò rỉ khái niệm-nhiệm vụ & concepts-task leakage \\
+rò rỉ liên khái niệm & interconcept leakage \\
+rò rỉ căn chỉnh & alignment leakage \\
+điểm số can thiệp & intervention score \\
+khả năng điều khiển & steerability \\
+\bottomrule
+\end{tabular}
+
+\medskip
+
 \textbf{Giữ nguyên tiếng Anh (không dịch)}
 
 % longtable, not tabular: this block gains rows every chapter and a plain
@@ -358,10 +376,10 @@ STII & Giữ nguyên; xem phụ lục~\ref{app:viet-tat} \\
 Recall@K & Giữ nguyên; tên đại lượng đo thứ hạng của những cặp token do người gán nhãn so với những tương tác mà mô hình cho là quan trọng nhất \\
 AttnLRP & Giữ nguyên; tên phương pháp attribution theo luật lan truyền ngược có tính tới cơ chế chú ý \\
 Gemma 3 & Giữ nguyên; tên họ mô hình ngôn ngữ mà thí nghiệm thứ nhất của chương 11 chạy trên \\
-CLIP & Giữ nguyên; tên bộ mã hóa ảnh và văn bản dùng trong thí nghiệm thứ hai \\
+CLIP & Giữ nguyên; tên bộ mã hóa ảnh và văn bản dùng trong thí nghiệm thứ hai của chương 11, và trong chương 15 là mô hình mà sparse autoencoder học dựng lại kích hoạt \\
 SigLIP-2 & Giữ nguyên; tên một bộ mã hóa ảnh và văn bản khác trong cùng thí nghiệm \\
 MetaCLIP-2 & Giữ nguyên; tên bộ mã hóa lớn nhất trong cùng thí nghiệm \\
-ImageNet-1k & Giữ nguyên; tên bộ dữ liệu ảnh mà chỉ số nhận diện tương tác chạy trên tập kiểm định của nó \\
+ImageNet-1k & Giữ nguyên; tên bộ dữ liệu ảnh mà chỉ số nhận diện tương tác của chương 11 chạy trên tập kiểm định của nó, và mà sparse autoencoder của chương 15 được huấn luyện trên. Bài báo của chương 15 viết hoa chữ cuối; sách giữ một cách viết \\
 ImageNet-Seg & Giữ nguyên; tên bộ mặt nạ phân đoạn dùng trong thí nghiệm thứ ba \\
 Pascal VOC & Giữ nguyên; tên một bộ dữ liệu phân đoạn của thí nghiệm thứ ba \\
 MS COCO & Giữ nguyên; tên bộ dữ liệu phân đoạn còn lại của thí nghiệm thứ ba \\
@@ -383,5 +401,11 @@ On Manifold SHAP & Giữ nguyên; tên biến thể lấy chúng theo phân ph�
 Shapley Flow & Giữ nguyên; tên biến thể gán attribution cho cạnh của đồ thị nhân quả thay vì cho đỉnh \\
 ASV & Giữ nguyên; tên biến thể nới tiên đề đối xứng để đưa thông tin nhân quả vào, một trong năm mốc so sánh của chương 14. Bài báo dẫn nó có mở rộng chữ viết tắt, nhưng chương 14 dùng tên này đúng một lần nên phụ lục~\ref{app:viet-tat} không có dòng cho nó, theo cùng quy tắc đã bỏ dòng CQS \\
 Brier & Giữ nguyên; tên điểm số đo sai lệch bình phương của xác suất dự báo, một trong ba chỉ số của phép thử insertion ở chương 14 \\
+NIS & Giữ nguyên; tên điểm số đo rò rỉ trên những tập con khái niệm thay vì từng cặp, một trong hai điểm số cũ mà chương 15 đọc. Nguồn có mở rộng chữ viết tắt, nhưng chương 15 dùng tên này đúng một lần nên phụ lục~\ref{app:viet-tat} không có dòng cho nó, theo cùng quy tắc đã bỏ dòng CQS và dòng ASV \\
+TabularToy & Giữ nguyên; tên họ bộ dữ liệu bảng tổng hợp mà chương 15 dẫn kết quả từ đó, tham số của nó là mức tương quan giữa các khái niệm \\
+dSprites & Giữ nguyên; tên họ bộ dữ liệu ảnh hình khối tổng hợp trong cùng thí nghiệm \\
+3dshapes & Giữ nguyên; tên họ bộ dữ liệu ảnh vật thể ba chiều tổng hợp trong cùng thí nghiệm \\
+CUB & Giữ nguyên; tên bộ dữ liệu ảnh chim gán 112 thuộc tính, bộ dữ liệu thật thứ nhất của chương 15 \\
+HAM10K & Giữ nguyên; tên bộ dữ liệu ảnh tổn thương da gán 18 khái niệm hình thái, bộ dữ liệu thật thứ hai \\
 \end{longtable}
 \normalsize

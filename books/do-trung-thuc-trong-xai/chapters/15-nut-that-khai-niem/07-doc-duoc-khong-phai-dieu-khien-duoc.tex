@@ -1,0 +1,182 @@
+\section{Đọc được không có nghĩa là điều khiển được}
+\label{sec:ch15-doc-duoc-dieu-khien-duoc}
+
+\index{sparse autoencoder!nút thắt không ai gán nhãn|(}%
+Nhánh không giám sát mà mục trước bỏ lại có một chỗ khó mà cả bốn mục trên
+không chạm tới: ở đó không có nhãn khái niệm, nên mốc của
+định nghĩa~ef{def:ch15-hai-diem-so} không tồn tại và không đo rò rỉ được. Mục này đọc bài thứ ba của
+chương, bài đứng đúng ở nhánh ấy, và nó không đo \tn{rò rỉ}{leakage}. Nó đo hai thứ khác, và
+và hai thứ ấy không đi cùng nhau.
+
+\index{sparse autoencoder!vì sao nó thuộc chương này}%
+Sparse autoencoder, gọi tắt là SAE theo phụ lục~\ref{app:viet-tat}, học dựng lại
+kích hoạt của một mô hình đã huấn luyện xong bằng một biểu diễn thưa và nhiều
+chiều hơn chính kích hoạt ấy. Mục~\ref{sec:ch07-attribution-thanh-phan} đã đặt
+nó ở đâu trong bản đồ: nó không chấm điểm cho thành phần có sẵn mà học ra thành
+phần mới, với hy vọng rằng thành phần mới thì mỗi cái mang đúng một nghĩa thay
+vì nhiều nghĩa chồng lên nhau. Đặt cạnh CBM thì thấy hai bên là hai nửa của cùng
+một ý. CBM có tên trước rồi mới có đơn vị: con người chọn tập khái niệm, và mô
+hình phải học sao cho mỗi đơn vị khớp một cái tên. SAE có đơn vị trước rồi mới
+đi tìm tên: nó học ra hàng vạn đơn vị thưa, và việc gán nghĩa cho từng đơn vị là
+một bước riêng sau đó. Nên bài này là nút thắt khái niệm dựng theo chiều ngược,
+và chỗ hỏng của nó cũng ngược lại.
+
+\index{sparse autoencoder!hai phép đo trên từng nơ-ron}%
+Bài báo đo hai tính chất trên từng nơ-ron của một SAE, và định nghĩa cả hai bằng
+những phép tính rẻ~\autocite{p32cbmsae}. Tính chất thứ nhất là đọc được: một
+công cụ dò tên có sẵn nhận vào một tập khái niệm bằng chữ và gán cho mỗi nơ-ron
+cái tên khớp nhất với cách nó phản ứng trên một tập ảnh dò, còn điểm số là độ
+khớp ấy. Tính chất thứ hai là \tn{khả năng điều khiển}{steerability}: ép kích
+hoạt của đúng một nơ-ron lên một giá trị lớn, cho cả biểu diễn đã sửa chạy qua
+bộ giải mã rồi qua một mô hình ngôn ngữ thị giác, hỏi nó bức ảnh này có gì bằng
+đúng một từ, rồi đo độ gần giữa từ nó trả về và cái tên đã gán cho nơ-ron ấy.
+Phép ép ấy có hai biến thể khác nhau ở chỗ những nơ-ron còn lại nhận giá trị gì
+trong lúc ép, và bài báo chạy cả hai: hoặc đặt tất cả về không, hoặc để chúng ở
+giá trị mà một bức ảnh trắng sinh ra. Cộng với hai cách chấm điểm đọc được, độ
+khớp của công cụ dò tên và một điểm số đo mức đơn nghĩa của nơ-ron, thành bốn
+chỉ số mà mọi bảng kết quả dưới đây báo cáo.
+
+\index{mức quan trọng!đọc được và điều khiển được đo tách nhau}%
+Hai tính chất ấy đo hai thứ mà Phần~IV đã phải tách ra bằng lời. Đọc được là một
+phát biểu về những gì quan sát thấy: nơ-ron này sáng lên ở những ảnh nào, và cái
+gì chung giữa chúng. Điều khiển được là một phát biểu về nhân quả: ép nơ-ron này
+thì đầu ra đổi theo hướng nào. Và phát biểu thứ hai chính là mức quan trọng theo
+nghĩa mà mục~\ref{sec:ch09-doi-tuong-khac-nhau} đã cố định, không phải độ trung
+thực: nó chứng thực rằng đơn vị ấy có ảnh hưởng nhân quả lên đầu ra, không chứng
+thực rằng cái tên gán cho nó mô tả đúng vai trò của nó.
+
+\index{sparse autoencoder!bốn góc phần tư}%
+Kết quả là một bảng bốn ô. Trên một SAE 65\,536 nơ-ron huấn luyện từ kích hoạt
+của tầng 22 của một bộ mã hóa ảnh CLIP, với hệ số nở 64 và dữ liệu ImageNet-1k,
+lấy trung bình của mỗi điểm số làm ranh giới, số nơ-ron rơi vào bốn góc là:
+23\,763 nơ-ron, tức 36.26 phần trăm, thấp cả hai; 13\,022 nơ-ron, tức 19.87 phần
+trăm, đọc được mà không điều khiển được; 16\,403 nơ-ron, tức 25.03 phần trăm,
+điều khiển được mà không đọc được; và 12\,348 nơ-ron, tức 18.84 phần trăm, cao
+cả hai. Bốn số ấy cộng lại đúng bằng 65\,536.
+
+Con số cuối là con số cả mục xoay quanh: chưa tới một phần năm số nơ-ron của
+một SAE vừa có tên đọc được vừa ép được đầu ra đi theo cái tên ấy. Hai góc giữa
+nói vì sao con số ấy nhỏ. Có nơ-ron sáng lên đều đặn ở một loại ảnh, nhận được
+một cái tên rõ ràng, và ép nó thì đầu ra không đổi theo hướng nào cả. Có nơ-ron
+ép thì đầu ra đổi mạnh, mà tập ảnh làm nó sáng thì không có cái tên nào gọn cho
+chúng. Tổng hai góc ấy là 44.90 phần trăm, gần một nửa từ điển.
+
+\index{sparse autoencoder!khái niệm người dùng muốn thì không có}%
+Chỗ hỏng thứ hai là chỗ hỏng về diện, và nó không phụ thuộc vào ranh giới trung
+bình như bảng bốn ô. Dùng chính công cụ dò tên ấy để đếm xem trong một tập khái
+niệm cho trước, bao nhiêu khái niệm được ít nhất một nơ-ron của SAE nhận, thì
+kết quả phụ thuộc mạnh vào chỗ tập ấy lấy từ đâu. Bảng~\ref{tab:ch15-dien-khai-niem}
+là năm tập mà bài báo thử.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Số khái niệm mà một SAE 65\,536 nơ-ron nhận được, trên năm tập khái
+  niệm khác nhau~\autocite{p32cbmsae}. Hai dòng giữa là hai tập gắn với chính
+  bộ dữ liệu mà SAE được huấn luyện trên, nên chúng là hai dòng khó bào chữa
+  nhất. Hai dòng cuối cho thấy diện phủ đi xuống theo cỡ của tập chứ không theo
+  mức độ tập ấy xa dữ liệu huấn luyện.}
+  \label{tab:ch15-dien-khai-niem}
+  \begin{tabular}{@{}lrrr@{}}
+    \toprule
+    Tập khái niệm & Nhận được & Tổng & Tỉ lệ \\
+    \midrule
+    Tập thị giác nhỏ dùng để chấm điểm đọc được & 1\,153 & 1\,197 & 96.3\% \\
+    \addlinespace
+    Tập thứ nhất gắn với ImageNet & 3\,445 & 4\,729 & 72.8\% \\
+    Tập thứ hai gắn với ImageNet & 4\,333 & 7\,827 & 55.3\% \\
+    \addlinespace
+    Ba nghìn từ tiếng Anh thông dụng & 1\,857 & 3\,000 & 61.9\% \\
+    Hai mươi nghìn từ tiếng Anh thông dụng & 5\,596 & 20\,000 & 28.0\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Dòng đầu là dòng dễ, và nó dễ vì tập ấy nhỏ và định nghĩa gọn. Hai dòng giữa là
+chỗ đắt: chúng gắn với chính bộ dữ liệu mà SAE được huấn luyện trên, nên không
+giải thích được bằng việc hỏi sai chỗ, và ở đó SAE thiếu 27 tới 45 phần trăm số
+khái niệm. Hai dòng cuối cho thấy cái quyết định không phải khoảng cách tới dữ
+liệu huấn luyện mà là cỡ của tập: hỏi ba nghìn từ thì thiếu gần bốn phần mười,
+hỏi hai mươi nghìn từ thì thiếu hơn bảy phần mười. Một từ điển 65\,536 đơn vị,
+tức lớn gấp hơn ba lần danh sách hai mươi nghìn từ ấy, vẫn không mang nổi một
+phần ba số khái niệm trong đó.
+
+\index{CB-SAE!ghép hai nhánh}%
+Phép sửa mà bài đề xuất ghép hai nhánh của mục~\ref{sec:ch15-khai-niem-trong-mo-hinh}
+lại. Nó chấm điểm từng nơ-ron của SAE theo hai tính chất trên, cắt bỏ những
+nơ-ron có tổng hai điểm số thấp nhất, rồi bù vào phần đã mất bằng một tầng thắt
+khái niệm học riêng, gắn với một tập khái niệm do người dùng nêu. Tầng bù ấy học
+theo ba mục tiêu: dựng lại được kích hoạt như trước khi cắt, kích hoạt đúng
+khái niệm của mình, và ép được đầu ra theo khái niệm ấy. Kết quả gọi là CB-SAE.
+Cách nó chọn tập khái niệm cho tầng bù nói rõ ý ấy: nó chỉ lấy những khái
+niệm mà SAE giữ lại \emph{không} biểu diễn được, nên tầng thắt ở đây không thay
+SAE mà lấp chỗ SAE thiếu.
+
+\index{CB-SAE!hai tính chất vẫn không đi cùng nhau}%
+Đo lại trên ba mô hình phía sau, hai mô hình ngôn ngữ thị giác và một mô hình
+sinh ảnh, CB-SAE tốt hơn SAE gốc ở cả bốn chỉ số của cả ba mô hình. Nhưng bảng
+tách riêng ba nhóm nơ-ron mới là chỗ nói được nhiều nhất, và nó nói lại đúng
+điều mà bốn góc phần tư đã nói. Trên mô hình ngôn ngữ thị giác thứ nhất, nhóm
+nơ-ron thắt khái niệm mới đạt điểm đọc được 0.323, cao hơn hẳn nhóm nơ-ron SAE
+được giữ lại ở 0.238; nhưng chính nhóm ấy lại điều khiển kém hơn, 0.231 so với
+0.263 theo cách ép thứ nhất và 0.219 so với 0.252 theo cách ép thứ hai. Đặt tên
+sẵn cho một đơn vị làm nó đọc được hơn và không làm nó điều khiển được hơn. Hai
+tính chất tách nhau cả trong SAE lẫn trong phép sửa dựng ra để hàn chúng lại.
+
+\index{CB-SAE!một con số cộng chứ không phải trung bình}%
+Một chỗ trong phần kết quả cần sửa trước khi trích. Bài báo báo cáo sáu mức tăng
+tương đối của CB-SAE so với SAE gốc, mỗi mức là trung bình hai chỉ số của một
+cặp tính chất và mô hình, và gọi cả sáu là trung bình. Dựng lại từ chính bảng
+của bài thì năm mức đúng là trung bình, còn mức thứ tư, khả năng điều khiển trên
+mô hình ngôn ngữ thị giác thứ hai, là tổng: hai chỉ số của cặp ấy tăng 7.26 và
+6.78 phần trăm, nên trung bình của chúng là 7.02 còn tổng là 14.04, và con số
+bài in cho ô ấy là 14.0. Nó đi tiếp vào phần tóm tắt, nơi mức tăng khả năng điều
+khiển của cả bài được báo là 14.5 phần trăm, trung bình của ba mức 27.5, 14.0 và
+2.1. Thay 14.0 bằng 7.0 thì con số ấy là 12.2 phần trăm. Mức tăng đọc được, 32.1
+phần trăm, thì
+đúng: nó là trung bình của 33.0, 29.0 và 34.3, và cả ba mức ấy đều dựng lại
+được. Sách in con số đã sửa và giữ nguyên mọi thứ hạng, vì dấu của mọi phép so
+không đổi: CB-SAE vẫn hơn SAE gốc ở cả bốn chỉ số của cả ba mô hình.
+
+\index{sparse autoencoder!một công cụ đứng cả hai phía}%
+Còn một chỗ mà bài không nói và sách nói. Phần giới hạn của bài ghi rằng hiệu
+quả của phương pháp phụ thuộc vào việc công cụ dò tên gán tên có chính xác hay
+không, và đó là một câu đúng nhưng chưa đủ. Công cụ ấy không đứng một phía mà
+đứng cả hai: nó gán cái tên, điểm số đọc được \emph{là} độ khớp mà nó tính ra
+khi gán, và điểm số điều khiển được thì đo độ gần giữa đầu ra sau khi ép và
+chính cái tên nó đã gán. Nên một nơ-ron mà công cụ ấy gán nhầm tên sẽ bị chấm
+thấp ở cả hai điểm số cùng lúc, và bốn góc phần tư ở trên không tách được một
+nơ-ron thật sự vô nghĩa khỏi một nơ-ron có nghĩa mà công cụ dò không gọi được
+tên. Đây là hình dạng quen: một dụng cụ chấm điểm cho một lời giải thích, dựng
+trên một dụng cụ khác chưa ai kiểm, đúng cái vòng mà
+chương~\ref{ch:tro-choi-attribution} đã đi.
+
+\index{sparse autoencoder!nút thắt không ai gán nhãn|)}%
+\index{khoảng trống nghiên cứu!cái chương này để lại}%
+Gom cả chương lại thì có ba thứ đi tiếp và một thứ dừng ở đây. Thứ đi tiếp thứ
+nhất là đường thứ tư dựng ground truth mà
+mục~\ref{sec:ch15-dung-cu-duoc-kiem} đã đặt tên, cùng cái giá của nó, và
+chương~\ref{ch:ground-truth-dung-san} nhận nó cạnh ba đường kia. Cái giá ấy có
+hai nửa: phải có người gán nhãn khái niệm cho từng điểm dữ liệu, và nếu tập nhãn
+ấy không đủ dự báo nhiệm vụ thì theo chính lời người đề xuất khung ở
+mục~\ref{sec:ch15-nguyen-nhan}, nhiệm vụ ấy không dùng lối này được. Thứ đi tiếp
+thứ hai là một phép đo, và nó rẻ: dựng một tập khái niệm không cần nhãn thì làm
+được, còn hỏi xem mỗi đơn vị có ép được đầu ra hay không thì chỉ tốn một lượt
+chạy cho mỗi đơn vị. Thứ đi tiếp thứ ba là một yêu cầu đặt lên dụng cụ tương
+lai, và nó là yêu cầu thứ ba mà sách gom được: mọi phép đọc tên của một đơn vị
+bên trong mô hình phải đi kèm một phép thử ép đơn vị ấy, và phải báo cả hai kết
+quả, vì 18.84 phần trăm là tỉ lệ những đơn vị mà hai kết quả cùng đạt. Yêu cầu
+ấy đứng cạnh yêu cầu công bố tập can thiệp của
+mục~\ref{sec:ch14-dieu-chua-giai-quyet} và yêu cầu mô tả chỗ lệch của
+mục~\ref{sec:ch13-tran-noi-gi}.
+
+Thứ dừng ở đây là chính chữ trong nhan đề sách. Không bài nào trong ba bài dùng
+chữ \enquote{faithful} một lần nào trong phần thân, và điều đó lặp lại đúng cái
+đã xảy ra ở chương~\ref{ch:giai-thich-duoi-tan-cong}: hai tầng liền của thang
+đọc, sáu bài báo, không tầng nào với tới chữ ấy. Ba đại lượng mà chương này đọc
+là lượng thông tin thừa trong một cột khái niệm, độ khớp giữa một cái tên và một
+tập ảnh, và độ gần giữa một đầu ra bị ép và cái tên ấy. Không đại lượng nào so
+một lời giải thích với hành vi của mô hình dưới một tập can thiệp đã nêu, tức
+không đại lượng nào là định nghĩa~\ref{def:ch01-do-trung-thuc}.
+Chương~\ref{ch:ground-truth-dung-san} đọc ba lối thoát mà văn liệu phê phán chỉ
+ra, và câu hỏi nó mang theo từ đây là câu hỏi mà mục này vừa đo được một nửa:
+một khái niệm bên trong mô hình đọc được tên, có nghĩa là gì.

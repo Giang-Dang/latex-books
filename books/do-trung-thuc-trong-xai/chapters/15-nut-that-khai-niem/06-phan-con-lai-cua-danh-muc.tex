@@ -1,0 +1,105 @@
+\section{Phần còn lại của danh mục}
+\label{sec:ch15-phan-con-lai}
+
+\index{mô hình nút thắt khái niệm!chín chỗ yếu|(}%
+Câu mà mục trước khép lại là câu của chính người đề xuất khung, rằng
+\tn{rò rỉ}{leakage} ở mô hình mềm thường không tránh được. Mục này đặt câu ấy
+vào chỗ của nó, vì rò rỉ là
+một trong chín chỗ yếu mà ngành tự liệt kê, và tám chỗ còn lại quyết định lối
+thoát của Phần~V còn lại bao nhiêu.
+
+Bản liệt kê là một khảo sát~\autocite{p31cbmrisks}. Nó không chạy thí nghiệm
+nào, giống khảo sát biến thể LIME của
+chương~\ref{ch:lime-nao-dang-tin}, nên mọi con số trong nó là con số của người
+khác và giá trị của nó nằm ở cách sắp xếp. Nó chia theo hai nhánh mà
+mục~\ref{sec:ch15-khai-niem-trong-mo-hinh} đã nêu: năm chỗ yếu ở nhánh có giám
+sát và bốn ở nhánh không giám sát.
+
+\index{mô hình nút thắt khái niệm!hiểu ngữ nghĩa hạn chế}%
+Ở nhánh có giám sát, chỗ yếu thứ nhất là rò rỉ và bốn mục trên đã đọc nó. Chỗ
+thứ hai là mô hình không thật sự hiểu nội dung ngữ nghĩa của khái niệm. Bằng
+chứng gọn nhất cho điều đó là phép thử che: che đúng vùng ảnh chứa một khái
+niệm, rồi xem mô hình có còn báo khái niệm ấy hiện diện hay không, và nó vẫn báo.
+Cùng hướng ấy là quan sát rằng bản đồ nổi bật gắn với từng khái niệm không tập
+trung vào vị trí của khái niệm mà lan cả sang nền. Chỗ yếu này khác rò rỉ ở đối
+tượng: rò rỉ nói cột khái niệm mang thêm cái gì, còn ở đây cột khái niệm mang
+đúng cái tên của nó nhưng đọc nó ra từ chỗ khác trong ảnh.
+
+\index{mô hình nút thắt khái niệm!giả thiết khái niệm độc lập}%
+Chỗ thứ ba là giả thiết các khái niệm độc lập với nhau. Giả thiết ấy tạm chấp
+nhận được với khái niệm nhìn thấy trực tiếp như màu sắc, và hỏng với khái niệm
+mang tính ngữ nghĩa như hình dạng, vì những khái niệm ấy chồng lấn nhau. Đây là
+chỗ yếu duy nhất trong chín chỗ mà khảo sát ghi rằng chưa ai khảo sát có hệ
+thống. Chỗ thứ tư là tính dễ vỡ trước phép nhiễu, và nó có hai mặt: nhiễu trong
+không gian đầu vào, nơi đã có phép tấn công xóa một khái niệm, đưa vào một khái
+niệm hoặc đánh tráo cả một tập khái niệm mà vẫn giữ nguyên nhãn dự đoán; và
+nhiễu trong chính không gian khái niệm, nơi có phép cấy cửa hậu bằng cách thay
+một tập khái niệm chuẩn bị sẵn để ép mô hình trả một nhãn định trước. Khảo sát
+nhận xét rằng không gian khái niệm thưa hơn không gian đầu vào, dù nhỏ chiều
+hơn, nên nó dễ bị tấn công hơn.
+
+\index{mô hình nút thắt khái niệm!can thiệp không cân}%
+Chỗ thứ năm đánh thẳng vào điều mà mục~\ref{sec:ch15-khai-niem-trong-mo-hinh} gọi
+là toàn bộ sức hấp dẫn của họ mô hình này. Can thiệp được cho là chỗ con người
+sửa được mô hình, và một nghiên cứu có hệ thống trên các mô hình lớn tìm ra rằng
+có những tập khái niệm can thiệp vào thì không sửa được dự đoán sai, còn tập
+khác thì sửa được dễ dàng, và điều đó xảy ra cả với những khái niệm có giá trị
+rỗng. Kết luận của nghiên cứu ấy là can thiệp không phải một thao tác độc lập
+đáng tin cậy mà là hệ quả trực tiếp của quy trình huấn luyện. Đọc cạnh
+mục~\ref{sec:ch15-ro-ri} thì hai bên nói cùng một chuyện từ hai phía: ở đó can
+thiệp thất bại vì nó xóa mất phần thông tin thêm mà đầu phân loại trông cậy, ở
+đây nó thất bại vì quan hệ giữa các khái niệm học được không phải quan hệ mà
+người can thiệp tưởng.
+
+\index{mô hình nút thắt khái niệm!bốn chỗ yếu của nhánh không giám sát}%
+Bốn chỗ yếu của nhánh không giám sát khác hẳn về hình dạng, vì ở đó không có
+nhãn khái niệm nên không có mốc nào để lệch khỏi. Ba trong bốn nói được gọn, còn
+chỗ thứ ba thì phải để riêng một đoạn vì cái tên nó mang. Chỗ thứ nhất là mô
+hình học phải tương quan giả từ thiên lệch của dữ liệu, ví dụ trên một bộ ảnh
+camera hành trình thì đặc trưng nền lấn át còn đèn đỏ và biển dừng bị bỏ qua.
+Chỗ thứ hai là không có cách nào đọc thẳng một khái niệm đã học: người ta phải
+suy ra nó từ những mẫu huấn luyện kích hoạt nó mạnh nhất, và việc hiểu tập mẫu
+ấy nói lên điều gì thì để cho người dùng. Chỗ thứ tư là thế đánh đổi giữa hiệu
+năng và tính diễn giải được đặc biệt gay ở nhánh này, vì thứ duy nhất ép khái
+niệm phải đọc được là các phép chính quy hóa, và chính chúng làm hiệu năng tụt.
+
+\index{tính ổn định!nghĩa thứ ba của chữ fidelity}%
+Chỗ thứ ba mang một cái tên mà sách đã cấp cho thứ khác. Khảo sát gọi nó là
+\enquote{concept fidelity} không nhất quán, và định nghĩa nó là việc các mẫu
+cùng một lớp phải chia sẻ phần lớn khái niệm với nhau; điều quan sát được là các
+phương pháp không giám sát học ra những khái niệm khác hẳn nhau giữa các lần
+chạy, dù hiệu năng nhiệm vụ ngang nhau. Đây là lần thứ ba chữ ấy mang một nghĩa
+khác trong sách, sau đại lượng fidelity của chương~\ref{ch:khung-hop-nhat} và
+nhóm vấn đề mà chương~\ref{ch:lime-nao-dang-tin} gọi là độ khớp. Đọc theo
+bảng~\ref{tab:ch01-bon-quan-he} thì nghĩa thứ ba này không phải hai nghĩa kia mà
+là \tn{tính ổn định}{stability}: nó so hai lần chạy với nhau, không so một lời
+giải thích với
+đầu ra của mô hình và cũng không so nó với hành vi. Sách giữ chữ fidelity cho
+đại lượng của chương~\ref{ch:khung-hop-nhat} và gọi chỗ yếu này bằng tên của
+quan hệ mà nó thật sự nói tới.
+
+\index{mô hình nút thắt khái niệm!không kiến trúc nào đủ sáu tính chất}%
+Khảo sát khép phần có giám sát bằng một bảng đối chiếu, và bảng ấy là chỗ nó nói
+được nhiều nhất. Mười kiến trúc, xếp theo thứ tự công bố từ CBM gốc
+tới các biến thể mới nhất, đối chiếu với sáu tính chất: có chống rò rỉ không, có
+mô hình hóa quá trình sinh dữ liệu theo lối xác suất không, có cấu trúc hóa
+không gian khái niệm không, có ý thức về can thiệp không, có hiểu ngữ nghĩa
+không, và có bền trước phép nhiễu không. Không kiến trúc nào đạt cả sáu, và
+khảo sát nói thẳng điều đó trong chú thích bảng. Ba con số đọc được từ bảng.
+Kiến trúc tốt nhất đạt bốn trong sáu. Cột cấu trúc hóa không gian khái niệm
+chỉ có đúng một dấu tích trong mười dòng, khớp với nhận xét ở trên rằng đây là
+chỗ yếu chưa ai khảo sát có hệ thống. Và CBM gốc, dòng đầu bảng,
+không đạt tính chất nào trong sáu.
+
+\index{mô hình nút thắt khái niệm!chín chỗ yếu|)}%
+Còn hai điều về chính khảo sát mà chương phải nói. Thứ nhất, câu của nó về biểu
+diễn cứng và biểu diễn mềm là câu sai chiều, và
+mục~\ref{sec:ch15-dung-cu-duoc-kiem} đã đối chiếu với bài gốc rồi. Thứ hai, và
+đáng chú ý hơn với sách này, mục hướng nghiên cứu tương lai của nó gồm ba hướng:
+dùng mô hình ngôn ngữ và mô hình thị giác ngôn ngữ để phát hiện khái niệm, phòng
+thủ trước các phép tấn công quyền riêng tư, và thiết kế kiến trúc tốt hơn. Cả ba
+đều là hướng dựng mô hình. Một khảo sát dài mười trang về rủi ro và giới hạn của
+cả một họ mô hình khái niệm, viết sau khi đã liệt kê chín chỗ yếu, không nêu một
+hướng nào về việc đo. Bài của mục~\ref{sec:ch15-dung-cu-duoc-kiem} lên arXiv
+trước khảo sát này và làm đúng việc ấy, nên chỗ trống này là chỗ trống trong tầm
+nhìn của khảo sát chứ không phải trong ngành.

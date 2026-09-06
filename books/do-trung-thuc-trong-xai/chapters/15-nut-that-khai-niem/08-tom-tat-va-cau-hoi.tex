@@ -1,0 +1,100 @@
+\begin{tomtat}
+\begin{itemize}
+  \item CBM ép luồng tính toán qua một tầng mà mỗi đơn vị được huấn luyện để
+nhận đúng một khái niệm do con người gán nhãn, rồi dự đoán nhãn chỉ từ tầng ấy.
+So với mười bốn chương trước, nó bỏ được hai thứ cùng lúc: không phải hỏi mô
+hình ở những đầu vào đã bị sửa, và không phải đi tìm ground truth, vì nhãn khái
+niệm nằm sẵn trong bộ dữ liệu. Các đơn vị của tầng thắt là thành phần theo nghĩa
+của mục~\ref{sec:ch07-ba-doi-tuong}, chỉ khác ở chỗ chúng được dựng theo tên có
+sẵn thay vì được đặt tên sau.
+  \item \tn{Rò rỉ}{leakage} là việc mô hình cất thêm thông tin vào chính các giá
+trị khái niệm, và đầu phân loại đọc phần thông tin thêm ấy trong khi người giám
+sát thì không. Nó đi xuyên qua tầng thắt chứ không đi vòng, nên bảng khái niệm
+vẫn đầy đủ về hình thức, và can thiệp đúng vào một khái niệm có thể làm độ chính
+xác nhiệm vụ tụt đi. Đọc theo bảng~\ref{tab:ch01-bon-quan-he}, rò rỉ là họ hàng
+của định nghĩa~\ref{def:ch01-do-trung-thuc} và không phải nó: cái được trưng ra
+là một tầng của chính mô hình chứ không phải một lời giải thích bên ngoài, phần
+chênh được định nghĩa so với một tập khái niệm đã gán nhãn nên đổi tập thì đổi
+mốc, và không bài nào trong ba bài gọi nó là độ trung thực.
+  \item Định nghĩa~\ref{def:ch15-hai-diem-so} đo rò rỉ bằng phần chênh giữa
+lượng thông tin chuẩn hóa mà giá trị học được mang và lượng thông tin mà khái
+niệm thật mang, về nhãn cho CTL và về khái niệm khác cho ICL. Cần một định nghĩa
+theo lối thông tin vì các điểm đánh giá thông thường không thấy rò rỉ: một cặp
+mô hình có sáu điểm đánh giá lệch nhau không quá $0.005$ mà
+\tn{điểm số can thiệp}{intervention score} lệch $0.301$.
+  \item Bảng~\ref{tab:ch15-tuong-quan-diem-so} là chỗ Phần~IV chờ suốt bảy
+chương: một dụng cụ đo được đối chiếu với một tiêu chí độc lập. CTL vượt OIS ở
+cả tám bộ dữ liệu và có ý nghĩa thống kê ở cả tám; ICL thì thua OIS ở ba bộ, nên
+câu của bài rằng cả hai vượt OIS trên mọi bộ dữ liệu là câu nói quá bảng của
+chính nó. Ba chỗ phép kiểm định ấy không với tới: tiêu chí dùng làm mốc đặc hiệu
+mà không nhạy, phép ước lượng thông tin không so được hai biểu diễn khác số
+chiều, và thứ được kiểm định là điểm số rò rỉ chứ không phải chỉ số độ trung
+thực. Điều làm nó chạy được là ground truth có sẵn trong bộ dữ liệu, tức đường
+thứ tư sau ba đường mà mục~\ref{sec:ch14-ground-truth-ke-tan-cong} đã đếm.
+  \item Bốn nguyên nhân gây rò rỉ chia hai hạng. Hai nguyên nhân đầu là siêu
+tham số và chọn được: giám sát khái niệm quá nhẹ, và cách mã hóa giàu hơn mức
+cần. Hai nguyên nhân sau thì không: tập khái niệm không đủ dự báo nhiệm vụ, và
+đầu phân loại quá nghèo để học quan hệ giữa khái niệm và nhãn. Cái giá của lối
+thoát nằm ở hạng thứ hai, và chính người đề xuất khung viết ra: khi không kiếm
+thêm được nhãn khái niệm thì phải kết luận nhiệm vụ ấy không dùng lối tiếp cận
+theo khái niệm được. Ở CEM thì
+\tn{rò rỉ khái niệm-nhiệm vụ}{concepts-task leakage} là thứ kiến trúc chừa sẵn
+chỗ cho, không phải tai nạn của phép tối ưu, nên hiệu năng của nó đến từ phần
+thông tin thêm chứ không từ phần khái niệm; CEM còn thêm một dạng thứ ba,
+\tn{rò rỉ căn chỉnh}{alignment leakage}, chỉ xuất hiện ở mô hình được huấn luyện
+kèm can thiệp, và đó là lý do hiệu năng khi can thiệp thôi không đo được rò rỉ ở
+kiến trúc ấy.
+  \item Bài thứ ba đo tách nhau hai tính chất của từng nơ-ron trong một SAE: có
+tên đọc được, và ép được đầu ra đi theo cái tên ấy. Tính chất thứ hai là mức
+quan trọng theo nghĩa mục~\ref{sec:ch09-doi-tuong-khac-nhau} đã cố định, không
+phải độ trung thực. Chỉ 18.84 phần trăm nơ-ron đạt cả hai, và một từ điển
+65\,536 đơn vị chỉ nhận được 28.0 phần trăm số khái niệm trong một danh sách hai
+mươi nghìn từ thông dụng. Mức tăng \tn{khả năng điều khiển}{steerability} mà bài
+báo cáo cho cả ba mô hình là 14.5 phần trăm, trung bình của ba con số; một trong
+ba con số ấy là tổng hai chỉ số chứ không phải trung bình của chúng, và thay nó
+bằng trung bình thì mức tăng là 12.2 phần trăm. Mọi thứ hạng giữ nguyên. Cả ba
+bài đều không dùng chữ \enquote{faithful} một lần nào trong phần thân.
+\end{itemize}
+\end{tomtat}
+
+\cauhoi
+\begin{cauhoids}
+  \item Mục~\ref{sec:ch15-ro-ri} lấy ngưỡng tại 1 trên hàm chạy suốt sách và
+được nhiệm vụ \enquote{hoặc}. Hãy lấy ngưỡng tại 2 thay vào đó, viết ra nhãn
+$y$ ở bốn tổ hợp, rồi tính $H(y)$, $I(c_1,y)$ và $I(c_2,y)$ dưới cùng giả thiết
+độc lập. Từ đó cho biết trần của $\mathrm{CTL}_1$ và trần của $\mathrm{CTL}_2$
+trên nhiệm vụ mới, và giải thích vì sao hai trần ấy khác nhau trong khi ở nhiệm
+vụ \enquote{hoặc} chúng bằng nhau.
+  \item Mục~\ref{sec:ch15-dung-cu-duoc-kiem} gọi lập luận thứ hai của bài báo là
+phép kiểm nhất quán chứ không phải phép kiểm định. Hãy dựng một điểm số hoàn
+toàn vô dụng làm dụng cụ đo rò rỉ mà vẫn tắt trên mọi mô hình cứng, rồi cho biết
+lập luận thứ nhất và lập luận thứ ba loại nó ở bước nào.
+  \item Đọc bảng~\ref{tab:ch15-tuong-quan-diem-so} và phát biểu lại đúng câu mà
+bài báo nói quá, tức viết một câu về quan hệ giữa CTL, ICL và OIS mà cả tám dòng
+của bảng đều ủng hộ. Sau đó cho biết nếu chỉ giữ ba dòng đầu, tức ba bộ dữ liệu
+có khái niệm ít tương quan, thì câu ấy phải sửa thế nào.
+  \item Điểm số can thiệp được mô tả là đặc hiệu hoàn hảo mà không nhạy. Hãy nêu
+một mô hình có $\mathrm{CTL}$ và $\mathrm{ICL}$ đều bằng 0 mà hiệu năng khi can
+thiệp vẫn tụt, rồi cho biết chỗ tụt ấy đến từ đâu và vì sao nó không mâu thuẫn
+với việc gọi điểm số can thiệp là đặc hiệu.
+  \item Mục~\ref{sec:ch15-phan-con-lai} xếp chỗ yếu mà khảo sát gọi là
+\enquote{concept fidelity} vào dòng tính ổn định của
+bảng~\ref{tab:ch01-bon-quan-he}. Hãy làm điều tương tự cho ba chỗ yếu còn lại
+của nhánh không giám sát, và với chỗ nào không xếp vào dòng nào được thì nói rõ
+bảng ấy thiếu quan hệ gì.
+  \item Mục~\ref{sec:ch15-doc-duoc-dieu-khien-duoc} chỉ ra rằng cùng một công cụ
+dò tên vừa gán tên vừa cung cấp cả hai điểm số. Hãy đề xuất một cách đo khả năng
+điều khiển không dùng tới cái tên ấy, rồi cho biết cách của bạn đo được tính
+chất nào trong hai tính chất và mất tính chất nào.
+  \item Tỉ lệ 18.84 phần trăm là tỉ lệ nơ-ron đạt cả hai tính chất. Hãy cho biết
+con số ấy chặn được điều gì trong ba điều sau và không chặn được hai điều kia:
+mức quan trọng của một đơn vị, độ trung thực theo
+định nghĩa~\ref{def:ch01-do-trung-thuc}, và độ khớp giữa tên gọi của một đơn vị
+với vai trò thật của nó.
+  \item Đọc mục 9, \enquote{Lessons for model design}, trong \enquote{Leakage
+and Interpretability in Concept-Based Models} của Parisini và cộng
+sự~\autocite{p30leakage}. Quy trình ở đó bắt đầu bằng việc huấn luyện vài đầu
+phân loại trên khái niệm thật. Hãy cho biết bước ấy đo được nguyên nhân nào
+trong bốn nguyên nhân của mục~\ref{sec:ch15-nguyen-nhan}, vì sao nó không tách
+được hai nguyên nhân sau khỏi nhau, và cần thêm phép đo nào để tách.
+\end{cauhoids}

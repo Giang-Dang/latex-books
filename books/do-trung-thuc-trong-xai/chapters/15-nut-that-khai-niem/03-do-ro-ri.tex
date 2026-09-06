@@ -1,0 +1,129 @@
+\section{Hai điểm số đo rò rỉ}
+\label{sec:ch15-do-ro-ri}
+
+\index{rò rỉ!vì sao điểm đánh giá không thấy|(}%
+Câu mà mục trước dừng lại được chỉ đứng vững nếu rò rỉ là một đại lượng đo được,
+vì một bản sao của độ trung thực mà không ai đo được thì cũng chỉ là một phép so
+sánh. Đo được thì nó đo được bằng phần chênh mà mục trước để lại chưa có công
+thức: chênh giữa lượng thông tin mà cột $\hat c_k$ mang và lượng thông tin mà
+khái niệm thật mang. Trước khi viết công thức ấy ra, mục này hỏi vì sao phải
+viết, tức những cách đo sẵn có hỏng ở đâu.
+
+\index{rò rỉ!điểm đánh giá khái niệm không thấy}%
+Cách đo hiển nhiên nhất là chấm điểm chính bộ mã hóa: độ chính xác trên khái
+niệm, điểm F1, hay AUROC. Cách ấy không thấy \tn{rò rỉ}{leakage}, và bài báo cho
+thấy điều đó bằng một cặp mô hình chứ không bằng lập luận~\autocite{p30leakage}.
+Trên bộ dữ
+liệu bảng tổng hợp của nó, một mô hình mềm và một mô hình logit huấn luyện ở
+cùng mức $\beta$ có độ chính xác khái niệm $0.993$ và $0.995$, điểm F1 khái niệm
+$0.992$ và $0.995$, AUROC khái niệm $0.992$ và $0.995$, rồi độ chính xác, F1 và
+AUROC trên nhiệm vụ lần lượt $0.990$ và $0.991$ ở cả ba. Sáu con số, và không
+con số nào lệch quá $0.005$. Lấy ngưỡng $0.5$ để đọc một xác suất mềm thành một bit
+thì hai mô hình gần như không phân biệt được. Nhưng đem can thiệp lên toàn bộ
+khái niệm rồi so với mốc, mô hình thứ nhất mất $0.000$ độ chính xác còn mô hình
+thứ hai mất $0.301$.
+
+\index{điểm số can thiệp!định nghĩa và giới hạn}%
+Đại lượng vừa dùng cần một cái tên, vì cả mục~\ref{sec:ch15-dung-cu-duoc-kiem}
+xoay quanh nó. Gọi nó là \tn{điểm số can thiệp}{intervention score}. Nó là hiệu
+của hai độ chính xác nhiệm vụ, lấy theo chiều để nó đo một khoản mất chứ không
+đo một khoản được. Số bị trừ là mốc: độ chính xác của một đầu phân loại huấn
+luyện riêng trên khái niệm thật, tức mức cao nhất mà một đầu phân loại như thế
+với tới được trên bộ dữ liệu ấy. Số trừ là độ chính xác của mô hình đang xét sau
+khi đã can thiệp lên tất cả các khái niệm của nó. Phép trừ ấy có lý do: đầu phân
+loại có thể đơn giản tới mức không học nổi quan hệ giữa khái niệm và nhãn, và
+khi đó độ chính xác thấp mà không phải do rò rỉ, nên lấy mốc ra thì phần còn lại
+đúng là phần rò rỉ lấy đi. Với một mô hình cứng huấn luyện thành công thì hai vế
+bằng nhau và điểm số can thiệp bằng 0 theo cách dựng; càng rò rỉ thì nó càng
+lớn. Bài báo viết nó là $S_{int}$; sách không lấy ký hiệu ấy, vì chữ $S$ đã
+thuộc về liên minh đặc trưng của chương~\ref{ch:shap}, và cái tên tiếng Việt đủ
+dùng.
+
+\index{điểm số can thiệp!đặc hiệu cao, nhạy thấp}%
+Điểm số can thiệp lại không dùng được làm dụng cụ đo chính, và bài báo nói rõ vì
+sao. Nó đặc hiệu hoàn hảo mà không nhạy: can thiệp mà kết quả tệ
+đi thì chắc chắn có rò rỉ, còn can thiệp mà kết quả tốt lên thì không kết luận
+được gì. Nó không tách được hai loại rò rỉ khỏi nhau và không chấm điểm cho từng
+khái niệm riêng, nên không chỉ ra chỗ nào trong bảng khái niệm đáng ngờ. Nó đắt,
+vì phải chạy lại mô hình sau mỗi bước can thiệp, và đắt nhất đúng ở những bộ dữ
+liệu thật có nhiều khái niệm. Và trong các kiến trúc phức tạp hơn nó thôi không
+còn là phép đo rò rỉ nữa: bài báo ghi rằng ở lớp mô hình mà
+mục~\ref{sec:ch15-nguyen-nhan} đọc, mô hình rò rỉ nhiều hơn lại có thể can thiệp
+tốt hơn.
+
+\index{rò rỉ!hai điểm số cũ và chỗ hỏng của chúng}%
+Hai điểm số đã được đề xuất trước đó cũng không thay được. Điểm thứ nhất, gọi là
+OIS, huấn luyện $\lvert\mathcal{C}\rvert(\lvert\mathcal{C}\rvert - 1)$ mạng phụ,
+mỗi mạng học đoán khái niệm thật thứ $l$ từ biểu diễn học được của khái niệm thứ
+$k$. Xếp các AUROC thu được thành một ma trận, làm cùng như vậy với khái niệm thật
+để có ma trận mốc, rồi lấy chuẩn Frobenius của hiệu hai ma trận, chuẩn hóa về
+khoảng từ 0 đến 1. Ý tưởng đúng hướng nhưng ba chỗ hỏng. Nó chỉ nhìn quan hệ
+giữa các khái niệm với nhau, nên không thấy loại rò rỉ chính là loại về nhãn. Nó
+không tắt trên mô hình cứng: bài báo đo OIS trên mô hình cứng ở tám bộ dữ liệu
+và không lần nào giá trị gần 0, mà lại gần bằng giá trị của những mô hình rò rỉ
+nặng, nên nó không phân biệt được mô hình diễn giải được với mô hình không. Và
+vì định nghĩa của nó chứa một phép huấn luyện, giá trị của nó dao động mạnh giữa
+các lần chạy trên cùng một mô hình, đủ mạnh để khoảng tin cậy của hai mô hình
+khác hẳn nhau về rò rỉ vẫn chồng lên nhau. Điểm thứ hai, gọi là NIS, mở rộng ý
+tưởng ấy sang những tập con khái niệm thay vì từng cặp, và mắc cùng chỗ hỏng thứ
+hai: nó cũng không tắt trên mô hình cứng.
+
+\index{rò rỉ!vì sao điểm đánh giá không thấy|)}%
+Chỗ chung của cả bốn cách đo trên là chúng đo bằng điểm số dự đoán. Rò rỉ thì
+không phải một chuyện về dự đoán mà là một chuyện về lượng thông tin, nên
+mục~\ref{sec:ch15-ro-ri} đã phải mượn entropy và thông tin tương hỗ mới nói được
+nó là gì. Định nghĩa sau đây chỉ là câu ấy viết thành công thức, và nó cho hai
+điểm số mà cả chương sau đó gọi bằng tên viết tắt của chúng: CTL cho rò rỉ khái
+niệm-nhiệm vụ và ICL cho rò rỉ liên khái niệm, cả hai theo phụ
+lục~\ref{app:viet-tat}.
+
+\index{rò rỉ!hai điểm số thông tin|(}%
+\begin{definition}[Hai điểm số rò rỉ]
+\label{def:ch15-hai-diem-so}
+Với mỗi khái niệm $k$ trong tập khái niệm $\mathcal{C}$, điểm
+\tn{rò rỉ khái niệm-nhiệm vụ}{concepts-task leakage} là phần chênh, chặn dưới ở
+0, giữa lượng thông tin chuẩn hóa
+mà giá trị học được mang về nhãn và lượng thông tin chuẩn hóa mà khái niệm thật
+mang về nhãn,
+\[
+  \mathrm{CTL}_k
+  = \max\!\left\{0,\; \frac{I(\hat c_k, y)}{H(y)} - \frac{I(c_k, y)}{H(y)}\right\} .
+\]
+Với mỗi cặp khái niệm $k \ne l$, điểm \tn{rò rỉ liên khái niệm}{interconcept
+leakage} là phần chênh tương ứng giữa hai giá trị học được và giữa hai khái niệm
+thật,
+\[
+  \mathrm{ICL}_{kl}
+  = \max\!\left\{0,\;
+    \frac{I(\hat c_k, \hat c_l)}{\sqrt{H(\hat c_k)H(\hat c_l)}}
+    - \frac{I(c_k, c_l)}{\sqrt{H(c_k)H(c_l)}}\right\} .
+\]
+Điểm rò rỉ của cả mô hình là trung bình của $\mathrm{CTL}_k$ trên các khái niệm,
+và trung bình của $\mathrm{ICL}_{kl}$ trên các cặp~\autocite{p30leakage}.
+\end{definition}
+
+Ba chi tiết trong định nghĩa ấy quyết định nó đọc được thế nào. Phép chuẩn hóa bằng entropy khiến
+cả hai điểm số nằm trong khoảng từ 0 đến 1, nên so được giữa các bộ dữ liệu có
+số lớp khác nhau. Phép chặn dưới ở 0 xử lý trường hợp phần chênh âm, tức giá trị
+học được mang \emph{ít} thông tin hơn khái niệm thật: đó là học khái niệm kém
+chứ không phải rò rỉ, và gộp hai thứ vào một con số thì con số ấy không đọc được
+nữa. Còn $\mathrm{ICL}_{kk}$ bằng 0 theo công thức, vì thông tin tương hỗ của
+một biến với chính nó là entropy của nó, nên đường chéo tự triệt tiêu ở cả hai
+vế.
+
+Cả hai đại lượng đều là thông tin tương hỗ trên các biến liên tục, thứ không
+tính thẳng được từ mẫu hữu hạn. Bài báo ước lượng chúng bằng ước lượng của
+Kraskov, Stögbauer và Grassberger, dựa trên thống kê láng giềng gần nhất. Phép
+ước lượng ấy là một
+lựa chọn tự do của khung, và mục~\ref{sec:ch15-dung-cu-duoc-kiem} sẽ thấy nó đặt
+một giới hạn thật lên chỗ khung dùng được.
+
+\index{rò rỉ!hai điểm số thông tin|)}%
+Hai điểm số cho hai con số, và so hai mô hình bằng hai con số thì có lúc chúng
+không cùng chiều. Bài báo phát biểu sẵn một tiêu chí cho phép kết luận: mô hình
+A rò rỉ nhiều hơn mô hình B nếu cả hai điểm số của A đều cao hơn với độ tin cậy
+thống kê cao, hoặc nếu một điểm số của A cao hơn với độ tin cậy cao còn điểm số
+kia nhận giá trị tương thích thống kê ở hai mô hình. Tiêu chí ấy cố tình dè dặt
+và bài báo nói vậy: nó không kết luận gì khi một điểm số cao hơn ở A còn điểm
+kia cao hơn ở B, và mọi phát biểu \enquote{rò rỉ nhiều hơn} ở các mục sau đều là
+phát biểu theo tiêu chí này chứ không phải theo một phép so tùy ý.
