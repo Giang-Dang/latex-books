@@ -532,6 +532,61 @@ validation does not have enough information to ensure that they are safe.*
 There is also a ceiling: *Operations checks run against a maximum of 10,000
 distinct operations.*
 
+#### The vendor reference pages the chapter cites
+
+Fetched 2026-09-06. The chapter states these facts in its own words and cites
+the pages, rather than attributing them to the CLI's help text, which nothing
+outside this machine can look up.
+
+- `https://cosmo-docs.wundergraph.com/cli/subgraph/check` (bib key
+  `cosmoclicheck`). Describes the command as one that *checks for breaking
+  changes and composition errors in all connected federated graphs associated
+  with the specified subgraph*; documents `--schema <path-to-schema>` as *The
+  path to the new schema file that you want to validate*, and
+  `--skip-traffic-check` as *This will skip checking against client traffic and
+  any breaking change will fail*.
+- `https://cosmo-docs.wundergraph.com/cli/intro` (bib key `cosmocli`). *The CLI
+  uses the following environment variables to authenticate with the control
+  plane*, and `COSMO_API_KEY` is the *API key for the control plane (For Cosmo
+  Cloud you get this token after account provisioning)*.
+- `https://cosmo-docs.wundergraph.com/cli/router/compose` (bib key
+  `cosmocompose`, already cited by chapter 7). *The `npx wgc router compose`
+  command allows you to compose subgraphs and build a router execution config
+  locally without a connection to the control plane*, and *does not interact
+  with the control plane and completely runs locally*.
+- `https://cosmo-docs.wundergraph.com/studio/schema-checks` (bib key
+  `cosmochecks`, already cited above). Two facts beyond what this section
+  already took from it: the page divides a check into four named components,
+  *Composition Errors*, *Breaking Change Detection*, *Operations Check* and
+  *Lint Check*; and the verdict rule is that a check passes when *the proposed
+  schema was both composable and non-breaking* and fails when it *was either
+  not composable, introduced breaking changes, or both*. The verdict sentence
+  names two of the four.
+
+**Documentation drift, the same finding chapter 15 recorded for the compose
+page.** The reference page and the installed 0.129.9 word the check
+differently: the page says *in all connected federated graphs associated with
+the specified subgraph*, and the tool's own help says *across all connected
+federated graphs, including feature flag compositions; also runs when the
+target is a feature subgraph*. Neither is wrong and the chapter quotes neither.
+It states the fact in its own words and cites the page, because a page is what
+a reader can open and a help string is not.
+
+**What the chapter stopped printing, and why the measurement stays here.** The
+refusal at the top of this section is no longer on the page. Decision 147
+replaced it: an output block whose only content is a command declining to run
+tells the reader what one machine lacked rather than what the command does. The
+measurement is unchanged, `verify.ps1` still asserts the exit code, and this
+note is where it lives.
+
+**The two invocations the chapter now prints** are
+`wgc router compose -i graph.yaml -o published.json` and the same line with
+`-o candidate.json`: the command chapter 7 established, run twice with the four
+documents edited in between. `verify.ps1` runs that command twice against one
+generated `graph.yaml`, writing `router.json` each time and pulling the schema
+out between runs. The two output names in the chapter are for a reader who
+wants both configs on disk to diff.
+
 ### 6. The gate this book can build, run twice
 
 Two compositions and a diff, which is section 1 of this note performed as a
