@@ -1,0 +1,135 @@
+\section{Đường thứ ba trong bản đồ attribution}
+\label{sec:ch16-duong-thu-ba}
+
+\index{diễn giải cơ chế!chỗ nó đứng trong bản đồ|(}%
+Đường thứ ba nhắm thẳng vào vế phải, như mục trước vừa nói, và đó là lý do người
+ta trông đợi ở nó nhiều nhất: nếu đọc được bên trong mô hình thì không phải dựng
+gì và cũng không phải hỏi ai. Mục này đọc bài duy nhất trong bốn bài của chương
+có bản đồ đủ rộng để nói đường ấy đứng ở đâu, và cái nó nói không phải điều
+người ta trông đợi.
+
+\index{diễn giải cơ chế!bài 18 xếp nó chứ không làm nó}%
+Trước hết phải nói bài ấy là bài gì, vì nhan đề chương dễ gây hiểu nhầm. Bài của
+chương~\ref{ch:khung-hop-nhat} là một bài quan điểm về attribution, không phải
+một bài \tn{diễn giải cơ chế}{mechanistic interpretability}. Nó không chạy thí
+nghiệm nào, không báo cáo phép đo nào, có đúng một hình và ba bảng trong 25
+trang. Cái nó làm là xếp: nó định nghĩa
+\tn{attribution thành phần}{component attribution} và ghi rằng nhánh ấy
+\emph{là một nhánh của} diễn giải cơ chế, một lĩnh vực tìm cách hiểu mô hình
+bằng cách dịch ngược các cơ chế bên trong thành thuật toán đọc
+được~\autocite{p18unified}. Chữ \enquote{mechanistic} xuất hiện sáu lần trong
+chín trang thân bài, ba lần trong số đó ở trang đầu, còn lại nằm trong thư mục
+tham khảo. Vậy bài này là bản đồ có ô dành cho đường thứ ba, không phải người đi
+đường ấy.
+
+\index{diễn giải cơ chế!ba nhánh, một bài toán}%
+Quan hệ mà bản đồ ấy khẳng định là quan hệ quan trọng nhất trong mục này. Ba bài
+toán attribution mà mục~\ref{sec:ch07-ba-doi-tuong} đã dựng lại, chấm điểm cho
+đặc trưng, cho điểm dữ liệu huấn luyện, và cho thành phần bên trong, không phải
+ba bài toán khác nhau: chúng cùng tìm một
+\tn{hàm attribution}{attribution function} gán điểm cho những đối
+tượng đã chọn, và \emph{chỉ khác nhau ở chỗ chọn đối tượng
+nào}~\autocite{p18unified}. Phần kết của bài nói lại điều đó bằng chữ khác, rằng
+ba nhánh khác nhau chủ yếu ở góc nhìn và dùng chung ba kỹ thuật lõi là
+\tn{phép nhiễu}{perturbation}, gradient và
+\tn{xấp xỉ tuyến tính}{linear approximation}.
+
+\index{xấp xỉ hàm cục bộ!khung chỉ phủ attribution đặc trưng}%
+Chương~\ref{ch:khung-hop-nhat} đã ghi rằng khung hình thức duy nhất của bài,
+\tn{xấp xỉ hàm cục bộ}{local function approximation}, chỉ phủ attribution đặc
+trưng, còn việc mở rộng sang hai nhánh kia là một giả thuyết. Mục này cần chỗ ấy
+lần nữa và cần nó chặt hơn, nên đây là ba chỗ trong bài chứng thực nó. Thứ nhất,
+cấu trúc mục: mục 3 có đúng một tiểu mục hợp nhất, tiểu mục về xấp xỉ hàm cục bộ
+cho attribution đặc trưng, còn hai nhánh kia không có tiểu mục tương ứng nào, và
+phụ lục lặp lại đúng sự lệch ấy. Thứ hai, phạm vi bài tự nêu: tám phương pháp
+attribution đặc trưng, trong đó có LIME, KernelSHAP và Integrated Gradients, là
+các trường hợp riêng của khung, và bảng liệt kê chúng được ghi rõ là chép lại từ
+một bài trước~\autocite{p18unified}. Thứ ba, câu mở rộng: khung \emph{có thể}
+cũng áp dụng cho hai nhánh kia, \emph{ta có thể giả thuyết rằng} attribution
+thành phần là phép xấp xỉ hàm trên không gian các thành phần, và \emph{nếu vậy}
+thì phép xấp xỉ hàm \emph{có thể} hợp nhất cả nhánh ấy~\autocite{p18unified}.
+Bốn lời dè dặt trong bốn câu, và cả đoạn nằm dưới một tiêu đề về hướng đi tiếp
+chứ không dưới một tiêu đề về kết quả.
+
+\index{kiểm định chỉ số!bài 18 nói chỗ thiếu là chỗ thiếu chung|(}%
+Bài phát biểu chỗ thiếu dụng cụ đo
+hai lần, một lần trong thân bài và một lần trong phụ lục, và cả hai lần đều phát
+biểu nó cho \emph{cả ba nhánh cùng lúc}. Ở trang 7: những khó khăn về đánh giá
+phát sinh ở cả ba loại attribution; phép đánh giá
+\tn{phản thực}{counterfactual} có thể cho phép kiểm
+chứng chặt chẽ hơn nhưng ràng buộc tính toán thường làm nó bất khả thi; các phép
+đánh giá gắn với một nhiệm vụ cụ thể thì dễ hơn nhưng thường không khái quát
+được sang bối cảnh khác; đánh giá với người, dù được coi là chuẩn vàng, vướng
+vấn đề mở rộng quy mô và thiên lệch; và sự đa dạng của các chỉ số đánh giá cùng
+với việc chúng định nghĩa \tn{mức quan trọng}{importance} khác nhau khiến một
+kết quả attribution
+có thể tốt theo chỉ số này mà tồi theo chỉ số kia~\autocite{p18unified}. Ở phụ
+lục, trang 24: đánh giá các phương pháp attribution gặp khó khăn đáng kể
+\emph{do thiếu ground truth} và do sự phức tạp của các hệ thống AI hiện đại, và
+những khó khăn ấy một phần đến từ chỗ không có định nghĩa phổ quát cho mức quan
+trọng lẫn cho ground truth~\autocite{p18unified}.
+
+\index{kiểm định chỉ số!ba cách đánh giá bài 18 liệt kê}%
+Ba cách đánh giá mà bài liệt kê ở cả hai chỗ là phản thực, gắn với nhiệm vụ, và
+với người. Hai trong ba là hai thứ chương này đang cân: cách thứ nhất là các họ
+chỉ số của chương~\ref{ch:do-do-trung-thuc}, và cách thứ ba là đường thứ hai của
+mục~\ref{sec:ch16-duong-thu-hai}. Cách thứ hai thì không, và chỗ nó lệch đáng
+ghi. Bài định nghĩa phép đánh giá gắn với nhiệm vụ là phép đo mức hữu dụng thực
+tế của điểm số ở một nhiệm vụ phía sau, ví dụ điểm attribution đặc trưng giúp
+tìm ra những thay đổi làm lật đầu ra, hay điểm attribution dữ liệu giúp phát
+hiện điểm dữ liệu gán nhãn sai~\autocite{p18unified}. Đó là hữu dụng, không phải
+ground truth do thiết kế nhiệm vụ ép ra, nên nó không phải đường thứ nhất của
+mục~\ref{sec:ch16-bon-duong-dung-san}. Vậy bài liệt kê hai trong ba lựa chọn của
+chương này cộng thêm một lựa chọn thứ ba mà chương này không đọc, và nói cả ba
+đều chưa đủ.
+
+\index{ground truth!bài 18 không nêu ground truth nào cho thành phần}%
+Có một phép rà nữa mà mục này chạy và nó cho kết quả sắc hơn cả hai đoạn trên.
+Cụm \enquote{ground truth} xuất hiện đúng ba lần trong 25 trang. Hai lần đầu ở
+ngay câu vừa dẫn, cả hai đều nói rằng nó thiếu: một lần cho chính chỗ thiếu, một
+lần cho việc không có định nghĩa phổ quát cho nó. Lần thứ ba ở phụ lục trang 19,
+và nó nói
+về \tn{attribution dữ liệu}{data attribution}: các phương pháp huấn luyện lại
+toàn bộ như leave-one-out thường được dùng làm một ground truth để đánh giá
+những phương pháp attribution dữ liệu khác~\autocite{p18unified}. Nghĩa là trong
+ba nhánh, bài nêu được ground truth cho đúng một nhánh, và nhánh ấy không phải
+nhánh của đường thứ ba. Sách rà cả 25 trang và \emph{không tìm thấy một ground
+truth nào được nêu cho attribution thành phần}. Nhánh mà nhan đề chương gọi là
+lối thoát khỏi vấn đề ground truth, trong bài duy nhất vẽ bản đồ cả ba nhánh, là
+nhánh không có ground truth nào cả.
+
+\index{kiểm định chỉ số!bài 18 nói chỗ thiếu là chỗ thiếu chung|)}%
+Đọc theo bảng~\ref{tab:ch01-bon-quan-he} thì phải ghi thêm một điều để khỏi nói
+quá. Chữ \enquote{faithful} không xuất hiện lần nào trong cả 25 trang, và chữ
+gần nghĩa nhất là \enquote{fidelity}, năm lần, tất cả ở phụ lục và tất cả đều
+gọi tên họ chỉ số phản thực của chương~\ref{ch:do-do-trung-thuc} chứ không gọi
+tên tính chất của định nghĩa~\ref{def:ch01-do-trung-thuc}. Vậy bài không nói
+đường thứ ba không trung thực. Nó nói đường thứ ba không có dụng cụ đo, và nó
+nói vậy về cả ba nhánh cùng một lúc.
+
+\index{vá kích hoạt!lựa chọn tự do lặp lại ở mức thành phần}%
+Chỗ thiếu ấy còn có một hình dạng quen.
+Mục~\ref{sec:ch07-attribution-thanh-phan} đã đọc
+\tn{phân tích trung gian nhân quả}{causal mediation analysis} và ghi rằng chữ
+\enquote{làm hỏng} trong thủ tục ba lượt che một danh sách ít nhất năm lựa chọn.
+Phụ lục của bài nói thêm một điều mà chương~\ref{ch:khung-hop-nhat} chưa cần
+tới: trong mọi trường hợp, bộ dữ liệu dùng để sinh kích hoạt phải được chọn sao
+cho nó thật sự gợi ra hành vi cần xét, kèm một chỉ số đo mức thành công của hành
+vi ấy~\autocite{p18unified}. Đọc câu ấy cho kỹ thì nó đòi hai thứ có trước: phải
+biết đang tìm hành vi nào, và phải có sẵn một chỉ số nói được rằng đã tìm thấy.
+Đó đúng là hai lựa chọn tự do đầu trong ba lựa chọn mà
+mục~\ref{sec:ch08-vong-lap-chung} tách ra cho vòng lặp phản thực, chuyển từ đặc
+trưng sang thành phần. Bài không gọi chúng là lựa chọn tự do và không gọi chúng
+là ground truth; cách đọc ấy là của sách.
+
+\index{diễn giải cơ chế!chỗ nó đứng trong bản đồ|)}%
+Còn một chi tiết về chi phí đáng nói vì nó bác một cách đọc dễ dãi. Nhánh tốn
+kém nhất trong ba nhánh, theo lời bài, không phải nhánh thành phần: gánh nặng
+tính toán nặng hơn ở các phương pháp attribution dữ liệu, vì chúng đòi huấn
+luyện lại mô hình cho mỗi phép nhiễu, trong khi attribution thành phần chủ yếu
+chạy ở thời điểm suy diễn~\autocite{p18unified}. Đường thứ ba vì thế không đắt
+theo nghĩa phải huấn luyện lại; nó đắt theo nghĩa có quá nhiều thứ để chấm điểm,
+và bài ghi rằng người ta đã rời khỏi mức từng nơ-ron vì mức ấy bất khả thi về
+tính toán trên các mô hình lớn. Cái giá của đường thứ ba, nếu đọc từ bài này,
+không phải tiền và cũng không phải thời gian. Nó là chỗ thiếu dụng cụ đo, thứ mà
+đường này lẽ ra phải lấp và thật ra thừa kế. Mục sau đọc bài đã đo nó.

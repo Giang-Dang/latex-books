@@ -1,0 +1,78 @@
+\section{Ba lối thoát, và chữ ấy là chữ của sách}
+\label{sec:ch16-ba-loi-thoat}
+
+\index{lối thoát!chỗ mà cả ba đường thoát khỏi|(}%
+Phần mở đầu chương vừa nói chữ \enquote{lối thoát} là chữ của sách, và nhận một
+chữ về thì phải nói rõ nó chỉ cái gì. Ba đường ấy thoát khỏi đúng một chỗ, và
+sau khi chỗ ấy được nêu thì hỏi được từng bài xem nó có tự đứng ở đó hay không.
+
+\index{độ trung thực!chỗ mắc kẹt của định nghĩa}%
+Chỗ cần thoát khỏi thì mục~\ref{sec:ch14-ground-truth-ke-tan-cong} đã phát biểu
+gọn nhất. Định nghĩa~\ref{def:ch01-do-trung-thuc} hỏi lời giải thích có phản ánh
+đúng những thứ mà hành vi của mô hình phụ thuộc vào hay không, và với một mô
+hình có sẵn thì không ai biết những thứ ấy là gì. Vế trái của phép so sánh nằm
+trong tay ta, vì lời giải thích là thứ ta vừa tính ra. Vế phải thì không. Mọi họ
+\tn{chỉ số trung thực}{faithfulness metric} của
+chương~\ref{ch:do-do-trung-thuc} tồn tại để né vế phải bằng một
+\tn{đại lượng thay thế}{proxy}, và bảy chương của Phần~IV là bảy cách cho thấy
+phép né ấy chưa ai kiểm.
+
+Ba đường thoát khác nhau ở chỗ chúng làm gì với vế phải. Đường thứ nhất ép nó
+phải biết trước: chọn hoặc dựng một thiết lập mà câu trả lời đúng là hệ quả của
+chính thiết kế, rồi chỉ chấm điểm trong thiết lập ấy. Đường thứ hai thay hẳn vế
+phải bằng một vế khác: đưa lời giải thích cho người đọc và hỏi họ. Đường thứ ba
+đi thẳng vào vế phải: mở mô hình ra và đọc xem bên trong nó có gì. Sách đã gặp
+cả ba, mỗi lần trong lúc đọc một bài báo khác nhau và cho một mục đích khác
+nhau, nên đây là lần đầu ba đường đứng cạnh nhau.
+
+\index{lối thoát!bài nào tự nhận là lối thoát}%
+Bây giờ hỏi từng bài. Bài của chương~\ref{ch:chi-so-khong-do-do-trung-thuc} tự
+đứng đúng ở chỗ ấy và nói ra: mục 3 của nó mở bằng đúng câu hỏi trên, rằng muốn
+biết lời giải thích có trung thực không thì phải biết mô hình đã tính những gì,
+rồi ghi rằng các tính toán bên trong không quan sát trực tiếp được, rồi đề xuất
+thiết kế nhiệm vụ như cách vòng qua~\autocite{p21metrics}. Với bài ấy thì chữ
+\enquote{lối thoát} là mô tả đúng và không cần ai gán cho nó.
+
+Bài của chương~\ref{ch:con-nguoi-vang-mat} thì không. Nó không nhắc tới
+\tn{độ trung thực}{faithfulness} lần nào, không nhắc ground truth lần nào,
+và không nêu tên một chỉ số nào
+của chương~\ref{ch:do-do-trung-thuc}. Cái nó đòi kiểm chứng là lời tuyên bố rằng
+một phương pháp giải thích được cho người, tức phía
+\tn{tính hợp lý}{plausibility} của phép chia mà
+mục~\ref{sec:ch01-do-trung-thuc-va-tinh-hop-ly} dựng. Nó là lối thoát khỏi một
+chỗ mắc kẹt khác, và mục~\ref{sec:ch16-duong-thu-hai} sẽ cho thấy cách
+đọc lẫn hai chỗ ấy làm hỏng điều gì.
+
+Hai bài của đường thứ ba thì không tự nhận là lối thoát khỏi chỗ nào cả. Bài của
+mục~\ref{sec:ch16-duong-thu-ba} là một bài quan điểm về attribution, xếp
+\tn{diễn giải cơ chế}{mechanistic interpretability} vào bản đồ chứ không làm nó;
+bài còn lại đề xuất một cách sửa cho chỗ yếu của chính loại công cụ mà nó dùng,
+tức sparse autoencoder mà mục~\ref{sec:ch15-doc-duoc-dieu-khien-duoc} đã đọc.
+Chữ \enquote{faithful} không xuất hiện lần nào trong phần thân của cả hai.
+
+\index{lối thoát!ba đường và chữ của sách}%
+Vậy trong bốn bài thì một bài đứng đúng chỗ nhan đề chương đặt nó, một bài đứng
+ở chỗ khác, và hai bài không đứng ở chỗ nào. Sách vẫn giữ cách sắp xếp ba đường,
+vì nó là cách sắp xếp của chính văn liệu phê phán mà
+mục~\ref{sec:ch01-luan-de-cua-sach} đã nêu khi phát biểu luận đề, nhưng giữ nó
+như cách sắp xếp của sách. Không câu nào trong sáu mục sau được viết như thể một
+bài báo tự gọi mình là lối thoát.
+
+\index{lối thoát!cái giá nghĩa là gì ở đây}%
+Còn một chữ nữa phải định nghĩa trước khi dùng, và nó là chữ mà chương này sửa
+lại. \enquote{Cái giá} của một lối thoát, ở đây, không phải chi phí tính toán và
+cũng không phải tiền. Nó là câu trả lời cho một câu hỏi: sau khi đi đường ấy thì
+ta biết được gì, và cái ta biết có phải cái định nghĩa~\ref{def:ch01-do-trung-thuc}
+hỏi hay không. Ba đường cho ba câu trả lời khác nhau về hạng, và
+mục~\ref{sec:ch16-ba-cai-gia} đặt cả ba cạnh nhau sau khi đã đọc từng đường.
+
+\index{lối thoát!chỗ mà cả ba đường thoát khỏi|)}%
+Cách làm của chương cũng khác các chương trước và đáng nói một câu, vì nó giải
+thích vì sao một chương không đọc bài mới nào lại tìm ra được gì. Bốn bài ở đây
+đều đã được đọc kỹ: bài của đường thứ nhất ở
+chương~\ref{ch:do-do-trung-thuc} và chương~\ref{ch:chi-so-khong-do-do-trung-thuc},
+bài của đường thứ hai ở chương~\ref{ch:con-nguoi-vang-mat}, và hai bài của đường
+thứ ba ở chương~\ref{ch:khung-hop-nhat} và chương~\ref{ch:nut-that-khai-niem}.
+Nhưng mỗi chương ấy đọc bài của mình cho một câu hỏi riêng, và không chương nào
+hỏi câu của chương này. Đọc lại bốn bài cho đúng một câu hỏi mới là việc mà mục
+sau bắt đầu.

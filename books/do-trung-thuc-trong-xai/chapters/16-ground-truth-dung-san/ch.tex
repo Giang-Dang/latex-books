@@ -1,6 +1,72 @@
-% Scope (SPEC table of contents): The three escape routes the critique points at, each with its cost. Papers 21, 24, 18, 32 re-used; no new corpus paper.
+% Scope (SPEC table of contents): The three escape routes the critique points
+% at, and what each one actually charges. The chapter collects the four ways of
+% constructing ground truth the book has met and names what each one forces;
+% reads paper 21's own accounting of what its construction reaches; reads paper
+% 24, whose route costs little and validates a different relation; reads paper
+% 18, which files mechanistic interpretability under attribution and states the
+% evaluation gap as shared across all three arms; and reads paper 32 measuring
+% what a readable name is worth. Papers 21, 24, 18, 32 re-used; no new corpus
+% paper, and this is the first chapter in the book that reads none.
+%
+% The initialized TOC line said "each with its cost" and paper 24 argues against
+% that predicate (decision 80). That is a fourth kind of TOC failure after
+% promising more, promising less and mis-arranging: an organising predicate one
+% of the line's own papers contradicts. The correction lands in section 16.5.
+%
+% Object and kind of claim, per decision 64: `faithful` occurs zero times in
+% papers 18, 24 and 32, and paper 21 uses it about chuỗi suy luận. The word
+% "lối thoát" is the book's, not any paper's, and section 16.1 says so on the
+% page. research/ch16-ba-loi-thoat.md records every number, the four defects the
+% chapter declines, the one inconsistency it reports unresolved, and the five
+% corrections this session made to earlier chapters' notes.
 \chapter{Ground truth dựng sẵn, human study, và mechanistic interpretability}
 % The full title overruns the running-head measure; the mark carries the
 % first clause only. The table of contents keeps the full title.
 \chaptermark{Ground truth dựng sẵn}
 \label{ch:ground-truth-dung-san}
+
+Câu hỏi mà mục~\ref{sec:ch15-doc-duoc-dieu-khien-duoc} giao lại cho chương này
+là câu hỏi ngắn nhất trong sách: một khái niệm bên trong mô hình đọc được tên,
+có nghĩa là gì. Bài của mục ấy đã trả lời được một nửa bằng số. Chương này trả
+lời nửa còn lại, và trả lời nó cùng lúc với hai câu hỏi cùng hạng mà hai lối
+thoát kia phải trả lời: dựng sẵn một ground truth thì dựng được cho những gì, và
+hỏi người thì xác nhận được lời đề xuất nào. Ba câu ấy khác nhau ở chỗ hỏi, và
+giống nhau ở dạng: sau khi đi đường ấy thì ta biết thêm được gì, và cái biết
+thêm ấy có phải cái định nghĩa~\ref{def:ch01-do-trung-thuc} hỏi hay không.
+
+\index{lối thoát!ba đường và chữ của sách}%
+Ba lối thoát ấy là ba thứ mà văn liệu phê phán chỉ tới mỗi khi nó dừng lại ở chỗ
+không có dụng cụ đo: dựng sẵn ground truth, hỏi người, và đọc thẳng từ bên trong
+mô hình. Sách đã đi qua từng đường một, ở
+chương~\ref{ch:chi-so-khong-do-do-trung-thuc},
+chương~\ref{ch:con-nguoi-vang-mat} và chương~\ref{ch:khung-hop-nhat}, nhưng đi
+qua từng đường trong lúc đọc một bài báo khác nhau, nên chưa lần nào đặt ba
+đường cạnh nhau và hỏi cái giá. Chương này làm đúng việc ấy, và nó không đọc bài
+báo mới nào: bốn bài của nó đều đã được một chương trước đọc kỹ.
+
+Cái nó tìm ra thì không phải điều nhan đề chương gợi ra. Ba đường không phải ba
+cửa song song, và cái mỗi đường đòi cũng không phải cái giá theo nghĩa thông
+thường của chữ ấy. Bài của mục~\ref{sec:ch16-gia-duong-dung-san} chọn đường thứ
+nhất vì nó xét đường thứ ba là không dùng được, và nói vậy trong đúng một câu.
+Bài của mục~\ref{sec:ch16-duong-thu-ba} thì nói chỗ thiếu dụng cụ đo là chỗ
+thiếu chung của cả ba nhánh attribution, nên đường thứ ba thừa kế chỗ thiếu ấy
+chứ không thoát khỏi nó. Còn bài của mục~\ref{sec:ch16-duong-thu-hai} bác thẳng
+cái giá mà nhan đề chương gán cho nó. Ba mảnh ấy ghép lại thành một câu mà
+mục~\ref{sec:ch16-ba-cai-gia} phát biểu, và câu ấy là câu của sách.
+
+Ranh giới phải nói trước, vì đây là lần thứ tám. Trong bốn bài của chương, chữ
+\enquote{faithful} không xuất hiện lần nào trong bài 18, bài 24 và bài 32; bài
+21 có dùng, và dùng về \tn{chuỗi suy luận}{chain of thought} như
+chương~\ref{ch:chi-so-khong-do-do-trung-thuc} đã ghi. Chữ \enquote{lối thoát}
+cũng vậy: không bài nào tự nhận mình là lối thoát khỏi chỗ mà Phần~IV mắc kẹt,
+và mục~\ref{sec:ch16-ba-loi-thoat} nhận chữ ấy về cho sách trước khi dùng nó
+sáu mục liền.
+
+\input{chapters/16-ground-truth-dung-san/01-ba-loi-thoat}
+\input{chapters/16-ground-truth-dung-san/02-bon-duong-dung-san}
+\input{chapters/16-ground-truth-dung-san/03-gia-cua-duong-dung-san}
+\input{chapters/16-ground-truth-dung-san/04-duong-thu-hai}
+\input{chapters/16-ground-truth-dung-san/05-duong-thu-ba-trong-ban-do}
+\input{chapters/16-ground-truth-dung-san/06-mot-cai-ten-dang-gia-bao-nhieu}
+\input{chapters/16-ground-truth-dung-san/07-ba-cai-gia-doc-canh-nhau}
+\input{chapters/16-ground-truth-dung-san/08-tom-tat-va-cau-hoi}

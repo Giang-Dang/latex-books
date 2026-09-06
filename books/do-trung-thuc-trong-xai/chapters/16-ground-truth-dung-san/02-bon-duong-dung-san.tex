@@ -1,0 +1,85 @@
+\section{Bốn đường dựng ground truth và cái bị ép}
+\label{sec:ch16-bon-duong-dung-san}
+
+\index{ground truth!bốn đường, gom lại|(}%
+Câu hỏi mới mà mục trước để lại là câu hỏi về cái giá, và với đường thứ nhất thì
+không hỏi được nếu chưa gom đủ các dạng của nó. Sách đã gặp bốn dạng, ở bốn chỗ
+cách nhau bảy chương, và mục này đặt cả bốn cạnh nhau lần đầu.
+
+\index{ground truth!đường thứ nhất, thiết kế nhiệm vụ}%
+Đường thứ nhất ép bằng thiết kế nhiệm vụ.
+Chương~\ref{ch:chi-so-khong-do-do-trung-thuc} đọc nó: chọn những bài toán mà lời
+giải đúng buộc phải đi qua một bước nhất định, rồi đọc bước ấy ra từ chính đáp
+án mà mô hình đưa. Người dựng là người muốn kiểm định chỉ số, và họ trả giá bằng
+việc chỉ được chấm điểm trên những bài toán có cấu trúc ấy.
+
+\index{ground truth!đường thứ hai, thiết kế dữ liệu}%
+Đường thứ hai ép bằng thiết kế dữ liệu. Bài của
+mục~\ref{sec:ch14-sua-bang-nhan-qua} tự viết các phương trình sinh dữ liệu, nên
+quan hệ giữa các biến là quan hệ mà chính người thí nghiệm đặt vào, và một tập
+giá trị tham chiếu tồn tại vì có người viết ra nó. Người dựng ở đây cũng là
+người muốn đo, và cái bị ép không phải nhiệm vụ mà là phân phối.
+
+\index{ground truth!đường thứ ba, thiết kế mô hình}%
+Đường thứ ba ép bằng thiết kế chính mô hình, và
+mục~\ref{sec:ch14-ground-truth-ke-tan-cong} đã đọc kỹ nó vì người dựng ở đó
+không giống hai đường trên. Mô hình thiên lệch trong thí nghiệm
+\tn{phép dựng giàn}{scaffolding} được viết ra để chỉ dự đoán bằng thuộc tính
+được bảo vệ, nên trên mọi điểm dữ liệu thật thì câu trả lời trung thực đã biết
+trước. Người dựng là bên tấn công, và họ dựng không phải vì muốn kiểm định gì:
+họ buộc phải biết mô hình của mình dựa vào cái gì thì mới giấu được cái ấy.
+
+\index{ground truth!đường thứ tư, nhãn có sẵn}%
+Đường thứ tư thì mục~\ref{sec:ch15-dung-cu-duoc-kiem} vừa thêm vào, và nó khác
+ba đường trên ở chỗ không ai dựng gì cả. Trong một bộ dữ liệu có gán nhãn khái
+niệm, lượng thông tin mà mỗi khái niệm thật mang về nhãn nhiệm vụ là một đại
+lượng tính thẳng từ bảng nhãn, không phụ thuộc vào mô hình nào. Người gán nhãn
+đã làm việc ấy từ trước, cho một mục đích khác, và cái mà
+định nghĩa~\ref{def:ch15-hai-diem-so} cần đã nằm sẵn ở đó.
+Hình~\ref{fig:ch16-bon-duong-dung-san} đặt cả bốn cạnh nhau.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch16-bon-duong-dung-san}
+  \caption{Bốn đường không khác nhau ở chỗ chúng cấp cái gì, vì cả bốn đều cấp
+  đúng một thứ, là vế phải mà định nghĩa~\ref{def:ch01-do-trung-thuc} không có.
+  Chúng khác nhau ở chỗ cái gì phải bị ép để vế ấy biết được, và ba đường đầu ép
+  một thứ mà đường thứ tư không phải ép, vì thứ ấy đã có sẵn. Ô bên phải vẽ nét
+  chấm theo quy ước của sách cho thứ vắng mặt: với một mô hình bắt được ngoài
+  đời thì không ai biết nội dung của nó, và đó là chỗ mắc kẹt mà cả bốn đường
+  tồn tại để vòng qua.}
+  \label{fig:ch16-bon-duong-dung-san}
+\end{figure}
+
+\index{ground truth!chỗ chung của bốn đường}%
+Đặt cạnh nhau thì thấy hai điều mà đọc rời từng đường không thấy. Điều thứ nhất
+là cả bốn đường đều cấp đúng một thứ: vế phải của định
+nghĩa~\ref{def:ch01-do-trung-thuc}, thứ mà với một mô hình có sẵn thì không ai
+biết. Chúng không phải bốn cách đo khác nhau mà là bốn cách trả lời cùng một câu
+hỏi thiếu, nên so chúng với nhau là việc làm được.
+
+Điều thứ hai là ba đường đầu trả cùng một kiểu giá và đường thứ tư trả kiểu
+khác. Ở ba đường đầu, cái làm cho vế phải biết được cũng chính là cái làm cho
+kết luận hẹp lại: nhiệm vụ được chọn, phân phối được viết, mô hình được dựng
+riêng, và kết luận rút ra là kết luận về nhiệm vụ ấy, phân phối ấy, mô hình ấy.
+Mục~\ref{sec:ch14-ground-truth-ke-tan-cong} đã phát biểu điều đó cho đường thứ
+ba trong một câu đáng lặp lại ở đây, vì bây giờ nó áp cho ba đường: một phép dựng
+cho ta ground truth và lấy đi tính đại diện, đổi cái này lấy cái kia.
+
+\index{ground truth!cái giá của đường thứ tư}%
+Đường thứ tư không đổi như vậy, vì nó không dựng gì để mà đánh đổi. Cái nó đòi
+là một điều kiện có trước: bộ dữ liệu phải đã được gán nhãn khái niệm, và tập
+nhãn ấy phải đủ dự báo nhiệm vụ. Hai vế ấy đều đắt theo nghĩa thông thường, và
+mục~\ref{sec:ch15-nguyen-nhan} đã cho thấy vế thứ hai hỏng thì hỏng ra sao:
+chính người đề xuất khung viết rằng khi không kiếm thêm được nhãn khái niệm thì
+phải kết luận nhiệm vụ ấy không dùng lối tiếp cận theo khái niệm được. Nhưng cái
+giá ấy là giá phải trả trước khi bắt đầu, không phải chỗ hẹp trong kết luận rút
+ra sau. Trong bốn đường thì đây là đường duy nhất mà kết luận nói về một bộ dữ
+liệu thật, và cũng là đường duy nhất mà phần lớn các nhiệm vụ không đi được.
+
+\index{ground truth!bốn đường, gom lại|)}%
+Bốn đường ấy là bốn dạng của một lối thoát, nên cái giá của lối thoát ấy phải
+đọc trên dạng nào đo được nó. Ba dạng sau chưa dạng nào có bài báo tự đếm xem
+mình với tới đâu. Dạng thứ nhất thì có, vì bài của
+chương~\ref{ch:chi-so-khong-do-do-trung-thuc} in ra một bảng phân bố nhãn cho
+phép đếm, và mục sau đọc bảng ấy.

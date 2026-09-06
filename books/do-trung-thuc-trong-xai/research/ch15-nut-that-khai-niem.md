@@ -579,7 +579,9 @@ beats the baseline on all four metrics of all three models.
 - The CB-SAE retains **30k** SAE neurons after pruning and uses a top-k
   activation with **k = 5**, on the VLG-CBM ImageNet concept set (page 7).
 - The steerability loss ablation improves steerability by **2.9%** (page 7).
-- Limitations and future work, appendix A page 10, quoted in full because the
+- Limitations and future work, appendix A **page 9** (this line read page 10
+  until chapter 16's session re-read the render; the source-pin row above is
+  right and this citation was off by one), quoted in full because the
   chapter uses both halves: \enquote{We acknowledge that the efficacy of our
   approach depends on the reliability of CLIP-Dissect in assigning accurate
   neuron-level concepts}, and the future work is extending the hybrid to other
@@ -704,6 +706,15 @@ list it.
   paper never states the number of CB neurons**, and the chapter does not print
   this estimate, because the slack is wide enough that the estimate would be
   the book's guess rather than its arithmetic.
+
+  **Pinned by chapter 16's session, 2026-09-06, and the estimate above holds.**
+  Table 3 on page 11 states the CB-SAE dictionary sizes directly, in the
+  denominators of its dead-neuron column: 32,167, 32,162 and 32,169 for the
+  Top-k, Batch Top-k and Matryoshka variants. Page 7 gives the retained SAE
+  count as 30k, so the Matryoshka variant of the main paper has 32,169 - 30,000
+  = 2,169 CB neurons, inside the 1,900 to 2,300 above. It is still the book's
+  arithmetic on an input the paper rounded to `30k`, so it is still not printed;
+  what changes is that it is no longer an open question.
 - Paper 30's page 8 says the misclassification-style claim about CEMs points at
   its appendix G, which pages 26-39 do contain; the appendix was scanned, not
   read, and the chapter takes the claim from the body sentence that states it.

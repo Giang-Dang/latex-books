@@ -1,0 +1,38 @@
+\begin{tikzpicture}[
+  every node/.style={font=\footnotesize, align=center},
+  known/.style={draw=black!85, line width=1pt, fill=black!12,
+    minimum width=30mm, minimum height=9mm},
+  unknown/.style={draw=black!55, dotted, thick, fill=white,
+    minimum width=34mm, minimum height=9mm},
+  route/.style={draw=black!65, rounded corners=2pt, fill=black!5,
+    minimum width=26mm, minimum height=15mm, text width=24mm,
+    font=\scriptsize},
+  flow/.style={-{Stealth[length=2mm]}, thick, black!70},
+  thinflow/.style={-{Stealth[length=1.6mm]}, black!55},
+  lbl/.style={font=\scriptsize, align=center, black!55}
+]
+  \node[known]   (gt)  at (1.4,4.2) {lời giải thích};
+  \node[unknown] (dep) at (8.6,4.2) {cái mà hành vi\\phụ thuộc vào};
+
+  \draw[flow] (gt.east) -- (dep.west);
+  \node[lbl] at (5.0,4.85) {định nghĩa~\ref{def:ch01-do-trung-thuc} so hai bên,
+    dưới một tập can thiệp đã nêu};
+
+  \node[route] (r1) at (0,0)   {thiết kế \textbf{nhiệm vụ}\\[1mm] câu trả lời đúng buộc phải đi qua một bước};
+  \node[route] (r2) at (3.1,0) {thiết kế \textbf{dữ liệu}\\[1mm] quan hệ giữa các biến do phương trình sinh đặt ra};
+  \node[route] (r3) at (6.2,0) {thiết kế \textbf{mô hình}\\[1mm] mô hình được viết để chỉ dùng một đặc trưng};
+  \node[route] (r4) at (9.3,0) {\textbf{gán nhãn} sẵn\\[1mm] không ai dựng gì; nhãn khái niệm đã nằm sẵn trong dữ liệu};
+
+  \draw[thinflow] (r1.north) -- (0,1.5);
+  \draw[thinflow] (r2.north) -- (3.1,1.5);
+  \draw[thinflow] (r3.north) -- (6.2,1.5);
+  \draw[thinflow] (r4.north) -- (9.3,1.5);
+  \draw[black!55] (0,1.5) -- (9.3,1.5);
+  \draw[flow] (8.6,1.5) -- (dep.south);
+  \node[lbl] at (6.35,2.35) {bốn cách cấp vế phải};
+
+  \node[lbl] at (0,-1.35)   {chương~\ref{ch:chi-so-khong-do-do-trung-thuc}};
+  \node[lbl] at (3.1,-1.35) {mục~\ref{sec:ch14-sua-bang-nhan-qua}};
+  \node[lbl] at (6.2,-1.35) {mục~\ref{sec:ch14-ground-truth-ke-tan-cong}};
+  \node[lbl] at (9.3,-1.35) {chương~\ref{ch:nut-that-khai-niem}};
+\end{tikzpicture}

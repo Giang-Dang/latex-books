@@ -1,0 +1,143 @@
+\section{Đường thứ hai, và cái giá của nó không phải giá tiền}
+\label{sec:ch16-duong-thu-hai}
+
+\index{đánh giá!đường thứ hai trả lời câu nào|(}%
+Câu mà đường thứ nhất trả lời thì mục trước đã nêu, và nó đúng là câu của
+định nghĩa~\ref{def:ch01-do-trung-thuc}. Đường thứ hai trả lời một câu khác, và
+mục~\ref{sec:ch12-hai-nhanh-danh-gia} đã dựng sẵn phép phân biệt cần dùng, nên
+mục này chỉ phải phát biểu lại nó ở mức một lối thoát chứ không ở mức một
+chương.
+
+\index{đánh giá!người đọc không nhìn thấy mô hình}%
+Phép phân biệt ấy đứng trên một sự thật đơn giản về vị trí: người đọc không nhìn
+thấy bên trong mô hình. Cho nên dù hỏi bao nhiêu người, câu trả lời của họ nói
+về quan hệ giữa lời giải thích và người đọc, tức
+\tn{tính hợp lý}{plausibility} theo dòng thứ ba của
+bảng~\ref{tab:ch01-bon-quan-he}, chứ không nói về quan hệ giữa lời giải thích và
+mô hình. Một chỉ số trung thực hoàn hảo vẫn có thể không tương quan với cảm nhận
+của người, và điều đó không phải bằng chứng chống lại nó.
+
+Trong phạm vi ấy thì đường thứ hai vẫn xác nhận được đúng một loại lời đề xuất,
+và loại ấy có thật. Khi một chỉ số tự động được đề xuất như
+\tn{đại lượng thay thế}{proxy} cho chất lượng của lời giải thích
+\emph{đối với người dùng}, thì phép thử tối thiểu là cho thấy điểm số của nó đi
+cùng đánh giá của người trên cùng những lời giải thích ấy. Đó là món nợ mà
+mục~\ref{sec:ch12-hai-nhanh-danh-gia} đi đòi, và nó là món nợ có thật, vì chính
+Doshi-Velez và Kim đặt điều kiện ấy lên cách đánh giá theo chức
+năng~\autocite{p14rigorous}.
+
+\index{kiểm đếm tài liệu XAI!đọc như một lối thoát}%
+Phép thử ấy đã được chạy bao nhiêu lần thì
+mục~\ref{sec:ch12-con-so-va-cai-no-dem} đã đếm: trong 18\,254 bài mang từ khóa
+về \tn{khả năng giải thích}{explainability}, 253 bài có từ khóa về thử nghiệm
+với người, 237 bài đúng
+chủ đề, và 128 bài thật sự có kiểm chứng với người, tức
+0.70\%~\autocite{p24humangap}. Đọc con số ấy như một phát biểu về lối thoát chứ
+không như một phát biểu về một chương thì nó nói rằng đường thứ hai tồn tại, đi
+được, và gần như không ai đi.
+
+\index{đánh giá!trần của đường thứ hai, theo lời bài báo}%
+Chỗ mà mục này thêm vào so với chương~\ref{ch:con-nguoi-vang-mat} là trần của
+đường ấy nói bằng chính chữ của bài báo, vì bài báo phát biểu nó hai lần và cả
+hai lần đều chọn danh từ rất cẩn thận. Ở phần kết, trang 6: không có bằng chứng
+thực nghiệm thì không thể đánh giá được liệu các phương pháp giải thích có thật
+sự đáp ứng \emph{nhu cầu của người dùng cuối} hay không. Và ở mục 5.2, cùng
+trang: kiểm thử thực nghiệm với người nhất thiết là chuẩn vàng cho
+\emph{những lời tuyên bố về khả năng giải thích}~\autocite{p24humangap}.
+
+\index{độ trung thực!vắng tên trong bài của đường thứ hai}%
+Hai danh từ ấy, nhu cầu của người dùng cuối và lời tuyên bố về khả năng giải
+thích, không danh từ nào là đối tượng của định
+nghĩa~\ref{def:ch01-do-trung-thuc}. Điều đó khớp với phép rà toàn văn mà
+mục~\ref{sec:ch12-con-so-va-cai-no-dem} đã ghi và mục này kiểm lại: trong bảy
+trang của bài, các chữ \enquote{faithful}, \enquote{faithfulness},
+\enquote{ground truth} và \enquote{fidelity} không xuất hiện lần
+nào~\autocite{p24humangap}. Bài không tránh né chủ đề độ trung thực; nó không ở
+trong chủ đề ấy. Đọc theo bảng~\ref{tab:ch01-bon-quan-he} thì nó cấp bằng chứng
+cho dòng tính hợp lý và không cấp cho dòng độ trung thực, và cột cuối của chính
+bảng ấy ghi rằng từ dòng thứ ba không suy ra được lời giải thích đúng với mô
+hình.
+
+\index{đánh giá!chi phí không phải chỗ tắc}%
+Còn cái giá thì đây là chỗ chương phải sửa lại câu hỏi của chính mình. Cách đọc
+thông thường về việc chỉ 128 bài trên 18\,254 chạy kiểm chứng với người là cách
+đọc theo chi phí: thí nghiệm có người thì đắt, chậm, phải tuyển người, phải qua
+thủ tục, nên người ta bỏ qua. Cách đọc ấy không lấy được từ bài báo. Rà toàn văn
+bảy trang thì các chữ \enquote{expensive}, \enquote{power}, \enquote{IRB},
+\enquote{consent}, \enquote{budget} và \enquote{burden} không xuất hiện lần nào,
+còn chữ \enquote{cost} xuất hiện đúng một lần và nằm trong tên một tác giả ở
+thư mục tham khảo~\autocite{p24humangap}. Bài không phân tích chi phí, không ước
+lượng chi phí, và không nêu chi phí như lý do.
+
+Câu duy nhất trong bài đọc gần giống một cái giá nằm ở trang 5, và nó nói về
+việc tập hợp chuyên gia: tất nhiên có thể khó tập hợp được các chuyên gia lĩnh
+vực để thử phương pháp và công cụ, nhất là những chuyên gia mà ta không cùng làm
+công cụ với họ, và có lẽ vì thế mà một số bài chỉ có hai hoặc ba chuyên gia
+trong phần đánh giá. Câu ngay sau đó rút lại lời nhân nhượng vừa nêu: dù vậy, khó mà
+tin những phát biểu có tính khái quát về khả năng giải thích khi nhóm người tham
+gia rất nhỏ hoặc không giống người dùng đích~\autocite{p24humangap}.
+
+\index{đánh giá!bài báo nêu phản đối rồi bác}%
+Ở trang 6 thì bài nêu hai lời phản đối thông thường với đánh giá thực nghiệm và
+bác cả hai, và đoạn ấy quyết định cách mục này phải viết. Hai lời phản đối mà
+bài nêu không phải lời phản đối về chi phí: chúng là con người thì thiên lệch,
+và khó tập hợp được một mẫu người đại diện. Câu trả lời của bài thì đi qua đúng
+chỗ chi phí. Bài viết rằng cũng có thể nói y như vậy về mọi benchmark học máy
+đang dùng, từ ImageNet tới các bộ đánh giá bình luận phim và hỏi đáp y khoa: tất
+cả đều mang thiên lệch của con người từ khâu sinh ra, chọn lọc và bối cảnh văn
+hóa, có thể khớp hoặc không khớp với ứng dụng đích, và \emph{đã tốn rất nhiều
+thời gian để thu thập; dù vậy người ta vẫn dùng chúng}. Rồi bài kết luận rằng
+các phương pháp để thử XAI thì rõ ràng đã có, và tuy có những khó khăn khi
+chuyển từ chỗ chỉ thử AI trên các bộ dữ liệu tĩnh sang chỗ thử với người,
+\emph{những khó khăn ấy không phải là không vượt qua nổi}~\autocite{p24humangap}.
+Nghĩa là công sức bỏ ra được bài nêu đúng một lần, ở vế bị so sánh, và nêu để
+nói rằng ngành vẫn trả nó cho những thứ khác.
+
+\index{đánh giá!công trình mà bài dẫn để nói phương pháp đã có}%
+Công trình mà bài dẫn ở chỗ nói các phương pháp đã có là bài của Doshi-Velez và
+Kim~\autocite{p14rigorous}, tức đúng bài mà
+mục~\ref{sec:ch01-danh-gia-giai-thich} lấy ba tầng đánh giá và
+mục~\ref{sec:ch12-hai-nhanh-danh-gia} lấy quan hệ vay mượn giữa chúng. Điều bài
+nói ở đó chỉ là phương pháp đã có sẵn. Bước từ đó sang câu \enquote{vậy chỗ tắc
+không phải phương pháp mà là việc không ai bị đòi phải dùng nó} là bước của
+sách, không của bài; cái bài đưa ra để đỡ cho bước ấy là một câu nhắn gửi người
+bình duyệt, rằng có trách nhiệm đẩy lại những nghiên cứu tuyên bố giải thích
+được mà đưa rất ít hoặc không đưa bằng chứng
+nào~\autocite{p24humangap}. Một lời nhắn gửi người bình duyệt là một phát biểu về
+chỗ nào trong quy trình chưa đòi hỏi điều gì, nên nó đỡ được bước ấy mà không
+chứng minh nó.
+
+\index{đánh giá!cái giá thật là chất lượng bằng chứng}%
+Bài lại có ghi một cái giá, và nó ở chỗ khác hẳn: không phải giá phải trả để
+chạy phép thử mà là chất lượng của bằng chứng thu được sau khi chạy. Trang 5:
+trong 128 bài có kiểm chứng thì 13 bài không báo số người tham gia và 3 bài chỉ
+báo con số ước chừng, và ở nhiều bài thì các tác giả không nêu chuyên môn, nơi
+làm việc, học vấn hay quan hệ của người tham gia với chính
+họ~\autocite{p24humangap}. Cộng với quan sát vừa dẫn về những phần đánh giá chỉ
+có hai hoặc ba chuyên gia, điều bài mô tả không phải một lối thoát chưa ai đủ
+tiền đi mà một lối thoát đã có người đi và đi ẩu.
+
+\index{đánh giá!người tự tin không phải người đúng}%
+Chỗ sắc nhất trong phần ấy là chỗ bài cho thấy vì sao chất lượng lại quan trọng
+đến thế, và nó là một câu về khoảng cách giữa tự tin và đúng. Bài viết rằng một
+phép xác nhận rằng tín hiệu đã được nhận và được hiểu vẫn là cần thiết, vì công
+trình trước đó cho thấy không phải lúc nào cũng vậy, và dẫn ví dụ rằng chuyên
+gia lĩnh vực có thể tự tin quá mức một cách nghiêm trọng về mức độ họ hiểu những
+phương pháp XAI mà chính họ góp phần dựng nên~\autocite{p24humangap}. Công trình
+được dẫn ở đó là công trình trước của chính một trong các tác giả, nên bằng
+chứng duy nhất mà bài đưa ra cho việc tự tin và đúng tách nhau là bằng chứng của
+chính nhóm viết bài; sách ghi lại điều đó và không rút thêm gì, vì sách không
+đọc công trình được dẫn, đúng như khi
+mục~\ref{sec:ch12-con-so-va-cai-no-dem} thuật ba cuộc rà trước đó qua lời bài
+báo này.
+
+\index{đánh giá!đường thứ hai trả lời câu nào|)}%
+Gộp lại thì cái giá của đường thứ hai gồm hai phần và không phần nào là tiền.
+Phần thứ nhất là trần đã nêu ở trên: bằng chứng mua được nói về một quan hệ
+khác, nên đi hết đường này vẫn không trả lời được câu hỏi của
+định nghĩa~\ref{def:ch01-do-trung-thuc}. Phần thứ hai là chất lượng: trong số ít
+ỏi những lần đường này được đi, một phần đáng kể được đi theo cách mà chính bài
+báo không dám gọi là bằng chứng. Hai phần ấy khác nhau về hạng. Phần thứ nhất là
+giới hạn của đường, không sửa được bằng cách cố gắng hơn; phần thứ hai là chuyện
+làm cẩu thả, và sửa được. Mục sau chuyển sang đường thứ ba, đường duy nhất trong
+ba đường nhắm thẳng vào vế phải mà cả chương xoay quanh.

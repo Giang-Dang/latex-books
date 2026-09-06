@@ -1,0 +1,150 @@
+\section{Một cái tên đọc được đáng giá bao nhiêu}
+\label{sec:ch16-mot-cai-ten}
+
+\index{sparse autoencoder!cái tên đáng giá bao nhiêu|(}%
+Bài đã đo chỗ thiếu mà mục trước để lại là bài mà
+mục~\ref{sec:ch15-doc-duoc-dieu-khien-duoc} đã đọc, và câu hỏi mà mục ấy giao
+lại cho chương này là câu hỏi mà mục này trả lời: một khái niệm bên trong mô
+hình đọc được tên, có nghĩa là gì. Chương~\ref{ch:nut-that-khai-niem} trả lời
+được một nửa, rằng trong một từ điển 65\,536 nơ-ron thì 18.84 phần trăm vừa có
+tên đọc được vừa ép được đầu ra đi theo cái tên ấy. Mục này đọc nửa còn lại,
+tức con số ấy chắc tới đâu.
+
+\index{sparse autoencoder!ranh giới là trung bình của chính phân bố}%
+Nửa còn lại bắt đầu ở chỗ ranh giới. Bốn góc phần tư được cắt tại
+\emph{trung bình của chính hai phân bố điểm số}, chứ không tại một mức tuyệt đối
+nào~\autocite{p32cbmsae}. Nghĩa là \enquote{đọc được} ở đây không có nghĩa là
+đọc được, mà có nghĩa là đọc được hơn mức trung bình của chính từ điển đang xét;
+tương tự cho điều khiển được. Không chỗ nào trong bài đặt một mức tuyệt đối cho
+tính chất nào trong hai tính chất. Điều đó không làm con số sai, nhưng nó quyết
+định con số ấy trả lời được câu hỏi nào: nó so các nơ-ron của một từ điển với
+nhau, không so chúng với một tiêu chuẩn.
+
+\index{sparse autoencoder!ba mô hình, ba con số}%
+Hệ quả thứ nhất của cách cắt ấy là con số đổi theo từ điển. Bài chạy cùng phép
+đo trên ba mô hình phía sau, và bảng~\ref{tab:ch16-bon-goc-ba-mo-hinh} là kết
+quả.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Bốn góc phần tư đọc được và điều khiển được, trên ba mô hình phía
+  sau~\autocite{p32cbmsae}. Ranh giới của mỗi hàng là trung bình của chính hai
+  phân bố điểm số trong hàng ấy, nên bốn ô của một hàng so với nhau chứ không so
+  với hàng khác. Cột cuối là cột mà cả mục này đọc, và ba giá trị của nó trải từ
+  11.88 tới 19.82 phần trăm, tức hàng thấp nhất kém hàng cao nhất hơn một phần
+  ba. Hai hàng đầu là mô hình ngôn ngữ thị giác và hàng thứ ba là mô hình sinh
+  ảnh, nên hàng thứ ba là hàng mà phép ép được đọc trong không gian nhúng ảnh
+  chứ không trong không gian nhúng chữ. Mỗi hàng cộng lại đúng 100 phần trăm
+  trên 65\,536 nơ-ron.}
+  \label{tab:ch16-bon-goc-ba-mo-hinh}
+  \small
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    & Thấp & Đọc được, & Điều khiển được, & Cao \\
+    Mô hình phía sau & cả hai & không điều khiển & không đọc được & cả hai \\
+    \midrule
+    LLaVA, CLIP-ViT-L + Vicuna-7B   & 36.26\% & 19.87\% & 25.03\% & 18.84\% \\
+    LLaVA, DINOv2-L + Gemma2-9B     & 33.07\% & 23.35\% & 23.75\% & 19.82\% \\
+    UnCLIP, CLIP-ViT-L + SD 2.1     & 30.84\% & 14.53\% & 42.76\% & 11.88\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Bài tóm tắt ba hàng ấy bằng một câu ở phụ lục: chỉ một phần nhỏ các nơ-ron, từ
+12 tới 20 phần trăm, hữu dụng cho cả hai việc~\autocite{p32cbmsae}. Câu ấy đúng
+với bảng. Phần mở đầu ở trang đầu thì không in khoảng mà in một con số, khoảng
+19 phần trăm, tức hàng thứ nhất~\autocite{p32cbmsae}. Sách in cả khoảng, vì hàng
+thứ ba thấp hơn hàng thứ nhất tới hơn một phần ba và một con số duy nhất không
+nói được điều đó.
+
+\index{sparse autoencoder!đổi ranh giới thì đổi kết luận}%
+Hệ quả thứ hai nặng hơn, và chính bài đo nó. Phụ lục đặt câu hỏi hiển nhiên: nếu
+lấy một mốc khác thì sao, chẳng hạn lấy điểm điều khiển được trung bình của
+chính các nơ-ron mô hình gốc, tức các nơ-ron chưa qua SAE nào.
+Bài đo mốc ấy được 0.173, so với 0.232 mà hình bốn góc dùng, rồi tính lại: bốn
+góc của hàng thứ nhất thành 17.86, 9.58, 43.42 và 29.14 phần
+trăm~\autocite{p32cbmsae}. Con số mà cả mục~\ref{sec:ch15-doc-duoc-dieu-khien-duoc}
+xoay quanh chuyển từ 18.84 lên 29.14 phần trăm, hơn một lần rưỡi, chỉ vì một
+lần đổi mốc. Và mốc mới không phải mốc tùy tiện: nó hỏi một nơ-ron của từ điển
+có ép đầu ra tốt hơn một nơ-ron thường hay không, thay vì hỏi nó có tốt hơn mức
+trung bình của chính từ điển hay không.
+
+\index{sparse autoencoder!hai chỗ trong bài phải sửa trước khi trích}%
+Hai chỗ trong đoạn ấy sách phải sửa trước khi dùng. Chỗ thứ nhất là câu kết của
+chính đoạn, và nó thuộc đúng loại mà mục~\ref{sec:ch13-tran-cao-bao-nhieu} đã
+gặp, tức một ý đứng được viết trong một câu không đứng được: bài viết rằng phát
+biểu ban đầu của nó, rằng SAE có tỉ lệ thấp các nơ-ron hữu dụng, \enquote{29
+phần trăm}, vẫn còn đúng. Phát biểu ban đầu là phát biểu về khoảng 19 phần trăm,
+ở trang đầu; 29 là con số mới. Ý thực chất thì vẫn đứng, vì 29.14 phần trăm vẫn
+là một phần nhỏ, còn câu thì không, nên sách giữ phép tính đổi mốc và bỏ câu kết
+ấy. Chỗ thứ hai là một chỗ vênh mà
+sách không giải thích được và vì vậy ghi lại thay vì làm mượt: mốc 0.232 nói
+trên là điểm điều khiển được trung bình của hình bốn góc, trong khi bảng kết quả
+ở trang 7 của cùng bài cho điểm điều khiển được của toàn bộ nơ-ron SAE là 0.198
+và 0.203 theo hai cách ép, và bài mô tả hình bốn góc bằng
+đúng một trong hai cách ép ấy. Ba con số ấy đáng lẽ nói về cùng một đại lượng.
+Bài không đối chiếu chúng ở đâu, và sách không tìm ra cách đọc nào làm chúng
+khớp.
+
+\index{sparse autoencoder!điểm điều khiển được không chuyển được}%
+Hệ quả thứ ba là hệ quả mạnh nhất, và nó là một con số duy nhất. Nó không đo
+trên các nơ-ron của từ điển gốc mà trên phép sửa: bài huấn luyện tầng thắt khái
+niệm cho hai mô hình phía sau bằng cùng một cách, lấy 1329 khái niệm có mặt ở cả
+hai bên, rồi tính hệ số tương quan Pearson giữa điểm điều khiển được của chúng ở
+hai bên. Kết quả là $r = 0.06$ với giá trị $p$ bằng 0.035, và bài kết luận rằng
+\tn{khả năng điều khiển}{steerability} có vẻ phụ thuộc nặng vào nhiệm vụ và mô
+hình phía sau~\autocite{p32cbmsae}. Đọc con số ấy cho đúng: giá trị $p$ ở cỡ mẫu
+1329 chỉ nói rằng tương quan phân biệt được với 0, tức là một phát biểu về cỡ
+mẫu, còn $0.06$ là phát biểu về độ mạnh và nó gần như bằng không.
+
+Bài tự nêu một lý do cho chỗ ấy và lý do ấy phải đi kèm con số. Hai mô hình phía
+sau có sẵn không dùng cùng một bộ mã hóa CLIP, và còn dùng khác tầng lẫn khác số
+token~\autocite{p32cbmsae}. Nên phép so không phải phép so hai từ điển giống hệt
+nhau đặt sau hai mô hình khác nhau; hai bên khác nhau ở nhiều chỗ cùng lúc, và
+$r = 0.06$ không tách được chỗ nào gây ra chỗ nào. Cái nó vẫn nói được là điều
+mà mục này cần, và nói được bất kể nguyên nhân: một khái niệm điều khiển được ở
+một chỗ trong ngăn xếp thì không vì thế mà điều khiển được ở chỗ khác. Sách đọc
+nó ở mức ấy, và không chuyển nó thẳng sang các nơ-ron của bảng bốn góc, vì đó là
+một tập khác.
+
+\index{sparse autoencoder!điểm đọc được phụ thuộc công cụ chấm}%
+Nửa \enquote{đọc được} cũng không đứng yên. Bài chạy lại điểm đọc được của cùng
+những nơ-ron ấy với bảy mô hình ngôn ngữ thị giác khác nhau đặt bên trong công
+cụ dò tên, và điểm số chạy từ 0.154 tới 0.220, tức đầu cao gấp khoảng 1.43 lần
+đầu thấp~\autocite{p32cbmsae}. Mô hình mà bài chọn cho mọi kết quả chính lại là mô
+hình cho điểm thấp nhất trong bảy. Bài kết luận rằng điều đó xác nhận việc chọn
+mô hình nào không ảnh hưởng tới phép đánh giá của nó. Câu ấy đúng theo nghĩa thứ
+hạng, vì phép sửa mà bài đề xuất thắng từ điển gốc dưới cả bảy công cụ chấm, và
+không đúng theo nghĩa mức, vì ranh giới bốn góc là một mức chứ không phải một
+thứ hạng. Sách in khoảng lệch và không mở rộng chữ của bài.
+
+\index{sparse autoencoder!một công cụ đứng cả hai phía}%
+Ba hệ quả trên đều là chuyện ranh giới và chuyện đo lại. Chỗ thứ tư thì không,
+và mục~\ref{sec:ch15-doc-duoc-dieu-khien-duoc} đã nêu nó: cùng một công cụ dò
+tên vừa gán tên cho nơ-ron, vừa cấp điểm đọc được, vốn là độ khớp mà nó tính ra
+lúc gán, vừa cấp điểm điều khiển được, vốn là độ gần giữa đầu ra sau khi ép và
+chính cái tên nó đã gán. Điều mà mục này thêm vào là bài không chỉ bỏ sót chỗ
+ấy: bài chọn nó. Công trình mà bài lấy làm mốc so sánh đối chiếu đầu ra sau khi
+ép với những bức ảnh làm nơ-ron sáng nhất, tức với một thứ không do công cụ dò
+tên sinh ra, và bài đổi sang đối chiếu với cái tên do công cụ ấy gán, gọi phép
+đo mới là vững hơn và có nền ngữ nghĩa hơn~\autocite{p32cbmsae}. Chỗ mà bài tự
+nhận thì nằm ở phần giới hạn và nó là một lời trông đợi chứ không phải một phép
+đo: hiệu quả của cách tiếp cận phụ thuộc vào việc công cụ dò tên gán tên có
+chính xác hay không, tuy nhiên các tiến bộ tiếp theo của mô hình thị giác ngôn
+ngữ có khả năng sẽ cải thiện nó~\autocite{p32cbmsae}.
+
+\index{sparse autoencoder!cái tên đáng giá bao nhiêu|)}%
+\index{khoảng trống nghiên cứu!hướng tương lai của bài không giao}%
+Gộp bốn chỗ lại thì trả lời được câu mà
+chương~\ref{ch:nut-that-khai-niem} giao. Một khái niệm bên trong mô hình đọc
+được tên có nghĩa là một công cụ dò chưa ai kiểm đã gán cho nó một cái tên với
+độ khớp cao hơn trung bình của từ điển ấy, và nghĩa ấy hết ở đó. Nó không kéo
+theo rằng ép nơ-ron ấy thì đầu ra đi theo tên, vì hai tính chất tách nhau ở gần
+một nửa từ điển. Nó không kéo theo rằng con số đếm được là con số ổn định, vì
+đổi mốc thì nó thành 29.14 phần trăm và đổi công cụ chấm thì thang điểm giãn ra
+gấp khoảng 1.43 lần. Và nó không kéo theo rằng tính chất ấy thuộc về nơ-ron, vì
+$r = 0.06$ nói nó thuộc về cặp. Còn phần hướng nghiên cứu tương lai của bài thì
+liệt kê những cách dựng từ điển tốt hơn, và không mục nào trong đó hỏi làm sao
+biết các tên gán ra là đúng. Đó là hình dạng mà
+mục~\ref{sec:ch14-dieu-chua-giai-quyet} đã gặp ba lần ở Phần~IV, gặp lại ở đây
+trong chính văn liệu của lối thoát.

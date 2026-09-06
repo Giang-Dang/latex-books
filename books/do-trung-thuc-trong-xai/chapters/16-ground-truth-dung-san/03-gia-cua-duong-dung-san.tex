@@ -1,0 +1,113 @@
+\section{Cái giá của đường dựng sẵn}
+\label{sec:ch16-gia-duong-dung-san}
+
+\index{ground truth!cái thiết kế nhiệm vụ với tới|(}%
+Bảng cho phép đếm mà mục trước nhắc tới nằm ở phụ lục của bài
+báo~\autocite{p21metrics}, và trước khi đọc nó thì phải nói rõ nó đếm cái gì.
+Đường thứ nhất không đòi ground truth phải tồn tại, vì với mọi mô hình thì nó
+vẫn tồn tại; nó đòi ground truth phải \emph{đọc được ra từ đầu ra}. Hai điều ấy
+không giống nhau, và chỗ khác nhau tính được bằng tay trên hàm mà sách dùng từ
+chương~\ref{ch:giai-thich-de-lam-gi}.
+
+\index{ví dụ chạy suốt sách!khi nào đầu ra chỉ ra được phụ thuộc}%
+Hàm ấy là $f(x_1,x_2) = x_1 + 2x_2 + x_1x_2$ trên hai
+\tn{đặc trưng}{feature} bật tắt, nhận bốn giá trị $0$, $1$, $2$ và $4$.
+Mục~\ref{sec:ch15-ro-ri} đã lấy ngưỡng tại $1$ và được phép hoặc; lấy ngưỡng tại
+$4$ thì $y$ bằng 1 đúng ở tổ hợp $(1,1)$, tức phép và. Với mỗi nhiệm vụ, hỏi
+xem hành vi phụ thuộc vào cái gì, dưới tập can thiệp gồm đúng một thao tác là
+lật một đặc trưng. Tập can thiệp ấy không phải tập mà
+mục~\ref{sec:ch01-do-trung-thuc-va-tinh-hop-ly} dùng khi giới thiệu định
+nghĩa~\ref{def:ch01-do-trung-thuc}, ở đó thao tác là đặt một đặc trưng về 0; với
+hai đặc trưng nhị phân thì lật là thao tác tự nhiên hơn, và vì cả mục này nói về
+chuyện câu trả lời phụ thuộc tập can thiệp nào, chỗ đổi ấy phải nêu ra chứ không
+được lặng lẽ.
+
+Với phép và thì bốn tổ hợp cho bốn câu trả lời khác nhau. Ở $(0,0)$, lật đặc
+trưng nào thì $y$ vẫn bằng 0, nên $y$ không phụ thuộc vào đặc trưng nào. Ở
+$(1,0)$, lật $x_2$ thì $y$ thành 1 còn lật $x_1$ thì $y$ vẫn 0, nên $y$ chỉ phụ
+thuộc $x_2$; ở $(0,1)$ thì đối xứng, $y$ chỉ phụ thuộc $x_1$. Còn ở $(1,1)$, lật
+đặc trưng nào thì $y$ cũng về 0, nên $y$ phụ thuộc cả hai.
+
+Bốn tổ hợp cho bốn tập phụ thuộc khác nhau, và đó là vế phải của
+định nghĩa~\ref{def:ch01-do-trung-thuc} đã biết đủ. Nhưng đường thứ nhất không
+được nhìn đầu vào, nó chỉ được nhìn đầu ra. Thấy $y = 1$ thì đầu vào chỉ có thể
+là $(1,1)$, nên tập phụ thuộc xác định: cả hai đặc trưng. Thấy $y = 0$ thì đầu
+vào là một trong ba tổ hợp còn lại, và ba tổ hợp ấy cho ba tập phụ thuộc khác
+nhau, nên không xác định được gì.
+
+Phép hoặc của mục~\ref{sec:ch15-ro-ri} cho hình ảnh ngược lại. Ở đó $y = 0$ chỉ
+xảy ra ở $(0,0)$, nơi $y$ phụ thuộc cả hai đặc trưng, còn $y = 1$ xảy ra ở ba
+tổ hợp cho ba tập phụ thuộc khác nhau. Vậy với cả hai nhiệm vụ, đúng một trong
+hai giá trị của $y$ chỉ ra được vế phải, và đó là giá trị chỉ xảy ra ở một trong
+bốn tổ hợp. Đếm theo tổ hợp thì thiết kế ép được một tổ hợp trong bốn và bỏ ngỏ
+ba tổ hợp còn lại; đếm theo giá trị đầu ra thì nó ép được một trong hai. Hai
+cách đếm cho hai con số khác nhau và cả hai đều đúng, nên chỗ này phải nói bằng
+cả hai.
+
+\index{ground truth!chữ của chính bài báo}%
+Chữ mà bài báo dùng cho đúng chỗ ấy là chữ hẹp, và nó nằm ngay trong danh sách
+đóng góp ở trang 2: phương pháp dựa trên những thiết kế nhiệm vụ khiến các tính
+toán bên trong mô hình \emph{khôi phục được một phần} từ đầu
+ra~\autocite{p21metrics}. Chữ \enquote{một phần} không phải lời dè dặt lịch sự.
+Nó là chỗ mà ví dụ vừa rồi đo được, và bài báo đo nó trên chính bộ dữ liệu của
+mình.
+
+\index{ground truth!hai chỗ bài báo tự nhận}%
+Trước khi đọc phép đo ấy thì phải ghi bài báo tự nhận những gì, vì nó nhận ít
+hơn ta tưởng. Mục hạn chế của nó, trang 9, dài đúng một đoạn và nêu hai chỗ, cả
+hai đều nằm bên trong phương pháp. Chỗ thứ nhất là phủ sóng: phương pháp cho
+biết nhãn cho những bước mà thiết kế buộc phải xảy ra, còn một chuỗi bất kỳ thì
+chứa nhiều bước khác mà thiết lập ấy không nói được gì. Chỗ thứ hai là lệch
+nhãn: gắn nhãn trung thực cho cả một chuỗi thì đòi mọi bước của nó phải trung
+thực hoặc trơ, trong khi một bước không trung thực đã đủ để gắn nhãn ngược lại,
+nên chuỗi trung thực khó chứng nhận hơn chuỗi không trung thực và bộ dữ liệu
+chứa ít loại trước hơn loại sau~\autocite{p21metrics}.
+
+\index{ground truth!phép đếm trên bảng của bài báo}%
+Bây giờ tới phép đo. Bảng phân bố nhãn ở trang 28 chia 1946 nhãn mức bước theo
+bốn loại bước và theo bốn nguồn dữ liệu, và ba trong bốn nguồn là những bộ dữ
+liệu hỏi đáp có sẵn mà bài báo cài thêm gợi ý vào, còn nguồn thứ tư là những
+nhiệm vụ do chính bài sinh ra theo thủ tục. Cột nhiệm vụ tự sinh cho 486 nhãn.
+Ba cột kia cộng lại cho 1460. Và cột tự sinh chỉ có mặt ở đúng một trong bốn
+loại bước, loại \tn{thực thi bước nút thắt}{bottleneck execution}; hai loại bước
+mà mục~\ref{sec:ch09-bonafide} gọi là \tn{gán sai nguồn}{misattribution} và
+\tn{cam kết trung thực}{faithful commitment} nhận 0
+nhãn từ nó, vì chú thích của chính bảng ghi rằng hai loại ấy chỉ phát sinh trong
+thiết lập đánh lạc hướng~\autocite{p21metrics}.
+
+Đọc con số ấy cho đúng thì nó không nói phương pháp yếu. Nó nói phần thuần túy
+dựng sẵn của phương pháp, tức phần mà không có bộ dữ liệu nào của người khác đi
+kèm, cấp được 486 trong 1946 nhãn và cấp được đúng một trong bốn loại bước mà
+bảng ấy đếm. Ba phần tư còn lại đến từ việc cài một gợi ý vào dữ liệu có sẵn,
+tức từ một phép ép nhẹ hơn hẳn: không dựng nhiệm vụ mới mà chỉ thêm một thứ vào
+nhiệm vụ cũ và biết trước thứ ấy sai.
+
+\index{ground truth!chỗ sách nói thêm và bài báo không nói}%
+Đến đây là chỗ sách nói một câu mà bài báo không nói, nên câu ấy phải được đánh
+dấu. Câu là: đường thứ nhất mua một tiêu chí bằng cách thu hẹp chỗ nó áp dụng
+được, và ví dụ hai ngưỡng ở trên cho thấy chỗ hẹp ấy hẹp ngay ở mức một hàm hai
+biến. Bài báo không phát biểu điều đó. Rà toàn văn 31 trang thì các cụm
+\enquote{external validity}, \enquote{generalize}, \enquote{artificial},
+\enquote{real-world} và \enquote{narrow} không xuất hiện lần nào, và mục hạn chế
+của nó chỉ nêu hai chỗ vừa dẫn.
+
+\index{ground truth!bài báo trả lời trước lời buộc tội}%
+Bài báo lại trả lời sẵn lời buộc tội ấy, ở mục công trình liên quan trang 9, và
+câu trả lời đủ mạnh để sách phải in ra thay vì làm như chưa ai nghĩ tới: cách
+tiếp cận của nó đánh giá những chuỗi suy luận \emph{thật} so với những tính toán
+mà nó có hiểu biết ground truth về việc chúng đã xảy ra~\autocite{p21metrics}.
+Nghĩa là nhiệm vụ được dựng còn chuỗi thì không: mô hình vẫn suy luận theo cách
+của nó, và cái được dựng chỉ là hoàn cảnh khiến ta biết đáp án đúng đòi những
+bước nào. Đó là một phân biệt thật, và nó làm lời buộc tội của sách yếu đi mà
+không làm nó sai. Kết luận vẫn là kết luận về một tập nhiệm vụ được chọn vì
+chúng có tính chất ấy, và không phương pháp nào trong sách này bảo đảm rằng
+những nhiệm vụ mà người ta thật sự cần giải thích cũng có nó.
+
+\index{ground truth!cái thiết kế nhiệm vụ với tới|)}%
+Cái giá của đường thứ nhất vì vậy đọc được bằng hai câu. Nó trả lời đúng câu hỏi
+của định nghĩa~\ref{def:ch01-do-trung-thuc}, và trong bốn đường thì đây là đường
+duy nhất mà điều đó chắc chắn. Nó trả lời trong một phạm vi do chính người hỏi
+chọn, và phạm vi ấy hẹp theo một chiều đo được. Hai câu ấy là hai câu về cùng
+một thứ, vì cái làm cho câu thứ nhất đúng cũng là cái làm cho câu thứ hai đúng.
+Đường thứ hai thì không có hình dạng này, và mục sau bắt đầu bằng việc nói nó
+trả lời câu nào.
