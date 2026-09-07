@@ -474,3 +474,45 @@
   urldate      = {2026-08-24},
   note         = {Read arXiv:1810.03292v3 (2020-11-06), the revision that corrected a Guided Backprop bug and left the conclusions standing, for chapter 08: the model parameter randomization test and the data randomization test, and the framing that a method failing them is incapable of supporting tasks that require faithfulness. That is a necessary condition rather than a degree, and chapter 08 turns on the distinction.},
 }
+
+% ---------------------------------------------------------------------------
+% Chapter 18's three outside-corpus keys. All three are admitted under decision
+% 76's trigger as decision 85 sharpened it: a claim the chapter must adjudicate,
+% not one it merely repeats. The claim is the book's own, section 9.7's, that the
+% ground-truth comparison has never been run on the feature-attribution side, and
+% these are the three documents in reach where a refutation would sit. Chapter 11
+% and the SPEC open items each deferred one of these reading decisions to chapter
+% 18; the third arrived through the second's bibliography and no corpus paper
+% names it.
+% ---------------------------------------------------------------------------
+
+@online{mmetaquantus,
+  author       = {Hedström, Anna and Bommer, Philine and Wickstrøm, Kristoffer K. and Samek, Wojciech and Lapuschkin, Sebastian and Höhne, Marina M.-C.},
+  title        = {The Meta-Evaluation Problem in Explainable {AI}: Identifying Reliable Estimators with {MetaQuantus}},
+  date         = {2023},
+  eprint       = {2302.07265},
+  eprinttype   = {arxiv},
+  urldate      = {2026-09-07},
+  note         = {Read arXiv:\allowbreak 2302.07265v2 (2023-07-19), the current revision, for chapter 18 on 2026-09-07, fetched from arXiv rather than from the corpus folder because this paper is not in the corpus. Published in Transactions on Machine Learning Research 06/2023; arXiv carries no journal-ref, and the venue is taken from the paper's own running header on every page, which is the stronger source. Read because section 11.6 defers to chapter 18 the decision whether to open the meta-evaluation paper that paper 23 distinguishes itself from, describing it as quantifying attribution quality. Its object is indeed the faithfulness metrics of feature attribution, and it is the opposite of a counterexample to section 9.7: p. 5 states that the accuracy or validity of an estimator cannot be determined because such an assessment requires ground truth labels, and p. 6 that without ground truth the estimators cannot be validated at all, so the paper instead formulates failure modes they must not exhibit. Both quotations were read from rendered page images; a text extraction places them on one page and they are on two. The book's own reading, marked as such in section 18.3, is that this is section 8.6's move applied one level up, to the instruments rather than to the explanations, for the same stated reason.},
+}
+
+@online{mnauta,
+  author       = {Nauta, Meike and Trienes, Jan and Pathak, Shreyasi and Nguyen, Elisa and Peters, Michelle and Schmitt, Yasmin and Schlötterer, Jörg and van Keulen, Maurice and Seifert, Christin},
+  title        = {From Anecdotal Evidence to Quantitative Evaluation Methods: A Systematic Review on Evaluating Explainable {AI}},
+  date         = {2023},
+  eprint       = {2201.08164},
+  eprinttype   = {arxiv},
+  urldate      = {2026-09-07},
+  note         = {Read arXiv:\allowbreak 2201.08164v3 (2023-02-24), the current revision, for chapter 18 on 2026-09-07, fetched from arXiv because this paper is not in the corpus. Published in ACM Computing Surveys 55(13s), DOI 10.1145/3583558, 2023-07-13; the book cites the arXiv version on decision 48's precedent and the venue stays in this note. Read because the SPEC open item records that three of the four critique-core papers cite it, for three different things, and defers to chapter 18 the decision whether the book needs it as a source. It is a systematic review and runs no experiment: 606 candidates, 494 after exclusions, 361 included papers of which 312 introduce a new XAI method. Its Co-12 property Correctness is its name for faithfulness, defined on p. 15 as the extent to which the explanation is faithful to the model it explains, and its description of the deletion family on p. 20 takes the model's own output shift as the criterion without interrogating it. Its forward-looking sentence, p. 28, asks that XAI methods be extensively validated, the object being the explanation method rather than the evaluation method, using the very tools the review catalogues. The 312 of 361 figure counts this review's own corpus of evaluation-related papers and is not a validation rate; paper 24 owns that count and the two are not comparable.},
+}
+
+@online{mxaibench,
+  author       = {Liu, Yang and Khandagale, Sujay and White, Colin and Neiswanger, Willie},
+  title        = {Synthetic Benchmarks for Scientific Research in Explainable Machine Learning},
+  date         = {2021},
+  eprint       = {2106.12543},
+  eprinttype   = {arxiv},
+  urldate      = {2026-09-07},
+  note         = {Read arXiv:\allowbreak 2106.12543v4 (2021-11-04), the current revision, for chapter 18 on 2026-09-07, fetched from arXiv because this paper is not in the corpus. NeurIPS Datasets and Benchmarks Track 2021; 25 pages; printed folio matches the PDF page index. No corpus paper names it: it reached the book through the bibliography of mnauta, and it is the document the two deferred reading decisions would have missed. It releases XAI-Bench, synthetic datasets on which conditional expectations are exact, and scores eight feature attribution methods on five metrics, two of which the book already keyed as mroar and minfid. Its fifth metric, GT-Shapley, is the Pearson correlation of the attribution weights with the exact Shapley values, defined on p. 4. Table 1, p. 7, read from the rendered page, is what section 18.3 argues from, together with the paper's own sentence explaining that the method ranked worst there by GT-Shapley is ranked best by monotonicity because it optimises by construction what monotonicity checks. It does not refute section 9.7, because GT-Shapley's criterion is a chosen attribution definition computed without error rather than what the model's behaviour depends on, which is table 1.1's first row and not its second.},
+}
+
