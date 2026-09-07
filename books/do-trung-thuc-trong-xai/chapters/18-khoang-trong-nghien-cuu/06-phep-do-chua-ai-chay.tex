@@ -1,0 +1,80 @@
+\section{Những phép đo chưa ai chạy, và giá của chúng}
+\label{sec:ch18-phep-do-chua-ai-chay}
+
+\index{khoảng trống nghiên cứu!phép đo chưa ai chạy|(}%
+Năm điều kiện vừa xếp ra loại bớt chứ không cộng thành một thiết kế. Mục này đi
+từ ràng buộc sang việc: trên đường đi, sách gặp bốn phép đo mà không ai chạy, và
+mục này xếp chúng theo giá chứ không theo mức thú vị.
+
+\index{khoảng trống nghiên cứu!phép đo rẻ nhất là đọc lại một bảng đã in}%
+Phép đo rẻ nhất không đòi chạy gì cả, và
+mục~\ref{sec:ch18-ba-bai-le-ra-da-dong} vừa đi qua nó. Bảng của bài chuẩn đã in
+sẵn, cùng với một cột ngẫu nhiên đặt làm mốc, và thư viện sinh ra nó là thư viện
+công khai. Việc chưa ai làm là đọc bảng ấy theo cột thay vì theo hàng: với mỗi
+chỉ số, hỏi nó có tách được cột mốc ngẫu nhiên khỏi các phương pháp đã công bố
+hay không, và tách được bao xa. Đọc theo hàng thì được câu hỏi phương pháp nào
+tốt hơn; đọc theo cột thì được câu hỏi chỉ số nào phân biệt được cái gì. Cùng một
+bảng trả lời được cả hai câu, và bài chỉ hỏi câu thứ nhất.
+
+Phép đo ấy rẻ tới mức đáng ngờ, nên phải nói ngay nó không kết luận được gì. Một
+chỉ số không tách được mốc ngẫu nhiên khỏi các phương pháp trên \emph{một} mô
+hình, \emph{một} bộ dữ liệu tổng hợp và \emph{một} mức tương quan đặc trưng thì
+mới chỉ hỏng ở đó. Đó là một điều kiện cần theo đúng nghĩa mà
+mục~\ref{sec:ch08-dieu-kien-can} đặt ra, và một điều kiện cần bị vi phạm thì bác
+được, còn được thỏa thì không xác nhận gì. Cái nó cho là một câu hỏi chạy được
+ngay với chi phí gần bằng không.
+
+\index{khoảng trống nghiên cứu!phép đo thứ hai, nút thắt khái niệm}%
+Phép đo thứ hai đắt hơn một chút và
+mục~\ref{sec:ch15-doc-duoc-dieu-khien-duoc} đã tính giá của nó: dựng một tập khái
+niệm không cần nhãn thì làm được, còn hỏi mỗi đơn vị bên trong mô hình có ép được
+đầu ra hay không thì tốn đúng một lượt chạy cho mỗi đơn vị. Chưa ai chạy nó ở quy
+mô mà câu trả lời có nghĩa.
+
+\index{khoảng trống nghiên cứu!phép đo thứ ba, trên mô hình thật}%
+Phép đo thứ ba là phép đo mà mục~\ref{sec:ch14-dieu-chua-giai-quyet} nêu, và giá
+của nó là giá của việc dựng một thiết lập. Cả ba bài của
+chương~\ref{ch:giai-thich-duoi-tan-cong} làm việc trên những thiết lập mà ground
+truth đã biết vì có người dựng ra nó, dù người ấy là bên tấn công hay là người
+viết phương trình sinh dữ liệu. Không bài nào hỏi một mô hình bình thường, huấn
+luyện trên dữ liệu thật, thì phần sai lệch của lời giải thích nằm ở đâu và lớn
+tới đâu. Đó cũng là điều kiện thứ nhất của
+bảng~\ref{tab:ch18-nam-dieu-kien} đọc thành một thí nghiệm.
+
+\index{khoảng trống nghiên cứu!phép đo thứ tư, cái đắt nhất}%
+Phép đo thứ tư là phép đo đắt nhất, và nó là phép đo mà cả chương này tồn tại để
+chỉ vào. Nó là phép đo của bài neo, chạy ở cột thứ ba của
+hình~\ref{fig:ch18-hinh-dang-khoang-trong}: dựng một bộ nhiệm vụ mà đầu ra để lộ
+phép tính đã sinh ra nó, gán nhãn theo thiết kế ấy, rồi chấm từng chỉ số của
+chương~\ref{ch:do-do-trung-thuc} xem điểm của nó có tách được lời giải thích đúng
+cơ chế khỏi lời giải thích không đúng cơ chế hay không. Giá của nó là công dựng
+bộ nhiệm vụ, và mục~\ref{sec:ch16-gia-duong-dung-san} đã đo phạm vi mà một bộ như
+vậy với tới trên chính bài neo, nên cái giá ấy đã biết trước chứ không phải đoán.
+
+\index{khoảng trống nghiên cứu!một phép đo đã được chạy và trả lời}%
+Trong danh sách này có đúng một mục đã được gạch đi, và gạch nó là việc của
+chương~\ref{ch:con-nguoi-vang-mat}. Mục~\ref{sec:ch09-doi-tuong-khac-nhau} kể ba
+thứ đi qua được ranh giới, và thứ thứ ba là một phép kiểm mà phía attribution
+chạy được ngay: đo mức đồng thuận giữa các chỉ số, việc không cần ground truth
+nào. Nó đã được chạy, và
+mục~\ref{sec:ch12-ket-qua-va-ranh-gioi} thuật lại kết quả qua bài báo dẫn nó: các
+chỉ số độ trung thực của attribution đặc trưng chỉ tương quan yếu với nhau và
+\emph{có thể} cho ra những bảng xếp hạng phương pháp mâu thuẫn nhau. Chỗ rào ấy
+là chỗ rào của bài được dẫn chứ không của sách, và nó phải giữ nguyên. Câu trả
+lời đi cùng chiều với câu trả lời ở phía chuỗi suy luận.
+
+Chỗ ấy phải đọc cho đúng mức, vì nó dễ bị đọc quá tay. Các chỉ số bất đồng với
+nhau thì chưa nói chỉ số nào sai, và
+mục~\ref{sec:ch09-ket-qua} đã ghi hai cách giải thích cùng khớp với mức đồng
+thuận thấp: chúng đo những tính chất khác nhau, hoặc chúng cùng nhắm một đại
+lượng với nhiễu lớn. Điều phép kiểm ấy làm được là loại bỏ khả năng thứ ba, rằng
+các chỉ số đo cùng một thứ và đo đúng. Nó thu hẹp chứ không kết luận.
+
+\index{khoảng trống nghiên cứu!phép đo chưa ai chạy|)}%
+Đọc bốn phép đo theo giá thì thấy một thứ tự ngược với thứ tự mà lĩnh vực đi. Cái
+rẻ nhất chưa ai làm, dù số liệu đã in ra từ năm 2021. Cái đắt nhất cũng chưa ai
+làm, và nó là cái duy nhất trong bốn cái trả lời thẳng câu hỏi của
+định nghĩa~\ref{def:ch01-do-trung-thuc}. Cái đã được làm là cái không đòi ground
+truth, và nó cho một câu trả lời thu hẹp chứ không kết luận. Nói cách khác, lĩnh
+vực đã làm đúng phần việc không đòi trả giá, và ba phần còn lại đều đang chờ ở
+chỗ chúng được đặt xuống.

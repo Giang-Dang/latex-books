@@ -1,0 +1,81 @@
+\section{Hai chỗ phép đo đã chạy được}
+\label{sec:ch18-hai-cho-da-do-duoc}
+
+\index{khoảng trống nghiên cứu!hai chỗ đã đo được|(}%
+Như vậy khoảng trống không phải chuyện thiếu số liệu. Mục này nói nó là chuyện
+gì, và cách nói là đặt cạnh nhau hai chỗ mà phép đối chiếu đã chạy được, rồi hỏi
+hai chỗ ấy có gì chung.
+
+\index{khoảng trống nghiên cứu!chỗ thứ nhất, chuỗi suy luận}%
+Chỗ thứ nhất là bài neo, và
+chương~\ref{ch:chi-so-khong-do-do-trung-thuc} đã đọc nó hết. Điều mục này cần
+không phải kết quả mà là cách bài lấy được vế phải: nó chọn những nhiệm vụ mà đáp
+án đúng chỉ ra được nếu mô hình có đi qua một bước nào đó, nên với những bước ấy
+thì biết trước bước nào phải xảy ra, không cần nhìn vào trong mô hình. Có vế phải
+rồi thì chấm được từng chỉ số, và tám chỉ số cho kết quả quanh mức ngẫu nhiên.
+
+\index{khoảng trống nghiên cứu!chỗ thứ hai, nút thắt khái niệm}%
+Chỗ thứ hai là bài mà mục~\ref{sec:ch15-dung-cu-duoc-kiem} đọc, và nó là chỗ mà
+chương~\ref{ch:nut-that-khai-niem} gọi là dụng cụ đo đầu tiên đã được kiểm định
+mà sách gặp. Ở đó vế phải rẻ hơn nữa: các khái niệm đã được gán nhãn sẵn cùng bộ
+dữ liệu, nên không ai phải dựng gì. Có nhãn rồi thì đối chiếu được hai điểm số
+\tn{rò rỉ}{leakage} với một tiêu chí mà chính tác giả không chọn ra, trên tám bộ
+dữ liệu.
+
+\index{khoảng trống nghiên cứu!cái hai chỗ ấy có chung}%
+Đặt hai chỗ ấy cạnh nhau thì cái chung hiện ra, và nó không phải cái mà một người
+đọc đoán trước. Cả hai không thông minh hơn phần còn lại của lĩnh vực. Cả hai
+đơn giản là đã ở sẵn trong tình huống mà vế phải có mà không phải trả giá cho nó:
+một bên vì thiết kế nhiệm vụ ép nó lộ ra, một bên vì người làm dữ liệu đã gán nhãn
+từ trước cho một mục đích khác. Không bên nào dựng ground truth cho việc kiểm
+định chỉ số; cả hai nhặt được nó.
+
+Hình~\ref{fig:ch18-hinh-dang-khoang-trong} xếp ba phía cạnh nhau, hai phía đã đo
+được và một phía chưa.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch18-hinh-dang-khoang-trong}
+  \caption{Hàng giữa là chỗ quyết định. Ở hai cột trái, vế phải của
+  định nghĩa~\ref{def:ch01-do-trung-thuc} có sẵn vì một lý do không liên quan gì
+  tới việc kiểm định chỉ số, nên hàng dưới chạy được. Ở cột phải, nơi mọi phương
+  pháp của Phần~II sống, hàng giữa để trống, và hàng dưới để trống theo. Nét chấm
+  mang nghĩa thiếu, như từ chương~\ref{ch:lime-nao-dang-tin} tới giờ.}
+  \label{fig:ch18-hinh-dang-khoang-trong}
+\end{figure}
+
+\index{khoảng trống nghiên cứu!phía không nhặt được thì chưa ai trả giá}%
+Cột thứ ba là phía mà cả Phần~II lẫn Phần~IV bàn tới, và nó là phía duy nhất
+trong ba phía mà không ai nhặt được vế phải. Ở đó, muốn biết mô hình đã dùng gì
+thì phải nhìn vào trong nó, và
+mục~\ref{sec:ch16-ba-loi-thoat} đã ghi rằng nội dung tính toán bên trong không
+quan sát trực tiếp được. Cho nên phía ấy phải \emph{dựng} lấy vế phải, tức phải
+trả giá, và chương~\ref{ch:ground-truth-dung-san} đã đếm được bốn cách dựng cùng
+cái giá của từng cách.
+
+Bây giờ đọc lại cả ba cột như một câu. Ở hai chỗ mà giá bằng không thì phép đối
+chiếu đã được chạy. Ở chỗ mà giá khác không thì nó chưa được chạy. Vậy điều phân
+biệt hai bên không phải là ai nghĩ ra việc phải kiểm định dụng cụ đo của mình:
+bài siêu đánh giá của mục trước nghĩ ra từ năm 2023 và nói rõ vì sao không làm
+được. Điều phân biệt là ở hai bên kia có người đã trả sẵn cái giá ấy vì một lý do
+khác.
+
+\index{khoảng trống nghiên cứu!cách dựng ground truth không gắn với đối tượng}%
+Còn một câu nữa phải nói ở đây, vì thiếu nó thì cột thứ ba trông như một chỗ
+không đi vào được. Cách dựng ground truth của bài neo không gắn với
+\tn{chuỗi suy luận}{chain-of-thought}.
+Mục~\ref{sec:ch09-doi-tuong-khac-nhau} đã ghi điều đó từ chín chương trước,
+và ghi nó vào danh sách những thứ đi qua được ranh giới: nguyên tắc chọn những
+bài toán mà đầu ra để lộ phép tính đã sinh ra nó là một nguyên tắc về thiết kế
+nhiệm vụ, không phải về loại lời giải thích. Attribution đặc trưng dùng được
+nguyên tắc ấy. Cái nó phải trả là công dựng bộ nhiệm vụ, và cái nó nhận lại là
+một phạm vi hẹp mà mục~\ref{sec:ch16-gia-duong-dung-san} đã đo trên chính bài
+neo.
+
+\index{khoảng trống nghiên cứu!hai chỗ đã đo được|)}%
+Nên khoảng trống, đọc tới đây, đã hẹp lại thành một câu cụ thể hơn câu mà
+mục~\ref{sec:ch09-doi-tuong-khac-nhau} để lại. Không phải không ai đo được. Là
+chưa ai chịu trả giá để đo, ở đúng cái phía mà giá khác không, trong khi ở hai
+phía giá bằng không thì việc ấy đã được làm hai lần và cho hai câu trả lời khác
+nhau. Mục sau xếp lại những điều kiện mà sách đã gom được cho một dụng cụ như
+vậy, nếu có ai chịu trả.

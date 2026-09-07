@@ -1,0 +1,202 @@
+\section{Ba bài lẽ ra đã khép được khoảng trống}
+\label{sec:ch18-ba-bai-le-ra-da-dong}
+
+\index{khoảng trống nghiên cứu!ba bài ngoài danh mục|(}%
+Mục trước khép lại ở chỗ chỉ một bài trong chín gọi tên được dụng cụ còn thiếu.
+Mục này hỏi câu hiển nhiên tiếp theo: có ai ngoài chín bài ấy đã dựng nó chưa.
+Ba tài liệu trả lời được câu ấy, và cả ba đều nằm ngoài danh mục 32 bài của sách.
+
+\index{khoảng trống nghiên cứu!vì sao phải đọc cả ba}%
+Vì sao sách phải mở cả ba thì nói trước, vì quy tắc đọc ngoài danh mục hẹp và ba
+bài trong một chương là nhiều. Quy tắc, đặt ra ở
+chương~\ref{ch:nut-that-khai-niem} và siết lại ở
+chương~\ref{ch:do-trung-thuc-chuoi-suy-luan}, là sách mở một bài ngoài danh mục
+khi có một khẳng định \emph{mà chương phải xử}, chứ không phải khi chương chỉ
+thuật lại. Khẳng định phải xử ở đây là khẳng định của chính sách, câu mạnh nhất
+sách đưa ra: phép đối chiếu với ground truth chưa được chạy ở phía attribution
+đặc trưng. Ba tài liệu này là ba chỗ mà một phản ví dụ cho câu ấy sẽ nằm. Không
+mở chúng là để nguyên câu ấy ở chỗ nó chưa được kiểm, mà một cuốn sách kết thúc
+bằng một khoảng trống thì phải kiểm rằng khoảng trống ấy có thật.
+
+\subsection*{Bài siêu đánh giá phát biểu đúng câu của sách}
+
+\index{siêu đánh giá!bài mà chương 11 hoãn lại}%
+Bài thứ nhất là bài mà mục~\ref{sec:ch11-khong-co-tang-day} hoãn quyết định đọc
+sang chương này. Bài của chương ấy tự tách mình khỏi nó bằng một vế, rằng đó là
+bài toán \tn{siêu đánh giá}{meta-evaluation}, \emph{định lượng chất lượng
+attribution}, còn khung của bài thì nhắm vào
+\tn{tương tác bậc hai}{second-order interaction}~\autocite{p23metagame}. Một bài định lượng chất lượng attribution là đúng thứ
+mà khoảng trống này nói là chưa có.
+
+Đọc nó thì thấy đối tượng đúng như vậy. Bài siêu đánh giá lấy chính các chỉ số
+chấm điểm lời giải thích làm đối tượng, gọi chúng là các bộ ước lượng chất lượng,
+và trong số các chỉ số nó đem ra xét có những chỉ số thuộc đúng các họ mà
+chương~\ref{ch:do-do-trung-thuc} dựng lại, trong đó có một chỉ số xóa dần từng
+điểm ảnh~\autocite{mmetaquantus}. Vậy nếu có tài liệu nào đã chạy phép đối chiếu
+mà sách nói chưa ai chạy thì phải là tài liệu này.
+
+\index{siêu đánh giá!chỗ bài tự nói nó không làm được}%
+Bài nói ngược lại, và nói ngay ở chỗ nó dựng khung. Mục 2.2 của nó mang nhan đề
+\emph{thách thức của tính không kiểm chứng được}, và đoạn quyết định nằm ở trang
+5~\autocite{mmetaquantus}:
+
+\begin{quote}
+Một quan sát then chốt khác là ta không thể xác định độ chính xác hay tính hợp lệ
+của một bộ ước lượng, tức là nó có thật sự đo cái tính chất mà nó nhắm tới hay
+không, bởi một phép đánh giá như vậy đòi phải truy cập được các nhãn ground
+truth. Tuy nhiên, vì phân tích độ tin cậy không phụ thuộc vào việc có sẵn nhãn
+ground truth, ta vẫn có thể nghiên cứu độ tin cậy của một bộ ước lượng, tức mức
+nhất quán chung của nó.%
+\footnote{Nguyên văn: \enquote{Another key observation is that we cannot determine
+the accuracy or validity of an estimator (i.e., whether it actually measures the
+intended quality) since such an assessment requires access to ground truth labels.
+However, as reliability analysis does not depend on the availability of ground
+truth labels, it is still possible to study the reliability of an estimator, which
+refers to its overall consistency.}}
+\end{quote}
+
+Câu ấy nói bài không làm được gì; câu tiếp theo nói bài sẽ làm gì thay vào đó, và
+nó mở đúng mục mà bài dựng khung của mình, ở trang
+sau~\autocite{mmetaquantus}:
+
+\begin{quote}
+Không có thông tin ground truth thì ta không thể kiểm định hay tối ưu các bộ ước
+lượng theo cái ta muốn chúng đạt được, nhưng ta có thể thay vào đó phát biểu
+những tình huống biên hoặc những hành vi mà ta không muốn chúng có.%
+\footnote{Nguyên văn: \enquote{Without ground truth information, we cannot validate
+or optimise the quality estimators against what we want them to fulfil, but we can
+instead articulate edge-case scenarios or behaviours that we do not want them to
+exhibit.}}
+\end{quote}
+
+Hai câu ấy là câu của mục~\ref{sec:ch09-doi-tuong-khac-nhau}, phát biểu bởi chính
+lĩnh vực, trong một bài đã qua bình duyệt, ba năm trước khi bài neo của sách xuất
+hiện. Sách đi tìm một phản ví dụ và tìm thấy một nhân chứng.
+
+\index{siêu đánh giá!nước đi giống nước đi của các chỉ số}%
+Còn một điều nữa trong bài ấy, và đây là cách đọc của sách chứ không phải câu của
+bài. Gặp bức tường vừa dẫn, bài không dừng lại: nó chuyển sang phát biểu các
+\emph{chế độ hỏng}, tức những hành vi mà một bộ ước lượng tốt không được
+có~\autocite{mmetaquantus}. Nước đi ấy đúng bằng nước đi mà
+mục~\ref{sec:ch08-dieu-kien-can} mô tả, ở đó lĩnh vực không kiểm được rằng một
+bản đồ nổi bật đúng nên chuyển sang kiểm những điều kiện cần mà nó phải thỏa. Chỗ
+giống nhau không phải trùng hợp: hai bên gặp cùng một bức tường, không có ground
+truth, và cùng đi vòng bằng cách đổi điều kiện đủ lấy điều kiện cần. Bài siêu
+đánh giá làm việc ấy với các chỉ số, còn các chỉ số đã làm việc ấy với các lời
+giải thích. Không bài nào nói ra chỗ lặp lại này, vì mỗi bài chỉ đứng ở một tầng.
+
+\subsection*{Bài khảo sát mà ba bài cùng dẫn là một bản kiểm kê}
+
+\index{khoảng trống nghiên cứu!bài được ba bài khác cùng dẫn}%
+Bài thứ hai là bài mà ba trong bốn bài lõi của Phần~IV cùng dẫn, mỗi bài cho một việc
+khác nhau, và mục ghi chép của sách đã hoãn quyết định đọc nó sang chương này.
+Một tài liệu được ba bên độc lập dẫn tới là chỗ đáng hỏi, nhất là khi nó là một
+bài tổng quan về \emph{cách lĩnh vực đánh giá lời giải thích}.
+
+Đọc nó thì câu trả lời ngắn: đó là một bài tổng quan hệ thống, và nó không chạy
+thí nghiệm nào. Nó gạn từ 606 bài xuống 494 rồi xuống 361 bài được đưa vào, trong
+đó 312 bài giới thiệu một phương pháp XAI mới~\autocite{mnauta}. Việc nó làm là
+phân loại và đếm những gì người khác làm.
+
+\index{khoảng trống nghiên cứu!Correctness là của lời giải thích, không phải của chỉ số}%
+\code{Correctness} là chữ mà bài dùng cho tính chất tương ứng với độ trung thực,
+và đó cũng đúng là chữ mà khảo sát của chương~\ref{ch:lime-nao-dang-tin} dùng cho
+tính chất đầu tiên trong bảng đánh giá của nó. Bài định nghĩa chữ ấy là mức mà
+lời giải thích trung thực với mô hình dự đoán mà nó giải
+thích~\autocite{mnauta}, tức là định nghĩa~\ref{def:ch01-do-trung-thuc} nói bằng
+lời khác. Khi mô tả họ xóa dần, bài
+viết rằng trong một lời giải thích đúng đắn thì điểm số quan trọng của đặc trưng
+phải tỉ lệ với độ dịch chuyển của phân bố đầu ra~\autocite{mnauta}. Tiêu chí ở
+đó là chính đầu ra của mô hình, tức là \tn{đại lượng thay thế}{proxy} mà cả
+chương~\ref{ch:do-do-trung-thuc} dành để mổ, và bài mô tả nó mà không hỏi nó có
+đứng vững không.
+
+Câu hướng tới tương lai của bài thì nằm ở phần bàn luận, và tân ngữ của nó là chỗ
+quan trọng: bài viết rằng các \emph{phương pháp} XAI cần được kiểm định rộng rãi
+để bảo đảm chúng đáng tin và hữu ích~\autocite{mnauta}. Thứ được đem đi kiểm định
+là phương pháp giải thích, còn thứ dùng để kiểm định là chính bộ công cụ mà bài
+vừa kiểm kê. Đó là một tầng, và tầng trên nó, câu hỏi bộ công cụ ấy đã được kiểm
+định bằng gì, bài không đặt ra.
+
+Một con số của bài đáng giữ và một cách đọc nó đáng cấm. Con số là 312 trên 361.
+Cách đọc bị cấm là đọc nó thành một tỉ lệ kiểm định: 361 là số bài trong tập hợp
+riêng của bài tổng quan này, gồm những bài có liên quan tới việc đánh giá, nên
+312 không nói gì về tỉ lệ trong toàn lĩnh vực. Con số đếm việc kiểm chứng với
+người thì thuộc về mục~\ref{sec:ch12-mot-cuoc-kiem-dem} và đã ở đó; hai con số
+không so với nhau được.
+
+\subsection*{Bài chuẩn đã có sẵn số liệu, và đọc nó thành chuyện khác}
+
+\index{khoảng trống nghiên cứu!bài tới qua danh mục tài liệu}%
+Bài thứ ba không được bài nào trong danh mục 32 bài nhắc tới. Nó tới qua danh mục
+tài liệu của bài thứ hai, và nó là bài mà hai quyết định đọc kia sẽ bỏ sót. Nó
+công bố một bộ dữ liệu tổng hợp và một thư viện để chấm điểm các phương pháp
+attribution đặc trưng, trên những phân bố mà kỳ vọng có điều kiện tính được chính
+xác chứ không phải xấp xỉ~\autocite{mxaibench}.
+
+Điều làm nó thành bài đáng đọc nhất trong ba bài là danh sách chỉ số của nó. Nó
+chấm bằng năm chỉ số và gọi chúng bằng tên riêng của từng chỉ số:
+\code{faithfulness}, \code{monotonicity}, ROAR, \code{GT-Shapley} và infidelity.
+Hai trong năm là chỉ số mà chương~\ref{ch:do-do-trung-thuc} đã đi qua và đã thêm
+khóa trích dẫn, ROAR và infidelity. Chỉ số thứ tư thì khác hẳn bốn chỉ số kia:
+\code{GT-Shapley} là hệ số tương quan Pearson giữa trọng số mà phương pháp gán
+với \tn{giá trị Shapley}{Shapley value} chính xác, mà bộ dữ liệu tổng hợp cho
+phép tính không sai số~\autocite{mxaibench}. Nghĩa là trong cùng một bảng, trên
+cùng những lần chạy, bài đặt bốn chỉ số thay thế cạnh một cột có tham chiếu tới
+một đáp án tính được.
+
+\index{khoảng trống nghiên cứu!một cột đối chiếu đặt cạnh bốn cột thay thế}%
+Bảng ấy in ở trang 7, và nó có bảy cột: sáu phương pháp đã công bố, cộng một cột
+ứng với một phương pháp sinh trọng số ngẫu nhiên, đặt ở đó làm mốc. Hãy đọc hai
+hàng của nó. Ở hàng \code{monotonicity}, cả bảy cột nằm gọn giữa 0.517 và 0.562,
+và cột mốc ngẫu nhiên đứng ở 0.525, tức là nó không đứng cuối: có một phương pháp
+đã công bố xếp dưới nó~\autocite{mxaibench}. Ở hàng \code{GT-Shapley}, cũng bảy
+cột ấy trải từ $-0.127$ tới 0.930, và cột mốc đứng ở 0.004, với bốn phương pháp
+đứng trên nó và hai phương pháp đứng dưới~\autocite{mxaibench}. Cùng một tập
+phương pháp và cùng những lần chạy cho ra hai bức tranh không giống nhau.
+
+Chi tiết sắc nhất thì chính bài nêu ra và nêu bằng một câu: phương pháp bị chấm
+tệ nhất ở hàng \code{GT-Shapley} lại là phương pháp được chấm tốt nhất ở hàng
+\code{monotonicity}, tức $-0.127$ ở hàng dưới và 0.562 ở hàng
+trên~\autocite{mxaibench}. Bài giải thích luôn vì sao, và lời giải thích của bài
+là chỗ mà mục này dừng lại: phương pháp ấy chọn lần lượt các đặc trưng có ảnh
+hưởng lớn nhất lên đầu ra, có hoàn lại, mà đó đúng là thao tác mà
+\code{monotonicity} kiểm~\autocite{mxaibench}.
+
+\index{khoảng trống nghiên cứu!một chỉ số có thể bị nhắm để thắng}%
+Cách đọc sau đây là của sách, không phải của bài. Một chỉ số mà người ta dựng
+được một phương pháp để thắng nó bằng chính cấu tạo của phương pháp ấy thì không
+còn là bằng chứng về tính chất ghi trên tên nó. Đó là chẩn đoán của
+chương~\ref{ch:do-do-trung-thuc} phát biểu lại, và cũng là điều mà bài khảo sát
+của chương~\ref{ch:lime-nao-dang-tin} ghi nhận khi nó viết rằng các chỉ số đánh
+giá được chọn sao cho khẳng định của bài được xác nhận. Ở đây cả hai hiện ra
+trong một hàng đã in.
+
+Vậy tại sao bảng ấy không khép được khoảng trống. Bài đọc nó theo cách khác: mục
+mang nhan đề \emph{hiệu năng qua các chỉ số}, và chủ ngữ suốt mục là các phương
+pháp giải thích, còn kết luận rút ra là hiệu năng tương đối của chúng thay đổi
+mạnh tùy chỉ số~\autocite{mxaibench}. Không chỗ nào trong bài hỏi câu ngược lại,
+là các chỉ số ấy có đo đúng thứ chúng ghi trên tên hay không, dù cột có tham
+chiếu đã nằm sẵn trong bảng để hỏi câu ấy.
+
+\index{khoảng trống nghiên cứu!vì sao câu của mục 9 chấm 7 còn đứng}%
+Còn một lý do nữa, và nó là lý do khiến câu của
+mục~\ref{sec:ch09-doi-tuong-khac-nhau} còn đứng sau khi bảng này được in ra.
+Đáp án mà cột \code{GT-Shapley} đối chiếu là giá trị Shapley chính xác, tức một
+định nghĩa attribution đã được chọn rồi tính không sai số trên một phân bố đã
+biết. Nó không phải những thứ mà hành vi của mô hình phụ thuộc vào. Nói cho gọn
+thì cột ấy so một lời giải thích với một lời giải thích khác, cái sau được tính
+đúng theo một công thức đã chọn; nó không so lời giải thích với mô hình. Muốn đọc
+nó thành phép đo độ trung thực thì phải công nhận trước rằng giá trị Shapley là
+câu trả lời đúng, mà chương~\ref{ch:shap} và
+chương~\ref{ch:attribution-tu-nguyen-ly-dau} dành hai chương để không công nhận
+điều đó. Nên bảng ấy giải quyết được câu hỏi phương pháp nào xấp xỉ giá trị
+Shapley tốt nhất, và không chạm tới câu hỏi chỉ số nào đo được độ trung thực.
+
+\index{khoảng trống nghiên cứu!ba bài ngoài danh mục|)}%
+Ba bài không khép được khoảng trống theo ba cách khác nhau. Bài thứ nhất đứng
+đúng chỗ và tuyên bố rằng chỗ ấy
+không đứng được, rồi dựng một khung để làm việc mà không cần đứng ở đó. Bài thứ
+hai kiểm kê các dụng cụ và hỏi chúng dùng để kiểm cái gì, chứ không hỏi ai kiểm
+chúng. Bài thứ ba có sẵn số liệu để hỏi câu ấy và đọc số liệu ấy thành một câu về
+các phương pháp. Cộng lại thì khoảng trống không còn là chuyện thiếu số liệu.

@@ -1,0 +1,41 @@
+\begin{tikzpicture}[
+  every node/.style={font=\footnotesize, align=center},
+  side/.style={draw=black!85, line width=1pt, fill=black!8,
+    minimum width=34mm, minimum height=8mm},
+  gap/.style={draw=black!55, dotted, thick, fill=white,
+    minimum width=34mm, minimum height=8mm},
+  cell/.style={draw=black!65, rounded corners=2pt, fill=black!4,
+    minimum width=34mm, minimum height=13mm, text width=32mm,
+    font=\scriptsize},
+  cellgap/.style={draw=black!55, dotted, thick, fill=white,
+    rounded corners=2pt, minimum width=34mm, minimum height=13mm,
+    text width=32mm, font=\scriptsize},
+  flow/.style={-{Stealth[length=2mm]}, thick, black!70},
+  lbl/.style={font=\scriptsize, align=center, black!55}
+]
+  \node[side] (a) at (0,3.1)   {chuỗi suy luận};
+  \node[side] (b) at (4.1,3.1) {nút thắt khái niệm};
+  \node[side] (c) at (8.2,3.1) {attribution đặc trưng};
+
+  \node[cell] (a1) at (0,1.4)   {ground truth từ \textbf{thiết kế nhiệm vụ}: đáp án đúng buộc phải đi qua một bước};
+  \node[cell] (b1) at (4.1,1.4) {ground truth từ \textbf{nhãn có sẵn}: khái niệm đã được gán nhãn cùng dữ liệu};
+  \node[cellgap] (c1) at (8.2,1.4) {không ai biết mô hình đã dùng gì; mọi chỉ số dùng một đại lượng thay thế};
+
+  \node[cell] (a2) at (0,-0.6)   {phép đối chiếu \textbf{đã chạy}: tám chỉ số, kết quả quanh mức ngẫu nhiên};
+  \node[cell] (b2) at (4.1,-0.6) {phép đối chiếu \textbf{đã chạy}: hai điểm số, tương quan trên tám bộ dữ liệu};
+  \node[cellgap] (c2) at (8.2,-0.6) {phép đối chiếu \textbf{chưa ai chạy}};
+
+  \draw[flow] (a.south) -- (a1.north);
+  \draw[flow] (b.south) -- (b1.north);
+  \draw[flow] (c.south) -- (c1.north);
+  \draw[flow] (a1.south) -- (a2.north);
+  \draw[flow] (b1.south) -- (b2.north);
+  \draw[flow] (c1.south) -- (c2.north);
+
+  \node[lbl] at (0,-2.05)   {chương~\ref{ch:chi-so-khong-do-do-trung-thuc}};
+  \node[lbl] at (4.1,-2.05) {chương~\ref{ch:nut-that-khai-niem}};
+  \node[lbl] at (8.2,-2.05) {Phần~II và Phần~IV};
+
+  \node[lbl, text width=30mm] at (11.4,1.4)  {vế phải của định nghĩa~\ref{def:ch01-do-trung-thuc} lấy ở đâu};
+  \node[lbl, text width=30mm] at (11.4,-0.6) {đã đem chỉ số ra đối chiếu với nó chưa};
+\end{tikzpicture}
