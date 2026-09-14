@@ -19,14 +19,20 @@ So a question mark in a C\# signature is an API decision made in a file that
 does not look like one. Chapter~\ref{ch:data-without-n-plus-1} chose
 \code{Task<Speaker?>} because a DataLoader answers a missing key with null and
 the type had to allow it. That was a local choice about a return value, and it
-was also a permanent promise to every client the graph will ever have.
+was also a promise in the client-facing schema.
 
 \index{non-null!what it costs to be wrong}%
-Permanent because there is no safe direction out of it. Adding an exclamation
-mark later breaks every client that handled null, whose null branch is now
-dead code guarding against a case the schema says cannot occur. Removing one
-breaks every client that trusted the field and never wrote that branch at all.
-The nullability of a field is a decision you make once.
+For an output field, changing \code{String} to \code{String!} narrows the
+possible values and preserves existing valid operations. An old client's null
+check becomes unnecessary, not broken. The reverse change can break code that
+trusted the non-null promise. Inputs run the other way: requiring a formerly
+optional value can reject an old request, while accepting null relaxes the
+contract. Adding a new required input without a default has the same
+risk~\autocite{apollocompatrepair}.
+
+Compatibility is separate from execution reliability. A server that advertises
+a stronger output promise must keep it; if it produces null, the error
+propagates to an enclosing nullable position. That is the cost measured next.
 
 \subsection{One Missing Row}
 
@@ -80,7 +86,11 @@ The method promises a \code{Speaker}, the loader can hand it back a null, and
 the compiler can see the gap before a single request has been sent. The schema
 now carries \code{speaker: Speaker!}, so the same gap is in the contract.
 
-Ask for the page.
+Before sending a request, stop Sessions. In \code{src/Sessions}, remove only
+the disposable \code{conference.db}. From that directory, run
+\code{dotnet run} to rebuild and recreate it from the changed seed.
+This also undoes the preceding mutation, so the orphan is again the fourth
+session in start-time order. Ask for the page.
 
 \begin{minted}{text}
 {"query":"{ sessions(first: 10) { nodes { title speaker { name } } } }"}
@@ -159,11 +169,38 @@ failure itself sets it.
 
 \index{selection set!decides whether the failure is visible}%
 A fourth request is the uncomfortable one. Ask the same broken service for
-\code{sessions \{ nodes \{ title \} \}}, without the speaker, and all four
-titles come back with no error key anywhere. The schema is exactly as wrong.
+the titles without the speaker:
+
+\begin{minted}{graphql}
+{ sessions(first: 10) { nodes { title } } }
+\end{minted}
+
+All four titles come back with no error key anywhere. The schema is exactly as wrong.
 Whether a given client ever sees it depends on what that client selected, so
 this is a defect that arrives in production on the day somebody adds a field to
 a query.
+
+\subsection{Restore the Working Example}
+
+The orphan and non-null resolver were temporary. Restore the speaker resolver
+to the complete member below; the node resolver in the same file stays as it
+was.
+
+\begin{minted}{csharp}
+    public static async Task<Speaker?> GetSpeakerAsync(
+        [Parent(nameof(Session.SpeakerId))] Session session,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+        => await speakerById.LoadAsync(session.SpeakerId, ct);
+\end{minted}
+
+In \code{ConferenceData}, restore session 4's \code{SpeakerId} to 3.
+Keep session 3's seeded start time at 11:00 UTC; the successful mutation
+moved its stored row to 16:00, not its seed. Stop the service and remove only
+the disposable \code{conference.db} in \code{src/Sessions}, then restart
+from that directory. This reapplies the original seed and removes both
+experiments' state. A request for \code{sessions(first: 10)} must again
+return speakers 1, 1, 2, 3 in start-time order before you continue.
 
 \subsection{The Rule I Use}
 

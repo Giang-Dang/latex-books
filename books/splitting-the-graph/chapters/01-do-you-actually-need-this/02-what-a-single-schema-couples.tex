@@ -1,10 +1,11 @@
 \section{What a Single Schema Couples}
 \label{sec:ch01-what-a-single-schema-couples}
 
-A single GraphQL schema is a single deployable. Every field in it resolves in
-one process, so every change to it ships on one release, reviewed by whoever
-owns that release. Nothing about GraphQL causes this. It is what happens to any
-interface that many teams need to change and one team compiles.
+In the centralized service considered here, one team compiles and releases
+every resolver behind the schema. A field change therefore waits for that
+team's review and release. A single schema does not require a single process
+or deployment; the bottleneck is this implementation and its release ownership,
+not GraphQL's type system.
 
 \index{federation!definition}%
 Federation breaks the coupling by moving the merge, and the merge here is not

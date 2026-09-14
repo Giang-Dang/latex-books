@@ -188,9 +188,11 @@ type SpeakerDoubleBookedError implements Error {
 \index{mutation conventions!input type}%
 The method's non-service parameters became the fields of an input type named
 after the mutation, and the argument itself is called \code{input}. That is
-not decoration: an argument list is positional in the schema's grammar and
-adding to it is awkward, while an input object grows a field without any
-existing query changing. The shape is Relay's, and Relay's current
+a grouping decision, not a compatibility trick. GraphQL arguments are named
+and unordered, as are input-object fields. Adding an optional argument or an
+optional input field preserves existing calls; requiring either without a
+default can break them~\autocite{graphqlspec2025}. The input object gives
+this operation one reusable input shape. The shape is Relay's, and Relay's current
 documentation no longer mentions the \code{clientMutationId} field its older
 editions asked every mutation to carry. Nothing generates one here.
 
@@ -246,12 +248,13 @@ forever, and a new failure mode becomes an additive change. Both fell out of
 two attributes.
 
 \index{errors as data!versus the errors array}%
-An exception that is not declared escapes into the top-level \code{errors}
-array instead, where it is a string with a path and no type, arriving beside
-\code{data: null} for the whole field. A client can display it and cannot
-branch on it, because there is nothing to branch on. Declaring the failure
-moves it into the payload, where it has a type, has fields, and is something
-the client can act on.
+An undeclared exception becomes an execution error in the top-level
+\code{errors} array. Its path identifies the failed response position, and
+nullability determines how much data is lost. An application can supply an
+\code{extensions.code} that clients branch on; chapter~\ref{ch:entities-authorization}
+uses exactly that. The distinction is that the envelope does not declare a
+typed business outcome in the schema. The payload does, with fields a client
+can select and validate.
 
 \subsection{The Three Outcomes}
 
@@ -267,9 +270,9 @@ mutation R($input: RescheduleSessionInput!) {
     session { id title startsAt }
     errors {
       __typename
-      ... on SessionNotFoundError { message sessionId }
+      ... on Error { message }
+      ... on SessionNotFoundError { sessionId }
       ... on SpeakerDoubleBookedError {
-        message
         speakerId
         clashingSessionId
       }
@@ -303,7 +306,8 @@ statement, the lookup, and then the exception:
 \end{minted}
 
 \index{errors as data!status 200}%
-Status 200, no error at the top level, no null in \code{data}. As far as HTTP
+Status 200, no error at the top level, and an intact \code{data} object.
+The payload's \code{session} is null, as declared. As far as HTTP
 is concerned nothing went wrong, because nothing did: the request was valid,
 the server answered it, and the answer is that there is no such session.
 
@@ -332,6 +336,13 @@ from an exception thrown halfway through a transaction, and it is a property of
 how the method is written rather than anything the conventions did.
 
 \index{mutation!success}%
+For the successful run, send the same operation with these variables:
+
+\begin{minted}{json}
+{"input":{"sessionId":"U2Vzc2lvbjoz",
+          "startsAt":"2026-09-14T16:00:00Z"}}
+\end{minted}
+
 A move that works costs three: the lookup, the speaker's other sessions, and
 the write.
 

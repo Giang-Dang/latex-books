@@ -34,7 +34,7 @@ type Session @key(fields: "id") {
   speaker: Speaker
 }
 
-type Speaker @key(fields: "id") {
+type Speaker @key(fields: "id", resolvable: false) {
   id: ID!
 }
 \end{graphqlsdl}

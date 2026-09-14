@@ -1,8 +1,8 @@
 \begin{chaptersummary}
-  \item Hot Chocolate derives the schema from your C\# types at compile time.
-        \code{[QueryType]} feeds a source generator, which writes a
-        registration method named after your assembly, so the line you call is
-        \code{AddSessionsTypes} here and something else in your project.
+  \item Hot Chocolate constructs and validates the schema when the server
+        initializes. At compile time, \code{[QueryType]} feeds a source
+        generator that writes the registration method. Its name follows your
+        assembly: \code{AddSessionsTypes} here, another name in your project.
   \item Leaving that attribute off fails in two opposite ways. On the last
         remaining root class the host refuses to start and names the problem;
         on any other class the build passes, the service starts, and the
