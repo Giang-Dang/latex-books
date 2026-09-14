@@ -1,0 +1,247 @@
+\section{Writing It Down}
+\label{sec:ch18-writing-it-down}
+
+\index{trace id!written down everywhere|(}%
+Section~\ref{sec:ch18-the-id-was-already-there} ends with an id that reaches
+every process and is recorded by one of them. The fix adds no tracing. It is three small edits that make the id visible at
+the three places it currently disappears: the response, the services' own log output, and the
+statement log this book counts with.
+
+\subsection{The Router Hands It Back}
+
+\index{config.yaml@\code{config.yaml}!returning the trace id|(}%
+\code{response\_trace\_id}, under \code{telemetry.tracing}, is the router's
+setting for the first one. It puts the id the router is already using into a
+response header, named \code{x-wg-trace-id} unless you name it otherwise~\autocite{cosmotelemetry}; HTTP header names are
+case-insensitive, and the router writes this one as \code{X-Wg-Trace-Id}. Here is \code{router/config.yaml}, complete,
+with the block this chapter adds:
+
+\begin{minted}[highlightlines={50-59}]{yaml}
+version: "1"
+
+# Without this the router asks Cosmo Cloud for its execution config and
+# refuses to start, because it has no token to ask with. The path is
+# resolved against the directory the router is started in, not against
+# this file, so start it from this folder:
+#
+#   router -config config.yaml
+execution_config:
+  file:
+    path: ../graph/router.json
+
+# A development switch, and what makes the query plan visible at all.
+# The plan is an Advanced Request Tracing option, and outside dev mode
+# the router wants a Cosmo Cloud token before it hands one out. With
+# this off, X-WG-Include-Query-Plan is ignored rather than refused.
+dev_mode: true
+
+# Who the router thinks is asking. The alternative entry in this list
+# is a jwks url, which is what a deployment with an identity provider
+# behind it uses; the shared secret is here because this book stands
+# up no such provider. header_key_id is not optional: the router
+# matches it against the kid in the token header, so the token this
+# book mints carries one.
+#
+# A request carrying a token this key does not verify is answered 401
+# by the router and never reaches a subgraph.
+authentication:
+  jwt:
+    jwks:
+      - secret: splitting-the-graph-development-signing-key-32b
+        symmetric_algorithm: HS256
+        header_key_id: dev
+
+# The router does not forward request headers to subgraphs unless it
+# is told to, and a subgraph that guards its own data cannot tell who
+# is asking without this block. Leaving it out does not make the graph
+# insecure; it makes the guarded field unreachable. Every request that
+# names one comes back null with an authorization error underneath,
+# for a caller holding a good token exactly as for a caller holding
+# none, which is what makes the missing block read like a policy
+# rather than like a header. A request that never names a guarded
+# field is unaffected, so this survives a smoke test.
+headers:
+  all:
+    request:
+      - op: propagate
+        named: Authorization
+
+# The router gives every request a trace id, and sends it to each
+# subgraph it fetches from in a traceparent header, with nothing
+# configured here at all. What it does not do is tell the client.
+# This puts the id on every response as X-WG-Trace-Id, which is the
+# one string that joins a report from a client to the router's log
+# and to the log of every service that request reached.
+telemetry:
+  tracing:
+    response_trace_id:
+      enabled: true
+\end{minted}
+
+\index{X-WG-Trace-Id@\code{X-WG-Trace-Id}}%
+Nothing else under \code{telemetry} needs to be set for it, and the page from
+section~\ref{sec:ch18-the-page-that-got-slower} now comes back with one more
+header than it did:
+
+\begin{minted}{text}
+X-Wg-Trace-Id: 327f111c797fd261f05d6bce80d680ca
+\end{minted}
+
+That is the string a client can put in a bug report, and it is the value the
+router writes on its own line for the request.
+\index{config.yaml@\code{config.yaml}!returning the trace id|)}%
+
+\subsection{The Services Print Their Scopes}
+
+\index{appsettings.json@\code{appsettings.json}!printing log scopes|(}%
+The second place is every log entry a service writes through .NET's logger,
+which already carries the id in its scope. The console only has to be told to
+print it. That is configuration rather than code, and it goes in
+\code{appsettings.json}, the settings file \code{dotnet new web} generates,
+which every service in this book has carried since it was created and none
+has needed until now. This is the whole file, and it is identical in all four services:
+
+\begin{minted}{json}
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    },
+    "Console": {
+      "FormatterName": "simple",
+      "FormatterOptions": {
+        "IncludeScopes": true
+      }
+    }
+  },
+  "AllowedHosts": "*"
+}
+\end{minted}
+
+\index{logging!a formatter option that is ignored}%
+Both settings under \code{Console} are needed.
+
+\code{FormatterOptions} is where the console formatter's settings live, and
+written on its own, without \code{FormatterName}, it is read by nothing: no
+error, no warning, and no scopes. With the formatter named, every entry the
+service logs gains a line carrying \code{TraceId}. None of this book's services
+logs much at the levels that file lets through, so the place those scopes earn their keep is
+section~\ref{sec:ch18-when-it-fails-instead}, when something fails.
+\index{appsettings.json@\code{appsettings.json}!printing log scopes|)}%
+
+\subsection{The Statement Log Prints the Id}
+
+\index{StatementLog@\code{StatementLog}!prints the trace id|(}%
+The third place is the instrument this book counts with, and it needs a code
+change because it writes to the console directly. Here is the Sessions
+service's \code{StatementLog.cs}, complete, with what changed marked: it reads
+the trace id off the current activity and prints it on the marker line.
+
+\begin{minted}[highlightlines={2,11-13,42,43}]{csharp}
+using System.Data.Common;
+using System.Diagnostics;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+
+namespace Sessions;
+
+/// <summary>
+/// Prints every statement the service sends to SQLite, numbered, so a
+/// request's cost can be read off the console. The counter is
+/// process-wide and never reset: start the service, send one request,
+/// and the last number is what that request cost. Each marker carries
+/// the trace id of the request that issued it, so the statements one
+/// request cost can be picked out of a log that many requests share.
+/// </summary>
+public sealed class StatementLog : DbCommandInterceptor
+{
+    private static int _count;
+
+    public override InterceptionResult<DbDataReader> ReaderExecuting(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result)
+    {
+        Print(command);
+        return result;
+    }
+
+    public override ValueTask<InterceptionResult<DbDataReader>>
+        ReaderExecutingAsync(
+            DbCommand command,
+            CommandEventData eventData,
+            InterceptionResult<DbDataReader> result,
+            CancellationToken cancellationToken = default)
+    {
+        Print(command);
+        return ValueTask.FromResult(result);
+    }
+
+    private static void Print(DbCommand command)
+    {
+        var n = Interlocked.Increment(ref _count);
+        var trace = Activity.Current?.TraceId.ToString() ?? "none";
+        Console.WriteLine($"-- statement {n} trace {trace}");
+        Console.WriteLine(command.CommandText);
+    }
+}
+\end{minted}
+
+\index{StatementLog@\code{StatementLog}!four identical copies}%
+The Speakers and Ratings copies are this file with their own namespace, as
+they have been since chapter~\ref{ch:second-third-subgraph}, and so now is the
+Search service's, which chapter~\ref{ch:cross-seam-paging} wrote in a shorter
+shape that this edit replaces. The prefix \code{-- statement} is unchanged, so
+counting markers still counts statements. A statement issued outside any
+request prints the word \code{none} where the id would be.
+\index{StatementLog@\code{StatementLog}!prints the trace id|)}%
+
+\subsection{Finding the Service}
+
+\index{blame routing!finding the slow service by its id|(}%
+Now run the investigation from
+section~\ref{sec:ch18-the-page-that-got-slower} again, with chapter~\ref{ch:router-n-plus-1}'s naive resolver still in
+Speakers and these three edits made. The edits change four services and the
+router's config, so rebuild and restart all four services and restart the
+router on the new \code{config.yaml} before sending the page. The client reports the page as slow and
+quotes the header above. Search each of the four consoles for that id, and
+count the statement markers carrying it:
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+Service & Statements carrying the id \\
+\midrule
+Sessions, on 5001 & 1 \\
+Speakers, on 5002 & 3 \\
+Ratings, on 5003 & 1 \\
+Search, on 5004 & 0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\index{N+1@N+1!found by a trace id}%
+The count is the same whether that console printed one request or a thousand
+around it, because the id selects the request's statements rather than
+whatever happened to be adjacent. Here are the three from Speakers, marker
+lines only, the query under each being the one-row \code{SELECT}
+section~\ref{sec:ch18-the-page-that-got-slower} printed:
+
+\begin{minted}{text}
+-- statement 4 trace 327f111c797fd261f05d6bce80d680ca
+-- statement 5 trace 327f111c797fd261f05d6bce80d680ca
+-- statement 6 trace 327f111c797fd261f05d6bce80d680ca
+\end{minted}
+
+\index{ownership!the investigation ends with a team}%
+Speakers is the service, the Speakers team is who gets the ticket, and the
+numbers \code{4} to \code{6} show the other half of the argument: this console
+had already printed three statements for an earlier request, and without the
+id nothing would separate those three from these. What the Speakers team does
+next is chapter~\ref{ch:router-n-plus-1}'s section on the loader behind the
+resolver. What this chapter changes is that they are the team who reads it,
+rather than whoever owns the router. Before going on, put the Speakers
+service's DataLoader back, then rebuild and restart it: every count from here
+on is taken on the graph this chapter ships.
+\index{blame routing!finding the slow service by its id|)}%
+\index{trace id!written down everywhere|)}%

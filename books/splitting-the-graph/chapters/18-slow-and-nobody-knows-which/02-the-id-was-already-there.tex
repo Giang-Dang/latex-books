@@ -1,0 +1,117 @@
+\section{The Id Was Already There}
+\label{sec:ch18-the-id-was-already-there}
+
+\index{trace id!sent to every subgraph|(}%
+Section~\ref{sec:ch18-the-page-that-got-slower} found one trace id in five logs
+and called it the router's. That undersells it. The router did not only write
+the id down; it handed a copy to every service it asked, on every fetch, and
+the services took it.
+
+\index{traceparent@\code{traceparent}!what the router sends}%
+Anything that records request headers, placed between the router and the
+services by pointing \code{graph.yaml}'s routing urls at it, shows what
+arrives. Here is one run of the same page, one line per subgraph request, each
+reduced to the name of the service it went to and the one header that
+matters:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+sessions  traceparent: 00-515457460e4ab1a45a57b5b745491f0d-856a85a0e4c3f7c4-01
+speakers  traceparent: 00-515457460e4ab1a45a57b5b745491f0d-d32570b5eacb6961-01
+ratings   traceparent: 00-515457460e4ab1a45a57b5b745491f0d-3b798df673db39f6-01
+\end{minted}
+
+\index{W3C Trace Context}%
+\code{traceparent} is a header defined by the W3C Trace Context recommendation,
+and its value is four fields separated by hyphens: a version, a trace id of
+sixteen bytes written as thirty-two hex characters, a parent id of eight bytes
+written as sixteen, and a byte of flags~\autocite{w3ctracecontext}. The trace
+id is the request's and does not change as the request travels. The parent id
+is the identity of the call being made, and the specification requires every
+participant to replace it on each request it sends onward, which is why the
+three lines above share their second field and differ in their third.
+
+\index{Cosmo Router!propagates trace context with no configuration}%
+None of that was configured. The \code{config.yaml} this book has printed since
+chapter~\ref{ch:entities-authorization} has no \code{telemetry} block at all,
+there is no graph token, and the router's startup log lists
+\enquote{Cosmo Cloud Tracing} among the features it has disabled for want of
+one. The id is minted and propagated anyway. WunderGraph's reference for the
+router says that it enables the Trace-Context specification by
+default~\autocite{cosmotelemetry}, and that is the whole mechanism: the router
+does not need somewhere to send traces in order to give each request an id and
+pass it on.
+
+\subsection{What the Services Did With It}
+
+\index{ASP.NET Core!adopts an incoming trace id}%
+\index{Activity@\code{Activity}}%
+Each service received that header and did not ignore it. ASP.NET Core reads an
+incoming \code{traceparent} and makes the request's
+\code{System.Diagnostics.Activity}, the runtime's object for \enquote{the
+operation in progress}, a continuation of it. Microsoft documents that the
+ASP.NET web server decodes and encodes these ids on HTTP messages with no
+code from the application~\autocite{msdistributedtracing}, and it holds for
+the services in this book exactly as chapter~\ref{ch:ownership} left them:
+inside each one, \code{Activity.Current} carries the router's trace id, and
+its parent id is the one the router put on that service's fetch.
+Section~\ref{sec:ch18-writing-it-down} makes each service print the trace id.
+
+\index{logging!scopes carry the trace id and are not printed}%
+The same id is already attached to everything those services log. .NET's
+logging adds a \emph{scope}, a set of values stamped onto every log entry
+written while it is active, carrying \code{TraceId}, \code{ParentId} and \code{SpanId}, the last being the
+service's own id for the work it is doing, which it would pass on as the
+parent id of any call it made. Those three are on by
+default~\autocite{msaspnetlogging}.
+The console's default formatter does not print scopes. And
+\code{StatementLog} bypasses the logger entirely, writing its marker with
+\code{Console.WriteLine}, so even a formatter that printed scopes would not
+have put the id on the three lines
+section~\ref{sec:ch18-the-page-that-got-slower} could not attribute.
+
+\subsection{Where the Id Stops}
+
+\index{trace id!where it stops}%
+Figure~\ref{fig:ch18-one-id-three-fetches} is that request drawn with what
+each component does with the id. The router mints it, writes it down and sends
+it three times. Each service receives it, carries it through the request, and
+writes it nowhere. And the response goes back to the client without it.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/tikz/ch18-one-id-three-fetches}
+  \caption{One page, one trace id. The router attaches the id to each of its
+  three fetches with a fresh parent id, and every service holds it for the
+  length of the request. Only the router writes it anywhere, and the client,
+  who is the one person able to say which request was slow, is never told
+  it.}
+  \label{fig:ch18-one-id-three-fetches}
+\end{figure}
+
+\index{trace id!a client's own trace is continued}%
+A client that already has a trace of its own, a browser or a mobile app carrying its own
+instrumentation, can send a \code{traceparent} to the router, and the router
+continues it: its log line and every subgraph fetch then carry the client's
+trace id rather than one the router made up. So the join is available from
+the very first process in the chain, if the first process asks for it.
+
+\index{config version!which composition answered}%
+\code{config\_version}, on the same log line, is the field
+chapter~\ref{ch:enter-the-router} could not make mean anything. It is
+thirty-two zeroes in this book because the execution
+config is composed on a laptop. In a deployment that fetches its config from a
+control plane it is the version of the composition that served the request,
+which answers the question every slow-page investigation eventually reaches:
+was this before or after the last publish.
+
+\index{Netflix!routing a question to its owner from a trace}%
+This is not a problem peculiar to a four-service conference graph. Tejas
+Shikhare, describing Netflix's federated graph, gives the reason the response
+alone cannot carry the blame: \enquote{In GraphQL, almost every response is a
+200 with custom errors in the error block}. His team's answer to what he calls
+the \enquote{who do I ask about\ldots} routing problem was to link types and
+fields to their owning teams' support channels, so that finding one \enquote{is
+now as simple as clicking a link from a trace}~\autocite{shikhare2020part2}. A
+link from a trace needs a trace, and a trace starts from an id that every
+service wrote down.
+\index{trace id!sent to every subgraph|)}%

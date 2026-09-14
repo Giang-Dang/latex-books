@@ -1,0 +1,27 @@
+\begin{problemsummary}
+{A page is slow, or answers \code{Unexpected Execution Error}, at HTTP 200 with
+a body identical to a healthy one or an error naming a service and nothing
+about why. Every service log is full of statements and none of them can be
+tied to the request somebody complained about.}
+{The router gives every request a trace id and sends it to each subgraph in a
+W3C \code{traceparent} header with no configuration at all, and writes it on
+its own log line. ASP.NET Core adopts that id in every service and attaches it
+to every log scope. Nothing prints it: the console formatter leaves scopes
+out, a statement log written straight to the console never sees them, the
+router does not return the id to the client, and Hot Chocolate writes a resolver's exception nowhere at the log levels a
+service ships with. The router's error does name the failing service
+in \code{serviceName}, and names no service for a request that is merely
+slow. Its caches save no service any work: a cached plan costs the same
+statements, and \code{cache\_control\_policy} decides how long a whole response
+may be kept from values set per service, marking a response carrying a
+bearer-token column \code{public} if told to.}
+{Turn on \code{response\_trace\_id} so the client receives the id in
+\code{X-WG-Trace-Id}. In every service, set \code{FormatterName} to
+\code{simple} beside \code{IncludeScopes} in \code{appsettings.json}, because
+the option alone is ignored; print \code{Activity.Current}'s trace id on
+anything that writes to the console directly; and register a diagnostic event
+listener that logs resolver errors, after \code{AddApplicationService} has
+registered its logger. Then a reported id finds the
+slow service by counting its lines and the failing one by its exception. Leave \code{cache\_control\_policy} off unless every field a response can
+carry is as cacheable as the value it would be given.}
+\end{problemsummary}

@@ -1,13 +1,19 @@
-% Scope (SPEC.md, Table of contents): trace correlation across the router and three subgraphs, routing a failure to its owner, and caching
+% Scope (SPEC.md, Table of contents): trace correlation across the router and
+% four subgraphs, routing a failure to its owner, and what the router's caches
+% save. Corrected 2026-09-14 while drafting: the line said three subgraphs,
+% and chapter 13 made it four; the caching clause is narrowed to what the
+% router this book pins actually has.
 \chapter{Slow, and Nobody Knows Which Subgraph}
 \label{ch:blame-routing}
 
-\emph{Not yet drafted.}
+The router gives every request one trace id and sends it to every subgraph it
+asks, and nobody can say which subgraph was slow, or why the one the router names
+failed, because no service writes that id down and the router never hands it to the person
+reporting the problem.
 
-% Chapter skeleton, SPEC decision 13. Five beats, this order:
-%   1. The one sentence  - what this chapter establishes, stated first.
-%   2. Show it          - the thing running, or in Part III the thing failing.
-%   3. Why it does that - the mechanism. All theory lives here (decision 14).
-%   4. Do it properly   - the complete, correct implementation.
-%   5. Summary box      - decision 21.
-% Section files are \input from here, numbered 01-, 02-, ... from the book root.
+\input{chapters/18-slow-and-nobody-knows-which/01-the-page-that-got-slower}
+\input{chapters/18-slow-and-nobody-knows-which/02-the-id-was-already-there}
+\input{chapters/18-slow-and-nobody-knows-which/03-writing-it-down}
+\input{chapters/18-slow-and-nobody-knows-which/04-when-it-fails-instead}
+\input{chapters/18-slow-and-nobody-knows-which/05-what-the-router-caches}
+\input{chapters/18-slow-and-nobody-knows-which/06-summary}
