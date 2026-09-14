@@ -61,16 +61,18 @@ a different team, on a different database, emptied it.
 \index{blast radius!the two positions that matter}%
 In section~\ref{sec:ch14-four-sessions-for-one-dead-service} a non-null field
 inside somebody else's list cost that list. Here a non-null field at the root
-costs the response. Those are the only two sizes of collateral damage a
-federated graph has, and which one you get is decided by where in the
-supergraph the field sits rather than by anything about the failure.
+costs the response. These are two outcomes of one rule, not the only two
+possible blast radii. Propagation stops at the nearest nullable response
+position: that may be a field, a nested object, a list item or a list. It
+reaches \code{data} only when every enclosing position on that path is
+non-null. Read the composed types along the failing path to find the boundary.
 
 \index{HTTP 200!with no data at all}%
 Two hundred, incidentally, as it is for every response in this chapter. The
-router refuses a request outright only when it cannot verify a token, which is
-the 401 chapter~\ref{ch:entities-authorization} met; a graph that cannot answer
-is a success as far as the transport is concerned. A client that checks the
-status code sees one here, with no data in it.
+401 in chapter~\ref{ch:entities-authorization} described a token refusal;
+it was not an exhaustive list of HTTP failure statuses. Here the request is
+accepted and execution fails. A client must inspect \code{errors} and
+\code{data}, not infer a usable answer from the observed 200 status.
 
 \subsection{What This Costs a Real Graph}
 
@@ -86,3 +88,4 @@ Nobody reviewing the Ratings service would catch it either. The field is a
 count over its own table. The reviewer who approves it is right about
 everything in front of them, and the consequence is in a file they have never
 opened, in a response shape that does not exist until a composer builds it.
+\index{partial failure!when the field is not nullable|)}%

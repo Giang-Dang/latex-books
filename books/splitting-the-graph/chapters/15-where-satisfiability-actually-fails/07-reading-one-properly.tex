@@ -31,11 +31,12 @@ The Sessions service's \code{Speaker} is the first kind. The Search service's
 \code{Session} is the first kind. The Ratings service's \code{Session} is the
 second, and it is the second whether or not that service owns a single row.
 
-\index{resolvability!fix, then compose again, then compose again}%
-Third, compose again and expect another one. The check returns at the first
-root field it cannot walk, so a clean run after one fix is not evidence that
-there was one problem. I compose until it passes twice: once after the fix, and
-once after that, having changed nothing.
+\index{resolvability!fix and test the routes}%
+Third, compose again after each fix; the next run may expose another blocked
+path. Repeating an unchanged successful composition adds no coverage. For this
+defect, compare the reduced Sessions/Ratings pair and the root-order variant
+already measured, then send a routed request for each contributed field.
+Those controls change the path exercised; an identical second run does not.
 
 \subsection{And Do Not Read a Pass as a Result}
 
@@ -76,4 +77,16 @@ service, and chapter~\ref{ch:composition} treated that as a feature: it is why
 a subgraph does not have to be running to be composed. It is also the reason
 the strongest check on a graph is not composition. It is a request, sent to a
 router, for a field somebody contributed to somebody else's type.
+\subsection{Return to the Four-Service Graph}
+
+Restore Ratings' \code{[Key("id")]} and its \code{[ReferenceResolver]}
+attribute from chapter~\ref{ch:null-blast-radius}. Rebuild Ratings and export
+its schema; re-export Sessions if its document was reordered. Keep all four
+entries in \code{graph.yaml}, compose it into \code{router.json}, and restart
+the router with its normal \code{config.yaml}.
+
+Check all three contributed fields on a session page: the average score,
+rating count and feedback URL must again match the seed.
+Chapters~\ref{ch:breaking-changes} and~\ref{ch:ownership} use that healthy graph;
+their document-only experiments do not replace its service implementations.
 \index{resolvability!how to read one of these|)}%

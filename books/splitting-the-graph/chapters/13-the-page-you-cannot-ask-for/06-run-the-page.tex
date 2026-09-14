@@ -84,12 +84,11 @@ the Search projection and not out of the ratings table. Speakers spent nothing
 because nobody asked for a speaker.
 
 \index{query plan!the list owner goes first}%
-The plan is a \code{Sequence} of two steps again, in the other order from
-section~\ref{sec:ch13-cut-happens-first}: a \code{Single} fetch to Search,
-subgraph~3, and then a \code{BatchEntity} fetch to Sessions, subgraph~0,
-declaring that it waits for the first. Swap them and the opening of this
-chapter comes back. The planner put them in the only order that answers the
-request, because the list owner is now the service that holds the values.
+The plan is a \code{Sequence} with a new page owner: a \code{Single} fetch
+to Search, subgraph~3, followed by a \code{BatchEntity} fetch to Sessions,
+subgraph~0. The earlier plan went from Sessions to Ratings; this is not those
+same two services in reverse. Search now selects the keys using the values
+it holds, and Sessions hydrates those keys only after that selection.
 
 \index{search document!the unrated session is still found}%
 Drop the filter and the same field is a completeness check. In

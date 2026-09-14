@@ -77,11 +77,13 @@ payload, and argument types are untouched throughout. It is a rewrite of what
 the query side returns, not of the schema.
 
 \index{semantic nullability!it changes nothing about execution}%
-Nothing about the running service changes. The same requests get the same
-responses, propagate the same way, and empty the same lists. The document is
-for a client's code generator, so that
-generated types can say \enquote{present unless something broke} while the wire
-keeps the nullable shape that lets a response degrade.
+The export flag alone changes no running executor. Requests sent directly
+to that unchanged service retain its configured error-handling behavior.
+The generated document carries metadata for tools and clients; it does not
+enable non-propagating execution. Composing that rewritten document can
+change the router's schema contract, which is a separate action and needs its
+own end-to-end tests. Do not infer a nullable wire response from an export
+rewrite alone.
 
 \index{semantic nullability!the router serves it}%
 It composes, which surprised me. \code{wgc} takes a rewritten subgraph document

@@ -35,8 +35,11 @@ fields on members of that list, at the members' own position in the response.
 No step discards a member, reorders the rest, mints new cursors and goes
 back to the owner for a replacement row, and the reason is what a replacement
 would cost. Suppose Sessions hands back ten rows and six of them score too
-low. Returning four rows breaks \code{first: 10}. Fetching ten more does not
-settle it, because the next ten may score too low as well, and a router that
+low. Returning four rows does not itself violate \code{first: 10}, which
+sets an upper bound, not a promised count. The problem is that qualifying rows
+may remain beyond that cut, while the cursors and \code{pageInfo} describe
+the unfiltered connection. Fetching ten more does not settle membership or
+ordering either, because the next ten may score too low as well. A router that
 kept going would need a scan protocol, a stable sort, ownership of the cursors
 and a rule for when to stop, spanning two services and agreed by both. None of
 that follows from a client selecting a field.
