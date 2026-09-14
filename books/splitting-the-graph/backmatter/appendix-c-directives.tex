@@ -1,5 +1,213 @@
-% Scope (SPEC.md, Table of contents): Apollo Federation v2 directives, one entry each
 \chapter{Federation Directives Quick Reference}
 \label{app:directives}
 
-\emph{Not yet drafted.}
+\section{Read the Version Before the Name}
+
+The entries distinguish the Federation v2.6 vocabulary from later additions.
+They describe directive contracts, not blanket support by this book's
+Hot Chocolate/Cosmo combination. Compare the subgraph's exported declaration
+with the composer's supported definition. Chapter~\ref{ch:composition} shows
+two products disagreeing about the same directive name.
+
+The version boundaries follow Apollo's federation changelog
+~\autocite{apollofederationversionsrepair}. The baseline definitions were
+cross-checked against Apollo's versioned implementation as well as the
+reference documentation~\autocite{apollofederation26repair}. Core GraphQL
+directives such as \code{@skip}, \code{@include} and \code{@deprecated}
+are not federation directives.
+
+\section{The Baseline Vocabulary}
+
+\subsection*{\code{@link}}
+
+Location: schema, repeatable. Arguments: \code{url}, optional \code{as},
+\code{for} and \code{import} in the link specification
+~\autocite{apollolinkrepair}. Imports select names from the linked vocabulary.
+The Hot Chocolate export used here has a narrower declaration: no
+\code{as} or \code{for}, and a string-list import. See
+section~\ref{sec:ch05-the-directives} before copying a generic link signature.
+
+\subsection*{\code{@key}}
+
+Location: object or interface, repeatable. Arguments: required
+\code{fields}, optional \code{resolvable} defaulting to true.
+The field set identifies an entity. A reference-only stub uses false; a
+subgraph that must accept entity lookups needs a resolvable key. Interface
+entity support requires Federation v2.3. See chapter~\ref{ch:first-subgraph}.
+
+\subsection*{\code{@external}}
+
+Location: field or object. Declares fields supplied from elsewhere for this
+subgraph's federation contract. The Apollo baseline implementation also
+accepts an optional \code{reason}; generic documentation does not consistently
+show it. The book uses the argument-free form with \code{@requires}.
+It is not permission to provide an arbitrary second authoritative value.
+
+\subsection*{\code{@requires}}
+
+Location: field. Argument: required \code{fields} field set.
+The resolver needs these external values in its representation.
+Ratings' \code{feedbackUrl} requires the session title. It does not move
+filtering or pagination into Ratings; see
+chapters~\ref{ch:second-third-subgraph} and~\ref{ch:cross-seam-paging}.
+
+\subsection*{\code{@provides}}
+
+Location: field. Argument: required \code{fields} field set.
+Values are available along this particular return path, not every path to
+the entity. The provided field must satisfy the external/shareable rules.
+Chapter~\ref{ch:second-third-subgraph} records a mismatch between those
+published prerequisites and the pinned composer's acceptance; the final
+example does not use this optimization.
+
+\subsection*{\code{@shareable}}
+
+Location: object or field; repeatable from Federation v2.2. No arguments.
+Permits multiple resolvers for a field, with equivalent answers required.
+A declaration does not prove equivalent behavior or fresh approval from
+another team. Shared value types need no entity key.
+See chapters~\ref{ch:second-third-subgraph} and~\ref{ch:ownership}.
+
+\subsection*{\code{@override}}
+
+Location: field. Argument: required \code{from}, naming the old subgraph.
+Deploy the receiving resolver before routing to it, then retire the old
+resolver. The optional progressive-override \code{label} was added in v2.7;
+the pinned Cosmo composer rejects it even though the Hot Chocolate attribute
+exposes it. See section~\ref{sec:ch17-handing-a-field-over}.
+
+\subsection*{\code{@inaccessible}}
+
+Location: type-system elements except schema; no arguments.
+Removes an element from the client contract while retaining it for planning.
+For client compatibility, compare the client-facing document.
+That is \code{graphqlClientSchema} when present, rather than the
+planner's \code{graphqlSchema}.
+See section~\ref{sec:ch17-writing-it-down-somewhere-else}.
+
+\subsection*{\code{@tag}}
+
+Location: type-system elements, repeatable. Argument: required \code{name}.
+Adds metadata; consumers such as contract filters assign its meaning.
+Apollo's pinned tag v0.3 implementation includes the schema location, while
+the subgraph-reference listing omits it
+~\autocite{apollotag26repair}. Do not infer acceptance by a particular
+subgraph library from either generic listing.
+
+\subsection*{\code{@authenticated}}
+
+Location: field, object, interface, scalar or enum; no arguments.
+Requires an authenticated caller. Federation introduced it in v2.5.
+The book measures Cosmo's enforcement after the fetch and separately guards
+the field inside Hot Chocolate. It does not secure direct subgraph access
+by itself; see chapter~\ref{ch:entities-authorization}.
+
+\subsection*{\code{@requiresScopes}}
+
+Location: the same authorization locations: field, object, interface, scalar
+or enum. Argument: required \code{scopes}, a nested list of scope names.
+The outer alternatives are OR; the names inside one alternative are AND.
+Introduced in v2.5. Runtime configuration and enforcement are not exercised
+by the example~\autocite{apolloscopes26repair}.
+
+\subsection*{\code{@policy}}
+
+Location: field, object, interface, scalar or enum. Argument: required
+\code{policies}, a nested list of policy names.
+Introduced in v2.6. Policy names require an evaluator configured outside the
+schema; declaring them is not evidence that such an evaluator ran.
+This example does not exercise policy evaluation
+~\autocite{apollopolicy26repair}.
+
+\subsection*{\code{@interfaceObject}}
+
+Location: object; no arguments. Introduced in v2.3.
+Lets an object declaration stand for an entity interface and contribute
+fields to its implementations. It is not an ordinary interface annotation.
+The package contains this directive, but the example does not exercise its
+execution behavior.
+
+\subsection*{\code{@composeDirective}}
+
+Location: schema, repeatable. Argument: \code{name}, including the
+directive's leading \code{@}. Preserves an imported custom directive through
+composition; it does not implement that directive's policy.
+Apollo's reference signature and pinned compiler differ on the argument's
+nullability. Pass an explicit name and verify the chosen tool's declaration.
+See chapter~\ref{ch:ownership}.
+
+\subsection*{\code{@extends}}
+
+Location: object or interface; no arguments. An alternative for libraries
+that cannot express GraphQL's \code{extend} syntax.
+It is not what makes a key resolvable, and this example does not need it.
+
+\section{Later Vocabulary: Reference Only}
+
+These names are outside the example's declared federation version.
+Their presence in current documentation does not authorize adding them to
+the pinned schema. The following entries are reference contracts
+~\autocite{apollodirectives,apollofederationversionsrepair}.
+
+\subsection*{\code{@context}}
+
+Minimum federation version: v2.8. Location: object, interface or union,
+repeatable. Argument: required \code{name}. Names an ancestor context.
+The versioned implementation confirms repeatability, which one current
+reference signature omits~\autocite{apollocontext28repair}.
+
+\subsection*{\code{@fromContext}}
+
+Minimum federation version: v2.8. Location: argument definition.
+Argument: \code{field}, a context-field selection. Supplies a resolver
+argument from a named ancestor context; it is not a client argument or an
+entity key~\autocite{apollocontext28repair}.
+
+\subsection*{\code{@cost}}
+
+Minimum federation version: v2.9. Locations include fields, arguments,
+input fields, objects, scalars and enums. Argument: required integer
+\code{weight}. The cost annotation emitted by this book's Hot Chocolate
+core uses a different definition. Chapter~\ref{ch:composition} diagnoses
+that mismatch rather than treating the shared name as interoperability.
+
+\subsection*{\code{@listSize}}
+
+Minimum federation version: v2.9. Location: field.
+Its four arguments are:
+
+\begin{minted}{text}
+assumedSize: Int
+slicingArguments: [String!]
+sizedFields: [String!]
+requireOneSlicingArgument: Boolean = true
+\end{minted}
+
+They describe the estimate, the arguments that bound it, the fields it sizes
+and whether exactly one slicing argument must be supplied.
+These are cost-analysis hints, not a pagination algorithm.
+Chapter~\ref{ch:composition} records an extra Hot Chocolate argument that the
+pinned Cosmo definition rejects.
+
+\subsection*{\code{@cacheTag}}
+
+Minimum federation version: v2.12. Location: object or field, repeatable.
+Argument: required \code{format}. Declares cache-tag metadata.
+It is not used or tested by this example; no cache invalidation behavior
+should be inferred for the pinned router.
+
+\section{Related, but a Separate Specification}
+
+\subsection*{\code{@connect}}
+
+A Connector directive for mapping a field to an HTTP source. Connectors
+began with a Federation v2.10 requirement, but have their own versioned
+specification. They are not the reference-resolver mechanism used here
+~\autocite{apolloconnectorsrepair}.
+
+\subsection*{\code{@source}}
+
+A Connector directive that configures a named HTTP source for connector
+mappings. It belongs with \code{@connect}, not in the v2.6 baseline.
+No connector configuration is included in this book's runnable source
+~\autocite{apolloconnectorsrepair}.
