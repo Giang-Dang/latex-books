@@ -104,7 +104,10 @@ process, against a different database, reached through a reference resolver
 rather than through a field. The DataLoader did not stop working when the code
 moved, which is worth saying out loud because the thing on the other side of it
 changed completely: it used to be fed by one resolver running four times, and
-it is now fed by one \code{\_entities} call carrying four representations.
+it is now fed by one \code{\_entities} call carrying three distinct
+representations. There are four speaker positions in the client response,
+three keys on the wire and one Speakers SQL statement. Chapter~\ref{ch:router-n-plus-1}
+separates the router's deduplication from the loader's batching.
 
 \subsection{Reading the Plan}
 
@@ -112,9 +115,13 @@ it is now fed by one \code{\_entities} call carrying four representations.
 Chapter~\ref{ch:enter-the-router} said that every plan over a graph of one
 subgraph is a \code{Sequence} holding one \code{Single}, and that the moment a
 second name appeared in the subgraph list the plan is where you go to find out
-what the router decided. Ask for it:
+what the router decided. Send the same \code{first: 10} request with
+\code{X-WG-Include-Query-Plan: true} and \code{X-WG-Skip-Loader: true}.
+The following is the complete \code{extensions} object; the plan-only
+response also carries \code{data: null}. The literal 10 becomes variable
+\code{a} in the normalized operation:
 
-\begin{minted}[fontsize=\footnotesize]{json}
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
 {
   "queryPlan": {
     "version": "1",
@@ -127,7 +134,7 @@ what the router decided. Ask for it:
           "subgraphName": "sessions",
           "subgraphId": "0",
           "fetchId": 0,
-          "query": "{\n    sessions {\n        nodes {\n            title\n            speaker {\n                __typename\n                id\n            }\n        }\n    }\n}"
+          "query": "query($a: Int){\n    sessions(first: $a){\n        nodes {\n            title\n            speaker {\n                __typename\n                id\n            }\n        }\n    }\n}"
         }
       },
       {
@@ -138,7 +145,9 @@ what the router decided. Ask for it:
           "subgraphName": "speakers",
           "subgraphId": "1",
           "fetchId": 1,
-          "dependsOnFetchIds": [0],
+          "dependsOnFetchIds": [
+            0
+          ],
           "representations": [
             {
               "kind": "@key",
@@ -146,11 +155,32 @@ what the router decided. Ask for it:
               "fragment": "fragment Key on Speaker {\n    __typename\n    id\n}"
             }
           ],
-          "query": "query($representations: [_Any!]!){\n    _entities(representations: $representations){\n        ... on Speaker {\n            __typename\n            name\n        }\n    }\n}"
+          "query": "query($representations: [_Any!]!){\n    _entities(representations: $representations){\n        ... on Speaker {\n            __typename\n            name\n        }\n    }\n}",
+          "dependencies": [
+            {
+              "coordinate": {
+                "typeName": "Speaker",
+                "fieldName": "name"
+              },
+              "isUserRequested": true,
+              "dependsOn": [
+                {
+                  "fetchId": 0,
+                  "subgraph": "sessions",
+                  "coordinate": {
+                    "typeName": "Speaker",
+                    "fieldName": "id"
+                  },
+                  "isKey": true,
+                  "isRequires": false
+                }
+              ]
+            }
+          ]
         }
       }
     ],
-    "normalizedQuery": "{sessions {nodes {title speaker {name}}}}"
+    "normalizedQuery": "query($a: Int){sessions(first: $a){nodes {title speaker {name}}}}"
   }
 }
 \end{minted}
@@ -183,7 +213,7 @@ things in it carry the whole mechanism between them:
 
 \index{seam!costs one round trip, not one per row}%
 The word that matters in \code{BatchEntity} is the first one. Four sessions
-produce one fetch carrying four representations, not four fetches, and that is
+produce one fetch carrying three distinct speaker representations, not four fetches, and that is
 the router's doing rather than anything the subgraph asked for.
 Figure~\ref{fig:ch09-two-fetches} is the two shapes beside each other.
 
@@ -202,9 +232,9 @@ Figure~\ref{fig:ch09-two-fetches} is the two shapes beside each other.
 
 \index{router!batches representations, and the resolver may not}%
 Hold on to the batching, because it is doing more work than it looks like.
-The router sends one request per subgraph per step no matter how many rows are
-in the list, so the count on the wire is fixed. What is not fixed is what the
-service does with a list of four representations after it arrives, and
+For this measured page, the router sends one Speakers request for the whole
+batch. That count is a property of this plan, not a guarantee for every query. What is not fixed is what the
+service does with a list of three representations after it arrives, and
 \code{SpeakerType}'s answer, one statement, is a property of the DataLoader
 behind that resolver rather than of federation. Take the loader out and the
 router's behavior does not change at all while the statement count does.
@@ -216,8 +246,9 @@ part of the book measures.
 \index{partial failure!one subgraph down is not the graph down}%
 Chapter~\ref{ch:enter-the-router} stopped the only service there was and got a
 null and an error. With three services the more useful question is what happens
-when one of them goes and the others do not. Stop Speakers and send the same
-request:
+when one of them goes and the others do not. Stop Speakers. Remove
+\code{X-WG-Skip-Loader} and the plan header before sending the same operation
+as an ordinary execution request; the plan-only request never calls Speakers.
 
 \begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
 {"errors":[
@@ -260,4 +291,6 @@ still stopped, because every one of them routes to a service that is running.
 The blast radius of a dead subgraph is the set of fields that route to it, and
 no larger, provided those fields are nullable.
 Chapter~\ref{ch:null-blast-radius} is what happens when they are not.
+Restart Speakers from \code{src/Speakers} with \code{dotnet run} before
+continuing; the next exercises need the healthy two-service graph.
 \index{seam!the first query that crosses one|)}%

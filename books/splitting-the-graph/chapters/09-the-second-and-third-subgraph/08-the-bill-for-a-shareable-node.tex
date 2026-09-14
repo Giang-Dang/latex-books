@@ -96,8 +96,10 @@ try:
   \item Give every subgraph a node resolver for every type. They do not have
         the rows. Doing it anyway would be undoing the split.
   \item Declare \code{node} in one subgraph only, so nothing collides and no
-        \code{@shareable} is needed. Composition passes and the failure is
-        identical, because that one subgraph still owns one type out of two.
+        \code{@shareable} is needed. Composition passes in the measured
+        variant. I did not run that variant through the router, so it is
+        not a verified runtime fix; the remaining resolver still lacks
+        the other service's rows.
   \item Have the node resolver return null for a type it does not own rather
         than throwing. That trades a loud failure for a quiet wrong answer,
         which is the class of defect chapters~\ref{ch:representation-order}

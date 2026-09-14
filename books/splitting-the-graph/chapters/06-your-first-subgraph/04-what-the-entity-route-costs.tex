@@ -67,8 +67,9 @@ Figure~\ref{fig:ch06-two-routes} is the pair of routes drawn against each other.
   is handed. Lane~A is given a decoded integer and a projection, and asks for
   one column. Lane~B is given a string, decodes it itself, is given no
   projection, and asks for six. The braces mark where the decoding happens, and
-  they sit under different stages on purpose: that shift is the only structural
-  difference between the lanes, and the source of both others.}
+  they sit under different stages. Decoding and projection are independent:
+  adding a \code{QueryContext} changes the selected columns without moving
+  the decoding step.}
   \label{fig:ch06-two-routes}
 \end{figure}
 

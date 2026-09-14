@@ -47,7 +47,31 @@ you contribute fields to, because those fields can then be reached from
 nowhere. Ratings also exports no \code{node} field, so there is no other door.
 
 \index{composition!merging succeeds and serving would not}%
-Merge those two documents and nothing collides. \code{Session} gains a field,
+Save this third SDL document as \code{graph/ratings.graphql}. It replaces
+the hand-written Speakers document in this experiment; it is not added to
+that failing pair. Save this complete \code{graph/graph-with-ratings.yaml}:
+
+\begin{minted}{yaml}
+version: 1
+subgraphs:
+  - name: sessions
+    routing_url: http://localhost:5001/graphql
+    schema:
+      file: ../src/Sessions/schema.graphql
+  - name: ratings
+    routing_url: http://localhost:5003/graphql
+    schema:
+      file: ./ratings.graphql
+\end{minted}
+
+From \code{graph}, run:
+
+\begin{minted}{text}
+wgc router compose -i graph-with-ratings.yaml -o ratings-test.json
+\end{minted}
+
+Merge Sessions and this Ratings document and nothing collides.
+\code{Session} gains a field,
 which is exactly what a contributing subgraph is for, and every field in the
 result has one owner. The merged schema is fine. It is also unservable, and the
 second pass is what says so:
@@ -140,11 +164,9 @@ algorithm over a stack of paths~\autocite{compositeschemasspec}.
 \index{resolvability!is Cosmo's word}%
 Cosmo uses a different word. Its composition library is its own, with no Apollo
 package behind it, and what it calls this check is resolvability: that is the
-name on the flag you just read, and it is the name on the source directory and
-the error function behind that message. I have not read every page WunderGraph
-publishes, so I will not tell you the other word appears nowhere; I will tell
-you it appears in none of the places I looked, and that the message on your
-screen does not use it.
+name on the flag you just read and on the source directory and error
+function behind that message. Use \enquote{resolvability} when looking up
+this tool's diagnostic.
 
 \index{terminology!the same check under two names}%
 Which is worth knowing for the practical reason rather than the pedantic one.
@@ -154,16 +176,21 @@ terms your error does not use. The idea is the same in both. The words came
 from the tool you ran.
 
 \index{resolvability!a walk is my description, not a citation}%
-As for calling it a walk: that is my description, and I cite nobody for it
-because nobody publishes it in those words. What is published is the algorithm.
-The Composite Schemas section above does not describe the check in prose, it
-writes it out: start with a stack of one-element paths, take one off, extend
-it, push the extensions back, and stop when the stack is
-empty~\autocite{compositeschemasspec}. That is a walk whatever anybody calls
-it, and it is what the message on the page is a trace of. I would not rest the
-claim on the class names in either composer's source, tempting as they are: an
-identifier is evidence that somebody once meant something by it and no more
-than that.
+I call it a walk because the diagnostic follows a path from a root to the
+unreachable field. The Composite Schemas algorithm makes that model explicit:
+it extends paths from a stack until no paths remain~\autocite{compositeschemasspec}.
+That draft explains the model; the captured Cosmo message establishes this
+tool's result.
+
+Before continuing, restore the one-subgraph configuration. From
+\code{graph}, run:
+
+\begin{minted}{text}
+wgc router compose -i graph.yaml -o router.json
+\end{minted}
+
+Neither hand-written test document belongs in the
+runnable graph yet.
 
 \index{satisfiability!chapter 15 is the one about reading these}%
 One clean failure is all this chapter wants from it.

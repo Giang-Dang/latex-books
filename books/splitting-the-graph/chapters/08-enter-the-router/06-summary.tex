@@ -5,7 +5,8 @@
         endpoint nobody asked for, and then refuses to start. The refusal names
         the local alternative, which is one key in one file. The port this book
         uses, 3002, is the one the router prints on the way down.
-  \item Handed a static execution config the router stops polling anything, and
+  \item Handed a static execution config the router stops polling a control
+        plane for that config, and
         reads the file once: changing the graph means restarting the process. It
         starts happily with no subgraph running, because loading a config and
         calling a service are different things, the same way composition reads
@@ -21,7 +22,7 @@
         Cloud token the header asking for one is ignored in silence rather than
         refused. \code{dev\_mode: true} turns it on locally and the router then
         explains that it has. Every plan over this graph is a \code{Sequence}
-        holding one \code{Single} fetch, and the router costs the graph nothing:
+        holding one \code{Single} fetch. The SQL count is unchanged:
         two statements through it, two statements without it, none at all for a
         plan asked for with \code{X-WG-Skip-Loader}. Reading a plan also gives
         away that the router rewrites literal arguments into variables before

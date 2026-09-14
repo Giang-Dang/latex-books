@@ -35,9 +35,15 @@ message RouterConfig {
 \end{minted}
 
 \index{router execution config!five keys}%
-Five fields, and the file this graph produced has exactly five keys with those
-names. That is worth doing once for any artifact a tool hands you and expects
-you to deploy. Seventeen kilobytes of JSON for a single-service graph looks
+Five fields become five JSON keys. Protobuf converts the underscored names
+to lower camel case; for example:
+
+\begin{minted}{text}
+engine_config          -> engineConfig
+compatibility_version  -> compatibilityVersion
+\end{minted}
+
+Reading those names once is worth doing for an artifact you must deploy. Seventeen kilobytes of JSON for a single-service graph looks
 opaque and is not.
 
 \subsection{The Three Small Ones}
@@ -92,8 +98,9 @@ reminder that the composed document is generated rather than curated.
 Then read one level down, into the datasource entry, and the seam is back.
 Inside \code{customGraphql} there is a \code{federation} block, and inside that
 a \code{serviceSdl} string holding your subgraph's own document, whole. The
-\code{@key} on both types, the \code{@shareable} on both root fields,
-\code{\_entities} and the \code{@link} header are all still in it. So the config holds
+\code{@key} on both types, \code{\_entities} and the \code{@link} header
+are all still in it. The root-field \code{@shareable} declarations are added
+in the next section, not in this export. So the config holds
 both views at once: the schema the client is allowed to see, and the schema the
 router needs in order to serve it. Chapter~\ref{ch:blame-routing} is about what
 it means that only one of those two ever reaches the outside.
