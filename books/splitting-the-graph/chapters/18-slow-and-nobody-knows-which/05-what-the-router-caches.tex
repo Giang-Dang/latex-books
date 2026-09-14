@@ -1,0 +1,123 @@
+\section{What the Router Caches}
+\label{sec:ch18-what-the-router-caches}
+
+\index{caching!at the router|(}%
+Sections~\ref{sec:ch18-writing-it-down} and~\ref{sec:ch18-when-it-fails-instead}
+leave every service able to say what a request cost it and why it failed. The usual reply to a slow page, before anyone has
+found the service, is to put a cache in front of it, and the router is the
+obvious place: every request passes through it. So it is worth knowing
+exactly what this router caches and what that saves, in the counts this book
+uses.
+
+\subsection{The Plan, Not the Answer}
+
+\index{query plan!cached, and what that saves}%
+The router caches its own work. Normalizing an operation and planning its fetches are done once per distinct
+operation and reused.
+
+\code{enable\_cache\_response\_headers}, under \code{engine.debug}, makes the
+router report each of those caches as a hit or a miss in a response header of
+its own~\autocite{cosmorouterconfig}. With that on,
+send the page from section~\ref{sec:ch18-the-page-that-got-slower} twice, on
+the graph as this chapter leaves it, and count statements the way
+section~\ref{sec:ch18-writing-it-down} does:
+
+\begin{center}
+\begin{tabular}{lcrrrr}
+\toprule
+Request & Plan cache & Sessions & Speakers & Ratings & Search \\
+\midrule
+First & \code{MISS} & 1 & 1 & 1 & 0 \\
+Second & \code{HIT} & 1 & 1 & 1 & 0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\index{normalization!a literal lifted into a variable shares the plan}%
+The second request skipped planning and every service did exactly the work it
+did the first time. That is not a weakness of the cache; it caches a plan,
+and a plan is instructions for asking the services, not their answers. It is
+also shared more widely than the query text suggests. Ask for
+\code{sessions(first: 2)} instead of ten and the normalization cache misses
+while the plan cache hits. Chapter~\ref{ch:enter-the-router} showed the router
+lifting a literal argument into a variable before it forwards an operation,
+and here the two page sizes share one plan. None of it changes how many statements the Speakers
+service spends, so none of it would have made
+section~\ref{sec:ch18-the-page-that-got-slower}'s page faster.
+
+\subsection{A Header for Somebody Else's Cache}
+
+\index{Cache-Control@\code{Cache-Control}!computed by the router|(}%
+What the router can do about answers is tell a cache in front of it how long
+one may be kept. \code{cache\_control\_policy} is off by default. Turned on, it
+writes a \code{Cache-Control} header on each response from the values the
+subgraphs involved in that request carry, taking \code{no-store} or
+\code{no-cache} from any of them over everything else and otherwise the
+smallest \code{max-age}; a subgraph's value is either the \code{Cache-Control}
+header it sends back or one set for it in the router's config; and a response
+with errors in it gets \code{no-store} whatever the subgraphs
+said~\autocite{cosmocachecontrol}. None of this book's services sends a \code{Cache-Control} of its own, so here
+every value comes from the router's config.
+
+\index{Cache-Control@\code{Cache-Control}!the most restrictive subgraph decides}%
+Give the policy a global value of \code{max-age=180, public} and a
+\code{subgraphs} entry setting \code{ratings} to \code{max-age=60, public}, and
+the header depends on which services a request happened to reach. The session
+titles and speakers come back cacheable for 180 seconds. Add
+the two rating fields, which only the Ratings service answers, and the whole
+page is cacheable for 60. The value belongs to the response, so the least cacheable
+service a request touches decides for every field in it, the same shape as the
+blast radius chapter~\ref{ch:null-blast-radius} measured for nulls.
+
+\index{Cache-Control@\code{Cache-Control}!a subgraph with no value has no say}%
+A service with no value set has no say at all. Take the global value away and
+give only \code{speakers} a value, \code{max-age=300, public}. A page of titles, \code{\{ sessions(first: 10) \{ nodes \{ title \} \} \}},
+which is all Sessions data, gets no \code{Cache-Control} header. The same page
+with speaker names on it gets \code{public} and 300 seconds, although every
+title on it came from a service that expressed no view on how long it may be
+kept. The router reads a missing value as no restriction at all.
+
+\index{Cache-Control@\code{Cache-Control}!public on an authorized response}%
+And the policy does not know who asked. With the global value back at
+\code{max-age=180, public}, send the session page asking for each speaker's email, the column
+chapter~\ref{ch:entities-authorization} guarded:
+
+\begin{minted}{graphql}
+{ sessions(first: 10) { nodes { title speaker { name email } } } }
+\end{minted}
+
+ Without a token the email is refused,
+the response has errors, and it is marked \code{no-store}. With the bearer
+token, the guarded column comes back, and the response carrying it is marked
+\code{public} for 180 seconds with nothing in \code{Vary} beyond
+\code{Accept-Encoding}. RFC 9111 is specific about what that permits: a shared
+cache must not reuse a response to a request that carried an
+\code{Authorization} header unless the response carries a directive allowing
+it, and \code{public} is one of the three that do~\autocite{rfc9111}.
+\index{Cache-Control@\code{Cache-Control}!computed by the router|)}%
+
+\subsection{The Cache This Router Does Not Have}
+
+\index{response cache!not in the router this book pins}%
+WunderGraph's documentation describes a response cache, one that stores the
+subgraph answers themselves, entity fetches included, keyed by entity and
+selection set and governed by each subgraph's \code{Cache-Control}. The page
+marks it experimental, \enquote{in alpha} and not to be used in production, and disabled by default~\autocite{cosmoresponsecache}. The router this book runs does not
+have it: add a \code{response\_cache} block to \code{config.yaml} and the router
+refuses to start, naming it as a property its configuration schema does not
+allow, the same refusal chapter~\ref{ch:enter-the-router} got for a key it made
+up. Whatever release the page describes, it is not the one
+appendix~\ref{app:toolchain} pins.
+
+\index{caching!my judgment on the router}%
+So this book ships no cache policy, and that is my judgment rather than
+something measured. The router this book runs has two levers: the plans it
+caches, which it caches already and which save no service anything, and the
+length of time it tells a shared cache to keep a whole response, which is decided per response out of
+values set per service. The reason this graph must not be cached is one column
+in one service, behind a token. A per-response setting built from per-service
+values cannot express that, and the one it will express quietly is
+\code{public}. When a page is slow, the id in
+section~\ref{sec:ch18-writing-it-down} finds the service that made it slow, and
+the fix belongs in that service.
+\index{caching!at the router|)}%

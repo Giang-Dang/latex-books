@@ -1,0 +1,457 @@
+\section{When It Fails Instead}
+\label{sec:ch18-when-it-fails-instead}
+
+\index{blame routing!a failure, routed|(}%
+Section~\ref{sec:ch18-writing-it-down} found a slow service by counting what
+it did. A failing service is the easier half of the problem, because the
+router already names it, and the harder half of the fix, because naming it is
+where the router stops.
+
+\index{serviceName@\code{serviceName}!the router names the failing service}%
+Take a failure that needs no bug in the service's code: the Ratings service
+running against a database whose \code{Ratings} table is not there, which is
+the state a missed migration leaves behind. Rename the table out from under the running
+service, with any SQLite client pointed at the Ratings service's
+\code{ratings.db}, and send the page again:
+
+\begin{minted}{sql}
+ALTER TABLE Ratings RENAME TO RatingsMissing;
+\end{minted}
+
+It answers 200, every title and speaker
+present and both rating fields null on all four sessions, and one error. Here
+it is with the \code{data} half and six of the eight inner errors taken out,
+because all eight say the same thing:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[{"message":"Failed to fetch from Subgraph 'ratings' at Path 'sessions.nodes'.","extensions":{"errors":[{"message":"Unexpected Execution Error","path":["sessions","nodes","averageScore"],"extensions":{"code":"DOWNSTREAM_SERVICE_ERROR"}},{"message":"Unexpected Execution Error","path":["sessions","nodes","ratingCount"],"extensions":{"code":"DOWNSTREAM_SERVICE_ERROR"}}],"serviceName":"ratings","statusCode":200}}]}
+\end{minted}
+
+\index{Unexpected Execution Error@\code{Unexpected Execution Error}!says nothing about the cause}%
+Two things in it matter. \code{serviceName} is the router routing the failure
+to its owner, in an extension a program can read, so the question
+section~\ref{sec:ch18-the-page-that-got-slower} could not answer for a slow
+page is answered for a failing one before anyone opens a log. And the eight
+inner errors are Hot Chocolate's, and every one of them is
+\code{Unexpected Execution Error}, two fields on four sessions, with nothing
+about a table. The Ratings team now knows it is theirs and nothing else. The
+cause is in the Ratings service's console, if it is anywhere, and the
+response's \code{X-Wg-Trace-Id} is how they find the right part of it.
+
+\subsection{What the Owner Finds}
+
+\index{Entity Framework Core!logs its own failures}%
+For this failure the cause is there, and not because of anything in this
+book. EF Core logs a command it failed to execute at error level, with the
+\code{SqliteException} and its message, \code{no such table: Ratings}. With
+section~\ref{sec:ch18-writing-it-down}'s scopes printed, those entries carry the
+request's \code{TraceId}, and the statement marker before them carries the
+same id, so the search the Speakers team ran in that section finds this
+failure too.
+
+\index{Hot Chocolate!writes a resolver's exception nowhere}%
+That is luck about where the exception was thrown. Hot Chocolate turns an
+exception inside a resolver into \code{Unexpected Execution Error} for the
+caller and writes the exception itself nowhere, neither to the console nor
+through the logger at the levels this book's services run at, with scopes on
+or off. The database failure
+above is found only because EF Core wrote its own entry before Hot Chocolate
+swallowed the exception. Throw from a resolver that never touches the
+database, and the router's \code{serviceName} sends the Ratings team to a
+console holding not one line about the request.
+Chapter~\ref{ch:second-third-subgraph} met this silence already, when the
+Ratings service without its node id serializer answered
+\code{Unexpected Execution Error} with nothing in any log. The trace id cannot
+find an entry that was never written.
+
+\subsection{A Listener That Writes It Down}
+
+\index{diagnostic event listener!logging resolver errors|(}%
+Hot Chocolate reports what happens during execution to \emph{diagnostic event
+listeners}, classes that override the events they care about, and a resolver
+error is one of those events, delivered with the \code{IError} the caller will
+see and the exception behind it. So the fix is a listener that logs each one
+through the service's logger, where the scope adds the trace id. Here is
+\code{ErrorLog.cs} for the Ratings service, complete:
+
+\begin{minted}{csharp}
+using HotChocolate.Execution.Instrumentation;
+using HotChocolate.Resolvers;
+
+namespace Ratings;
+
+/// <summary>
+/// Writes every resolver error to this service's own log, with the
+/// exception behind it. Hot Chocolate answers the caller with
+/// Unexpected Execution Error and writes the exception nowhere, so
+/// without this the one service that knows what went wrong keeps no
+/// record of it. The log scope carries the trace id the router sent,
+/// which is what lets a trace id from a bug report find this line.
+/// </summary>
+public sealed class ErrorLog(ILogger<ErrorLog> logger)
+    : ExecutionDiagnosticEventListener
+{
+    public override void ResolverError(
+        IMiddlewareContext context,
+        IError error)
+        => logger.LogError(
+            error.Exception,
+            "{Path}: {Message}",
+            error.Path,
+            error.Message);
+}
+\end{minted}
+
+\index{Program.cs@\code{Program.cs}!registering ErrorLog}%
+It is registered on the GraphQL builder, and the registration has a trap of
+its own. Hot Chocolate builds listeners from the schema's own service
+provider, and the error it gives shows that provider does not hold the host's
+loggers. Registering the listener on its own compiles, and then
+the service refuses to start, reporting that it cannot
+resolve \code{ILogger<ErrorLog>} while activating \code{ErrorLog}.
+Registering the logger with \code{AddApplicationService} first is what works. Here is the Ratings
+service's \code{Program.cs}, complete, with the two registrations and the
+comment that explains them marked:
+
+\begin{minted}[highlightlines={47-53}]{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Ratings;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<RatingContext>(options =>
+{
+    options.UseSqlite("Data Source=ratings.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+// Two lines here differ from the other two services, and both follow
+// from the same fact: this service contributes fields to a type it
+// does not own and owns no node of its own.
+//
+// There is no AddGlobalObjectIdentification, because there cannot be.
+// That call refuses to build a schema with no node type in it: "There
+// is no object type implementing interface `Node`." So this service
+// has no node or nodes field, and needs no interceptor to declare
+// them shareable.
+//
+// But the keys it is handed across the seam are still global node ids,
+// and the serializer that reads one is normally registered by the call
+// it cannot make. AddDefaultNodeIdSerializer registers it on its own.
+// Without this line the reference resolver is injected a null and the
+// entity route answers Unexpected Execution Error.
+builder
+    .AddGraphQL()
+    .AddRatingsTypes()
+    .RegisterDbContextFactory<RatingContext>()
+    .AddDefaultNodeIdSerializer()
+    .AddApolloFederation()
+    // A resolver that throws is answered as Unexpected Execution Error
+    // and Hot Chocolate writes the exception nowhere, so ErrorLog does.
+    // Listeners are built from the schema's own services, which hold
+    // none of the host's loggers: without the first line the service
+    // refuses to start, unable to resolve ILogger<ErrorLog>.
+    .AddApplicationService<ILogger<ErrorLog>>()
+    .AddDiagnosticEventListener<ErrorLog>()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false);
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<RatingContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{ErrorLog@\code{ErrorLog}!what it writes}%
+Rename the table again and send the page. The Ratings console now holds one
+\code{ErrorLog} entry per inner error, eight, each opening like this, with the
+stack trace that follows cut:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+fail: Ratings.ErrorLog[0]
+      => SpanId:161a2ce1c7f840fc, TraceId:262e3e16a3ca9dd8da4553a6834b0426, ParentId:d28132b2876aef8a => ConnectionId:0HNOI8R7TFM49 => RequestPath:/graphql RequestId:0HNOI8R7TFM49:00000004
+      _entities[0].ratingCount: Unexpected Execution Error
+      Microsoft.Data.Sqlite.SqliteException (0x80004005): SQLite Error 1: 'no such table: Ratings'.
+\end{minted}
+
+\index{trace id!joins a client's error to the exception}%
+The second line is the scope, and \code{TraceId} in it is the value the client
+received in \code{X-Wg-Trace-Id}. The third is the path inside the Ratings
+service's own \code{\_entities} answer, which is not the path the client saw,
+and the fourth is the exception the client was never shown. The listener logs
+the database's failure a second time here, which is harmless. What it exists
+for is the resolver that throws something else, where its entry is the only
+one there is.
+\index{diagnostic event listener!logging resolver errors|)}%
+
+\subsection{The Same Lines in the Other Three Services}
+
+\index{Program.cs@\code{Program.cs}!the same registration in four services}%
+Every service in the graph gets \code{ErrorLog.cs}, identical but for its
+namespace, and the same two registrations immediately before the call that
+turns off cost defaults. A service that leaves them out is a service whose
+failures leave no trace in its own log, however well the others are set up.
+Here is the Sessions service's \code{Program.cs}, complete:
+
+\begin{minted}[highlightlines={35-41}]{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Sessions;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<ConferenceContext>(options =>
+{
+    options.UseSqlite("Data Source=conference.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+builder
+    .AddGraphQL()
+    .AddSessionsTypes()
+    .RegisterDbContextFactory<ConferenceContext>()
+    .AddQueryContext()
+    .AddPagingArguments()
+    .AddGlobalObjectIdentification()
+    .AddMutationConventions()
+    .AddApolloFederation()
+    // A resolver that throws is answered as Unexpected Execution Error
+    // and Hot Chocolate writes the exception nowhere, so ErrorLog does.
+    // Listeners are built from the schema's own services, which hold
+    // none of the host's loggers: without the first line the service
+    // refuses to start, unable to resolve ILogger<ErrorLog>.
+    .AddApplicationService<ILogger<ErrorLog>>()
+    .AddDiagnosticEventListener<ErrorLog>()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false)
+    .TryAddTypeInterceptor<ShareNodeFields>()
+    .TryAddTypeInterceptor<NullableNodesField>();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<ConferenceContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+The Speakers service's, which carries chapter~\ref{ch:entities-authorization}'s
+authentication as well:
+
+\begin{minted}[highlightlines={63-69}]{csharp}
+using System.Text;
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Speakers;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<SpeakerContext>(options =>
+{
+    options.UseSqlite("Data Source=speakers.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+// A shared secret rather than a JWKS endpoint, because this book
+// stands up no identity provider and a reader has to be able to mint
+// a token and repeat every request in the chapter. The three
+// Validate flags are off for the same reason and are the three a
+// deployment turns on first. What is not negotiable is that the
+// router validates the same token against the same key: a subgraph
+// that trusts a header the router set, without checking it, has
+// moved the guard back out of the service again.
+builder.Services
+    .AddAuthentication()
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new()
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = false,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(SigningKey.Value))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+builder
+    .AddGraphQL()
+    // Without this the [Authorize] attributes compile, reach the
+    // schema as @authorize, and are never executed.
+    .AddAuthorization()
+    .AddSpeakersTypes()
+    .RegisterDbContextFactory<SpeakerContext>()
+    .AddQueryContext()
+    .AddPagingArguments()
+    .AddGlobalObjectIdentification()
+    .AddApolloFederation()
+    // A resolver that throws is answered as Unexpected Execution Error
+    // and Hot Chocolate writes the exception nowhere, so ErrorLog does.
+    // Listeners are built from the schema's own services, which hold
+    // none of the host's loggers: without the first line the service
+    // refuses to start, unable to resolve ILogger<ErrorLog>.
+    .AddApplicationService<ILogger<ErrorLog>>()
+    .AddDiagnosticEventListener<ErrorLog>()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false)
+    .TryAddTypeInterceptor<ShareNodeFields>()
+    .TryAddTypeInterceptor<NullableNodesField>();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<SpeakerContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+And the Search service's:
+
+\begin{minted}[highlightlines={28-34}]{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Search;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<SearchContext>(options =>
+{
+    options.UseSqlite("Data Source=search.db");
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+builder
+    .AddGraphQL()
+    .AddSearchTypes()
+    .RegisterDbContextFactory<SearchContext>()
+    .AddPagingArguments()
+    .AddDefaultNodeIdSerializer()
+    .AddApolloFederation()
+    // A resolver that throws is answered as Unexpected Execution Error
+    // and Hot Chocolate writes the exception nowhere, so ErrorLog does.
+    // Listeners are built from the schema's own services, which hold
+    // none of the host's loggers: without the first line the service
+    // refuses to start, unable to resolve ILogger<ErrorLog>.
+    .AddApplicationService<ILogger<ErrorLog>>()
+    .AddDiagnosticEventListener<ErrorLog>()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false);
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<SearchContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL().WithOptions(options =>
+{
+    options.Tool.ServeMode = ServeMode.Embedded;
+});
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\index{blame routing!the router routes, the service explains}%
+The router routes a failure to a service by name, and a slow request to
+nobody. What turns the id into lines an owner can find is the router handing
+it out, and each service owner making section~\ref{sec:ch18-writing-it-down}'s
+two service edits and adding the listener above.
+\index{blame routing!a failure, routed|)}%

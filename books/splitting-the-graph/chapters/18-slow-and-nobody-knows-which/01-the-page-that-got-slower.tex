@@ -1,0 +1,97 @@
+\section{The Page That Got Slower}
+\label{sec:ch18-the-page-that-got-slower}
+
+\index{blame routing!the page nobody can attribute|(}%
+Chapter~\ref{ch:ownership} ended on a graph that is slow, a request that
+crossed several services, and a composed schema that says which service
+answers each field and nothing about which one took the time. Here is that
+graph. It is the four services this book has built, with one change I made
+and did not announce: the Speakers service's reference resolver is the naive
+one chapter~\ref{ch:router-n-plus-1} opened on, fetching one row per
+representation instead of going through a DataLoader. I know which service it
+is because I changed it. The person holding the pager does not, and everything
+below is what that person has to work with.
+
+\index{HTTP 200!a slower page looks identical}%
+The complaint is about the session page, asked for with the two rating fields
+chapter~\ref{ch:second-third-subgraph} contributed from the Ratings service, so
+that one request reaches three of the four services:
+
+\begin{minted}[fontsize=\footnotesize]{text}
+POST /graphql HTTP/1.1
+Host: localhost:3002
+Content-Type: application/json
+
+{"query":"{ sessions(first: 10) { nodes { title speaker { name } averageScore ratingCount } } }"}
+\end{minted}
+
+\index{router!response headers name no service}%
+The body that comes back is byte for byte the one the graph returns without my
+change: four sessions, every speaker, every rating there is, no \code{errors}
+key. These
+are the headers it arrives with, the date aside, and the thing to look for in
+them is anything at all that names a service or identifies the request:
+
+\begin{minted}{text}
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+Vary: Accept-Encoding
+Content-Length: 463
+\end{minted}
+
+\index{StatementLog@\code{StatementLog}!a number and nothing else}%
+Nothing does. So the next place to look is the logs, and there are five of
+them. Four are the services' consoles, each printing
+chapter~\ref{ch:data-without-n-plus-1}'s \code{StatementLog} markers. Here is
+what the Speakers console printed while that request was being answered:
+
+\begin{minted}{sql}
+-- statement 1
+SELECT "s"."Id", "s"."Bio", "s"."Email", "s"."Name"
+FROM "Speakers" AS "s"
+WHERE "s"."Id" = @key
+LIMIT 1
+-- statement 2
+SELECT "s"."Id", "s"."Bio", "s"."Email", "s"."Name"
+FROM "Speakers" AS "s"
+WHERE "s"."Id" = @key
+LIMIT 1
+-- statement 3
+SELECT "s"."Id", "s"."Bio", "s"."Email", "s"."Name"
+FROM "Speakers" AS "s"
+WHERE "s"."Id" = @key
+LIMIT 1
+\end{minted}
+
+\index{N+1@N+1!invisible in a shared log}%
+Three statements, one row each. Read alone, on a quiet laptop, that is the
+answer, and chapter~\ref{ch:router-n-plus-1} spent a section explaining it.
+On a service answering real traffic it answers nothing. The marker is a
+process-wide counter and the text is a query. Neither line says which request
+issued it, so three statements in a row could be one request paying three
+times or three requests paying once each, and the Speakers team cannot tell
+those apart from their own console any better than you can. The Sessions and
+Ratings consoles printed one statement each, as a marker and a query in the
+same form.
+
+\index{router!the request log line}%
+The fifth log is the router's. It writes one line per request, and this is
+the line for the page, with its timestamp, its timing, the router's own
+request number and the fields that identify this machine and this client
+taken out:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+INFO requestlogger/requestlogger.go:206 /graphql {"log_type": "request", "method": "POST", "path": "/graphql", "config_version": "00000000-0000-0000-0000-000000000000", "trace_id": "1cd345017494455980971dceaf195769", "status": 200}
+\end{minted}
+
+\index{trace id!the only line that carries one}%
+A \emph{trace id} is an identifier given to one request so that everything
+done on its behalf, in any process, can be recognized as belonging to it, and
+\code{trace\_id} on that line is one. It is the only identifier for this
+request that appears in any of the five logs and was also sent anywhere
+beyond the router, and the router is the only component that printed it. The Sessions, Speakers and Ratings consoles hold no line
+containing those thirty-two characters, and the client that complained was
+never shown them. So what the on-call engineer can prove is that the router
+took a request and answered 200. Which of three services spent the effort is a
+question with no key to join on.
+\index{blame routing!the page nobody can attribute|)}%

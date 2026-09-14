@@ -1,0 +1,121 @@
+% One request, one trace id, three fetches that never see it recorded
+% anywhere but the router.
+%
+% Every other figure in this book is a timeline read left to right, one
+% lane per scenario (figures/tikz/ch01-one-field.tex, ch09-two-fetches.tex,
+% ch10-one-fetch-two-costs.tex). This chapter's argument is about five
+% parties in the same request rather than about stages within one lane, so
+% this figure turns the axis: five lifelines run top to bottom instead of
+% one axis running left to right, and the sequence reads down the page. The
+% idiom itself is reused unchanged: square corners, one 0.4pt stroke
+% throughout, the same -{Straight Barb} arrowhead as every axis and span in
+% this book, no fill anywhere, and the same solid/dashed split ch09 and
+% ch10 already use for a request versus its return. Lifelines are dashed
+% for the same reason ch09's seam boundary is dashed: a guide the eye
+% follows without mistaking it for a message.
+%
+% The router mints the trace id itself; nothing upstream sent one. That
+% mint is not a message between two lifelines, so it is drawn as a tick on
+% the router's own lifeline with a solid-outline label beside it, not an
+% arrow. Solid outline is deliberate and is the figure's one write/no-write
+% distinction: the router's box below ("logs T") is the same solid outline
+% as this mint note, and every other party's box ("holds T, writes
+% nothing", "never sees T") is dashed. Solid outline means this party wrote
+% the id down; dashed means it did not.
+%
+% Sessions answers before the router fans out to Speakers and Ratings.
+% Both fetches leave from the router's own lifeline within a few mm of each
+% other rather than from one literal shared point: two coincident straight
+% lines cannot both be drawn without one running on top of the other for
+% the 72mm they would otherwise share, so the arrow to Ratings starts 6mm
+% below the arrow to Speakers. Both labels sit left-aligned just to the
+% right of the router lifeline, stacked at that same offset, so neither
+% overlaps the other and neither reads as attached to a lifeline further
+% along the row.
+%
+% No response carries the trace id back. The two return arrows from
+% Speakers and Ratings, and the final response to the client, are dashed
+% like every return in this book and carry no traceparent label, because
+% none of them has one to show.
+%
+% Every node whose content varies (the five lifeline heads, the five
+% write/hold boxes) carries a leading \vphantom{Tg} so its height and depth
+% come from that fixed reference glyph rather than from its own letters.
+% Without it, a word with a descender (speakers, ratings, writes) measures
+% taller than one without (client, router, sessions, logs), and anchoring
+% on south or north then puts its box at a visibly different level. This
+% is the same fix under every node here, not a special case for one row.
+\begin{tikzpicture}[
+  x=1mm, y=1mm,
+  every node/.append style={font=\sffamily\scriptsize},
+  head/.style={draw, line width=0.4pt, align=center, inner sep=2pt,
+    minimum width=18mm, anchor=south},
+  lifeline/.style={draw, line width=0.4pt, dashed},
+  request/.style={draw, line width=0.4pt,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  reply/.style={draw, line width=0.4pt, dashed,
+    -{Straight Barb[length=1.4mm, width=1.6mm]}},
+  msglabel/.style={anchor=south, align=center, inner sep=1pt},
+  msglabelleft/.style={anchor=south west, align=left, inner sep=1pt},
+  tick/.style={draw, line width=0.4pt},
+  mint/.style={draw, line width=0.4pt, align=center, inner sep=1.5pt,
+    anchor=west},
+  writesbox/.style={draw, line width=0.4pt, align=center, inner sep=2pt,
+    text width=20mm, anchor=north},
+  holdsbox/.style={draw, line width=0.4pt, dashed, align=center,
+    inner sep=2pt, text width=20mm, anchor=north},
+]
+
+% ------------------------------------------------------------- lifelines
+\node[head, anchor=south west] at (0,8)   {\vphantom{Tg}client};
+\node[head]                    at (36,8)  {\vphantom{Tg}router};
+\node[head]                    at (72,8)  {\vphantom{Tg}sessions};
+\node[head]                    at (108,8) {\vphantom{Tg}speakers};
+\node[head, anchor=south east] at (144,8) {\vphantom{Tg}ratings};
+
+\foreach \x in {0,36,72,108,144}{
+  \draw[lifeline] (\x,3) -- (\x,-90);
+}
+
+% --------------------------------------------------------- 1. the query
+\draw[request] (0,-14) -- (36,-14);
+\node[msglabel, text width=30mm] at (18,-12)
+  {POST /graphql\\{\itshape\tiny no trace id}};
+
+% --------------------------------------------------- 2. the router mints
+\draw[tick] (34,-24) -- (38,-24);
+\node[mint] at (39,-24) {trace id T};
+
+% ------------------------------------------------------- 3. to sessions
+\draw[request] (36,-34) -- (72,-34);
+\node[msglabel] at (54,-32) {traceparent 00-T-p1-01};
+
+\draw[reply] (72,-44) -- (36,-44);
+
+% ------------------------- 4. sessions answered: fan out, a few mm apart
+\draw[request] (36,-54) -- (108,-54);
+\node[msglabelleft] at (37,-52) {00-T-p2-01};
+
+\draw[request] (36,-60) -- (144,-60);
+\node[msglabelleft] at (37,-58) {00-T-p3-01};
+
+\draw[reply] (108,-68) -- (36,-68);
+\draw[reply] (144,-74) -- (36,-74);
+
+% --------------------------------------------------------- 5. the reply
+\draw[reply] (36,-84) -- (0,-84);
+\node[msglabel, text width=30mm] at (18,-82) {200, no trace id};
+
+% ----------------------------------------------------- what gets written
+\node[holdsbox, anchor=north west] at (0,-94)
+  {\vphantom{Tg}never sees T};
+\node[writesbox]                   at (36,-94)
+  {\vphantom{Tg}logs T};
+\node[holdsbox]                    at (72,-94)
+  {\vphantom{Tg}holds T, writes nothing};
+\node[holdsbox]                    at (108,-94)
+  {\vphantom{Tg}holds T, writes nothing};
+\node[holdsbox, anchor=north east] at (144,-94)
+  {\vphantom{Tg}holds T, writes nothing};
+
+\end{tikzpicture}

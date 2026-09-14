@@ -975,3 +975,121 @@
               the byline shows there as a profile handle and the full name was
               confirmed against the author's own public profiles}
 }
+
+%--------------------------------------------------------------------------
+% Chapter 18 - Slow, and Nobody Knows Which Subgraph
+%
+% Provenance for all of these is recorded in
+% research/ch18-slow-and-nobody-knows-which.md.
+%--------------------------------------------------------------------------
+
+@online{w3ctracecontext,
+  title        = {Trace Context},
+  organization = {W3C},
+  url          = {https://www.w3.org/TR/trace-context/},
+  urldate      = {2026-09-14},
+  addendum     = {A W3C Recommendation, passing unsigned under decision 39.
+                  Cited for the four fields of the traceparent header, the
+                  lengths of the trace id and the parent id, and the
+                  requirement that a participant set a new parent id on each
+                  request it sends onward}
+}
+
+@online{cosmotelemetry,
+  title        = {{OpenTelemetry}},
+  organization = {WunderGraph, Cosmo documentation},
+  url          = {https://cosmo-docs.wundergraph.com/router/open-telemetry},
+  urldate      = {2026-09-14},
+  addendum     = {Unsigned vendor reference page, admitted under decision 39 as
+                  describing the vendor's own router. Cited for Trace-Context
+                  propagation being enabled by default and for the
+                  response\_trace\_id setting and its default header name. That
+                  the router sends a traceparent on every subgraph fetch with no
+                  telemetry configured was measured, not read here}
+}
+
+@online{msdistributedtracing,
+  title        = {Distributed Tracing Concepts},
+  organization = {Microsoft Learn},
+  url          = {https://learn.microsoft.com/en-us/dotnet/core/diagnostics/distributed-tracing-concepts},
+  urldate      = {2026-09-14},
+  addendum     = {Unsigned vendor reference about the vendor's own runtime.
+                  Cited for the ASP.NET web server decoding and encoding
+                  Activity ids on HTTP messages with no code from the
+                  application}
+}
+
+@online{msaspnetlogging,
+  title        = {Logging in {.NET} and {ASP.NET} {Core}},
+  organization = {Microsoft Learn},
+  url          = {https://learn.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-10.0},
+  urldate      = {2026-09-14},
+  addendum     = {Unsigned vendor reference, same footing. Cited for SpanId,
+                  TraceId and ParentId being enabled by default in the scope
+                  the logging libraries create. That the documented
+                  FormatterOptions setting is ignored without FormatterName was
+                  measured and is not on this page}
+}
+
+@online{shikhare2020part2,
+  author       = {Shikhare, Tejas},
+  title        = {How {Netflix} Scales its {API} with {GraphQL} Federation (Part 2)},
+  organization = {Netflix TechBlog},
+  date         = {2020-12-11},
+  url          = {https://netflixtechblog.com/how-netflix-scales-its-api-with-graphql-federation-part-2-bbe71aaec44a},
+  urldate      = {2026-09-14},
+  addendum     = {Bylined by a named engineer at the company described, which
+                  the Sources rule asks for and the prose states.
+                  netflixtechblog.com answers a direct fetch with 403, so the
+                  text was read through the Wayback Machine and the two quoted
+                  sentences taken from the page's own embedded paragraph data}
+}
+
+@online{cosmorouterconfig,
+  title        = {Router Configuration},
+  organization = {WunderGraph, Cosmo documentation},
+  url          = {https://cosmo-docs.wundergraph.com/router/configuration},
+  urldate      = {2026-09-14},
+  addendum     = {Unsigned vendor reference, same footing. Cited for
+                  enable\_cache\_response\_headers and the cache headers it
+                  names. The same page gives tracing a default of true where
+                  the configuration schema at the pinned tag says false; no
+                  chapter relies on either}
+}
+
+@online{cosmocachecontrol,
+  title        = {Adjusting Cache Control},
+  organization = {WunderGraph, Cosmo documentation},
+  url          = {https://cosmo-docs.wundergraph.com/router/proxy-capabilities/adjusting-cache-control},
+  urldate      = {2026-09-14},
+  addendum     = {Unsigned vendor reference, same footing. Cited for the
+                  algorithm, no-store and no-cache first and then the smallest
+                  max-age, for per-subgraph values, and for errors forcing
+                  no-store. The page does not mention private, which the
+                  router was measured keeping}
+}
+
+@online{rfc9111,
+  author       = {Fielding, Roy T. and Nottingham, Mark and Reschke, Julian},
+  title        = {{HTTP} Caching},
+  series       = {RFC},
+  number       = {9111},
+  organization = {IETF},
+  date         = {2022-06},
+  url          = {https://www.rfc-editor.org/rfc/rfc9111.txt},
+  urldate      = {2026-09-14},
+  addendum     = {Cited for section 3.5, on storing responses to authenticated
+                  requests, and the three directives it names as permitting a
+                  shared cache to reuse one}
+}
+
+@online{cosmoresponsecache,
+  title        = {Response Cache (Experimental)},
+  organization = {WunderGraph, Cosmo documentation},
+  url          = {https://cosmo-docs.wundergraph.com/router/response-cache},
+  urldate      = {2026-09-14},
+  addendum     = {Unsigned vendor reference, same footing. Cited for the
+                  feature being experimental, in alpha and disabled by default,
+                  and for what it stores. The router this book pins refuses the
+                  response\_cache key, so the page describes another release}
+}
