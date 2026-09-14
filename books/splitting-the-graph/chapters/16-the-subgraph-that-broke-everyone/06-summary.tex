@@ -16,12 +16,11 @@ routes it could not plan, and one of them breaks no client at all.}
 {Diff the composed schema rather than the subgraph document: compose what is
 published, compose the candidate, and diff \code{engineConfig.graphqlSchema}
 out of the two configs, which costs two commands you already run and reports
-the change in the schema clients actually read. That answers which of the
-sixteen categories you are in and not whether it matters, so pair it with an
-operation corpus replayed through a router on the candidate config, knowing
-that a corpus your own team maintains moves with your schema. The comparison
-neither of those makes is against real client traffic, and both vendors sell
-that as a control plane with a seven-day default window; when you cannot name
-your clients any more, that record is the only way anyone has to answer the
-question.}
+the change in the schema clients actually read. Classify that change using
+the compatibility rules; a text diff does not do the classification. Retain
+old client operations and replay them against the candidate before deployment.
+That catches breaks in the retained corpus even without a control plane, but
+cannot cover operations you never collected. Observed traffic supplies another
+corpus; both vendors' default seven-day window still leaves older or rarely
+used operations outside the evidence.}
 \end{problemsummary}

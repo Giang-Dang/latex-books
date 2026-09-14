@@ -28,12 +28,10 @@ router schema keeps such fields because query planning still needs them, and
 the client schema is what introspection and clients are given.
 
 \index{inaccessible@\code{"@inaccessible}!hiding is not a routing question}%
-So one team can remove a field from the public schema by editing its own
-document. That is the exception to
-section~\ref{sec:ch17-what-the-config-calls-a-subgraph}, which said every
-directive here answers a routing question, and it is an exception for a
-reason: hiding a field is not a routing question, the composer has no route to
-lose over it, and so it does that one without asking anybody either.
+One subgraph's declaration can therefore hide a shared field from clients
+while preserving it for planning. That is a visibility decision, and it also
+needs review outside composition. The composer does not know whether the
+team responsible for the public contract approved it.
 
 \subsection{The Governance Products, and What They Need}
 

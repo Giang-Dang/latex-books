@@ -26,9 +26,8 @@ the field.
 
 \index{shareable@\code{"@shareable}!one document is not enough}%
 The obvious repair is to mark the field \code{@shareable}, and the interesting
-question is where. Put it on the Sessions copy alone, so that the service that
-owns the rows has consented and the newcomer has not, and the composer refuses
-again. Its first line is the one above, unchanged; these two are what has
+question is where. Put it on the Sessions copy alone, leaving Ratings'
+resolving declaration unmarked, and the composer refuses again. Its first line is the one above, unchanged; these two are what has
 grown a distinction:
 
 \begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
@@ -39,10 +38,9 @@ grown a distinction:
 \index{shareable@\code{"@shareable}!the refusal is symmetric}%
 Put it on the Ratings copy alone instead and the same message comes back with
 the two names exchanged. Both directions refuse, which is the answer to the
-question worth asking: there is no asymmetry here to exploit. The service that
-owns the rows cannot unilaterally invite a second owner, and a second owner
-cannot unilaterally invite itself. Apollo states the rule as a
-rule~\autocite{apollovaluetypes}:
+question worth asking: both resolving declarations need the marker. This is
+symmetric schema validation, not a record of when either team approved the
+change. Apollo states the rule~\autocite{apollovaluetypes}:
 
 \begin{quote}
 If a type or field is marked \code{@shareable} in any subgraph, it must be
@@ -66,9 +64,10 @@ as able to answer the field.
 \subsection{What Sharing Actually Promises}
 
 \index{shareable@\code{"@shareable}!nothing checks that the two agree}%
-What neither vendor will do for you is the part that matters. Composition
-checks that the two declarations have the same shape. Nothing checks, and
-nothing can check, that the two resolvers return the same value. WunderGraph
+Composition checks compatible declarations. It does not execute the two
+resolvers to compare their values. Your own tests can compare known inputs;
+keeping the implementations equivalent for every valid input remains an
+application obligation. WunderGraph
 says so in the reference page for the directive~\autocite{cosmoshareable}:
 
 \begin{quote}
@@ -93,9 +92,10 @@ silence out of the resolvability check.
 
 \index{ownership!consent to share, none to take}%
 So the shape of the whole mechanism is this. To have two owners of a field,
-both documents must say so, in a word a human types, and the composer will not
-proceed until they agree. To have a different owner of a field, one document
-says so and nobody else is consulted at all. Consent is required for the
-arrangement where the two teams have to talk anyway, and not required for the
-one where a value silently starts coming from somewhere else.
+the declarations must permit multiple resolvers. That is a schema permission,
+not proof of fresh approval by both teams: an existing \code{@shareable}
+declaration can permit a later contributor without any edit to the original
+document. To route an existing field to a different subgraph,
+\code{@override} needs only the receiving declaration. Neither check records
+a business owner, a reviewer or a new approval.
 \index{shareable@\code{"@shareable}!the one refusal in this chapter|)}%

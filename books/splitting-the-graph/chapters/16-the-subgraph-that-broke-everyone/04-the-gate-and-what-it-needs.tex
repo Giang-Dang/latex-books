@@ -33,18 +33,20 @@ holding. A schema check makes two comparisons. The first is a diff, between
 the candidate document you hand it and the one the control plane already has
 for that subgraph, across every graph that subgraph is part of, which is why
 the reference page counts composition errors in the plural. The second is the
-one nothing local can do. It takes the changes the first found and asks whether
-any client actually used them.
+usage comparison. It takes the changes the first found and asks whether
+observed client operations depend on them. That requires an operation record,
+whether you collect it locally or obtain it through a control plane.
 
 \index{schema check!four components, and the verdict}%
 Cosmo's documentation divides a check into four named components rather than
 two comparisons, and the two counts do not disagree: composition errors and
 breaking change detection are what the diff produces, the operations check is
 the second comparison, and a lint check runs beside both. The verdict is
-narrower than that list. A check passes when the proposed schema was both
-composable and non-breaking, and fails when it was either not composable,
-introduced breaking changes, or both~\autocite{cosmochecks}. The sentence that
-says so names two of the four.
+policy-dependent. Composition failures block the candidate. A structural
+breaking change may still pass the operations policy when no observed active
+operation uses it~\autocite{cosmochecks}. Keep the structural classification
+and the final pass/fail decision separate; the traffic setting below decides
+whether an unused break is allowed.
 
 \index{schema check!the traffic comes from the router}%
 Where the traffic comes from is the router. Cosmo's documentation is plain
@@ -161,20 +163,24 @@ and is two commands rather than one.
 
 \index{schema check!the half that stays hard}%
 What that does not give you is the second comparison, and the shortfall is
-exact. The diff tells you which of the sixteen
-categories you are in. It cannot tell you whether it matters, and in practice
-the argument about a removal is never about the category.
+exact. A text diff only shows changed text. Classify it against the schema
+rules: removing a selected field breaks validation; removing output non-null
+broadens possible responses; adding a required input without a default can
+reject old variables. Adding an optional argument does not have that effect.
+Those are semantic judgments over the diff, not categories produced by the
+two compose commands. Neither the text nor that classification establishes
+which deployed clients are affected.
 
 \index{operation corpus!is not a population of clients}%
 What stands in for the second comparison, with no control plane behind you, is
 a corpus of operations you keep yourself and replay through a router started on
 the candidate config. Build it. It is worth having and it is not the same
-thing, for the reason
-section~\ref{sec:ch16-the-change-this-book-already-shipped} gave: a corpus
-maintained by the people who change the schema moves when the schema moves. It
-is a regression suite, and a regression suite tells you that the graph still
-does what you meant. A population of clients tells you what somebody else
-meant, and only one of those two is on your machine.
+thing as a complete population of clients. Keep old released operations
+unchanged when adding new ones; otherwise the suite can erase the behavior
+it was meant to protect. Replaying that retained corpus locally can catch
+old-client failures before deployment. Its limitation is coverage: it cannot
+protect an operation you never recorded, and a traffic sample has its own
+time-window limit.
 
 \index{figure!what each check can see}%
 Figure~\ref{fig:ch16-what-each-check-can-see} is the three checks against the
@@ -183,15 +189,12 @@ life of one change.
 \begin{figure}[htbp]
   \centering
   \input{figures/tikz/ch16-what-each-check-can-see}
-  \caption{Three checks over the life of one schema change, and the two that
-  run locally cover the wrong parts of it. Composition reads the four
-  documents when they merge, and can ask nothing outside them. The router
-  validates the operation correctly and does it at the far end, after the
-  deployment, in somebody else's request. The third span is drawn open at its
-  right because nothing in this book closes it: a check that stopped the edit
-  would have to know, while you are still editing, what a client is going to
-  send. A control plane is a service that closes that span by keeping the
-  operations for you.}
+  \caption{Three checks need different inputs. Composition reads the candidate
+  documents. Request validation reads an operation against the loaded schema.
+  Compatibility checking needs both the proposed schema and operations that
+  must survive it. A retained corpus can supply those operations before
+  deployment; a control plane can supply observed traffic. Neither record
+  proves that an unobserved client does not exist.}
   \label{fig:ch16-what-each-check-can-see}
 \end{figure}
 

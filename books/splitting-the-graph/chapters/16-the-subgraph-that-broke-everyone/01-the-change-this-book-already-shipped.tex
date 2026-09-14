@@ -64,9 +64,9 @@ merges the two declarations into one field. Two of the five are root fields, \co
 \index{ratingCount@\code{ratingCount}!two fields of that name}%
 One field that looks like a sixth is not.
 \code{SessionSearchDocument.ratingCount} is still \code{Int!}, because the
-Search service owns that column and answers it out of its own projection. Two
-fields in this supergraph are called \code{ratingCount} and only one of them
-moved.
+Search service owns that column and answers it out of its own projection.
+The name occurs in three places. On \code{Query} and \code{Session}, the
+rating count became nullable. On the search document, it stayed non-null.
 
 \index{composition!prints nothing about a changed type}%
 Neither composition said anything. Exit zero both times, and the whole of what
@@ -138,15 +138,16 @@ Three things failed to notice that change at the top of this section: the
 composition, the router, and every request in this book. There is a fourth,
 and it is the part I would not have volunteered. A schema has tests, and the
 tests assert the schema. When I softened those five fields, the change that
-softened them also rewrote every assertion that named them, because a change
-that leaves them alone does not pass and therefore does not ship. That is not
-a lapse of discipline. It is the only shape such a change can have.
+softened them also rewrote every assertion that named their schema types.
+Those current-schema assertions have to change to describe the new API.
+That does not require replacing old client operations: a separate retained
+corpus can test compatibility against the proposed schema.
 
 \index{breaking change!why your own tests cannot tell you}%
-Which is why a suite of operations kept by the team that owns the schema
-cannot tell that team it has broken somebody. The operations move when the
-schema moves, in the same change, by the same hand, so nothing in the suite is
-older than the edit, and being older than the edit is the whole of what would
-make it evidence. Nobody found out here. The next section is what finding out
-looks like when somebody does.
+A suite updated to exercise only the new API cannot establish compatibility
+with old callers. A suite that retains their operations can catch the
+covered failures before deployment, whoever owns it. The limit is coverage:
+passing those operations says nothing about a client the corpus never saw.
+Nobody found out here. The next section is what finding out looks like when
+somebody does.
 \index{breaking change!the one this book made|)}%
