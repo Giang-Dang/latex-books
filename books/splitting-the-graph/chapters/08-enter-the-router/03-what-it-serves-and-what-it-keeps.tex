@@ -2,8 +2,9 @@
 \label{sec:ch08-what-it-serves-and-what-it-keeps}
 
 \index{router!serves fewer types than the subgraph|(}%
-Introspect the router, then introspect the subgraph behind it, and count the
-types each one names. Discount the ones whose names begin with a double
+Restart Sessions from \code{src/Sessions} with \code{dotnet run}; leave the
+router running. Introspect the router, then introspect the subgraph behind it,
+and count the types each one names. Discount the ones whose names begin with a double
 underscore, which are introspection's own and belong to no schema. The router
 serves 21. The subgraph serves 24.
 

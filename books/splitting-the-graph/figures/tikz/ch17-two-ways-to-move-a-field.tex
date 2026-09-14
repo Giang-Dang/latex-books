@@ -1,11 +1,9 @@
 % Two ways abstract moves from one subgraph to another, measured against wgc
 % 0.129.9 and the book's four exported subgraph documents. Above, two teams
-% share the field and the composer withholds the route until both of them
-% agree. Below, one team takes the field outright and the composer asks
-% nobody. Both routes end at the same routing-table entry in the composed
-% config, and in both the schema a client reads never changes; the difference
-% the picture argues is entirely in what happens before that entry is
-% written, and who is consulted while it happens.
+% share an initially unmarked field: both declarations need editing. A field
+% already declared shareable would not require a fresh old-owner edit.
+% Below, an override changes the route without editing the old declaration.
+% Both preserve the client-facing field. Neither records business approval.
 %
 % Same idiom as figures/tikz/ch01-one-field.tex, which fixes it: x=1mm/y=1mm,
 % ticks above a single-weight axis, event nodes anchored south with manual
@@ -66,7 +64,7 @@
 ]
 
 % ------------------------------------------------------------------- lane A
-\node[lane] at (0,20) {A. sharing a field needs both teams};
+\node[lane] at (0,20) {A. sharing an initially unmarked field};
 
 % One continuous stroke from the first event to the last: the refusal at
 % x=46 is not where the walk stops, so the axis does not stop there either.
@@ -83,20 +81,20 @@
 \node[event, text width=26mm] at (46,3)
   {wgc router compose\\exit 1, refused};
 \node[event, text width=30mm] at (78,3)
-  {both teams add shareable\\to their own documents};
+  {shareable is added\\to both documents};
 \node[event, text width=24mm] at (106,3)
   {wgc router\\compose, exit 0};
 
 \draw[span] (30,-4) -- (30,-7) -- (94,-7) -- (94,-4);
 \node[spanlabel, text width=44mm] at (62,-8)
-  {the composer asks whether both declaring subgraphs agree to share the
-   field, and consent is what it needs before it grants the route};
+  {both declarations must permit sharing; an existing shareable declaration
+   would need no fresh edit};
 
-\node[outcome] at (120,0) {both documents moved,\\so both teams knew.};
+\node[outcome] at (120,0) {both documents moved;\\approval is not recorded.};
 
 % ------------------------------------------------------------------- lane B
 \begin{scope}[shift={(0,-50)}]
-  \node[lane] at (0,20) {B. taking a field needs nobody};
+  \node[lane] at (0,20) {B. overriding needs no old-owner edit};
 
   % Stops well short of the outcome column: nothing happens after the field
   % is served, and nobody is asked along the way, which is the point of the
@@ -113,12 +111,10 @@
 
   \draw[span] (2,-4) -- (2,-7) -- (58,-7) -- (58,-4);
   \node[spanlabel, text width=44mm] at (30,-8)
-    {the same question has one route and one answer, so nothing is asked of
-     anybody};
+    {override selects the new route without changing the old declaration};
 
   \node[outcome] at (120,0)
-    {one document moved,\\and the team that owned\\the field was never
-     asked.};
+    {one document moved;\\approval is not recorded.};
 \end{scope}
 
 \end{tikzpicture}

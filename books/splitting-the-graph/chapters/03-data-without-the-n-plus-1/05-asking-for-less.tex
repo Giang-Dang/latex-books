@@ -272,6 +272,39 @@ Content-Type: application/json
 Two sessions come back and \code{hasNextPage} is true, because no \code{first}
 was given and \code{DefaultPageSize} decided.
 
+To fetch the next page, ask for the cursor as well. The operation below
+names an input variable \code{\$after} of nullable type \code{String}.
+The dollar sign means \enquote{use the value supplied separately under this
+name}; it is not part of that name in JSON. Send this operation first
+with \code{\{"after": null\}} as the variables:
+
+\begin{minted}{graphql}
+query Page($after: String) {
+  sessions(first: 2, after: $after) {
+    nodes { title }
+    pageInfo { endCursor hasNextPage }
+  }
+}
+\end{minted}
+
+In Nitro, put the operation in the query editor and the object in its
+variables editor. Over HTTP, the JSON request has a \code{query} string
+holding the operation above and a sibling \code{variables} object holding
+\code{\{"after": null\}}. The operation's \code{after: \$after} passes
+that supplied value to the field's \code{after} argument.
+
+The first page contains the schema and query-plan talks, with
+\code{endCursor: "MQ=="} and \code{hasNextPage: true}. Send the same operation
+with \code{\{"after": "MQ=="\}}. The second page contains
+\enquote{Paging Without Offsets} and \enquote{The Bank That Split Its Graph},
+with \code{endCursor: "Mw=="} and \code{hasNextPage: false}. Treat those
+cursor strings as opaque values returned by this service, not as a format
+to construct yourself. Each page costs one statement. This provider uses
+an offset in the second statement; the Relay connection shape does not
+promise keyset pagination.
+
+The original first-page request above issues this statement:
+
 \begin{minted}{text}
 -- statement 1
 SELECT "s"."Title"

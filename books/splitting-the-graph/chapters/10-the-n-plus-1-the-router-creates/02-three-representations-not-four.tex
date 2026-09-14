@@ -6,14 +6,107 @@ Four sessions, three statements. The arithmetic is wrong for an N+1, and where
 the missing one went is the rest of this section.
 
 \index{representations!what the router actually sends}%
-The place to look is the wire, and getting at it means putting something in
-front of the Speakers service that writes down each request body as it arrives.
-That is an instrument rather than part of the program, so this book does not
-print what it saw; the chapter's research note carries the bodies and the
-procedure. What they show is that the fetch carries \emph{three} representations
-for a list of four sessions, holding the node ids of Ada Fischer, Bruno
-Kaminski and Chidi Okafor, in the order the sessions first named them. Two of
-those sessions are Ada Fischer's and her identifier is in the list once.
+Inspect the body arriving at Speakers before its GraphQL executor reads it.
+For this local exercise, replace Speakers' \code{Program.cs} with the
+complete file below. The highlighted middleware buffers and rewinds the
+stream so inspection does not consume the request.
+Do not log arbitrary request bodies in production; they can contain private
+data.
+
+\begin{minted}[highlightlines={47-58}]{csharp}
+using ChilliCream.Nitro.App;
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Speakers;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<SpeakerContext>(options =>
+{
+    options.UseSqlite("Data Source=speakers.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+builder
+    .AddGraphQL()
+    .AddSpeakersTypes()
+    .RegisterDbContextFactory<SpeakerContext>()
+    .AddQueryContext()
+    .AddPagingArguments()
+    .AddGlobalObjectIdentification()
+    .AddApolloFederation()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false)
+    .TryAddTypeInterceptor<ShareNodeFields>();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<SpeakerContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+// Temporary request inspection: preserve the request body and record
+// exactly what the router sends before Hot Chocolate reads it.
+app.Use(async (context, next) =>
+{
+    context.Request.EnableBuffering();
+    using var bodyReader = new StreamReader(
+        context.Request.Body, leaveOpen: true);
+    var body = await bodyReader.ReadToEndAsync();
+    context.Request.Body.Position = 0;
+    Console.WriteLine("WIRE_REQUEST_BODY=" + body);
+    await next();
+});
+
+app.MapGraphQL()
+    .WithOptions(options =>
+    {
+        // Serve the Nitro build that shipped in the package. The
+        // default, ServeMode.Latest, downloads the current one
+        // from ChilliCream's CDN instead.
+        options.Tool.ServeMode = ServeMode.Embedded;
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+Rebuild and restart Speakers, then send the opening \code{first: 10}
+request to the router. The captured request body is below, formatted for
+reading without dropping fields:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{
+  "query": "query($representations: [_Any!]!){_entities(representations: $representations){... on Speaker {__typename name}}}",
+  "variables": {
+    "representations": [
+      {"__typename":"Speaker","id":"U3BlYWtlcjox"},
+      {"__typename":"Speaker","id":"U3BlYWtlcjoy"},
+      {"__typename":"Speaker","id":"U3BlYWtlcjoz"}
+    ]
+  }
+}
+\end{minted}
+
+There are three representations for four response positions. The keys name
+Ada Fischer, Bruno Kaminski and Chidi Okafor in first-appearance order.
+Ada's identifier occurs once even though two sessions name her. This is
+evidence at the HTTP boundary, before a DataLoader can collapse anything.
+Remove the temporary middleware and restart Speakers after capturing it.
 
 \index{representations!a page of one speaker is one representation}%
 Narrow the page to the two sessions that share a speaker and the point is
@@ -30,14 +123,16 @@ speaker, and the router asked for her once and put the answer in both places.
 \subsection{Which of Them Did That}
 
 \index{DataLoader!both halves look the same from outside}%
-There are two candidates and only one experiment separates them. A DataLoader
+SQL alone leaves two candidates. A DataLoader
 de-duplicates keys, which is the second thing
 chapter~\ref{ch:data-without-n-plus-1} said about it, so a service with one
 behind its resolver would show a batch of three whether it had been sent three
-or four. The observation above is consistent with either.
+or four. A database batch of three keys alone is consistent with either;
+the HTTP body is not. Once the body contains only three representations,
+deduplication has already happened before the subgraph's loader runs.
 
 \index{representations!the de-duplication survives the loader's removal}%
-The version with no loader in it settles it. Three statements, not four, for
+Removing the loader confirms the boundary observation. Three statements, not four, for
 four sessions; one statement, not two, for the page of two. There is nothing in
 that service keeping track of anything, so whatever collapsed the duplicate
 did it before the request was sent.
@@ -52,6 +147,8 @@ query E($r: [_Any!]!) {
   _entities(representations: $r) { __typename ... on Speaker { name } }
 }
 \end{minted}
+
+Use three copies of the same speaker key as variables:
 
 \begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
 {"r":[{"__typename":"Speaker","id":"U3BlYWtlcjox"},

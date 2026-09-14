@@ -26,11 +26,13 @@ looking for a published rule about the federated case and did not find one that
 clears this book's bar for a source.
 
 \index{nullability!two positions decide everything}%
-The positions that matter are the two this chapter has met. A field contributed
-to a type another service owns sits inside that service's list, and emptying it
-empties the list. A root field sits directly under the response, and emptying it
-empties the response. Everything else in a subgraph is comparatively cheap to
-get wrong.
+The two measured paths show why the enclosing types matter.
+Under \code{sessions.nodes: [Session!]}, a non-null contribution can empty
+the list because its items cannot hold null. Under the nullable
+\code{sessionById} root, the same failure empties one object instead.
+A non-null root field propagates directly to \code{data}. Follow the actual
+path to its nearest nullable position; contributing a field does not by
+itself determine the damage.
 
 \subsection{What Moved, and What Did Not}
 
@@ -90,7 +92,7 @@ rule this book prints changes under:
             ?.Length ?? 0;
 \end{minted}
 
-\index{@requires@\code{@requires}!the field with two ways to fail}%
+\index{requires@\code{"@requires}!the field with two ways to fail}%
 And the one beside it, which is the same change and the worse position, because
 the router cannot ask for this field at all until it has collected a title from
 a third service:

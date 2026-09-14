@@ -205,27 +205,27 @@ app.MapGraphQL()
 app.RunWithGraphQLCommands(args);
 \end{minted}
 
-\index{@shareable@\code{@shareable}!two subgraphs must agree on the type}%
+\index{shareable@\code{"@shareable}!two subgraphs must agree on the type}%
 That is half the job, and I expected the composer to insist on the other half.
 \code{node} and \code{nodes} are shareable, which says two subgraphs can
 resolve the same field, and a field two subgraphs declare with different types
 does not look like one field. Soften it in Sessions, leave Speakers at
 \code{[Node]!}, and compose.
 
-\index{@shareable@\code{@shareable}!the composer takes the permissive type}%
+\index{shareable@\code{"@shareable}!the composer takes the permissive type}%
 It composes. Exit zero, nothing printed, and the schema the router serves
 carries \code{[Node]}: handed two types for one shareable field, this composer
 takes the more permissive of them rather than refusing the pair. That is the
-third time in this book that this composer has accepted something a reader
-would expect it to stop, after the \code{@cost} weights of
-chapter~\ref{ch:composition} and the \code{@provides} preconditions of
-chapter~\ref{ch:second-third-subgraph}.
+permissive output merge described by the federation sharing rules: a client
+must be able to accept either subgraph's response. It is not the
+\code{@cost} mismatch from chapter~\ref{ch:composition}, which the composer
+rejected. The separately measured \code{@provides} acceptance in
+chapter~\ref{ch:second-third-subgraph} was a different precondition.
 
-\index{@shareable@\code{@shareable}!why both services change anyway}%
-Both services change anyway. A graph that is correct because a composer was
-lenient is a graph that breaks on the release where it stops being, and the
-half-softened version leaves the Speakers subgraph telling anyone who reads its
-schema a different story from the one the supergraph tells. So Speakers gets
+\index{shareable@\code{"@shareable}!why both services change anyway}%
+Both services change anyway. The half-softened version leaves Speakers'
+direct callers with a stronger promise than router callers receive. I want
+the same failure boundary on both surfaces. So Speakers gets
 its own copy, exactly as it got its own \code{ShareNodeFields} in
 chapter~\ref{ch:second-third-subgraph}:
 
@@ -239,10 +239,10 @@ namespace Speakers;
 /// <summary>
 /// Makes the generated nodes field nullable, so that a subgraph it
 /// routes to being down costs the field rather than the response.
-/// Declared again in this service rather than shared with the
-/// Sessions one, for the same reason ShareNodeFields is: both
-/// subgraphs export this field, so both have to soften it, and the
-/// two must agree or the composed field has two types.
+/// Declared again here so both services expose the chosen nullable
+/// boundary. The composer can merge different nullability into one
+/// nullable field; matching the local contracts is this book's policy,
+/// not a requirement that composition enforces.
 /// </summary>
 // AddGlobalObjectIdentification generates node and nodes, and it
 // generates them with different nullability: node is Node, which may

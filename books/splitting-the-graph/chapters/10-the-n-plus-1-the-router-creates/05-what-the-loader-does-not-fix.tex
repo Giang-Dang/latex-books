@@ -68,7 +68,10 @@ the row is used for the fields that were asked for and the key was only ever the
 thing in the \code{WHERE} clause.
 
 \index{DataLoader!a dictionary keyed on a column the projection dropped}%
-For a loader it is fatal. Put the projection inside the loader and the query
+The next experiment uses Speakers' loader and selects \code{name}, so that
+three distinct speaker keys exercise the same dictionary problem. Restore
+its generated implementation before making this temporary change. Put the
+projection inside that loader and the query
 that goes out is everything you wanted: one statement, one column, and the
 three keys in an \code{IN} list. Then look at what comes back. Three
 \code{Speaker} records with the right names on them and \code{Id} zero on all
@@ -125,5 +128,10 @@ when a row is wide, when a column is a blob nobody asked for, or when the
 projection would have let the database answer from an index instead of the
 table. If that is your shape, the entity route is where to look, and the answer
 this book could not find is still worth looking for.
+Before continuing, restore the loader-backed Sessions reference resolver and
+unprojected \code{SessionDataLoader.cs} from
+section~\ref{sec:ch10-the-loader-behind-the-resolver}, and the generated
+\code{SpeakerDataLoader.cs} from chapter~\ref{ch:second-third-subgraph}.
+Neither projection experiment is part of the next chapter's starting state.
 \index{projection!the entity route has none|)}%
 \index{N+1@N+1!at the entity route|)}%

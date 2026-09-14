@@ -2,8 +2,10 @@
 \label{sec:ch16-the-schema-nobody-can-retire}
 
 \index{schema growth!what a missing usage record does to a schema|(}%
-Section~\ref{sec:ch16-the-gate-and-what-it-needs} left the second comparison
-unanswerable without a control plane: is anybody still asking for this field.
+Section~\ref{sec:ch16-the-gate-and-what-it-needs} left a question this
+offline graph has no operation record to answer: is anybody still asking
+for this field? A control plane or a locally collected record could supply
+evidence; without either, the team does not know.
 A team that cannot answer that does not stop working. They make a decision
 instead, the same decision every time, and after two years the schema has a
 shape.
@@ -111,9 +113,12 @@ subject is mitigation, and I would still do all of it.
 \index{schema design!prefer an argument to a new root field}%
 Prefer an argument on an existing field to a new root field. A caller who
 needs the schedule filtered by track is asking for
-\code{sessions(track:)}, and chapter~\ref{ch:cross-seam-paging} put a whole
-discovery service behind exactly that instinct rather than adding a
-\code{sessionsForTrackPage}. The argument is discoverable by the next caller
+\code{sessions(track:)} if that field already owns the required discovery
+operation. Chapter~\ref{ch:cross-seam-paging} introduced a separate
+\code{searchSessions} root because Search owns filtering and ordering over
+its projection; it did not silently move those responsibilities to Sessions.
+That is a domain discovery operation, not a field named after one screen.
+An argument is discoverable by the next caller
 who wants the same thing. A field named after one screen is not.
 
 \index{deprecation!name the replacement and then look for the traffic}%

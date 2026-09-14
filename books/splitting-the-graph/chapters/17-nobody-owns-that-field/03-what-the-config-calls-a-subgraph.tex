@@ -45,12 +45,13 @@ comes from. Neither is about whose it is either.
 Which is not a criticism. That question has to be answered and no other tool
 in the stack can answer it. The trouble is that routing and ownership overlap
 enough to be confused for one another, and they come apart at exactly the
-place this chapter is about. Two teams answering one field is a routing
-problem and an ownership problem at once, so the composer stops and both teams
-find out. One team answering a field the other used to answer is an ownership
-problem and not a routing problem at all, because there is still exactly one
-route and it merely goes somewhere else, so nothing stops and nobody finds
-out.
+place this chapter is about. With the initially unmarked declarations in
+this experiment, two services claiming the field stop composition until
+both documents permit sharing. That is a schema requirement, not evidence
+that both teams approved the change today. An already-shareable field needs
+no fresh edit from its existing owner. An override is different again: the
+new declaration selects one route without requiring the old document to
+change. Neither mechanism records business approval.
 
 \index{figure!two ways a field changes hands}%
 Figure~\ref{fig:ch17-two-ways-to-move-a-field} is the two routes to the same
@@ -60,12 +61,11 @@ routing-table entry.
   \centering
   \input{figures/tikz/ch17-two-ways-to-move-a-field}
   \caption{The same field ending up answerable by the ratings service, twice.
-  Above, two subgraphs share it, and the composer withholds the route until
-  both documents say \code{@shareable}, so the change cannot land without the
-  other team's editor open. Below, one subgraph takes it, and the single
-  compose that approves the change reads the other team's document without
-  needing anything from it. The routing table ends up saying almost the same
-  thing either way; the difference is entirely in who had to be in the room.}
+  Above, the initially unmarked field needs \code{@shareable} in both
+  documents. Below, \code{@override} changes the route without an edit to
+  the old owner's document. These are the edits this experiment required,
+  not an approval workflow: an existing shareable declaration would remove
+  the first lane's need for a fresh edit by that owner.}
   \label{fig:ch17-two-ways-to-move-a-field}
 \end{figure}
 

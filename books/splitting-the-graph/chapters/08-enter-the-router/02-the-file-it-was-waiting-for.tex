@@ -64,11 +64,14 @@ to debug at three in the morning, because there is no silence.
 \subsection{Starting It}
 
 \index{Cosmo Router!the startup log, read line by line}%
-Compose first, then start the router from the folder holding
+Start at the example root, beside \code{src}, \code{graph} and
+\code{router}. Compose first, then move to the folder holding
 \code{config.yaml}:
 
 \begin{minted}{text}
+cd graph
 wgc router compose -i graph.yaml -o router.json
+cd ../router
 router -config config.yaml
 \end{minted}
 
@@ -100,9 +103,9 @@ locally bought any of them back. Four are new, and three of the four are worth
 reading.
 
 \index{Cosmo Router!stops polling once handed a file}%
-\enquote{Polling and watching is disabled.} Handed a file, the router stops being
-a client of anything. It made no network call to start and it will make none
-while it runs, and the same sentence tells you the price: the config is read
+\enquote{Polling and watching is disabled.} With this static configuration,
+the router does not fetch or poll a control plane for its execution config.
+It still calls subgraphs over HTTP when serving requests. The config is read
 once, so changing the graph means restarting the process. A router that polls a
 control plane can be updated without one. This one cannot, and for a book that
 is the right trade, because every state it serves is a state you produced.

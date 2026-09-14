@@ -43,12 +43,13 @@ Now try to fix it. \code{sessionById(id: Int!)} takes an integer, so an
 identifier that carries its type is a different type, a different argument and
 a different field. Change it and every query a client has already written
 breaks. Add a second field
-beside it and the schema has two ways to fetch a session forever. There is no
-third option, because there is no version number to raise. A REST service can
-ship \code{/v2/sessions} and let \code{/v1} rot; a GraphQL service has one
-endpoint, one schema, and every client it has ever had on it at once.
+beside it and both coexist while clients migrate. Deprecate the old field,
+measure its use, and remove it only when your compatibility policy permits.
+GraphQL does not forbid versioned endpoints or field removal. This book
+chooses one evolving endpoint, so an old client and a new client must work
+against the same schema during that migration.
 
 \index{schema!is the contract}%
-That constraint is the whole of this chapter, and it is the deal rather than an
-oversight. One endpoint means one contract, and a contract you cannot version
-is a contract you have to be able to extend without breaking.
+That is the constraint this chapter designs for: extend the shared contract
+without forcing every client to deploy at once. Retirement needs usage
+evidence and a migration window, not an assumption that fields live forever.

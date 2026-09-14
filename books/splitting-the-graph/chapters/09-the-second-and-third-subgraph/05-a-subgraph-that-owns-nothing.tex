@@ -139,9 +139,9 @@ public static class RatingDataLoader
 {
     /// <summary>
     /// Every rating left for each session in one batch, grouped by
-    /// session. A session nobody rated is absent from the dictionary
-    /// rather than present with an empty list, which is the difference
-    /// between an average of null and an average of zero.
+    /// session. A session nobody rated is absent from the dictionary.
+    /// The field resolver treats a missing group or an empty group as
+    /// no average and a count of zero.
     /// </summary>
     [DataLoader]
     public static async Task<Dictionary<int, Rating[]>>
@@ -499,17 +499,17 @@ would decode to a perfectly good integer and select somebody's ratings.
 
 \index{Parent@\code{[Parent]}!names the hidden key, not the public one}%
 On the two resolvers that touch the database, the \code{[Parent]} attribute
-names \code{Key} rather than \code{Id}, so what they are handed is the integer
-and not the node id. That is the second place in this chapter where the
-attribute is load-bearing and easy to miss.
+names \code{Key} rather than \code{Id}. The parameter remains a
+\code{Session} object; the attribute declares which parent property the
+resolver needs, and the body reads its integer \code{Key}. It does not
+convert the parent parameter into an integer.
 
 \index{averageScore@\code{averageScore}!null is not zero}%
 One design decision in \code{GetAverageScoreAsync} is worth defending, because
 the alternative is one character shorter. A session nobody has rated returns
-null and not zero. Zero is a score somebody could have given, and a schema
-that cannot tell \enquote{nobody rated this} from \enquote{everybody hated
-this} has thrown away the difference at the type level, where no client can get
-it back. \code{ratingCount} beside it is a genuine zero, and the pair is what
+null and not zero. Ratings in this example range from one to five, so zero
+would not be a valid average. Null means there is no average to report.
+\code{ratingCount} beside it is a genuine zero, and the pair is what
 lets a client render \enquote{not yet rated} rather than a one-star average.
 
 \index{parameter binding!a resolver reads the representation by name}%
@@ -543,6 +543,23 @@ subgraphs:
     schema:
       file: ../src/Ratings/schema.graphql
 \end{minted}
+
+From \code{src/Ratings}, export the schema and start Ratings on 5003:
+
+\begin{minted}{text}
+dotnet run -- schema export --output schema.graphql
+dotnet run
+\end{minted}
+
+Keep Sessions and Speakers running. From \code{graph}, compose the new input:
+
+\begin{minted}{text}
+wgc router compose -i graph.yaml -o router.json
+\end{minted}
+
+Stop the router, then start it again from \code{router} with
+\code{router -config config.yaml}. It reads the new execution config only
+at startup.
 
 \index{subgraphId@\code{subgraphId}!is positional and renumbers}%
 Compose that, and the identifiers chapter~\ref{ch:enter-the-router} taught you

@@ -81,10 +81,11 @@ response with it. Part~III is almost entirely
 about those.
 
 \index{failure!which time it belongs to}%
-Sorting a failure into the right one of those two is, in my experience, most of
-debugging a federated graph, and the sort is cheap once you think to make it. A
-field that has not worked since the deployment, for anyone, is composition. A
-field that works for some requests and not others, or worked an hour ago, is
-execution. The two have separate tooling, separate logs and separate people to
-ask, so the cost of guessing wrong is an afternoon.
+Locate the failed stage from evidence. A nonzero composition result is a
+composition failure. A successful composition followed by a router validation
+error, failed downstream request or resolver exception is a later failure.
+A wrong routing URL can fail every request from deployment onward; an accepted
+but incomplete route may fail only one selection. Neither symptom tells you
+which stage was wrong. Keep the composition result, the loaded config and the
+downstream request together when diagnosing it.
 \index{subgraph!is an ordinary service|)}%

@@ -133,7 +133,11 @@ That is a copy of somebody else's data living in your service, with a schema
 declaration to match, so that a fetch can be avoided. It is the exact
 duplication chapter~\ref{ch:second-third-subgraph} removed from the Sessions
 service when it moved the speaker rows out. I would rather pay the fetch. A
-graph where three services carry declarations of each other's columns is a
-graph where the question this chapter opens with, who owns this field, has no
-answer left at all.
+graph with several authoritative answers needs a policy that keeps those
+answers equal. The Search projection in chapter~\ref{ch:cross-seam-paging}
+has a different contract: its values rank discovery results, its freshness is
+explicit, and Sessions still hydrates the canonical entity. A derived
+projection does not make Search another authoritative resolver for every
+copied field. The question is which contract owns a value and how copies
+are refreshed, not whether any duplication exists.
 \index{override@\code{"@override}!the migration it exists for|)}%

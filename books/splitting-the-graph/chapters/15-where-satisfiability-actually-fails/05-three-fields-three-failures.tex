@@ -2,9 +2,17 @@
 \label{sec:ch15-three-fields-three-failures}
 
 \index{resolvability!what the approved graph does at run time|(}%
-The config that came out of the last section is a file a router will load, so
-start the three services and point one at it. Ask for the first of the three
-fields, by the first of the six routes.
+Use \code{router-false-pass.json}, rebuilt after restoring the original
+Sessions root order and the broken Ratings key. In the \code{router}
+directory, make a copy of \code{config.yaml}. Name the copy
+\code{config-false-pass.yaml}. In its \code{execution\_config} block,
+under \code{file}, change only \code{path} to
+\code{../graph/router-false-pass.json}; keep every other setting unchanged.
+
+Start Sessions, Speakers and the broken Ratings service. Stop the normal
+router, then run \code{router -config config-false-pass.yaml} from
+\code{router}. Search is not part of this variant, so it has six routes to
+\code{Session}, not the full graph's eight. Ask for the first contributed field:
 
 \begin{minted}{graphql}
 { sessions(first: 10) { nodes { title averageScore } } }
@@ -103,7 +111,11 @@ behind \code{@requires}, and that is why it behaves differently: the router
 plans a \code{BatchEntity} step for it, carrying an \code{\_entities} query and
 a fragment collecting \code{title}, and sends that to a service whose exported
 schema has no \code{\_entities} field on it. The fetch comes back with nothing
-usable and the position is nullable, so the position gets a null.
+usable, and the nullable position can hold the resulting null without
+erasing its parents. Nullability explains that boundary, not the absence of
+an error entry. A nullable field can still report an execution error. The
+missing \code{errors} key is this pinned router's observed handling of this
+failed fetch, not a GraphQL guarantee.
 
 \index{resolvability!one defect, three failure modes}%
 One defect. One line of C\#. Three fields on one type in one service, and three

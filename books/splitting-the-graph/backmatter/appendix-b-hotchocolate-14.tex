@@ -1,5 +1,707 @@
-% Scope (SPEC.md, Table of contents): the 14-to-16 mapping every On HotChocolate 14 callout points at
 \chapter{HotChocolate 14, in Full}
 \label{app:hc14}
 
-\emph{Not yet drafted.}
+\section{Scope and Migration Map}
+
+This is the single-service compatibility example used by the
+\enquote{On HotChocolate 14} callouts. It keeps sessions and speakers in one
+database. It is not a port of the final four-service graph, and missing
+services here are not evidence that the older library cannot implement them.
+Use a separate example directory; its Sessions service uses port 5001.
+
+The older Hot Chocolate release no longer receives security fixes.
+Appendix~\ref{app:toolchain} records the tested versions and the current
+security-policy source. For an existing application, these differences are
+migration aids, not reasons to remain on that release.
+
+\begin{center}
+\small
+\begin{tabular}{p{0.40\linewidth}p{0.47\linewidth}}
+\toprule
+Main example & Compatibility implementation \tabularnewline
+\midrule
+\code{net10.0}, current package family & \code{net8.0}, older packages from appendix A \tabularnewline
+\code{ServeMode.Embedded} & \code{GraphQLToolServeMode.Embedded} inside \code{GraphQLServerOptions} \tabularnewline
+\code{QueryContext<T>} with IQueryable \code{With} & Omit that projection; fetch complete rows \tabularnewline
+Generated type-class federation attributes & Explicit \code{ObjectType<Speaker>} descriptor configuration \tabularnewline
+Injected node-id serializer & Schema service's \code{INodeIdSerializerAccessor}, then its \code{Serializer} property \tabularnewline
+\code{TypeSystemConfiguration} & \code{DefinitionBase} \tabularnewline
+\code{ObjectTypeConfiguration} & \code{ObjectTypeDefinition} \tabularnewline
+\code{DirectiveConfiguration} & \code{DirectiveDefinition} \tabularnewline
+\code{Descriptors.Configurations} namespace & \code{Descriptors.Definitions} namespace \tabularnewline
+Semantic-non-null export option & Not available in this version \tabularnewline
+\bottomrule
+\end{tabular}
+\end{center}
+
+Batching, cursor connections, global node identifiers and mutation error
+payloads remain in this example. The lack of the IQueryable projection
+overload does not remove the DataLoader. Parameter names and the
+\code{json\_each} form in SQL come from the older EF Core provider, not from
+federation.
+
+The generated \code{SessionType} retains its node resolver but is not an
+entity in this compatibility schema. \code{SpeakerType} uses descriptor
+calls to attach both the key and reference resolver. Keeping a second
+generated declaration of that same speaker type would create a collision;
+use the complete file set below.
+
+\section{Run the Compatibility Service}
+
+Create a separate example directory and save the files under their shown
+paths. Run these commands from \code{src/Sessions}:
+
+\begin{minted}{text}
+dotnet restore
+dotnet build
+dotnet run --no-build -- schema export --output schema.graphql
+dotnet run --no-build
+\end{minted}
+
+The SDK must be able to build the older target and the corresponding ASP.NET
+Core runtime must be installed. Check the emitted schema, not only the build:
+\code{Speaker} must carry a resolvable key and appear in \code{\_Entity}.
+A clean build with an ignored federation attribute is the failure described
+in chapter~\ref{ch:first-subgraph}.
+
+For a local composition, create \code{graph/graph.yaml} relative to that
+separate example root:
+
+\begin{minted}{yaml}
+version: 1
+subgraphs:
+  - name: sessions
+    routing_url: http://localhost:5001/graphql
+    schema:
+      file: ../src/Sessions/schema.graphql
+\end{minted}
+
+Compose from \code{graph}:
+
+\begin{minted}{text}
+wgc router compose -i graph.yaml -o router.json
+\end{minted}
+
+The one-service router configuration in chapter~\ref{ch:enter-the-router} can serve this
+graph; do not reuse the final four-service graph input from appendix E.
+
+On the direct service port, this entity request reaches the batched speaker
+lookup:
+
+\begin{minted}{graphql}
+{
+  _entities(representations: [
+    {__typename: "Speaker", id: "U3BlYWtlcjox"}
+  ]) {
+    ... on Speaker { id name }
+  }
+}
+\end{minted}
+
+The returned speaker is Ada Fischer, with the same global id. Sending a
+Session representation is not a test of this implementation's speaker
+resolver: Session is not in this compatibility schema's entity union.
+
+\section{Sessions}
+
+\subsection*{\code{src/Sessions/ConferenceContext.cs}}
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+/// <summary>
+/// The conference program, in SQLite. Session carries SpeakerId as a
+/// plain column and no navigation property, so EF Core never joins the
+/// two tables on its own and every speaker lookup is a resolver's job.
+/// </summary>
+public sealed class ConferenceContext(
+    DbContextOptions<ConferenceContext> options) : DbContext(options)
+{
+    public DbSet<Session> Sessions => Set<Session>();
+
+    public DbSet<Speaker> Speakers => Set<Speaker>();
+
+    protected override void OnModelCreating(ModelBuilder model)
+    {
+        // SQLite stores no date type of its own and refuses to sort a
+        // DateTimeOffset. Keep the offset out of the column and put it
+        // back on the way in; every session here is in conference time.
+        model.Entity<Session>()
+            .Property(s => s.StartsAt)
+            .HasConversion(
+                v => v.UtcDateTime,
+                v => new DateTimeOffset(v, TimeSpan.Zero));
+
+        model.Entity<Speaker>().HasData(ConferenceData.Speakers);
+        model.Entity<Session>().HasData(ConferenceData.Sessions);
+    }
+}
+\end{minted}
+
+\subsection*{\code{src/Sessions/ConferenceData.cs}}
+\begin{minted}{csharp}
+namespace Sessions;
+
+/// <summary>
+/// The conference program, held in memory. The next chapter puts it in
+/// SQLite with EF Core; nothing outside this file knows where the data
+/// lives.
+/// </summary>
+public static class ConferenceData
+{
+    public static readonly IReadOnlyList<Speaker> Speakers =
+    [
+        new Speaker(1, "Ada Fischer", "Works on query planners."),
+        new Speaker(2, "Bruno Kaminski", null),
+        new Speaker(3, "Chidi Okafor", "Runs platform engineering.")
+    ];
+
+    public static readonly IReadOnlyList<Session> Sessions =
+    [
+        new Session(
+            1,
+            "Schemas That Outlive Their Authors",
+            "A five-year-old schema, and the decisions that shaped it.",
+            1,
+            new DateTimeOffset(2026, 9, 14, 9, 0, 0, TimeSpan.Zero),
+            45),
+        new Session(
+            2,
+            "Reading a Query Plan",
+            null,
+            1,
+            new DateTimeOffset(2026, 9, 14, 10, 0, 0, TimeSpan.Zero),
+            45),
+        new Session(
+            3,
+            "Paging Without Offsets",
+            "Why the page you get is not the page you asked for.",
+            2,
+            new DateTimeOffset(2026, 9, 14, 11, 0, 0, TimeSpan.Zero),
+            30),
+        new Session(
+            4,
+            "The Bank That Split Its Graph",
+            "Eighteen months, four teams, and the unwritten parts.",
+            3,
+            new DateTimeOffset(2026, 9, 14, 14, 0, 0, TimeSpan.Zero),
+            60)
+    ];
+}
+\end{minted}
+
+\subsection*{\code{src/Sessions/Mutation.cs}}
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+[MutationType]
+public static class Mutation
+{
+    /// <summary>
+    /// Moves one session to a new slot, keeping its length.
+    /// </summary>
+    [Error<SessionNotFoundException>]
+    [Error<SpeakerDoubleBookedException>]
+    public static async Task<Session> RescheduleSessionAsync(
+        [ID<Session>] int sessionId,
+        DateTimeOffset startsAt,
+        ConferenceContext db,
+        CancellationToken ct)
+    {
+        var session = await db.Sessions
+            .FirstOrDefaultAsync(s => s.Id == sessionId, ct)
+            ?? throw new SessionNotFoundException(sessionId);
+
+        var ends = startsAt.AddMinutes(session.DurationMinutes);
+
+        // The overlap test is done in memory on purpose. StartsAt goes
+        // through a value converter, so SQLite cannot do arithmetic on
+        // that column, and one speaker's program is a handful of rows.
+        var alsoTheirs = await db.Sessions
+            .Where(s => s.SpeakerId == session.SpeakerId)
+            .Where(s => s.Id != session.Id)
+            .ToListAsync(ct);
+
+        var clash = alsoTheirs.FirstOrDefault(
+            s => s.StartsAt < ends
+                && startsAt < s.StartsAt.AddMinutes(s.DurationMinutes));
+
+        if (clash is not null)
+        {
+            throw new SpeakerDoubleBookedException(
+                session.SpeakerId,
+                clash.Id);
+        }
+
+        var moved = session with { StartsAt = startsAt };
+        db.Entry(session).CurrentValues.SetValues(moved);
+        await db.SaveChangesAsync(ct);
+
+        return moved;
+    }
+}
+\end{minted}
+
+\subsection*{\code{src/Sessions/Program.cs}}
+\begin{minted}{csharp}
+using HotChocolate.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Sessions;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// EF Core reports every command through the logging pipeline as well,
+// at Information and with a duration attached. StatementLog below is
+// this service's instrument, so silence the other one rather than have
+// every statement printed twice.
+builder.Logging.AddFilter(
+    "Microsoft.EntityFrameworkCore.Database.Command",
+    LogLevel.Warning);
+
+builder.Services.AddDbContextFactory<ConferenceContext>(options =>
+{
+    options.UseSqlite("Data Source=conference.db");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddInterceptors(new StatementLog());
+    }
+});
+
+builder
+    .AddGraphQL()
+    .AddSessionsTypes()
+    .RegisterDbContextFactory<ConferenceContext>()
+    .AddQueryContext()
+    .AddPagingArguments()
+    .AddGlobalObjectIdentification()
+    .AddMutationConventions()
+    .AddApolloFederation()
+    .ModifyCostOptions(options => options.ApplyCostDefaults = false)
+    .TryAddTypeInterceptor<ShareNodeFields>();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<ConferenceContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.EnsureCreated();
+}
+
+app.MapGraphQL()
+    .WithOptions(new GraphQLServerOptions
+    {
+        Tool = { ServeMode = GraphQLToolServeMode.Embedded }
+    });
+
+app.RunWithGraphQLCommands(args);
+\end{minted}
+
+\subsection*{\code{src/Sessions/Properties/launchSettings.json}}
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5001",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
+\end{minted}
+
+\subsection*{\code{src/Sessions/Query.cs}}
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+[QueryType]
+public static class Query
+{
+    /// <summary>
+    /// Sessions on the schedule, earliest first.
+    /// </summary>
+    [UsePaging(DefaultPageSize = 2, MaxPageSize = 10)]
+    public static IQueryable<Session> GetSessions(ConferenceContext db)
+        => db.Sessions.OrderBy(s => s.StartsAt);
+
+    /// <summary>
+    /// One session by its identifier, or null if no session has it.
+    /// </summary>
+    [GraphQLDeprecated(
+        "Ask for `node(id:)` instead. This field takes the database "
+        + "key, which is only unique among sessions.")]
+    public static async Task<Session?> GetSessionByIdAsync(
+        int id,
+        ConferenceContext db,
+        CancellationToken ct)
+        => await db.Sessions
+            .FirstOrDefaultAsync(s => s.Id == id, ct);
+}
+\end{minted}
+
+\subsection*{\code{src/Sessions/Session.cs}}
+\begin{minted}{csharp}
+namespace Sessions;
+
+/// <summary>
+/// A talk on the conference program.
+/// </summary>
+/// <param name="Id">Stable identifier for this session.</param>
+/// <param name="Title">The line that goes in the program.</param>
+/// <param name="Abstract">The longer text, if there is one.</param>
+/// <param name="SpeakerId">Who gives it. Not part of the schema.</param>
+/// <param name="StartsAt">When it starts, in conference time.</param>
+/// <param name="DurationMinutes">How long the slot is.</param>
+public sealed record Session(
+    int Id,
+    string Title,
+    string? Abstract,
+    [property: GraphQLIgnore] int SpeakerId,
+    DateTimeOffset StartsAt,
+    int DurationMinutes);
+\end{minted}
+
+\subsection*{\code{src/Sessions/SessionNotFoundException.cs}}
+\begin{minted}{csharp}
+using HotChocolate.Types.Relay;
+
+namespace Sessions;
+
+/// <summary>
+/// No session on the program carries the identifier that was asked for.
+/// </summary>
+public sealed class SessionNotFoundException(int sessionId)
+    : Exception($"No session has id {sessionId}.")
+{
+    /// <summary>
+    /// The identifier that matched nothing.
+    /// </summary>
+    [ID<Session>]
+    public int SessionId { get; } = sessionId;
+}
+\end{minted}
+
+\subsection*{\code{src/Sessions/SessionType.cs}}
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+[ObjectType<Session>]
+public static partial class SessionType
+{
+    /// <summary>
+    /// The person giving this session.
+    /// </summary>
+    public static async Task<Speaker?> GetSpeakerAsync(
+        [Parent(nameof(Session.SpeakerId))] Session session,
+        ISpeakerByIdDataLoader speakerById,
+        CancellationToken ct)
+        => await speakerById.LoadAsync(session.SpeakerId, ct);
+
+    /// <summary>
+    /// Loads one session by the identifier inside a global node id.
+    /// </summary>
+    // Chapter 4's callout tells a reader on 14 to drop the
+    // QueryContext parameter and the .With(query) line, because 14 has
+    // no IQueryable overload of With. This is that file, so it is
+    // written the way the callout says rather than the way a resolver
+    // starting from scratch here would be.
+    [NodeResolver]
+    public static async Task<Session?> GetSessionAsync(
+        int id,
+        ConferenceContext db,
+        CancellationToken ct)
+        => await db.Sessions
+            .Where(s => s.Id == id)
+            .FirstOrDefaultAsync(ct);
+}
+\end{minted}
+
+\subsection*{\code{src/Sessions/Sessions.csproj}}
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{xml}
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HotChocolate.ApolloFederation" Version="14.3.1" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="14.3.1" />
+    <PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="14.3.1" />
+    <PackageReference Include="HotChocolate.Data.EntityFramework" Version="14.3.1" />
+    <PackageReference Include="HotChocolate.Types.Analyzers" Version="14.3.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.19" />
+  </ItemGroup>
+
+</Project>
+\end{minted}
+
+\subsection*{\code{src/Sessions/ShareNodeFields.cs}}
+\begin{minted}{csharp}
+using HotChocolate.Configuration;
+using HotChocolate.Language;
+using HotChocolate.Types.Descriptors.Definitions;
+
+namespace Sessions;
+
+/// <summary>
+/// Applies @shareable to the two fields global object identification
+/// generates, and to nothing else. The same class as on 16, with the
+/// four type names 16 renamed: DefinitionBase for
+/// TypeSystemConfiguration, ObjectTypeDefinition for
+/// ObjectTypeConfiguration, DirectiveDefinition for
+/// DirectiveConfiguration, and the Definitions namespace for
+/// Configurations.
+/// </summary>
+internal sealed class ShareNodeFields : TypeInterceptor
+{
+    public override void OnBeforeCompleteType(
+        ITypeCompletionContext context,
+        DefinitionBase definition)
+    {
+        if (definition is not ObjectTypeDefinition type
+            || type.Name != "Query")
+        {
+            return;
+        }
+
+        foreach (var field in type.Fields)
+        {
+            if (field.Name is "node" or "nodes")
+            {
+                field.Directives.Add(
+                    new DirectiveDefinition(
+                        new DirectiveNode("shareable")));
+            }
+        }
+    }
+}
+\end{minted}
+
+\subsection*{\code{src/Sessions/Speaker.cs}}
+\begin{minted}{csharp}
+namespace Sessions;
+
+/// <summary>
+/// A person giving one or more sessions.
+/// </summary>
+/// <param name="Id">Stable identifier for this speaker.</param>
+/// <param name="Name">The name to print in the program.</param>
+/// <param name="Bio">A sentence or two, if the speaker sent any.</param>
+public sealed record Speaker(int Id, string Name, string? Bio);
+\end{minted}
+
+\subsection*{\code{src/Sessions/SpeakerDataLoader.cs}}
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+public static class SpeakerDataLoader
+{
+    /// <summary>
+    /// Every speaker a batch of sessions asked for, keyed by identifier.
+    /// </summary>
+    [DataLoader]
+    public static async Task<Dictionary<int, Speaker>>
+        GetSpeakerByIdAsync(
+            IReadOnlyList<int> ids,
+            ConferenceContext db,
+            CancellationToken ct)
+        => await db.Speakers
+            .Where(s => ids.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, ct);
+}
+\end{minted}
+
+\subsection*{\code{src/Sessions/SpeakerDoubleBookedException.cs}}
+\begin{minted}{csharp}
+using HotChocolate.Types.Relay;
+
+namespace Sessions;
+
+/// <summary>
+/// The new slot overlaps another session the same speaker gives.
+/// </summary>
+public sealed class SpeakerDoubleBookedException(
+    int speakerId,
+    int clashingSessionId)
+    : Exception(
+        $"Speaker {speakerId} already gives session "
+        + $"{clashingSessionId} in that slot.")
+{
+    /// <summary>
+    /// The speaker who cannot be in two rooms at once.
+    /// </summary>
+    [ID<Speaker>]
+    public int SpeakerId { get; } = speakerId;
+
+    /// <summary>
+    /// The session already occupying the slot.
+    /// </summary>
+    [ID<Session>]
+    public int ClashingSessionId { get; } = clashingSessionId;
+}
+\end{minted}
+
+\subsection*{\code{src/Sessions/SpeakerType.cs}}
+\begin{minted}{csharp}
+using HotChocolate.ApolloFederation.Types;
+using HotChocolate.Resolvers;
+using HotChocolate.Types.Relay;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Sessions;
+
+/// <summary>
+/// Speaker as a federated entity on HotChocolate 14. The attribute
+/// idiom the generated type-class example uses does not work here:
+/// 14's source generator has no mechanism for applying an arbitrary
+/// descriptor attribute declared on the type class, so [Key] and
+/// [ReferenceResolver] compile and are never read. Configuring the type
+/// the code-first way applies both, because the descriptor calls are
+/// made rather than discovered.
+///
+/// The cost is that this type leaves the generator entirely: there is
+/// no [ObjectType&lt;Speaker&gt;] partial class for Speaker in this
+/// version, because two declarations of one type collide.
+/// </summary>
+public sealed class SpeakerType : ObjectType<Speaker>
+{
+    protected override void Configure(
+        IObjectTypeDescriptor<Speaker> descriptor)
+    {
+        descriptor
+            .ImplementsNode()
+            .ResolveNodeWith(
+                typeof(SpeakerType).GetMethod(
+                    nameof(ResolveByKeyAsync))!);
+
+        descriptor
+            .Key("id")
+            .ResolveReferenceWith(
+                _ => ResolveReferenceAsync(default!, default!));
+    }
+
+    public static async Task<Speaker?> ResolveByKeyAsync(
+        IResolverContext context,
+        int id)
+    {
+        var loader = context.Service<ISpeakerByIdDataLoader>();
+        return await loader.LoadAsync(id, context.RequestAborted);
+    }
+
+    /// <summary>
+    /// The reference resolver. The key arrives as the undecoded node id
+    /// string here exactly as it does on 16, and the decode is the same
+    /// call; only the way the method is attached to the type differs.
+    /// </summary>
+    public static async Task<Speaker?> ResolveReferenceAsync(
+        string id,
+        IResolverContext context)
+    {
+        var serializer = context.Schema.Services
+            .GetRequiredService<INodeIdSerializerAccessor>()
+            .Serializer;
+        var nodeId = serializer.Parse(id, typeof(int));
+
+        if (nodeId.TypeName != nameof(Speaker))
+        {
+            return null;
+        }
+
+        var loader = context.Service<ISpeakerByIdDataLoader>();
+        return await loader.LoadAsync(
+            (int)nodeId.InternalId!, context.RequestAborted);
+    }
+}
+\end{minted}
+
+\subsection*{\code{src/Sessions/StatementLog.cs}}
+\begin{minted}{csharp}
+using System.Data.Common;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+
+namespace Sessions;
+
+/// <summary>
+/// Prints every statement the service sends to SQLite, numbered, so a
+/// request's cost can be read off the console. The counter is
+/// process-wide and never reset: start the service, send one request,
+/// and the last number is what that request cost.
+/// </summary>
+public sealed class StatementLog : DbCommandInterceptor
+{
+    private static int _count;
+
+    public override InterceptionResult<DbDataReader> ReaderExecuting(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result)
+    {
+        Print(command);
+        return result;
+    }
+
+    public override ValueTask<InterceptionResult<DbDataReader>>
+        ReaderExecutingAsync(
+            DbCommand command,
+            CommandEventData eventData,
+            InterceptionResult<DbDataReader> result,
+            CancellationToken cancellationToken = default)
+    {
+        Print(command);
+        return ValueTask.FromResult(result);
+    }
+
+    private static void Print(DbCommand command)
+    {
+        var n = Interlocked.Increment(ref _count);
+        Console.WriteLine($"-- statement {n}");
+        Console.WriteLine(command.CommandText);
+    }
+}
+\end{minted}
+
+\subsection*{\code{src/Sessions/appsettings.Development.json}}
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  }
+}
+\end{minted}
+
+\subsection*{\code{src/Sessions/appsettings.json}}
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+\end{minted}

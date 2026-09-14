@@ -2,10 +2,9 @@
 \label{sec:ch07-the-second-document}
 
 \index{composition!a graph of one hides everything|(}%
-A graph of one subgraph composes, and that is the problem with it. Every
-question composition exists to answer is a question about two services
-disagreeing, so a graph with nothing to disagree with passes by having nothing
-to check. The config in
+One subgraph still has to pass schema and directive validation: the cost
+directives already demonstrated that. What it cannot test is whether its
+field declarations coexist with another service's. The config in
 section~\ref{sec:ch07-what-the-composer-wrote} is real and a router will serve
 it, and it tells you nothing about whether this subgraph can live beside
 another one.
@@ -52,13 +51,16 @@ scalar FieldSet
 \index{speakers.graphql@\code{speakers.graphql}!why it declares node}%
 Twenty-four lines, and two of them are doing all the work.
 Chapter~\ref{ch:schema-design} switched global object identification on, and
-every Hot Chocolate service this book builds will have it on for the same
-reason this one does. So every subgraph in this graph exports \code{node} and
-\code{nodes}, and this document says so. Everything else in it is the Speakers
+the future Speakers service enables it too. Those two services export
+\code{node} and \code{nodes}; Ratings will not. This document models that
+specific collision. Everything else in it is the Speakers
 subgraph as chapter~\ref{ch:federation-model} drew it.
 
 \index{graph.yaml@\code{graph.yaml}!a second graph file}%
-A second input file names both:
+Save the SDL as \code{speakers.graphql} inside \code{graph}.
+Keep the original single-service input unchanged.
+
+The second file is \code{graph-with-speakers.yaml}, in that directory:
 
 \begin{minted}{yaml}
 version: 1
@@ -76,8 +78,13 @@ subgraphs:
 \subsection{The Bill, Presented}
 
 \index{composition!the collision arrives}%
-Compose that and the answer is the one chapter~\ref{ch:federation-model} said
-was coming:
+From the \code{graph} directory, run:
+
+\begin{minted}{text}
+wgc router compose -i graph-with-speakers.yaml -o speakers-test.json
+\end{minted}
+
+The answer is the one chapter~\ref{ch:federation-model} said was coming:
 
 \begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
 The Object "Query" defines the same fields in multiple subgraphs without the "@shareable" directive:
@@ -101,8 +108,10 @@ first is the one you want: it tells you where to go.
 
 \index{ownership!two collisions, opposite fixes}%
 What the composer cannot tell you is that these two collisions want opposite
-answers. \code{node} is a field two services genuinely both resolve, and every
-service in this graph will resolve it, so the fix is to say so in both.
+answers. Sessions and Speakers both generate \code{node} and \code{nodes},
+so their overlapping declarations need a rule for resolution. Ratings will
+export neither root. Marking these roots shareable permits composition; it
+does not make their answers equivalent across the two services.
 \code{Speaker.name} is a field two services both claim and only one should own.
 Sessions still stores the speakers, which chapter~\ref{ch:federation-model}
 said would stay true until there was somewhere to move the rows to, and moving

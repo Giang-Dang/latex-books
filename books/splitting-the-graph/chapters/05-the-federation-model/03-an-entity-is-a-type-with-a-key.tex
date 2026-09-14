@@ -18,8 +18,10 @@ The clause about key fields is the one that does the work, and the same page
 makes it a requirement rather than a description: \enquote{Because an entity is
 keyed, an entity type's definition must have a \code{@key}
 directive}~\autocite{apolloentities}. A type with no key is an ordinary object
-type. It can appear in one subgraph's schema and be perfectly useful there, and
-no second subgraph can say anything about it.
+type: it cannot be fetched through an entity key. It may still be a shared
+value type, such as \code{PageInfo}, declared consistently by several
+subgraphs. Sharing an output shape does not create an entity lookup
+route~\autocite{apollosharedtypesrepair}.
 
 \begin{graphqlsdl}
 directive @key(fields: FieldSet!, resolvable: Boolean = true)
@@ -51,13 +53,16 @@ For the conference example that means the Sessions subgraph, which owns no
 speaker data and never will, declares a \code{Speaker} type anyway:
 
 \begin{graphqlsdl}
-type Speaker @key(fields: "id") {
+type Speaker @key(fields: "id", resolvable: false) {
   id: ID!
 }
 \end{graphqlsdl}
 
 \index{stub!a type declared for its key alone}%
-That is a stub: one field, there so that the value can be written down. This is the
+That is a reference-only stub: one field, with \code{resolvable: false}
+because Sessions cannot load a speaker by that key. A contributor such as
+Ratings is different: it accepts a session key to resolve its own fields and
+therefore needs a resolvable key. This is the
 thing section~\ref{sec:ch05-the-join-you-cannot-see} predicted: the key stops
 being an integer in a call stack and becomes a field with a name, a type and a
 promise attached. Chapter~\ref{ch:data-without-n-plus-1} took a foreign key out

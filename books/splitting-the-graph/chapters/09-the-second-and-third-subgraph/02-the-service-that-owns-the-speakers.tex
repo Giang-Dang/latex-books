@@ -170,10 +170,10 @@ namespace Speakers;
 /// Applies @shareable to the two fields global object identification
 /// generates, and to nothing else. This is chapter 7's file, declared
 /// again in this service rather than shared with the Sessions one:
-/// every subgraph in this graph exports node and nodes, so every
-/// subgraph needs this, and a project reference between two services
-/// that would be separate repositories is the thing this book is
-/// arguing against.
+/// Sessions and Speakers both export node and nodes, so both need
+/// this interceptor. Ratings and Search export neither. A project
+/// reference between services that could live in separate repositories
+/// would couple their builds.
 /// </summary>
 internal sealed class ShareNodeFields : TypeInterceptor
 {

@@ -1,5 +1,197 @@
-% Scope (SPEC.md, Table of contents): accumulates from chapters 7 and 15
 \chapter{Composition Errors, Decoded}
 \label{app:comperrors}
 
-\emph{Not yet drafted.}
+These entries refer to the pinned composer in appendix~\ref{app:toolchain}.
+A schema coordinate such as \code{Session.averageScore} names a type and
+field, not a source-file line. The quoted diagnostic fragments below are
+excerpts of the full captures in chapters~\ref{ch:composition}
+and~\ref{ch:satisfiability}. The stage matters: a compiler error, a composition
+error and a router execution error require different evidence.
+
+\section{Directive Validation}
+
+\subsection*{Cost Weight Has the Wrong Type}
+
+Symptom: \code{@cost(weight: ...)} reports a value that is not a valid
+\code{Int!}. In this example the rejected value is a quoted string, so the
+diagnostic contains doubled quotation marks.
+
+Cause: Hot Chocolate's generated cost directive and Cosmo's definition
+disagree. This can fail with only one subgraph; no ownership collision is
+needed.
+
+Action: use the complete \code{Program.cs} in
+section~\ref{sec:ch07-the-second-document}, which disables automatic cost
+defaults with \code{ModifyCostOptions}. Rebuild and export before composing.
+Do not hand-edit every generated weight and leave the next export to undo it.
+
+\subsection*{List-Size Argument Is Unknown}
+
+Symptom: the \code{@listSize} diagnostic says its definition does not define
+an argument that was provided. The captured console box cuts off
+\code{slicingArgumentDefaultValue}.
+
+Cause: the two tools disagree about that directive's arguments.
+
+Action: inspect the untruncated exported SDL to identify the argument.
+The same automatic-cost-default change removes the conflicting annotation
+in this example. Disabling resolvability validation does not disable
+directive validation.
+
+\subsection*{Override Label Is Rejected}
+
+Symptom: the composer rejects the \code{label} argument on \code{@override}.
+
+Cause: the Hot Chocolate attribute exposes progressive override, but the
+pinned Cosmo composer does not accept that argument.
+
+Action: do not infer cross-product support from a compiling attribute.
+Use the non-progressive migration described in
+section~\ref{sec:ch17-handing-a-field-over}, or verify a different toolchain
+as a separate change.
+
+\section{Conflicting Declarations}
+
+\subsection*{Field Is Declared More Than Once}
+
+Symptom excerpt:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+The Object "Speaker" defines the same fields in multiple subgraphs without the "@shareable" directive:
+\end{minted}
+
+Cause: more than one subgraph claims the same field without declarations
+that permit sharing.
+
+Action: locate every named declaration. If one service is only pointing at
+a speaker, reduce it to the key-only stub. If the field is genuinely
+shareable, make the required declarations agree and test equivalent answers.
+Adding a directive solely to silence the error does not establish equivalence.
+
+\subsection*{Generated Node Fields Collide}
+
+Symptom: the same error names \code{Query.node} or \code{Query.nodes},
+although no application method declared either field.
+
+Cause: global object identification generated them in more than one service.
+
+Action: the \code{ShareNodeFields} interceptor in
+section~\ref{sec:ch07-the-second-document} targets those two fields only.
+Do not mark the whole \code{Query} type shareable to solve this collision.
+Chapter~\ref{ch:second-third-subgraph} documents the remaining node-routing
+limitation even after composition accepts the declarations.
+
+\subsection*{Two Output Types Merge Without an Error}
+
+Symptom: one subgraph declares \code{[Node]!}, another \code{[Node]}, and
+composition succeeds with the nullable result.
+
+Cause: the composed output accepts the more permissive value. This is not
+the earlier directive-validation failure.
+
+Action: compare the composed field and each direct subgraph contract.
+Chapter~\ref{ch:null-blast-radius} makes both services nullable to align
+their direct and routed failure boundaries; a successful merge alone does
+not make those boundaries identical.
+
+\section{A Field Has No Reachable Entity Route}
+
+\subsection*{Unresolvable Field}
+
+Symptom excerpt:
+
+\begin{minted}{text}
+The field "averageScore" is unresolvable at the following path:
+\end{minted}
+
+Cause: the composer cannot reach the named field along the reported path.
+In the book's Ratings experiment, \code{Session} carries a non-resolvable
+key even though Ratings must accept entity lookups for its contributed
+fields.
+
+Action: read the reason naming the field's subgraph, then inspect its key,
+key fields and reference resolver. Check whether the originating service can
+supply that key. The printed root is one route that failed, not necessarily
+the service to edit. See section~\ref{sec:ch15-reading-one-properly}.
+
+\subsection*{Interface Has No Object Implementation}
+
+Symptom excerpt:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
+Subgraph "speakers": The Interface "Node" is used as an output type without at least one Object type implementation
+\end{minted}
+
+Cause: the experiment kept the node root while removing the implementing
+object from that document.
+
+Action: distinguish this warning from the unreachable-field defect.
+The pinned composer can emit it and still accept the broken graph.
+Restore the normal exported document before continuing; the warning is not
+a repair.
+
+\subsection*{Disabling the Check Produces a Config}
+
+Symptom: composition succeeds only when the resolvability check is disabled
+with this flag:
+
+\begin{minted}{text}
+--disable-resolvability-validation
+\end{minted}
+
+Cause: the reachability pass was skipped. Structural and directive checks
+still ran.
+
+Action: use the flag only to isolate which pass raised the diagnostic.
+A config written under that flag is not evidence that its fields can be
+served. The runnable example does not retain the flag.
+
+\section{Composition Passes, Requests Fail}
+
+\subsection*{The False Pass in the Three-Service Variant}
+
+Symptom: the broken Ratings key is accepted when Search is absent and the
+shared singular node field is visited first.
+
+Cause: the pinned composer's visited-entity bookkeeping skips paths it has
+not actually proved resolvable. Reordering root fields changes detection
+without repairing the key.
+
+Action: use the named false-pass input in
+section~\ref{sec:ch15-the-composition-that-passes}. Compare the reduced
+Sessions/Ratings pair and the reordered-root control, then send requests for
+every contributed field. Repeating an identical successful composition adds
+no coverage.
+
+\subsection*{Three Runtime Outcomes of That False Pass}
+
+\begin{center}
+\small
+\begin{tabular}{p{0.25\linewidth}p{0.62\linewidth}}
+\toprule
+Selected field & Observed result \tabularnewline
+\midrule
+\code{averageScore} & Router planning fails, HTTP 500 \tabularnewline
+\code{ratingCount} & Wrong root-field fetch; client positions null with an error \tabularnewline
+\code{feedbackUrl} & Null positions with no error entry \tabularnewline
+\bottomrule
+\end{tabular}
+\end{center}
+
+These are the captured results of one pinned defect, not general GraphQL
+rules. Nullable positions limit propagation; they do not require errors to
+be omitted. Restore the resolvable Ratings key, its reference resolver and
+the four-service configuration after the experiment.
+
+\subsection*{Client Compatibility or Ownership Is Wrong}
+
+Symptom: composition succeeds after a public field is removed, an input is
+made required, or an existing field is rerouted to another service.
+
+Cause: composition is not a comparison with the published client contract,
+a retained operation corpus or a record of team approval.
+
+Action: compare the client-facing composed schemas, classify compatibility
+changes, replay retained operations and review routing changes with the
+responsible team. Chapters~\ref{ch:breaking-changes}
+and~\ref{ch:ownership} separate those checks from composition.

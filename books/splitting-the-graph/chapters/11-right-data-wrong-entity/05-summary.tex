@@ -16,8 +16,9 @@ list is. It cannot do better: it never asks for the key, so it has no copy of
 the answer's identity to compare. Hot Chocolate keeps the order by resolving
 each representation into its own slot, and a source-generated DataLoader keeps
 it by looking up every key in the dictionary the batch returned, so the mistake
-requires leaving both, which a store that is not a \code{DbContext} routinely
-does.}
+in this experiment comes from replacing the generated key lookup with a
+hand-written positional loop. A remote store does not require that change:
+its batch adapter can return the same keyed dictionary.}
 {In a hand-written \code{DataLoaderBase}, bound the loop by the keys and not by
 the rows: build a dictionary from whatever the store returned, walk the key
 list, and write each slot from a lookup, so a key with no row becomes the null

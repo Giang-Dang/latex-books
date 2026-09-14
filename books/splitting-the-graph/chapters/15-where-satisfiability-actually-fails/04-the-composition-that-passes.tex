@@ -2,12 +2,38 @@
 \label{sec:ch15-the-composition-that-passes}
 
 \index{resolvability!the graph that composes and cannot be served|(}%
-Section~\ref{sec:ch15-the-route-it-named-is-one-of-six} took Speakers out of
-\code{graph.yaml} and the composer still refused. Put Speakers back and take
-Search out instead, which leaves the three services
-chapter~\ref{ch:second-third-subgraph} finished with, before Search existed.
-Same broken Ratings document, one subgraph entry different from a graph that
-has just produced three errors. Compose it.
+Keep the four-service \code{graph.yaml} as the normal configuration. This
+section uses a separate \code{graph/graph-false-pass.yaml}, printed below.
+It includes Sessions, Speakers and Ratings, but not Search. Export Ratings
+with the broken key from the opening experiment: \code{resolvable: false}
+and no reference-resolver attribute. Export Sessions and Speakers unchanged,
+with their original root-field order.
+
+\begin{minted}{yaml}
+version: 1
+subgraphs:
+  - name: sessions
+    routing_url: http://localhost:5001/graphql
+    schema:
+      file: ../src/Sessions/schema.graphql
+  - name: speakers
+    routing_url: http://localhost:5002/graphql
+    schema:
+      file: ../src/Speakers/schema.graphql
+  - name: ratings
+    routing_url: http://localhost:5003/graphql
+    schema:
+      file: ../src/Ratings/schema.graphql
+\end{minted}
+
+From \code{graph}, compose the false-pass variant:
+
+\begin{minted}{text}
+wgc router compose -i graph-false-pass.yaml -o router-false-pass.json
+\end{minted}
+
+The captured success message below uses the output filename from the original
+run; the named variant above writes the same kind of config to a separate file.
 
 \begin{minted}[fontsize=\footnotesize,breakanywhere]{text}
 Router execution config successfully written to ".../graph/router.json".
@@ -92,6 +118,10 @@ about three fields that cannot be fetched.
 \subsection{Two Fields, Moved Down One File}
 
 \index{resolvability!declaration order decides the answer}%
+Restore Speakers' original export, including both root fields and
+\code{Speaker implements Node}, before this next control. Keep that
+Speakers document fixed throughout the root-order experiment.
+
 The order the root fields are written in decides it too, and this is the
 demonstration I would show anybody who thinks a passing composition is a
 result. Take the Sessions document exactly as the service exports it. Move
@@ -137,6 +167,13 @@ Figure~\ref{fig:ch15-the-order-decides} is the two documents side by side.
   different between the two lanes.}
   \label{fig:ch15-the-order-decides}
 \end{figure}
+
+The reordered-root and restored-key runs are controls, not the state served
+next. Before leaving this section, restore Sessions' original exported
+root order, restore Speakers' original export, and re-export the broken
+Ratings service. Recompose
+\code{graph-false-pass.yaml} into \code{router-false-pass.json}. Keep the
+healthy four-service config separate.
 
 \subsection{Why}
 
