@@ -30,7 +30,22 @@ that is why the chapter opened on a field a smoke test rarely touches.
 
 \index{representation order!aliased node calls are immune}%
 Two aliased \code{node(id:)} calls, which look like the same request written
-differently, are immune. The planner treats them as two separate entity
+differently, are immune in this measured plan:
+
+\begin{minted}{graphql}
+{
+  bank: node(id: "U2Vzc2lvbjo0") {
+    ... on Session { title speaker { name } }
+  }
+  schema: node(id: "U2Vzc2lvbjox") {
+    ... on Session { title speaker { name } }
+  }
+}
+\end{minted}
+
+\code{bank} and \code{schema} are response aliases for two separate root
+field selections, not two names for entries in one \code{nodes} list.
+The planner treats them as two separate entity
 fetches, each carrying one representation, and a batch of one cannot be out of
 order. Both come back correct on this graph. So the failing request and the
 passing request differ only in whether the client wrote one root field or two.

@@ -447,9 +447,9 @@ statements 1 to 3 in Speakers.
 
 | Tag | Tree | `verify.ps1` |
 |---|---|---|
-| `ch18-blind` | `ch17` plus chapter 10's naive Speakers resolver | its own script, 11 assertions, PASS |
+| `ch18-blind` | `ch17` plus chapter 10's naive Speakers resolver | its own script, 9 assertions, PASS |
 | `ch18` | `ch17` plus this chapter's source changes and blocks | 659 assertions, PASS (607 before) |
-| `ch18-naive` | `ch18` plus the naive resolver | its own script, 12 assertions, PASS |
+| `ch18-naive` | `ch18` plus the naive resolver | its own script, 10 assertions, PASS |
 
 ## Sources
 
@@ -509,7 +509,7 @@ never glossed; the header's casing unexplained; section 18.5's hook misnaming
 what 18.4 ends on; "every score" on a page with an unrated session; an
 unindexed `Activity`; the resolver-exception claim unqualified in the summary;
 the figure's lifeline layout diverging from the fixed router visual without a
-decision row (now decision 164); the SPEC progress row missing its closing
+decision row (now decision 168); the SPEC progress row missing its closing
 pipe; a two-sentence punchline, an unsourced "people", an invented list of
 three uses, a "which is deliberate" with no reason, two setup openers in a row
 and a "So the division of labor is this" closer.
@@ -534,3 +534,24 @@ Rejected on the record:
 - The `AddApplicationService` mechanism being unsourced. The sentence now says
   only what the error shows and that the registration works, which is what was
   measured.
+
+## Re-verification on the pinned SDK, 2026-09-14
+
+The runs recorded above used this machine's default `dotnet`, which resolves
+to SDK 11.0.100-preview.7 because 10.0.303 is not installed here (SDKs present:
+9.0.318, 10.0.401 and the preview). Decision 158 records the same drift and
+the fix. All four states were re-run from clean `bin`/`obj` with the official
+portable SDK 10.0.303 (runtime 10.0.11) on a process-local `PATH` and
+`DOTNET_ROOT`, `DOTNET_MULTILEVEL_LOOKUP=0`:
+
+| Tag | Result |
+|---|---|
+| `ch18` | exit 0, 659 ok, PASS |
+| `ch18-blind` | exit 0, 9 ok, PASS |
+| `ch18-naive` | exit 0, 10 ok, PASS |
+| `ch18-hc14` | exit 0, 216 ok, PASS |
+
+The first pass reported 11 and 12 for the two state scripts. Those were
+miscounts, not different runs: the scripts hold 9 and 10 assertions, and the
+verification repo's commit messages for `ch18-blind` and `ch18-naive` still
+carry the wrong numbers.

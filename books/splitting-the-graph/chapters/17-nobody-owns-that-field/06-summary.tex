@@ -3,14 +3,16 @@
 \code{Failed to fetch from Subgraph} naming a service that never owned it. Or
 a type gains a field nobody on the owning team wrote, and the first they hear
 of it is a client asking for it. Both states composed at exit zero and printed
-nothing, and neither moved the schema a client reads.}
+nothing. Adding the public field changed the client schema; rerouting an
+existing field with \code{@override} left that schema unchanged.}
 {Nothing in the toolchain records an owner. There is no such directive in
 Apollo Federation, no such word in the Composite Schemas draft, and no such
 property in the router execution config, where a subgraph is an id, a name and
 a routing url. What the composer has instead is a rule about routes, and the
 shape of that rule decides which mistakes it catches. Two subgraphs declaring
 one field leaves two candidates and no way to choose, so it is refused unless
-every subgraph declaring it says \code{@shareable}, which takes both teams.
+the relevant declarations permit sharing. That does not require fresh
+approval from the team whose field was already shareable.
 One subgraph taking a field off another with \code{@override} leaves exactly
 one candidate, so it is accepted with nothing printed, no edit to the other
 document, and a composed schema that is byte for byte the one before it.}

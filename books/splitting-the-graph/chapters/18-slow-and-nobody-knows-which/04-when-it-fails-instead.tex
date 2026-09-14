@@ -36,7 +36,9 @@ inner errors are Hot Chocolate's, and every one of them is
 \code{Unexpected Execution Error}, two fields on four sessions, with nothing
 about a table. The Ratings team now knows it is theirs and nothing else. The
 cause is in the Ratings service's console, if it is anywhere, and the
-response's \code{X-Wg-Trace-Id} is how they find the right part of it.
+response's \code{X-Wg-Trace-Id} is how they find the right part of it. Put
+the table back the same way, \code{ALTER TABLE RatingsMissing RENAME TO
+Ratings;}, before sending anything else.
 
 \subsection{What the Owner Finds}
 
@@ -192,7 +194,8 @@ app.RunWithGraphQLCommands(args);
 \end{minted}
 
 \index{ErrorLog@\code{ErrorLog}!what it writes}%
-Rename the table again and send the page. The Ratings console now holds one
+Rebuild and restart the Ratings service, rename the table again, send the
+page, and put the table back afterwards. The Ratings console now holds one
 \code{ErrorLog} entry per inner error, eight, each opening like this, with the
 stack trace that follows cut:
 

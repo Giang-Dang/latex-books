@@ -2,12 +2,8 @@
 \label{sec:ch01-the-threshold}
 
 \index{adoption threshold|(}%
-I went looking for a published threshold and did not find one. No engineer I
-could find has written down a number of teams, or of services, above which
-federation pays. The closest thing is a vendor guide with no author's name on
-it, and I am not willing to build a chapter on a claim nobody signed. So what
-follows is my judgment. I would rather say that plainly than dress it up as a
-finding.
+I use four conditions to judge whether federation is worth its cost. They
+are a decision rule, not a measured threshold that applies to every company.
 
 Four conditions. Federation pays when all four hold, and the count of your
 teams is not one of them.
@@ -24,8 +20,9 @@ teams is not one of them.
 \end{enumerate}
 
 The failure modes are more useful than the conditions. If the first is false,
-you have one team, and you are about to solve a scheduling problem with a
-distributed system. If the second is false, you get the entire cost of
+you have not established a release bottleneck that federation would remove.
+Several teams can share an API without blocking each other. If the second is
+false, you get the entire cost of
 federation and none of its benefit: the schema is split, and it still ships on
 one train, so you have added a composer and a router to a release process that
 was already the bottleneck. If the third is false, the composer will make the

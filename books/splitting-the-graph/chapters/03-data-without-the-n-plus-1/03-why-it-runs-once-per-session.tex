@@ -49,13 +49,10 @@ resolver could not have known that, since each of its calls saw one session and
 had no way to ask what the other three wanted.
 
 \index{N+1@N+1!across a seam}%
-Hold on to the shape of lane A rather than the fix. In this chapter the four
-repeated statements go to a database in the same process, and the worst that
-happens is that you notice. In chapter~\ref{ch:router-n-plus-1} the same
-picture has a router in the place of the engine and an HTTP request in the
-place of each statement, the parent list arrives from one service and the
-field belongs to another, and the four calls are four round trips over a
-network you do not control. The mechanism is identical, and the unit of
-repetition stops being a local statement and becomes a request to another
-team's service.
+Hold on to the repeated database work. In
+chapter~\ref{ch:router-n-plus-1}, the parent list and the speaker field live
+in different services. The router sends one batched entity request for the
+distinct speakers, but a naive reference resolver still issues one SQL
+statement per speaker. HTTP batching at the seam does not batch the database
+work behind it. Count those two boundaries separately.
 \index{execution!field by field|)}%

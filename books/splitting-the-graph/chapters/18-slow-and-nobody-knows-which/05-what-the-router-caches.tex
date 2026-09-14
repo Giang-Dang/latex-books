@@ -17,9 +17,11 @@ operation and reused.
 
 \code{enable\_cache\_response\_headers}, under \code{engine.debug}, makes the
 router report each of those caches as a hit or a miss in a response header of
-its own~\autocite{cosmorouterconfig}. With that on,
-send the page from section~\ref{sec:ch18-the-page-that-got-slower} twice, on
-the graph as this chapter leaves it, and count statements the way
+its own~\autocite{cosmorouterconfig}. Each router setting in this section is appended to \code{config.yaml} for one
+run, the router is restarted on it, and the book's own \code{config.yaml} is
+put back afterwards; none of them ships. With this one on, send the page from
+section~\ref{sec:ch18-the-page-that-got-slower} twice, on the graph as this
+chapter leaves it, and count statements the way
 section~\ref{sec:ch18-writing-it-down} does:
 
 \begin{center}
@@ -60,9 +62,10 @@ said~\autocite{cosmocachecontrol}. None of this book's services sends a \code{Ca
 every value comes from the router's config.
 
 \index{Cache-Control@\code{Cache-Control}!the most restrictive subgraph decides}%
-Give the policy a global value of \code{max-age=180, public} and a
-\code{subgraphs} entry setting \code{ratings} to \code{max-age=60, public}, and
-the header depends on which services a request happened to reach. The session
+Restart the router with the policy enabled, a global \code{value} of
+\code{max-age=180, public}, and a \code{subgraphs} entry giving \code{ratings}
+\code{max-age=60, public}. The header then depends on which services a request
+happened to reach. The session
 titles and speakers come back cacheable for 180 seconds. Add
 the two rating fields, which only the Ratings service answers, and the whole
 page is cacheable for 60. The value belongs to the response, so the least cacheable
@@ -70,15 +73,16 @@ service a request touches decides for every field in it, the same shape as the
 blast radius chapter~\ref{ch:null-blast-radius} measured for nulls.
 
 \index{Cache-Control@\code{Cache-Control}!a subgraph with no value has no say}%
-A service with no value set has no say at all. Take the global value away and
-give only \code{speakers} a value, \code{max-age=300, public}. A page of titles, \code{\{ sessions(first: 10) \{ nodes \{ title \} \} \}},
+A service with no value set has no say at all. Restart the router
+with the global value taken away and only \code{speakers} given a value,
+\code{max-age=300, public}. A page of titles, \code{\{ sessions(first: 10) \{ nodes \{ title \} \} \}},
 which is all Sessions data, gets no \code{Cache-Control} header. The same page
 with speaker names on it gets \code{public} and 300 seconds, although every
 title on it came from a service that expressed no view on how long it may be
 kept. The router reads a missing value as no restriction at all.
 
 \index{Cache-Control@\code{Cache-Control}!public on an authorized response}%
-And the policy does not know who asked. With the global value back at
+And the policy does not know who asked. Restart the router with the global value back at
 \code{max-age=180, public}, send the session page asking for each speaker's email, the column
 chapter~\ref{ch:entities-authorization} guarded:
 

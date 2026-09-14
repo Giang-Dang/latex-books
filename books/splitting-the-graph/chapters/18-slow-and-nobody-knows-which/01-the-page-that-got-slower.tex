@@ -8,8 +8,10 @@ answers each field and nothing about which one took the time. Here is that
 graph. It is the four services this book has built, with one change I made
 and did not announce: the Speakers service's reference resolver is the naive
 one chapter~\ref{ch:router-n-plus-1} opened on, fetching one row per
-representation instead of going through a DataLoader. I know which service it
-is because I changed it. The person holding the pager does not, and everything
+representation instead of going through a DataLoader. To reproduce it, put chapter~\ref{ch:router-n-plus-1}'s resolver back in
+\code{SpeakerType.cs}, rebuild and restart the Speakers service, and leave the
+other three services and the router running as they are. I know which service
+it is because I changed it. The person holding the pager does not, and everything
 below is what that person has to work with.
 
 \index{HTTP 200!a slower page looks identical}%

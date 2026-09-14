@@ -67,6 +67,91 @@ entity and nothing else. That is this file exactly, and it is worth having the
 word for it, because a stub is a thing you will write once per seam for the
 rest of your graph's life.
 
+\subsection{Remove the Local Speaker Store}
+
+The stub has a one-argument constructor, so the old three-argument seed no
+longer compiles. Replace \code{ConferenceData.cs} with the complete file
+below; the four sessions and their ordering stay unchanged.
+
+\begin{minted}{csharp}
+namespace Sessions;
+
+/// <summary>
+/// The conference program, seeded into this service's database. The
+/// speakers that used to sit beside it moved to their own service in
+/// chapter 9; what is left of them here is the SpeakerId on each row.
+/// </summary>
+public static class ConferenceData
+{
+    public static readonly IReadOnlyList<Session> Sessions =
+    [
+        new Session(
+            1,
+            "Schemas That Outlive Their Authors",
+            "A five-year-old schema, and the decisions that shaped it.",
+            1,
+            new DateTimeOffset(2026, 9, 14, 9, 0, 0, TimeSpan.Zero),
+            45),
+        new Session(
+            2,
+            "Reading a Query Plan",
+            null,
+            1,
+            new DateTimeOffset(2026, 9, 14, 10, 0, 0, TimeSpan.Zero),
+            45),
+        new Session(
+            3,
+            "Paging Without Offsets",
+            "Why the page you get is not the page you asked for.",
+            2,
+            new DateTimeOffset(2026, 9, 14, 11, 0, 0, TimeSpan.Zero),
+            30),
+        new Session(
+            4,
+            "The Bank That Split Its Graph",
+            "Eighteen months, four teams, and the unwritten parts.",
+            3,
+            new DateTimeOffset(2026, 9, 14, 14, 0, 0, TimeSpan.Zero),
+            60)
+    ];
+}
+\end{minted}
+
+Replace \code{ConferenceContext.cs} as well. There is no \code{Speakers}
+set and no speaker seed mapping in the Sessions database.
+
+\begin{minted}{csharp}
+using Microsoft.EntityFrameworkCore;
+
+namespace Sessions;
+
+/// <summary>
+/// The conference program, in SQLite. Session carries SpeakerId as a
+/// plain column, and since chapter 9 there is no speaker table here
+/// for it to point at: the rows are the Speakers service's, and this
+/// column is a foreign key across a seam that no database enforces.
+/// </summary>
+public sealed class ConferenceContext(
+    DbContextOptions<ConferenceContext> options) : DbContext(options)
+{
+    public DbSet<Session> Sessions => Set<Session>();
+
+    protected override void OnModelCreating(ModelBuilder model)
+    {
+        // SQLite stores no date type of its own and refuses to sort a
+        // DateTimeOffset. Keep the offset out of the column and put it
+        // back on the way in; every session here is in conference time.
+        model.Entity<Session>()
+            .Property(s => s.StartsAt)
+            .HasConversion(
+                v => v.UtcDateTime,
+                v => new DateTimeOffset(v, TimeSpan.Zero));
+
+        model.Entity<Session>().HasData(ConferenceData.Sessions);
+    }
+}
+\end{minted}
+
 \subsection{The Resolver That Does No Work}
 
 \index{Session.speaker@\code{Session.speaker}!costs no statement now}%
@@ -112,6 +197,13 @@ service could guarantee, and made it stick by measuring what
 a judgment any more. This service cannot guarantee a speaker because the
 speakers are in another process, and section~\ref{sec:ch09-the-first-query-across-two}
 shows what arrives when that process is not running.
+
+All dependent source edits are now in place. Stop Sessions and remove only
+its disposable \code{src/Sessions/conference.db}. From \code{src/Sessions},
+run \code{dotnet run} to rebuild and let \code{EnsureCreated} create the
+reduced schema. Do not remove the Speakers service's database. Sessions now
+stores four session rows and no speaker table; Speakers stores the three
+speaker rows.
 
 \subsection{Three Readouts of One Argument}
 

@@ -98,7 +98,8 @@ The Speakers service exports the same schema, byte for byte. The graph
 composes, with no message. The router serves the same types and the same root
 fields. The query plan is the same \code{Sequence} of two steps with the same
 \code{BatchEntity} fetch naming the same field path. The router makes the same
-number of HTTP requests it made before, which is one. And the response, as you
+number of HTTP requests it made before: two in total, one to Sessions and
+one batched call to Speakers. And the response, as you
 have just seen, is identical.
 
 \index{observability!the router cannot see this}%
@@ -109,8 +110,9 @@ is the one inside the process doing the work, and in this book that is
 chapter~\ref{ch:data-without-n-plus-1}'s statement log.
 Chapter~\ref{ch:blame-routing} is the chapter about finding out which subgraph
 is slow, and this is the failure mode it will be hunting: a service that is
-correct, is not erroring, is not timing out, and is doing four times the work
-somebody thinks it is.
+correct, is not erroring and is not timing out, yet Speakers issues three
+statements instead of one. Across both services the total rose from two to
+four; the total doubled, while Speakers' own count tripled.
 
 \index{N+1@N+1!the count is somebody else's page size}%
 One more property before the mechanism, because it changes how alarming the

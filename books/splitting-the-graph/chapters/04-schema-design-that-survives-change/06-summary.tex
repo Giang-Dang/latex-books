@@ -1,7 +1,7 @@
 \begin{chaptersummary}
-  \item A schema has no version number, so a field you regret is a field you
-        live with. Every decision in this chapter is about making the next
-        change additive rather than breaking.
+  \item A schema can evolve without a new endpoint. Add a replacement,
+        deprecate the old field, migrate its clients and check usage before
+        retiring it. Removing a field still in use breaks those clients.
   \item A global node id is the type name and the key, base64 encoded:
         \code{U2Vzc2lvbjox} is \code{Session:1}. One \code{[NodeResolver]}
         method per type rewrites its \code{id} to \code{ID!}, makes it
@@ -14,9 +14,10 @@
         message the person removing the field will read, so it names the
         replacement. It may not go on a required argument, and the schema
         refuses to build if it does.
-  \item A failure the caller should act on belongs in the payload, not in the
-        top-level \code{errors} array where it is a string nobody can branch
-        on. Two \code{[Error<T>]} attributes generate a union of error types
+  \item This mutation puts expected domain failures in its typed payload.
+        Top-level errors can carry branchable extension codes, but those
+        codes are not this schema's declared result types.
+        Two \code{[Error<T>]} attributes generate a union of error types
         and an \code{Error} interface they both implement: the union tells a
         client every failure that exists today, and the interface lets
         tomorrow's arrive without breaking that client. The answer is 200,

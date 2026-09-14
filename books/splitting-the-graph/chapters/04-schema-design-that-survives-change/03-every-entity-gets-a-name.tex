@@ -216,8 +216,12 @@ section~\ref{sec:ch04-the-schema-is-the-version}'s collision cannot recur.
 \index{statement count!node field}%
 One \code{node} costs one statement, and the projection still applies, because
 that resolver took a \code{QueryContext<Session>} like every other query in
-chapter~\ref{ch:data-without-n-plus-1}. Ask \code{node} for a title and SQLite
-is asked for two columns.
+chapter~\ref{ch:data-without-n-plus-1}. This operation selects both the id
+and title, so SQLite is asked for two columns:
+
+\begin{minted}{graphql}
+{ node(id: "U2Vzc2lvbjox") { ... on Session { id title } } }
+\end{minted}
 
 \begin{minted}{text}
 -- statement 1
@@ -239,8 +243,11 @@ what \code{SpeakerType} above quietly has and \code{SessionType} does not.
 \subsection{Three Ways to Get an Id Wrong}
 
 \index{node id!malformed}%
-A string that is not a node id at all answers 200, resolves the field to null,
-and reports an error carrying back what you sent:
+Send \code{\{ node(id: "not-an-id") \{ id \} \}} to the Sessions endpoint
+as a JSON POST. The request has \code{Content-Type: application/json} and no
+explicit \code{Accept} header. The response uses
+\code{application/graphql-response+json; charset=utf-8}. A malformed node id
+answers 200, resolves the field to null, and reports what you sent:
 
 \begin{minted}[fontsize=\footnotesize]{json}
 {"errors":[{"message":"The node ID string has an invalid format.",
@@ -253,18 +260,31 @@ The second is a bad id that never reaches execution at all.
 Section~\ref{sec:ch04-a-mutation-that-can-fail}'s mutation takes its session
 as an \code{ID!} inside an input type, and the string \code{2} is a perfectly
 legal \code{ID} that is not a node id. It answers 400, with no \code{data} key
-anywhere in the response:
+anywhere in the response. Use the mutation operation printed in the next
+section with these variables:
+
+\begin{minted}[fontsize=\footnotesize]{json}
+{"input":{"sessionId":"2","startsAt":"2026-09-14T16:00:00Z"}}
+\end{minted}
+
+The request and response media types are the same as above. The body is:
 
 \begin{minted}[fontsize=\footnotesize]{json}
 {"errors":[{"message":"The node ID string has an invalid format.",
 "extensions":{"originalValue":"2"}}]}
 \end{minted}
 
-Same message, same complaint, two different stages, two different statuses.
-An argument on a root field is coerced as the field executes; a variable
-feeding an input object is coerced before the operation runs at all. Worth
-knowing before you write the client code that has to tell a user what went
-wrong.
+The same library diagnostic occurs at two different stages. The generic
+\code{node} field accepts an \code{ID} string, then decodes the global node
+ID during field execution. The mutation's typed \code{[ID<Session>]} input
+decodes it while coercing the input variable, before any resolver runs.
+This is not a rule that root arguments always wait until execution. Variable
+coercion and operation validation generally precede execution.
+
+The 200 and 400 are observations of this Hot Chocolate version and request
+transport. GraphQL's core specification distinguishes request errors from
+execution errors; it does not assign HTTP statuses. Preserve the request and
+response media types when comparing another server's behavior.
 
 \index{node id!wrong type resolves silently}%
 \index{variables!definition}%
@@ -298,11 +318,11 @@ the debugging session that follows.
 
 \subsection{Retiring the Field This Replaces}
 
-\index{deprecation!as the only removal mechanism}%
-\code{sessionById} is now redundant, and removing it is not available. Deleting
-a field from a schema breaks every client still asking for it, on the
-deployment, with no warning and no migration window. What the specification
-gives instead is a marker, and \code{Query.cs} is where it goes.
+\index{deprecation!before a planned removal}%
+\code{sessionById} is now redundant, but clients may still select it. Removing
+it before those clients migrate would break their operations. Mark it
+deprecated now, then consider removal after the migration window and an
+explicit check of remaining use. The marker goes in \code{Query.cs}.
 
 \begin{minted}[highlightlines={23-25}]{csharp}
 using GreenDonut.Data;

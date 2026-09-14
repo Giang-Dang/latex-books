@@ -228,11 +228,13 @@ build a context on demand, and it also registers the context itself as a
 scoped service, which is what makes a \code{ConferenceContext} parameter on a
 resolver resolvable at all.
 
-\code{RegisterDbContextFactory} is the line I can tell you least about. It is
-what the documentation pairs with a factory registration, and it is here
-because I would ship it. Taking it out, though, leaves the exported schema,
-every response and every statement count in this chapter unchanged, so I will
-not tell you what it buys you.
+\code{RegisterDbContextFactory} configures Hot Chocolate's resolver
+integration: when a resolver needs a context, the integration creates one
+through that factory and manages its lifetime. \code{AddDbContextFactory}
+registers the factory in application DI; it does not itself configure how
+the GraphQL executor supplies contexts. Keep both registrations. A passing
+small query without the second is not evidence that concurrently executing
+resolvers can safely share a context~\autocite{hcefcontextrepair}.
 
 \index{AddQueryContext@\code{AddQueryContext}}%
 \index{AddPagingArguments@\code{AddPagingArguments}}%

@@ -2,12 +2,11 @@
 \label{sec:ch05-the-directives}
 
 \index{directives!the vocabulary|(}%
-Federation v2 hands every subgraph library a block of sixteen directive
-definitions to add to your schema for you, plus one more for libraries that
-cannot write GraphQL's own \code{extend}
-keyword~\autocite{apollosubgraphspec}. Four of the sixteen carry the model.
-The rest get a paragraph each so that you recognize one in somebody else's
-schema, and appendix~\ref{app:directives} carries the definitions in full.
+Federation's directive vocabulary grows by version. The v2.6 baseline this
+book exports is not the same inventory as today's reference page. Four
+directives carry the seam model; the others below explain names you will meet
+in schemas. Appendix~\ref{app:directives} lists their arguments, locations and
+version boundaries, including later additions~\autocite{apollosubgraphspec}.
 
 \subsection{The Opt-In}
 
@@ -130,13 +129,13 @@ schema}~\autocite{apollodirectives}, which is the right default and an awkward
 surprise the first time a directive of yours vanishes.
 
 \index{extends@\code{"@extends}!for libraries without the keyword}%
-\code{@extends} is the seventeenth, and it exists only for libraries that
+\code{@extends} exists for libraries that
 cannot write GraphQL's own \code{extend} keyword. Hot Chocolate can, so this
 book never uses it, and it is here because you will meet it in schemas written
 by libraries that cannot.
 
 \index{directives!what this package does not ship}%
-Two of the sixteen are not in the package this book uses. \code{@context} and
+Two later additions are not in the package this book uses. \code{@context} and
 \code{@fromContext}, which pass a value down from an ancestor field into a
 resolver's argument, have no attribute and no directive type in
 \code{HotChocolate.ApolloFederation}, so no chapter here claims anything about
@@ -144,7 +143,7 @@ them.
 
 \index{cost@\code{"@cost}!arrives from elsewhere}%
 \code{@cost} and \code{@listSize} are a different case again. Apollo documents
-both alongside the sixteen, as controls on how much work a client may ask
+both as controls on how much work a client may ask
 for rather than as anything to do with a seam, and Hot Chocolate implements
 them in its core rather than in the federation package. Which is why
 chapter~\ref{ch:data-without-n-plus-1}'s exported schema was already carrying

@@ -90,8 +90,9 @@ One more placement is worth knowing before you copy the attributes onto a type
 of your own. \code{[Key("id")]} on the \code{Speaker} record rather than on
 \code{SpeakerType} also compiles, and produces a schema with no key in it at
 all. The attribute is read off the class the source generator is building the
-type from, and a positional record is not that class. The union in
-section~\ref{sec:ch06-three-edits} is where you would notice.
+type from, and a positional record is not that class. The \code{\_Entity}
+union shown under \enquote{What the Schema Became} below is where you
+would notice.
 
 \subsection{Both Resolvers}
 
@@ -99,7 +100,7 @@ section~\ref{sec:ch06-three-edits} is where you would notice.
 \code{SpeakerType.cs} in full, with everything chapter~\ref{ch:schema-design}
 did not have marked. The reference resolver borrows the same DataLoader the node
 resolver above it uses, which is a one-line decision with a measurable
-consequence in the next section:
+consequence measured in section~\ref{sec:ch06-what-the-entity-route-costs}:
 
 \begin{minted}[highlightlines={1-3,8-10,23-41}]{csharp}
 using HotChocolate.ApolloFederation.Resolvers;
@@ -316,3 +317,69 @@ listing: \code{ResolveNodeWith} takes a \code{MethodInfo} where
 Appendix~\ref{app:hc14} carries the class in full.
 \end{onhc14}
 \index{reference resolver!what it is handed|)}%
+
+\subsection{What the Schema Became}
+
+\index{schema!what the package adds}%
+Both reference resolvers are now in place. Build and export. Chapter~\ref{ch:federation-model}
+said a subgraph is your service with four additions and named them; here they
+are, as the difference between this exported schema and the one
+chapter~\ref{ch:schema-design} left. Everything below was written by the
+package. The C\# definitions are authoritative; the SDL file is generated,
+not maintained by hand. As in chapters~\ref{ch:data-without-n-plus-1}
+and~\ref{ch:schema-design}, the descriptions and \code{@cost} directives the
+export writes are dropped here, and the fields of the two entity types are
+elided, because what changed about them is on the first line:
+
+\begin{graphqlsdl}
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.6"
+    import: ["@key", "@shareable", "@tag", "FieldSet"]
+  ) {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  ...
+  _service: _Service!
+  _entities(representations: [_Any!]!): [_Entity]!
+}
+
+type _Service {
+  sdl: String!
+}
+
+type Session implements Node @key(fields: "id") { ... }
+type Speaker implements Node @key(fields: "id") { ... }
+
+union _Entity = Session | Speaker
+
+scalar _Any
+scalar FieldSet
+\end{graphqlsdl}
+
+\index{link@\code{"@link}!the version is not chosen}%
+The \code{@link} line is the opt-in. The url ends in a version, as
+chapter~\ref{ch:federation-model} said it would, and that version is a default
+rather than a decision: the package emits the one it emits unless you go looking
+for the setting, and appendix~\ref{app:toolchain} is where the number lives. The
+import list beside it holds the names the document actually uses, which is why
+\code{@key} appears there the moment a type carries one.
+
+\index{Entity@\code{\_Entity}!is generated from the keys}%
+\code{\_Entity} is the union chapter~\ref{ch:federation-model} promised, and it
+is generated rather than declared: two types carry a key, so two types are in
+it, and a third key would put a third type in it. That is worth knowing because
+it makes the union a readout. If a type you expected to be an entity is missing
+from it, the key did not take, and the schema is telling you so in a line nobody
+wrote.
+
+\index{directives!the definitions travel with the schema}%
+Below that, and elided here for length, the export also carries the definitions
+of \code{@key}, \code{@link} and \code{@shareable}, written out in full with
+their locations and their default arguments. A composer that reads this document
+and nothing else knows what every directive in it means, which is
+section~\ref{sec:ch06-the-schema-as-a-string}'s subject.
+\index{HotChocolate.ApolloFederation@\code{HotChocolate.ApolloFederation}!the package|)}%

@@ -55,7 +55,7 @@ Two files differ from the graph chapter~\ref{ch:router-n-plus-1} left, and the
 first is \code{SpeakerDataLoader.cs}. The Speakers service's DataLoader is no
 longer generated from a \code{[DataLoader]} method; it is written out by hand:
 
-\begin{minted}[highlightlines={37-42}]{csharp}
+\begin{minted}[highlightlines={36-41}]{csharp}
 using GreenDonut;
 using Microsoft.EntityFrameworkCore;
 
@@ -64,10 +64,9 @@ namespace Speakers;
 /// <summary>
 /// What the source-generated loader is underneath: a class deriving
 /// from DataLoaderBase, given the batch of keys and a span to put the
-/// answers in. Written out by hand because a store that is not a
-/// DbContext - a remote service, a cache, a stored procedure - hands
-/// back a list rather than a dictionary, and the generator only
-/// accepts a dictionary.
+/// answers in. Written out by hand to expose the positional contract.
+/// A remote batch can also use a generated loader: adapt its rows to
+/// a dictionary keyed by identifier before returning the batch.
 /// </summary>
 public interface ISpeakerByIdDataLoader : IDataLoader<int, Speaker>;
 

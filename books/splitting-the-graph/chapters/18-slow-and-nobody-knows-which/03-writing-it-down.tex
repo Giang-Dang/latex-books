@@ -200,9 +200,10 @@ request prints the word \code{none} where the id would be.
 
 \index{blame routing!finding the slow service by its id|(}%
 Now run the investigation from
-section~\ref{sec:ch18-the-page-that-got-slower} again, on the same four
-services with chapter~\ref{ch:router-n-plus-1}'s naive resolver still in
-Speakers and these three edits made. The client reports the page as slow and
+section~\ref{sec:ch18-the-page-that-got-slower} again, with chapter~\ref{ch:router-n-plus-1}'s naive resolver still in
+Speakers and these three edits made. The edits change four services and the
+router's config, so rebuild and restart all four services and restart the
+router on the new \code{config.yaml} before sending the page. The client reports the page as slow and
 quotes the header above. Search each of the four consoles for that id, and
 count the statement markers carrying it:
 
@@ -239,6 +240,8 @@ had already printed three statements for an earlier request, and without the
 id nothing would separate those three from these. What the Speakers team does
 next is chapter~\ref{ch:router-n-plus-1}'s section on the loader behind the
 resolver. What this chapter changes is that they are the team who reads it,
-rather than whoever owns the router.
+rather than whoever owns the router. Before going on, put the Speakers
+service's DataLoader back, then rebuild and restart it: every count from here
+on is taken on the graph this chapter ships.
 \index{blame routing!finding the slow service by its id|)}%
 \index{trace id!written down everywhere|)}%

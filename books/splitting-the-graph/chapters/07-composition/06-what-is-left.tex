@@ -5,9 +5,9 @@
 Two files and one command, and the graph as it stands composes. There is still
 one subgraph in it. A router execution config for a single service is a real
 artifact and chapter~\ref{ch:enter-the-router} will serve from it, and it
-proves nothing about the graph this book is heading for, because every check
-composition performs is a check on a disagreement and one document disagrees
-with nobody.
+validates that single schema and its directive uses. It does not prove that
+the schema can coexist with the other services: the overlap and cross-service
+routes need more than one document to test.
 
 \index{composition!what the second document settled}%
 The second and third documents are what did the proving, and two of the three
@@ -30,7 +30,7 @@ correct, both schemas are correct, and the arrangement is what is wrong.
 
 \index{shareable@\code{"@shareable}!would compose and would be a lie}%
 It is also fixable in thirty seconds the wrong way, which is the part worth
-carrying out of this chapter. Write \code{@shareable} on \code{Speaker.name} in
+carrying out of this chapter. Write \code{@shareable} on both \code{Speaker.name} and \code{Speaker.bio} in
 both documents and the graph composes, silently. What you would have declared
 is that either service can answer for a speaker's name and a client may be
 served whichever, when only one of them has the table. The first time somebody

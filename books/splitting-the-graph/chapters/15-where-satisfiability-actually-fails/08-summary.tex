@@ -1,8 +1,9 @@
 \begin{problemsummary}
 {A composition error names a query you did not write, through a service you did
 not touch, and stops at a field that looks correct. Or the graph composes at
-exit zero and a field answers HTTP 500, or answers a different field's value,
-or comes back null with no \code{errors} key at all.}
+exit zero and a field answers HTTP 500, or the router queries the wrong root
+field and returns null with an error, or a field comes back null with no
+\code{errors} key at all.}
 {The check asks whether a field can be reached at all, not whether each route
 to it works, so it reports one route out of however many fail and picks the one
 it happened to be walking. The route it picks moves with the rest of the graph:
