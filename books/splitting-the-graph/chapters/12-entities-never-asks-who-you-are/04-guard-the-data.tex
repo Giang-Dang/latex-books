@@ -2,8 +2,10 @@
 \label{sec:ch12-guard-the-data}
 
 \index{authorization!the placement that works|(}%
-Put the attribute on the column. Here is \code{Speaker.cs} again, complete,
-with what moved marked:
+Remove the inert \code{[Authorize]} from the reference resolver and its
+unused authorization import. Keep \code{Query} unguarded, as in the isolated
+experiment just completed. Now put the guard on the column. Here is
+\code{Speaker.cs} again, complete, with what moved marked:
 
 \begin{minted}[highlightlines={1,2,13,14,19}]{csharp}
 using HotChocolate.ApolloFederation.Types;
@@ -43,9 +45,9 @@ moment.
 
 \index{authorization!the root field loses its attribute}%
 \code{Query.cs} goes back to what chapter~\ref{ch:second-third-subgraph}
-printed. The attribute on \code{speakers} is not wrong, exactly, but it is
-now redundant and it is the shape of the mistake this chapter is about, so it
-comes off rather than staying as a belt.
+printed. It has already been restored for the previous experiment. Keep it
+that way: public names should remain available without a token, and a guard
+on the list would not replace the guard on \code{email}.
 
 \subsection{All Three Doors}
 

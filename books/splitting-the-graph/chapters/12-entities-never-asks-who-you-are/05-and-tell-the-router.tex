@@ -2,88 +2,9 @@
 \label{sec:ch12-and-tell-the-router}
 
 \index{router!the graph after the guard lands|(}%
-Deploy section~\ref{sec:ch12-guard-the-data} and the graph stops working for
-everybody. Ask the router for a session and its speaker's address, with a
-token the router itself verified:
-
-\begin{minted}[fontsize=\footnotesize,breakanywhere]{graphql}
-{ sessions(first: 10) { nodes { title speaker { name email } } } }
-\end{minted}
-
-\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
-{"errors":[
-  {"message":"Failed to fetch from Subgraph 'speakers' at Path 'sessions.nodes.@.speaker'.",
-   "extensions":{
-     "errors":[
-       {"message":"The current user is not authorized to access this resource.",
-        "path":["sessions","nodes","@","speaker","email"],
-        "extensions":{"code":"AUTH_NOT_AUTHENTICATED"}},
-       {"message":"The current user is not authorized to access this resource.",
-        "path":["sessions","nodes","@","speaker","email"],
-        "extensions":{"code":"AUTH_NOT_AUTHENTICATED"}},
-       {"message":"The current user is not authorized to access this resource.",
-        "path":["sessions","nodes","@","speaker","email"],
-        "extensions":{"code":"AUTH_NOT_AUTHENTICATED"}}],
-     "serviceName":"speakers",
-     "statusCode":200}},
-  {"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.speaker.name'.",
-   "path":["sessions","nodes",0,"speaker","name"]},
-  {"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.speaker.name'.",
-   "path":["sessions","nodes",1,"speaker","name"]},
-  {"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.speaker.name'.",
-   "path":["sessions","nodes",2,"speaker","name"]},
-  {"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.speaker.name'.",
-   "path":["sessions","nodes",3,"speaker","name"]}],
- "data":{"sessions":{"nodes":[
-   {"title":"Schemas That Outlive Their Authors","speaker":null},
-   {"title":"Reading a Query Plan","speaker":null},
-   {"title":"The Bank That Split Its Graph","speaker":null},
-   {"title":"Paging Without Offsets","speaker":null}]}}}
-\end{minted}
-
-\index{router!three refusals for four sessions}%
-Three refusals from the subgraph and four from the router, for four sessions.
-The subgraph counts distinct speakers, because
-chapter~\ref{ch:router-n-plus-1} established that the router de-duplicates
-representations before it sends them and this page has three speakers across
-its four sessions. The non-null errors count sessions, because that is where
-the nulls land.
-
-\index{router!an anonymous caller is told the same thing}%
-Send the same query with no token at all and the answer is byte for byte
-identical. That is the tell, and it is the reason this is worth a section:
-a graph whose authorization is working looks different to those two callers.
-This one does not, because neither of them is getting through and both for
-the same reason.
-
-\index{router!headers are not forwarded by default}%
-The router does not forward request headers to subgraphs unless it is told
-to, and WunderGraph says so in as many words: \enquote{by default, no headers
-are forwarded for security reasons}~\autocite{cosmoheaders}. The Speakers
-service is not refusing your caller. It is refusing an anonymous request,
-because an anonymous request is what reached it.
-
-\index{non-null!the guard's blast radius through the seam}%
-The four errors underneath are what a non-null field costs when the entity
-carrying it disappears. Losing \code{email} loses the whole \code{Speaker},
-and \code{name} is \code{String!}, so every session on the page reports a null
-it cannot hold. The titles arrive; nothing under them does.
-
-\index{router!what the missing block survives}%
-The part that makes this expensive to diagnose is how narrow it is. The
-refusal follows the guarded column rather than the seam, so the same seam
-asked for a speaker's public name never selects \code{email}, nothing objects,
-and the answer is complete. Every dashboard stays green and one screen is
-broken.
-
-\subsection{Telling the Router Who You Are}
-
-\index{router!validating a token}%
-The second thing the router needs is a way to know a token at all, and it
-takes either a JWKS url, which is what a deployment with an identity provider
-behind it uses, or a shared secret. Here is \code{config.yaml} again in full,
-the file chapter~\ref{ch:enter-the-router} wrote, with everything this chapter
-adds to it marked:
+Configure the router before testing the guard across the seam.
+The complete configuration below validates tokens and forwards the bearer
+header. Save it as \code{config.yaml} in the \code{router} directory.
 
 \begin{minted}[highlightlines={19-48}]{yaml}
 version: "1"
@@ -135,6 +56,88 @@ headers:
       - op: propagate
         named: Authorization
 \end{minted}
+
+For the failure experiment, remove the last block, \code{headers}.
+Keep the authentication block. Start the router from the
+\code{router} directory. The token is verified there, but the subgraph
+receives no credential. Public-name queries still work; queries selecting
+the guarded email fail for both anonymous and authenticated callers:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{graphql}
+{ sessions(first: 10) { nodes { title speaker { name email } } } }
+\end{minted}
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"errors":[
+  {"message":"Failed to fetch from Subgraph 'speakers' at Path 'sessions.nodes.@.speaker'.",
+   "extensions":{
+     "errors":[
+       {"message":"The current user is not authorized to access this resource.",
+        "path":["sessions","nodes","@","speaker","email"],
+        "extensions":{"code":"AUTH_NOT_AUTHENTICATED"}},
+       {"message":"The current user is not authorized to access this resource.",
+        "path":["sessions","nodes","@","speaker","email"],
+        "extensions":{"code":"AUTH_NOT_AUTHENTICATED"}},
+       {"message":"The current user is not authorized to access this resource.",
+        "path":["sessions","nodes","@","speaker","email"],
+        "extensions":{"code":"AUTH_NOT_AUTHENTICATED"}}],
+     "serviceName":"speakers",
+     "statusCode":200}},
+  {"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.speaker.name'.",
+   "path":["sessions","nodes",0,"speaker","name"]},
+  {"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.speaker.name'.",
+   "path":["sessions","nodes",1,"speaker","name"]},
+  {"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.speaker.name'.",
+   "path":["sessions","nodes",2,"speaker","name"]},
+  {"message":"Cannot return null for non-nullable field 'Query.sessions.nodes.speaker.name'.",
+   "path":["sessions","nodes",3,"speaker","name"]}],
+ "data":{"sessions":{"nodes":[
+   {"title":"Schemas That Outlive Their Authors","speaker":null},
+   {"title":"Reading a Query Plan","speaker":null},
+   {"title":"Paging Without Offsets","speaker":null},
+   {"title":"The Bank That Split Its Graph","speaker":null}]}}}
+\end{minted}
+
+\index{router!three refusals for four sessions}%
+Three refusals from the subgraph and four from the router, for four sessions.
+The subgraph counts distinct speakers, because
+chapter~\ref{ch:router-n-plus-1} established that the router de-duplicates
+representations before it sends them and this page has three speakers across
+its four sessions. The non-null errors count sessions, because that is where
+the nulls land.
+
+\index{router!an anonymous caller is told the same thing}%
+Send the same query with no token at all and the answer is byte for byte
+identical. That is the tell, and it is the reason this is worth a section:
+a graph whose authorization is working looks different to those two callers.
+This one does not, because neither of them is getting through and both for
+the same reason.
+
+\index{router!headers are not forwarded by default}%
+The router does not forward request headers to subgraphs unless it is told
+to, and WunderGraph says so in as many words: \enquote{by default, no headers
+are forwarded for security reasons}~\autocite{cosmoheaders}. The Speakers
+service is not refusing your caller. It is refusing an anonymous request,
+because an anonymous request is what reached it.
+
+\index{non-null!the guard's blast radius through the seam}%
+The four errors underneath are what a non-null field costs when the entity
+carrying it disappears. Losing \code{email} loses the whole \code{Speaker},
+and \code{name} is \code{String!}, so every session on the page reports a null
+it cannot hold. The titles arrive; nothing under them does.
+
+\index{router!what the missing block survives}%
+The part that makes this expensive to diagnose is how narrow it is. The
+refusal follows the guarded column rather than the seam, so the same seam
+asked for a speaker's public name never selects \code{email}, nothing objects,
+and the answer is complete. Every dashboard stays green and one screen is
+broken.
+
+\subsection{Restore Header Forwarding}
+
+Restore the \code{headers} block shown at the start of this section and
+restart the router. Validation and forwarding are now both configured.
+
 
 \index{router!a token it cannot verify never reaches a subgraph}%
 With that in place the router refuses a token it cannot verify itself, and it
@@ -219,8 +222,8 @@ router is refused:
  "data":{"sessions":{"nodes":[
    {"title":"Schemas That Outlive Their Authors","speaker":null},
    {"title":"Reading a Query Plan","speaker":null},
-   {"title":"The Bank That Split Its Graph","speaker":null},
-   {"title":"Paging Without Offsets","speaker":null}]}}}
+   {"title":"Paging Without Offsets","speaker":null},
+   {"title":"The Bank That Split Its Graph","speaker":null}]}}}
 \end{minted}
 
 \index{authenticated@\code{"@authenticated}!no subgraph objected}%

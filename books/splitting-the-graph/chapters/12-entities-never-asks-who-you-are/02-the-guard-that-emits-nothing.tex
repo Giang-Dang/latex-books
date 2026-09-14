@@ -4,7 +4,11 @@
 \index{authorization!the second placement|(}%
 The obvious correction is to guard the method the entity route calls. The
 reference resolver is right there, it is the thing answering, and it takes
-one line:
+one line. Test this placement in isolation: remove \code{[Authorize]} from
+the \code{Query} resolver added in the previous section, leaving the
+authorization services registered. Do not guard \code{Speaker} or
+\code{Email} yet. The only attempted guard in this variant is the one in
+the complete file below:
 
 \begin{minted}[highlightlines={3,32}]{csharp}
 using HotChocolate.ApolloFederation.Resolvers;

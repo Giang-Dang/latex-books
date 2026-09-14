@@ -92,8 +92,27 @@ method does now is say which session it wants and check that it was asked a
 question about a session.
 
 \index{statement count!three representations, one statement}%
-Send the three representations again, on the Sessions service's own port so
-that no router is involved:
+This time the keys identify sessions, not the speakers used earlier. Send
+this operation to Sessions at port 5001, with the variables below:
+
+\begin{minted}{graphql}
+query ($r: [_Any!]!) {
+  _entities(representations: $r) {
+    __typename
+    ... on Session { title }
+  }
+}
+\end{minted}
+
+The three keys select sessions one, two and three:
+
+\begin{minted}[fontsize=\footnotesize,breakanywhere]{json}
+{"r":[{"__typename":"Session","id":"U2Vzc2lvbjox"},
+      {"__typename":"Session","id":"U2Vzc2lvbjoy"},
+      {"__typename":"Session","id":"U2Vzc2lvbjoz"}]}
+\end{minted}
+
+With no router involved, the batched lookup issues one statement:
 
 \begin{minted}{text}
 -- statement 1
@@ -104,9 +123,14 @@ WHERE "s"."Id" IN (@ids1, @ids2, @ids3)
 \end{minted}
 
 \index{statement count!the whole graph is back to two}%
-One. And through the router, the page that opened this chapter is back to the
-two statements chapter~\ref{ch:second-third-subgraph} measured, one in each
-service, with the Speakers half being the loader that was there all along.
+One Sessions statement for that direct entity request. This is a separate
+repair from the Speakers experiment that opened the chapter.
+
+Restore \code{SpeakerDataLoader.cs} in Speakers and its reference resolver
+from chapter~\ref{ch:second-third-subgraph}. The naive resolver was temporary.
+With both loaders in place, the opening
+page again costs two statements, one per service. Adding the Sessions loader
+alone would not repair that page's Speakers N+1.
 
 \subsection{Four Things That Have to Survive}
 

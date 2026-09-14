@@ -5,7 +5,7 @@
 The fix is the loop, rewritten to count the other collection. Here is
 \code{SpeakerDataLoader.cs} again, complete, with what moved marked:
 
-\begin{minted}[highlightlines={13-17,40,42-49}]{csharp}
+\begin{minted}[highlightlines={39,41-49}]{csharp}
 using GreenDonut;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,10 +14,9 @@ namespace Speakers;
 /// <summary>
 /// What the source-generated loader is underneath: a class deriving
 /// from DataLoaderBase, given the batch of keys and a span to put the
-/// answers in. Written out by hand because a store that is not a
-/// DbContext - a remote service, a cache, a stored procedure - hands
-/// back a list rather than a dictionary, and the generator only
-/// accepts a dictionary.
+/// answers in. Written out by hand to expose the positional contract.
+/// A remote batch can also use a generated loader: adapt its rows to
+/// a dictionary keyed by identifier before returning the batch.
 ///
 /// The whole of the difference between this and the generated one is
 /// which collection the loop walks. FetchAsync's own doc comment says
@@ -160,19 +159,32 @@ section~\ref{sec:ch11-why-this-graph-got-away-with-it}, one layer down.
 \subsection{And When You Cannot Write One}
 
 \index{DataLoader!the remote store case}%
-The case that got me into this file is worth naming, because it is the one that
-takes people out of the source generator in the first place. A loader that
-calls another service asks for a list of ids over HTTP and is handed a JSON
-array. There is no dictionary, there is nobody's primary key to sort by, and
-the service on the other end has made no promise about sequence. Build the
-dictionary yourself, off whatever the payload calls its identifier, before you
-go anywhere near the span. The loop stays the same loop.
+A remote service may return an unordered JSON array for a list of requested
+ids. That does not require a hand-written loader. Build a dictionary keyed by
+the returned identifier inside the generated loader's batch method and return
+it; the generator supplies the positional loop. The manual implementation
+above exposes that loop so you can inspect the contract when implementing a
+custom adapter.
 
 \index{DataLoader!the store that answers a different length}%
-And check the length rather than trusting it. A remote service that drops the
-ids it could not find gives you a shorter array than you asked for, which is
-the first clause of the contract breaking, and the router will refuse the
-answer with a message about the returned entities count not matching. That is
-the good outcome. The bad one is a service that also happens to return them
-sorted, where the count is right and nothing is.
+Keep three collections separate. The store may return fewer rows than there
+are requested keys: that is a valid way to report missing records. The loader
+must still resolve every requested-key slot, using null for a missing row.
+Hot Chocolate then produces one \code{\_entities} position per input
+representation, including repeated keys. Only a shortened final entity array
+violates the wire count contract and triggers the router's count check.
+A full-length array in the wrong order remains the silent failure.
+
+\subsection{Leave the Generated Loader in Place}
+
+The manual file was an experiment, not the next chapter's starting point.
+Before continuing, restore the generated \code{SpeakerDataLoader.cs} from
+chapter~\ref{ch:second-third-subgraph}. Remove the explicit
+\code{AddDataLoader} registration introduced at the start of this chapter;
+that call was only for the manual loader.
+Keep \code{AddSpeakersTypes()}; it registers the generated
+loader. The reference resolver still takes \code{ISpeakerByIdDataLoader}.
+Repeat the out-of-order and missing-middle-key requests above after restoring
+it. Chapter~\ref{ch:entities-authorization} starts from that generated
+implementation, with both services' loaders enabled.
 \index{DataLoader!the corrected loop|)}%

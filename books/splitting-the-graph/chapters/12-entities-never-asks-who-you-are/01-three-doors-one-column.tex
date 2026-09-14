@@ -2,10 +2,11 @@
 \label{sec:ch12-three-doors-one-column}
 
 \index{authorization!the guard on the root field|(}%
-The speaker list is not public. Every speaker in this conference has an
-address the program committee writes to, it is nobody's business but the
-committee's, and the Speakers service is where it lives. So \code{Speaker}
-gains a column and the service gains a way to tell one caller from another.
+Speaker names and biographies are public; committee email addresses are not.
+The Speakers service owns that new column and must protect it on every route.
+The first experiment puts a guard on the speaker list, an intentionally
+incomplete placement: it blocks one entry point while leaving other routes
+to the same email address open.
 
 \index{authorization!two packages}%
 Two packages, one for each half of that. \code{Speakers.csproj} again, with
