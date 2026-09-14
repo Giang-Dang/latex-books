@@ -1,4 +1,56 @@
 \chapter{Preface}
 \label{ch:preface}
 
-Explain here why the book exists and who it is for.
+I wanted a book in which a graph that composes successfully could still be
+the beginning of the problem. The interesting questions come after the
+services start: why one query issues too many database statements, why the
+right records arrive in the wrong positions, why guarding a list leaves
+another route open, and why one failed field can erase data from a healthy
+service. A diagram of several services behind one endpoint does not answer
+those questions. A request, its response and the work behind it can.
+
+This book builds a conference API in C\# with Hot Chocolate, then splits it
+behind a Cosmo router. The example stays small enough that every row has a
+name and every extra statement can be accounted for. Sessions, speakers and
+ratings give it two different kinds of join. Search later supplies a page
+whose ordering depends on data the schedule service does not hold. The
+point is to make the boundaries observable, not to present a production
+conference system.
+
+I assume you have shipped an ASP.NET Core service, can read C\# and JSON,
+and have seen a GraphQL schema and query. You do not need federation
+experience. The first chapters establish one working service before adding
+a composer or router. If several teams are not blocked on changing the same
+API, that service may be all you need. Chapter~\ref{ch:do-you-need-this}
+makes the adoption decision before the book asks you to install the tools.
+
+Read the build-along chapters in order. A later listing assumes the state
+left by the earlier one, including its seed data and generated loaders.
+Temporary failures are exercises with a return path: restore the working
+state before moving on. For a lookup, use the appendices. They collect the
+toolchain, compatibility differences, directive vocabulary, composition
+diagnostics and complete source through chapter~\ref{ch:ownership}, so a
+reader does not have to reconstruct the final files from successive edits.
+
+The measurements are deliberately narrow. A statement count describes the
+query and data printed beside it; it is not a latency benchmark or a promise
+about your database. An HTTP request count describes the boundary where it
+was observed. Where the specification, library and router disagree, I name
+the disagreement and keep the observed result. A passing composition is a
+useful check, not proof that every client operation can be served.
+
+The package versions matter here because the book prints APIs and diagnostic
+text, not just concepts. Appendix~\ref{app:toolchain} gives the reproducible
+baseline. The Hot Chocolate 14 callouts are for readers maintaining older
+code; that release no longer receives security fixes. They are not a
+recommendation to begin a new service on it. Nor are this book's local token,
+SQLite reset or static router configuration production deployment advice.
+
+This manuscript currently develops the example through
+chapter~\ref{ch:ownership}. The later testing and operational chapters listed
+in the contents are still to come. The source appendix describes the working
+state reached here, not an implementation of those unwritten chapters.
+
+Start with the field your team cannot ship. If federation removes that
+release bottleneck, the rest of the book gives you a small graph whose
+failures you can reproduce before they belong to a much larger one.

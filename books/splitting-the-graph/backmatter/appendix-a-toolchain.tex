@@ -1,5 +1,136 @@
-% Scope (SPEC.md, Table of contents): setup, and the one version table SPEC decision 35 names
 \chapter{Toolchain and Versions}
 \label{app:toolchain}
 
-\emph{Not yet drafted.}
+This is the reproducibility baseline for the printed requests and diagnostics,
+not a recommendation to keep an old patch release in production. Use an
+isolated installation for the exercises. Apply supported security updates to
+deployed services and rerun their compatibility tests.
+
+\section{The Version Table}
+
+\begin{center}
+\small
+\begin{tabular}{p{0.49\linewidth}p{0.38\linewidth}}
+\toprule
+Component & Verified baseline \tabularnewline
+\midrule
+.NET SDK / .NET and ASP.NET Core runtime & 10.0.303 / 10.0.11 \tabularnewline
+Main target framework & \code{net10.0} \tabularnewline
+All Hot Chocolate packages, including federation and authorization & 16.6.1 \tabularnewline
+EF Core SQLite / JWT bearer package & 10.0.11 / 10.0.11 \tabularnewline
+Node.js / npm & 24.15.0 / 11.13.0 \tabularnewline
+Cosmo CLI (\code{wgc}) & 0.129.9 \tabularnewline
+Embedded composition package & 0.63.3 \tabularnewline
+Cosmo Router / its Go compiler & 0.341.0 / go1.26.6 \tabularnewline
+Federation vocabulary emitted by default & v2.6 \tabularnewline
+Compatibility: Hot Chocolate / target & 14.3.1 / \code{net8.0} \tabularnewline
+Compatibility: EF Core / runtime & 9.0.19 / 8.0.31 \tabularnewline
+\bottomrule
+\end{tabular}
+\end{center}
+
+The compatibility example uses the same SDK to build its older target.
+Go and the composition library are bundled components, not separate
+installations. The federation package can emit through v2.7, but this example
+uses its v2.6 default. Newer documentation does not establish what this
+combination accepts.
+
+Hot Chocolate 14 no longer receives security fixes. The ChilliCream security
+policy checked on September 14, 2026 lists 16.x as receiving fixes and versions
+below 16 as not receiving them~\autocite{hcsecurityrepair}. Appendix~\ref{app:hc14}
+helps read and migrate older code, not start a deployment on that release.
+Current documentation has moved beyond the book's Hot Chocolate patch; use
+the printed source when reproducing an API.
+
+\section{Install and Check}
+
+Install the SDK, not only the runtime, from Microsoft's official download
+page. Select the archived SDK above and the binary matching the operating
+system and architecture~\autocite{dotnetdownloadrepair}. A portable
+installation keeps the exercise independent of a newer SDK on the machine.
+Check from the shell that will run the example:
+
+\begin{minted}{text}
+dotnet --version
+dotnet --list-runtimes
+node --version
+npm --version
+npm install -g wgc@0.129.9
+wgc --version
+router -version
+\end{minted}
+
+The router executable comes from the matching Cosmo release asset described
+in chapter~\ref{ch:enter-the-router}, not from npm. Extract the platform's
+archive, check its published checksum and make the executable available as
+\code{router} in the exercise shell. On Windows its filename is
+\code{router.exe}. Installing the CLI does not install it.
+
+Keep all Hot Chocolate references within a service on the same version.
+EF Core and JWT bearer follow .NET's release family, not Hot Chocolate's.
+Build before exporting: a stale executable can export a valid schema that
+does not describe the source just edited.
+
+\section{Directories and Ports}
+
+Appendix~\ref{app:source} prints each application file under its destination
+path from this example root:
+
+\begin{minted}{text}
+src/
+  Sessions/    localhost:5001   conference.db
+  Speakers/    localhost:5002   speakers.db
+  Ratings/     localhost:5003   ratings.db
+  Search/      localhost:5004   search.db
+graph/         graph.yaml and generated router.json
+router/        config.yaml; router listens on localhost:3002
+\end{minted}
+
+Do not run the single-service compatibility example beside the main Sessions
+service: both use port 5001. From each service directory, run:
+
+\begin{minted}{text}
+dotnet restore
+dotnet build
+dotnet run --no-build -- schema export --output schema.graphql
+dotnet run --no-build
+\end{minted}
+
+The last command stays running in its own terminal. Repeat for the other
+services needed by the current chapter. The supplied launch profile selects
+the port and Development environment, which enables the statement log.
+
+From the example root, compose and launch in another terminal:
+
+\begin{minted}{text}
+cd graph
+wgc router compose -i graph.yaml -o router.json
+cd ../router
+router -config config.yaml
+\end{minted}
+
+Schema paths are relative to the graph input. The router's execution-config
+path is relative to the router's working directory. After a schema change,
+export, compose, then restart this statically configured router.
+
+\section{Reset Only the Exercise Data}
+
+The example uses \code{EnsureCreated}, not migrations. After changing a seed
+or model, stop the affected service and remove only its disposable database,
+then restart. In PowerShell, starting from the example root:
+
+\begin{minted}{text}
+cd src/Sessions
+Remove-Item -LiteralPath ./conference.db
+dotnet run
+\end{minted}
+
+Do not reset a database containing data that must be kept. A successful
+mutation changes a stored row until reset; rebuilding does not restore the
+seed. Chapters~\ref{ch:schema-design} and~\ref{ch:representation-order}
+depend on the original start-time order.
+
+The signing key and token in chapter~\ref{ch:entities-authorization} are
+development fixtures. Keep the example on a trusted local machine. They do
+not replace an identity provider, production token validation, protected
+subgraph ports or a secret store.
